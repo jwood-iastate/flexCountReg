@@ -1,0 +1,179 @@
+#' Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
+#'
+#' These functions provide density, distribution function, quantile function, and random number generation for the Poisson-Lindley-Gamma (PLG) Distribution
+#'
+#' The Poisson-Lindley-Gamma is a 3-parameter count distribution that captures high densities for small integer values and provides flexibility for heavier tails.
+#'
+#' @param x numeric value or a vector of values.
+#' @param q quantile or a vector of quantiles.
+#' @param p probability or a vector of probabilities.
+#' @param n the number of random numbers to generate.
+#' @param mean numeric value or vector of mean values for the distribution (the values have to be greater than 0).
+#' @param theta single value or vector of values for the theta parameter of the distribution (the values have to be greater than 0).
+#' @param alpha single value or vector of values for the `alpha` parameter of the gamma distribution in the special case that the mean = 1 and the variance = `alpha` (the values for `alpha` have to be greater than 0).
+#' @param lambda alternative parameterization (use instead of the mean); numeric value or vector of values for lambda parameter of the distribution (the values have to be greater than 0).
+#' @param ndraws the number of Halton draws to use for the integration.
+#' @param log logical; if TRUE, probabilities p are given as log(p).
+#' @param log.p logical; if TRUE, probabilities p are given as log(p).
+#' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.
+#'
+#' @details
+#' \code{dplindGamma} computes the density (PDF) of the Poisson-Lindley-Gamma Distribution.
+#'
+#' \code{pplindGamma} computes the CDF of the Poisson-Lindley-Gamma Distribution.
+#'
+#' \code{qplindGamma} computes the quantile function of the Poisson-Lindley-Gamma Distribution.
+#'
+#' \code{rplindGamma} generates random numbers from the Poisson-Lindley-Gamma Distribution.
+#'
+#' The compound Probability Mass Function(PMF) for the Poisson-Lindley-Gamma (PLG) distribution utilizes a special case
+#' \deqn{f(y|\mu,\theta,\alpha)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!} \frac{x^{\frac{1}{\alpha}-1}e^{-\frac{x}{\alpha}}}{\Gamma\left(\frac{1}{\alpha}\right)\alpha^{\frac{1}{\alpha}}}dx}
+#'
+#' Where \eqn{\theta} and \eqn{\lambda} are distribution parameters from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, and \eqn{y} is a non-negative integer.
+#'
+#' The expected value of the distribution is:
+#' \deqn{\mu=\frac{\lambda(\theta+2)}{\theta(\theta+1)}}
+#'
+#' The default is to use the input mean value for the distribution. However, the lambda parameter can be used as an alternative to the mean value.
+#'
+#' Halton draws are used to perform simulation over the gamma distribution to solve the integral.
+#'
+#' @examples
+#' dplindGamma(0, mean=0.75, theta=7, alpha=2, ndraws=2000)
+#' pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=500)
+#' qplindGamma(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, alpha=2,
+#'               ndraws=500)
+#' rplindGamma(30, mean=0.75, theta=7, alpha=2, ndraws=500)
+#'
+#' @import stats randtoolbox
+#' @include plind.R
+#' @export
+#' @name Negative-Binomial-Lindley
+
+#' @rdname Negative-Binomial-Lindley
+#' @export
+dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, lambda=NULL, ndraws=1500, log=FALSE){
+  #test to make sure the value of x is an integer
+  tst <- ifelse(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2])>0),FALSE, TRUE)
+  if(tst || x < 0){
+    print("The value of `x` must be a non-negative whole number")
+    stop()
+  }
+  if(is.null(lambda)){
+    if(mean<=0 || theta<=0 || alpha<=0){
+      print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+      stop()
+    }
+    else{
+      lambda <- mean*theta*(theta+1)/((theta+2))
+    }
+  }
+  else{
+    if(lambda<=0 || theta<=0  || alpha<=0){
+      print('The values of `lambda`, `theta`, and `alpha` all have to have values greater than 0.')
+      stop()
+    }
+  }
+
+  # Generate Halton draws to use as quantile values
+  h <- randtoolbox::halton(ndraws)
+
+  # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to gamma values
+  gammdist <- exp(stats::qgamma(h, shape=1/alpha, scale=alpha))
+
+  mu <- lambda*(theta+2)/(theta*(theta+1))
+  mu_i <- outer(mu, gammdist)
+
+  p_plind.i <- sapply(mu_i, function(y) dplind(x=x, mean=y, theta=theta))
+
+  p <- mean(p_plind.i)
+
+  if (log) return(log(p))
+  else return(p)
+})
+
+#' @rdname Negative-Binomial-Lindley
+#' @export
+pplindGamma <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, alpha=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
+  if(is.null(lambda)){
+    if(mean<=0 || theta<=0  || alpha<=0){
+      print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+      stop()
+    }
+  }
+  else{
+    if(lambda<=0 || theta<=0  || alpha<=0){
+      print('The values of `lambda`, `theta`, and `alpha` all have to have values greater than 0.')
+      stop()
+    }
+    else{
+      mean <- mean*theta*(theta+1)/((theta+2))
+    }
+  }
+
+  y <- seq(0,q,1)
+  probs <- dplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws)
+  p <- sum(probs)
+
+  if(!lower.tail) p <- 1-p
+
+  if (log.p) return(log(p))
+  else return(p)
+})
+
+#' @rdname Negative-Binomial-Lindley
+#' @export
+qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1, ndraws=1500, lambda=NULL) {
+  if(p < 0){
+    print("The value of `p` must be a value greater than 0 and less than 1.")
+    stop()
+  }
+  if(is.null(lambda)){
+    if(mean<=0 || theta<=0 || alpha<=0){
+      print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+      stop()
+    }
+    else{
+      lambda <- mean*theta*(theta+1)/((theta+2))
+    }
+  }
+  else{
+    if(lambda<=0 || theta<=0  || alpha<=0){
+      print('The values of `lambda`, `theta`, and `alpha` all have to have values greater than 0.')
+      stop()
+    }
+  }
+
+  y <- 0
+  p_value <- pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws)
+  while(p_value < p){
+    y <- y + 1
+    p_value <- pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws)
+  }
+  return(y)
+})
+
+
+#' @rdname Negative-Binomial-Lindley
+#' @export
+rplindGamma <- function(n, mean=1, theta=1, alpha=1, ndraws=1500, lambda=NULL) {
+  if(is.null(lambda)){
+    if(mean<=0 || theta<=0  || alpha<=0){
+      print('The values of `mean`, `theta`, and `alpha` allboth have to have values greater than 0.')
+      stop()
+    }
+  }
+  else{
+    if(lambda<=0 || theta<=0  || alpha<=0){
+      print('The values of `lambda`, `theta`, and `alpha` all have to have values greater than 0.')
+      stop()
+    }
+    else{
+      mean <- mean*theta*(theta+1)/((theta+2))
+    }
+  }
+
+  u <- runif(n)
+  y <- sapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha, ndraws=ndraws))
+  return(y)
+}

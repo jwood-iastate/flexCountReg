@@ -43,7 +43,7 @@
 #' pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=500)
 #' qplindGamma(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, alpha=2,
 #'               ndraws=500)
-#' rplindGamma(30, mean=0.75, theta=7, alpha=2, ndraws=500)
+#' rplindGamma(30, lambda=4.67, theta=7, alpha=2, ndraws=500)
 #'
 #' @import stats randtoolbox
 #' @include plind.R
@@ -128,6 +128,10 @@ qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1, ndraws=1500, lamb
     print("The value of `p` must be a value greater than 0 and less than 1.")
     stop()
   }
+  if(is.na(p)){
+    print("The value of `p` cannot be an `NA` value")
+    stop()
+  }
   if(is.null(lambda)){
     if(mean<=0 || theta<=0 || alpha<=0){
       print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
@@ -145,10 +149,11 @@ qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1, ndraws=1500, lamb
   }
 
   y <- 0
-  p_value <- pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws)
+  p_value <- max(pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws), .Machine$double.xmin)
   while(p_value < p){
     y <- y + 1
-    p_value <- pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws)
+    p_value_new <- max(pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws), .Machine$double.xmin)
+    if (!is.na(p_value_new)) p_value <- p_value_new else break
   }
   return(y)
 })
@@ -174,6 +179,6 @@ rplindGamma <- function(n, mean=1, theta=1, alpha=1, ndraws=1500, lambda=NULL) {
   }
 
   u <- runif(n)
-  y <- sapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha, ndraws=ndraws))
+  y <- lapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha, ndraws=ndraws))
   return(y)
 }

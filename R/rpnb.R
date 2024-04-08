@@ -99,6 +99,8 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   #X_rand <-stats::model.matrix(rpar_formula, data)
   y_name <- all.vars(formula)[1]
   y <- stats::model.response(mod1_frame)
+  
+  X_expanded <- cbind(X_Fixed, X_rand, X_rand) # for use in the gradient
 
   # Create named vectors
   fixed_terms <- names(X_Fixed)
@@ -210,6 +212,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   }
   # main function for estimating log-likelihoods
   p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, est_method){
+    if (!correlated) exact.gradient=TRUE else exact.gradient=FALSE # use numerical gradient if using correlated random parameters
     N_fixed = length(x_fixed_names)
     N_rand = length(rpar)
     coefs <- as.array(p)
@@ -313,10 +316,11 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
 
     rpar_mat <- exp(xb_rand_mat)
     pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
-    prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p=p)
-    probs <- rowMeans(prob_mat)
+    prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p=p) # Pitr
+    probs <- rowMeans(prob_mat) # Pi
+    
     ll <- sum(log(probs))
-
+    
     if (est_method == 'bhhh' || method == 'BHHH'){
       return(log(probs))
     } else{return(ll)}
@@ -387,7 +391,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   else{
     if(form=='nbp'){
       b.coefs <- head(coefs,-2)
-      parms <- split(b.coefs, f=param.splits)
+      parms <- split(b.coefs, f=param.splits[1:(length(param.splits)-2)])
     }
     else{
       b.coefs <- head(coefs,-1)

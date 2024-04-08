@@ -2,8 +2,8 @@
 #'
 #' @name genWaring
 #' @param formula an R formula.
-#' @param method a method to use for optimization in the maximum likelihood estimation. For options, see `maxLik` documentation.
-#' @param data a dataframe that has all of the variables in  `formula` and `rpar_formula`,
+#' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}} documentation.
+#' @param data a dataframe that has all of the variables in  `formula`.
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform.
 #'
 #' @details

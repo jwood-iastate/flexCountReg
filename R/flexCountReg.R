@@ -6,13 +6,21 @@
 #' @param formula an R formula,
 #' @param rpar_formula an optional formula for the model related specifically to the random parameters (if a random parameter model is desired). If used, this should not include an outcome variable. If the intercept is random, include it in this formula. If the intercept is fixed, include it in \code{formula} but not in \code{rpar_formula}. To remove the intercept, use \code{0 + vars} or \code{-1 + vars},
 #' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula},
-#' @param dist determines the count distribution to be used in the regression estimation and must be a string. Options include: \code{"NB2"} for the standard negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^2},
+#' @param dist determines the count distribution to be used in the regression estimation and must be a string. Options include: 
+#' \code{"NB2"} for the standard negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^2},
 #' \code{"NB1"} for the negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu},
 #' \code{"NBP"} for the negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^{2-P}},
-#' \code{"Poisson Lognormal"} for a Poisson-Lognormal model, \code{"Poisson Lindley"} for a Poisson-Lindley model,
-#' \code{"GW"} for a Generalized Waring model, \code{"PIG"} for a Poisson-Inverse-Gamma model,
-#' \code{"PW"} for a Poisson-Weibull model, \code{"PGE"} for a Poisson-Generalized-Exponential model,
-#' \code{"PLL"} for a Poisson-Lindley-Lognormal model, or \code{"PLG"} for a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) model.
+#' \code{"Poisson Lognormal"} for a Poisson-Lognormal model, 
+#' \code{"Poisson Lindley"} for a Poisson-Lindley model,
+#' \code{"GW"} for a Generalized Waring model, 
+#' \code{"PIG"} for a Poisson-Inverse-Gamma model,
+#' \code{"PW"} for a Poisson-Weibull model, 
+#' \code{"PGE"} for a Poisson-Generalized-Exponential model,
+#' \code{"PLL"} for a Poisson-Lindley-Lognormal model, 
+#' \code{"PLG"} for a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) model,
+#' \code{"PInvGaus"} for a Poisson-Inverse-Gaussian model (Type 1), 
+#' \code{"PInvGaus-2"} for a Poisson-Inverse-Gaussian model (Type 2), or
+#' \code{"Sichel"} for a Sichel model.
 #' @param ln.alpha.formula an optional formula for using independent variables to estimate the natural log of the overdispersion parameter (makes the model a generalized negative binomial but is not an option for random parameters models),
 #' @param rpardists an optional named vector whose names are the random parameters and values the distribution (for random parameter models only). The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), and uniform ("u"). If this is not provided, normal distributions are used for all random coefficients,
 #' @param ndraws the number of Halton draws to use for estimating the random parameters,
@@ -44,7 +52,7 @@
 #' summary(poislind.mod)
 #'
 #' ## Poisson-Generalized-Exponential Model
-#' poisgenexp.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
+#' poisgenexp.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
 #'                                 speed50 + ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 dist="PGE",
@@ -52,7 +60,7 @@
 #' summary(poisgenexp.mod)
 #'
 #' ## Poisson-Weibull Model
-#' poisweib.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength + speed50 +
+#' poisweib.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
 #'                                 ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 dist="PW",
@@ -60,7 +68,7 @@
 #' summary(poisweib.mod)
 #'
 #' ## Poisson-Inverse-Gamma Model
-#' poisinvgamma.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
+#' poisinvgamma.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
 #'                                 speed50 + ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 dist="PIG",
@@ -68,7 +76,7 @@
 #' summary(poisinvgamma.mod)
 #'
 #' ## Generalized Waring Model
-#' genwaring.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
+#' genwaring.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
 #'                                 speed50 + ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 dist="GW", method="nm")
@@ -87,6 +95,30 @@
 #'                             data=washington_roads, dist="PLG",
 #'                             ndraws=50, method="nm")
 #' summary(poislindgamma.mod)
+#' 
+#' # Poisson-Inverse-Guassian Model (Type 1)
+#' poisinvgaus.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
+#'                                 speed50 + ShouldWidth04 + AADTover10k,
+#'                                 data=washington_roads,
+#'                                 dist="PInvGaus", 
+#'                                 method="nm")
+#' summary(poisinvgaus.mod)
+#'
+#' # Poisson-Inverse-Guassian Model (Type 2)
+#' poisinvgaus.mod2 <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
+#'                                 speed50 + ShouldWidth04 + AADTover10k,
+#'                                 data=washington_roads,
+#'                                 dist="PInvGaus-2", 
+#'                                 method="nm")
+#' summary(poisinvgaus.mod2)
+#'
+#' # Sichel Model
+#' sichel.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
+#'                                 speed50 + ShouldWidth04 + AADTover10k,
+#'                                 data=washington_roads,
+#'                                 dist="Sichel", 
+#'                                 method="bfgs")
+#' summary(sichel.mod)
 #' }
 #'
 #' @export
@@ -190,8 +222,30 @@ flexCountReg <- function(formula, rpar_formula=NULL, data, dist = "NB2",
     model$dist <- dist
     model$random <- FALSE
   }
+  else if(dist=="PInvGaus"){ # Poisson-Inverse-Gaussian Model - Type 1
+    model <- poisInvGaus(formula=formula, data=data,
+                           method=method, 
+                           max.iters=max.iters)
+    model$dist <- dist
+    model$random <- FALSE
+  }
+  else if(dist=="PInvGaus-2"){ # Poisson-Inverse-Gaussian Model - Type 2
+    model <- poisInvGaus(formula=formula, data=data,
+                         mod.form="Type 2", method=method, 
+                         max.iters=max.iters)
+    model$dist <- dist
+    model$random <- FALSE
+  }
+  else if (dist=="Sichel"){ # Sichel Model
+    model <- sichel(formula=formula, data=data,
+                         method=method,
+                         max.iters=max.iters)
+    model$dist <- dist
+    model$random <- FALSE
+  }
   else{
-    print("Please use one of the following options for `dist`: 'NB1', 'NB2', 'NBP', 'Poisson Lognormal', 'Poisson Lindley', 'GW', 'PGE', 'PW', 'PIG', 'PLL', or 'PLG'")
+    print("Please use one of the following options for `dist`: 'NB1', 'NB2', 'NBP', 'Poisson Lognormal', 
+          'Poisson Lindley', 'GW', 'PGE', 'PW', 'PIG', 'PLL', 'PLG', 'PInvGaus', 'PInvGaus-2', or 'Sichel'")
     stop()
     }
 

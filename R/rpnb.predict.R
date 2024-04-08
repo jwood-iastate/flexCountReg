@@ -88,32 +88,20 @@ rpnb.predict <- function(model, data, method='Exact') {
   rpar.adjust <- function(dist, mu, sigma){ # adjusted coefficients for random parameters
     if(dist=="n"){
       adj <- mu + sigma^2/2
-      print(mu)
-      print(sigma)
-      print(exp(adj))
       return(adj)
     }
     else if (dist=="ln"){
       W <- lamW::lambertW0(-sigma^2*exp(mu))
       W <- ifelse(is.na(W), lamW::lambertWm1(-sigma^2*exp(mu)), W)
       adj <- exp(mu-W)-W^2/(2*sigma^2)-log(sigma)-0.5*log(abs(exp(mu-W)-1/(sigma^2)))
-      print(mu)
-      print(sigma)
-      print(exp(adj))
       return(adj)
     }
     else if (dist=="t"){
       adj <- mu-2*log(sigma)+log(2*cosh(sigma)-2)
-      print(mu)
-      print(sigma)
-      print(exp(adj))
       return(adj)
     }
     else if (dist=="u"){
       adj <- mu-log(sigma)+log(sinh(sigma))
-      print(mu)
-      print(sigma)
-      print(exp(adj))
       return(adj)
     }
   }

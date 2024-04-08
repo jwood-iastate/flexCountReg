@@ -32,7 +32,7 @@
 #' Where \eqn{\theta} and \eqn{\lambda} are distribution parameters from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, \eqn{\sigma} is a parameter for the lognormal distribution with the restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 #'
 #' The expected value of the distribution is:
-#' \deqn{\mu=\frac{\lambda(\theta+2)e^{\frac{\sigma^2}{2}}}{\theta(\theta+1)}}
+#' \deqn{E[y]=\mu=\e^{X\beta}=\frac{\lambda(\theta+2)e^{\frac{\sigma^2}{2}}}{\theta(\theta+1)}}
 #'
 #' The default is to use the input mean value for the distribution. However, the lambda parameter can be used as an alternative to the mean value.
 #'

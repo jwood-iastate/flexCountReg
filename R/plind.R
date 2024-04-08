@@ -35,7 +35,7 @@
 #' The default is to use the input mean value for the distribution. However, the lambda parameter can be used as an alternative to the mean value.
 #'
 #' @examples
-#' dplind(0.5, mean=0.75, theta=7)
+#' dplind(0, mean=0.75, theta=7)
 #' pplind(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7)
 #' qplind(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7)
 #' rplind(30, mean=0.75, theta=7)

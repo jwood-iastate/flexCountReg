@@ -9,7 +9,7 @@ poisLind(formula, data, method = "BHHH", max.iters = 1000)
 \arguments{
 \item{formula}{an R formula.}
 
-\item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}.}
+\item{data}{a dataframe that has all of the variables in the \code{formula}.}
 
 \item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},}
 

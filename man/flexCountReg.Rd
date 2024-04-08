@@ -27,13 +27,21 @@ flexCountReg(
 
 \item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula},}
 
-\item{dist}{determines the count distribution to be used in the regression estimation and must be a string. Options include: \code{"NB2"} for the standard negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^2},
+\item{dist}{determines the count distribution to be used in the regression estimation and must be a string. Options include: 
+\code{"NB2"} for the standard negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^2},
 \code{"NB1"} for the negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu},
 \code{"NBP"} for the negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^{2-P}},
-\code{"Poisson Lognormal"} for a Poisson-Lognormal model, \code{"Poisson Lindley"} for a Poisson-Lindley model,
-\code{"GW"} for a Generalized Waring model, \code{"PIG"} for a Poisson-Inverse-Gamma model,
-\code{"PW"} for a Poisson-Weibull model, \code{"PGE"} for a Poisson-Generalized-Exponential model,
-\code{"PLL"} for a Poisson-Lindley-Lognormal model, or \code{"PLG"} for a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) model.}
+\code{"Poisson Lognormal"} for a Poisson-Lognormal model, 
+\code{"Poisson Lindley"} for a Poisson-Lindley model,
+\code{"GW"} for a Generalized Waring model, 
+\code{"PIG"} for a Poisson-Inverse-Gamma model,
+\code{"PW"} for a Poisson-Weibull model, 
+\code{"PGE"} for a Poisson-Generalized-Exponential model,
+\code{"PLL"} for a Poisson-Lindley-Lognormal model, 
+\code{"PLG"} for a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) model,
+\code{"PInvGaus"} for a Poisson-Inverse-Gaussian model (Type 1), 
+\code{"PInvGaus-2"} for a Poisson-Inverse-Gaussian model (Type 2), or
+\code{"Sichel"} for a Sichel model.}
 
 \item{ln.alpha.formula}{an optional formula for using independent variables to estimate the natural log of the overdispersion parameter (makes the model a generalized negative binomial but is not an option for random parameters models),}
 
@@ -77,7 +85,7 @@ poislind.mod <- flexCountReg(Animal ~ lnaadt + lnlength + speed50 +
 summary(poislind.mod)
 
 ## Poisson-Generalized-Exponential Model
-poisgenexp.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
+poisgenexp.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
                                 speed50 + ShouldWidth04 + AADTover10k,
                                 data=washington_roads,
                                 dist="PGE",
@@ -85,7 +93,7 @@ poisgenexp.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
 summary(poisgenexp.mod)
 
 ## Poisson-Weibull Model
-poisweib.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength + speed50 +
+poisweib.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
                                 ShouldWidth04 + AADTover10k,
                                 data=washington_roads,
                                 dist="PW",
@@ -93,7 +101,7 @@ poisweib.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength + speed50 +
 summary(poisweib.mod)
 
 ## Poisson-Inverse-Gamma Model
-poisinvgamma.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
+poisinvgamma.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
                                 speed50 + ShouldWidth04 + AADTover10k,
                                 data=washington_roads,
                                 dist="PIG",
@@ -101,7 +109,7 @@ poisinvgamma.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
 summary(poisinvgamma.mod)
 
 ## Generalized Waring Model
-genwaring.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
+genwaring.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
                                 speed50 + ShouldWidth04 + AADTover10k,
                                 data=washington_roads,
                                 dist="GW", method="nm")
@@ -120,6 +128,30 @@ poislindgamma.mod <- flexCountReg(Animal ~ lnaadt + lnlength + speed50 +
                             data=washington_roads, dist="PLG",
                             ndraws=50, method="nm")
 summary(poislindgamma.mod)
+
+# Poisson-Inverse-Guassian Model (Type 1)
+poisinvgaus.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
+                                speed50 + ShouldWidth04 + AADTover10k,
+                                data=washington_roads,
+                                dist="PInvGaus", 
+                                method="nm")
+summary(poisinvgaus.mod)
+
+# Poisson-Inverse-Guassian Model (Type 2)
+poisinvgaus.mod2 <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
+                                speed50 + ShouldWidth04 + AADTover10k,
+                                data=washington_roads,
+                                dist="PInvGaus-2", 
+                                method="nm")
+summary(poisinvgaus.mod2)
+
+# Sichel Model
+sichel.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
+                                speed50 + ShouldWidth04 + AADTover10k,
+                                data=washington_roads,
+                                dist="Sichel", 
+                                method="bfgs")
+summary(sichel.mod)
 }
 
 }

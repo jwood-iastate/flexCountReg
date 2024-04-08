@@ -9,9 +9,9 @@ genWaring(formula, data, method = "BHHH", max.iters = 1000)
 \arguments{
 \item{formula}{an R formula.}
 
-\item{data}{a dataframe that has all of the variables in  `formula` and `rpar_formula`,}
+\item{data}{a dataframe that has all of the variables in  `formula`.}
 
-\item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see `maxLik` documentation.}
+\item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}} documentation.}
 
 \item{max.iters}{the maximum number of iterations to allow the optimization method to perform.}
 }

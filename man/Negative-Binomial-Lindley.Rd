@@ -90,6 +90,6 @@ dplindGamma(0, mean=0.75, theta=7, alpha=2, ndraws=2000)
 pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=500)
 qplindGamma(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, alpha=2,
               ndraws=500)
-rplindGamma(30, mean=0.75, theta=7, alpha=2, ndraws=500)
+rplindGamma(30, lambda=4.67, theta=7, alpha=2, ndraws=500)
 
 }

@@ -74,25 +74,21 @@ Where \eqn{\beta} is the shape parameter and \eqn{\alpha} is the scale parameter
 
 ## Poisson-Generalized-Exponential Model
 data("washington_roads")
-washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
-poisgenexp.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
-                                speed50 + ShouldWidth04 + AADTover10k,
+poisgenexp.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength,
                                 data=washington_roads,
                                 distrib="GE",
                                 ndraws=500, method="bfgs")
 summary(poisgenexp.mod)
 
 ## Poisson-Weibull Model
-poisweib.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k,
+poisweib.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength,
                                 data=washington_roads,
                                 distrib="W",
                                 ndraws=500, method="bfgs")
 summary(poisweib.mod)
 
 ## Poisson-Inverse-Gamma Model
-poisginvgamma.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength +
-                                speed50 + ShouldWidth04 + AADTover10k,
+poisginvgamma.mod <- compoundPoisson(Total_crashes ~ lnaadt + lnlength,
                                 data=washington_roads,
                                 distrib="IG",
                                 ndraws=500, method="bfgs")

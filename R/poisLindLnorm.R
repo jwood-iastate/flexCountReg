@@ -28,7 +28,8 @@
 #' ## Poisson-Lindley-Lognormal Model
 #' data("washington_roads")
 #' washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
-#' poislindlnorm.mod <- poisLindLnorm(Animal ~ lnaadt + lnlength + speed50 + ShouldWidth04 + AADTover10k,
+#' poislindlnorm.mod <- poisLindLnorm(Animal ~ lnaadt + lnlength + speed50 
+#'                                         + ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 method="nm",
 #'                                 ndraws=100,

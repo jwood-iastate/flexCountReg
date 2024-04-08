@@ -3,7 +3,7 @@
 #' @name poisLind
 #' @param formula an R formula.
 #' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},
-#' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}.
+#' @param data a dataframe that has all of the variables in the \code{formula}.
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform,
 #'
 #' @import nlme  maxLik  MASS  stats modelr
@@ -56,8 +56,6 @@ poisLind <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   start <- unlist(p_model$coefficients)
   t <- 116761/exp(-9.04*p_model$theta)
   theta <- ifelse(t<100,t,1) # Approximate Initial Theta
-
-  start[1] <- start[1]-log((theta+2)/(theta*(theta+1))) # adjust intercept for theta
 
   full_start <- append(start, log(theta))
 

@@ -91,9 +91,16 @@ rpnb.predict <- function(model, data, method='Exact') {
       return(adj)
     }
     else if (dist=="ln"){
-      W <- lamW::lambertW0(-sigma^2*exp(mu))
-      W <- ifelse(is.na(W), lamW::lambertWm1(-sigma^2*exp(mu)), W)
-      adj <- exp(mu-W)-W^2/(2*sigma^2)-log(sigma)-0.5*log(abs(exp(mu-W)-1/(sigma^2)))
+      if (sigma<=sqrt(exp(-mu-1))){
+        W <- lamW::lambertW0(-sigma^2*exp(mu))
+        W <- ifelse(is.na(W), lamW::lambertWm1(-sigma^2*exp(mu)), W)
+        adj <- exp(mu-W)-W^2/(2*sigma^2)-log(sigma)-0.5*log(abs(exp(mu-W)-1/(sigma^2)))
+      }
+      else{
+        h <- randtoolbox::halton(1)
+        adj <- log(mean(exp((stats::qlnorm(h, mu, abs(sigma))))))
+      }
+      
       return(adj)
     }
     else if (dist=="t"){

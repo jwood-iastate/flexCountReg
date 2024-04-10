@@ -33,7 +33,7 @@ compoundPoisson(
 \description{
 Function for estimating a various compound Poisson regression models where the error term follows specific distributions using Maximum Simulated Likelihood when there is not a closed form PMF
 }
-\details{
+\note{
 For the distributions used for compounding with the Poisson, the CDF is used to determine the quantile function. These include:
 
 Generalized Exponential Distribution CDF and Quantile Functions (see Gupta & Kundu (2007))

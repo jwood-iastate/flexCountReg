@@ -12,7 +12,7 @@
 #' @param ndraws the number of Halton draws to use for estimating the random parameters,
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform.
 #'
-#' @details
+#' @note
 #' For the distributions used for compounding with the Poisson, the CDF is used to determine the quantile function. These include:
 #'
 #' Generalized Exponential Distribution CDF and Quantile Functions (see Gupta & Kundu (2007))
@@ -52,8 +52,9 @@
 #' Gupta, R. D., & Kundu, D. (2007). Generalized exponential distribution: Existing results and some recent developments. Journal of Statistical planning and inference, 137(11), 3537-3547.
 #'
 #'
-#' @import nlme maxLik MASS stats randtoolbox invgamma modelr
+#' @import nlme maxLik MASS stats randtoolbox modelr
 #' @importFrom utils head  tail
+#' @include invgamma.R
 #'
 #' @examples
 #' \donttest{
@@ -110,12 +111,12 @@ compoundPoisson <- function(formula, data, distrib="GE", ndraws = 1500, method =
   n <- as.integer(ndraws)
 
   poisson_prob <- function(observed, predicted) {
-    log_probs <- dpois(observed, predicted, log = TRUE)
+    log_probs <- stats::dpois(observed, predicted, log = TRUE)
 
     return(log_probs)
   }
 
-  p_poisson_lognormal <- function(p, y, X, n, est_method){
+  p_poisson_mixed <- function(p, y, X, n, est_method){
 
     coefs <- as.array(head(p,-2))
     distpars <- tail(p,2)
@@ -132,7 +133,7 @@ compoundPoisson <- function(formula, data, distrib="GE", ndraws = 1500, method =
       i_logdist <- log(stats::qweibull(h, shape=par1, scale=par2))
     }
     else if (distrib=="IG"){
-      i_logdist <- log(invgamma::qinvgamma(h, shape=par1, scale=(par2-2)))
+      i_logdist <- log(qinvgamma(h, shape=par1, scale=(par2-2)))
     }
 
     for (i in i_logdist){
@@ -149,7 +150,7 @@ compoundPoisson <- function(formula, data, distrib="GE", ndraws = 1500, method =
     } else{return(ll)}
   }
 
-  fit <- maxLik::maxLik(p_poisson_lognormal,
+  fit <- maxLik::maxLik(p_poisson_mixed,
                         start = start,
                         y = y,
                         X = X,

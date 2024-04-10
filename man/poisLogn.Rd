@@ -2,32 +2,68 @@
 % Please edit documentation in R/poisLogn.R
 \name{poisLogn}
 \alias{poisLogn}
-\title{Function for estimating a Poisson Lognormal regression model via maximum simulated likelihood}
+\title{Poisson-Lognormal Regression}
 \usage{
-poisLogn(formula, data, ndraws = 1500, method = "BHHH", max.iters = 1000)
+poisLogn(
+  formula,
+  data,
+  ln.sigma.formula = NULL,
+  ndraws = 1500,
+  method = "BHHH",
+  max.iters = 200,
+  print.level = 0
+)
 }
 \arguments{
 \item{formula}{an R formula.}
 
-\item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}.}
+\item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe,}
 
-\item{ndraws}{the number of Halton draws to use for estimating the random parameters,}
+\item{ln.sigma.formula}{an optional formula for using independent variables to estimate the natural log of the standard deviation parameter (makes the model a generalized Poisson-Lognormal).}
+
+\item{ndraws}{the number of Halton draws to use for the integration over the lognormal distribution.}
 
 \item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},}
 
-\item{max.iters}{the maximum number of iterations to allow the optimization method to perform,}
+\item{max.iters}{the maximum number of iterations to allow the optimization method to perform.}
+
+\item{print.level}{determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.}
 }
 \description{
-Function for estimating a Poisson Lognormal regression model via maximum simulated likelihood
+Poisson-Lognormal Regression
+}
+\details{
+This implements maximum simulated likelihood (MSL) to estimate a Poisson-Lognormal regression model. The regression model has the flexibility to model the dispersion parameter \eqn{\sigma} from the lognormal distribution as a function of independent variables, similar to the generalized negative binomial.
+
+#' The compound Probability Mass Function(PMF) for the Poisson-Lognormal distribution is:
+\deqn{f(y|\lambda,\theta,\alpha)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
+
+Where \eqn{\sigma} is a parameter for the lognormal distribution with the restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
+
+The expected value of the distribution is:
+\deqn{E[y]=\e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
+
+When `ln.sigma.formula` is used, the parameter \eqn{\sigma} is modeled as:
+\deqn{ln(\sigma)=\beta_0_\beta_1 x_1 + \cdots + \beta_n x_n}
+
+Thus, the resulting value for the parameter \eqn{\sigma} is:
+\deqn{\sigma=e^{\beta_0_\beta_1 x_1 + \cdots + \beta_n x_n}}
+
+The t-statistics and p-values for the coefficients related to ln(sigma) are, by default, testing if the coefficients are different from a value of 0. This has little practical meaning given that they are coefficients for ln(sigma). They are not testing if the coefficients have statistical significance in terms of improvement over a Poisson model. The Likelihood-Ratio test results provided in the output provide a test comparing if the Poisson-Longomal model provides a statistically significant improvement in model fit over the Poisson model.
 }
 \examples{
 \donttest{
 
-## Poisson-Lognormal Model
+## Generalized Poisson-Lognormal
 data("washington_roads")
-washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
-poislog.mod <- poisLogn(Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 + AADTover10k,
-                                data=washington_roads,
-                                ndraws=50)
-summary(poislog.mod)}
+washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
+
+poslogn.mod <- poisLogn(Total_crashes ~ lnaadt + lnlength + speed50 +
+                        ShouldWidth04 + AADTover10k,
+                        ln.sigma.formula = ~ lnaadt + AADTover10k,
+                        data=washington_roads, 
+                        ndraws = 100, 
+                        method = 'BHHH')
+summary(poslogn.mod)
+}
 }

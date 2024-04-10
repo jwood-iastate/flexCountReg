@@ -22,6 +22,7 @@
 #' \code{"PInvGaus-2"} for a Poisson-Inverse-Gaussian model (Type 2), or
 #' \code{"Sichel"} for a Sichel model.
 #' @param ln.alpha.formula an optional formula for using independent variables to estimate the natural log of the overdispersion parameter (makes the model a generalized negative binomial but is not an option for random parameters models),
+#' @param ln.sigma.formula an optional formula for using independent variables to estimate the natural log of the standard deviation parameter (makes the model a generalized Poisson-Lognormal).
 #' @param rpardists an optional named vector whose names are the random parameters and values the distribution (for random parameter models only). The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), and uniform ("u"). If this is not provided, normal distributions are used for all random coefficients,
 #' @param ndraws the number of Halton draws to use for estimating the random parameters,
 #' @param scrambled if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = FALSE} results in scrambled Halton draws,
@@ -30,6 +31,8 @@
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform,
 #' @param start.vals an optional vector of starting values for the regression coefficients
 #' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
+#'
+#' @include poisLogn.R genWaring.R rpnb.R nbg.R compoundPoisson.R sichel.R poisLind.R poisLindLnorm.R poisLindGamma.R  
 #'
 #' @examples
 #' \donttest{
@@ -124,6 +127,7 @@
 #' @export
 flexCountReg <- function(formula, rpar_formula=NULL, data, dist = "NB2",
                          ln.alpha.formula = NULL,
+                         ln.sigma.formula = NULL,
                          rpardists = NULL,
                          ndraws = 1500, scrambled = FALSE,
                          correlated = FALSE, method = 'BHHH', max.iters = 200,
@@ -176,6 +180,7 @@ flexCountReg <- function(formula, rpar_formula=NULL, data, dist = "NB2",
   }
   else if(dist=="Poisson Lognormal"){ # Poisson-Lognormal Model
     model <- poisLogn(formula=formula, data=data, ndraws=ndraws,
+                      ln.sigma.formula = ln.sigma.formula,
                       method=method, max.iters=max.iters)
     model$dist <- dist
     model$random <- FALSE
@@ -231,7 +236,7 @@ flexCountReg <- function(formula, rpar_formula=NULL, data, dist = "NB2",
   }
   else if(dist=="PInvGaus-2"){ # Poisson-Inverse-Gaussian Model - Type 2
     model <- poisInvGaus(formula=formula, data=data,
-                         mod.form="Type 2", method=method, 
+                         form="Type 2", method=method, 
                          max.iters=max.iters)
     model$dist <- dist
     model$random <- FALSE

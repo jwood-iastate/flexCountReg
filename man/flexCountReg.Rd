@@ -10,6 +10,7 @@ flexCountReg(
   data,
   dist = "NB2",
   ln.alpha.formula = NULL,
+  ln.sigma.formula = NULL,
   rpardists = NULL,
   ndraws = 1500,
   scrambled = FALSE,
@@ -44,6 +45,8 @@ flexCountReg(
 \code{"Sichel"} for a Sichel model.}
 
 \item{ln.alpha.formula}{an optional formula for using independent variables to estimate the natural log of the overdispersion parameter (makes the model a generalized negative binomial but is not an option for random parameters models),}
+
+\item{ln.sigma.formula}{an optional formula for using independent variables to estimate the natural log of the standard deviation parameter (makes the model a generalized Poisson-Lognormal).}
 
 \item{rpardists}{an optional named vector whose names are the random parameters and values the distribution (for random parameter models only). The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), and uniform ("u"). If this is not provided, normal distributions are used for all random coefficients,}
 

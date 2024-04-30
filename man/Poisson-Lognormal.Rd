@@ -62,7 +62,7 @@ The compound Probability Mass Function(PMF) for the Poisson-Lognormal distributi
 Where \eqn{\sigma} is a parameter for the lognormal distribution with the restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 
 The expected value of the distribution is:
-\deqn{E[y]=\e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
+\deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
 Halton draws are used to perform simulation over the lognormal distribution to solve the integral.
 }
 \examples{

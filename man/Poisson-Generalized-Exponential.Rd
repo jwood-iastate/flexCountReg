@@ -60,7 +60,7 @@ These functions provide density, distribution function, quantile function, and r
 \code{rpge} generates random numbers from the PGE Distribution.
 
 The Generalized Exponential distribution can be written as a function with a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The distribution has striclty positive continuous values. The PDF of the distribution is:
-\deqn{f(x|\alph,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
+\deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
 
 Thus, the compound Probability Mass Function(PMF) for the PGE distribution is:
 \deqn{f(y|\lambda,\alpha,\beta)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}

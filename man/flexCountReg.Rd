@@ -11,6 +11,7 @@ flexCountReg(
   dist = "NB2",
   ln.alpha.formula = NULL,
   ln.sigma.formula = NULL,
+  ln.scale.formula = NULL,
   rpardists = NULL,
   ndraws = 1500,
   scrambled = FALSE,
@@ -35,8 +36,6 @@ flexCountReg(
 \code{"Poisson Lognormal"} for a Poisson-Lognormal model, 
 \code{"Poisson Lindley"} for a Poisson-Lindley model,
 \code{"GW"} for a Generalized Waring model, 
-\code{"PIG"} for a Poisson-Inverse-Gamma model,
-\code{"PW"} for a Poisson-Weibull model, 
 \code{"PGE"} for a Poisson-Generalized-Exponential model,
 \code{"PLL"} for a Poisson-Lindley-Lognormal model, 
 \code{"PLG"} for a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) model,
@@ -47,6 +46,8 @@ flexCountReg(
 \item{ln.alpha.formula}{an optional formula for using independent variables to estimate the natural log of the overdispersion parameter (makes the model a generalized negative binomial but is not an option for random parameters models),}
 
 \item{ln.sigma.formula}{an optional formula for using independent variables to estimate the natural log of the standard deviation parameter (makes the model a generalized Poisson-Lognormal).}
+
+\item{ln.scale.formula}{an optional formula for using independent variables to estimate the natural log of the scale parameter in the Poisson Generalized-Ecposnential model.}
 
 \item{rpardists}{an optional named vector whose names are the random parameters and values the distribution (for random parameter models only). The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), and uniform ("u"). If this is not provided, normal distributions are used for all random coefficients,}
 
@@ -92,24 +93,10 @@ poisgenexp.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
                                 speed50 + ShouldWidth04 + AADTover10k,
                                 data=washington_roads,
                                 dist="PGE",
-                                ndraws=50)
+                                ndraws = 100, 
+                                method = 'nm')
 summary(poisgenexp.mod)
 
-## Poisson-Weibull Model
-poisweib.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k,
-                                data=washington_roads,
-                                dist="PW",
-                                ndraws=50, method="nm")
-summary(poisweib.mod)
-
-## Poisson-Inverse-Gamma Model
-poisinvgamma.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
-                                speed50 + ShouldWidth04 + AADTover10k,
-                                data=washington_roads,
-                                dist="PIG",
-                                ndraws=50, method="nm")
-summary(poisinvgamma.mod)
 
 ## Generalized Waring Model
 genwaring.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +

@@ -41,13 +41,13 @@ This implements maximum simulated likelihood (MSL) to estimate a Poisson-Lognorm
 Where \eqn{\sigma} is a parameter for the lognormal distribution with the restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 
 The expected value of the distribution is:
-\deqn{E[y]=\e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
+\deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
 
 When `ln.sigma.formula` is used, the parameter \eqn{\sigma} is modeled as:
-\deqn{ln(\sigma)=\beta_0_\beta_1 x_1 + \cdots + \beta_n x_n}
+\deqn{ln(\sigma)=\beta_0+\beta_1 x_1 + \cdots + \beta_n x_n}
 
 Thus, the resulting value for the parameter \eqn{\sigma} is:
-\deqn{\sigma=e^{\beta_0_\beta_1 x_1 + \cdots + \beta_n x_n}}
+\deqn{\sigma=e^{\beta_0+\beta_1 x_1 + \cdots + \beta_n x_n}}
 
 The t-statistics and p-values for the coefficients related to ln(sigma) are, by default, testing if the coefficients are different from a value of 0. This has little practical meaning given that they are coefficients for ln(sigma). They are not testing if the coefficients have statistical significance in terms of improvement over a Poisson model. The Likelihood-Ratio test results provided in the output provide a test comparing if the Poisson-Longomal model provides a statistically significant improvement in model fit over the Poisson model.
 }

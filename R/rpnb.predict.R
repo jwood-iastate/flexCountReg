@@ -38,9 +38,9 @@
 #' @export
 rpnb.predict <- function(model, data, method='Exact') {
   # The Individual method uses a Bayesian approach to get individual coefficients and variance of the coefficients
-
+  
   form <- model$form
-
+  
   # function to compute probabilities
   nb_prob <- function(y, mu, alpha, p) {
     if (form=='nb2'){
@@ -51,24 +51,24 @@ rpnb.predict <- function(model, data, method='Exact') {
       return(stats::dnbinom(y, size = (mu^(2-p))/alpha, mu = mu))
     }
   }
-
+  
   rpar_formula <- model$rpar_formula
   rpardists <- model$rpardists
   formula <- model$formula
-
+  
   mod1_frame <- stats::model.frame(formula, data)
   X_Fixed <- as.matrix(modelr::model_matrix(data, formula))
   X_rand <- as.matrix(modelr::model_matrix(data, rpar_formula))
-
+  
   X <- cbind(X_Fixed, X_rand)
-
+  
   x_fixed_names <- colnames(X_Fixed)
   rpar <- colnames(X_rand)
-
+  
   num_vars_fixed <- length(x_fixed_names)
   N_rand <- num_vars_rand <- length(unname(rpar))
   total_vars <- num_vars_fixed + num_vars_rand
-
+  
   coefs <- unlist(model$estimate, recursive = TRUE, use.names = FALSE)
   fixed_coefs <- head(coefs,num_vars_fixed)
   h <- head(coefs, total_vars)
@@ -81,57 +81,65 @@ rpnb.predict <- function(model, data, method='Exact') {
   ndraws <- max(model$numdraws,2000)
   p <- model$P
   dists <- model$rpardists
-
+  
   hdraws <- randtoolbox::halton(ndraws, num_vars_rand, mixed = scrambled)
-
+  
   # function to adjust for random distributions
-  rpar.adjust <- function(dist, mu, sigma){ # adjusted coefficients for random parameters
+  rpar.adjust <- function(dist, mu, sigma, xrand){ 
     if(dist=="n"){
-      adj <- mu + sigma^2/2
+      adj <- exp(xrand*mu + xrand^2*sigma^2/2)
       return(adj)
     }
     else if (dist=="ln"){
       if (sigma<=sqrt(exp(-mu-1))){
-        W <- lamW::lambertW0(-sigma^2*exp(mu))
-        W <- ifelse(is.na(W), lamW::lambertWm1(-sigma^2*exp(mu)), W)
-        adj <- exp(mu-W)-W^2/(2*sigma^2)-log(sigma)-0.5*log(abs(exp(mu-W)-1/(sigma^2)))
+        W <- lamW::lambertW0(-xrand*sigma^2*exp(mu))
+        W <- ifelse(is.na(W), lamW::lambertWm1(-xrand*sigma^2*exp(mu)), W)
+        adj <- (exp(xrand*mu-W)-W^2/(2*sigma^2))/(sigma*sqrt(abs(exp(xrand*mu-W)-W-1/(sigma^2))))
       }
       else{
-        h <- randtoolbox::halton(1)
-        adj <- log(mean(exp((stats::qlnorm(h, mu, abs(sigma))))))
+        draws <- stats::qlnorm(randtoolbox::halton(ndraws, 1), random_coefs_means, abs(rand_sdevs))
+        xs <- exp(crossprod(xrand, draws))
+        adj <- rowMeans(xs)
       }
       
       return(adj)
     }
     else if (dist=="t"){
-      adj <- mu-2*log(sigma)+log(2*cosh(sigma)-2)
+      adj <- 2*mu*sinh(xrand*sigma)/(xrand^2*(mu^2*sigma-sigma^2))
       return(adj)
     }
     else if (dist=="u"){
-      adj <- mu-log(sigma)+log(sinh(sigma))
+      adj <- exp(xrand*mu)*sinh(xrand*sigma)/(xrand*sigma)
+      return(adj)
+    }
+    else if (dist=="g"){
+      adj <- (1-xrand*sigma^2/(mu^2))^(-mu^2/(sigma^2))
       return(adj)
     }
   }
-
+  
   if(length(rpar)==1){
     rpar_sd = rand_sdevs <- coefs[length(coefs)]
   }else{
     numtail <- length(coefs) - total_vars
     t <- tail(coefs, numtail)
   }
-
+  
   if (method == 'Exact'){
     sd <- abs(model$sd)
-    rand_coefs <- rep(0, length(random_coefs_means))
-
+    rand_factors <- rep(0, length(random_coefs_means))
+    
     for (i in 1:length(dists)){
-      rand_coefs[i] <- rpar.adjust(dists[rpar[i]], random_coefs_means[i], sd[rpar[i]])
+      rand_factors[i] <- rpar.adjust(dists[rpar[i]], random_coefs_means[i], sd[rpar[i]], X_rand[,i])
     }
-
-    X <- cbind(X_Fixed, X_rand)
-
-    betas <- c(fixed_coefs, rand_coefs)
-    predictions <- exp(X %*% betas)
+    
+    if (length(dists)>1){
+      rand_pred <- apply(rand_factors,1,prod)
+    }
+    else rand_pred <- rand_factors
+    
+    fixed_predictions <- exp(X_Fixed %*% fixed_coefs)
+    predictions <- fixed_predictions*rand_pred
     return(as.vector(predictions))
   }
   else if (method=='Simulated'){
@@ -145,7 +153,7 @@ rpnb.predict <- function(model, data, method='Exact') {
       else{
         rand_sdevs <- t
         draws <- hdraws #initialize the matrix
-
+        
         if (is.null(rpardists)){
           print(random_coefs_means)
           print(rand_sdevs)
@@ -166,6 +174,10 @@ rpnb.predict <- function(model, data, method='Exact') {
               draws[,counter] <- random_coefs_means[counter] + (hdraws[,counter] - 0.5)*abs(rand_sdevs[counter])
               counter=counter+1
             }
+            else if (rpardists[1]=="g"){
+              draws <- stats::qgamma(hdraws[,counter], shape=random_coefs_means[,counter]^2/(rand_sdevs[,counter]^2), 
+                                     rate=random_coefs_means[,counter]/(rand_sdevs[,counter]^2))
+            }
             else{
               draws[,counter] <- stats::qnorm(hdraws[,counter], random_coefs_means[counter], abs(rand_sdevs[counter]))
               counter=counter+1
@@ -191,19 +203,22 @@ rpnb.predict <- function(model, data, method='Exact') {
         else if (rpardists[1]=="u"){
           draws <- random_coefs_means + (hdraws-0.5)*abs(rand_sdevs)
         }
+        else if (rpardists[1]=="g"){
+          draws <- stats::qgamma(hdraws, shape=random_coefs_means^2/(rand_sdevs^2), rate=random_coefs_means/(rand_sdevs^2))
+        }
         else{
           draws <- stats::qnorm(hdraws, random_coefs_means, abs(rand_sdevs))
         }
-
+        
       }
       xb_rand_mat <- sapply(draws, function(x) X_rand * x)
     }
-
+    
     rpar_mat <- exp(xb_rand_mat)
-
+    
     # Efficient computation of predicted matrix
     pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
-
+    
     mui = rowMeans(pred_mat)
     return(mui)
   }
@@ -218,7 +233,7 @@ rpnb.predict <- function(model, data, method='Exact') {
       else{
         rand_sdevs <- t
         draws <- hdraws #initialize the matrix
-
+        
         if (is.null(rpardists)){
           draws <- apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs))
         }
@@ -265,23 +280,23 @@ rpnb.predict <- function(model, data, method='Exact') {
         else{
           draws <- stats::qnorm(hdraws, random_coefs_means, abs(rand_sdevs))
         }
-
+        
       }
       xb_rand_mat <- sapply(draws, function(x) X_rand * x)
     }
-
+    
     rpar_mat <- exp(xb_rand_mat)
-
+    
     pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
-
-
+    
+    
     y <- model.response(mod1_frame)
     n_obs <- length(mu_fixed)
     ind_coefs <- matrix(0, nrow=n_obs, ncol=num_vars_rand)
     ind_var <- matrix(0, nrow=n_obs, ncol=num_vars_rand)
     prob_mat <- apply(pred_mat, 2, nb_prob, y=y, alpha=alpha, p=p)
     pred_i <- rep(0,n_obs)
-
+    
     if(num_vars_rand>1){
       ind_coefs_pred <- matrix(0, nrow=n_obs, ncol=num_vars_rand)
       for (i in 1:num_vars_rand){
@@ -296,11 +311,11 @@ rpnb.predict <- function(model, data, method='Exact') {
         ind_coefs_pred[,i] <- bi + var/2
       }
     }
-
+    
     xr <- exp(rowSums(ind_coefs_pred * X_rand))
     pred_i <- diag(outer(xr, as.vector(mu_fixed)))
     return(pred_i)
   }
-
+  
   else{print('Please use one of the following methods: Approximate, Simulated, or Individual')}
 }

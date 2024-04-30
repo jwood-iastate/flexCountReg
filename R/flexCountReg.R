@@ -13,8 +13,6 @@
 #' \code{"Poisson Lognormal"} for a Poisson-Lognormal model, 
 #' \code{"Poisson Lindley"} for a Poisson-Lindley model,
 #' \code{"GW"} for a Generalized Waring model, 
-#' \code{"PIG"} for a Poisson-Inverse-Gamma model,
-#' \code{"PW"} for a Poisson-Weibull model, 
 #' \code{"PGE"} for a Poisson-Generalized-Exponential model,
 #' \code{"PLL"} for a Poisson-Lindley-Lognormal model, 
 #' \code{"PLG"} for a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) model,
@@ -23,6 +21,7 @@
 #' \code{"Sichel"} for a Sichel model.
 #' @param ln.alpha.formula an optional formula for using independent variables to estimate the natural log of the overdispersion parameter (makes the model a generalized negative binomial but is not an option for random parameters models),
 #' @param ln.sigma.formula an optional formula for using independent variables to estimate the natural log of the standard deviation parameter (makes the model a generalized Poisson-Lognormal).
+#' @param ln.scale.formula an optional formula for using independent variables to estimate the natural log of the scale parameter in the Poisson Generalized-Ecposnential model.
 #' @param rpardists an optional named vector whose names are the random parameters and values the distribution (for random parameter models only). The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), and uniform ("u"). If this is not provided, normal distributions are used for all random coefficients,
 #' @param ndraws the number of Halton draws to use for estimating the random parameters,
 #' @param scrambled if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = FALSE} results in scrambled Halton draws,
@@ -59,24 +58,10 @@
 #'                                 speed50 + ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 dist="PGE",
-#'                                 ndraws=50)
+#'                                 ndraws = 100, 
+#'                                 method = 'nm')
 #' summary(poisgenexp.mod)
 #'
-#' ## Poisson-Weibull Model
-#' poisweib.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
-#'                                 ShouldWidth04 + AADTover10k,
-#'                                 data=washington_roads,
-#'                                 dist="PW",
-#'                                 ndraws=50, method="nm")
-#' summary(poisweib.mod)
-#'
-#' ## Poisson-Inverse-Gamma Model
-#' poisinvgamma.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
-#'                                 speed50 + ShouldWidth04 + AADTover10k,
-#'                                 data=washington_roads,
-#'                                 dist="PIG",
-#'                                 ndraws=50, method="nm")
-#' summary(poisinvgamma.mod)
 #'
 #' ## Generalized Waring Model
 #' genwaring.mod <- flexCountReg(Total_crashes ~ lnaadt + lnlength +
@@ -128,6 +113,7 @@
 flexCountReg <- function(formula, rpar_formula=NULL, data, dist = "NB2",
                          ln.alpha.formula = NULL,
                          ln.sigma.formula = NULL,
+                         ln.scale.formula = NULL,
                          rpardists = NULL,
                          ndraws = 1500, scrambled = FALSE,
                          correlated = FALSE, method = 'BHHH', max.iters = 200,
@@ -198,19 +184,8 @@ flexCountReg <- function(formula, rpar_formula=NULL, data, dist = "NB2",
     model$random <- FALSE
   }
   else if(dist=="PGE"){ # Poisson-Generalized Exponential Model
-    model <- compoundPoisson(formula=formula, data=data, distrib="GE",
-                             ndraws=ndraws, method=method, max.iters=max.iters)
-    model$dist <- dist
-    model$random <- FALSE
-  }
-  else if(dist=="PW"){ # Poisson-Weibull Model
-    model <- compoundPoisson(formula=formula, data=data, distrib="W",
-                             ndraws=ndraws, method=method, max.iters=max.iters)
-    model$dist <- dist
-    model$random <- FALSE
-  }
-  else if(dist=="PIG"){ # Poisson-Inverse-Gamma Model
-    model <- compoundPoisson(formula=formula, data=data, distrib="IG",
+    model <- poisGE(formula=formula, data=data, 
+                    ln.scale.formula = ln.scale.formula,
                              ndraws=ndraws, method=method, max.iters=max.iters)
     model$dist <- dist
     model$random <- FALSE

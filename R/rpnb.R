@@ -5,7 +5,7 @@
 #' @param rpar_formula a symbolic description of the model related specifically to the random parameters. This should not include an outcome variable. If the intercept is random, include it in this formula. If the intercept is fixed, include it in \code{formula} but not in \code{rpar_formula}. To remove the intercept, use \code{0 + vars} or \code{-1 + vars},
 #' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula},
 #' @param form the version of the negative binomial to estimate (\code{"nb2"} estimates the NB-2, \code{"nb1"} estimates the NB-1, \code{"nbp"} estimates the NB-P)
-#' @param rpardists an optional named vector whose names are the random parameters and values the distribution. The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), and uniform ("u"). If this is not provided, normal distributions are used for all random coefficients,
+#' @param rpardists an optional named vector whose names are the random parameters and values the distribution. The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma ("g"). If this is not provided, normal distributions are used for all random coefficients,
 #' @param ndraws the number of Halton draws to use for estimating the random parameters,
 #' @param scrambled if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = FALSE} results in scrambled Halton draws,
 #' @param correlated if the random parameters should be correlated (\code{correlated = FALSE} results in uncorrelated random coefficients, \code{correlated = TRUE} results in correlated random coefficients). If the random parameters are correlated, only the normal distribution is used for the random coefficients,
@@ -281,6 +281,11 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
               draws[,counter] <- random_coefs_means[counter] + (hdraws[,counter] - 0.5)*abs(rand_sdevs[counter])
               counter=counter+1
             }
+            else if (rpardists[i]=="g"){
+              draws[,counter] <- stats::qgamma(hdraws[,counter], shape=random_coefs_means[counter]^2/(rand_sdevs[counter]^2), 
+                                               rate=random_coefs_means[counter]/(rand_sdevs[counter]^2))
+              counter=counter+1
+            }
             else{
               draws[,counter] <- stats::qnorm(hdraws[,counter], random_coefs_means[counter], abs(rand_sdevs[counter]))
               counter=counter+1
@@ -305,6 +310,10 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
         }
         else if (rpardists[1]=="u"){
           draws <- random_coefs_means + (hdraws-0.5)*abs(rand_sdevs)
+        }
+        else if (rpardists[1]=="g"){
+          draws <- stats::qgamma(hdraws, shape=random_coefs_means^2/(rand_sdevs^2), 
+                                 rate=random_coefs_means/(rand_sdevs^2))
         }
         else{
           draws <- stats::qnorm(hdraws, random_coefs_means, abs(rand_sdevs))

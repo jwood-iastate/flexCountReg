@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 # flexCountReg
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The goal of flexCountReg is to provide functions that allow the analyst to estimate count regression models that can handle multiple analysis issues including excess zeros, overdispersion as a function of variables (i.e., generalized count models), random parameters, etc.
@@ -28,6 +29,72 @@ You can install the development version of flexCountReg like using:
 # install.packages("devtools")
 devtools::install_github("jwood-iastate/flexCountReg")
 ```
+
+## Functions
+
+| Function                        | Category                 | Description                                                                                                                        |
+| ------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| dinvgamma                       | Probability Distribution | Inverse Gamma Distribution                                                                                                         |
+| dpge                            | Probability Distribution | Poisson-Generalized-Exponential Distribution                                                                                       |
+| dpinvgaus                       | Probability Distribution | Poisson-Inverse-Gaussian Distribution                                                                                              |
+| dplind                          | Probability Distribution | Poisson-Lindley Distribution                                                                                                       |
+| dplindGamma                     | Probability Distribution | Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution                                                                     |
+| dplindLnorm                     | Probability Distribution | Poisson-Lindley-Lognormal Distribution                                                                                             |
+| dpLnorm                         | Probability Distribution | Poisson-Lognormal Distribution                                                                                                     |
+| dsichel                         | Probability Distribution | Sichel Distribution                                                                                                                |
+| dtri                            | Probability Distribution | Triangle Distribution                                                                                                              |
+| flexCountReg                    | Regression Fit           | Estimate flexible count regression models with and without random parameters                                                       |
+| flexCountReg.predict            |                          | Function for generating predictions based on the random parameters negative binomial with multiple optional methods                |
+| genWaring                       |                          | Function for estimating a Generalized Waring regression model                                                                      |
+| invgamma                        |                          | Inverse Gamma Distribution                                                                                                         |
+| mgf_lognormal                   |                          | Moment Generating Function for a Lognormal Distribution                                                                            |
+| mle.predict                     |                          | Predictions for non-random parameters count models                                                                                 |
+| nbg                             |                          | Function for estimating a variety of negative binomial models (NB-1, NB-2, NB-P and generalized versions of each)                  |
+| Negative-Binomial-Lindley       |                          | Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution                                                                     |
+| pinvgamma                       |                          | Inverse Gamma Distribution                                                                                                         |
+| poisGE                          |                          | Poisson-Generalized-Exponential Regression                                                                                         |
+| poisInvGaus                     |                          | Function for estimating a Poisson-Inverse-Gaussian regression model                                                                |
+| poisLind                        |                          | Function for estimating a Poisson-Lindley regression model                                                                         |
+| poisLindGamma                   |                          | Function for estimating a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) regression model                                 |
+| poisLindLnorm                   |                          | Function for estimating a Poisson-Lindley-Lognormal regression model                                                               |
+| poisLogn                        |                          | Poisson-Lognormal Regression                                                                                                       |
+| Poisson-Generalized-Exponential |                          | Poisson-Generalized-Exponential Distribution                                                                                       |
+| Poisson-Inverse-Gaussian        |                          | Poisson-Inverse-Gaussian Distribution                                                                                              |
+| Poisson-Lindley                 |                          | Poisson-Lindley Distribution                                                                                                       |
+| Poisson-Lindley-Lognormal       |                          | Poisson-Lindley-Lognormal Distribution                                                                                             |
+| Poisson-Lognormal               |                          | Poisson-Lognormal Distribution                                                                                                     |
+| ppge                            |                          | Poisson-Generalized-Exponential Distribution                                                                                       |
+| ppinvgaus                       |                          | Poisson-Inverse-Gaussian Distribution                                                                                              |
+| pplind                          |                          | Poisson-Lindley Distribution                                                                                                       |
+| pplindGamma                     |                          | Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution                                                                     |
+| pplindLnorm                     |                          | Poisson-Lindley-Lognormal Distribution                                                                                             |
+| ppLnorm                         |                          | Poisson-Lognormal Distribution                                                                                                     |
+| psichel                         |                          | Sichel Distribution                                                                                                                |
+| ptri                            |                          | Triangle Distribution                                                                                                              |
+| qinvgamma                       |                          | Inverse Gamma Distribution                                                                                                         |
+| qpge                            |                          | Poisson-Generalized-Exponential Distribution                                                                                       |
+| qpinvgaus                       |                          | Poisson-Inverse-Gaussian Distribution                                                                                              |
+| qplind                          |                          | Poisson-Lindley Distribution                                                                                                       |
+| qplindGamma                     |                          | Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution                                                                     |
+| qplindLnorm                     |                          | Poisson-Lindley-Lognormal Distribution                                                                                             |
+| qpLnorm                         |                          | Poisson-Lognormal Distribution                                                                                                     |
+| qsichel                         |                          | Sichel Distribution                                                                                                                |
+| qtri                            |                          | Triangle Distribution                                                                                                              |
+| rinvgamma                       |                          | Inverse Gamma Distribution                                                                                                         |
+| rpge                            |                          | Poisson-Generalized-Exponential Distribution                                                                                       |
+| rpinvgaus                       |                          | Poisson-Inverse-Gaussian Distribution                                                                                              |
+| rplind                          |                          | Poisson-Lindley Distribution                                                                                                       |
+| rplindGamma                     |                          | Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution                                                                     |
+| rplindLnorm                     |                          | Poisson-Lindley-Lognormal Distribution                                                                                             |
+| rpLnorm                         |                          | Poisson-Lognormal Distribution                                                                                                     |
+| rpnb                            |                          | Function for estimating a random parameter negative binomial with the ability to specify if the NB-1, NB-2, or NB-P should be used |
+| rpnb.predict                    |                          | Function for generating predictions based on the random parameters negative binomial with multiple optional methods                |
+| rsichel                         |                          | Sichel Distribution                                                                                                                |
+| rtri                            |                          | Triangle Distribution                                                                                                              |
+| sichel                          |                          | Function for estimating a Sichel regression model                                                                                  |
+| Sichel-Distribution             |                          | Sichel Distribution                                                                                                                |
+| Triangular                      |                          | Triangle Distribution                                                                                                              |
+| washington_roads                |                          | Washington Road Crashes                                                                                                            |
 
 ## Example
 

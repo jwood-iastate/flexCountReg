@@ -12,8 +12,15 @@
 #' @details
 #' This implements maximum simulated likelihood (MSL) to estimate a Poisson-Generalized Exponential regression model. The regression model has the flexibility to model the scale parameter as a function of independent variables, similar to the generalized negative binomial.
 #'
-#' Details of the distribution can be found with the function @seealso [dpge()]
-#' The t-statistics and p-values for the coefficients related to ln(sigma) are, by default, testing if the coefficients are different from a value of 0. This has little practical meaning given that they are coefficients for ln(sigma). They are not testing if the coefficients have statistical significance in terms of improvement over a Poisson model. The Likelihood-Ratio test results provided in the output provide a test comparing if the Poisson-Longomal model provides a statistically significant improvement in model fit over the Poisson model.
+#' Details of the distribution can be found with the function \code{\link{dpge}}
+#' The t-statistics and p-values for the coefficients related to ln(sigma) are,
+#' by default, testing if the coefficients are different from a value of 0. This
+#' has little practical meaning given that they are coefficients for ln(sigma).
+#' They are not testing if the coefficients have statistical significance in
+#' terms of improvement over a Poisson model. The Likelihood-Ratio test results
+#' provided in the output provide a test comparing if the Poisson-Lognormal
+#' model provides a statistically significant improvement in model fit over the
+#' Poisson model.
 #'
 #' @import nlme  maxLik  MASS  stats modelr
 #' @include ppoisGE.R

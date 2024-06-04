@@ -11,9 +11,11 @@ sichel(formula, data, method = "BHHH", max.iters = 1000)
 
 \item{data}{a dataframe that has all of the variables in the \code{formula}.}
 
-\item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},}
+\item{method}{a method to use for optimization in the maximum likelihood
+estimation. For options, see \code{\link[maxLik]{maxLik}}.}
 
-\item{max.iters}{the maximum number of iterations to allow the optimization method to perform.}
+\item{max.iters}{the maximum number of iterations to allow the optimization
+method to perform.}
 }
 \description{
 Function for estimating a Sichel regression model
@@ -36,8 +38,8 @@ summary(sichel.mod)}
 \seealso{
 [dsichel()] for more information on the distribution.
 
-The expected value of the distribution in the regression utilizes a log-link function. Thus, the mean is:
-\deqn{\mu=e^{X\beta}}
+The expected value of the distribution in the regression utilizes a log-link
+function. Thus, the mean is: \deqn{\mu=e^{X\beta}}
 
 The variance is:
 \deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)\mu^2}

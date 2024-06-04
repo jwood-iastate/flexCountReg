@@ -19,10 +19,14 @@
 #'   Binary.}
 #'   \item{ShouldWidth04}{Indicator of whether the shoulder is 4 feet or wider.
 #'   Binary.}
-#'   \item{Fatal_crashes}{Total number of non-intersection fatal crashes for the road segment}
-#'   \item{Injury_crashes}{Total number of non-intersection Injury crashes for the road segment}
-#'   \item{Animal}{Total number of non-intersection animal-related crashes for the road segment}
-#'   \item{Rollover}{Total number of non-intersection arollover crashes for the road segment}
+#'   \item{Fatal_crashes}{Total number of non-intersection fatal crashes for the
+#'   road segment}
+#'   \item{Injury_crashes}{Total number of non-intersection Injury crashes for
+#'   the road segment}
+#'   \item{Animal}{Total number of non-intersection animal-related crashes for
+#'   the road segment}
+#'   \item{Rollover}{Total number of non-intersection arollover crashes for the
+#'   road segment}
 #' }
-#' @source <https://highways.dot.gov/research/safety/hsis>
+#' @source \url{https://highways.dot.gov/research/safety/hsis}
 "washington_roads"

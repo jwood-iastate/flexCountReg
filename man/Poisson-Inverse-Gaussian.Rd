@@ -48,7 +48,9 @@ rpinvgaus(n, mu = 1, eta = 1, form = "Type 1")
 These functions provide the density function, distribution function, quantile function, and random number generation for the Poisson-Inverse-Gaussian (PInvGaus) Distribution
 }
 \details{
-The Poisson-Inverse-Gaussian distribution is a special case of the Sichel distribution, as noted by Cameron & Trivedi (2013). It is also known as a uivariate Sichel distribution (Hilbe, 2011).
+The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
+distribution, as noted by Cameron & Trivedi (2013). It is also known as a
+univariate Sichel distribution (Hilbe, 2011).
 
 
 \code{dpinvgaus} computes the density (PDF) of the Poisson-Inverse-Gaussian Distribution.

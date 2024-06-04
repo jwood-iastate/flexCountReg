@@ -31,7 +31,7 @@
 #' @param start.vals an optional vector of starting values for the regression coefficients
 #' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
 #'
-#' @include poisLogn.R genWaring.R rpnb.R nbg.R compoundPoisson.R sichel.R poisLind.R poisLindLnorm.R poisLindGamma.R  
+#' @include poisLogn.R genWaring.R rpnb.R nbg.R sichel.R poisLind.R poisLindLnorm.R poisLindGamma.R  
 #'
 #' @examples
 #' \donttest{

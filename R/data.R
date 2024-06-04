@@ -4,8 +4,9 @@
 #' from Washington Department of Transportation through the Highway Safety
 #' Information System (HSIS).
 #'
-#' @format ## `washington_roads`
-#' The data frame compiled from roadway, traffic, and police-reported crash data that has 1,501 rows and 13 columns:
+#' @format 
+#' Data frame compiled from roadway, traffic, and police-reported crash data
+#' that has 1,501 rows and 13 columns:
 #' \describe{
 #'   \item{ID}{Anonymized road ID. Factor.}
 #'   \item{Year}{Year. Integer.}

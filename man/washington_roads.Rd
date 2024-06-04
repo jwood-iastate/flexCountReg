@@ -5,8 +5,8 @@
 \alias{washington_roads}
 \title{Washington Road Crashes}
 \format{
-## `washington_roads`
-The data frame compiled from roadway, traffic, and police-reported crash data that has 1,501 rows and 13 columns:
+Data frame compiled from roadway, traffic, and police-reported crash data
+that has 1,501 rows and 13 columns:
 \describe{
   \item{ID}{Anonymized road ID. Factor.}
   \item{Year}{Year. Integer.}

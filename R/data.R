@@ -25,7 +25,7 @@
 #'   the road segment}
 #'   \item{Animal}{Total number of non-intersection animal-related crashes for
 #'   the road segment}
-#'   \item{Rollover}{Total number of non-intersection arollover crashes for the
+#'   \item{Rollover}{Total number of non-intersection rollover crashes for the
 #'   road segment}
 #' }
 #' @source \url{https://highways.dot.gov/research/safety/hsis}

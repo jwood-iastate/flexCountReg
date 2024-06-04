@@ -27,11 +27,16 @@ rpge(n, mean = 1, shape = 1, scale = 1, ndraws = 1500)
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{mean}{numeric value or vector of mean values for the distribution (the values have to be greater than 0). This is NOT the value of \eqn{\lambda}.}
+\item{mean}{numeric value or vector of mean values for the distribution (the
+values have to be greater than 0). This is NOT the value of \eqn{\lambda}.}
 
-\item{shape}{numeric value or vector of shape values for the shape parameter of the generalized exponential distribution (the values have to be greater than 0).}
+\item{shape}{numeric value or vector of shape values for the shape parameter
+of the generalized exponential distribution (the values have to be greater
+than 0).}
 
-\item{scale}{single value or vector of values for the scale parameter of the generalized exponential distribution (the values have to be greater than 0).}
+\item{scale}{single value or vector of values for the scale parameter of the
+generalized exponential distribution (the values have to be greater than
+0).}
 
 \item{ndraws}{the number of Halton draws to use for the integration.}
 
@@ -39,7 +44,8 @@ rpge(n, mean = 1, shape = 1, scale = 1, ndraws = 1500)
 
 \item{q}{quantile or a vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.}
+\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+otherwise, \eqn{P[X>x]}.}
 
 \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
 
@@ -48,7 +54,9 @@ rpge(n, mean = 1, shape = 1, scale = 1, ndraws = 1500)
 \item{n}{the number of random numbers to generate.}
 }
 \description{
-These functions provide density, distribution function, quantile function, and random number generation for the Poisson-Generalized-Exponential (PGE) Distribution
+These functions provide density, distribution function, quantile function,
+and random number generation for the Poisson-Generalized-Exponential (PGE)
+Distribution
 }
 \details{
 \code{dpge} computes the density (PDF) of the PGE Distribution.
@@ -59,10 +67,14 @@ These functions provide density, distribution function, quantile function, and r
 
 \code{rpge} generates random numbers from the PGE Distribution.
 
-The Generalized Exponential distribution can be written as a function with a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The distribution has striclty positive continuous values. The PDF of the distribution is:
+The Generalized Exponential distribution can be written as a function with a
+shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
+distribution has strictly positive continuous values. The PDF of the
+distribution is:
 \deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
 
-Thus, the compound Probability Mass Function(PMF) for the PGE distribution is:
+Thus, the compound Probability Mass Function(PMF) for the PGE distribution
+is:
 \deqn{f(y|\lambda,\alpha,\beta)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 
 The expected value of the distribution is:

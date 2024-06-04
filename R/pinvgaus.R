@@ -2,7 +2,9 @@
 #'
 #' These functions provide the density function, distribution function, quantile function, and random number generation for the Poisson-Inverse-Gaussian (PInvGaus) Distribution
 #'
-#' The Poisson-Inverse-Gaussian distribution is a special case of the Sichel distribution, as noted by Cameron & Trivedi (2013). It is also known as a uivariate Sichel distribution (Hilbe, 2011).
+#' The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
+#' distribution, as noted by Cameron & Trivedi (2013). It is also known as a
+#' univariate Sichel distribution (Hilbe, 2011).
 #'
 #' @param x numeric value or a vector of values.
 #' @param q quantile or a vector of quantiles.

@@ -25,14 +25,23 @@ flexCountReg(
 \arguments{
 \item{formula}{an R formula,}
 
-\item{rpar_formula}{an optional formula for the model related specifically to the random parameters (if a random parameter model is desired). If used, this should not include an outcome variable. If the intercept is random, include it in this formula. If the intercept is fixed, include it in \code{formula} but not in \code{rpar_formula}. To remove the intercept, use \code{0 + vars} or \code{-1 + vars},}
+\item{rpar_formula}{an optional formula for the model related specifically to
+the random parameters (if a random parameter model is desired). If used,
+this should not include an outcome variable. If the intercept is random,
+include it in this formula. If the intercept is fixed, include it in
+\code{formula} but not in \code{rpar_formula}. To remove the intercept, use
+\code{0 + vars} or \code{-1 + vars},}
 
 \item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula},}
 
-\item{dist}{determines the count distribution to be used in the regression estimation and must be a string. Options include: 
-\code{"NB2"} for the standard negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^2},
-\code{"NB1"} for the negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu},
-\code{"NBP"} for the negative binomial with a mean value of \eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^{2-P}},
+\item{dist}{determines the count distribution to be used in the regression
+  estimation and must be a string. Options include:
+\code{"NB2"} for the standard negative binomial with a mean value of
+\eqn{E[Y]=\mu} and variance \eqn{Var[Y]=\mu+\alpha\mu^2},
+\code{"NB1"} for the negative binomial with a mean value of \eqn{E[Y]=\mu}
+and variance \eqn{Var[Y]=\mu+\alpha\mu},
+\code{"NBP"} for the negative binomial with a mean value of \eqn{E[Y]=\mu}
+and variance \eqn{Var[Y]=\mu+\alpha\mu^{2-P}},
 \code{"Poisson Lognormal"} for a Poisson-Lognormal model, 
 \code{"Poisson Lindley"} for a Poisson-Lindley model,
 \code{"GW"} for a Generalized Waring model, 
@@ -43,30 +52,54 @@ flexCountReg(
 \code{"PInvGaus-2"} for a Poisson-Inverse-Gaussian model (Type 2), or
 \code{"Sichel"} for a Sichel model.}
 
-\item{ln.alpha.formula}{an optional formula for using independent variables to estimate the natural log of the overdispersion parameter (makes the model a generalized negative binomial but is not an option for random parameters models),}
+\item{ln.alpha.formula}{an optional formula for using independent variables
+to estimate the natural log of the overdispersion parameter (makes the
+model a generalized negative binomial but is not an option for random
+parameters models),}
 
-\item{ln.sigma.formula}{an optional formula for using independent variables to estimate the natural log of the standard deviation parameter (makes the model a generalized Poisson-Lognormal).}
+\item{ln.sigma.formula}{an optional formula for using independent variables
+to estimate the natural log of the standard deviation parameter (makes the
+model a generalized Poisson-Lognormal).}
 
-\item{ln.scale.formula}{an optional formula for using independent variables to estimate the natural log of the scale parameter in the Poisson Generalized-Ecposnential model.}
+\item{ln.scale.formula}{an optional formula for using independent variables
+to estimate the natural log of the scale parameter in the Poisson
+Generalized-Exponential model.}
 
-\item{rpardists}{an optional named vector whose names are the random parameters and values the distribution (for random parameter models only). The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), and uniform ("u"). If this is not provided, normal distributions are used for all random coefficients,}
+\item{rpardists}{an optional named vector whose names are the random
+parameters and values the distribution (for random parameter models only).
+The distribution options include normal ("n"), lognormal ("ln"), triangular
+("t"), and uniform ("u"). If this is not provided, normal distributions are
+used for all random coefficients,}
 
-\item{ndraws}{the number of Halton draws to use for estimating the random parameters,}
+\item{ndraws}{the number of Halton draws to use for estimating the random
+parameters,}
 
-\item{scrambled}{if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = FALSE} results in scrambled Halton draws,}
+\item{scrambled}{if the Halton draws should be scrambled or not.
+\code{scrambled = FALSE} results in standard Halton draws while
+\code{scrambled = FALSE} results in scrambled Halton draws,}
 
-\item{correlated}{if the random parameters should be correlated (\code{correlated = FALSE} results in uncorrelated random coefficients, \code{correlated = TRUE} results in correlated random coefficients),}
+\item{correlated}{if the random parameters should be correlated
+(\code{correlated = FALSE} results in uncorrelated random coefficients,
+\code{correlated = TRUE} results in correlated random coefficients),}
 
-\item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},}
+\item{method}{a method to use for optimization in the maximum likelihood
+estimation. For options, see \code{\link[maxLik]{maxLik}},}
 
-\item{max.iters}{the maximum number of iterations to allow the optimization method to perform,}
+\item{max.iters}{the maximum number of iterations to allow the optimization
+method to perform,}
 
-\item{start.vals}{an optional vector of starting values for the regression coefficients}
+\item{start.vals}{an optional vector of starting values for the regression
+coefficients}
 
-\item{print.level}{determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.}
+\item{print.level}{determines the level of verbosity for printing details of
+the optimization as it is computed. A value of 0 does not print out any
+information, a value of 1 prints minimal information, and a value of 2
+prints the most information.}
 }
 \description{
-flexCountReg is a wrapper function for estimating a variety of count regression models. This is the main function in the package. These include multiple count distributions with options for random parameters.
+\code{flexCountReg} is a wrapper function for estimating a variety of count
+regression models. This is the main function in the package. These include
+multiple count distributions with options for random parameters.
 }
 \examples{
 \donttest{

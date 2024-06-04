@@ -1,12 +1,21 @@
-#' Function for estimating a variety of negative binomial models (NB-1, NB-2, NB-P and generalized versions of each)
+#' Function for estimating a variety of negative binomial models (NB-1, NB-2,
+#' NB-P and generalized versions of each)
 #'
 #' @name nbg
 #' @param formula an R formula.
-#' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe,
-#' @param form the version of the negative binomial to estimate (\code{"nb2"} estimates the NB-2, \code{"nb1"} estimates the NB-1, \code{"nbp"} estimates the NB-P)
-#' @param ln.alpha.formula an optional formula for using indpendent variables to estimate the natural log of the overdispersion parameter (makes the model a generalized negative binomial).
-#' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},
-#' @param max.iters the maximum number of iterations to allow the optimization method to perform.
+#' @param data a dataframe that has all of the variables in the \code{formula}
+#'   and \code{rpar_formula}. This can be the data used for estimating the model
+#'   or another dataframe,
+#' @param form the version of the negative binomial to estimate (\code{"nb2"}
+#'   estimates the NB-2, \code{"nb1"} estimates the NB-1, \code{"nbp"} estimates
+#'   the NB-P)
+#' @param ln.alpha.formula an optional formula for using independent variables
+#'   to estimate the natural log of the overdispersion parameter (makes the
+#'   model a generalized negative binomial).
+#' @param method a method to use for optimization in the maximum likelihood
+#'   estimation. For options, see \code{\link[maxLik]{maxLik}},
+#' @param max.iters the maximum number of iterations to allow the optimization
+#'   method to perform.
 #'
 #' @details
 #' The NB-1, NB-2, and NB-P versions of the negative binomial distribution

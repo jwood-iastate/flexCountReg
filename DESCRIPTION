@@ -1,6 +1,6 @@
 Package: flexCountReg
 Type: Package
-Title: Esimation of a variety of count regression models
+Title: Estimation of a variety of count regression models
 Version: 0.1.0
 Author: c(person("Wood", "Jonathan", role = c("aut", "cre"), email = "jwood2@iastate.edu", comment = c(ORCID = "0000-0003-0131-6384")))
 Maintainer: Jonathan Wood <jwood2@iastate.edu>

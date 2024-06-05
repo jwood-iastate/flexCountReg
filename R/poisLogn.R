@@ -74,7 +74,7 @@ poisLogn <- function(formula, data,  ln.sigma.formula = NULL, ndraws=1500,
     sigma_X <- stats::model.matrix(ln.sigma.formula, data)
     sigma_names <- nlme::Names(ln.sigma.formula, data)
     s_coefs <- rep(0, length(sigma_names))
-    s_coefs[1] = s
+    s_coefs[1] <- s
     if (!is.null(s_coefs)) {
       full_start <- c(start, s_coefs)
     }

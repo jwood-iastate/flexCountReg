@@ -98,7 +98,7 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = '
     alpha_X <- stats::model.matrix(ln.alpha.formula, data)
     alpha_names <- nlme::Names(ln.alpha.formula, data)
     a_coefs <- rep(0, length(alpha_names))
-    a_coefs[1] = a
+    a_coefs[1] <- a
     if (!is.null(a_coefs)) {
       comb_start <- c(start, a_coefs)
     }
@@ -181,7 +181,7 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = '
   }
 
   if (form=='nbp'){
-    x_names = append(x_names, 'P')
+    x_names <- append(x_names, 'P')
   }
 
   names(fit$estimate) <- x_names

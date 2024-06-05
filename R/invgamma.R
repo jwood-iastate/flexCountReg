@@ -57,7 +57,7 @@ dinvgamma <- Vectorize(function(x, shape = 2.5, scale = 1, log = FALSE) {
   
   # Calculate the log-density using the gamma density function
   # Convert scale to rate for the gamma function
-  rate = 1 / scale
+  rate <- 1 / scale
   # Logarithm of the gamma density evaluated at 1/x
   log.p <- stats::dgamma(1/x, shape, rate = rate, log = TRUE) - 2 * log(x)
   

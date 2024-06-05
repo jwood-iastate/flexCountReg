@@ -119,7 +119,7 @@ rpnb.predict <- function(model, data, method='Exact') {
   }
   
   if(length(rpar)==1){
-    rpar_sd = rand_sdevs <- coefs[length(coefs)]
+    rpar_sd <- rand_sdevs <- coefs[length(coefs)]
   }else{
     numtail <- length(coefs) - total_vars
     t <- tail(coefs, numtail)
@@ -219,7 +219,7 @@ rpnb.predict <- function(model, data, method='Exact') {
     # Efficient computation of predicted matrix
     pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
     
-    mui = rowMeans(pred_mat)
+    mui <- rowMeans(pred_mat)
     return(mui)
   }
   else if (method=='Individual'){

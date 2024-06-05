@@ -13,16 +13,21 @@
 #'
 #' @details
 #' The Sichel regression model is based on the Sichel Distribution .
-#' @seealso [dsichel()] for more information on the distribution.
 #' 
 #' The expected value of the distribution in the regression utilizes a log-link
 #' function. Thus, the mean is: \deqn{\mu=e^{X\beta}}
 #'
 #' The variance is:
-#' \deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)\mu^2}
+#' \deqn{
+#'    \sigma^2= 
+#'      \mu + 
+#'      \left(\frac{2\sigma(\gamma+1)}{c} + \frac{1}{c^2} - 1\right) \mu^2}
 #' 
-#' The parameter \eqn{\sigma} is estimated as the natural logarithm transformed value, ln(sigma), to ensure that \eqn{\sigma>0}.
+#' The parameter \eqn{\sigma} is estimated as the natural logarithm transformed
+#' value, ln(sigma), to ensure that \eqn{\sigma>0}.
 #'
+#' @seealso \code{\link{dsichel}()} for more information on the distribution.
+#' 
 #' @examples
 #' \donttest{
 #'
@@ -110,8 +115,9 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
 
   fit$LR <- -2*(LLpoisson - fit$LL) # LR Statistic
-  fit$LRdof <- length(x_names) - length(pois_mod$coefficients) # LR Degrees of Freedom
-  if (fit$LR>0) {
+  fit$LRdof <- 
+    length(x_names) - length(pois_mod$coefficients) # LR Degrees of Freedom
+  if (fit$LR > 0) {
     fit$LR_pvalue <- pchisq(fit$LR, fit$LRdof, lower.tail=FALSE)  # LR p-Value
   }else{
     fit$LR_pvalue <- 1
@@ -123,7 +129,9 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
 
   # Print out key model metrics
   LRpval <- ifelse(fit$LR_pvalue<0.0001, "<0.0001", round(fit$LR_pvalue,4))
-  print('The Likelihood Ratio (LR) Test for H0: Sichel is No Better than the Poisson')
+  msg <- paste('The Likelihood Ratio (LR) Test for H0:',
+               'Sichel is No Better than the Poisson')
+  print(msg)
   print(paste('LR = ', round(fit$LR,4)))
   print(paste('LR degrees of freedom = ', fit$LRdof))
   print(paste('LR p-value = ', LRpval))

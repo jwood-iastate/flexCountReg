@@ -22,6 +22,18 @@ Function for estimating a Sichel regression model
 }
 \details{
 The Sichel regression model is based on the Sichel Distribution .
+
+The expected value of the distribution in the regression utilizes a log-link
+function. Thus, the mean is: \deqn{\mu=e^{X\beta}}
+
+The variance is:
+\deqn{
+   \sigma^2= 
+     \mu + 
+     \left(\frac{2\sigma(\gamma+1)}{c} + \frac{1}{c^2} - 1\right) \mu^2}
+
+The parameter \eqn{\sigma} is estimated as the natural logarithm transformed
+value, ln(sigma), to ensure that \eqn{\sigma>0}.
 }
 \examples{
 \donttest{
@@ -36,13 +48,5 @@ sichel.mod <- sichel(Total_crashes ~ lnaadt + lnlength,
 summary(sichel.mod)}
 }
 \seealso{
-[dsichel()] for more information on the distribution.
-
-The expected value of the distribution in the regression utilizes a log-link
-function. Thus, the mean is: \deqn{\mu=e^{X\beta}}
-
-The variance is:
-\deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)\mu^2}
-
-The parameter \eqn{\sigma} is estimated as the natural logarithm transformed value, ln(sigma), to ensure that \eqn{\sigma>0}.
+\code{\link{dsichel}()} for more information on the distribution.
 }

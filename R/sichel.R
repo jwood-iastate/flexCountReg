@@ -59,7 +59,7 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   modparams <- as.numeric(length(full_start))
 
   reg.run <- function(beta, y, X, est_method){
-    pars <- length(beta)-2
+    pars <- length(beta) - 2
     distpars <- tail(beta, 2)
 
     coefs <- as.vector(unlist(beta[1:pars]))
@@ -68,7 +68,7 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
 
     predicted <- exp(X %*% coefs) 
 
-    probs <- dsichel(y, mu=predicted, sigma=sigma, gamma=gamma)
+    probs <- dsichel(y, mu = predicted, sigma = sigma, gamma = gamma)
 
     ll <- sum(log(probs))
     if (est_method == 'bhhh' | est_method == 'BHHH'){
@@ -85,10 +85,10 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
                 control = list(iterlim = max.iters))
 
   beta_est <- fit$estimate
-  npars <- length(beta_est)-2
+  npars <- length(beta_est) - 2
 
   beta_pred <- as.vector(unlist(beta_est[1:npars]))
-  distpars <- tail(beta_est,2)
+  distpars <- tail(beta_est, 2)
   fit$beta_pred <- beta_pred # save coefficients for predictions
 
   mu <- exp(X %*% beta_pred)
@@ -114,28 +114,27 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   LLpoisson <- sum(dpois(pois_mod$y, pois_mod$fitted.values, log=TRUE))
   LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
 
-  fit$LR <- -2*(LLpoisson - fit$LL) # LR Statistic
+  fit$LR <- -2 * (LLpoisson - fit$LL) # LR Statistic
   fit$LRdof <- 
     length(x_names) - length(pois_mod$coefficients) # LR Degrees of Freedom
   if (fit$LR > 0) {
-    fit$LR_pvalue <- pchisq(fit$LR, fit$LRdof, lower.tail=FALSE)  # LR p-Value
+    fit$LR_pvalue <- pchisq(fit$LR, fit$LRdof, lower.tail = FALSE)  # LR p-Value
   }else{
     fit$LR_pvalue <- 1
   }
 
   # Compute McFadden's Pseudo R^2, based on a Poisson intercept-only model
-  fit$PseudoR2 <- 1-fit$LL/LLbase
-
+  fit$PseudoR2 <- 1 - fit$LL / LLbase
 
   # Print out key model metrics
-  LRpval <- ifelse(fit$LR_pvalue<0.0001, "<0.0001", round(fit$LR_pvalue,4))
+  LRpval <- ifelse(fit$LR_pvalue < 0.0001, "<0.0001", round(fit$LR_pvalue, 4))
   msg <- paste('The Likelihood Ratio (LR) Test for H0:',
                'Sichel is No Better than the Poisson')
-  print(msg)
-  print(paste('LR = ', round(fit$LR,4)))
-  print(paste('LR degrees of freedom = ', fit$LRdof))
-  print(paste('LR p-value = ', LRpval))
-  print(paste("Macfadden's Pseudo R^2 = ", round(fit$PseudoR2,4)))
+  message(msg)
+  message(paste('LR = ', round(fit$LR,4)))
+  message(paste('LR degrees of freedom = ', fit$LRdof))
+  message(paste('LR p-value = ', LRpval))
+  message(paste("Macfadden's Pseudo R^2 = ", round(fit$PseudoR2, 4)))
 
   return(fit)
 }

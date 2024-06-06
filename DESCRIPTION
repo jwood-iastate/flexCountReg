@@ -44,3 +44,6 @@ Collate:
     'poisGE.R'
     'poisInvGaus.R'
     'rpnb.predict.R'
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

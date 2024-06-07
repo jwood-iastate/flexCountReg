@@ -1,10 +1,17 @@
-#' Function for generating predictions based on the random parameters negative binomial with multiple optional methods
+#' Function for generating predictions based on the random parameters negative
+#' binomial with multiple optional methods
 #'
 #' @name flexCountReg.predict
 #' @param model a model object estimated using the \code{rpnb} function,
-#' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe,
-#' @param method the method to be used in generating the predictions if a random parameters model is used (options include \code{Simulated}, \code{Exact}, or \code{Individual}).
-#' @note the method option \code{Individual} requires that the outcome be observed for all observations. This is due to the use of Bayesian methods for computing the individual observation coefficients.
+#' @param data a dataframe that has all of the variables in the \code{formula}
+#'   and \code{rpar_formula}. This can be the data used for estimating the model
+#'   or another dataframe,
+#' @param method the method to be used in generating the predictions if a random
+#'   parameters model is used (options include \code{Simulated}, \code{Exact},
+#'   or \code{Individual}).
+#' @note the method option \code{Individual} requires that the outcome be
+#'   observed for all observations. This is due to the use of Bayesian methods
+#'   for computing the individual observation coefficients.
 #'
 #' @import nlme randtoolbox stats lamW modelr
 #' @importFrom utils head  tail
@@ -27,7 +34,7 @@
 #' }
 flexCountReg.predict <- function(model, data, method="Simulated"){
   modtype <- model$modelType 
-  if(modtype=="rpnb"){
+  if (modtype == "rpnb"){
     return(rpnb.predict(model, data, method))
   }
   else{

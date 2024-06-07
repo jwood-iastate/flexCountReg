@@ -2,22 +2,30 @@
 % Please edit documentation in R/flexCountReg.predict.R
 \name{flexCountReg.predict}
 \alias{flexCountReg.predict}
-\title{Function for generating predictions based on the random parameters negative binomial with multiple optional methods}
+\title{Function for generating predictions based on the random parameters negative
+binomial with multiple optional methods}
 \usage{
 flexCountReg.predict(model, data, method = "Simulated")
 }
 \arguments{
 \item{model}{a model object estimated using the \code{rpnb} function,}
 
-\item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe,}
+\item{data}{a dataframe that has all of the variables in the \code{formula}
+and \code{rpar_formula}. This can be the data used for estimating the model
+or another dataframe,}
 
-\item{method}{the method to be used in generating the predictions if a random parameters model is used (options include \code{Simulated}, \code{Exact}, or \code{Individual}).}
+\item{method}{the method to be used in generating the predictions if a random
+parameters model is used (options include \code{Simulated}, \code{Exact},
+or \code{Individual}).}
 }
 \description{
-Function for generating predictions based on the random parameters negative binomial with multiple optional methods
+Function for generating predictions based on the random parameters negative
+binomial with multiple optional methods
 }
 \note{
-the method option \code{Individual} requires that the outcome be observed for all observations. This is due to the use of Bayesian methods for computing the individual observation coefficients.
+the method option \code{Individual} requires that the outcome be
+  observed for all observations. This is due to the use of Bayesian methods
+  for computing the individual observation coefficients.
 }
 \examples{
 \donttest{

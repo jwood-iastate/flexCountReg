@@ -49,30 +49,36 @@
 
 #' @rdname Triangular
 #' @export
-dtri <- Vectorize(function(x, mode=0, sigma = 1, upper = NULL, lower=NULL, log=FALSE){
+dtri <- Vectorize(function(
+    x, mode = 0, sigma = 1, upper = NULL, lower = NULL, log = FALSE){
+
   c <- mode
-  if (!is.null(upper) && !is.null(lower)){
-    if (lower>=upper){
-      print('The value of `lower` must be smaller than the value of `upper`')
-      stop()
+
+  if (!is.null(upper) && !is.null(lower)) {
+    if (lower >= upper){
+      msg <-'The value of `lower` must be smaller than the value of `upper`' 
+      stop(msg)
     }
-    else if (lower>c){
-      print('The value of `mode` must be greater than or equal to the value of `lower`')
-      stop()
+    else if (lower > c){
+      msg <- paste0('The value of `mode` must be greater than or ', 
+                    'equal to the value of `lower`')
+        
+      stop(msg)
     }
-    else if (c>upper){
-      print('The value of `mode` must be smaller than or equal to the value of `upper`')
-      stop()
+    else if (c > upper){
+      msg <- paste0('The value of `mode` must be smaller than or ',
+                    'equal to the value of `upper`') 
+      stop(msg)
     }
     a <- lower
     b <- upper
   }
   else{
-    a <- c-sigma
-    b <- c+sigma
+    a <- c - sigma
+    b <- c + sigma
   }
   # Check the values of x
-  if(x<a){
+  if(x < a){
     print(paste("x cannot have values less than", a))
     stop()
   }
@@ -81,14 +87,14 @@ dtri <- Vectorize(function(x, mode=0, sigma = 1, upper = NULL, lower=NULL, log=F
     stop()
   }
   # compute probabilities
-  if (x<c){
-    p <- 2*(x-a)/((b-a)*(c-a))
+  if (x < c){
+    p <- 2 * (x - a) / ((b - a) * (c - a))
   }
-  else if (x==c){
-    p <- 2/(b-a)
+  else if (x == c){
+    p <- 2 / (b - a)
   }
   else{
-    p <- 2*(b-x)/((b-a)*(b-c))
+    p <- 2 * (b - x) / ((b - a) * (b - c))
   }
 
   if (log) return(log(p))

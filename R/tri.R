@@ -148,28 +148,31 @@ ptri <- Vectorize(function(
 #' @export
 qtri <- Vectorize(function(p, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
   c <- mode
-  if (!is.null(upper) && !is.null(lower)){
-    if (lower>=upper){
-      print('The value of `lower` must be smaller than the value of `upper`')
-      stop()
+  if (!is.null(upper) & !is.null(lower)){
+    if (lower >= upper){
+      msg <- 'The value of `lower` must be smaller than the value of `upper`'
+      stop(msg)
     }
-    else if (lower>c){
-      print('The value of `mode` must be greater than or equal to the value of `lower`')
-      stop()
+    else if (lower > c){
+      msg <- paste0('The value of `mode` must be greater than or ',
+                    'equal to the value of `lower`')
+      stop(msg)
     }
-    else if (c>upper){
-      print('The value of `mode` must be smaller than or equal to the value of `upper`')
-      stop()
+    else if (c > upper){
+      msg <- paste0('The value of `mode` must be smaller than or ',
+                    'equal to the value of `upper`')
+      stop(msg)
     }
+
     a <- lower
     b <- upper
-    p_mode <- ptri(q=mode, mode=mode, upper=upper, lower=lower)
+    p_mode <- ptri(q = mode, mode = mode, upper = upper, lower = lower)
   } else {
     a <- c - sigma
     b <- c + sigma
-    p_mode <- ptri(mode, mode=mode, sigma=sigma)
+    p_mode <- ptri(mode, mode = mode, sigma = sigma)
   }
-  if (p<=p_mode) {
+  if (p <= p_mode) {
     q <- a + sqrt(p * (b - a) * (c - a))
   } else {
     q <- b - sqrt((1 - p) * (b - a) * (b - c))
@@ -180,7 +183,7 @@ qtri <- Vectorize(function(p, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
 #' @rdname Triangular
 #' @export
 rtri <- function(n, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
-  if(is.null(upper) || is.null(lower)){
+  if(is.null(upper) | is.null(lower)){
     return(qtri(stats::runif(n), mode, sigma))
   }
   else(

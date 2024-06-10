@@ -77,35 +77,30 @@ dtri <- Vectorize(function(
     a <- c - sigma
     b <- c + sigma
   }
-  # Check the values of x
-  if(x < a){
-    print(paste("x cannot have values less than", a))
-    stop()
-  }
-  if(x>b){
-    print(paste("x cannot have values greater than", b))
-    stop()
-  }
-  # compute probabilities
-  if (x < c){
+  
+  # Compute probabilities
+  if (x <= a | x >= b) {
+    p <- 0
+  } else if (x < c) {
     p <- 2 * (x - a) / ((b - a) * (c - a))
   }
   else if (x == c){
     p <- 2 / (b - a)
   }
-  else{
+  else {
     p <- 2 * (b - x) / ((b - a) * (b - c))
-  }
-
+  } 
+  
   if (log) return(log(p))
   else return(p)
 })
 
 
-
 #' @rdname Triangular
 #' @export
-ptri <- Vectorize(function(q, mode=0, sigma = 1, upper = NULL, lower=NULL, lower.tail=TRUE, log.p=FALSE){
+ptri <- Vectorize(function(
+    q, mode=0, sigma = 1, upper = NULL, lower=NULL, 
+    lower.tail=TRUE, log.p=FALSE){
   c <- mode
   if (!is.null(upper) && !is.null(lower)){
     if (lower>=upper){
@@ -141,7 +136,7 @@ ptri <- Vectorize(function(q, mode=0, sigma = 1, upper = NULL, lower=NULL, lower
     p <- 1-(b-q)^2/((b-a)*(b-c))
   }
   if(!lower.tail) p <- 1-p
-
+  
   if (log.p) return(log(p))
   else return(p)
 })

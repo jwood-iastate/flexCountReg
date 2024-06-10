@@ -54,7 +54,7 @@ dtri <- Vectorize(function(
 
   c <- mode
 
-  if (!is.null(upper) && !is.null(lower)) {
+  if (!is.null(upper) & !is.null(lower)) {
     if (lower >= upper){
       msg <-'The value of `lower` must be smaller than the value of `upper`' 
       stop(msg)
@@ -99,43 +99,46 @@ dtri <- Vectorize(function(
 #' @rdname Triangular
 #' @export
 ptri <- Vectorize(function(
-    q, mode=0, sigma = 1, upper = NULL, lower=NULL, 
-    lower.tail=TRUE, log.p=FALSE){
+    q, mode = 0, sigma = 1, upper = NULL, lower=NULL, 
+    lower.tail = TRUE, log.p = FALSE){
   c <- mode
-  if (!is.null(upper) && !is.null(lower)){
-    if (lower>=upper){
-      print('The value of `lower` must be smaller than the value of `upper`')
-      stop()
+  if (!is.null(upper) & !is.null(lower)){
+    if (lower >= upper){
+      msg <- 'The value of `lower` must be smaller than the value of `upper`' 
+      stop(msg)
     }
-    else if (lower>c){
-      print('The value of `mode` must be greater than or equal to the value of `lower`')
-      stop()
+    else if (lower > c){
+      msg <- paste0('The value of `mode` must be greater than or ', 
+                    'equal to the value of `lower`')
+      stop(msg)
     }
-    else if (c>upper){
-      print('The value of `mode` must be smaller than or equal to the value of `upper`')
-      stop()
+    else if (c > upper){
+      msg <- paste0('The value of `mode` must be smaller than or ', 
+                    'equal to the value of `upper`')
+      stop(msg)
     }
     a <- lower
     b <- upper
   }
   else{
-    a <- c-sigma
-    b <- c+sigma
+    a <- c - sigma
+    b <- c + sigma
   }
-  # compute cumulative probabilities
-  if(q<a){
+  
+  # Compute cumulative probabilities
+  if(q < a){
     p <- 0
   }
-  else if(q>b){
+  else if (q > b){
     p <- 1
   }
-  else if (q<=c){
-    p <- (q-a)^2/((b-a)*(c-a))
+  else if (q <= c){
+    p <- (q - a)^2 / ((b - a) * (c - a))
   }
   else{
-    p <- 1-(b-q)^2/((b-a)*(b-c))
+    p <- 1 - (b - q)^2 / ((b - a) * (b - c))
   }
-  if(!lower.tail) p <- 1-p
+  if(!lower.tail) p <- 1 - p
   
   if (log.p) return(log(p))
   else return(p)

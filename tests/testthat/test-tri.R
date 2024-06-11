@@ -9,6 +9,24 @@ test_that("Triangular PDF", {
   expect_equal(out, 1)
 })
 
+test_that("Triangular PDF (error 1)", {
+  
+  ## Lower > upper
+  expect_error(dtri(8, mode = 8, upper = 13, lower = 14))
+})
+
+test_that("Triangular PDF (error 2)", {
+  
+  ## Mode > upper
+  expect_error(dtri(8, mode = 14, upper = 13, lower = 1))
+})
+
+test_that("Triangular PDF (error 3)", {
+  
+  ## Mode < lower
+  expect_error(dtri(8, mode = 0, upper = 13, lower = 1))
+})
+
 
 # library(testthat)
 # 

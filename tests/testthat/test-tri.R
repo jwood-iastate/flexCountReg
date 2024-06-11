@@ -42,20 +42,14 @@ test_that("Triangular CDF", {
 })
 
 
-test_that("Triangular CDF (error 1)", {
+test_that("Triangular CDF (errors)", {
   
   ## Lower > upper
   expect_error(ptri(8, mode = 8, upper = 13, lower = 14))
-})
 
-test_that("Triangular CDF (error 2)", {
-  
   ## Mode > upper
   expect_error(ptri(8, mode = 14, upper = 13, lower = 1))
-})
 
-test_that("Triangular CDF (error 3)", {
-  
   ## Mode < lower
   expect_error(ptri(8, mode = 0, upper = 13, lower = 1))
 })
@@ -72,25 +66,47 @@ test_that("Triangular Quantiles", {
 })
 
 
-test_that("Triangular Quantiles (error 1)", {
+test_that("Triangular Quantiles (errors)", {
   
   ## Lower > upper
   expect_error(qtri(8, mode = 8, upper = 13, lower = 14))
-})
 
-test_that("Triangular Quantiles (error 2)", {
-  
   ## Mode > upper
   expect_error(qtri(8, mode = 14, upper = 13, lower = 1))
-})
 
-test_that("Triangular Quantiles (error 3)", {
-  
-  ## Mode < lower
+    ## Mode < lower
   expect_error(qtri(8, mode = 0, upper = 13, lower = 1))
 })
 
-# Random samples ----
+# # Random samples ----
+# 
+# test_that("Triangular Samples", {
+#   
+#   quant <- qtri(c(0, 0.5, 1), mode = 5, upper=9, lower = 1)
+#   quant_expected <- c(1, 5, 9)
+#   out <- all(quant_expected == quant)
+#   
+#   expect_true(out)
+# })
+# 
+# 
+# test_that("Triangular Samples (errors)", {
+#   
+#   ## Lower > upper
+#   expect_error(rtri(10, mode = 8, upper = 13, lower = 14))
+# 
+#   ## Mode > upper
+#   expect_error(rtri(10, mode = 14, upper = 13, lower = 1))
+#   
+#   ## Mode < lower
+#   expect_error(rtri(10, mode = 0, upper = 13, lower = 1))
+# })
+# 
+
+
+# quant <- qtri(c(0, 0.5, 1), mode = 5, upper=9, lower = 1)
+# quant_expected <- c(1, 5, 9)
+# out <- all(quant_expected == quant)
 
 
 # library(testthat)

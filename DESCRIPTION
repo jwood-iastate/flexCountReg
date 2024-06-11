@@ -36,6 +36,7 @@ Collate:
     'poisLogn.R'
     'flexCountReg.R'
     'flexCountReg.predict.R'
+    'how_to_use_predict.R'
     'invgamma.R'
     'mgf_lognormal.R'
     'mle.predict.R'

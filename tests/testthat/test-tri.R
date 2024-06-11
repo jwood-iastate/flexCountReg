@@ -1,5 +1,5 @@
 
-## PDF ----
+# PDF ----
 
 test_that("Triangular PDF", {
   
@@ -30,6 +30,8 @@ test_that("Triangular PDF (error 3)", {
   expect_error(dtri(8, mode = 0, upper = 13, lower = 1))
 })
 
+# PDF ----
+
 test_that("Triangular CDF", {
 
   pdf_vals <- ptri(c(0, 1, 3, 9, 10), mode = 3, upper=9, lower = 1)
@@ -37,7 +39,6 @@ test_that("Triangular CDF", {
   out <- all(pdf_expected == pdf_vals)
   
   expect_true(out)
-  expect_error(dtri(8, mode = 0, upper = 13, lower = 1))
 })
 
 
@@ -58,6 +59,38 @@ test_that("Triangular CDF (error 3)", {
   ## Mode < lower
   expect_error(ptri(8, mode = 0, upper = 13, lower = 1))
 })
+
+# Quantiles ----
+
+test_that("Triangular Quantiles", {
+  
+  quant <- qtri(c(0, 0.5, 1), mode = 5, upper=9, lower = 1)
+  quant_expected <- c(1, 5, 9)
+  out <- all(quant_expected == quant)
+  
+  expect_true(out)
+})
+
+
+test_that("Triangular Quantiles (error 1)", {
+  
+  ## Lower > upper
+  expect_error(qtri(8, mode = 8, upper = 13, lower = 14))
+})
+
+test_that("Triangular Quantiles (error 2)", {
+  
+  ## Mode > upper
+  expect_error(qtri(8, mode = 14, upper = 13, lower = 1))
+})
+
+test_that("Triangular Quantiles (error 3)", {
+  
+  ## Mode < lower
+  expect_error(qtri(8, mode = 0, upper = 13, lower = 1))
+})
+
+# Random samples ----
 
 
 # library(testthat)

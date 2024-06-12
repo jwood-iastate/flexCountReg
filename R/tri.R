@@ -183,6 +183,25 @@ qtri <- Vectorize(function(p, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
 #' @rdname Triangular
 #' @export
 rtri <- function(n, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
+  
+  c <- mode
+  if (!is.null(upper) & !is.null(lower)){
+    
+    if (lower >= upper){
+      msg <- 'The value of `lower` must be smaller than the value of `upper`'
+      stop(msg)
+    } else if (lower > c){
+      msg <- paste0('The value of `mode` must be greater than or ',
+                    'equal to the value of `lower`')
+      stop(msg)
+    } else if (c > upper){
+      msg <- paste0('The value of `mode` must be smaller than or ',
+                    'equal to the value of `upper`')
+      stop(msg)
+    }
+  }
+    
+  
   if(is.null(upper) | is.null(lower)){
     return(qtri(stats::runif(n), mode, sigma))
   }

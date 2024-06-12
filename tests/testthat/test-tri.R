@@ -78,35 +78,33 @@ test_that("Triangular Quantiles (errors)", {
   expect_error(qtri(8, mode = 0, upper = 13, lower = 1))
 })
 
-# # Random samples ----
-# 
-# test_that("Triangular Samples", {
-#   
-#   quant <- qtri(c(0, 0.5, 1), mode = 5, upper=9, lower = 1)
-#   quant_expected <- c(1, 5, 9)
-#   out <- all(quant_expected == quant)
-#   
-#   expect_true(out)
-# })
-# 
-# 
-# test_that("Triangular Samples (errors)", {
-#   
-#   ## Lower > upper
-#   expect_error(rtri(10, mode = 8, upper = 13, lower = 14))
-# 
-#   ## Mode > upper
-#   expect_error(rtri(10, mode = 14, upper = 13, lower = 1))
-#   
-#   ## Mode < lower
-#   expect_error(rtri(10, mode = 0, upper = 13, lower = 1))
-# })
-# 
+# Random samples ----
+
+test_that("Triangular Samples", {
+
+  set.seed(666)
+  trisamples <- rtri(1e4, mode = 2, upper = 9, lower = 1)
+  sample_median <- median(trisamples)
+  median <- 9 - sqrt(28)
+  diff <- abs(sample_median - median) 
+  
+  testthat::expect_true(diff < 0.04)
+})
 
 
-# quant <- qtri(c(0, 0.5, 1), mode = 5, upper=9, lower = 1)
-# quant_expected <- c(1, 5, 9)
-# out <- all(quant_expected == quant)
+test_that("Triangular Samples (errors)", {
+
+  ## Lower > upper
+  expect_error(rtri(10, mode = 8, upper = 13, lower = 14))
+
+  ## Mode > upper
+  expect_error(rtri(10, mode = 14, upper = 13, lower = 1))
+
+  ## Mode < lower
+  expect_error(rtri(10, mode = 0, upper = 13, lower = 1))
+})
+
+
 
 
 # library(testthat)

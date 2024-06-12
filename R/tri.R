@@ -206,6 +206,6 @@ rtri <- function(n, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
     return(qtri(stats::runif(n), mode, sigma))
   }
   else(
-    return(qtri(stats::runif(n), mode, upper, lower))
+    return(qtri(stats::runif(n), mode, sigma, upper, lower))
   )
 }

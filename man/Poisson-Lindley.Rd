@@ -19,17 +19,22 @@ rplind(n, mean = 1, theta = 1, lambda = NULL)
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{mean}{numeric value or vector of mean values for the distribution (the values have to be greater than 0).}
+\item{mean}{numeric value or vector of mean values for the distribution (the
+values have to be greater than 0).}
 
-\item{theta}{single value or vector of values for the theta parameter of the distribution (the values have to be greater than 0).}
+\item{theta}{single value or vector of values for the theta parameter of the
+distribution (the values have to be greater than 0).}
 
-\item{lambda}{alternative parameterization (use instead of the mean); numeric value or vector of values for lambda parameter of the distribution (the values have to be greater than 0).}
+\item{lambda}{alternative parameterization (use instead of the mean); numeric
+value or vector of values for lambda parameter of the distribution (the
+values have to be greater than 0).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
 \item{q}{quantile or a vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.}
+\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+otherwise, \eqn{P[X>x]}.}
 
 \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
 
@@ -38,10 +43,13 @@ rplind(n, mean = 1, theta = 1, lambda = NULL)
 \item{n}{the number of random numbers to generate.}
 }
 \description{
-These functions provide density, distribution function, quantile function, and random number generation for the Poisson-Lindley (PL) Distribution
+These functions provide density, distribution function, quantile function,
+and random number generation for the Poisson-Lindley (PL) Distribution
 }
 \details{
-The Poisson-Lindley is a 2-parameter count distribution that captures high densities for small integer values. This makes it ideal for data that are zero-inflated.
+The Poisson-Lindley is a 2-parameter count distribution that captures high
+densities for small integer values. This makes it ideal for data that are
+zero-inflated.
 
 
 \code{dplind} computes the density (PDF) of the Poisson-Lindley Distribution.
@@ -52,20 +60,26 @@ The Poisson-Lindley is a 2-parameter count distribution that captures high densi
 
 \code{rplind} generates random numbers from the Poisson-Lindley Distribution.
 
-The compound Probability Mass Function(PMF) for the Poisson-Lindley (PL) distribution is:
-\deqn{f(y|\theta,\lambda)=\frac{\theta^2\lambda^y(\theta+\lambda+ y+1)}{(\theta+1)(\theta+\lambda)^{y+2}}}
+The compound Probability Mass Function(PMF) for the Poisson-Lindley (PL)
+distribution is:
+\deqn{f(y| \theta, \lambda) = 
+  \frac{\theta^2 \lambda^y (\theta + \lambda + y + 1)}
+    {(\theta + 1)(\theta + \lambda)^{y + 2}}}
 
-Where \eqn{\theta} and \eqn{\lambda} are distribution parameters with the restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, and \eqn{y} is a non-negative integer.
+Where \eqn{\theta} and \eqn{\lambda} are distribution parameters with the
+restrictions that \eqn{\theta > 0} and \eqn{\lambda > 0}, and \eqn{y} is a
+non-negative integer.
 
 The expected value of the distribution is:
-\deqn{\mu=\frac{\lambda(\theta+2)}{\theta(\theta+1)}}
+\deqn{\mu=\frac{\lambda(\theta + 2)}{\theta(\theta + 1)}}
 
-The default is to use the input mean value for the distribution. However, the lambda parameter can be used as an alternative to the mean value.
+The default is to use the input mean value for the distribution. However, the
+lambda parameter can be used as an alternative to the mean value.
 }
 \examples{
-dplind(0, mean=0.75, theta=7)
-pplind(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7)
-qplind(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7)
-rplind(30, mean=0.75, theta=7)
+dplind(0, mean = 0.75, theta = 7)
+pplind(c(0, 1, 2, 3, 5, 7, 9, 10), mean = 0.75, theta = 7)
+qplind(c(0.1, 0.3, 0.5, 0.9, 0.95), lambda = 4.67, theta = 7)
+rplind(30, mean = 0.75, theta = 7)
 
 }

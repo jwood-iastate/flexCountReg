@@ -56,7 +56,8 @@ zero-inflated.
 
 \code{pplind} computes the CDF of the Poisson-Lindley Distribution.
 
-\code{qplind} computes the quantile function of the Poisson-Lindley Distribution.
+\code{qplind} computes the quantile function of the Poisson-Lindley
+Distribution.
 
 \code{rplind} generates random numbers from the Poisson-Lindley Distribution.
 

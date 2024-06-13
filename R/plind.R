@@ -99,28 +99,32 @@ dplind <- Vectorize(function(
 
 #' @rdname Poisson-Lindley
 #' @export
-pplind <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, lower.tail=TRUE, log.p=FALSE){
-  if(is.null(lambda)){
-    if(mean<=0 || theta<=0){
-      print('The values of `mean` and `theta` both have to have values greater than 0.')
-      stop()
+pplind <- Vectorize(function(
+    q, mean = 1, theta = 1, lambda = NULL, lower.tail = TRUE, log.p = FALSE){
+  
+  if (is.null(lambda)){
+    if(mean <= 0 | theta <= 0){
+      msg <- paste0('The values of `mean` and `theta` both ',
+                    'have to have values greater than 0.')
+      stop(msg)
     }
   }
   else{
-    if(lambda<=0 || theta<=0){
-      print('The values of `lambda` and `theta` both have to have values greater than 0.')
-      stop()
+    if(lambda <= 0 | theta <= 0){
+      msg <- paste0('The values of `lambda` and `theta` both have ',
+                    'to have values greater than 0.')
+      stop(msg)
     }
     else{
-      mean <- lambda*(theta+2)/(theta*(theta+1))
+      mean <- lambda * (theta + 2) / (theta * (theta + 1))
     }
   }
 
-  y <- seq(0,q,1)
+  y <- seq(0, q, 1)
   probs <- dplind(y, mean, theta)
   p <- sum(probs)
 
-  if(!lower.tail) p <- 1-p
+  if(!lower.tail) p <- 1 - p
 
   if (log.p) return(log(p))
   else return(p)
@@ -129,19 +133,21 @@ pplind <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, lower.tail=TRUE,
 #' @rdname Poisson-Lindley
 #' @export
 qplind <- Vectorize(function(p, mean=1, theta=1, lambda=NULL) {
-  if(is.null(lambda)){
+  if (is.null(lambda)){
     if(mean<=0 || theta<=0){
-      print('The values of `mean` and `theta` both have to have values greater than 0.')
-      stop()
+      msg <- paste0('The values of `mean` and `theta` both have to ',
+                    'have values greater than 0.')
+      stop(msg)
     }
   }
   else{
-    if(lambda<=0 || theta<=0){
-      print('The values of `lambda` and `theta` both have to have values greater than 0.')
-      stop()
+    if (lambda<=0 | theta <= 0) {
+      msg <- paste0('The values of `lambda` and `theta` both have to ',
+                    'have values greater than 0.')
+      stop(msg)
     }
     else{
-      mean <- lambda*(theta+2)/(theta*(theta+1))
+      mean <- lambda * (theta + 2) / (theta * (theta + 1))
     }
   }
 
@@ -158,19 +164,22 @@ qplind <- Vectorize(function(p, mean=1, theta=1, lambda=NULL) {
 #' @rdname Poisson-Lindley
 #' @export
 rplind <- function(n, mean=1, theta=1, lambda=NULL) {
+  
   if(is.null(lambda)){
-    if(mean<=0 || theta<=0){
-      print('The values of `mean` and `theta` both have to have values greater than 0.')
-      stop()
+    if(mean <= 0 | theta <= 0){
+      msg <- paste0('The values of `mean` and `theta` both have to ',
+                    'have values greater than 0.')
+      stop(msg)
     }
   }
   else{
-    if(lambda<=0 || theta<=0){
-      print('The values of `lambda` and `theta` both have to have values greater than 0.')
-      stop()
+    if(lambda <= 0 | theta <= 0){
+      msg <- paste0('The values of `lambda` and `theta` both have to ',
+                    'have values greater than 0.')
+      stop(msg)
     }
     else{
-      mean <- lambda*(theta+2)/(theta*(theta+1))
+      mean <- lambda * (theta + 2) / (theta * (theta + 1))
     }
   }
 

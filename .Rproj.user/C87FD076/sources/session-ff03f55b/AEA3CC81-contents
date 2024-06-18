@@ -1,0 +1,169 @@
+#' Function for estimating a Generalized Waring regression model
+#'
+#' @name genWaring
+#' @param formula an R formula.
+#' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}} documentation.
+#' @param data a dataframe that has all of the variables in  `formula`.
+#' @param max.iters the maximum number of iterations to allow the optimization method to perform.
+#'
+#' @details
+#' ## Generalized Waring Probability Mass Function, Mean, and Variance
+#' The following are the versions of the PMF, mean, and variance used in this function. This is adjusted from the typical formulation by replacing parameter \code{k} with \eqn{\mu}
+#' \deqn{PMF=\frac{\Gamma(\alpha+\rho)}{\Gamma(\alpha)\Gamma(\rho)}\left(\frac{\alpha}{\mu(\rho-1)}\right)^{\alpha-1}\left(1+\frac{\alpha}{\mu(\rho-1)}\right)^{-(\alpha+\rho)}}
+#' \deqn{\mu=e^{X\beta}}
+#' \deqn{\sigma^2=\mu+\left(\frac{\frac{\mu(\rho-1)}{\alpha}+1}{\rho-2}\right)\mu+\left(\frac{\frac{\mu(\rho-1)}{\alpha}+\rho+1}{\frac{\mu(\rho-1)}{\alpha}(\rho-2)}\right)\mu^2}
+#' Where \eqn{\alpha} and \eqn{\rho} are distribution parameters with the constraints that \eqn{\alpha\geq 0} and \eqn{\rho\geq 0}, \eqn{X} is a matrix of predictors, and \eqn{\beta} is a vector of coefficients.
+#'
+#' ## Gradient and Fisher Information Matrix
+#' The gradient (\eqn{U_\theta}) and Fisher information matrix (\eqn{I_\theta}) for the Generalized Waring regression model are given by:
+#' \deqn{U_\beta = \frac{\rho - 1}{\kappa} X^T Z_1 \odot \mu}
+#' \deqn{U_\kappa = \sum_{i=1}^n \left[ -\frac{a_i}{\kappa} Z_{1i} + \psi(\kappa + \rho) + \psi(\kappa + y_i) - \psi(\kappa) - \psi(a_i + \kappa + \rho + y_i) \right]}
+#' \deqn{U_\rho = \sum_{i=1}^n \left[ \frac{\mu_i}{\kappa} Z_{1i} + \psi(\kappa + \rho) - \psi(\rho) + \psi(a_i + \rho) - \psi(a_i + \kappa + \rho + y_i) \right]}
+#' The observed Fisher information matrix elements are given by:
+#' \deqn{I_{\beta \beta} = \left(\frac{\rho - 1}{\kappa}\right)^2 X^T \text{Diag}(Z'_1 \odot \mu^2) X + \frac{\rho - 1}{\kappa} X^T \text{Diag}(Z_1 \odot \mu) X}
+#' \deqn{I_{\beta \kappa} = -\left(\frac{\rho - 1}{\kappa}\right)^3 X^T Z_1 \odot \mu^2 - \left(\frac{\rho - 1}{\kappa^2}\right) X^T Z_1 \odot \mu - \frac{\rho - 1}{\kappa} X^T \psi'(a + \kappa + \rho + y_i) \odot \mu}
+#' \deqn{I_{\beta \rho} = \left(\frac{\rho - 1}{\kappa^2}\right) X^T Z'_1 \odot \mu^2 + \frac{1}{\kappa} X^T Z_1 \odot \mu + \frac{\rho - 1}{\kappa} X^T (\psi'(a + \rho) - \psi'(a + \kappa + \rho + y_i)) \odot \mu}
+#' \deqn{I_{\kappa \kappa} = \sum_{i=1}^n \left[ \frac{2 a_i}{\kappa^2} Z_{1i} + \frac{a_i^2}{\kappa^2} Z'_{1i} + \psi'(\kappa + \rho) + \psi'(\kappa + y_i) - \psi'(\kappa) - \psi'(a_i + \kappa + \rho + y_i) \left(-\frac{2 a_i}{\kappa} + 1\right) \right]}
+#' \deqn{I_{\kappa \rho} = \sum_{i=1}^n \left[ -\frac{a_i}{\kappa^2} \mu_i Z'_{1i} - \frac{\mu_i}{\kappa^2} Z_{1i} + \psi'(\kappa + \rho) - \frac{a_i}{\kappa} \psi'(a_i + \rho) - \psi'(a_i + \kappa + \rho + y_i) \left(\frac{\mu_i}{\kappa} - \frac{a_i}{\kappa} + 1\right) \right]}
+#' \deqn{I_{\rho \rho} = \sum_{i=1}^n \left[ \frac{\mu_i^2}{\kappa^2} Z'_{1i} + \psi'(\kappa + \rho) - \psi'(\rho) + [\psi'(a_i + \rho) - \psi'(a_i + \kappa + \rho + y_i)] \left(\frac{2 \mu_i}{\kappa} + 1\right) \right]}
+#' Where \eqn{Z_1} and \eqn{Z'_1} are specific transformations of the variables and parameters.
+#' 
+#' The detailed derivation of these equations can be found in Rivas, L., & Galea, M. (2020). Influence analysis for the generalized Waring regression model. Journal of Applied Statistics, 47(1), 1-27. DOI: 10.1080/02664763.2019.1670148.
+#'
+#' @references
+#' Rivas, L., & Galea, M. (2020). Influence analysis for the generalized Waring regression model. Journal of Applied Statistics, 47(1), 1-27. DOI: 10.1080/02664763.2019.1670148.
+#'
+#' @import nlme maxLik MASS stats
+#' @examples
+#' \donttest{
+#'
+#' ## Generalized Waring Model
+#' data("washington_roads")
+#' genwaring.mod <- genWaring(Total_crashes ~ lnaadt + lnlength,
+#'                                 data=washington_roads,
+#'                                 method='BHHH')
+#' summary(genwaring.mod)}
+#' @export
+genWaring <- function(formula, data, method = 'BHHH', max.iters = 1000) {
+  mod_df <- stats::model.frame(formula, data)
+  X <- as.matrix(model.matrix(formula, data))
+  y <- as.numeric(stats::model.response(mod_df))
+  x_names <- colnames(X)
+  
+  # Use the Poisson as starting values
+  p_model <- MASS::glm.nb(formula, data = data)
+  start <- unlist(p_model$coefficients)
+  start <- append(start, 1) # add initial starting value for ln(alpha)
+  full_start <- append(start, 1) # add initial starting value for ln(rho)
+  
+  modparams <- length(full_start)
+  
+  gw_prob <- function(y, mu, alpha, rho){
+    v <- alpha / (mu * (rho - 1))
+    p <- gamma(alpha + rho) / (gamma(alpha) * gamma(rho)) * v^(alpha - 1) * (1 + v)^(-(alpha + rho))
+    return(p)
+  }
+  
+  # Define the gradient
+  gradFun <- function(beta, y, X) {
+    coefs <- beta[1:(modparams - 2)]
+    ln_alpha <- beta[(modparams - 1)]
+    ln_rho <- beta[modparams]
+    alpha <- exp(ln_alpha)
+    rho <- exp(ln_rho)
+    
+    predicted <- exp(X %*% coefs)
+    v <- alpha / (predicted * (rho - 1))
+    
+    dL_dmu <- ((rho + alpha) * v / (1 + v) - alpha) / predicted
+    dL_dalpha <- log(v / (1 + v)) + digamma(alpha + rho) - digamma(alpha)
+    dL_drho <- log(1 + 1 / v) + digamma(alpha + rho) - digamma(rho)
+    
+    grad <- matrix(0, ncol = modparams, nrow = length(y))
+    for (i in 1:length(y)) {
+      grad[i, 1:(modparams - 2)] <- dL_dmu[i] * X[i, ]
+      grad[i, (modparams - 1)] <- dL_dalpha[i] * alpha # Chain rule for ln(alpha)
+      grad[i, modparams] <- dL_drho[i] * rho           # Chain rule for ln(rho)
+    }
+    return(grad)
+  }
+  
+  # Define Hessian
+  hessFun <- function(beta, y, X) {
+    coefs <- beta[1:(modparams - 2)]
+    ln_alpha <- beta[(modparams - 1)]
+    ln_rho <- beta[modparams]
+    alpha <- exp(ln_alpha)
+    rho <- exp(ln_rho)
+    
+    predicted <- exp(X %*% coefs)
+    v <- alpha / (predicted * (rho - 1))
+    
+    d2L_dmu2 <- -((rho + alpha) * v / (1 + v)^2 - alpha) / predicted^2
+    d2L_dalpha2 <- trigamma(alpha + rho) - trigamma(alpha)
+    d2L_drho2 <- trigamma(alpha + rho) - trigamma(rho)
+    
+    hess <- matrix(0, ncol = modparams, nrow = modparams)
+    for (i in 1:length(y)) {
+      hess[1:(modparams - 2), 1:(modparams - 2)] <- hess[1:(modparams - 2), 1:(modparams - 2)] + d2L_dmu2[i] * (X[i, ] %*% t(X[i, ]))
+      hess[(modparams - 1), (modparams - 1)] <- hess[(modparams - 1), (modparams - 1)] + d2L_dalpha2[i] * alpha^2 # Chain rule for ln(alpha)
+      hess[modparams, modparams] <- hess[modparams, modparams] + d2L_drho2[i] * rho^2          # Chain rule for ln(rho)
+    }
+    return(hess)
+  }
+  
+  reg.run <- function(beta, y, X) {
+    pars <- length(beta) - 2
+    
+    coefs <- as.vector(unlist(beta[1:pars]))
+    dispars <- tail(beta, 2)
+    alpha <- exp(dispars[1])
+    rho <- exp(dispars[2])
+    
+    predicted <- exp(X %*% coefs)
+    
+    probs <- gw_prob(y, predicted, alpha, rho)
+    
+    ll <- sum(log(probs))
+    if (method == 'bhhh' | method == 'BHHH') {
+      return(log(probs))
+    } else {
+      return(ll)
+    }
+  }
+  
+  fit <- maxLik::maxLik(reg.run,
+                        start = full_start,
+                        y = y,
+                        X = X,
+                        grad = if (method == 'BHHH') gradFun else function(...) colSums(gradFun(...)),
+                        hess = hessFun,
+                        method = method,
+                        control = list(iterlim = max.iters))
+  
+  beta_est <- fit$estimate
+  npars <- length(beta_est) - 2
+  
+  beta_pred <- as.vector(unlist(beta_est[1:npars]))
+  fit$beta_pred <- beta_pred
+  
+  mu <- exp(X %*% beta_pred)
+  distpars <- tail(beta_est, 2)
+  fit$alpha <- exp(distpars[1])
+  fit$rho <- exp(distpars[2])
+  
+  x_names <- append(x_names, 'ln(alpha)')
+  x_names <- append(x_names, 'ln(rho)')
+  for (i in 1:length(x_names)) {
+    names(fit$estimate)[i] <- x_names[i]
+  }
+  
+  fit$predictions <- mu
+  fit$formula <- formula
+  fit$observed <- y
+  fit$residuals <- y - fit$predictions
+  fit$LL <- fit$maximum
+  fit$modelType <- "genWaring"
+  
+  return(fit)
+}

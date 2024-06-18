@@ -1,0 +1,43 @@
+"0","library(reticulate)"
+"0","py_install(""sympy"")"
+"2","+ ""C:/Users/jwood2/AppData/Local/miniconda3/condabin/conda.bat"" install --yes --prefix ""C:/Users/jwood2/AppData/Local/miniconda3"" -c conda-forge sympy
+"
+"1","Channels:
+"
+"1"," - conda-forge
+"
+"1"," - defaults
+"
+"1","Platform: win-64
+"
+"1","Collecting package metadata (repodata.json): ...working... done
+"
+"1","Solving environment: ...working... done
+"
+"1","
+"
+"1","# All requested packages already installed.
+"
+"1","
+"
+"0","py_install(""numpy"")"
+"2","+ ""C:/Users/jwood2/AppData/Local/miniconda3/condabin/conda.bat"" install --yes --prefix ""C:/Users/jwood2/AppData/Local/miniconda3"" -c conda-forge numpy
+"
+"1","Channels:
+"
+"1"," - conda-forge
+"
+"1"," - defaults
+"
+"1","Platform: win-64
+"
+"1","Collecting package metadata (repodata.json): ...working... done
+"
+"1","Solving environment: ...working... done
+"
+"1","
+"
+"1","# All requested packages already installed.
+"
+"1","
+"

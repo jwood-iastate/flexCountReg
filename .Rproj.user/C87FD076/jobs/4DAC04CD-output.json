@@ -1,0 +1,5 @@
+[1,"==> quarto preview OtherCountModels.qmd --to docx --no-watch-inputs --no-browse\n\n"]
+[1,"\r\n\r\nprocessing file: OtherCountModels.qmd\r\n"]
+[1,"\r  |                                     \r  |                               |   0%\r  |                                     \r  |                               |   1%                                       \r  |                                     \r  |.                              |   2% [unnamed-chunk-1]                     "]
+[1,"Error in `use_python()`:\r\n! could not find function \"use_python\"\r\n"]
+[1,"\r\n\n\nQuitting from lines 78-85 [unnamed-chunk-1] (OtherCountModels.qmd)\r\n\r                                                                                                                                 \r\nExecution halted\r\n"]

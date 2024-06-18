@@ -1,0 +1,50 @@
+#' Custom summary method for models with bootstrapped standard errors
+#' @param object A model object with bootstrapped standard errors.
+#' @param confint_level A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
+#' @param digits Number of digits to round to.
+#' @export
+summary.boot <- function(object, confint_level = 0.95, digits = max(3, getOption("digits") - 3)) {
+  cat("Call:\n", deparse(object$formula), "\n")
+  cat("\n", "Method: ", object$type, "\n")
+  cat("Iterations: ", object$iterations, "\n")
+  cat("Convergence: ", object$message, "\n")
+  cat("Log-likelihood: ", object$maximum, "\n")
+  
+  cat("\nParameter Estimates:\n")
+  mod.sum <- tibble::tibble(parameter = names(object$estimate), 
+                            coeff = object$estimate, 
+                            `Std. Err.` = object$bootstrapped_se)
+  mod.sum$`t-stat` <- mod.sum$coeff / mod.sum$`Std. Err.`
+  mod.sum$`p-value` <- 2 * pnorm(-1 * abs(mod.sum$`t-stat`), mean = 0, sd = 1)
+  
+  lower.level <- (1 - confint_level) / 2
+  upper.level <- 1 - lower.level
+  
+  ci_z.lower <- qnorm(lower.level)
+  ci_z.upper <- qnorm(upper.level)
+  
+  mod.sum$`lower CI` <- mod.sum$coeff + ci_z.lower * mod.sum$`Std. Err.`
+  mod.sum$`upper CI` <- mod.sum$coeff + ci_z.upper * mod.sum$`Std. Err.`
+  
+  print(mod.sum)
+  
+  invisible(NULL)
+}
+
+
+
+#' Custom summary method for maxLik objects
+#' @param object An object of class maxLik.
+#' @param confint_level A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
+#' @param digits Number of digits to round to.
+#' @import maxLik
+#' @param ... Additional parameters to be passed to the maxLik summary call.
+#' @export
+summary.maxLik <- function(object, confint_level = 0.95, digits = max(3, getOption("digits") - 3), ...) {
+  if (!is.null(object$bootstraps)){
+    summary.boot(object, confint_level = confint_level, digits = digits, ...)
+  }
+  else {
+    maxLik::summary(object, confint_level = confint_level, digits = digits, ...)
+  }
+}

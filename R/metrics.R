@@ -1,0 +1,82 @@
+#' Calculate Akaike Information Criterion (AIC)
+#'
+#' This function calculates the Akaike Information Criterion (AIC) for a given model.
+#'
+#' @param LL Numeric value representing the log-likelihood of the model.
+#' @param nparam Numeric value representing the number of parameters in the model.
+#' @return Numeric value representing the AIC.
+#' @details The AIC is calculated using the formula:
+#' \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}
+#' Where \eqn{LL} is the log-likelihood of the model and \eqn{nparam} is the number of parameters.
+#' @examples
+#' LL <- -120.5
+#' nparam <- 5
+#' myAIC(LL, nparam)
+#' 
+#' @export
+myAIC <- function(LL, nparam){
+  return(-2 * LL + 2 * nparam)
+}
+
+#' Calculate Bayesian Information Criterion (BIC)
+#'
+#' This function calculates the Bayesian Information Criterion (BIC) for a given model.
+#'
+#' @param LL Numeric value representing the log-likelihood of the model.
+#' @param nparam Numeric value representing the number of parameters in the model.
+#' @param n Numeric value representing the number of observations.
+#' @return Numeric value representing the BIC.
+#' @details The BIC is calculated using the formula:
+#' \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}
+#' Where \eqn{LL} is the log-likelihood of the model, \eqn{nparam} is the number of parameters, and \eqn{n} is the number of observations.
+#' @examples
+#' LL <- -120.5
+#' nparam <- 5
+#' n <- 100
+#' myBIC(LL, nparam, n)
+#' 
+#' @export
+myBIC <- function(LL, nparam, n){
+  return(-2 * LL + nparam * log(n))
+}
+
+#' Calculate Root Mean Squared Error (RMSE)
+#'
+#' This function calculates the Root Mean Squared Error (RMSE) between observed and predicted values.
+#'
+#' @param y Numeric vector representing the observed values.
+#' @param mu Numeric vector representing the predicted values.
+#' @return Numeric value representing the RMSE.
+#' @details The RMSE is calculated using the formula:
+#' \deqn{RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \mu_i)^2}}
+#' Where \eqn{y} is the vector of observed values and \eqn{\mu} is the vector of predicted values.
+#' 
+#' @examples
+#' y <- c(1, 2, 3)
+#' mu <- c(1.1, 1.9, 3.2)
+#' rmse(y, mu)
+#' 
+#' @export
+rmse <- function(y, mu){
+  return(sqrt(mean((y - mu)^2)))
+}
+
+#' Calculate Mean Absolute Error (MAE)
+#'
+#' This function calculates the Mean Absolute Error (MAE) between observed and predicted values.
+#'
+#' @param y Numeric vector representing the observed values.
+#' @param mu Numeric vector representing the predicted values.
+#' @return Numeric value representing the MAE.
+#' @details The MAE is calculated using the formula:
+#' \deqn{MAE = \frac{1}{n} \sum_{i=1}^{n} |y_i - \mu_i|}
+#' Where \eqn{y} is the vector of observed values and \eqn{\mu} is the vector of predicted values.
+#' @examples
+#' y <- c(1, 2, 3)
+#' mu <- c(1.1, 1.9, 3.2)
+#' mae(y, mu)
+#' 
+#' @export
+mae <- function(y, mu){
+  return(mean(abs(y - mu)))
+}

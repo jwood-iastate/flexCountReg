@@ -17,6 +17,8 @@
 \item{confint_level}{A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.}
 
 \item{digits}{Number of digits to round to.}
+
+\item{...}{TBD}
 }
 \description{
 Summary method for random parameter negative binomial model

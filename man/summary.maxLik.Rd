@@ -17,6 +17,8 @@
 \item{confint_level}{A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.}
 
 \item{digits}{Number of digits to round to.}
+
+\item{...}{Additional arguments passed to \code{\link[stats]{summary.glm}} or \code{\link{summary.rpnb}}.}
 }
 \description{
 Custom summary method for maxLik objects

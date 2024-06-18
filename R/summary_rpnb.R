@@ -2,7 +2,7 @@
 #' @param object a rpnb model, as produced by the rpnb function.
 #' @param confint_level A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
 #' @param digits Number of digits to round to.
-#' @param ...
+#' @param ... TBD
 #' @export
 summary.rpnb <- function(object, confint_level = 0.95, digits = max(3, getOption("digits") - 3), ...) {
   cat("\nSummary of Random Parameter Negative Binomial Model\n")
@@ -79,7 +79,7 @@ summary.rpnb <- function(object, confint_level = 0.95, digits = max(3, getOption
 #' @param object An object of class maxLik.
 #' @param confint_level A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
 #' @param digits Number of digits to round to.
-#' @param ...
+#' @param ... Additional arguments passed to \code{\link[stats]{summary.glm}} or \code{\link{summary.rpnb}}.
 #' @export
 summary.maxLik <- function(object, confint_level = 0.95, digits = max(3, getOption("digits") - 3), ...) {
   if (inherits(object, "rpnb")) {

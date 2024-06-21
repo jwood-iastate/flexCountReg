@@ -12,7 +12,11 @@ Imports:
     randtoolbox,
     stats,
     lamW,
-    modelr
+    modelr,
+    dplyr,
+    gt,
+    knitr,
+    tibble
 Depends: R (>= 2.10)
 License: MIT + file LICENSE
 Encoding: UTF-8

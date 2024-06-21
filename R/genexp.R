@@ -1,43 +1,63 @@
 #' Poisson-Inverse-Gaussian Distribution
 #'
-#' These functions provide the density function, distribution function, quantile function, and random number generation for the Poisson-Inverse-Gaussian (PInvGaus) Distribution
+#' These functions provide the density function, distribution function, quantile
+#' function, and random number generation for the Poisson-Inverse-Gaussian
+#' (PInvGaus) Distribution
 #'
-#' The Poisson-Inverse-Gaussian distribution is a special case of the Sichel distribution, as noted by Cameron & Trivedi (2013). It is also known as a uivariate Sichel distribution (Hilbe, 2011).
+#' The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
+#' distribution, as noted by Cameron & Trivedi (2013). It is also known as a
+#' uivariate Sichel distribution (Hilbe, 2011).
 #'
 #' @param x numeric value or a vector of values.
 #' @param q quantile or a vector of quantiles.
 #' @param p probability or a vector of probabilities.
 #' @param n the number of random numbers to generate.
-#' @param mu numeric value or vector of mean values for the distribution (the values have to be greater than 0).
-#' @param eta single value or vector of values for the scale parameter of the distribution (the values have to be greater than 0).
-#' @param form optional parameter indicating which formulation to use. Options include "Type 1" which is the standard form or "Type 2" which follows the formulation by Dean et. al. (1987).
+#' @param mu numeric value or vector of mean values for the distribution (the
+#'   values have to be greater than 0).
+#' @param eta single value or vector of values for the scale parameter of the
+#'   distribution (the values have to be greater than 0).
+#' @param form optional parameter indicating which formulation to use. Options
+#'   include "Type 1" which is the standard form or "Type 2" which follows the
+#'   formulation by Dean et. al. (1987).
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
-#' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.
+#' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+#'   otherwise, \eqn{P[X>x]}.
 #'
 #' @details
-#' \code{dpinvgaus} computes the density (PDF) of the Poisson-Inverse-Gaussian Distribution.
+#' \code{dpinvgaus} computes the density (PDF) of the Poisson-Inverse-Gaussian
+#' Distribution.
 #'
-#' \code{ppinvgaus} computes the CDF of the Poisson-Inverse-Gaussian Distribution.
+#' \code{ppinvgaus} computes the CDF of the Poisson-Inverse-Gaussian
+#' Distribution.
 #'
-#' \code{qpinvgaus} computes the quantile function of the Poisson-Inverse-Gaussian Distribution.
+#' \code{qpinvgaus} computes the quantile function of the
+#' Poisson-Inverse-Gaussian Distribution.
 #'
-#' \code{rpinvgaus} generates random numbers from the Poisson-Inverse-Gamma Distribution.
+#' \code{rpinvgaus} generates random numbers from the Poisson-Inverse-Gamma
+#' Distribution.
 #'
-#' The compound Probability Mass Function (PMF) for the Poisson-Inverse-Gaussian distribution (Type 1) is (Cameron & Trivedi, 2013):
-#' \deqn{f(y|\eta,\mu)=\begin{cases}
-#'                              f(y=0)=exp\left(\frac{\mu}{\eta}\left(1-\sqrt{1+2\eta}\right)\right) \\
-#'                              f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2\mu}\right)^2(1+2\eta)^{-j/2}
-#'                              \end{cases}}
+#' The compound Probability Mass Function (PMF) for the Poisson-Inverse-Gaussian
+#' distribution (Type 1) is (Cameron & Trivedi, 2013):
+#' \deqn{f(y|\eta,\mu) = 
+#'   \begin{cases}
+#'     f(y = 0) = \exp \left(
+#'       \frac{\mu}{\eta} \left(1-\sqrt{1 + 2\eta}\right)\right) \\
+#'     f(y|y>0) = f(y = 0)\frac{\mu^y}{y!}(1 + 2\eta)^{-y / 2} \cdot 
+#'       \sum_{j=0}^{y-1} \frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)} \left( 
+#'         \frac{\eta}{2\mu}\right)^2(1 + 2\eta)^{-j / 2}
+#'   \end{cases}}
 #' 
-#' Where \eqn{\eta} is a scale parameter with the restriction that \eqn{eta>0}, \eqn{\mu} is the mean value, and \eqn{y} is a non-negative integer.
+#' Where \eqn{\eta} is a scale parameter with the restriction that \eqn{eta>0},
+#' \eqn{\mu} is the mean value, and \eqn{y} is a non-negative integer.
 #'
 #' The variance of the distribution is:
 #' \deqn{\sigma^2=\mu+\eta\mu}
 #' 
-#' The alternative parameterization by Dean et. al. (1987) replaces \eqn{\eta} with \eqn{\eta\mu}. This version(Type 2) has the PMF:
+#' The alternative parametrization by Dean et. al. (1987) replaces \eqn{\eta}
+#' with \eqn{\eta\mu}. This version(Type 2) has the PMF:
 #' \deqn{f(y|\eta,\mu)=\begin{cases}
-#'                              f(y=0)=exp\left(\frac{1}{\eta}\left(1-\sqrt{1+2\eta\mu}\right)\right) \\
+#'                              f(y=0)= \exp\left(\frac{1}{\eta}\left(1-\sqrt{1+2\eta\mu}\right)\right) \\
 #'                              f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2}\right)^2(1+2\eta\mu)^{-j/2}
 #'                              \end{cases}}
 #' 

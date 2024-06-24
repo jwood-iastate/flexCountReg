@@ -13,9 +13,10 @@ Imports:
     stats,
     lamW,
     modelr,
-    dplyr,
-    gt,
     knitr,
+    cureplots,
+    dplyr, 
+    gt, 
     tibble
 Depends: R (>= 2.10)
 License: MIT + file LICENSE
@@ -24,6 +25,8 @@ LazyData: true
 RoxygenNote: 7.3.1
 Collate: 
     'Generalized-Waring.R'
+    'createFlexCountReg.R'
+    'cureplot.R'
     'data.R'
     'plind.R'
     'plindGamma.R'
@@ -41,6 +44,7 @@ Collate:
     'poisLogn.R'
     'flexCountReg.R'
     'flexCountReg.predict.R'
+    'flexCountRegClass.R'
     'genexp.R'
     'how_to_use_predict.R'
     'invgamma.R'
@@ -52,9 +56,11 @@ Collate:
     'poisGE.R'
     'poisInvGaus.R'
     'poisWeib.R'
+    'predict_flexCountReg.R'
     'pwiebreg.R'
     'regCompTest.R'
     'rpnb.predict.R'
+    'rppois.R'
     'rppoisson.R'
     'summary_flexCountReg.R'
     'summary_rpnb.R'

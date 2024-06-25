@@ -15,26 +15,38 @@ cureplot(
 \arguments{
 \item{model}{A model object estimated using this R package.}
 
-\item{data}{Optional dataframe. If not provided, the data used to fit the model will be used.}
+\item{data}{Optional dataframe. If not provided, the data used to fit the
+model will be used.}
 
-\item{indvar}{Optional independent variable name. This is the continuous independent variable to plot the cumulative residuals against. If not provided, the plot will be against the predicted values.}
+\item{indvar}{Optional independent variable name. This is the continuous
+independent variable to plot the cumulative residuals against. If not
+provided, the plot will be against the predicted values.}
 
-\item{method}{Optional parameter to pass to the predict function. This is only used for random parameters models. For further details, see \code{\link{predict.flexCountReg}}.}
+\item{method}{Optional parameter to pass to the predict function. This is
+only used for random parameters models. For further details, see
+\code{\link{predict.flexCountReg}}.}
 
-\item{n_resamples}{Number of resamples for potential resampling in the CURE plot, based on the options in \code{\link[cureplots]{cure_plot}}.}
+\item{n_resamples}{Number of resamples for potential resampling in the CURE
+plot, based on the options in \code{\link[cureplots]{cure_plot}}.}
 }
 \description{
-This function generates a Cumulative Residuals (CURE) plot for count models, including those with random parameters, estimated using the flexCountReg package.
+This function generates a Cumulative Residuals (CURE) plot for count models,
+including those with random parameters, estimated using the flexCountReg
+package.
 }
 \examples{
 \donttest{
 ## Example using a Negative Binomial model
 data("washington_roads")
-nb_model <- nbg(Total_crashes ~ lnlength + speed50, data = washington_roads, form = 'nb2')
+nb_model <- 
+  nbg(Total_crashes ~ lnlength + speed50, 
+      data = washington_roads, 
+      form = 'nb2')
 cureplot(nb_model)
 
 ## Example using a Poisson model with random parameters
-rp_model <- rppois(Total_crashes ~ lnlength + lnaadt, rpar_formula = ~ speed50,
+rp_model <- rppois(Total_crashes ~ lnlength + lnaadt, 
+                   rpar_formula = ~ speed50,
                    data = washington_roads, ndraws = 100, method = "bfgs")
 cureplot(rp_model, method = "Simulated")
 }

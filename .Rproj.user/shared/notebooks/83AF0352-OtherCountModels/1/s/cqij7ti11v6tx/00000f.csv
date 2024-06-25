@@ -1,8 +1,0 @@
-"0","d2LL_dbeta2 = sp.simplify(sp.diff(dLL_dbeta), beta))
-"
-"2","  File ""<string>"", line 1
-    d2LL_dbeta2 = sp.simplify(sp.diff(dLL_dbeta), beta))
-                                                       ^
-SyntaxError: unmatched ')'
-"
-"0",""

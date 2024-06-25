@@ -1,5 +1,0 @@
-"0","sp.simplify(P*dLL_dlnP/(alpha*dLL_dlnalpha))
-
-"
-"1","P*log(mu)
-"

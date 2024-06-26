@@ -48,7 +48,7 @@
 #'         \frac{\eta}{2\mu}\right)^2(1 + 2\eta)^{-j / 2}
 #'   \end{cases}}
 #' 
-#' Where \eqn{\eta} is a scale parameter with the restriction that \eqn{eta>0},
+#' Where \eqn{\eta} is a scale parameter with the restriction that \eqn{\eta>0},
 #' \eqn{\mu} is the mean value, and \eqn{y} is a non-negative integer.
 #'
 #' The variance of the distribution is:

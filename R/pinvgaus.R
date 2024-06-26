@@ -32,7 +32,7 @@
 #'                              f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2\mu}\right)^2(1+2\eta)^{-j/2}
 #'                              \end{cases}}
 #' 
-#' Where \eqn{\eta} is a scale parameter with the restriction that \eqn{eta>0}, \eqn{\mu} is the mean value, and \eqn{y} is a non-negative integer.
+#' Where \eqn{\eta} is a scale parameter with the restriction that \eqn{\eta>0}, \eqn{\mu} is the mean value, and \eqn{y} is a non-negative integer.
 #'
 #' The variance of the distribution is:
 #' \deqn{\sigma^2=\mu+\eta\mu}

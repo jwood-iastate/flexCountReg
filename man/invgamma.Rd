@@ -50,7 +50,7 @@ These functions provide the density function, distribution function, quantile fu
 The compound Probability Mass Function (PMF) for the Inverse-Gamma distribution:
 \deqn{f(x|\alpha,\beta)=\frac{\beta^\alpha}{\Gamma(\alpha)}\left(\frac{1}{x}\right)^{\alpha+1}e^{-\frac{\beta}{x}}}
 
-Where \eqn{\alpha} is the shape parameter, \eqn{\beta} is a scale parameter, the restrictions that \eqn{\alpha>0} and \eqn{eta>0}, and \eqn{x>0}.
+Where \eqn{\alpha} is the shape parameter, \eqn{\beta} is a scale parameter, the restrictions that \eqn{\alpha>0} and \eqn{\eta>0}, and \eqn{x>0}.
 
 The CDF of the Inverse-Gamma distribution is:
 \deqn{F(x|\alpha,\beta)=\frac{\alpha. \Gamma\left(\frac{\beta}{x}\right)}{\Gamma(\alpha)}=Q\left(\alpha, \frac{\beta}{x} \right)}

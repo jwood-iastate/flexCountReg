@@ -69,7 +69,7 @@ These functions provide the density function, distribution function, quantile fu
 \details{
 The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
 distribution, as noted by Cameron & Trivedi (2013). It is also known as a
-uivariate Sichel distribution (Hilbe, 2011).
+univariate Sichel distribution (Hilbe, 2011).
 
 
 \code{dpinvgaus} computes the density (PDF) of the Poisson-Inverse-Gaussian
@@ -102,7 +102,7 @@ The variance of the distribution is:
 \deqn{\sigma^2=\mu+\eta\mu}
 
 The alternative parametrization by Dean et. al. (1987) replaces \eqn{\eta}
-with \eqn{\eta\mu}. This version(Type 2) has the PMF:
+with \eqn{\eta\mu}. This version (Type 2) has the PMF:
 \deqn{f(y|\eta,\mu)=\begin{cases}
                              f(y=0)= \exp\left(\frac{1}{\eta}\left(1-\sqrt{1+2\eta\mu}\right)\right) \\
                              f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2}\right)^2(1+2\eta\mu)^{-j/2}

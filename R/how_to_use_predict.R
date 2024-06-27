@@ -23,7 +23,6 @@ veryCoolMethod <- function(mydata, ...) {
 
 
 #' Create a method for function print for class veryCoolMethod
-#' Title
 #'
 #' @param veryCoolMethodObject 
 #'

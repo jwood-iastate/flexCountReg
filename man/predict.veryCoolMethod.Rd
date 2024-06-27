@@ -2,8 +2,7 @@
 % Please edit documentation in R/how_to_use_predict.R
 \name{predict.veryCoolMethod}
 \alias{predict.veryCoolMethod}
-\title{Create a method for function print for class veryCoolMethod
-Title}
+\title{Create a method for function print for class veryCoolMethod}
 \usage{
 \method{predict}{veryCoolMethod}(veryCoolMethodObject)
 }
@@ -15,7 +14,6 @@ Predicted valued for veryCoolMethod
 }
 \description{
 Create a method for function print for class veryCoolMethod
-Title
 }
 \examples{
 sample_object <- veryCoolMethod(cars)

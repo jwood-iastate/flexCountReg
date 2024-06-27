@@ -11,7 +11,7 @@
 
 \item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe.}
 
-\item{method}{Only valid for random parameters models.Tthe method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).}
+\item{method}{Only valid for random parameters models.The method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).}
 }
 \description{
 Predictions for non-random parameters count models

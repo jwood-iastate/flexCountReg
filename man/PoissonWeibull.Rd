@@ -48,7 +48,7 @@ rpoisweibull(n, alpha = NULL, beta = NULL, mean_value = NULL, sd_value = NULL)
 
 \item{p}{A numeric value or vector of probabilities for the quantile function.}
 
-\item{n}{The number of random variates to generate.}
+\item{n}{The number of random samples to generate.}
 }
 \description{
 These functions provide density, distribution function, quantile function, and random number 

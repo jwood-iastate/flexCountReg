@@ -12,7 +12,7 @@
 #'
 #' @param x A numeric value or vector of values for which the PDF or CDF is calculated.
 #' @param p A numeric value or vector of probabilities for the quantile function.
-#' @param n The number of random variates to generate.
+#' @param n The number of random samples to generate.
 #' @param alpha Shape parameter of the Weibull distribution (optional if mean and sd are provided).
 #' @param beta Scale parameter of the Weibull distribution (optional if mean and sd are provided).
 #' @param mean_value Mean of the Weibull distribution (optional if alpha and beta are provided).

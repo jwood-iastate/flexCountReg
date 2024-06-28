@@ -85,6 +85,6 @@ summary.maxLik <- function(object, confint_level = 0.95, digits = max(3, getOpti
   if (inherits(object, "rpnb")) {
     summary.rpnb(object, confint_level = confint_level, digits = digits, ...)
   } else {
-    stats:::summary.glm(object, confint_level = confint_level, digits = digits, ...)
+    stats::summary.glm(object, confint_level = confint_level, digits = digits, ...)
   }
 }

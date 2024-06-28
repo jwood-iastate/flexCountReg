@@ -44,7 +44,11 @@ rpoisweibull(n, alpha = NULL, beta = NULL, mean_value = NULL, sd_value = NULL)
 
 \item{log}{Logical; if TRUE, probabilities p are given as log(p).}
 
+\item{q}{Quantile or a vector of quantiles.}
+
 \item{lower.tail}{Logical; if TRUE, probabilities are P[X <= x], otherwise P[X > x].}
+
+\item{log.p}{Logical; if TRUE, probabilities p are given as log(p).}
 
 \item{p}{A numeric value or vector of probabilities for the quantile function.}
 

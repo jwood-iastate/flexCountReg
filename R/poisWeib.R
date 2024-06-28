@@ -11,6 +11,7 @@
 #' where \eqn{f(\theta; \alpha, \beta)} is the PDF of the Weibull distribution.
 #'
 #' @param x A numeric value or vector of values for which the PDF or CDF is calculated.
+#' @param q Quantile or a vector of quantiles.
 #' @param p A numeric value or vector of probabilities for the quantile function.
 #' @param n The number of random samples to generate.
 #' @param alpha Shape parameter of the Weibull distribution (optional if mean and sd are provided).
@@ -18,6 +19,7 @@
 #' @param mean_value Mean of the Weibull distribution (optional if alpha and beta are provided).
 #' @param sd_value Standard deviation of the Weibull distribution (optional if alpha and beta are provided).
 #' @param log Logical; if TRUE, probabilities p are given as log(p).
+#' @param log.p Logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail Logical; if TRUE, probabilities are P[X <= x], otherwise P[X > x].
 #'
 #' @details

@@ -73,7 +73,7 @@ The Poisson-Lindley-Gamma is a 3-parameter count distribution that captures high
 
 \code{rplindGamma} generates random numbers from the Poisson-Lindley-Gamma Distribution.
 
-The compound Probability Mass Function(PMF) for the Poisson-Lindley-Gamma (PLG) distribution utilizes a special case
+The compound Probability Mass Function (PMF) for the Poisson-Lindley-Gamma (PLG) distribution utilizes a special case
 \deqn{f(y|\mu,\theta,\alpha)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!} \frac{x^{\frac{1}{\alpha}-1}e^{-\frac{x}{\alpha}}}{\Gamma\left(\frac{1}{\alpha}\right)\alpha^{\frac{1}{\alpha}}}dx}
 
 Where \eqn{\theta} and \eqn{\lambda} are distribution parameters from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, and \eqn{y} is a non-negative integer.

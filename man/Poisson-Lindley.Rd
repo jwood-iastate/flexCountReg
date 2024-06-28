@@ -61,7 +61,7 @@ Distribution.
 
 \code{rplind} generates random numbers from the Poisson-Lindley Distribution.
 
-The compound Probability Mass Function(PMF) for the Poisson-Lindley (PL)
+The compound Probability Mass Function (PMF) for the Poisson-Lindley (PL)
 distribution is:
 \deqn{f(y| \theta, \lambda) = 
   \frac{\theta^2 \lambda^y (\theta + \lambda + y + 1)}

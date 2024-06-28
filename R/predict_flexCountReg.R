@@ -2,9 +2,15 @@
 #'
 #' @name predict.flexCountReg
 #' @param model a model object estimated using this R package.
-#' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe.
-#' @param method Only valid for random parameters models.The method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).
-#' @note the method option \code{Individual} requires that the outcome be observed for all observations. This is due to the use of Bayesian methods for computing the individual observation coefficients.
+#' @param data a dataframe that has all of the variables in the \code{formula}
+#'   and \code{rpar_formula}. This can be the data used for estimating the model
+#'   or another dataframe.
+#' @param method Only valid for random parameters models.The method to be used
+#'   in generating the predictions (options include \code{Simulated},
+#'   \code{Exact}, or \code{Individual}).
+#' @note the method option \code{Individual} requires that the outcome be
+#'   observed for all observations. This is due to the use of Bayesian methods
+#'   for computing the individual observation coefficients.
 #'
 #' @import nlme randtoolbox stats lamW modelr
 #' @importFrom utils head  tail
@@ -23,23 +29,24 @@
 #' predictions <- predict(nbg, washington_roads)
 #' print(predictions)}
 #' @export
-predict.flexCountReg <- function(model, data, method='Exact'){
+predict.flexCountReg <- function(model, data, method = 'Exact'){
   model <- model$model
   
   modtype <- model$modelType 
   if(modtype=="rpnb" || modtype=="rppois"){
-    # The Individual method uses a Bayesian approach to get individual coefficients and variance of the coefficients
+    # The Individual method uses a Bayesian approach to get individual
+    # coefficients and variance of the coefficients
     
     form <- model$form
     
     # function to compute probabilities
     nb_prob <- function(y, mu, alpha, p) {
-      if (form=='nb2'){
+      if (form == 'nb2'){
         return(stats::dnbinom(y, size = alpha, mu = mu))
-      } else if (form=='nb1'){
-        return(stats::dnbinom(y, size = mu/alpha, mu = mu))
+      } else if (form == 'nb1'){
+        return(stats::dnbinom(y, size = mu / alpha, mu = mu))
       } else{
-        return(stats::dnbinom(y, size = (mu^(2-p))/alpha, mu = mu))
+        return(stats::dnbinom(y, size = (mu^(2 - p)) / alpha, mu = mu))
       }
     }
     
@@ -57,6 +64,7 @@ predict.flexCountReg <- function(model, data, method='Exact'){
     rpar <- colnames(X_rand)
     
     num_vars_fixed <- length(x_fixed_names)
+    N_fixed <- num_vars_fixed
     N_rand <- num_vars_rand <- length(unname(rpar))
     total_vars <- num_vars_fixed + num_vars_rand
     
@@ -67,7 +75,7 @@ predict.flexCountReg <- function(model, data, method='Exact'){
     
     
     if (N_rand > 1) {
-      rand_sdevs <- coefs[(total_vars+ 1):(total_vars+N_rand)]
+      rand_sdevs <- coefs[(total_vars + 1):(total_vars + N_rand)]
     } 
     else {
       rand_sdevs <- coefs[(N_fixed + 2)]
@@ -94,21 +102,30 @@ predict.flexCountReg <- function(model, data, method='Exact'){
         adj <- exp(xrand*mu + xrand^2*sigma^2/2)
         return(adj)
       }
-      else if (dist=="ln"){
-        if (sigma<=sqrt(exp(-mu-1))){
-          W <- lamW::lambertW0(-xrand*sigma^2*exp(mu))
-          W <- ifelse(is.na(W), lamW::lambertWm1(-xrand*sigma^2*exp(mu)), W)
-          adj <- ifelse(xrand*exp(mu-W)-1/(sigma^2)==0,1,(exp(xrand*exp(mu-W))-W^2/(2*sigma^2))/(sigma*sqrt(abs(xrand*exp(mu-W)-1/(sigma^2)))))
+      else if (dist == "ln") {
+        if (sigma <= sqrt(exp(-mu - 1))){
+          W <- lamW::lambertW0(-xrand * sigma^2 * exp(mu))
+          W <- ifelse(is.na(W), lamW::lambertWm1(-xrand * sigma^2 * exp(mu)), W)
+          adj <- ifelse(
+            test = xrand * exp(mu - W) - 1 / (sigma^2) == 0, 
+            yes = 1, 
+            no = (exp(xrand * exp(mu - W)) - W^2 / (2 * sigma^2)) /
+              (sigma * sqrt(abs(xrand * exp(mu - W) - 1 / (sigma^2)))))
         }
         else{
-          draws <- stats::qlnorm(randtoolbox::halton(ndraws, 1), random_coefs_means, rand_sdevs)
+          draws <- stats::qlnorm(
+            randtoolbox::halton(ndraws, 1), random_coefs_means, rand_sdevs)
           xs <- exp(crossprod(xrand, draws))
           adj <- rowMeans(xs)
         }
         return(adj)
       }
-      else if (dist=="t"){
-        adj <- ifelse(xrand^2==0, 1, (exp(2*sigma*xrand)-2*exp(sigma*xrand)+1)*exp(xrand*(mu-sigma))/(sigma^2^xrand^2))
+      else if (dist == "t"){
+        adj <- ifelse(
+          test = xrand^2 == 0, 
+          yes = 1, 
+          no = (exp(2 * sigma * xrand) - 2 * exp(sigma * xrand) + 1) * 
+            exp(xrand * (mu - sigma)) / (sigma^2^xrand^2))
         return(adj)
       }
       else if (dist=="u"){
@@ -194,7 +211,10 @@ predict.flexCountReg <- function(model, data, method='Exact'){
             draws <- random_coefs_means + (hdraws-0.5)*rand_sdevs
           }
           else if (rpardists[1]=="g"){
-            draws <- stats::qgamma(hdraws, shape=random_coefs_means^2/(rand_sdevs^2), rate=random_coefs_means/(rand_sdevs^2))
+            draws <- stats::qgamma(
+              hdraws, 
+              shape = random_coefs_means^2 / (rand_sdevs^2), 
+              rate = random_coefs_means / (rand_sdevs^2))
           }
           else{
             draws <- stats::qnorm(hdraws, random_coefs_means, rand_sdevs)

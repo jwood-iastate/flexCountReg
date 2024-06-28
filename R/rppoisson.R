@@ -1,18 +1,21 @@
 #' Random Parameters Poisson Model
 #'
-#' Estimates a Poisson regression model with the possibility of random parameters. This function
-#' allows for the specification of parameters that can vary randomly across observations,
-#' modeled through the inclusion of Halton draws.
+#' Estimates a Poisson regression model with the possibility of random
+#' parameters. This function allows for the specification of parameters that can
+#' vary randomly across observations, modeled through the inclusion of Halton
+#' draws.
 #'
 #' @name rppoisson
-#' @param formula A symbolic description of the model to be fitted, specifying the outcome
-#'        and the independent variables with fixed effects.
-#' @param rpar_formula A symbolic description of the model for random parameters,
-#'        excluding the outcome variable. Use 0 + vars or -1 + vars to exclude the intercept.
-#' @param data A dataframe containing all variables included in 'formula' and 'rpar_formula'.
-#' @param rpardists An optional named vector specifying the distributions of the random parameters.
-#'        Possible values include normal ("n"), lognormal ("ln"), and others as needed.
-#'        Defaults to normal if not specified.
+#' @param formula A symbolic description of the model to be fitted, specifying
+#'   the outcome and the independent variables with fixed effects.
+#' @param rpar_formula A symbolic description of the model for random
+#'   parameters, excluding the outcome variable. Use 0 + vars or -1 + vars to
+#'   exclude the intercept.
+#' @param data A dataframe containing all variables included in 'formula' and
+#'   'rpar_formula'.
+#' @param rpardists An optional named vector specifying the distributions of the
+#'   random parameters. Possible values include normal ("n"), lognormal ("ln"),
+#'   and others as needed. Defaults to normal if not specified.
 #' @param ndraws The number of Halton draws for estimating random parameters.
 #' @param scrambled Boolean to determine if Halton sequences should be scrambled.
 #' @param correlated Boolean indicating if random parameters are correlated.
@@ -22,10 +25,11 @@
 #' @param max.iters Maximum number of iterations for the optimization method.
 #' @param start.vals Optional vector of starting values for the optimization.
 #' @param print.level Integer specifying the verbosity of output during optimization.
-#' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
-#'        for estimating standard errors.
-#' @return An object of class 'rppoisson' containing the model's estimated coefficients, the variance-covariance matrix of the random parameters (if correlated),
-#'         standard errors, and other diagnostic measures.
+#' @param bootstraps Optional integer specifying the number of bootstrap samples
+#'   to be used for estimating standard errors.
+#' @return An object of class 'rppoisson' containing the model's estimated
+#'   coefficients, the variance-covariance matrix of the random parameters (if
+#'   correlated), standard errors, and other diagnostic measures.
 #' @importFrom stats model.frame model.matrix dpois
 #' @importFrom maxLik maxLik
 #' @importFrom randtoolbox halton

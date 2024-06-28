@@ -20,17 +20,19 @@ rppoisson(
 )
 }
 \arguments{
-\item{formula}{A symbolic description of the model to be fitted, specifying the outcome
-and the independent variables with fixed effects.}
+\item{formula}{A symbolic description of the model to be fitted, specifying
+the outcome and the independent variables with fixed effects.}
 
-\item{rpar_formula}{A symbolic description of the model for random parameters,
-excluding the outcome variable. Use 0 + vars or -1 + vars to exclude the intercept.}
+\item{rpar_formula}{A symbolic description of the model for random
+parameters, excluding the outcome variable. Use 0 + vars or -1 + vars to
+exclude the intercept.}
 
-\item{data}{A dataframe containing all variables included in 'formula' and 'rpar_formula'.}
+\item{data}{A dataframe containing all variables included in 'formula' and
+'rpar_formula'.}
 
-\item{rpardists}{An optional named vector specifying the distributions of the random parameters.
-Possible values include normal ("n"), lognormal ("ln"), and others as needed.
-Defaults to normal if not specified.}
+\item{rpardists}{An optional named vector specifying the distributions of the
+random parameters. Possible values include normal ("n"), lognormal ("ln"),
+and others as needed. Defaults to normal if not specified.}
 
 \item{ndraws}{The number of Halton draws for estimating random parameters.}
 
@@ -48,17 +50,19 @@ See `maxLik` documentation for options.}
 
 \item{print.level}{Integer specifying the verbosity of output during optimization.}
 
-\item{bootstraps}{Optional integer specifying the number of bootstrap samples to be used
-for estimating standard errors.}
+\item{bootstraps}{Optional integer specifying the number of bootstrap samples
+to be used for estimating standard errors.}
 }
 \value{
-An object of class 'rppoisson' containing the model's estimated coefficients, the variance-covariance matrix of the random parameters (if correlated),
-        standard errors, and other diagnostic measures.
+An object of class 'rppoisson' containing the model's estimated
+  coefficients, the variance-covariance matrix of the random parameters (if
+  correlated), standard errors, and other diagnostic measures.
 }
 \description{
-Estimates a Poisson regression model with the possibility of random parameters. This function
-allows for the specification of parameters that can vary randomly across observations,
-modeled through the inclusion of Halton draws.
+Estimates a Poisson regression model with the possibility of random
+parameters. This function allows for the specification of parameters that can
+vary randomly across observations, modeled through the inclusion of Halton
+draws.
 }
 \examples{
 data("washington_roads")

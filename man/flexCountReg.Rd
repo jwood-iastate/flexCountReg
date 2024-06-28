@@ -32,7 +32,8 @@ include it in this formula. If the intercept is fixed, include it in
 \code{formula} but not in \code{rpar_formula}. To remove the intercept, use
 \code{0 + vars} or \code{-1 + vars},}
 
-\item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula},}
+\item{data}{a dataframe that has all of the variables in the \code{formula}
+and \code{rpar_formula},}
 
 \item{dist}{determines the count distribution to be used in the regression
   estimation and must be a string. Options include:

@@ -15,9 +15,10 @@ Imports:
     modelr,
     knitr,
     cureplots,
-    dplyr, 
-    gt, 
-    tibble
+    dplyr,
+    gt,
+    tibble,
+    methods
 Depends: R (>= 2.10)
 License: MIT + file LICENSE
 Encoding: UTF-8

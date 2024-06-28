@@ -7,7 +7,8 @@
 \method{predict}{veryCoolMethod}(veryCoolMethodObject)
 }
 \arguments{
-\item{veryCoolMethodObject}{}
+\item{veryCoolMethodObject}{Object produced with
+\code{\link{veryCoolMethod}}.}
 }
 \value{
 Predicted valued for veryCoolMethod

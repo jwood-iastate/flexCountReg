@@ -24,7 +24,8 @@ veryCoolMethod <- function(mydata, ...) {
 
 #' Create a method for function print for class veryCoolMethod
 #'
-#' @param veryCoolMethodObject 
+#' @param veryCoolMethodObject Object produced with
+#'   \code{\link{veryCoolMethod}}.
 #'
 #' @return Predicted valued for veryCoolMethod
 #' @export

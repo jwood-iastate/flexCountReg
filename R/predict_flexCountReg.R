@@ -11,17 +11,15 @@
 #' @include tri.R
 #'
 #' @examples
-#' \donttest{
 #'
-#' ## Standard Negative Binomial
+#' # Standard Negative Binomial
 #' data("washington_roads")
-#' nbg <- nbg(Total_crashes ~ - 1 + lnlength + speed50,
-#'            rpar_formula = ~ lnaadt,
+#' nbg <- nbg(Total_crashes ~ - 1 + lnaadt + lnlength + speed50,
+#'            ln.alpha.formula = ~ lnaadt,
 #'            data = washington_roads)
 #' summary(nbg)
 #'
-#' predictions <- predict(nbg, washington_roads)
-#' print(predictions)}
+#' predict(nbg, washington_roads)
 #' @export
 predict.flexCountReg <- function(model, data, method='Exact'){
   model <- model$model
@@ -149,8 +147,6 @@ predict.flexCountReg <- function(model, data, method='Exact'){
           draws <- hdraws #initialize the matrix
           
           if (is.null(rpardists)){
-            print(random_coefs_means)
-            print(rand_sdevs)
             draws <- apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs))
           }
           else{

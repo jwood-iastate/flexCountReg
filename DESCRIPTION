@@ -49,7 +49,6 @@ Collate:
     'flexCountReg.predict.R'
     'flexCountRegClass.R'
     'genexp.R'
-    'how_to_use_predict.R'
     'invgamma.R'
     'metrics.R'
     'mgf_lognormal.R'

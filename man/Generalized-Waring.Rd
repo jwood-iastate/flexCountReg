@@ -8,20 +8,20 @@
 \alias{rgwar}
 \title{Generalized Waring Distribution}
 \usage{
-dgwar(y, mu, alpha, rho, log = FALSE)
+dgwar(y, mu, k, rho, log = FALSE)
 
-pgwar(q, mu, alpha, rho, lower.tail = TRUE, log.p = FALSE)
+pgwar(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE)
 
-qgwar(p, mu, alpha, rho)
+qgwar(p, mu, k, rho)
 
-rgwar(n, mu, alpha, rho)
+rgwar(n, mu, k, rho)
 }
 \arguments{
 \item{y}{non-negative integer vector of count outcomes.}
 
 \item{mu}{numeric vector of means of the distribution.}
 
-\item{alpha}{non-negative numeric parameter of the distribution.}
+\item{k}{non-negative numeric parameter of the distribution.}
 
 \item{rho}{non-negative numeric parameter of the distribution.}
 
@@ -44,25 +44,28 @@ These functions provide density, distribution function, quantile function, and r
 The Generalized Waring distribution is a 3-parameter count distribution that is used to model overdispersed count data.
 
 
-\code{dwaring} computes the density (PMF) of the Generalized Waring Distribution.
+\code{dgwar} computes the density (PMF) of the Generalized Waring Distribution.
 
-\code{pwaring} computes the CDF of the Generalized Waring Distribution.
+\code{pgwar} computes the CDF of the Generalized Waring Distribution.
 
 \code{qwaring} computes the quantile function of the Generalized Waring Distribution.
 
 \code{rwaring} generates random numbers from the Generalized Waring Distribution.
 
 The Probability Mass Function (PMF) for the Generalized Waring (GW) distribution is:
-\deqn{PMF=\frac{\Gamma(\alpha+\rho)}{\Gamma(\alpha)\Gamma(\rho)}
-       \left(\frac{\alpha}{\mu(\rho-1)}\right)^{\alpha-1}
-       \left(1+\frac{\alpha}{\mu(\rho-1)}\right)^{-(\alpha+\rho)}}
+\deqn{f(y|a_x,k,\rho)=\frac{\Gamma(a_x+\rho)\Gamma(k+\rho)\left(a_x\right)_y(k)_y}{y!\Gamma(\rho)\Gamma(a_x+k+\rho)(a_x+k+\rho)_y}}
+Where \eqn{(\alpha)_r=\frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}}, and \eqn{a_x, \ k, \ \rho)>0}.
 
-Where \eqn{\alpha} and \eqn{\rho} are distribution parameters with the constraints that \eqn{\alpha \geq 0} and \eqn{\rho > 1}, \eqn{\mu} is the mean of the distribution.
+The mean value is:
+\deqn{E[Y]=\frac{a_x K}{\rho-1}}
+
+Thus, we can use:
+\deqn{a_x=\frac{\mu(\rho-1)}{k}}
 }
 \examples{
-dgwar(0, mu=1, alpha=2, rho=3)
-pgwar(c(0,1,2,3), mu=1, alpha=2, rho=3)
-qgwar(c(0.1, 0.5, 0.9), mu=1, alpha=2, rho=3)
-rgwar(10, mu=1, alpha=2, rho=3)
+dgwar(0, mu=1, k=2, rho=3)
+pgwar(c(0,1,2,3), mu=1, k=2, rho=3)
+qgwar(0.8, mu=1, k=2, rho=3)
+rgwar(10, mu=1, k=2, rho=3)
 
 }

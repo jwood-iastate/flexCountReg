@@ -1,8 +1,6 @@
 #' Poisson-Weibull Regression
 #'
-#' Estimates a Poisson-Weibull regression model with optional random parameters. 
-#' This function allows for the specification of parameters that can vary 
-#' randomly across observations, modeled through the inclusion of Halton draws.
+#' Estimates a Poisson-Weibull regression model. 
 #'
 #' @name pwiebreg
 #' @param formula A symbolic description of the model to be fitted, specifying the outcome
@@ -20,99 +18,81 @@
 #' @param print.level Integer specifying the verbosity of output during optimization.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
 #'        for estimating standard errors.
-#'        
-#' @importFrom stats model.frame model.matrix
+#' @import modelr        
+#' @importFrom stats model.frame model.matrix model.response
 #' @importFrom maxLik maxLik
-#' @importFrom randtoolbox halton
 #' @include poisWeib.R
 #' 
 #' @details
 #' For the Poisson-Weibull Regression model, the expected values is:
-#' \deqn{E[Y]=\lambda\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}
+#' \deqn{E[Y]=\lambda\beta\Gamma\left(1+\frac{1}{\alpha}\right)}
 #' Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is the shape parameter, and \eqn{\beta} is the scale parameter.
 #' 
 #' To ensure that the regression model predicts the mean value, the regression utilizes:
-#' \deqn{\mu=\e^{X\gamma}=\lambda\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}
+#' \deqn{\mu=\exp{X\gamma}=\lambda\beta\Gamma\left(1+\frac{1}{\alpha}\right)}
 #' Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a vector of coefficients. 
 #' 
 #' This leads to:
-#' \deqn{\lambda=\frac{\mu}{\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}}
+#' \deqn{\lambda=\frac{\mu}{\beta\Gamma\left(1+\frac{1}{\alpha}\right)}}
 #' 
 #' The variance for the Poisson-Weibull regression is:
 #' 
-#'\deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}{\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+#' \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}{\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
 #' 
 #' @examples
 #' data("washington_roads")
 #' pw_rp <- pwiebreg(Total_crashes ~ lnlength + lnaadt,
-#'                                  alpha_formula = ~ lnlength,
-#'                                  beta_formula = ~ lnaadt,
 #'                                  data = washington_roads,
-#'                                  ndraws = 10
+#'                                  ndraws = 10)
 #' print(summary(pw_rp))
 #' 
 #' @export
-pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, data,
+pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
                      ndraws = 1500,  method = 'BHHH', max.iters = 1000,
                      start.vals = NULL, print.level = 0, bootstraps = NULL) {
   
-  # Generate Halton sequences for the random parameters
-  halton_draws <- function(ndraws, rpar, scrambled) {
-    num_params <- length(rpar)
-    halton_seq <- randtoolbox::halton(ndraws, num_params, mixed = scrambled)
-    return(halton_seq)
-  }
-  
-  # Prepare model matrices for fixed effects, random effects (if provided), alpha parameter, and beta parameter
+  # Prepare model matrices for fixed effects, alpha parameter, and beta parameter
   mod1_frame <- stats::model.frame(formula, data)
-  X_Fixed <- model.matrix(formula, data)
+  X_Fixed <- stats::model.matrix(formula, data)
+  
   if (!is.null(alpha_formula)) {
-    X_alpha <- model.matrix(alpha_formula, data)
+    mod_alpha_frame <- stats::model.frame(alpha_formula, data)
+    X_alpha <- stats::model.matrix(alpha_formula, data)
   } else {
-    X_alpha <- NULL
+    X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if alpha_formula is not provided
   }
   
   if (!is.null(beta_formula)) {
-    X_beta <- model.matrix(beta_formula, data)
+    mod_beta_frame <- stats::model.frame(beta_formula, data)
+    X_beta <- stats::model.matrix(beta_formula, data)
   } else {
-    X_beta <- NULL
+    X_beta <- matrix(1, nrow(data), 1)  # Use an intercept-only model if beta_formula is not provided
   }
-  y <- model.response(mod1_frame)
   
+  y <- stats::model.response(mod1_frame)
   
   # Define the main function for computing log-likelihood
-  p_poisweibull_rp <- function(p, y, X_Fixed, X_rand, X_alpha, X_beta, ndraws, 
-                               rpar, correlated, est_method) {
+  p_poisweibull_rp <- function(p, y, X_Fixed, X_alpha, X_beta, ndraws, 
+                               est_method) {
     N_fixed = ncol(X_Fixed)
     coefs <- as.array(p)
     fixed_coefs <- head(coefs, N_fixed)
     
-    if (!is.null(alpha_formula)) {
-      N_alpha = ncol(X_alpha)
-      alpha_coefs <- coefs[(N_fixed+1):(N_fixed+N_alpha)]
-      alpha <- exp(X_alpha %*% alpha_coefs)
-    } else {
-      N_alpha = 1
-      alpha_coefs <- coefs[(N_fixed+1)]
-      alpha <- exp(alpha_coefs)
-    }
+    N_alpha = ncol(X_alpha)
+    alpha_coefs <- coefs[(N_fixed + 1):(N_fixed + N_alpha)]
+    alpha <- exp(X_alpha %*% alpha_coefs)
     
-    if (!is.null(beta_formula)) {
-      N_beta = ncol(X_beta)
-      beta_coefs <- coefs[(N_fixed+N_alpha+1):(N_fixed+N_alpha+N_beta)]
-      beta <- exp(X_beta %*% beta_coefs)
-    } else {
-      N_beta = coefs[length(coefs)]
-      beta <- exp(beta_coefs)
-    }
+    N_beta = ncol(X_beta)
+    beta_coefs <- coefs[(N_fixed + N_alpha + 1):(N_fixed + N_alpha + N_beta)]
+    beta <- exp(X_beta %*% beta_coefs)
     
     pred <- exp(X_Fixed %*% fixed_coefs)
     
-    lambda <- pred/(beta*gamma(1+1/alpha))
+    lambda <- pred / (beta * gamma(1 + 1 / alpha))
     
     # Call the provided Poisson-Weibull density function
     probs <- dpoisweibull(x = y, 
-                          lambda=lambda, 
+                          lambda = lambda, 
                           alpha = alpha,
                           beta = beta, 
                           log = FALSE)
@@ -128,7 +108,7 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
   
   # Initialize starting values if not provided
   start <- if (is.null(start.vals)) {
-    coefs <- rep(0, ncol(X_Fixed) + ncol(X_alpha) + ncol(X_beta))
+    rep(0, ncol(X_Fixed) + ncol(X_alpha) + ncol(X_beta))
   } else {
     start.vals
   }
@@ -148,8 +128,8 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
       
       # Subset matrices and vector using sampled indices
       sampled_X_Fixed <- X_Fixed[sampled_indices, ]
-      sampled_X_alpha <- X_alpha[sampled_indices, ]
-      sampled_X_beta <- X_beta[sampled_indices, ]
+      sampled_X_alpha <- if (!is.null(X_alpha)) X_alpha[sampled_indices, ] else NULL
+      sampled_X_beta <- if (!is.null(X_beta)) X_beta[sampled_indices, ] else NULL
       sampled_y <- y[sampled_indices]
       
       model.boot <- maxLik::maxLik(p_poisweibull_rp,
@@ -172,7 +152,7 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
   
   fit$coefficients = fit$estimate
   fit$se = if (!is.null(bootstraps) & is.numeric(bootstraps)) fit$bootstrapped_se else sqrt(diag(fit$hessian))
-  fit$logLik = fit$minimum
+  fit$logLik = fit$maximum
   fit$converged = fit$convergence
   fit$model = "rpoisweibull_regression"
   fit$method = method

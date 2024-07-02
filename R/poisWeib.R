@@ -111,7 +111,6 @@ qpoisweibull <- Vectorize(function(p, lambda, alpha = NULL, beta = NULL,
   }
   y <- 0
   p_value <- ppoisweibull(y, lambda=lambda, alpha = alpha, beta = beta, ndraws=ndraws)
-  print(p_value)
   while (p_value < p){
     y <- y + 1
     p_value <- ppoisweibull(y, lambda=lambda, alpha = alpha, beta = beta, ndraws=ndraws)

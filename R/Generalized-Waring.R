@@ -9,34 +9,36 @@
 #' @param p numeric vector of probabilities.
 #' @param n integer number of random numbers to generate.
 #' @param mu numeric vector of means of the distribution.
-#' @param alpha non-negative numeric parameter of the distribution.
+#' @param k non-negative numeric parameter of the distribution.
 #' @param rho non-negative numeric parameter of the distribution.
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.
 #'
 #' @details
-#' \code{dwaring} computes the density (PMF) of the Generalized Waring Distribution.
+#' \code{dgwar} computes the density (PMF) of the Generalized Waring Distribution.
 #'
-#' \code{pwaring} computes the CDF of the Generalized Waring Distribution.
+#' \code{pgwar} computes the CDF of the Generalized Waring Distribution.
 #'
 #' \code{qwaring} computes the quantile function of the Generalized Waring Distribution.
 #'
 #' \code{rwaring} generates random numbers from the Generalized Waring Distribution.
 #'
 #' The Probability Mass Function (PMF) for the Generalized Waring (GW) distribution is:
-#' \deqn{PMF=\frac{\Gamma(\alpha+\rho)}{\Gamma(\alpha)\Gamma(\rho)}
-#'        \left(\frac{\alpha}{\mu(\rho-1)}\right)^{\alpha-1}
-#'        \left(1+\frac{\alpha}{\mu(\rho-1)}\right)^{-(\alpha+\rho)}}
+#' \deqn{f(y|a_x,k,\rho)=\frac{\Gamma(a_x+\rho)\Gamma(k+\rho)\left(a_x\right)_y(k)_y}{y!\Gamma(\rho)\Gamma(a_x+k+\rho)(a_x+k+\rho)_y}}
+#' Where \eqn{(\alpha)_r=\frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}}, and \eqn{a_x, \ k, \ \rho)>0}.
 #'
-#' Where \eqn{\alpha} and \eqn{\rho} are distribution parameters with the constraints that \eqn{\alpha \geq 0} and \eqn{\rho > 1}, \eqn{\mu} is the mean of the distribution.
+#' The mean value is:
+#' \deqn{E[Y]=\frac{a_x K}{\rho-1}}
 #'
+#' Thus, we can use:
+#' \deqn{a_x=\frac{\mu(\rho-1)}{k}}
 #'
 #' @examples
-#' dgwar(0, mu=1, alpha=2, rho=3)
-#' pgwar(c(0,1,2,3), mu=1, alpha=2, rho=3)
-#' qgwar(c(0.1, 0.5, 0.9), mu=1, alpha=2, rho=3)
-#' rgwar(10, mu=1, alpha=2, rho=3)
+#' dgwar(0, mu=1, k=2, rho=3)
+#' pgwar(c(0,1,2,3), mu=1, k=2, rho=3)
+#' qgwar(0.8, mu=1, k=2, rho=3)
+#' rgwar(10, mu=1, k=2, rho=3)
 #'
 #' @import stats
 #' @export
@@ -44,68 +46,68 @@
 
 #' @rdname Generalized-Waring
 #' @export
-dgwar <- function(y, mu, alpha, rho, log = FALSE) {
+dgwar <- Vectorize(function(y, mu, k, rho, log = FALSE) {
   if (any(y < 0) || !all(y == floor(y))) {
     stop("All y values must be non-negative integers.")
   }
-  if (alpha < 0 || rho <= 1) {
-    stop("Alpha must be non-negative and rho must be greater than 1.")
+  if (k < 0 || rho <= 1) {
+    stop("k and rho must be greater than 1.")
   }
   
+  a <- mu * (rho - 1) / k
+  
+  axy <- gamma(a + y) / gamma(a)
+  ky <- gamma(k + y) / gamma(k)
+  akrho <- gamma(a + k + rho + y) / gamma(a + k + rho)
+  
   # Compute PMF for each y value
-  v <- alpha / (mu * (rho - 1))
-  p <- gamma(alpha + rho) / (gamma(alpha) * gamma(rho)) * v^(alpha - 1) * (1 + v)^(-1 * (alpha + rho))
-  pmf <- p * sapply(y, function(yi) v^yi / factorial(yi))
+  num <- gamma(a + rho) * gamma(k + rho) * axy * ky
+  denom <- factorial(y) * gamma(rho) * gamma(a + k + rho) * akrho
+  pmf <- num / denom
   
   if (log) pmf <- log(pmf)
   return(pmf)
-}
+})
 
 
 #' @rdname Generalized-Waring
 #' @export
-pgwar <- function(q, mu, alpha, rho, lower.tail = TRUE, log.p = FALSE) {
+pgwar <- Vectorize(function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
   if (any(q < 0) || !all(q == floor(q))) {
     stop("All q values must be non-negative integers.")
   }
-  # Compute the cumulative probability for each quantile
-  p <- sapply(q, function(qi) sum(dgwar(0:qi, mu, alpha, rho)))
+  y <- seq(0, q, 1)
+  probs <- dgwar(y, mu, k = k, rho = rho)
+  p <- sum(probs)
   
   if (!lower.tail) p <- 1 - p
-  if (log.p) p <- log(p)
-  return(p)
-}
+  
+  if (log.p) return(log(p))
+  else return(p)
+})
 
 
 #' @rdname Generalized-Waring
 #' @export
-qgwar <- function(p, mu, alpha, rho) {
+qgwar <- Vectorize(function(p, mu, k, rho) {
   if (any(p < 0 | p > 1)) {
     stop("All p values must be in the interval [0, 1].")
   }
   
-  quantiles <- sapply(p, function(pi) {
-    low <- 0
-    high <- 1000  # Set a reasonable upper bound; adjust based on your data's range
-    while (low < high) {
-      mid <- (low + high) %/% 2
-      P <- pgwar(mid, mu, alpha, rho)
-      if (P < pi) {
-        low <- mid + 1
-      } else {
-        high <- mid
-      }
-    }
-    return(low)
-  })
-  return(quantiles)
-}
+  y <- 0
+  p_value <- pgwar(y, mu, k, rho)
+  while (p_value < p) {
+    y <- y + 1
+    p_value <- pgwar(y, mu, k, rho)
+  }
+  return(y)
+})
 
 
 #' @rdname Generalized-Waring
 #' @export
-rgwar <- function(n, mu, alpha, rho) {
+rgwar <- function(n, mu, k, rho) {
   p <- runif(n)
-  random_counts <- qgwar(p, mu, alpha, rho)
+  random_counts <- qgwar(p, mu, k, rho)
   return(random_counts)
 }

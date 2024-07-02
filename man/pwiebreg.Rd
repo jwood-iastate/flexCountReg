@@ -6,9 +6,8 @@
 \usage{
 pwiebreg(
   formula,
-  rpar_formula = NULL,
-  alpha_formula,
-  beta_formula,
+  alpha_formula = NULL,
+  beta_formula = NULL,
   data,
   ndraws = 1500,
   method = "BHHH",
@@ -45,21 +44,19 @@ See `maxLik` documentation for options.}
 for estimating standard errors.}
 }
 \description{
-Estimates a Poisson-Weibull regression model with optional random parameters. 
-This function allows for the specification of parameters that can vary 
-randomly across observations, modeled through the inclusion of Halton draws.
+Estimates a Poisson-Weibull regression model.
 }
 \details{
 For the Poisson-Weibull Regression model, the expected values is:
-\deqn{E[Y]=\lambda\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}
+\deqn{E[Y]=\lambda\beta\Gamma\left(1+\frac{1}{\alpha}\right)}
 Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is the shape parameter, and \eqn{\beta} is the scale parameter.
 
 To ensure that the regression model predicts the mean value, the regression utilizes:
-\deqn{\mu=\e^{X\gamma}=\lambda\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}
+\deqn{\mu=\exp{X\gamma}=\lambda\beta\Gamma\left(1+\frac{1}{\alpha}\right)}
 Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a vector of coefficients. 
 
 This leads to:
-\deqn{\lambda=\frac{\mu}{\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}}
+\deqn{\lambda=\frac{\mu}{\beta\Gamma\left(1+\frac{1}{\alpha}\right)}}
 
 The variance for the Poisson-Weibull regression is:
 
@@ -68,10 +65,8 @@ The variance for the Poisson-Weibull regression is:
 \examples{
 data("washington_roads")
 pw_rp <- pwiebreg(Total_crashes ~ lnlength + lnaadt,
-                                 alpha_formula = ~ lnlength,
-                                 beta_formula = ~ lnaadt,
                                  data = washington_roads,
-                                 ndraws = 10
+                                 ndraws = 10)
 print(summary(pw_rp))
 
 }

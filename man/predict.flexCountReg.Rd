@@ -20,15 +20,13 @@ Predictions for non-random parameters count models
 the method option \code{Individual} requires that the outcome be observed for all observations. This is due to the use of Bayesian methods for computing the individual observation coefficients.
 }
 \examples{
-\donttest{
 
-## Standard Negative Binomial
+# Standard Negative Binomial
 data("washington_roads")
-nbg <- nbg(Total_crashes ~ - 1 + lnlength + speed50,
-           rpar_formula = ~ lnaadt,
+nbg <- nbg(Total_crashes ~ - 1 + lnaadt + lnlength + speed50,
+           ln.alpha.formula = ~ lnaadt,
            data = washington_roads)
 summary(nbg)
 
-predictions <- predict(nbg, washington_roads)
-print(predictions)}
+predict(nbg, washington_roads)
 }

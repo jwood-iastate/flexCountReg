@@ -62,7 +62,6 @@ Collate:
     'predict_flexCountReg.R'
     'pwiebreg.R'
     'regCompTest.R'
-    'regCompTable.R'
     'rpnb.predict.R'
     'summary_flexCountReg.R'
     'summary_rpnb.R'

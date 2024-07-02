@@ -12,14 +12,12 @@
 #' @include psichel.R
 #'
 #' @details
-#' The Sichel regression model is based on the Sichel Distribution .
-#' 
 #' The expected value of the distribution in the regression utilizes a log-link
 #' function. Thus, the mean is: \deqn{\mu=e^{X\beta}}
 #'
 #' The variance is:
 #' \deqn{
-#'    \sigma^2= 
+#'    V[y]= 
 #'      \mu + 
 #'      \left(\frac{2\sigma(\gamma+1)}{c} + \frac{1}{c^2} - 1\right) \mu^2}
 #' 
@@ -77,13 +75,13 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   }
 
   fit <- maxLik::maxLik(reg.run,
-                start = full_start,
-                y = y,
-                X = X,
-                est_method = method,
-                method = method,
-                control = list(iterlim = max.iters))
-
+                        start = full_start,
+                        y = y,
+                        X = X,
+                        est_method = method,
+                        method = method,
+                        control = list(iterlim = max.iters))
+  
   beta_est <- fit$estimate
   npars <- length(beta_est) - 2
 
@@ -107,34 +105,6 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   fit$LL <- fit$maximum # The log-likelihood of the model
   fit$modelType <- "Sichel"
 
-  # Estimate Poisson model for tests and pseudo R^2
-  pois_mod <- glm(formula, data, family = poisson(link = "log"))
-  base_mod <- glm(y ~ 1, family = poisson(link = "log"))
-
-  LLpoisson <- sum(dpois(pois_mod$y, pois_mod$fitted.values, log=TRUE))
-  LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
-
-  fit$LR <- -2 * (LLpoisson - fit$LL) # LR Statistic
-  fit$LRdof <- 
-    length(x_names) - length(pois_mod$coefficients) # LR Degrees of Freedom
-  if (fit$LR > 0) {
-    fit$LR_pvalue <- pchisq(fit$LR, fit$LRdof, lower.tail = FALSE)  # LR p-Value
-  }else{
-    fit$LR_pvalue <- 1
-  }
-
-  # Compute McFadden's Pseudo R^2, based on a Poisson intercept-only model
-  fit$PseudoR2 <- 1 - fit$LL / LLbase
-
-  # Print out key model metrics
-  LRpval <- ifelse(fit$LR_pvalue < 0.0001, "<0.0001", round(fit$LR_pvalue, 4))
-  msg <- paste('The Likelihood Ratio (LR) Test for H0:',
-               'Sichel is No Better than the Poisson')
-  message(msg)
-  message(paste('LR = ', round(fit$LR,4)))
-  message(paste('LR degrees of freedom = ', fit$LRdof))
-  message(paste('LR p-value = ', LRpval))
-  message(paste("Macfadden's Pseudo R^2 = ", round(fit$PseudoR2, 4)))
-
-  return(fit)
+  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  return(obj)
 }

@@ -2,22 +2,22 @@
 % Please edit documentation in R/summary_flexCountReg.R
 \name{summary.flexCountReg}
 \alias{summary.flexCountReg}
-\title{Custom summary method for models with bootstrapped standard errors}
+\title{Custom summary method for flexCountReg models}
 \usage{
 \method{summary}{flexCountReg}(object, confint_level = 0.95, digits = 3)
 }
 \arguments{
-\item{object}{A model object with bootstrapped standard errors.}
+\item{object}{A flexCountReg model object.}
 
 \item{confint_level}{A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.}
 
 \item{digits}{Number of digits (decimal places) to round to. Default is 3.}
 }
 \description{
-Custom summary method for models with bootstrapped standard errors
+Custom summary method for flexCountReg models
 }
 \details{
-Bootstrapped standard errors are currently only implemented in \code{\link{pwiebreg}} and \code{\link{rppoisson}}.
+This summary method accounts for bootstrapped standard errors (when used). Bootstrapped standard errors are currently only implemented in \code{\link{pwiebreg}}.
 }
 \examples{
 # Poisson-Weibull

@@ -18,7 +18,9 @@ Imports:
     dplyr,
     gt,
     tibble,
-    methods
+    methods,
+    recipes,
+    rlang
 Depends: R (>= 2.10)
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -60,9 +62,8 @@ Collate:
     'predict_flexCountReg.R'
     'pwiebreg.R'
     'regCompTest.R'
+    'regCompTable.R'
     'rpnb.predict.R'
-    'rppois.R'
-    'rppoisson.R'
     'summary_flexCountReg.R'
     'summary_rpnb.R'
 Suggests: 

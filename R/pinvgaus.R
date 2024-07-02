@@ -28,7 +28,7 @@
 #'
 #' The compound Probability Mass Function (PMF) for the Poisson-Inverse-Gaussian distribution (Type 1) is (Cameron & Trivedi, 2013):
 #' \deqn{f(y|\eta,\mu)=\begin{cases}
-#'                              f(y=0)=\exp\left(\frac{\mu}{\eta}\left(1-\sqrt{1+2\eta}\right)\right) \\
+#'                              f(y=0)=exp\left(\frac{\mu}{\eta}\left(1-\sqrt{1+2\eta}\right)\right) \\
 #'                              f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2\mu}\right)^2(1+2\eta)^{-j/2}
 #'                              \end{cases}}
 #' 
@@ -39,7 +39,7 @@
 #' 
 #' The alternative parameterization by Dean et. al. (1987) replaces \eqn{\eta} with \eqn{\eta\mu}. This version (Type 2) has the PMF:
 #' \deqn{f(y|\eta,\mu)=\begin{cases}
-#'                              f(y=0)=\exp\left(\frac{1}{\eta}\left(1-\sqrt{1+2\eta\mu}\right)\right) \\
+#'                              f(y=0)=exp\left(\frac{1}{\eta}\left(1-\sqrt{1+2\eta\mu}\right)\right) \\
 #'                              f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2}\right)^2(1+2\eta\mu)^{-j/2}
 #'                              \end{cases}}
 #' 

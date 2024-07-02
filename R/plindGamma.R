@@ -39,11 +39,11 @@
 #' Halton draws are used to perform simulation over the gamma distribution to solve the integral.
 #'
 #' @examples
-#' dplindGamma(0, mean=0.75, theta=7, alpha=2, ndraws=2000)
-#' pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=500)
+#' dplindGamma(0, mean=0.75, theta=7, alpha=2, ndraws=10)
+#' pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=10)
 #' qplindGamma(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, alpha=2,
-#'               ndraws=500)
-#' rplindGamma(30, lambda=4.67, theta=7, alpha=2, ndraws=500)
+#'               ndraws=10)
+#' rplindGamma(3, lambda=4.67, theta=7, alpha=2, ndraws=10)
 #'
 #' @import stats randtoolbox
 #' @include plind.R
@@ -74,20 +74,20 @@ dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, lambda=NULL, nd
       stop()
     }
   }
-
+  
   # Generate Halton draws to use as quantile values
   h <- randtoolbox::halton(ndraws)
-
+  
   # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to gamma values
   gammdist <- exp(stats::qgamma(h, shape=1/alpha, scale=alpha))
-
+  
   mu <- lambda*(theta+2)/(theta*(theta+1))
   mu_i <- outer(mu, gammdist)
-
+  
   p_plind.i <- sapply(mu_i, function(y) dplind(x=x, mean=y, theta=theta))
-
+  
   p <- mean(p_plind.i)
-
+  
   if (log) return(log(p))
   else return(p)
 })
@@ -110,13 +110,13 @@ pplindGamma <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, alpha=1, nd
       mean <- mean*theta*(theta+1)/((theta+2))
     }
   }
-
+  
   y <- seq(0,q,1)
   probs <- dplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws)
   p <- sum(probs)
-
+  
   if(!lower.tail) p <- 1-p
-
+  
   if (log.p) return(log(p))
   else return(p)
 })
@@ -147,7 +147,7 @@ qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1, ndraws=1500, lamb
       stop()
     }
   }
-
+  
   y <- 0
   p_value <- max(pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws), .Machine$double.xmin)
   while(p_value < p){
@@ -177,7 +177,7 @@ rplindGamma <- function(n, mean=1, theta=1, alpha=1, ndraws=1500, lambda=NULL) {
       mean <- mean*theta*(theta+1)/((theta+2))
     }
   }
-
+  
   u <- runif(n)
   y <- lapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha, ndraws=ndraws))
   return(y)

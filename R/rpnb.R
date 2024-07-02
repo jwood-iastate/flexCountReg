@@ -69,7 +69,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   sd.start <- 0.1 # starting value for each of the standard deviations of random parameters
 
   # Check and correct the rpardists if the random parameters are correlated
-  if(correlated && !is.null(rpardists)){
+  if(correlated && !is.null(rpardists) && sum(ifelse(rpardists=="n",0,1))>0){
     print("When the random parameters are correlated, only the normal distribution is used.")
     rpardists <- NULL
   }
@@ -211,7 +211,8 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     names(start) <- x_names
   }
   # main function for estimating log-likelihoods
-  p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, est_method){
+  p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated){
+    est_method <- method
     if (!correlated) exact.gradient=TRUE else exact.gradient=FALSE # use numerical gradient if using correlated random parameters
     N_fixed = length(x_fixed_names)
     N_rand = length(rpar)
@@ -267,28 +268,22 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
           draws <- apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs))
         }
         else{
-          for (i in rpar){
-            counter=1
+          for (i in 1:length(rpar)){
             if (rpardists[i]=="ln"){
-              draws[,counter] <- stats::qlnorm(hdraws[,counter], random_coefs_means[counter], abs(rand_sdevs[counter]))
-              counter=counter+1
+              draws[,i] <- stats::qlnorm(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
             }
             else if (rpardists[i]=="t"){
-              draws[,counter] <- qtri(hdraws[,counter], random_coefs_means[counter], abs(rand_sdevs[counter]))
-              counter=counter+1
+              draws[,i] <- qtri(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
             }
             else if (rpardists[i]=="u"){
-              draws[,counter] <- random_coefs_means[counter] + (hdraws[,counter] - 0.5)*abs(rand_sdevs[counter])
-              counter=counter+1
+              draws[,i] <- random_coefs_means[i] + (hdraws[,i] - 0.5)*abs(rand_sdevs[i])
             }
             else if (rpardists[i]=="g"){
-              draws[,counter] <- stats::qgamma(hdraws[,counter], shape=random_coefs_means[counter]^2/(rand_sdevs[counter]^2), 
-                                               rate=random_coefs_means[counter]/(rand_sdevs[counter]^2))
-              counter=counter+1
+              draws[,i] <- stats::qgamma(hdraws[,i], shape=random_coefs_means[i]^2/(rand_sdevs[i]^2), 
+                                               rate=random_coefs_means[i]/(rand_sdevs[i]^2))
             }
             else{
-              draws[,counter] <- stats::qnorm(hdraws[,counter], random_coefs_means[counter], abs(rand_sdevs[counter]))
-              counter=counter+1
+              draws[,i] <- stats::qnorm(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
             }
           }
         }
@@ -334,7 +329,178 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
       return(log(probs))
     } else{return(ll)}
   }
-
+  
+  gradFun <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated) {
+    params <- p
+    N_fixed <- ncol(X_Fixed)
+    N_rand <- ncol(X_rand)
+    
+    fixed_coefs <- params[1:N_fixed]
+    
+    if (N_rand > 1) {
+      rand_means <- params[(N_fixed + 1):(N_fixed + N_rand)]
+      rand_sdevs <- params[(N_fixed + N_rand + 1):(N_fixed + 2 * N_rand)]
+    } else {
+      rand_means <- params[(N_fixed + 1)]
+      rand_sdevs <- params[(N_fixed + 2)]
+    }
+    
+    log_alpha <- params[length(params) - ifelse(form == 'nbp', 2, 1)]
+    alpha <- exp(log_alpha)
+    
+    mu_fixed <- exp(X_Fixed %*% fixed_coefs)
+    
+    if (correlated && N_rand > 1) {
+      chol_vals <- p[(N_fixed + N_rand + 1):(length(p) - ifelse(form == 'nbp', 2, 1))]
+      Ch <- matrix(0, N_rand, N_rand)
+      Ch[lower.tri(Ch, diag = TRUE)] <- chol_vals
+      scaled_draws <- qnorm(hdraws) %*% Ch
+    } else if (N_rand > 1) {
+      rpardists <- rep("n", length(rpar))
+      names(rpardists) <- rpar
+      scaled_draws = matrix(0, nrow = nrow(hdraws), ncol = ncol(hdraws))
+      for (i in 1:N_rand) {
+        dist_type <- rpardists[rpar[i]]
+        scaled_draws[, i] <- switch(dist_type,
+                                    ln = stats::qlnorm(hdraws[, i], rand_means[i], abs(rand_sdevs[i])),
+                                    t = qtri(hdraws[, i], rand_means[i], abs(rand_sdevs[i])),
+                                    u = rand_means[i] + (hdraws[, i] - 0.5) * abs(rand_sdevs[i]),
+                                    g = stats::qgamma(hdraws[, i], shape = rand_means[i]^2 / (rand_sdevs[i]^2), rate = rand_means[i] / (rand_sdevs[i]^2)),
+                                    n = stats::qnorm(hdraws[, i], rand_means[i], abs(rand_sdevs[i])))
+      }
+    } else {
+      dist_type <- rpardists <- "n"
+      names(rpardists) <- rpar
+      
+      scaled_draws <- switch(dist_type,
+                             ln = stats::qlnorm(hdraws, rand_means, abs(rand_sdevs)),
+                             t = qtri(hdraws, rand_means, abs(rand_sdevs)),
+                             u = rand_means + (hdraws - 0.5) * abs(rand_sdevs),
+                             g = stats::qgamma(hdraws, shape = rand_means^2 / (rand_sdevs^2), rate = rand_means / (rand_sdevs^2)),
+                             n = stats::qnorm(hdraws, rand_means, abs(rand_sdevs)))
+    }
+    
+    xb_rand_mat <- crossprod(t(X_rand), t(scaled_draws))
+    
+    rpar_mat <- exp(xb_rand_mat)
+    pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
+    
+    mu <- rowMeans(pred_mat)
+    
+    grad <- matrix(0, nrow = nrow(X_rand), ncol = length(params))
+    
+    if (form == 'nb1') {
+      p_val = 1
+    } else if (form == 'nb2') {
+      p_val = 2
+    } else if (form == 'nbp') {
+      p_val <- params[length(params)]
+    }
+    
+    R <- mu^(2 - p_val) / alpha
+    S_sum <- y + R
+    M_sum <- mu + R
+    
+    if (form != "nb2") {
+      ln_alpha_grad_cons <- R * (alpha * y - alpha * mu + alpha * R * (log(M_sum) - log(R) - digamma(S_sum) + digamma(R))) / (alpha * M_sum)
+      beta_grad_cons <- R * (alpha * y * (p_val - 1) - alpha * mu + (p_val - 2) * (alpha * M_sum * (log(M_sum) - log(R) - digamma(S_sum) + digamma(R)) + mu^(2 - p_val))) / (alpha * M_sum)
+    } else {
+      ln_alpha_grad_cons <- ((y - mu) + (alpha * mu + 1) * (log(alpha * mu + 1) - digamma(y + 1 / alpha) + digamma(1 / alpha))) / (mu + 1 / alpha)
+      beta_grad_cons <- (y - mu) / (alpha * mu + 1)
+    }
+    
+    # Gradient for fixed coefficients
+    g_beta <- apply(X_Fixed, 2, function(x) x * beta_grad_cons)
+    
+    # Start of gradient for random coefficients
+    g_beta_r <- apply(X_rand, 2, function(x) x * beta_grad_cons)
+    
+    ## Get individual-specific coefficients
+    n_obs <- nrow(X_rand)
+    num_vars_rand <- ncol(X_rand)
+    ind_coefs <- matrix(0, nrow = n_obs, ncol = num_vars_rand)
+    prob_mat <- apply(pred_mat, 2, function(mu_i) {
+      if (form == 'nb2') {
+        return(stats::dnbinom(y, size = 1 / alpha, mu = mu_i))
+      } else {
+        return(stats::dpois(y, lambda = mu_i))
+      }
+    })
+    
+    draws <- scaled_draws
+    
+    if (num_vars_rand > 1) {
+      ind_coefs_pred <- matrix(0, nrow = n_obs, ncol = num_vars_rand)
+      for (i in 1:num_vars_rand) {
+        hals <- draws[, i]
+        b_i <- as.vector(crossprod(t(prob_mat), hals))
+        ind_coefs[, i] <- b_i / rowSums(prob_mat)
+      }
+    } else {
+      hals <- draws
+      b_i <- as.vector(crossprod(t(prob_mat), hals))
+      ind_coefs <- b_i / rowSums(prob_mat)
+    }
+    
+    d_dist <- function(dist, mu, sigma, b) {
+      if (dist == "t") {
+        if (b <= mu) {
+          d_mu <- -1 / sigma^2      
+          d_sigma <- 2 * (b - mu + sigma) / sigma^2  
+        } else {
+          d_mu <- 1 / sigma^2      
+          d_sigma <- -2 * (mu + sigma - b) / sigma^2
+        }
+      } else if (dist == "u") {
+        d_mu <- 0    
+        d_sigma <- -1 / sigma^2
+      } else if (dist == "g") {
+        shape <- mu^2 / sigma^2
+        rate <- mu / sigma^2
+        d_mu <- (rate - log(b) / sigma^2) - 2 * (rate * (log(rate) - log(b) - digamma(shape)))    
+        d_sigma <- shape / sigma * (log(b) - log(rate) + digamma(shape)) - 2 * (rate / sigma * (mu - b))
+      } else if (dist == "ln") {
+        dens <- (1 / (b * sigma * sqrt(2 * pi))) * exp(-(log(b) - mu)^2 / (2 * sigma^2))
+        d_mu <- dens * (log(b) - mu) / sigma^2    
+        d_sigma <- dens * (-1 / sigma + (log(b) - mu)^2 / sigma^3)
+      } else if (dist == "n") {
+        dens <- dnorm(b, abs(mu), abs(sigma))
+        dens <- ifelse(is.na(dens), 1e-200,dens)
+        d_mu <- dens * (b - mu) / sigma^2    
+        d_sigma <- dens * (-1 / sigma + (b - mu)^2 / sigma^3)
+      }
+      return(cbind(d_mu, d_sigma))
+    }
+    
+    # Compute gradients for the random parameters using the chain rule
+    
+    g_beta_r_mu <- matrix(0, ncol = num_vars_rand, nrow = n_obs)
+    g_beta_r_sd <- matrix(0, ncol = num_vars_rand, nrow = n_obs)
+    
+    if (num_vars_rand>1){
+      for (i in 1:num_vars_rand) {
+        grads_rp <- d_dist(dist = rpardists[i], mu = rand_means[i], sigma = rand_sdevs[i], b = ind_coefs[, i])
+        g_beta_r_mu[, i] <- grads_rp[, 1] * g_beta_r[, i]
+        g_beta_r_sd[, i] <- grads_rp[, 2] * g_beta_r[, i]
+      }
+    }
+    else{
+      grads_rp <- d_dist(dist = rpardists, mu = rand_means, sigma = rand_sdevs, b = ind_coefs)
+      g_beta_r_mu <- grads_rp[, 1] * g_beta_r
+      g_beta_r_sd <- grads_rp[, 2] * g_beta_r
+    }
+    
+    
+    # Gradient for p if form is nbp
+    if (form == 'nbp') {
+      grad <- cbind(g_beta, g_beta_r_mu, g_beta_r_sd, ln_alpha_grad_cons, p_val * log(mu) * ln_alpha_grad_cons)
+    } else {
+      grad <- cbind(g_beta, g_beta_r_mu, g_beta_r_sd, ln_alpha_grad_cons)
+    }
+    return(grad)
+  }
+  
+  
   fit <- maxLik::maxLik(p_nb_rp,
                 start = start,
                 y = y,
@@ -343,12 +509,14 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                 ndraws = ndraws,
                 rpar = rpar,
                 correlated = correlated,
-                est_method = method,
+                # grad = if (correlated) NULL else if (method == 'BHHH') gradFun else function(...) colSums(gradFun(...)),
                 method = method,
                 control = list(iterlim = max.iters, printLevel = print.level))
 
   N_fixed = length(x_fixed_names)
   N_rand = length(rpar)
+  
+  names(fit$estimate) <- x_names
 
   param.splits <- as.factor(ifelse((grepl("St. Dev", x_names) + grepl("Cholesky", x_names)==1), "rpr", "coef"))
 
@@ -404,15 +572,15 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     }
     else{
       b.coefs <- head(coefs,-1)
-      parms <- split(b.coefs, f=param.splits)
+      parms <- split(b.coefs, f=param.splits[1:(length(param.splits)-1)])
     }
     fit$sd <- abs(as.vector(parms$rpr))
   }
   fit$coefs <- coefs[1:(N_fixed+N_rand)]
   fit$alpha = alpha
   fit$P <- P
-  fit$x_names <- as.list(x_names)
   fit$estimate <- ifelse(grepl("St.", names(fit$estimate)), abs(fit$estimate ), fit$estimate)
+  names(fit$estimate) <- x_names # ensure it retains the names
   fit$formula <- formula
   fit$x_names <- x_names
   fit$rpar_formula <- rpar_formula
@@ -430,9 +598,8 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     fit$rpardists = dst
   }
 
-  names(fit$estimate) <- x_names
-
   fit$modelType <- "rpnb"
-
-  return(fit)
+  
+  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  return(obj)
 }

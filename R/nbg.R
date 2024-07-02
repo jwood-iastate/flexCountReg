@@ -18,13 +18,43 @@
 #'   method to perform.
 #'
 #' @details
-#' The NB-1, NB-2, and NB-P versions of the negative binomial distribution
-#'
+#' The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
+#' based on Greene (2008).  The details of each of these are provided below.
+#' 
+#' # NB-1 Distribution
+#' The PMF and log-likelihood functions are:
+#' \deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu}{\alpha})}{y! \, \Gamma(\frac{\mu}{\alpha})} \left( \frac{\frac{\mu}{\alpha}}{\frac{\mu}{\alpha} + \mu} \right)^{\frac{\mu}{\alpha}} \left( \frac{\mu}{\frac{\mu}{\alpha} + \mu} \right)^y}
+#' \deqn{LL_{\text{NB1}}(\beta, \alpha) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i}{\alpha} \right) - \ln y_i! + \frac{\mu_i}{\alpha} \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \right]}
+#' 
+#' The Gradients are:
+#' \deqn{\frac{\partial LL_{\text{NB1}}}{\partial \beta} = \sum_{i=1}^n \left[ \left( \psi\left(y_i + \frac{\mu_i}{\alpha}\right) - \psi\left(\frac{\mu_i}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) - \frac{y_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \cdot \mu_i \cdot X_i \right]}
+#' \deqn{\frac{\partial LL_{\text{NB1}}}{\partial \eta} = \alpha \sum_{i=1}^n \left[ \psi\left(y_i + \frac{\mu_i}{\alpha}\right) - \psi\left(\frac{\mu_i}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) - \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right]}
+#' 
+#' # NB-2 Distribution
+#' The PMF and log-likelihood functions are:
+#' \deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} \left( \frac{\alpha}{\alpha + \mu} \right)^\alpha \left( \frac{\mu}{\alpha + \mu} \right)^y}
+#' \deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - \ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
+#' 
+#' The Gradients are:
+#' \deqn{\frac{\partial LL_{\text{NB2}}}{\partial \beta} = \sum_{i=1}^n \left[ \left( \psi(y_i + \alpha) - \psi(\alpha) + \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) - \frac{y_i}{\alpha + \mu_i} \right) \cdot \mu_i \cdot X_i \right]}
+#' \deqn{\frac{\partial LL_{\text{NB2}}}{\partial \eta} = \alpha \sum_{i=1}^n \left[ \psi(y_i + \alpha) - \psi(\alpha) + \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) - \frac{\mu_i}{\alpha + \mu_i} \right]}
+#' 
+#' # NB-P distribution
+#' The PMF and log-likelihood functions are:
+#' \deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu^{2-p}}{\alpha})}{y! \, \Gamma(\frac{\mu^{2-p}}{\alpha})} \left( \frac{\frac{\mu^{2-p}}{\alpha}}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^{\frac{\mu^{2-p}}{\alpha}} \left( \frac{\mu}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^y}
+#' \deqn{LL_{\text{NBP}}(\beta, \alpha, p) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i^{2-p}}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i^{2-p}}{\alpha} \right) - \ln y_i! + \frac{\mu_i^{2-p}}{\alpha} \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \right]}
+#' 
+#' The Gradients are:
+#' \deqn{\frac{\partial LL_{\text{NBP}}}{\partial \beta} = \sum_{i=1}^n \left[ \left( \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{y_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \cdot \mu_i \cdot X_i \right]}
+#' \deqn{\frac{\partial LL_{\text{NBP}}}{\partial \eta} = \alpha \sum_{i=1}^n \left[ \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{\mu_i^{2-p}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right]}
+#' \deqn{\frac{\partial LL_{\text{NBP}}}{\partial p} = \sum_{i=1}^n \left[ \left( \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \cdot \frac{\partial}{\partial p} \left( \frac{\mu_i^{2-p}}{\alpha} \right) \right]}
 #'
 #' @import nlme  maxLik  MASS  stats modelr
-#' @export
+#' 
+#' @references 
+#' Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
+#' 
 #' @examples
-#' \donttest{
 #'
 #' ## NB-P model
 #' data("washington_roads")
@@ -77,41 +107,55 @@
 #'                         data=washington_roads, form = 'nb2',
 #'                         method = 'NM',
 #'                         max.iters=3000, ln.alpha.formula = ~ 1+lnlength)
-#' summary(nb2.overdispersion)}
+#' summary(nb2.overdispersion)
+#' 
+#' @export
 nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = 'BHHH', max.iters=200) {
-
+  
   mod_df <- stats::model.frame(formula, data)
   X <- as.matrix(modelr::model_matrix(data, formula))
   y <- as.numeric(stats::model.response(mod_df))
   x_names <- colnames(X)
-
+  
   # Use the Poisson as starting values
   p_model <- MASS::glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   a <- log(1/p_model$theta)
-
+  
   if (is.null(ln.alpha.formula)){
     if (!is.null(a)) {
       comb_start <- append(start, a)
+      alpha_X <- NULL
+      alpha_X_cols <- 1
     }
   }else{
     alpha_X <- stats::model.matrix(ln.alpha.formula, data)
-    alpha_names <- nlme::Names(ln.alpha.formula, data)
+    alpha_X_cols <- ncol(alpha_X)
+    alpha_names <- colnames(alpha_X)
     a_coefs <- rep(0, length(alpha_names))
     a_coefs[1] <- a
     if (!is.null(a_coefs)) {
       comb_start <- c(start, a_coefs)
     }
   }
-
-  if (!is.null(comb_start) & form=='nbp') {
+  
+  if (is.null(ln.alpha.formula)) {
+    x_names <- append(x_names, 'ln(alpha)')
+  } else {
+    x_names <- append(x_names, paste('ln(alpha): ', alpha_names))
+  }
+  
+  if (form=='nbp') {
     full_start <- append(comb_start, 1.5)
+    x_names <- append(x_names, 'P')
   } else{
     full_start <- comb_start
   }
-
-  modparams <- as.numeric(length(start)) # save the number of model coefficients, not including alpha or P
-
+  
+  names(full_start) <- x_names
+  
+  modparams <- as.numeric(ncol(X)) # save the number of model coefficients, not including alpha or P
+  
   nbp_prob <- function(observed, predicted, log_alpha, p) {
     alpha <- exp(log_alpha)
     mu <- predicted
@@ -124,104 +168,59 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = '
       return(stats::dnbinom(y, size = (mu^(2-p))/alpha, mu = mu))
     }
   }
-
-  reg.run <- function(beta, y, X, est_method){
-
-    params_split <- split(beta,ceiling(seq_along(beta) / modparams))
-
-    coefs <- as.vector(unlist(params_split[1]))
-    dist_params <- as.vector(unlist(params_split[2]))
-
-    if (form=='nbp'){
-      if (is.null(ln.alpha.formula)){
-        log_alpha <- dist_params[1]
-        p <- dist_params[2]
-      }else{
-        alpha_coefs <- dist_params[1:(length(dist_params)-1)]
-        log_alpha <- alpha_X %*% alpha_coefs
-        p <- dist_params[length(dist_params)]
-      }
-    } else{
-      if (is.null(ln.alpha.formula)){
-        log_alpha <- dist_params[1]
-      }else{
-        alpha_coefs <- dist_params
-        log_alpha <- alpha_X %*% alpha_coefs
-      }
-      p <- NULL
+  
+  reg.run <- function(params, y, X, alpha_X){
+    coefs <- params[1:modparams]
+    if (is.null(alpha_X)) {
+      log_alpha <- params[(modparams + 1)]
+    } else {
+      alpha_coefs <- params[(modparams + 1):(modparams+alpha_X_cols)]
+      
+      log_alpha <- alpha_X %*% alpha_coefs
     }
-
+    alpha <- exp(log_alpha)
+    mu <- exp(X %*% coefs)
+    
+    if (form=='nbp') p <- params[length(params)] else p <- NULL
+    
     predicted <- exp(X %*% coefs)
-
+    
     probs <- nbp_prob(y, predicted, log_alpha, p)
-
+    
     ll <- sum(log(probs))
-    if (est_method == 'bhhh' | est_method == 'BHHH'){
+    if (method == 'bhhh' | method == 'BHHH'){
       return(log(probs))
     } else{return(ll)}
   }
-
+  
+  # Run the maximum likelihood estimation
   fit <- maxLik::maxLik(reg.run,
-                start = full_start,
-                y = y,
-                X = X,
-                est_method = method,
-                method = method,
-                iterlim = max.iters)
-
+                        start = unname(full_start),
+                        y = y,
+                        X = X,
+                        alpha_X = alpha_X,
+                        method = method,
+                        iterlim = max.iters)
+  
   beta_est <- fit$estimate
-
-  betas <- split(beta_est,ceiling(seq_along(beta_est) / modparams))
-  beta_pred <- as.vector(unlist(betas[1]))
-
-  if (is.null(ln.alpha.formula)){
-    x_names <- append(x_names, 'ln(alpha)')
-  }else{
-    x_names <- append(x_names, paste('ln(alpha): ', alpha_names))
-  }
-
-  if (form=='nbp'){
-    x_names <- append(x_names, 'P')
-  }
-
+  alpha_coefs <- beta_est[(modparams + 1):(modparams + alpha_X_cols)]
+  
+  if (form=="nbp") p <- beta_est[length(beta_est)] else p <- NULL
+  
+  beta_pred <- beta_est[1:modparams]
+  
   names(fit$estimate) <- x_names
   fit$beta_pred <- beta_pred # save coefficients for predictions
   fit$formula <- formula
   fit$form <- form
+  fit$ln_alpha <- alpha_coefs # natural log of alpha or the parameters for it
+  fit$p <- p
   fit$modelType <- "nbg"
   fit$predictions <- exp(X %*% beta_pred)
   fit$observed <- y
   fit$residuals <- y - fit$predictions
   fit$LL <- fit$maximum # The log-likelihood of the model
-
-  # Estimate Poisson model for tests and pseudo R^2
-  pois_mod <- glm(formula, data, family = poisson(link = "log"))
-  base_mod <- glm(y ~ 1, family = poisson(link = "log"))
-
-  LLpoisson <- sum(dpois(pois_mod$y, pois_mod$fitted.values, log=TRUE))
-  LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
-
-  fit$LR <- -2*(LLpoisson - fit$LL) # LR Statistic
-  fit$LRdof <- length(x_names) - length(pois_mod$coefficients) # LR Degrees of Freedom
-  if (fit$LR>0) {
-    fit$LR_pvalue <- pchisq(fit$LR, fit$LRdof, lower.tail=FALSE)  # LR p-Value
-  }else{
-    fit$LR_pvalue <- 1
-  }
-
-  # Compute McFadden's Pseudo R^2, based on a Poisson intercept-only model
-  fit$PseudoR2 <- 1-fit$LL/LLbase
-
-
-  # Print out key model metrics
-  LRpval <- ifelse(fit$LR_pvalue<0.0001, "<0.0001", round(fit$LR_pvalue,4))
-  print('The Likelihood Ratio (LR) Test for H0: NB is No Better than Poisson')
-  print(paste('LR = ', round(fit$LR,4)))
-  print(paste('LR degrees of freedom = ', fit$LRdof))
-  print(paste('LR p-value = ', LRpval))
-  print(paste("Macfadden's Pseudo R^2 = ", round(fit$PseudoR2,4)))
-
-  # Note that this has the predictions, residuals, observed outcome, LR test, and pseudo-r^2 stored with the model
-
-  return(fit)
+  
+  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  return(obj)
 }

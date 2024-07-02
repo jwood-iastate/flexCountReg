@@ -33,10 +33,10 @@
 #' Halton draws are used to perform simulation over the lognormal distribution to solve the integral.
 #'
 #' @examples
-#' dpLnorm(0, mean=0.75, sigma=2, ndraws=2000)
-#' ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=500)
-#' qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=500)
-#' rpLnorm(30, mean=0.75,  sigma=2, ndraws=500)
+#' dpLnorm(0, mean=0.75, sigma=2, ndraws=10)
+#' ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
+#' qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
+#' rpLnorm(30, mean=0.75,  sigma=2, ndraws=10)
 #'
 #' @import stats randtoolbox
 #' @export
@@ -50,18 +50,18 @@ dpLnorm <- Vectorize(function(x, mean=1, sigma=1, ndraws=1500, log=FALSE){
     print('The values of `mean` and `sigma` have to have values greater than 0.')
     stop()
   }
-
+  
   # Generate Halton draws to use as quantile values
   h <- randtoolbox::halton(ndraws)
-
+  
   # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to lognormal values
   lnormdist <- exp(stats::qnorm(h, 0, sigma))
   mu_i <- outer(mean, lnormdist)
-
+  
   p_plogn.i <- sapply(mu_i, stats::dpois, x=x)
-
+  
   p <- mean(p_plogn.i)
-
+  
   if (log) return(log(p))
   else return(p)
 })
@@ -70,16 +70,16 @@ dpLnorm <- Vectorize(function(x, mean=1, sigma=1, ndraws=1500, log=FALSE){
 #' @export
 ppLnorm <- Vectorize(function(q, mean=1, sigma=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
   if(mean<=0 || sigma<=0){
-      print('The values of `mean` and `sigma` have to have values greater than 0.')
-      stop()
+    print('The values of `mean` and `sigma` have to have values greater than 0.')
+    stop()
   }
-
+  
   y <- seq(0,q,1)
   probs <- dpLnorm(y, mean, sigma=sigma, ndraws=ndraws)
   p <- sum(probs)
-
+  
   if(!lower.tail) p <- 1-p
-
+  
   if (log.p) return(log(p))
   else return(p)
 })
@@ -91,7 +91,7 @@ qpLnorm <- Vectorize(function(p, mean=1, sigma=1, ndraws=1500) {
     print('The values of `mean`  and `sigma` have to have values greater than 0.')
     stop()
   }
-
+  
   y <- 0
   p_value <- ppLnorm(y, mean, sigma=sigma, ndraws=ndraws)
   while(p_value < p){
@@ -109,8 +109,8 @@ rpLnorm <- function(n, mean=1, sigma=1, ndraws=1500) {
     print('The values of `mean` and `sigma` have to have values greater than 0.')
     stop()
   }
-
-  u <- runif(n)
+  
+  u <- stats::runif(n)
   y <- sapply(u, function(p) qpLnorm(p, mean, sigma=sigma, ndraws=ndraws))
   return(y)
 }

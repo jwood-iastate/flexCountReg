@@ -1,12 +1,12 @@
-#' Custom summary method for models with bootstrapped standard errors
+#' Custom summary method for flexCountReg models
 #' 
-#' @param object A model object with bootstrapped standard errors.
+#' @param object A flexCountReg model object.
 #' @param confint_level A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
 #' @param digits Number of digits (decimal places) to round to. Default is 3.
 #' 
-#' @import tibble
+#' @import tibble dplyr
 #' @details
-#' Bootstrapped standard errors are currently only implemented in \code{\link{pwiebreg}} and \code{\link{rppoisson}}.
+#' This summary method accounts for bootstrapped standard errors (when used). Bootstrapped standard errors are currently only implemented in \code{\link{pwiebreg}}.
 #' 
 #' @examples
 #' # Poisson-Weibull
@@ -18,6 +18,7 @@
 #' 
 #' @export
 summary.flexCountReg <- function(object, confint_level = 0.95, digits = 3) {
+  object <- object$model
   cat("Call:\n", deparse(object$formula), "\n")
   cat("\n", "Method: ", object$type, "\n")
   cat("Iterations: ", object$iterations, "\n")
@@ -31,7 +32,7 @@ summary.flexCountReg <- function(object, confint_level = 0.95, digits = 3) {
                               coeff = object$estimate, 
                               `Std. Err.` = object$bootstrapped_se)
   } else {
-    se <- sqrt(diag(solve(object$hessian)))
+    se <- sqrt(diag(-1/(object$hessian)))
     mod.sum <- tibble::tibble(parameter = names(object$estimate), 
                               coeff = object$estimate, 
                               `Std. Err.` = se)
@@ -49,6 +50,8 @@ summary.flexCountReg <- function(object, confint_level = 0.95, digits = 3) {
   mod.sum$`lower CI` <- mod.sum$coeff + ci_z.lower * mod.sum$`Std. Err.`
   mod.sum$`upper CI` <- mod.sum$coeff + ci_z.upper * mod.sum$`Std. Err.`
   
-  print(round(mod.sum, digits))
-
+  mod.sum <- mod.sum %>%
+    dplyr::mutate(across(where(is.numeric), round, digits = digits))
+  
+  print(mod.sum)
 }

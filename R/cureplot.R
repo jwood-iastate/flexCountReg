@@ -29,12 +29,6 @@
 #'       data = washington_roads, 
 #'       form = 'nb2')
 #' cureplot(nb_model)
-#'
-#' ## Example using a Poisson model with random parameters
-#' rp_model <- rppois(Total_crashes ~ lnlength + lnaadt, 
-#'                    rpar_formula = ~ speed50,
-#'                    data = washington_roads, ndraws = 100, method = "bfgs")
-#' cureplot(rp_model, method = "Simulated")
 #' }
 cureplot <- function(
     model, data = NULL, indvar = NULL, method = "Simulated", n_resamples = 0) {
@@ -67,8 +61,7 @@ cureplot <- function(
   
   # Create CURE Dataframe
   cure.df <- cureplots::calculate_cure_dataframe(indvar_values, resids)
-  ## ensure naming of variable is correct
-  names(cure.df)[1] <- ifelse(!is.null(indvar), indvar, "Predictions") 
+  names(cure.df)[1] <- ifelse(!is.null(indvar),indvar,"Predictions") # ensure naming of variable is correct
   
   # Generate CURE plot
   cureplots::cure_plot(cure.df, n_resamples = n_resamples)

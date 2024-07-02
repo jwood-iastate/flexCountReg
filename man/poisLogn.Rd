@@ -36,7 +36,7 @@ Poisson-Lognormal Regression
 This implements maximum simulated likelihood (MSL) to estimate a Poisson-Lognormal regression model. The regression model has the flexibility to model the dispersion parameter \eqn{\sigma} from the lognormal distribution as a function of independent variables, similar to the generalized negative binomial.
 
 #' The compound Probability Mass Function(PMF) for the Poisson-Lognormal distribution is:
-\deqn{f(y|\lambda,\theta,\alpha)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
+\deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 
 Where \eqn{\sigma} is a parameter for the lognormal distribution with the restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 

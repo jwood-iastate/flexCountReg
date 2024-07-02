@@ -1,4 +1,4 @@
-#' Poisson-Weibull Regression with Optional Random Parameters
+#' Poisson-Weibull Regression
 #'
 #' Estimates a Poisson-Weibull regression model with optional random parameters. 
 #' This function allows for the specification of parameters that can vary 
@@ -7,20 +7,12 @@
 #' @name pwiebreg
 #' @param formula A symbolic description of the model to be fitted, specifying the outcome
 #'        and the independent variables with fixed effects.
-#' @param rpar_formula An optional symbolic description of the model for random parameters,
-#'        excluding the outcome variable. Use 0 + vars or -1 + vars to exclude the intercept.
 #' @param alpha_formula A symbolic description of the model for the alpha parameter,
 #'        specifying the distribution parameter as a function of predictor variables.
 #' @param beta_formula A symbolic description of the model for the beta parameter,
 #'        specifying the distribution parameter as a function of predictor variables.
-#' @param data A dataframe containing all variables included in 'formula', 'rpar_formula', 'alpha_formula', and 'beta_formula'.
-#' @param rpardists An optional named vector specifying the distributions of the random parameters.
-#'        Possible values include normal ("n"), lognormal ("ln"), and others as needed.
-#'        Defaults to normal if not specified.
-#' @param ndraws The number of Halton draws for estimating random parameters.
-#' @param scrambled Boolean to determine if Halton sequences should be scrambled.
-#' @param correlated Boolean indicating if random parameters are correlated.
-#'        If TRUE, only normal distributions are used for random parameters.
+#' @param data A dataframe containing all variables included in 'formula', 'alpha_formula', and 'beta_formula'.
+#' @param ndraws The number of Halton draws for integrating the Weibull distribution.
 #' @param method Optimization method to be used for maximum likelihood estimation.
 #'        See `maxLik` documentation for options.
 #' @param max.iters Maximum number of iterations for the optimization method.
@@ -34,22 +26,35 @@
 #' @importFrom randtoolbox halton
 #' @include poisWeib.R
 #' 
+#' @details
+#' For the Poisson-Weibull Regression model, the expected values is:
+#' \deqn{E[Y]=\lambda\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}
+#' Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is the shape parameter, and \eqn{\beta} is the scale parameter.
+#' 
+#' To ensure that the regression model predicts the mean value, the regression utilizes:
+#' \deqn{\mu=\e^{X\gamma}=\lambda\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}
+#' Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a vector of coefficients. 
+#' 
+#' This leads to:
+#' \deqn{\lambda=\frac{\mu}{\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}}
+#' 
+#' The variance for the Poisson-Weibull regression is:
+#' 
+#'\deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}{\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+#' 
 #' @examples
 #' data("washington_roads")
 #' pw_rp <- pwiebreg(Total_crashes ~ lnlength + lnaadt,
-#'                                  rpar_formula = ~ speed50,
 #'                                  alpha_formula = ~ lnlength,
 #'                                  beta_formula = ~ lnaadt,
 #'                                  data = washington_roads,
-#'                                  ndraws = 10,
-#'                                  correlated = FALSE)
+#'                                  ndraws = 10
 #' print(summary(pw_rp))
 #' 
 #' @export
 pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, data,
-                                    rpardists = NULL, ndraws = 1500, scrambled = FALSE,
-                                    correlated = FALSE, method = 'BHHH', max.iters = 1000,
-                                    start.vals = NULL, print.level = 0, bootstraps = NULL) {
+                     ndraws = 1500,  method = 'BHHH', max.iters = 1000,
+                     start.vals = NULL, print.level = 0, bootstraps = NULL) {
   
   # Generate Halton sequences for the random parameters
   halton_draws <- function(ndraws, rpar, scrambled) {
@@ -61,53 +66,58 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
   # Prepare model matrices for fixed effects, random effects (if provided), alpha parameter, and beta parameter
   mod1_frame <- stats::model.frame(formula, data)
   X_Fixed <- model.matrix(formula, data)
-  X_alpha <- model.matrix(alpha_formula, data)
-  X_beta <- model.matrix(beta_formula, data)
-  y <- model.response(mod1_frame)
-  
-  if (!is.null(rpar_formula)) {
-    X_rand <- model.matrix(rpar_formula, data)
+  if (!is.null(alpha_formula)) {
+    X_alpha <- model.matrix(alpha_formula, data)
   } else {
-    X_rand <- NULL
+    X_alpha <- NULL
   }
   
+  if (!is.null(beta_formula)) {
+    X_beta <- model.matrix(beta_formula, data)
+  } else {
+    X_beta <- NULL
+  }
+  y <- model.response(mod1_frame)
+  
+  
   # Define the main function for computing log-likelihood
-  p_poisweibull_rp <- function(p, y, X_Fixed, X_rand, X_alpha, X_beta, ndraws, rpar, correlated, est_method) {
+  p_poisweibull_rp <- function(p, y, X_Fixed, X_rand, X_alpha, X_beta, ndraws, 
+                               rpar, correlated, est_method) {
     N_fixed = ncol(X_Fixed)
-    N_alpha = ncol(X_alpha)
-    N_beta = ncol(X_beta)
     coefs <- as.array(p)
     fixed_coefs <- head(coefs, N_fixed)
-    alpha_coefs <- coefs[(N_fixed + 1):(N_fixed + N_alpha)]
-    beta_coefs <- tail(coefs, N_beta)
     
-    mu_fixed <- exp(X_Fixed %*% fixed_coefs)
-    alpha <- exp(X_alpha %*% alpha_coefs)
-    beta <- exp(X_beta %*% beta_coefs)
-    
-    if (!is.null(X_rand)) {
-      N_rand = ncol(X_rand)
-      random_coefs_means <- tail(coefs, N_rand)
-      
-      draws <- if (correlated) {
-        # Correlated random effects implementation
-      } else {
-        rand_sdevs <- tail(coefs, N_rand)
-        hdraws <- halton_draws(ndraws, rpar, scrambled)
-        apply(hdraws, 1, function(x) stats::qnorm(x, mean = random_coefs_means, sd = rand_sdevs))
-      }
-      
-      xb_rand_mat <- sapply(draws, function(x) X_rand * x)
-      rpar_mat <- exp(xb_rand_mat)
-      pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
+    if (!is.null(alpha_formula)) {
+      N_alpha = ncol(X_alpha)
+      alpha_coefs <- coefs[(N_fixed+1):(N_fixed+N_alpha)]
+      alpha <- exp(X_alpha %*% alpha_coefs)
     } else {
-      pred_mat <- mu_fixed
+      N_alpha = 1
+      alpha_coefs <- coefs[(N_fixed+1)]
+      alpha <- exp(alpha_coefs)
     }
     
-    # Call the provided Poisson-Weibull density function
-    probs <- apply(pred_mat, 2, function(lambda) dpoisweibull(x = y, alpha = alpha, beta = beta, log = FALSE))
+    if (!is.null(beta_formula)) {
+      N_beta = ncol(X_beta)
+      beta_coefs <- coefs[(N_fixed+N_alpha+1):(N_fixed+N_alpha+N_beta)]
+      beta <- exp(X_beta %*% beta_coefs)
+    } else {
+      N_beta = coefs[length(coefs)]
+      beta <- exp(beta_coefs)
+    }
     
-    ll <- sum(log(rowMeans(probs)))
+    pred <- exp(X_Fixed %*% fixed_coefs)
+    
+    lambda <- pred/(beta*gamma(1+1/alpha))
+    
+    # Call the provided Poisson-Weibull density function
+    probs <- dpoisweibull(x = y, 
+                          lambda=lambda, 
+                          alpha = alpha,
+                          beta = beta, 
+                          log = FALSE)
+    
+    ll <- sum(log(probs))
     
     if (est_method == 'bhhh' || method == 'BHHH') {
       return(log(probs))
@@ -117,25 +127,16 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
   }
   
   # Initialize starting values if not provided
-  if (is.null(rpar_formula)) {
-    start <- if (is.null(start.vals)) {
-      coefs <- rep(0, ncol(X_Fixed) + ncol(X_alpha) + ncol(X_beta))
-    } else {
-      start.vals
-    }
+  start <- if (is.null(start.vals)) {
+    coefs <- rep(0, ncol(X_Fixed) + ncol(X_alpha) + ncol(X_beta))
   } else {
-    start <- if (is.null(start.vals)) {
-      coefs <- rep(0, ncol(X_Fixed) + ncol(X_rand) + ncol(X_alpha) + ncol(X_beta))
-    } else {
-      start.vals
-    }
+    start.vals
   }
   
   # Run the maximum likelihood estimation
   fit <- maxLik::maxLik(p_poisweibull_rp, start = start,
-                        y = y, X_Fixed = X_Fixed, X_rand = X_rand, X_alpha = X_alpha, X_beta = X_beta,
-                        ndraws = ndraws, rpar = if (!is.null(X_rand)) colnames(X_rand) else NULL,
-                        correlated = correlated, est_method = method,
+                        y = y, X_Fixed = X_Fixed,  X_alpha = X_alpha, X_beta = X_beta,
+                        ndraws = ndraws, est_method = method,
                         method = method, control = list(iterlim = max.iters, printLevel = print.level))
   
   # Optionally, compute bootstrapped standard errors
@@ -147,7 +148,6 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
       
       # Subset matrices and vector using sampled indices
       sampled_X_Fixed <- X_Fixed[sampled_indices, ]
-      sampled_X_rand <- if (!is.null(X_rand)) X_rand[sampled_indices, ] else NULL
       sampled_X_alpha <- X_alpha[sampled_indices, ]
       sampled_X_beta <- X_beta[sampled_indices, ]
       sampled_y <- y[sampled_indices]
@@ -156,12 +156,9 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
                                    start = start,
                                    y = sampled_y,
                                    X_Fixed = sampled_X_Fixed,
-                                   X_rand = sampled_X_rand,
                                    X_alpha = sampled_X_alpha,
                                    X_beta = sampled_X_beta,
                                    ndraws = ndraws,
-                                   rpar = if (!is.null(X_rand)) colnames(X_rand) else NULL,
-                                   correlated = correlated,
                                    est_method = method,
                                    method = method,
                                    control = list(iterlim = max.iters, 
@@ -174,7 +171,6 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
   }
   
   fit$coefficients = fit$estimate
-  fit$vcov = if (correlated) chol2inv(fit$hessian) else diag(ncol(X_rand))
   fit$se = if (!is.null(bootstraps) & is.numeric(bootstraps)) fit$bootstrapped_se else sqrt(diag(fit$hessian))
   fit$logLik = fit$minimum
   fit$converged = fit$convergence
@@ -182,14 +178,11 @@ pwiebreg <- function(formula, rpar_formula = NULL, alpha_formula, beta_formula, 
   fit$method = method
   fit$data = data
   fit$formula = formula
-  fit$rpar_formula = rpar_formula
   fit$alpha_formula = alpha_formula
   fit$beta_formula = beta_formula
-  fit$rpardists = rpardists
   fit$ndraws = ndraws
-  fit$scrambled = scrambled
-  fit$correlated = correlated
   fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
   
-  return(fit)
+  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  return(obj)
 }

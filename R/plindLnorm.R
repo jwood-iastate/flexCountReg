@@ -39,10 +39,10 @@
 #' Halton draws are used to perform simulation over the lognormal distribution to solve the integral.
 #'
 #' @examples
-#' dplindLnorm(0, mean=0.75, theta=7, sigma=2, ndraws=2000)
-#' pplindLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, sigma=2, ndraws=500)
-#' qplindLnorm(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, sigma=2, ndraws=500)
-#' rplindLnorm(30, mean=0.75, theta=7, sigma=2, ndraws=500)
+#' dplindLnorm(0, mean=0.75, theta=7, sigma=2, ndraws=10)
+#' pplindLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, sigma=2, ndraws=10)
+#' qplindLnorm(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, sigma=2, ndraws=10)
+#' rplindLnorm(3, mean=0.75, theta=7, sigma=2, ndraws=10)
 #'
 #' @import stats randtoolbox
 #' @include plind.R
@@ -73,20 +73,20 @@ dplindLnorm <- Vectorize(function(x, mean=1, theta = 1, sigma=1, lambda=NULL, nd
       stop()
     }
   }
-
+  
   # Generate Halton draws to use as quantile values
   h <- randtoolbox::halton(ndraws)
-
+  
   # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to lognormal values
   lnormdist <- exp(stats::qnorm(h, 0, sigma))
-
+  
   mu <- lambda*(theta+2)/(theta*(theta+1))
   mu_i <- outer(mu, lnormdist)
-
+  
   p_plind.i <- sapply(mu_i, function(y) dplind(x=x, mean=y, theta=theta))
-
+  
   p <- mean(p_plind.i)
-
+  
   if (log) return(log(p))
   else return(p)
 })
@@ -109,13 +109,13 @@ pplindLnorm <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, sigma=1, nd
       mean <- lambda*(theta+2)/(theta*(theta+1))*exp(sigma^2/2)
     }
   }
-
+  
   y <- seq(0,q,1)
   probs <- dplindLnorm(y, mean, theta, sigma=sigma, ndraws=ndraws)
   p <- sum(probs)
-
+  
   if(!lower.tail) p <- 1-p
-
+  
   if (log.p) return(log(p))
   else return(p)
 })
@@ -138,7 +138,7 @@ qplindLnorm <- Vectorize(function(p, mean=1, theta=1, sigma=1, ndraws=1500, lamb
       mean <- lambda*(theta+2)/(theta*(theta+1))*exp(sigma^2/2)
     }
   }
-
+  
   y <- 0
   p_value <- pplindLnorm(y, mean, theta, sigma=sigma, ndraws=ndraws)
   while(p_value < p){
@@ -167,7 +167,7 @@ rplindLnorm <- function(n, mean=1, theta=1, sigma=1, ndraws=1500, lambda=NULL) {
       mean <- lambda*(theta+2)/(theta*(theta+1))*exp(sigma^2/2)
     }
   }
-
+  
   u <- runif(n)
   y <- sapply(u, function(p) qplindLnorm(p, mean, theta, sigma=sigma, ndraws=ndraws))
   return(y)

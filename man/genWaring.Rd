@@ -19,17 +19,25 @@ genWaring(formula, data, method = "BHHH", max.iters = 1000)
 Function for estimating a Generalized Waring regression model
 }
 \details{
-## Generalized Waring Probability Mass Function, Mean, and Variance
+# Generalized Waring Probability Mass Function, Mean, and Variance
 The following are the versions of the PMF, mean, and variance used in this function. This is adjusted from the typical formulation by replacing parameter \code{k} with \eqn{\mu}
-\deqn{PMF=\frac{\Gamma(\alpha+\rho)}{\Gamma(\alpha)\Gamma(\rho)}\left(\frac{\alpha}{\mu(\rho-1)}\right)^{\alpha-1}\left(1+\frac{\alpha}{\mu(\rho-1)}\right)^{-(\alpha+\rho)}}
-\deqn{\mu=e^{X\beta}}
-\deqn{\sigma^2=\mu+\left(\frac{\frac{\mu(\rho-1)}{\alpha}+1}{\rho-2}\right)\mu+\left(\frac{\frac{\mu(\rho-1)}{\alpha}+\rho+1}{\frac{\mu(\rho-1)}{\alpha}(\rho-2)}\right)\mu^2}
+\deqn{PMF=\frac{\Gamma(\alpha+\gamma)\Gamma(\alpha+\rho+x)\Gamma(\rho+\gamma)}{\Gamma(\alpha+\rho)\Gamma(\gamma+\rho+x)\Gamma(\alpha+\gamma+\rho+x)}\left(\frac{\rho}{\alpha+\rho}\right)}
+\deqn{\mu=e^{X\beta}=\frac{\alpha\rho}{\gamma(\alpha+\rho)}}
+\deqn{\sigma^2=\frac{\alpha\rho(\alpha+\rho+\gamma)}{\gamma^2(\alpha+\rho)^2(\alpha+\rho+1)}}
+
 Where \eqn{\alpha} and \eqn{\rho} are distribution parameters with the constraints that \eqn{\alpha\geq 0} and \eqn{\rho\geq 0}, \eqn{X} is a matrix of predictors, and \eqn{\beta} is a vector of coefficients.
+
+If we use:
+\deqn{\gamma=\frac{\mu(\alpha+\rho)}{\alpha\rho}}
+
+The PMF becomes:
+
+\deqn{PMF=\frac{\Gamma(\alpha + \rho) \Gamma\left(\alpha + \frac{2\mu}{\rho} + x\right) \Gamma\left(\frac{2\mu}{\rho} + \rho\right)}{\Gamma\left(\alpha + \frac{2\mu}{\rho}\right) \Gamma\left(\frac{2\mu}{\rho} + \rho + x\right) \Gamma\left(\alpha + \rho + \frac{2\mu}{\rho} + x\right)} \left( \frac{\frac{2\mu}{\rho}}{\alpha + \frac{2\mu}{\rho}} \right)}
 }
 \examples{
 \donttest{
 
-## Generalized Waring Model
+# Generalized Waring Model
 data("washington_roads")
 washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
 genwaring.mod <- genWaring(Total_crashes ~ lnaadt + lnlength + speed50 +

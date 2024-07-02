@@ -5,6 +5,7 @@
 #' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}}.
 #' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}.
 #' @param ndraws the number of Halton draws to use for the integration over the gamma distribution.
+#' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform.
 #'
 #' @import nlme  maxLik  MASS  stats modelr
@@ -36,7 +37,7 @@
 #'                                 max.iters = 1000)
 #' summary(poislindlnorm.mod)}
 #' @export
-poisLindLnorm <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters = 1000) {
+poisLindLnorm <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters = 1000, print.level=0) {
 
   mod_df <- stats::model.frame(formula, data)
   X <- as.matrix(modelr::model_matrix(data, formula))
@@ -75,7 +76,7 @@ poisLindLnorm <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters
                 X = X,
                 est_method = method,
                 method = method,
-                control = list(iterlim = max.iters))
+                control = list(iterlim = max.iters, printLevel= print.level))
 
   beta_est <- fit$estimate
   npars <- length(beta_est)-2
@@ -100,34 +101,6 @@ poisLindLnorm <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters
   fit$LL <- fit$maximum # The log-likelihood of the model
   fit$modelType <- "poisLindLnorm"
 
-  # Estimate Poisson model for tests and pseudo R^2
-  pois_mod <- glm(formula, data, family = poisson(link = "log"))
-  base_mod <- glm(y ~ 1, family = poisson(link = "log"))
-
-  LLpoisson <- sum(dpois(pois_mod$y, pois_mod$fitted.values, log=TRUE))
-  LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
-
-  fit$LR <- -2*(LLpoisson - fit$LL) # LR Statistic
-  fit$LRdof <- length(x_names) - length(pois_mod$coefficients) # LR Degrees of Freedom
-  if (fit$LR>0) {
-    fit$LR_pvalue <- pchisq(fit$LR, fit$LRdof, lower.tail=FALSE)  # LR p-Value
-  }else{
-    fit$LR_pvalue <- 1
-  }
-
-  # Compute McFadden's Pseudo R^2, based on a Poisson intercept-only model
-  fit$PseudoR2 <- 1-fit$LL/LLbase
-
-
-  # Print out key model metrics
-  LRpval <- ifelse(fit$LR_pvalue<0.0001, "<0.0001", round(fit$LR_pvalue,4))
-  print('The Likelihood Ratio (LR) Test for H0: Poisson-Lindley is No Better than the Poisson')
-  print(paste('LR = ', round(fit$LR,4)))
-  print(paste('LR degrees of freedom = ', fit$LRdof))
-  print(paste('LR p-value = ', LRpval))
-  print(paste("Macfadden's Pseudo R^2 = ", round(fit$PseudoR2,4)))
-
-  # Note that this has the predictions, residuals, observed outcome, LR test, and pseudo-r^2 stored with the model
-
-  return(fit)
+  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  return(obj)
 }

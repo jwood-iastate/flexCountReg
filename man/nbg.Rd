@@ -40,10 +40,38 @@ Function for estimating a variety of negative binomial models (NB-1, NB-2,
 NB-P and generalized versions of each)
 }
 \details{
-The NB-1, NB-2, and NB-P versions of the negative binomial distribution
+The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
+based on Greene (2008).  The details of each of these are provided below.
+
+# NB-1 Distribution
+The PMF and log-likelihood functions are:
+\deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu}{\alpha})}{y! \, \Gamma(\frac{\mu}{\alpha})} \left( \frac{\frac{\mu}{\alpha}}{\frac{\mu}{\alpha} + \mu} \right)^{\frac{\mu}{\alpha}} \left( \frac{\mu}{\frac{\mu}{\alpha} + \mu} \right)^y}
+\deqn{LL_{\text{NB1}}(\beta, \alpha) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i}{\alpha} \right) - \ln y_i! + \frac{\mu_i}{\alpha} \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \right]}
+
+The Gradients are:
+\deqn{\frac{\partial LL_{\text{NB1}}}{\partial \beta} = \sum_{i=1}^n \left[ \left( \psi\left(y_i + \frac{\mu_i}{\alpha}\right) - \psi\left(\frac{\mu_i}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) - \frac{y_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \cdot \mu_i \cdot X_i \right]}
+\deqn{\frac{\partial LL_{\text{NB1}}}{\partial \eta} = \alpha \sum_{i=1}^n \left[ \psi\left(y_i + \frac{\mu_i}{\alpha}\right) - \psi\left(\frac{\mu_i}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) - \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right]}
+
+# NB-2 Distribution
+The PMF and log-likelihood functions are:
+\deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} \left( \frac{\alpha}{\alpha + \mu} \right)^\alpha \left( \frac{\mu}{\alpha + \mu} \right)^y}
+\deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - \ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
+
+The Gradients are:
+\deqn{\frac{\partial LL_{\text{NB2}}}{\partial \beta} = \sum_{i=1}^n \left[ \left( \psi(y_i + \alpha) - \psi(\alpha) + \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) - \frac{y_i}{\alpha + \mu_i} \right) \cdot \mu_i \cdot X_i \right]}
+\deqn{\frac{\partial LL_{\text{NB2}}}{\partial \eta} = \alpha \sum_{i=1}^n \left[ \psi(y_i + \alpha) - \psi(\alpha) + \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) - \frac{\mu_i}{\alpha + \mu_i} \right]}
+
+# NB-P distribution
+The PMF and log-likelihood functions are:
+\deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu^{2-p}}{\alpha})}{y! \, \Gamma(\frac{\mu^{2-p}}{\alpha})} \left( \frac{\frac{\mu^{2-p}}{\alpha}}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^{\frac{\mu^{2-p}}{\alpha}} \left( \frac{\mu}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^y}
+\deqn{LL_{\text{NBP}}(\beta, \alpha, p) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i^{2-p}}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i^{2-p}}{\alpha} \right) - \ln y_i! + \frac{\mu_i^{2-p}}{\alpha} \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \right]}
+
+The Gradients are:
+\deqn{\frac{\partial LL_{\text{NBP}}}{\partial \beta} = \sum_{i=1}^n \left[ \left( \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{y_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \cdot \mu_i \cdot X_i \right]}
+\deqn{\frac{\partial LL_{\text{NBP}}}{\partial \eta} = \alpha \sum_{i=1}^n \left[ \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{\mu_i^{2-p}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right]}
+\deqn{\frac{\partial LL_{\text{NBP}}}{\partial p} = \sum_{i=1}^n \left[ \left( \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \cdot \frac{\partial}{\partial p} \left( \frac{\mu_i^{2-p}}{\alpha} \right) \right]}
 }
 \examples{
-\donttest{
 
 ## NB-P model
 data("washington_roads")
@@ -96,5 +124,9 @@ nb2.overdispersion <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
                         data=washington_roads, form = 'nb2',
                         method = 'NM',
                         max.iters=3000, ln.alpha.formula = ~ 1+lnlength)
-summary(nb2.overdispersion)}
+summary(nb2.overdispersion)
+
+}
+\references{
+Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
 }

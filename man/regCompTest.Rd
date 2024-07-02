@@ -6,7 +6,7 @@
 \usage{
 regCompTest(
   model,
-  data,
+  data = NULL,
   basemodel = "Poisson",
   variables = FALSE,
   print = FALSE,
@@ -16,7 +16,7 @@ regCompTest(
 \arguments{
 \item{model}{A fitted regression model object.}
 
-\item{data}{A data frame containing the variables in the model.}
+\item{data}{An options data frame containing the variables in the model. If not supplied, the original data used to estimate the model will be used.}
 
 \item{basemodel}{A character string specifying the type of base model to compare against. Default is "Poisson". Other options include any model specified from the \code{\link{flexCountReg}} function.}
 
@@ -69,6 +69,6 @@ nbp.base <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
                     ShouldWidth04 + AADTover10k,
                     data=washington_roads, form = 'nbp', method = 'NM',
                     max.iters=3000)
-comptests <- regCompTest(nbp.base, washington_roads, basemodel="NB2", print=TRUE)
+regCompTest(nbp.base, washington_roads, basemodel="NB2", print=TRUE)
 
 }

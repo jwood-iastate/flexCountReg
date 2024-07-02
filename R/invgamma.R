@@ -21,7 +21,7 @@
 #'
 #' \code{rinvgamma} generates random numbers from the Inverse-Gamma Distribution.
 #'
-#' The Probability Density Function (PDF) for the Inverse-Gamma distribution:
+#' The compound Probability Mass Function (PMF) for the Inverse-Gamma distribution:
 #' \deqn{f(x|\alpha,\beta)=\frac{\beta^\alpha}{\Gamma(\alpha)}\left(\frac{1}{x}\right)^{\alpha+1}e^{-\frac{\beta}{x}}}
 #' 
 #' Where \eqn{\alpha} is the shape parameter and \eqn{\beta} is a scale parameter with the restrictions that \eqn{\alpha>0} and \eqn{\eta>0}, and \eqn{x>0}.

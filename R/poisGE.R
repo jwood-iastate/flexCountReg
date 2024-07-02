@@ -41,7 +41,7 @@
 #' summary(poisge.mod)
 #' }
 poisGE <- function(formula, data,  ln.scale.formula = NULL, ndraws=1500, 
-                     method = 'BHHH', max.iters=200, print.level=0) {
+                   method = 'BHHH', max.iters=200, print.level=0) {
   
   mod_df <- stats::model.frame(formula, data)
   X <- as.matrix(modelr::model_matrix(data, formula))
@@ -76,7 +76,7 @@ poisGE <- function(formula, data,  ln.scale.formula = NULL, ndraws=1500,
     
     
     if (is.null(ln.scale.formula)){
-      scale <- dist_params[2]
+      scale <- exp(dist_params[2])
     }else{
       scale_pars <- dist_params[2:length(dist_params)]
       scale <- exp(S %*% scale_pars)
@@ -137,34 +137,6 @@ poisGE <- function(formula, data,  ln.scale.formula = NULL, ndraws=1500,
   fit$residuals <- y - fit$predictions
   fit$LL <- fit$maximum # The log-likelihood of the model
   
-  # Estimate Poisson model for tests and pseudo R^2
-  pois_mod <- glm(formula, data, family = poisson(link = "log"))
-  base_mod <- glm(y ~ 1, family = poisson(link = "log"))
-  
-  LLpoisson <- sum(dpois(pois_mod$y, pois_mod$fitted.values, log=TRUE))
-  LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
-  
-  fit$LR <- -2*(LLpoisson - fit$LL) # LR Statistic
-  fit$LRdof <- length(x_names) - length(pois_mod$coefficients) # LR Degrees of Freedom
-  if (fit$LR>0) {
-    fit$LR_pvalue <- pchisq(fit$LR, fit$LRdof, lower.tail=FALSE)  # LR p-Value
-  }else{
-    fit$LR_pvalue <- 1
-  }
-  
-  # Compute McFadden's Pseudo R^2, based on a Poisson intercept-only model
-  fit$PseudoR2 <- 1-fit$LL/LLbase
-  
-  
-  # Print out key model metrics
-  LRpval <- ifelse(fit$LR_pvalue<0.0001, "<0.0001", round(fit$LR_pvalue,4))
-  print('The Likelihood Ratio (LR) Test for H0: NB is No Better than Poisson')
-  print(paste('LR = ', round(fit$LR,4)))
-  print(paste('LR degrees of freedom = ', fit$LRdof))
-  print(paste('LR p-value = ', LRpval))
-  print(paste("Macfadden's Pseudo R^2 = ", round(fit$PseudoR2,4)))
-  
-  # Note that this has the predictions, residuals, observed outcome, LR test, and pseudo-r^2 stored with the model
-  
-  return(fit)
+  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  return(obj)
 }

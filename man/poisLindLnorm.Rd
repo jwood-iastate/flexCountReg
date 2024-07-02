@@ -4,7 +4,14 @@
 \alias{poisLindLnorm}
 \title{Function for estimating a Poisson-Lindley-Lognormal regression model}
 \usage{
-poisLindLnorm(formula, data, method = "BHHH", ndraws = 1500, max.iters = 1000)
+poisLindLnorm(
+  formula,
+  data,
+  method = "BHHH",
+  ndraws = 1500,
+  max.iters = 1000,
+  print.level = 0
+)
 }
 \arguments{
 \item{formula}{an R formula.}
@@ -16,6 +23,8 @@ poisLindLnorm(formula, data, method = "BHHH", ndraws = 1500, max.iters = 1000)
 \item{ndraws}{the number of Halton draws to use for the integration over the gamma distribution.}
 
 \item{max.iters}{the maximum number of iterations to allow the optimization method to perform.}
+
+\item{print.level}{determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.}
 }
 \description{
 Function for estimating a Poisson-Lindley-Lognormal regression model

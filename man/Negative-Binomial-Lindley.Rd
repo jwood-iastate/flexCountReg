@@ -86,10 +86,10 @@ The default is to use the input mean value for the distribution. However, the la
 Halton draws are used to perform simulation over the gamma distribution to solve the integral.
 }
 \examples{
-dplindGamma(0, mean=0.75, theta=7, alpha=2, ndraws=2000)
-pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=500)
+dplindGamma(0, mean=0.75, theta=7, alpha=2, ndraws=10)
+pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=10)
 qplindGamma(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, alpha=2,
-              ndraws=500)
-rplindGamma(30, lambda=4.67, theta=7, alpha=2, ndraws=500)
+              ndraws=10)
+rplindGamma(3, lambda=4.67, theta=7, alpha=2, ndraws=10)
 
 }

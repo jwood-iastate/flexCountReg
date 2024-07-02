@@ -2,7 +2,7 @@
 % Please edit documentation in R/pwiebreg.R
 \name{pwiebreg}
 \alias{pwiebreg}
-\title{Poisson-Weibull Regression with Optional Random Parameters}
+\title{Poisson-Weibull Regression}
 \usage{
 pwiebreg(
   formula,
@@ -10,10 +10,7 @@ pwiebreg(
   alpha_formula,
   beta_formula,
   data,
-  rpardists = NULL,
   ndraws = 1500,
-  scrambled = FALSE,
-  correlated = FALSE,
   method = "BHHH",
   max.iters = 1000,
   start.vals = NULL,
@@ -25,27 +22,15 @@ pwiebreg(
 \item{formula}{A symbolic description of the model to be fitted, specifying the outcome
 and the independent variables with fixed effects.}
 
-\item{rpar_formula}{An optional symbolic description of the model for random parameters,
-excluding the outcome variable. Use 0 + vars or -1 + vars to exclude the intercept.}
-
 \item{alpha_formula}{A symbolic description of the model for the alpha parameter,
 specifying the distribution parameter as a function of predictor variables.}
 
 \item{beta_formula}{A symbolic description of the model for the beta parameter,
 specifying the distribution parameter as a function of predictor variables.}
 
-\item{data}{A dataframe containing all variables included in 'formula', 'rpar_formula', 'alpha_formula', and 'beta_formula'.}
+\item{data}{A dataframe containing all variables included in 'formula', 'alpha_formula', and 'beta_formula'.}
 
-\item{rpardists}{An optional named vector specifying the distributions of the random parameters.
-Possible values include normal ("n"), lognormal ("ln"), and others as needed.
-Defaults to normal if not specified.}
-
-\item{ndraws}{The number of Halton draws for estimating random parameters.}
-
-\item{scrambled}{Boolean to determine if Halton sequences should be scrambled.}
-
-\item{correlated}{Boolean indicating if random parameters are correlated.
-If TRUE, only normal distributions are used for random parameters.}
+\item{ndraws}{The number of Halton draws for integrating the Weibull distribution.}
 
 \item{method}{Optimization method to be used for maximum likelihood estimation.
 See `maxLik` documentation for options.}
@@ -64,15 +49,29 @@ Estimates a Poisson-Weibull regression model with optional random parameters.
 This function allows for the specification of parameters that can vary 
 randomly across observations, modeled through the inclusion of Halton draws.
 }
+\details{
+For the Poisson-Weibull Regression model, the expected values is:
+\deqn{E[Y]=\lambda\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}
+Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is the shape parameter, and \eqn{\beta} is the scale parameter.
+
+To ensure that the regression model predicts the mean value, the regression utilizes:
+\deqn{\mu=\e^{X\gamma}=\lambda\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}
+Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a vector of coefficients. 
+
+This leads to:
+\deqn{\lambda=\frac{\mu}{\beta\Gamma\left(1+\\frac{1}{\alpha}\right)}}
+
+The variance for the Poisson-Weibull regression is:
+
+\deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}{\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+}
 \examples{
 data("washington_roads")
 pw_rp <- pwiebreg(Total_crashes ~ lnlength + lnaadt,
-                                 rpar_formula = ~ speed50,
                                  alpha_formula = ~ lnlength,
                                  beta_formula = ~ lnaadt,
                                  data = washington_roads,
-                                 ndraws = 10,
-                                 correlated = FALSE)
+                                 ndraws = 10
 print(summary(pw_rp))
 
 }

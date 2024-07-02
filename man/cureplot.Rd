@@ -43,11 +43,5 @@ nb_model <-
       data = washington_roads, 
       form = 'nb2')
 cureplot(nb_model)
-
-## Example using a Poisson model with random parameters
-rp_model <- rppois(Total_crashes ~ lnlength + lnaadt, 
-                   rpar_formula = ~ speed50,
-                   data = washington_roads, ndraws = 100, method = "bfgs")
-cureplot(rp_model, method = "Simulated")
 }
 }

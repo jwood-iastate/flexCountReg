@@ -13,7 +13,7 @@
 #' This implements maximum simulated likelihood (MSL) to estimate a Poisson-Lognormal regression model. The regression model has the flexibility to model the dispersion parameter \eqn{\sigma} from the lognormal distribution as a function of independent variables, similar to the generalized negative binomial.
 #'
 #' #' The compound Probability Mass Function(PMF) for the Poisson-Lognormal distribution is:
-#' \deqn{f(y|\lambda,\theta,\alpha)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
+#' \deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 #'
 #' Where \eqn{\sigma} is a parameter for the lognormal distribution with the restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 #'
@@ -100,10 +100,6 @@ poisLogn <- function(formula, data,  ln.sigma.formula = NULL, ndraws=1500,
     
     predicted <- exp(X %*% coefs)
     
-    # print(paste('The min value of the mean is ', min(predicted), " and the max is ", max(predicted)))
-    
-    # print(paste('The min value of the standard deviation is ', min(sigma), " and the max is ", max(sigma)))
-    
     probs <- dpLnorm(x=y, mean=predicted, sigma=sigma, ndraws=ndraws)
     
     ll <- sum(log(probs))
@@ -154,34 +150,6 @@ poisLogn <- function(formula, data,  ln.sigma.formula = NULL, ndraws=1500,
   fit$residuals <- y - fit$predictions
   fit$LL <- fit$maximum # The log-likelihood of the model
   
-  # Estimate Poisson model for tests and pseudo R^2
-  pois_mod <- glm(formula, data, family = poisson(link = "log"))
-  base_mod <- glm(y ~ 1, family = poisson(link = "log"))
-  
-  LLpoisson <- sum(dpois(pois_mod$y, pois_mod$fitted.values, log=TRUE))
-  LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
-  
-  fit$LR <- -2*(LLpoisson - fit$LL) # LR Statistic
-  fit$LRdof <- length(x_names) - length(pois_mod$coefficients) # LR Degrees of Freedom
-  if (fit$LR>0) {
-    fit$LR_pvalue <- pchisq(fit$LR, fit$LRdof, lower.tail=FALSE)  # LR p-Value
-  }else{
-    fit$LR_pvalue <- 1
-  }
-  
-  # Compute McFadden's Pseudo R^2, based on a Poisson intercept-only model
-  fit$PseudoR2 <- 1-fit$LL/LLbase
-  
-  
-  # Print out key model metrics
-  LRpval <- ifelse(fit$LR_pvalue<0.0001, "<0.0001", round(fit$LR_pvalue,4))
-  print('The Likelihood Ratio (LR) Test for H0: NB is No Better than Poisson')
-  print(paste('LR = ', round(fit$LR,4)))
-  print(paste('LR degrees of freedom = ', fit$LRdof))
-  print(paste('LR p-value = ', LRpval))
-  print(paste("Macfadden's Pseudo R^2 = ", round(fit$PseudoR2,4)))
-  
-  # Note that this has the predictions, residuals, observed outcome, LR test, and pseudo-r^2 stored with the model
-  
-  return(fit)
+  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  return(obj)
 }

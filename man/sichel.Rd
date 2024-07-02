@@ -21,14 +21,12 @@ method to perform.}
 Function for estimating a Sichel regression model
 }
 \details{
-The Sichel regression model is based on the Sichel Distribution .
-
 The expected value of the distribution in the regression utilizes a log-link
 function. Thus, the mean is: \deqn{\mu=e^{X\beta}}
 
 The variance is:
 \deqn{
-   \sigma^2= 
+   V[y]= 
      \mu + 
      \left(\frac{2\sigma(\gamma+1)}{c} + \frac{1}{c^2} - 1\right) \mu^2}
 

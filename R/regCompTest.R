@@ -2,8 +2,9 @@
 #'
 #' This function compares a given regression model to a base model using the Likelihood Ratio (LR) test, Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC).
 #'
+#' @name regCompTest
 #' @param model A fitted regression model object.
-#' @param data A data frame containing the variables in the model.
+#' @param data An options data frame containing the variables in the model. If not supplied, the original data used to estimate the model will be used.
 #' @param basemodel A character string specifying the type of base model to compare against. Default is "Poisson". Other options include any model specified from the \code{\link{flexCountReg}} function.
 #' @param variables Logical. If \code{TRUE}, the base model will include the same variables as the provided model. If \code{FALSE}, the base model will be an intercept-only model. Default is \code{FALSE}.
 #' @param print Logical. If \code{TRUE}, a table of the results will be shown. If \code{FALSE}, the table of results will not be printed to the console.
@@ -50,12 +51,15 @@
 #'                     ShouldWidth04 + AADTover10k,
 #'                     data=washington_roads, form = 'nbp', method = 'NM',
 #'                     max.iters=3000)
-#' comptests <- regCompTest(nbp.base, washington_roads, basemodel="NB2", print=TRUE)
+#' regCompTest(nbp.base, washington_roads, basemodel="NB2", print=TRUE)
 #' 
 #' @export
-regCompTest <- function(model, data, basemodel = "Poisson", variables = FALSE, print=FALSE, ...){
+regCompTest <- function(model, data=NULL, basemodel = "Poisson", variables = FALSE, print=FALSE, ...){
+  if(is.null(data)){ # Use object data if no new data are provided
+    data <- model$data
+  }
   
-  test <- c()
+  model <- model$model
   
   formula <- model$formula
   mod_df <- stats::model.frame(formula, data)
@@ -69,6 +73,7 @@ regCompTest <- function(model, data, basemodel = "Poisson", variables = FALSE, p
     }
     else{
       base_mod <- flexCountReg(formula, data, dist=basemodel, rpar_formula=NULL, ...)
+      base_mod <- base_mod$model
     }
   }
   else{
@@ -77,6 +82,7 @@ regCompTest <- function(model, data, basemodel = "Poisson", variables = FALSE, p
     }
     else{
       base_mod <- flexCountReg(y ~ 1, data, dist=basemodel, rpar_formula=NULL, ...)
+      base_mod <- base_mod$model
     }
   }
   
@@ -98,6 +104,8 @@ regCompTest <- function(model, data, basemodel = "Poisson", variables = FALSE, p
   
   # number of coefficients in the model provided
   n.coef <- length(model$estimate)
+  
+  test<-c()
   
   test$LL <- LL
   test$LLbase <- LLbase
@@ -139,7 +147,7 @@ regCompTest <- function(model, data, basemodel = "Poisson", variables = FALSE, p
               round(test$BIC, 4), 
               round(test$LR, 4), 
               test$LRdof, 
-              ifelse(test$LR_pvalue < 0.0001, "<0.0001", round(test$LR_pvalue, 4)), 
+              round(test$LR_pvalue, 4), 
               round(test$PseudoR2, 4)),
     BaseModel = c(round(test$AICbase, 4), 
                   round(test$BICbase, 4), 

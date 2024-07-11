@@ -7,7 +7,8 @@
 #' @param form optional parameter indicating which formulation to use. Options include "Type 1" which is the standard form (and is the default) or "Type 2" which follows the formulation by Dean et. al. (1987).
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform.
 #'
-#' @import nlme  maxLik  MASS  stats modelr
+#' @import maxLik  stats modelr
+#' @importFrom MASS glm.nb
 #' @include pinvgaus.R
 #'
 #' @details
@@ -47,7 +48,7 @@ poisInvGaus <- function(formula, data, form ="Type 1", method = 'BHHH', max.iter
   x_names <- colnames(X)
 
   # Use the Negative Binomial as starting values
-  p_model <- MASS::glm.nb(formula, data = data)
+  p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   eta <- 1/p_model$theta # intital eta
 

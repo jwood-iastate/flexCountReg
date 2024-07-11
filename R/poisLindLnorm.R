@@ -8,7 +8,8 @@
 #' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform.
 #'
-#' @import nlme  maxLik  MASS  stats modelr
+#' @import maxLik   stats modelr
+#' @importFrom MASS glm.nb
 #' @include plindLnorm.R
 #'
 #' @details
@@ -45,7 +46,7 @@ poisLindLnorm <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters
   x_names <- colnames(X)
 
   # Use the Poisson as starting values
-  p_model <- MASS::glm.nb(formula, data = data)
+  p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   start <- append(start, 0) # inital log(theta)
   full_start <- append(start, 0) # initial value for log(sigma)

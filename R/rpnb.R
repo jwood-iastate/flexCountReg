@@ -13,7 +13,8 @@
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform,
 #' @param start.vals an optional vector of starting values for the regression coefficients
 #' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
-#' @import MASS nlme randtoolbox maxLik stats modelr
+#' @import randtoolbox maxLik stats modelr
+#' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
 #' @include tri.R
 #'
@@ -163,7 +164,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     x_names <- names(start.vals)
   }
   else{
-    nb_model <- MASS::glm.nb(nb_formula, data)
+    nb_model <- glm.nb(nb_formula, data)
     params <- coef(nb_model)
     Lparams <- length(params)
     Lrpar = length(rpar)

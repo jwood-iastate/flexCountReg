@@ -8,7 +8,8 @@
 #' @param max.iters the maximum number of iterations to allow the optimization
 #'   method to perform.
 #'
-#' @import nlme  maxLik  MASS  stats modelr
+#' @import maxLik  stats modelr
+#' @importFrom MASS glm.nb
 #' @include psichel.R
 #'
 #' @details
@@ -46,7 +47,7 @@ sichel <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   x_names <- colnames(X)
 
   # Use the Negative Binomial as starting values
-  p_model <- MASS::glm.nb(formula, data = data)
+  p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   lnsigma <- 0 # initial ln(sigma)
   gamma <- 1 # initial gamma

@@ -49,7 +49,8 @@
 #' \deqn{\frac{\partial LL_{\text{NBP}}}{\partial \eta} = \alpha \sum_{i=1}^n \left[ \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{\mu_i^{2-p}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right]}
 #' \deqn{\frac{\partial LL_{\text{NBP}}}{\partial p} = \sum_{i=1}^n \left[ \left( \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \cdot \frac{\partial}{\partial p} \left( \frac{\mu_i^{2-p}}{\alpha} \right) \right]}
 #'
-#' @import nlme  maxLik  MASS  stats modelr
+#' @import maxLik  stats modelr
+#' @importFrom MASS glm.nb
 #' 
 #' @references 
 #' Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
@@ -118,7 +119,7 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = '
   x_names <- colnames(X)
   
   # Use the Poisson as starting values
-  p_model <- MASS::glm.nb(formula, data = data)
+  p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   a <- log(1/p_model$theta)
   

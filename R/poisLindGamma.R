@@ -7,7 +7,8 @@
 #' @param ndraws the number of Halton draws to use for the integration over the gamma distribution.
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform.
 #'
-#' @import nlme  maxLik  MASS  stats modelr
+#' @import maxLik  stats modelr
+#' @importFrom MASS glm.nb
 #' @include plindGamma.R
 #'
 #' @details
@@ -44,7 +45,7 @@ poisLindGamma <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters
   x_names <- colnames(X)
 
   # Use the Poisson as starting values
-  p_model <- MASS::glm.nb(formula, data = data)
+  p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   start <- append(start, 0) # inital log(theta)
   full_start <- append(start, 0) # initial value for log(alpha)

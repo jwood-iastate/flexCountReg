@@ -13,7 +13,7 @@
 #'   observed for all observations. This is due to the use of Bayesian methods
 #'   for computing the individual observation coefficients.
 #'
-#' @import nlme randtoolbox stats lamW modelr
+#' @import randtoolbox stats lamW modelr
 #' @importFrom utils head  tail
 #' @include tri.R
 #'

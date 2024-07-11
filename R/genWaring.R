@@ -22,7 +22,8 @@
 #' 
 #' \deqn{PMF=\frac{\Gamma(\alpha + \rho) \Gamma\left(\alpha + \frac{2\mu}{\rho} + x\right) \Gamma\left(\frac{2\mu}{\rho} + \rho\right)}{\Gamma\left(\alpha + \frac{2\mu}{\rho}\right) \Gamma\left(\frac{2\mu}{\rho} + \rho + x\right) \Gamma\left(\alpha + \rho + \frac{2\mu}{\rho} + x\right)} \left( \frac{\frac{2\mu}{\rho}}{\alpha + \frac{2\mu}{\rho}} \right)}
 #'
-#'@import nlme  maxLik  MASS stats
+#' @import maxLik stats
+#' @importFrom MASS glm.nb
 #' @examples
 #' \donttest{
 #'
@@ -41,7 +42,7 @@ genWaring <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   x_names <- colnames(X)
   
   # Use the Poisson as starting values
-  p_model <- MASS::glm.nb(formula, data = data)
+  p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   start <- append(start, 1) # add initial starting value for ln(alpha)
   full_start <- append(start, 1) # add initial starting value for ln(rho)

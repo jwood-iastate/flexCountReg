@@ -6,7 +6,7 @@
 #' @param method the method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).
 #' @note the method option \code{Individual} requires that the outcome be observed for all observations. This is due to the use of Bayesian methods for computing the individual observation coefficients.
 #'
-#' @import nlme randtoolbox stats lamW modelr
+#' @import randtoolbox stats lamW modelr
 #' @importFrom utils head  tail
 #' @include tri.R
 #'

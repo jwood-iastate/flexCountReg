@@ -35,7 +35,8 @@
 #' model provides a statistically significant improvement in model fit over the
 #' Poisson model.
 #'
-#' @import nlme  maxLik  MASS  stats modelr
+#' @import maxLik  stats modelr
+#' @importFrom MASS glm.nb
 #' @include ppoislogn.R
 #' @export
 #' @examples
@@ -62,7 +63,7 @@ poisLogn <- function(formula, data,  ln.sigma.formula = NULL, ndraws=1500,
   x_names <- colnames(X)
   
   # Use the Poisson as starting values
-  p_model <- MASS::glm.nb(formula, data = data)
+  p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   s <- sqrt(log(1/p_model$theta+1))
   

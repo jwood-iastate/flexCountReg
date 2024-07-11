@@ -8,7 +8,8 @@
 #' @param max.iters the maximum number of iterations to allow the optimization 
 #' method to perform,
 #'
-#' @import nlme  maxLik  MASS  stats modelr
+#' @import maxLik  stats modelr
+#' @importFrom MASS glm.nb
 #' @include plind.R
 #'
 #' @details
@@ -80,7 +81,7 @@ poisLind <- function(formula, data, method = 'BHHH', max.iters = 1000) {
   x_names <- colnames(X)
 
   # Use the Negative Binomial as starting values
-  p_model <- MASS::glm.nb(formula, data = data)
+  p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   t <- 116761/exp(-9.04*p_model$theta)
   theta <- ifelse(t<100,t,1) # Approximate Initial Theta

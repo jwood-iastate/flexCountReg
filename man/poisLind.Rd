@@ -47,7 +47,7 @@ regression analysis is:
 \deqn{\lambda=\frac{\mu\theta(\theta+1)}{\theta+2}}
 
 Using the replacement and simplifying results in:
-\deqn{f(y \mid \theta, \mu) = \\frac{\theta^2 (\mu \theta (\theta+1))^y 
+\deqn{f(y \mid \theta, \mu) = \\ \frac{\theta^2 (\mu \theta (\theta+1))^y 
 (\theta^2 (1+\mu) + \theta (2+\mu) + (\theta+2) (y+1))}{(\theta+1) 
 (\theta+2)^{y+1} (\theta^2 (1+\mu) + \theta (2+\mu))^{y+2}}}
 And

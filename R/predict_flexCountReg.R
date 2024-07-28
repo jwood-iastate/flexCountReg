@@ -65,13 +65,18 @@ predict.flexCountReg <- function(model, data, method='Exact'){
     
     
     if (N_rand > 1) {
-      rand_sdevs <- coefs[(total_vars+ 1):(total_vars+N_rand)]
+      rand_sdevs <- abs(coefs[(total_vars+ 1):(total_vars+N_rand)])
     } 
     else {
-      rand_sdevs <- coefs[(N_fixed + 2)]
+      rand_sdevs <- abs(coefs[(N_fixed + 2)])
     }
     
     sd <- rpar_sd <- rand_sdevs
+    
+    print(coefs)
+    print(fixed_coefs)
+    print(random_coefs_means)
+    print(sd)
     
     if (modtype=="rpnb" ){
       alpha <- model$alpha

@@ -523,17 +523,17 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
 
   coefs <- as.array(fit$estimate)
 
-  split.coefs <- split(coefs, param.splits)
+  # split.coefs <- split(coefs, param.splits)
 
-  t <- split.coefs$coef
-  sd <- split.coefs$rpr
+  betas <- coefs[1:(N_fixed+N_rand)] # includes means of random parameters
+  t <- coefs[(N_fixed+N_rand+1):length(coefs)]
 
   if (correlated){
     if(form=='nbp'){
-      chol_vals <- head(t,-2)
+      chol_vals <- coefs[(N_fixed+N_rand+1):(length(coefs)-2)]
     }
     else{
-      chol_vals <- head(t,-1)
+      chol_vals <-coefs[(N_fixed+N_rand+1):(length(coefs)-1)]
     }
     Cholesky <- matrix(0, N_rand, N_rand)
     counter = 1
@@ -549,9 +549,18 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     Covariance <- t(Cholesky) %*% Cholesky
     Correlation <- cov2cor(Covariance)
   }
+  else{
+    if(form=='nbp'){
+      sd <- coefs[(N_fixed+N_rand+1):(length(coefs)-2)]
+    }
+    else{
+      sd <- coefs[(N_fixed+N_rand+1):(length(coefs)-1)]
+    }
+  }
+  
 
   if(form =='nbp'){
-    t <- tail(fit$estimate,2)
+    t <- tail(coefs,2)
     alpha <- exp(t[1])
     P <- t[2]
   }
@@ -567,20 +576,12 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     fit$sd <- as.vector(sqrt(diag(Covariance)))
   }
   else{
-    if(form=='nbp'){
-      b.coefs <- head(coefs,-2)
-      parms <- split(b.coefs, f=param.splits[1:(length(param.splits)-2)])
-    }
-    else{
-      b.coefs <- head(coefs,-1)
-      parms <- split(b.coefs, f=param.splits[1:(length(param.splits)-1)])
-    }
-    fit$sd <- abs(as.vector(parms$rpr))
+    fit$sd <- abs(sd)
   }
-  fit$coefs <- coefs[1:(N_fixed+N_rand)]
+  fit$coefs <- betas
   fit$alpha = alpha
   fit$P <- P
-  fit$estimate <- ifelse(grepl("St.", names(fit$estimate)), abs(fit$estimate ), fit$estimate)
+  #fit$estimate <- ifelse(grepl("St.", names(fit$estimate)), abs(fit$estimate ), fit$estimate)
   names(fit$estimate) <- x_names # ensure it retains the names
   fit$formula <- formula
   fit$x_names <- x_names

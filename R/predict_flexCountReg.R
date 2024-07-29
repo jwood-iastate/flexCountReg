@@ -72,12 +72,7 @@ predict.flexCountReg <- function(model, data, method='Exact'){
     }
     
     sd <- rpar_sd <- rand_sdevs
-    
-    print(coefs)
-    print(fixed_coefs)
-    print(random_coefs_means)
-    print(sd)
-    
+
     if (modtype=="rpnb" ){
       alpha <- model$alpha
       p <- model$P
@@ -111,11 +106,11 @@ predict.flexCountReg <- function(model, data, method='Exact'){
         return(adj)
       }
       else if (dist=="t"){
-        adj <- ifelse(xrand^2==0, 1, (exp(2*sigma*xrand)-2*exp(sigma*xrand)+1)*exp(xrand*(mu-sigma))/(sigma^2*xrand^2))
+        adj <- ifelse(xrand!=0, (exp(2*sigma*xrand)-2*exp(sigma*xrand)+1)*exp(xrand*(mu-sigma))/(sigma^2*xrand^2), 1)
         return(adj)
       }
       else if (dist=="u"){
-        adj <- ifelse(xrand==0,1,(-exp(xrand*(mu-sigma))+exp(xrand*(mu-sigma)))/(2*xrand*sigma))
+        adj <- ifelse(xrand!=0,(-exp(xrand*(mu-sigma))+exp(xrand*(mu+sigma)))/(2*xrand*sigma),1)
         return(adj)
       }
       else if (dist=="g"){
@@ -125,10 +120,11 @@ predict.flexCountReg <- function(model, data, method='Exact'){
     }
     
     if (method == 'Exact'){
-      rand_pred<- rep(1, nrow(X))
+      rand_pred<- rep(1, length(data))
       
       if (length(dists)>1){
         for (i in 1:length(dists)){
+          
           rand_pred <- rand_pred*rpar.adjust(dists[i], random_coefs_means[i], sd[i], X_rand[,i])
         }
       }
@@ -141,14 +137,26 @@ predict.flexCountReg <- function(model, data, method='Exact'){
       return(as.vector(predictions))
     }
     else if (method=='Simulated'){
+      
       # generate and scale random draws
       if (length(rpar)>1){
         if (correlated){ # Generate correlated random draws
-          Ch <- model$Cholesky
+          chol_vals <- model$Cholesky
+          Ch <- matrix(0, N_rand, N_rand)
+          counter = 1
+          for (i in 1:N_rand){
+            for (j in 1:N_rand){
+              if (j<=i){
+                Ch[j,i] <- chol_vals[counter]
+                counter <- counter + 1
+              }
+            }
+          }
           scaled_draws <- qnorm(hdraws) %*% Ch
           draws <- apply(scaled_draws, 1, function(x) x + random_coefs_means)
         }
         else{
+          rand_sdevs <- rand_sdevs
           draws <- hdraws #initialize the matrix
           
           if (is.null(rpardists)){
@@ -157,21 +165,20 @@ predict.flexCountReg <- function(model, data, method='Exact'){
           else{
             for (i in 1:length(rpar)){
               if (rpardists[i]=="ln"){
-                draws[,i] <- stats::qlnorm(hdraws[,i], random_coefs_means[i], rand_sdevs[i])
+                draws[,i] <- stats::qlnorm(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
               }
               else if (rpardists[i]=="t"){
-                draws[,i] <- qtri(hdraws[,i], random_coefs_means[i], rand_sdevs[i])
+                draws[,i] <- qtri(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
               }
               else if (rpardists[i]=="u"){
-                draws[,i] <- random_coefs_means[i] + (hdraws[,i] - 0.5)*rand_sdevs[i]
-
+                draws[,i] <- random_coefs_means[i] + (hdraws[,i] - 0.5)*abs(rand_sdevs[i])
               }
-              else if (rpardists[1]=="g"){
-                draws <- stats::qgamma(hdraws[,i], shape=random_coefs_means[,i]^2/(rand_sdevs[,i]^2), 
-                                       rate=random_coefs_means[,i]/(rand_sdevs[,i]^2))
+              else if (rpardists[i]=="g"){
+                draws[,i] <- stats::qgamma(hdraws[,i], shape=random_coefs_means[i]^2/(rand_sdevs[i]^2), 
+                                           rate=random_coefs_means[i]/(rand_sdevs[i]^2))
               }
               else{
-                draws[,i] <- stats::qnorm(hdraws[,i], random_coefs_means[i], rand_sdevs[i])
+                draws[,i] <- stats::qnorm(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
               }
             }
           }
@@ -186,19 +193,20 @@ predict.flexCountReg <- function(model, data, method='Exact'){
         }
         else{
           if (rpardists[1]=="ln"){
-            draws <- stats::qlnorm(hdraws, random_coefs_means, rand_sdevs)
+            draws <- stats::qlnorm(hdraws, random_coefs_means, abs(rand_sdevs))
           }
           else if (rpardists[1]=="t"){
-            draws <- qtri(hdraws, random_coefs_means, rand_sdevs)
+            draws <- qtri(hdraws, random_coefs_means, abs(rand_sdevs))
           }
           else if (rpardists[1]=="u"){
-            draws <- random_coefs_means + (hdraws-0.5)*rand_sdevs
+            draws <- random_coefs_means + (hdraws-0.5)*abs(rand_sdevs)
           }
           else if (rpardists[1]=="g"){
-            draws <- stats::qgamma(hdraws, shape=random_coefs_means^2/(rand_sdevs^2), rate=random_coefs_means/(rand_sdevs^2))
+            draws <- stats::qgamma(hdraws, shape=random_coefs_means^2/(rand_sdevs^2), 
+                                   rate=random_coefs_means/(rand_sdevs^2))
           }
           else{
-            draws <- stats::qnorm(hdraws, random_coefs_means, rand_sdevs)
+            draws <- stats::qnorm(hdraws, random_coefs_means, abs(rand_sdevs))
           }
           
         }
@@ -206,11 +214,9 @@ predict.flexCountReg <- function(model, data, method='Exact'){
       }
       
       rpar_mat <- exp(xb_rand_mat)
-      
-      # Efficient computation of predicted matrix
       pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
-      
       mui <- rowMeans(pred_mat)
+      
       return(mui)
     }
     else if (method=='Individual'){

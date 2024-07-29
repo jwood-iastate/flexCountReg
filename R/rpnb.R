@@ -200,7 +200,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     else{
       start <- append(start, rep(sd.start, length(rpar)))
       x_rand_names_sd <- paste0(rpar, ':St. Dev.')
-      x_names <- append(x_names, x_rand_names_sd)
+      x_names <- c(x_names, x_rand_names_sd)
     }
     start <- append(start, log(0.1)) # initial log of overdispersion parameter
     x_names <- append(x_names, 'ln(alpha)')
@@ -211,6 +211,8 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     }
     names(start) <- x_names
   }
+  
+  
   # main function for estimating log-likelihoods
   p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated){
     est_method <- method
@@ -517,7 +519,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   N_fixed = length(x_fixed_names)
   N_rand = length(rpar)
   
-  names(fit$estimate) <- x_names
+  # names(fit$estimate) <- x_names
 
   param.splits <- as.factor(ifelse((grepl("St. Dev", x_names) + grepl("Cholesky", x_names)==1), "rpr", "coef"))
 
@@ -551,10 +553,12 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   }
   else{
     if(form=='nbp'){
-      sd <- coefs[(N_fixed+N_rand+1):(length(coefs)-2)]
+      sd <- abs(coefs[(N_fixed+N_rand+1):(length(coefs)-2)])
+      fit$estimate[(N_fixed+N_rand+1):(length(coefs)-2)] <- sd
     }
     else{
-      sd <- coefs[(N_fixed+N_rand+1):(length(coefs)-1)]
+      sd <- abs(coefs[(N_fixed+N_rand+1):(length(coefs)-1)])
+      fit$estimate[(N_fixed+N_rand+1):(length(coefs)-1)] <- sd
     }
   }
   
@@ -589,6 +593,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   fit$scrambled <- scrambled
   fit$numdraws <- ndraws
   fit$correlated <- correlated
+  fit$bootstraps <- NULL
   fit$form = form
   if (!correlated){
     fit$rpardists = rpardists

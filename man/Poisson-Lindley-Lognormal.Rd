@@ -74,7 +74,7 @@ The Poisson-Lindley-Lognormal is a 3-parameter count distribution that captures 
 \code{rplind} generates random numbers from the Poisson-Lindley Distribution.
 
 The compound Probability Mass Function (PMF) for the Poisson-Lindley-Lognormal (PLL) distribution is:
-\deqn{f(y|\mu,\theta,\alpha)=\int_0^\infty \frac{\theta^2\mu^y x^y(\theta+\mu\cdot x+y+1)}{(\theta+1)(\theta+\mu\cdot x)^{y+2}} \frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
+\deqn{f(y|\mu,\theta,\alpha)=\int_0^\infty \frac{\theta^2\mu^y x^y(\theta+\mu\cdot x+y+1)}{(\theta+1)(\theta+\mu\cdot x)^{y+2}} \frac{\exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 
 Where \eqn{\theta} and \eqn{\lambda} are distribution parameters from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, \eqn{\sigma} is a parameter for the lognormal distribution with the restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 

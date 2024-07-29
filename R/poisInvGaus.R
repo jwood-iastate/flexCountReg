@@ -24,7 +24,7 @@
 #' While the variance for the Type 2 distribution is:
 #' \deqn{\sigma^2=\mu+\eta\mu^2}
 #' 
-#' The parameter \eqn{\eta} is estimated as the natural logarithm transformed value, ln(eta), to ensure that \eqn{\eta>0}.
+#' The parameter \eqn{\eta} is estimated as the natural logarithm transformed value, \eqn{\ln(\eta)}, to ensure that \eqn{\eta>0}.
 #'
 #' @examples
 #' \donttest{

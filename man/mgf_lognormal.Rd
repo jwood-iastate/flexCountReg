@@ -29,7 +29,7 @@ is specified by its log-mean (\eqn{\mu}) and log-standard deviation (\eqn{\sigma
 }
 \details{
 The moment generating function (MGF) for the lognormal distribution does not have a closed form solution. The MGF is defined as:
-\deqn{M_x(n)=\int_0^\infty e^{nx}\frac{1}{x\sigma\sqrt{2\pi}}e^{-\frac{\left(ln(x)-\mu\right)^2}{2\sigma^2}}dx}
+\deqn{M_x(n)=\int_0^\infty e^{nx}\frac{1}{x\sigma\sqrt{2\pi}}e^{-\frac{\left(\ln(x)-\mu\right)^2}{2\sigma^2}}dx}
 
 The MGF for the lognormal distribution is useful for adjusting the predictions of generalized linear mixed models 
 (GLMMs) that have parameters that follow a lognormal distribution and use a log link function. The adjustment for the mean value 

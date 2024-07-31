@@ -32,7 +32,7 @@ rpnb(
 
 \item{ndraws}{the number of Halton draws to use for estimating the random parameters,}
 
-\item{scrambled}{if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = FALSE} results in scrambled Halton draws,}
+\item{scrambled}{if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = TRUE} results in scrambled Halton draws,}
 
 \item{correlated}{if the random parameters should be correlated (\code{correlated = FALSE} results in uncorrelated random coefficients, \code{correlated = TRUE} results in correlated random coefficients). If the random parameters are correlated, only the normal distribution is used for the random coefficients,}
 

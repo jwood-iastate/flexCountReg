@@ -7,7 +7,7 @@
 #' @param form the version of the negative binomial to estimate (\code{"nb2"} estimates the NB-2, \code{"nb1"} estimates the NB-1, \code{"nbp"} estimates the NB-P)
 #' @param rpardists an optional named vector whose names are the random parameters and values the distribution. The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma ("g"). If this is not provided, normal distributions are used for all random coefficients,
 #' @param ndraws the number of Halton draws to use for estimating the random parameters,
-#' @param scrambled if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = FALSE} results in scrambled Halton draws,
+#' @param scrambled if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = TRUE} results in scrambled Halton draws,
 #' @param correlated if the random parameters should be correlated (\code{correlated = FALSE} results in uncorrelated random coefficients, \code{correlated = TRUE} results in correlated random coefficients). If the random parameters are correlated, only the normal distribution is used for the random coefficients,
 #' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform,

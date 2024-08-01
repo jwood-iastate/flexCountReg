@@ -50,7 +50,7 @@
 #'   parameters,
 #' @param scrambled if the Halton draws should be scrambled or not.
 #'   \code{scrambled = FALSE} results in standard Halton draws while
-#'   \code{scrambled = FALSE} results in scrambled Halton draws,
+#'   \code{scrambled = TRUE} results in scrambled Halton draws,
 #' @param correlated if the random parameters should be correlated
 #'   (\code{correlated = FALSE} results in uncorrelated random coefficients,
 #'   \code{correlated = TRUE} results in correlated random coefficients),

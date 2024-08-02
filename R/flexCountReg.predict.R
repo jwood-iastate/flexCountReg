@@ -30,7 +30,7 @@
 #'                             method="sann")
 #' summary(poislind.mod)
 #' 
-#' hist(flexCountReg.predict(poislind.mod, washington_roads))
+#' hist(predict(poislind.mod, washington_roads))
 #' }
 flexCountReg.predict <- function(model, data, method="Simulated"){
   modtype <- model$modelType 

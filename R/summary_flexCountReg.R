@@ -4,7 +4,8 @@
 #' @param confint_level A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
 #' @param digits Number of digits (decimal places) to round to. Default is 3.
 #' 
-#' @import tibble dplyr
+#' @import tibble 
+#' @importFrom dplyr mutate across  %>% where
 #' @details
 #' This summary method accounts for bootstrapped standard errors (when used). Bootstrapped standard errors are currently only implemented in \code{\link{pwiebreg}}.
 #' 

@@ -1,5 +1,7 @@
 ---
 output: github_document
+header-includes:
+- \usepackage{caption} # Insert the package used by gt
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -31,14 +33,153 @@ devtools::install_github("jwood-iastate/flexCountReg")
 ```
 
 ## Functions and Data
+The following functions are included in the `flexCountReg` package, grouped by continuous and count distributions.
+
+**Distribution Functions**
+
+*Continuous Distributions*
+
+- Inverse Gamma Distribution
+
+  - `dinvgamma` for the density function
+  - `pinvgamma` for the cumulative density function
+  - `qinvgamma` for the quantile function
+  - `rinvgamma` for random number generation
+
+- Triangle Distribution
+
+  - `dtri` for the density function
+  - `ptri` for the cumulative density function
+  - `qtri` for the quantile function
+  - `rtri` for random number generation
+
+- Lognormal Distribution
+
+  - `mgf_lognormal` for estimating the moment generating function
+
+
+*Count Distributions*
+
+- Generalized Waring Distribution
+
+  - `dgwar` for the density function
+  - `pgwar` for the cumulative density function
+  - `qgwar` for the quantile function
+  - `rgwar` for random number generation
+
+- Poisson-Generalized-Exponential Distribution
+
+  - `dpge` for the density function
+  - `ppge` for the cumulative density function
+  - `qpge` for the quantile function
+  - `rpge` for random number generation
+
+- Poisson-Inverse-Gaussian Distribution
+
+  - `dpinvgaus` for the density function
+  - `ppinvgaus` for the cumulative density function
+  - `qpinvgaus` for the quantile function
+  - `rpinvgaus` for random number generation
+
+- Poisson-Lindley Distribution
+
+  - `dplind` for the density function
+  - `pplind` for the cumulative density function
+  - `qplind` for the quantile function
+  - `rplind` for random number generation
+
+- Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
+
+  - `dplindGamma` for the density function
+  - `pplindGamma` for the cumulative density function
+  - `qplindGamma` for the quantile function
+  - `rplindGamma` for random number generation
+
+- Poisson-Lindley-Lognormal Distribution
+
+  - `dplindLnorm` for the density function
+  - `pplindLnorm` for the cumulative density function
+  - `qplindLnorm` for the quantile function
+  - `rplindLnorm` for random number generation
+
+- Poisson-Lognormal Distribution
+
+  - `dpLnorm` for the density function
+  - `ppLnorm` for the cumulative density function
+  - `qtpLnorm` for the quantile function
+  - `rpLnorm` for random number generation
+
+- Poisson-Weibull Distribution
+
+  - `dpoisweibull` for the density function
+  - `ppoisweibull` for the cumulative density function
+  - `qpoisweibull` for the quantile function
+  - `rpoisweibull` for random number generation
+
+- Sichel Distribution
+
+  - `dsichel` for the density function
+  - `psichel` for the cumulative density function
+  - `qsichel` for the quantile function
+  - `rsichel` for random number generation
+
+**Model Estimation Functions**
+
+- `flexCountReg` is a general function for estimating any of the regression models
+- `nbg` estimates negative binomial regression (NB-1, NB-2, or NB-P) and allows the overdispersion parameter to be specified as a function of predictors.
+- `poisGE` estimates the Poisson-Generalized-Exponential regression model. It allows the scale parameter to be specified as a function of predictors.
+- `poisInvGaus` estimates the Poisson-Inverse-Gaussian regression model. 
+- `poisLind` estimates the Poisson-Lindley regression model.
+- `poisLindGamma` estimates the Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) regression model. 
+- `poisLindLnorm ` estimates the Poisson-Lindley-Lognormal regression model.
+- `poisLogn ` estimates the Poisson-Lognormal regression model. It allows the standard deviation parameter ($\sigma$) to be specified as a function of predictors.
+- `pwiebreg ` estimates the Poisson-Weibull regression model. It allows the shape and scale parameters to be specified as functions of predictors.
+- `rpnb` estimates the random parameters negative binomial regression (NB-1, NB-2, or NB-P).
+- `sichel ` estimates the Sichel regression model. It allows the scale parameter to be specified as a function of predictors.
+
+**Model Evaluation, Comparison, and Convenience Functions**
+
+- `cureplot` generates a CURE plot for the specified model, based on the [cureplots package](https://gbasulto.github.io/cureplots/).
+- `mae` computes the Mean Absolute Error (MAE).
+- `myAIC` computes the Akaike Information Criterion (AIC) value.
+- `myBIC` computes the Bayesian Information Criterion (BIC) value.
+- `regCompTable` creates a publication-ready table comparing multiple models. This can include the regression estimate results, AIC, BIC, and Pseudo R-Square values.
+- `regCompTest` compares any given model with a base model. This can be used to perform a likelihood ratio test between models.
+- `rmse` computes the Root Mean Squared Error (RMSE).
+- `predict` allows the predict function to be used for out-of-sample predictions for any of the flexCountReg models.
+- `summary` allows the use of the summary function to get a model summary from a flexCountReg regression object.
+
+**Data**
+A dataset, `washington_roads`, is included. It is based on a sample of Washington primary 2-lane roads from the years 2016-2018. Data for the roads, traffic volumes (AADT) and associated crashes were obtained from the [Highway Safety Information System (HSIS)](https://highways.dot.gov/research/safety/hsis).
 
 ### Probability Distributions
+As noted in the list of functions, the probability distributions below are included in the flexCountReg package. Details of the distributions are provided in the documentation (help files).
+
+**Continuous Distributions**
+
+- Inverse Gamma Distribution
+- Triangle Distribution
+
+
+**Count Distributions**
+
+- Generalized Waring Distribution
+- Negative Binomial in various forms (NB-1, NB-2, and NB-P)
+- Poisson-Generalized-Exponential Distribution
+- Poisson-Inverse-Gaussian Distribution
+- Poisson-Lindley Distribution
+- Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
+- Poisson-Lindley-Lognormal Distribution
+- Poisson-Lognormal Distribution
+- Poisson-Weibull Distribution
+- Sichel Distribution
 
 ## Example
 
-The following is an example of using flexCountReg to estimate a negative binomial regression model with the overdispersion parameter as a function of predictor variables:
+The following is an example of using flexCountReg to estimate a negative binomial (NB-2) regression model with the overdispersion parameter as a function of predictor variables:
 
 ```{r example}
+library(gt) # used to format summary tables here
 library(flexCountReg)
 
 data("washington_roads")
@@ -49,13 +190,57 @@ gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
                                 data=washington_roads,
                                 dist="NB2",
                                 method = 'NM')
-summary(gen.nb2)
+gt(summary(gen.nb2), caption = "NB-2 Model Summary")
+
+tesstats <- regCompTest(gen.nb2)
+tesstats$gtTable
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+Checking the CURE plot:
+```{r}
+cureplot(gen.nb2, indvar  ="lnaadt")
+```
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
+Modifying the model to fit better:
 
-You can also embed plots, for example:
+```{r}
+gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt  + lnlength + speed50 +
+                                ShouldWidth04 + AADTover10k + I(AADTover10k/lnaadt),
+                                ln.alpha.formula = ~ 1+lnlength,
+                                data=washington_roads,
+                                dist="NB2",
+                                method = 'NM')
+gt(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
 
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
+tesstats <- regCompTest(gen.nb2)
+tesstats$gtTable
+cureplot(gen.nb2, indvar  ="lnaadt")
+```
+
+
+Estimating another model (NB-P) - without the interaction:
+
+```{r}
+gen.nbp <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
+                                ShouldWidth04 + AADTover10k,
+                                ln.alpha.formula = ~ 1+lnlength,
+                                data=washington_roads,
+                                dist="NBP",
+                                method = 'NM')
+gt(summary(gen.nbp), caption = "NB-P Model Summary")
+
+tesstats <- regCompTest(gen.nbp)
+tesstats$gtTable
+```
+
+Checking the CURE plot (notice that the CURE plot is MUCH better in this case than the NB-2 without the interaction and still better than the modified NB-2):
+```{r}
+cureplot(gen.nbp, indvar  ="lnaadt")
+```
+
+Creating a table to compare the models:
+```{r}
+regCompTable(list("Generalized NB-2"=gen.nb2, "Generalized NB-P"=gen.nbp), tableType="gt")
+```
+
+Note that the metrics for comparison are similar. While the models both have the same number of parameters, the NB-P was able to get better performance without requiring the interaction terms (which leads to strange relationships between the exposure metric and the outcome).

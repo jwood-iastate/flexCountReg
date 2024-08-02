@@ -39,6 +39,6 @@ poislind.mod <- flexCountReg(Animal ~ lnaadt + lnlength + speed50 +
                             method="sann")
 summary(poislind.mod)
 
-hist(flexCountReg.predict(poislind.mod, washington_roads))
+hist(predict(poislind.mod, washington_roads))
 }
 }

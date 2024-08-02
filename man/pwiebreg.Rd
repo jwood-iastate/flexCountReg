@@ -66,7 +66,7 @@ The variance for the Poisson-Weibull regression is:
 data("washington_roads")
 pw_rp <- pwiebreg(Total_crashes ~ lnlength + lnaadt,
                                  data = washington_roads,
-                                 ndraws = 10)
+                                 ndraws = 100)
 print(summary(pw_rp))
 
 }

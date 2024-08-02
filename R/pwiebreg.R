@@ -43,7 +43,7 @@
 #' data("washington_roads")
 #' pw_rp <- pwiebreg(Total_crashes ~ lnlength + lnaadt,
 #'                                  data = washington_roads,
-#'                                  ndraws = 10)
+#'                                  ndraws = 100)
 #' print(summary(pw_rp))
 #' 
 #' @export
@@ -79,12 +79,24 @@ pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
     fixed_coefs <- head(coefs, N_fixed)
     
     N_alpha = ncol(X_alpha)
-    alpha_coefs <- coefs[(N_fixed + 1):(N_fixed + N_alpha)]
-    alpha <- exp(X_alpha %*% alpha_coefs)
+    if (!is.null(alpha_formula)){
+      alpha_coefs <- coefs[(N_fixed + 1):(N_fixed + N_alpha)]
+      alpha <- exp(X_alpha %*% alpha_coefs)
+    }
+    else{
+      alpha <- exp(coefs[(N_fixed + 1)])
+    }
+    
     
     N_beta = ncol(X_beta)
-    beta_coefs <- coefs[(N_fixed + N_alpha + 1):(N_fixed + N_alpha + N_beta)]
-    beta <- exp(X_beta %*% beta_coefs)
+    if (!is.null(beta_formula)){
+      beta_coefs <- coefs[(N_fixed + N_alpha + 1):(N_fixed + N_alpha + N_beta)]
+      beta <- exp(X_beta %*% beta_coefs)
+    }
+    else{
+      beta <- exp(coefs[(N_fixed + N_alpha + 1)])
+    }
+    
     
     pred <- exp(X_Fixed %*% fixed_coefs)
     

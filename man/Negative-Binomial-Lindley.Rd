@@ -8,30 +8,20 @@
 \alias{rplindGamma}
 \title{Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution}
 \usage{
-dplindGamma(
-  x,
-  mean = 1,
-  theta = 1,
-  alpha = 1,
-  lambda = NULL,
-  ndraws = 1500,
-  log = FALSE
-)
+dplindGamma(x, mean = 1, theta = 1, alpha = 1, log = FALSE)
 
 pplindGamma(
   q,
   mean = 1,
   theta = 1,
-  lambda = NULL,
   alpha = 1,
-  ndraws = 1500,
   lower.tail = TRUE,
   log.p = FALSE
 )
 
-qplindGamma(p, mean = 1, theta = 1, alpha = 1, ndraws = 1500, lambda = NULL)
+qplindGamma(p, mean = 1, theta = 1, alpha = 1)
 
-rplindGamma(n, mean = 1, theta = 1, alpha = 1, ndraws = 1500, lambda = NULL)
+rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 }
 \arguments{
 \item{x}{numeric value or a vector of values.}
@@ -42,10 +32,6 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1, ndraws = 1500, lambda = NULL)
 
 \item{alpha}{single value or vector of values for the `alpha` parameter of the gamma distribution in the special case that the mean = 1 and the variance = `alpha` (the values for `alpha` have to be greater than 0).}
 
-\item{lambda}{alternative parameterization (use instead of the mean); numeric value or vector of values for lambda parameter of the distribution (the values have to be greater than 0).}
-
-\item{ndraws}{the number of Halton draws to use for the integration.}
-
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
 \item{q}{quantile or a vector of quantiles.}
@@ -55,14 +41,12 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1, ndraws = 1500, lambda = NULL)
 \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
 
 \item{p}{probability or a vector of probabilities.}
-
-\item{n}{the number of random numbers to generate.}
 }
 \description{
 These functions provide density, distribution function, quantile function, and random number generation for the Poisson-Lindley-Gamma (PLG) Distribution
 }
 \details{
-The Poisson-Lindley-Gamma is a 3-parameter count distribution that captures high densities for small integer values and provides flexibility for heavier tails.
+The Poisson-Lindley-Gamma is a count distribution that captures high densities for small integer values and provides flexibility for heavier tails.
 
 
 \code{dplindGamma} computes the density (PDF) of the Poisson-Lindley-Gamma Distribution.
@@ -73,23 +57,21 @@ The Poisson-Lindley-Gamma is a 3-parameter count distribution that captures high
 
 \code{rplindGamma} generates random numbers from the Poisson-Lindley-Gamma Distribution.
 
-The compound Probability Mass Function (PMF) for the Poisson-Lindley-Gamma (PLG) distribution utilizes a special case
-\deqn{f(y|\mu,\theta,\alpha)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!} \frac{x^{\frac{1}{\alpha}-1}e^{-\frac{x}{\alpha}}}{\Gamma\left(\frac{1}{\alpha}\right)\alpha^{\frac{1}{\alpha}}}dx}
+The compound Probability Mass Function (PMF) for the Poisson-Lindley-Gamma (PLG) distribution is:
+\deqn{f(x|\mu,\theta,\alpha)\frac{\alpha  (\theta+2) ^2 \Gamma (x+\alpha ) }{(\mu)^2(\theta +1)^3 \Gamma (\alpha )}\left(\frac{\mu\theta(\theta+1)}{\theta+2} U\left(x+1,2-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)+\alpha(x+1) U\left(x+2,3-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)\right)}
 
-Where \eqn{\theta} and \eqn{\lambda} are distribution parameters from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, and \eqn{y} is a non-negative integer.
+Where \eqn{\theta} isa distribution parameter from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} a, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, \eqn{mu} is the mean value, and \eqn{x} is a non-negative integer, and \deqn{U(a,b,z)} is the Tricomi's solution to the confluent hypergeometric function - also known as the confluent hypergeometric function of the second kind
 
 The expected value of the distribution is:
-\deqn{\mu=\frac{\lambda(\theta+2)}{\theta(\theta+1)}}
+\deqn{E[x]=\mu}
 
-The default is to use the input mean value for the distribution. However, the lambda parameter can be used as an alternative to the mean value.
-
-Halton draws are used to perform simulation over the gamma distribution to solve the integral.
+The variance is:
+\deqn{\sigma^2=\mu+\left(\alpha+1-\frac{2}{(\theta+2)^2}\right)\mu^2}
 }
 \examples{
-dplindGamma(0, mean=0.75, theta=7, alpha=2, ndraws=10)
-pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=10)
-qplindGamma(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, alpha=2,
-              ndraws=10)
-rplindGamma(3, lambda=4.67, theta=7, alpha=2, ndraws=10)
+dplindGamma(0, mean=0.75, theta=7, alpha=2)
+pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=3, alpha=0.5)
+qplindGamma(c(0.1,0.3,0.5,0.9,0.95), mean=1.67, theta=0.5, alpha=0.5)
+rplindGamma(30, mean=0.5, theta=0.5, alpha=2)
 
 }

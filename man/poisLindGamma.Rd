@@ -4,7 +4,13 @@
 \alias{poisLindGamma}
 \title{Function for estimating a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) regression model}
 \usage{
-poisLindGamma(formula, data, method = "BHHH", ndraws = 1500, max.iters = 1000)
+poisLindGamma(
+  formula,
+  data,
+  method = "BHHH",
+  max.iters = 1000,
+  print.level = 0
+)
 }
 \arguments{
 \item{formula}{an R formula.}
@@ -13,9 +19,9 @@ poisLindGamma(formula, data, method = "BHHH", ndraws = 1500, max.iters = 1000)
 
 \item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}}.}
 
-\item{ndraws}{the number of Halton draws to use for the integration over the gamma distribution.}
-
 \item{max.iters}{the maximum number of iterations to allow the optimization method to perform.}
+
+\item{print.level}{Integer specifying the verbosity of output during optimization.}
 }
 \description{
 Function for estimating a Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) regression model
@@ -41,7 +47,6 @@ poislindgamma.mod <- poisLindGamma(Animal ~ lnaadt + lnlength + speed50 +
                                 ShouldWidth04 + AADTover10k,
                                 data=washington_roads,
                                 method="nm",
-                                ndraws=100,
                                 max.iters = 1000)
 summary(poislindgamma.mod)}
 }

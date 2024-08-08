@@ -40,9 +40,8 @@
 #' qplindGamma(c(0.1,0.3,0.5,0.9,0.95), mean=1.67, theta=0.5, alpha=0.5)
 #' rplindGamma(30, mean=0.5, theta=0.5, alpha=2)
 #'
-#' @import stats
 #' @importFrom gsl hyperg_U
-#' @importFrom stats gamma
+#' @importFrom stats runif
 #' @include plind.R
 #' @export
 #' @name Negative-Binomial-Lindley
@@ -134,7 +133,7 @@ rplindGamma <- function(n, mean=1, theta=1, alpha=1) {
     stop()
   }
   
-  u <- stats::runif(n)
+  u <- runif(n)
   y <- lapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha))
   return(unlist(y))
 }

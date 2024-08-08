@@ -2,17 +2,14 @@
 #'
 #' These functions provide density, distribution function, quantile function, and random number generation for the Poisson-Lindley-Gamma (PLG) Distribution
 #'
-#' The Poisson-Lindley-Gamma is a 3-parameter count distribution that captures high densities for small integer values and provides flexibility for heavier tails.
+#' The Poisson-Lindley-Gamma is a count distribution that captures high densities for small integer values and provides flexibility for heavier tails.
 #'
 #' @param x numeric value or a vector of values.
 #' @param q quantile or a vector of quantiles.
 #' @param p probability or a vector of probabilities.
-#' @param n the number of random numbers to generate.
 #' @param mean numeric value or vector of mean values for the distribution (the values have to be greater than 0).
 #' @param theta single value or vector of values for the theta parameter of the distribution (the values have to be greater than 0).
 #' @param alpha single value or vector of values for the `alpha` parameter of the gamma distribution in the special case that the mean = 1 and the variance = `alpha` (the values for `alpha` have to be greater than 0).
-#' @param lambda alternative parameterization (use instead of the mean); numeric value or vector of values for lambda parameter of the distribution (the values have to be greater than 0).
-#' @param ndraws the number of Halton draws to use for the integration.
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.
@@ -26,93 +23,71 @@
 #'
 #' \code{rplindGamma} generates random numbers from the Poisson-Lindley-Gamma Distribution.
 #'
-#' The compound Probability Mass Function (PMF) for the Poisson-Lindley-Gamma (PLG) distribution utilizes a special case
-#' \deqn{f(y|\mu,\theta,\alpha)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!} \frac{x^{\frac{1}{\alpha}-1}e^{-\frac{x}{\alpha}}}{\Gamma\left(\frac{1}{\alpha}\right)\alpha^{\frac{1}{\alpha}}}dx}
-#'
-#' Where \eqn{\theta} and \eqn{\lambda} are distribution parameters from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, and \eqn{y} is a non-negative integer.
+#' The compound Probability Mass Function (PMF) for the Poisson-Lindley-Gamma (PLG) distribution is:
+#' \deqn{f(x|\mu,\theta,\alpha)\frac{\alpha  (\theta+2) ^2 \Gamma (x+\alpha ) }{(\mu)^2(\theta +1)^3 \Gamma (\alpha )}\left(\frac{\mu\theta(\theta+1)}{\theta+2} U\left(x+1,2-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)+\alpha(x+1) U\left(x+2,3-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)\right)}
+#' 
+#' Where \eqn{\theta} isa distribution parameter from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} a, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, \eqn{mu} is the mean value, and \eqn{x} is a non-negative integer, and \deqn{U(a,b,z)} is the Tricomi's solution to the confluent hypergeometric function - also known as the confluent hypergeometric function of the second kind
 #'
 #' The expected value of the distribution is:
-#' \deqn{\mu=\frac{\lambda(\theta+2)}{\theta(\theta+1)}}
+#' \deqn{E[x]=\mu}
 #'
-#' The default is to use the input mean value for the distribution. However, the lambda parameter can be used as an alternative to the mean value.
-#'
-#' Halton draws are used to perform simulation over the gamma distribution to solve the integral.
+#' The variance is:
+#' \deqn{\sigma^2=\mu+\left(\alpha+1-\frac{2}{(\theta+2)^2}\right)\mu^2}
 #'
 #' @examples
-#' dplindGamma(0, mean=0.75, theta=7, alpha=2, ndraws=10)
-#' pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, alpha=2, ndraws=10)
-#' qplindGamma(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, alpha=2,
-#'               ndraws=10)
-#' rplindGamma(3, lambda=4.67, theta=7, alpha=2, ndraws=10)
+#' dplindGamma(0, mean=0.75, theta=7, alpha=2)
+#' pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=3, alpha=0.5)
+#' qplindGamma(c(0.1,0.3,0.5,0.9,0.95), mean=1.67, theta=0.5, alpha=0.5)
+#' rplindGamma(30, mean=0.5, theta=0.5, alpha=2)
 #'
-#' @import stats randtoolbox
+#' @import stats
+#' @importFrom gsl hyperg_U
+#' @importFrom stats gamma
 #' @include plind.R
 #' @export
 #' @name Negative-Binomial-Lindley
 
 #' @rdname Negative-Binomial-Lindley
 #' @export
-dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, lambda=NULL, ndraws=1500, log=FALSE){
+dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, log=FALSE){
   #test to make sure the value of x is an integer
   tst <- ifelse(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2])>0),FALSE, TRUE)
   if(tst || x < 0){
     print("The value of `x` must be a non-negative whole number")
     stop()
   }
-  if(is.null(lambda)){
-    if(mean<=0 || theta<=0 || alpha<=0){
-      print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
-      stop()
-    }
-    else{
-      lambda <- mean*theta*(theta+1)/((theta+2))
-    }
+  if(is.na(mean) || mean < 0){
+    print("The value of `mean` must be greater than 0")
+    stop()
   }
-  else{
-    if(lambda<=0 || theta<=0  || alpha<=0){
-      print('The values of `lambda`, `theta`, and `alpha` all have to have values greater than 0.')
-      stop()
-    }
+  if(is.na(theta) || theta < 0){
+    print("The value of `theta` must be greater than 0")
+    stop()
   }
+  if(is.na(alpha) || alpha < 0){
+    print("The value of `alpha` must be greater than 0")
+    stop()
+  }
+  cfnt <- alpha*theta^2*gamma(x+alpha)/(mean^2*(theta+1)*gamma(alpha))
+  U1 <- hyperg_U(x+1,2-alpha,alpha*theta/mean)
+  U2 <- hyperg_U(x+2,3-alpha,alpha*theta/mean)
   
-  # Generate Halton draws to use as quantile values
-  h <- randtoolbox::halton(ndraws)
-  
-  # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to gamma values
-  gammdist <- exp(stats::qgamma(h, shape=1/alpha, scale=alpha))
-  
-  mu <- lambda*(theta+2)/(theta*(theta+1))
-  mu_i <- outer(mu, gammdist)
-  
-  p_plind.i <- sapply(mu_i, function(y) dplind(x=x, mean=y, theta=theta))
-  
-  p <- mean(p_plind.i)
-  
+  p <- cfnt*(mean*U1+alpha*(x+1)*U2)
+
   if (log) return(log(p))
   else return(p)
 })
 
 #' @rdname Negative-Binomial-Lindley
 #' @export
-pplindGamma <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, alpha=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
-  if(is.null(lambda)){
-    if(mean<=0 || theta<=0  || alpha<=0){
-      print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
-      stop()
-    }
-  }
-  else{
-    if(lambda<=0 || theta<=0  || alpha<=0){
-      print('The values of `lambda`, `theta`, and `alpha` all have to have values greater than 0.')
-      stop()
-    }
-    else{
-      mean <- mean*theta*(theta+1)/((theta+2))
-    }
+pplindGamma <- Vectorize(function(q, mean=1, theta = 1, alpha=1, lower.tail=TRUE, log.p=FALSE){
+  if(mean<=0 || theta<=0  || alpha<=0){
+    print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+    stop()
   }
   
   y <- seq(0,q,1)
-  probs <- dplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws)
+  probs <- dplindGamma(y, mean, theta, alpha)
   p <- sum(probs)
   
   if(!lower.tail) p <- 1-p
@@ -123,7 +98,7 @@ pplindGamma <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, alpha=1, nd
 
 #' @rdname Negative-Binomial-Lindley
 #' @export
-qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1, ndraws=1500, lambda=NULL) {
+qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1) {
   if(p < 0){
     print("The value of `p` must be a value greater than 0 and less than 1.")
     stop()
@@ -132,27 +107,18 @@ qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1, ndraws=1500, lamb
     print("The value of `p` cannot be an `NA` value")
     stop()
   }
-  if(is.null(lambda)){
-    if(mean<=0 || theta<=0 || alpha<=0){
-      print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
-      stop()
-    }
-    else{
-      lambda <- mean*theta*(theta+1)/((theta+2))
-    }
+
+  if(mean<=0 || theta<=0 || alpha<=0){
+    print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+    stop()
   }
-  else{
-    if(lambda<=0 || theta<=0  || alpha<=0){
-      print('The values of `lambda`, `theta`, and `alpha` all have to have values greater than 0.')
-      stop()
-    }
-  }
+ 
   
   y <- 0
-  p_value <- max(pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws), .Machine$double.xmin)
+  p_value <- max(pplindGamma(y, mean, theta, alpha=alpha), .Machine$double.xmin)
   while(p_value < p){
     y <- y + 1
-    p_value_new <- max(pplindGamma(y, mean, theta, alpha=alpha, ndraws=ndraws), .Machine$double.xmin)
+    p_value_new <- max(pplindGamma(y, mean, theta, alpha=alpha), .Machine$double.xmin)
     if (!is.na(p_value_new)) p_value <- p_value_new else break
   }
   return(y)
@@ -161,24 +127,14 @@ qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1, ndraws=1500, lamb
 
 #' @rdname Negative-Binomial-Lindley
 #' @export
-rplindGamma <- function(n, mean=1, theta=1, alpha=1, ndraws=1500, lambda=NULL) {
-  if(is.null(lambda)){
-    if(mean<=0 || theta<=0  || alpha<=0){
-      print('The values of `mean`, `theta`, and `alpha` allboth have to have values greater than 0.')
-      stop()
-    }
-  }
-  else{
-    if(lambda<=0 || theta<=0  || alpha<=0){
-      print('The values of `lambda`, `theta`, and `alpha` all have to have values greater than 0.')
-      stop()
-    }
-    else{
-      mean <- mean*theta*(theta+1)/((theta+2))
-    }
+rplindGamma <- function(n, mean=1, theta=1, alpha=1) {
+
+  if(mean<=0 || theta<=0  || alpha<=0){
+    print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+    stop()
   }
   
-  u <- runif(n)
-  y <- lapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha, ndraws=ndraws))
-  return(y)
+  u <- stats::runif(n)
+  y <- lapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha))
+  return(unlist(y))
 }

@@ -4,8 +4,8 @@
 #' @param formula an R formula.
 #' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}}.
 #' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}.
-#' @param ndraws the number of Halton draws to use for the integration over the gamma distribution.
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform.
+#' @param print.level Integer specifying the verbosity of output during optimization.
 #'
 #' @import maxLik  stats modelr
 #' @importFrom MASS glm.nb
@@ -33,11 +33,10 @@
 #'                                 ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 method="nm",
-#'                                 ndraws=100,
 #'                                 max.iters = 1000)
 #' summary(poislindgamma.mod)}
 #' @export
-poisLindGamma <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters = 1000) {
+poisLindGamma <- function(formula, data, method = 'BHHH', max.iters = 1000, print.level=0) {
 
   mod_df <- stats::model.frame(formula, data)
   X <- as.matrix(modelr::model_matrix(data, formula))
@@ -62,7 +61,7 @@ poisLindGamma <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters
 
     predicted <- exp(X %*% coefs)
 
-    probs <- dplindGamma(y, mean=predicted, theta=theta, alpha=alpha, ndraws=ndraws)
+    probs <- dplindGamma(y, mean=predicted, theta=theta, alpha=alpha)
 
     ll <- sum(log(probs))
     if (est_method == 'bhhh' | est_method == 'BHHH'){
@@ -76,7 +75,8 @@ poisLindGamma <- function(formula, data, method = 'BHHH', ndraws=1500, max.iters
                 X = X,
                 est_method = method,
                 method = method,
-                control = list(iterlim = max.iters))
+                control = list(iterlim = max.iters, 
+                               printLevel = print.level))
 
   beta_est <- fit$estimate
   npars <- length(beta_est)-2

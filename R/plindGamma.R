@@ -7,6 +7,7 @@
 #' @param x numeric value or a vector of values.
 #' @param q quantile or a vector of quantiles.
 #' @param p probability or a vector of probabilities.
+#' @param n the number of random numbers to generate.
 #' @param mean numeric value or vector of mean values for the distribution (the values have to be greater than 0).
 #' @param theta single value or vector of values for the theta parameter of the distribution (the values have to be greater than 0).
 #' @param alpha single value or vector of values for the `alpha` parameter of the gamma distribution in the special case that the mean = 1 and the variance = `alpha` (the values for `alpha` have to be greater than 0).

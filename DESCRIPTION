@@ -18,9 +18,9 @@ Imports:
     dplyr,
     gt,
     tibble,
-    methods,
-    recipes,
-    rlang
+    rlang,
+    gsl,
+    methods
 Depends: R (>= 2.10)
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -64,7 +64,6 @@ Collate:
     'regCompTable.R'
     'rpnb.predict.R'
     'summary_flexCountReg.R'
-    'summary_rpnb.R'
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

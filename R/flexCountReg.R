@@ -232,7 +232,7 @@ flexCountReg <- function(formula, rpar_formula=NULL, data, dist = "NB2",
   }
   else if(dist=="PLG"){ # Poisson-Lindley-Gamma Model
     model <- poisLindGamma(formula=formula, data=data,
-                           ndraws=ndraws, method=method, max.iters=max.iters)
+                           method=method, max.iters=max.iters)
     model$dist <- dist
     model$random <- FALSE
   }

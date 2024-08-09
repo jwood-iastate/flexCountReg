@@ -41,6 +41,8 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
 
 \item{p}{probability or a vector of probabilities.}
+
+\item{n}{the number of random numbers to generate.}
 }
 \description{
 These functions provide density, distribution function, quantile function, and random number generation for the Poisson-Lindley-Gamma (PLG) Distribution

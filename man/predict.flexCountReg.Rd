@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{a model object estimated using this R package.}
 
-\item{...}{additional arguments passed to the function. These include `data` and `method`.}
+\item{...}{optional arguments passed to the function. These include `data` and `method`.}
 }
 \description{
 Predictions for non-random parameters count models
@@ -25,10 +25,10 @@ the method option \code{Individual} requires that the outcome be observed for al
 
 # Standard Negative Binomial
 data("washington_roads")
-nbg <- nbg(Total_crashes ~ - 1 + lnaadt + lnlength + speed50,
+nbg <- nbg(Total_crashes ~ lnaadt + lnlength + speed50,
            ln.alpha.formula = ~ lnaadt,
            data = washington_roads)
 summary(nbg)
 
-predict(nbg, washington_roads)
+predict(nbg, data=washington_roads)
 }

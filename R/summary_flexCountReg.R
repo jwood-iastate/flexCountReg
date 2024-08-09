@@ -23,9 +23,9 @@
 summary.flexCountReg <- function(object, ...) {
   # Extract optional parameters from '...'
   args <- list(...)
-  confint_level <- ifelse("confint_level" %in% names(args), args$confint_level, 0.95)
-  digits <- ifelse("digits" %in% names(args), args$digits, 3)
-  
+  if (is.null(args$confint_level)) confint_level <- 0.95 else confint_level <- args$confint_level
+  if (is.null(args$digits)) digits <- 3 else digits <- args$digits
+
   object <- object$model
   cat("Call:\n", deparse(object$formula), "\n")
   cat("\n", "Method: ", object$type, "\n")

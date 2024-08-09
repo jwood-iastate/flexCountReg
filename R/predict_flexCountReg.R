@@ -16,20 +16,19 @@
 #'
 #' # Standard Negative Binomial
 #' data("washington_roads")
-#' nbg <- nbg(Total_crashes ~ - 1 + lnaadt + lnlength + speed50,
+#' nbg <- nbg(Total_crashes ~ lnaadt + lnlength + speed50,
 #'            ln.alpha.formula = ~ lnaadt,
 #'            data = washington_roads)
 #' summary(nbg)
 #'
-#' predict(nbg, washington_roads)
+#' predict(nbg, data=washington_roads)
 #' @export
 predict.flexCountReg <- function(object, ...){
   # Extract optional parameters from '...'
   args <- list(...)
-  data <- ifelse("data" %in% names(args), args$data, object$data)
-  method <- ifelse("method" %in% names(args), args$method, 'Exact')
-  
-  
+  if (is.null(args$data)) data <- object$data else data <- args$data
+  if (is.null(args$method)) method <- "Exact" else data <- args$method
+
   model <- object$model
   
   modtype <- model$modelType 
@@ -326,9 +325,12 @@ predict.flexCountReg <- function(object, ...){
     else{print('Please use one of the following methods: Approximate, Simulated, or Individual')}
   }
   else{
-    mod_df <- stats::model.frame(model$formula, data)
-    X <- stats::model.matrix(model$formula, data)
-    y <- as.numeric(stats::model.response(mod_df))
+    print(dim(data))
+    #mod_df <- stats::model.frame(model$formula, data)
+    
+    X <- as.matrix(modelr::model_matrix(data, model$formula))
+    #y <- as.numeric(stats::model.response(mod_df))
+    
     
     beta_pred <- model$beta_pred
     
@@ -346,6 +348,6 @@ predict.flexCountReg <- function(object, ...){
     else{
       predictions <- exp(X %*% beta_pred)
     }
-    return(predictions)
+    return(c(predictions))
   }
 }

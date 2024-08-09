@@ -49,7 +49,7 @@ cureplot <- function(
   
   if (!is.null(indvar)) {
     indvar_values <- data[[indvar]]
-    assign(indvar, indvar_values, envir = .GlobalEnv)
+    # assign(indvar, indvar_values, envir = .GlobalEnv)
   } else {
     indvar_values <- predictions
   }

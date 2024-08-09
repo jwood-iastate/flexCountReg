@@ -7,7 +7,8 @@
 #' @slot formula The R formula used in the regression model (main formula, not including random parameters, etc.)
 #' @slot call The matched call (language).
 #' @slot additional Any additional information (list).
-#' @export
+#' @importFrom methods setClass
+#' 
 #' @export
 setClass(
   Class = "flexCountReg",

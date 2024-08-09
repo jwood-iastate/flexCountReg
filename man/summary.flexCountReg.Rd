@@ -4,20 +4,23 @@
 \alias{summary.flexCountReg}
 \title{Custom summary method for flexCountReg models}
 \usage{
-\method{summary}{flexCountReg}(object, confint_level = 0.95, digits = 3)
+\method{summary}{flexCountReg}(object, ...)
 }
 \arguments{
 \item{object}{A flexCountReg model object.}
 
-\item{confint_level}{A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.}
-
-\item{digits}{Number of digits (decimal places) to round to. Default is 3.}
+\item{...}{Optional parameters that include `confint_level` and `digits`.}
 }
 \description{
 Custom summary method for flexCountReg models
 }
 \details{
 This summary method accounts for bootstrapped standard errors (when used). Bootstrapped standard errors are currently only implemented in \code{\link{pwiebreg}}.
+}
+\note{
+Optional parameter `confint_level`: A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
+
+Optional parameter `digits`: Number of digits (decimal places) to round to. Default is 3.
 }
 \examples{
 # Poisson-Weibull

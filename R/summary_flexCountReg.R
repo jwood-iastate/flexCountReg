@@ -1,8 +1,10 @@
 #' Custom summary method for flexCountReg models
 #' 
 #' @param object A flexCountReg model object.
-#' @param confint_level A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
-#' @param digits Number of digits (decimal places) to round to. Default is 3.
+#' @param ... Optional parameters that include `confint_level` and `digits`.
+#' 
+#' @note Optional parameter `confint_level`: A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
+#' @note Optional parameter `digits`: Number of digits (decimal places) to round to. Default is 3.
 #' 
 #' @import tibble 
 #' @importFrom dplyr mutate across  %>% where
@@ -18,7 +20,12 @@
 #' summary(pw_rp)
 #' 
 #' @export
-summary.flexCountReg <- function(object, confint_level = 0.95, digits = 3) {
+summary.flexCountReg <- function(object, ...) {
+  # Extract optional parameters from '...'
+  args <- list(...)
+  confint_level <- ifelse("confint_level" %in% names(args), args$confint_level, 0.95)
+  digits <- ifelse("digits" %in% names(args), args$digits, 3)
+  
   object <- object$model
   cat("Call:\n", deparse(object$formula), "\n")
   cat("\n", "Method: ", object$type, "\n")

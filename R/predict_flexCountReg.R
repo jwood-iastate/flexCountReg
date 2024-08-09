@@ -1,9 +1,11 @@
 #' Predictions for non-random parameters count models
 #'
 #' @name predict.flexCountReg
-#' @param model a model object estimated using this R package.
-#' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe.
-#' @param method Only valid for random parameters models. The method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).
+#' @param object a model object estimated using this R package.
+#' @param ... optional arguments passed to the function. These include `data` and `method`.
+#' 
+#' @note optional parameter `data`: a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe.
+#' @note optional parameter `method`: Only valid for random parameters models. The method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).
 #' @note the method option \code{Individual} requires that the outcome be observed for all observations. This is due to the use of Bayesian methods for computing the individual observation coefficients.
 #'
 #' @import randtoolbox stats lamW modelr rlang 
@@ -21,8 +23,14 @@
 #'
 #' predict(nbg, washington_roads)
 #' @export
-predict.flexCountReg <- function(model, data, method='Exact'){
-  model <- model$model
+predict.flexCountReg <- function(object, ...){
+  # Extract optional parameters from '...'
+  args <- list(...)
+  data <- ifelse("data" %in% names(args), args$data, object$data)
+  method <- ifelse("method" %in% names(args), args$method, 'Exact')
+  
+  
+  model <- object$model
   
   modtype <- model$modelType 
   if(modtype=="rpnb" || modtype=="rppois"){

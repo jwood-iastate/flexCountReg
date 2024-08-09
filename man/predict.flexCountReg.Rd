@@ -4,19 +4,21 @@
 \alias{predict.flexCountReg}
 \title{Predictions for non-random parameters count models}
 \usage{
-\method{predict}{flexCountReg}(model, data, method = "Exact")
+\method{predict}{flexCountReg}(object, ...)
 }
 \arguments{
-\item{model}{a model object estimated using this R package.}
+\item{object}{a model object estimated using this R package.}
 
-\item{data}{a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe.}
-
-\item{method}{Only valid for random parameters models. The method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).}
+\item{...}{additional arguments passed to the function. These include `data` and `method`.}
 }
 \description{
 Predictions for non-random parameters count models
 }
 \note{
+optional parameter `data`: a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe.
+
+optional parameter `method`: Only valid for random parameters models. The method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).
+
 the method option \code{Individual} requires that the outcome be observed for all observations. This is due to the use of Bayesian methods for computing the individual observation coefficients.
 }
 \examples{

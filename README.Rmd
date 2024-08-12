@@ -197,13 +197,13 @@ tesstats$gtTable
 ```
 
 Checking the CURE plot:
-```{r}
+```{r cureplot-initial}
 cureplot(gen.nb2, indvar  ="lnaadt")
 ```
 
 Modifying the model to fit better:
 
-```{r}
+```{r cureplot-updt}
 gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt  + lnlength + speed50 +
                                 ShouldWidth04 + AADTover10k + I(AADTover10k/lnaadt),
                                 ln.alpha.formula = ~ 1+lnlength,
@@ -234,7 +234,7 @@ tesstats$gtTable
 ```
 
 Checking the CURE plot (notice that the CURE plot is MUCH better in this case than the NB-2 without the interaction and still better than the modified NB-2):
-```{r}
+```{r cureplot-lnaadt}
 cureplot(gen.nbp, indvar  ="lnaadt")
 ```
 

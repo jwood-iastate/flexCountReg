@@ -190,8 +190,15 @@ gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
                                 data=washington_roads,
                                 dist="NB2",
                                 method = 'NM')
-gt(summary(gen.nb2), caption = "NB-2 Model Summary")
+```
 
+
+```{r example-cont, results='markup'}
+gt(summary(gen.nb2), caption = "NB-2 Model Summary")
+```
+
+
+```{r example-cont2, results='markup'}
 tesstats <- regCompTest(gen.nb2)
 tesstats$gtTable
 ```

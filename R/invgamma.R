@@ -50,9 +50,10 @@
 #' @rdname invgamma
 #' @export
 dinvgamma <- Vectorize(function(x, shape = 2.5, scale = 1, log = FALSE) {
+
   if (x <= 0) { # Ensure the input x is strictly positive
-    warning("x must be greater than 0")
-    return(NA)  # Return NA for invalid input values
+    # warning("x must be greater than 0")
+    return(0)  # Return NA for invalid input values
   }
   
   # Calculate the log-density using the gamma density function

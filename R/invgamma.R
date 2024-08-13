@@ -73,8 +73,17 @@ dinvgamma <- Vectorize(function(x, shape = 2.5, scale = 1, log = FALSE) {
 
 #' @rdname invgamma
 #' @export
-pinvgamma <- Vectorize(function(q, shape=2.5, scale = 1, lower.tail=TRUE, log.p=FALSE){
-  p <- stats::pgamma(1/q, shape, rate=1/scale, lower.tail = !lower.tail, log.p = log.p)
+pinvgamma <- Vectorize(function(
+    q, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALSE){
+
+  if (q < 0 & lower.tail) return (0)
+  if (q < 0 & !lower.tail) return (1)
+  
+  p <- stats::pgamma(q = 1 / q, 
+                     shape, 
+                     rate = 1 / scale, 
+                     lower.tail = !lower.tail, 
+                     log.p = log.p)
   return(p)
 })
 

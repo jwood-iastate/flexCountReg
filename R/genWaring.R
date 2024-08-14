@@ -21,6 +21,10 @@
 #' The PMF becomes:
 #' 
 #' \deqn{PMF=\frac{\Gamma(\alpha + \rho) \Gamma\left(\alpha + \frac{2\mu}{\rho} + x\right) \Gamma\left(\frac{2\mu}{\rho} + \rho\right)}{\Gamma\left(\alpha + \frac{2\mu}{\rho}\right) \Gamma\left(\frac{2\mu}{\rho} + \rho + x\right) \Gamma\left(\alpha + \rho + \frac{2\mu}{\rho} + x\right)} \left( \frac{\frac{2\mu}{\rho}}{\alpha + \frac{2\mu}{\rho}} \right)}
+#' 
+#' #' This results in a regression model where:
+#' \deqn{\mu=e^{X\beta}}
+#' \deqn{\sigma^2=\mu\left(1-\frac{1}{\alpha+\rho+1}\right)+\mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}}
 #'
 #' @import maxLik stats
 #' @importFrom MASS glm.nb

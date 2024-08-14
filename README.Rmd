@@ -181,6 +181,7 @@ The following is an example of using flexCountReg to estimate a negative binomia
 ```{r example}
 library(gt) # used to format summary tables here
 library(flexCountReg)
+library(knitr)
 
 data("washington_roads")
 washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
@@ -194,13 +195,13 @@ gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
 
 
 ```{r example-cont}
-gt(summary(gen.nb2), caption = "NB-2 Model Summary")
+kable(summary(gen.nb2), caption = "NB-2 Model Summary")
 ```
 
 
 ```{r example-cont2}
 tesstats <- regCompTest(gen.nb2)
-tesstats$gtTable
+knitr::kable(tesstats$statistics)
 ```
 
 Checking the CURE plot:

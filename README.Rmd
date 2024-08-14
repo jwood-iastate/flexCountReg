@@ -1,5 +1,7 @@
 ---
 output: github_document
+header-includes:
+- \usepackage{caption} # Insert the package used by gt
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -12,10 +14,6 @@ knitr::opts_chunk$set(
   out.width = "100%"
 )
 ```
-
-
-<!-- header-includes: -->
-<!-- - \usepackage{caption} # Insert the package used by gt -->
 
 # flexCountReg
 

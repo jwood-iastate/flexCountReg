@@ -200,8 +200,8 @@ kable(summary(gen.nb2), caption = "NB-2 Model Summary")
 
 
 ```{r example-cont2}
-tesstats <- regCompTest(gen.nb2)
-knitr::kable(tesstats$statistics)
+teststats <- regCompTest(gen.nb2)
+kable(teststats$statistics)
 ```
 
 Checking the CURE plot:
@@ -219,9 +219,8 @@ gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt  + lnlength + speed50 +
                                 dist="NB2",
                                 method = 'NM')
 kable(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
-
-tesstats <- regCompTest(gen.nb2)
-kable(tesstats$statistics)
+teststats <- regCompTest(gen.nb2)
+kable(teststats$statistics)
 cureplot(gen.nb2, indvar  ="lnaadt")
 ```
 
@@ -236,9 +235,8 @@ gen.nbp <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
                                 dist="NBP",
                                 method = 'NM')
 kable(summary(gen.nbp), caption = "NB-P Model Summary")
-
-tesstats <- regCompTest(gen.nbp)
-kable(tesstats$statistics)
+teststats <- regCompTest(gen.nbp)
+kable(teststats$statistics)
 ```
 
 Checking the CURE plot (notice that the CURE plot is MUCH better in this case than the NB-2 without the interaction and still better than the modified NB-2):

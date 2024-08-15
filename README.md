@@ -200,6 +200,12 @@ function of predictor variables:
 ``` r
 library(gt) # used to format summary tables here
 library(flexCountReg)
+#> Registered S3 method overwritten by 'flexCountReg':
+#>   method         from  
+#>   summary.maxLik maxLik
+```
+
+``` r
 library(knitr)
 
 data("washington_roads")
@@ -250,8 +256,8 @@ kable(summary(gen.nb2), caption = "NB-2 Model Summary")
 NB-2 Model Summary
 
 ``` r
-tesstats <- regCompTest(gen.nb2)
-knitr::kable(tesstats$statistics)
+teststats <- regCompTest(gen.nb2)
+kable(teststats$statistics)
 ```
 
 | Statistic             |     Model | BaseModel |
@@ -267,7 +273,6 @@ Checking the CURE plot:
 
 ``` r
 cureplot(gen.nb2, indvar  ="lnaadt")
-#> [1] 1501   14
 #> Covariate: indvar_values
 #> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
@@ -299,32 +304,31 @@ kable(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
 #> 1 (Intercept)        -7.36        0.043 -173.        0         -7.45      -7.28 
 #> 2 lnaadt              0.894       0.005  181.        0          0.884      0.904
 #> 3 lnlength            0.862       0.037   23.4       0          0.79       0.935
-#> 4 speed50            -0.409       0.092   -4.46      0         -0.588     -0.229
-#> 5 ShouldWidth04       0.251       0.059    4.23      0          0.134      0.367
+#> 4 speed50            -0.409       0.092   -4.46      0         -0.589     -0.229
+#> 5 ShouldWidth04       0.251       0.059    4.22      0          0.134      0.367
 #> 6 AADTover10k         5.09        0.09    56.8       0          4.91       5.26 
-#> 7 I(AADTover10k/ln… -41.2         0.938  -43.9       0        -43.0      -39.3  
-#> 8 ln(alpha):  (Int…   1.56        0.34     4.58      0          0.892      2.22 
-#> 9 ln(alpha):  lnle…   0.022       0.35     0.064     0.949     -0.663      0.708
+#> 7 I(AADTover10k/ln… -41.2         0.856  -48.1       0        -42.9      -39.5  
+#> 8 ln(alpha):  (Int…   1.56        0.35     4.46      0          0.873      2.24 
+#> 9 ln(alpha):  lnle…   0.022       0.345    0.065     0.948     -0.653      0.698
 ```
 
 | parameter              |   coeff | Std. Err. |   t-stat | p-value | lower CI | upper CI |
 |:-----------------------|--------:|----------:|---------:|--------:|---------:|---------:|
-| (Intercept)            |  -7.364 |     0.043 | -173.167 |   0.000 |   -7.447 |   -7.281 |
-| lnaadt                 |   0.894 |     0.005 |  181.134 |   0.000 |    0.884 |    0.904 |
+| (Intercept)            |  -7.364 |     0.043 | -173.202 |   0.000 |   -7.447 |   -7.281 |
+| lnaadt                 |   0.894 |     0.005 |  181.133 |   0.000 |    0.884 |    0.904 |
 | lnlength               |   0.862 |     0.037 |   23.373 |   0.000 |    0.790 |    0.935 |
-| speed50                |  -0.409 |     0.092 |   -4.462 |   0.000 |   -0.588 |   -0.229 |
-| ShouldWidth04          |   0.251 |     0.059 |    4.226 |   0.000 |    0.134 |    0.367 |
+| speed50                |  -0.409 |     0.092 |   -4.458 |   0.000 |   -0.589 |   -0.229 |
+| ShouldWidth04          |   0.251 |     0.059 |    4.224 |   0.000 |    0.134 |    0.367 |
 | AADTover10k            |   5.086 |     0.090 |   56.822 |   0.000 |    4.910 |    5.261 |
-| I(AADTover10k/lnaadt)  | -41.179 |     0.938 |  -43.907 |   0.000 |  -43.017 |  -39.341 |
-| ln(alpha): (Intercept) |   1.558 |     0.340 |    4.581 |   0.000 |    0.892 |    2.225 |
-| ln(alpha): lnlength    |   0.022 |     0.350 |    0.064 |   0.949 |   -0.663 |    0.708 |
+| I(AADTover10k/lnaadt)  | -41.179 |     0.856 |  -48.098 |   0.000 |  -42.857 |  -39.501 |
+| ln(alpha): (Intercept) |   1.558 |     0.350 |    4.459 |   0.000 |    0.873 |    2.244 |
+| ln(alpha): lnlength    |   0.022 |     0.345 |    0.065 |   0.948 |   -0.653 |    0.698 |
 
 Modified NB-2 Model Summary
 
 ``` r
-
-tesstats <- regCompTest(gen.nb2)
-kable(tesstats$statistics)
+teststats <- regCompTest(gen.nb2)
+kable(teststats$statistics)
 ```
 
 | Statistic             |     Model | BaseModel |
@@ -338,7 +342,6 @@ kable(tesstats$statistics)
 
 ``` r
 cureplot(gen.nb2, indvar  ="lnaadt")
-#> [1] 1501   14
 #> Covariate: indvar_values
 #> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
@@ -374,7 +377,7 @@ kable(summary(gen.nbp), caption = "NB-P Model Summary")
 #> 5 ShouldWidth04       0.255       0.059    4.29      0          0.139      0.372
 #> 6 AADTover10k         0.693       0.088    7.92      0          0.522      0.865
 #> 7 ln(alpha):  (Inte… -1.45        0.297   -4.88      0         -2.03      -0.865
-#> 8 ln(alpha):  lnlen… -0.116       0.256   -0.455     0.649     -0.619      0.386
+#> 8 ln(alpha):  lnlen… -0.116       0.254   -0.458     0.647     -0.615      0.382
 #> 9 P                   1.69        0.291    5.80      0          1.12       2.26
 ```
 
@@ -387,15 +390,14 @@ kable(summary(gen.nbp), caption = "NB-P Model Summary")
 | ShouldWidth04          |  0.255 |     0.059 |    4.293 |   0.000 |    0.139 |    0.372 |
 | AADTover10k            |  0.693 |     0.088 |    7.918 |   0.000 |    0.522 |    0.865 |
 | ln(alpha): (Intercept) | -1.447 |     0.297 |   -4.878 |   0.000 |   -2.028 |   -0.865 |
-| ln(alpha): lnlength    | -0.116 |     0.256 |   -0.455 |   0.649 |   -0.619 |    0.386 |
+| ln(alpha): lnlength    | -0.116 |     0.254 |   -0.458 |   0.647 |   -0.615 |    0.382 |
 | P                      |  1.686 |     0.291 |    5.796 |   0.000 |    1.116 |    2.256 |
 
 NB-P Model Summary
 
 ``` r
-
-tesstats <- regCompTest(gen.nbp)
-kable(tesstats$statistics)
+teststats <- regCompTest(gen.nbp)
+kable(teststats$statistics)
 ```
 
 | Statistic             |     Model | BaseModel |
@@ -413,7 +415,6 @@ modified NB-2):
 
 ``` r
 cureplot(gen.nbp, indvar  ="lnaadt")
-#> [1] 1501   14
 #> Covariate: indvar_values
 #> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
@@ -435,9 +436,9 @@ regCompTable(list("Generalized NB-2"=gen.nb2, "Generalized NB-P"=gen.nbp), table
 | speed50                | -0.409 (0.092)\*\*\*  | -0.39 (0.093)\*\*\*  |
 | ShouldWidth04          | 0.251 (0.059)\*\*\*   | 0.255 (0.059)\*\*\*  |
 | AADTover10k            | 5.086 (0.09)\*\*\*    | 0.693 (0.088)\*\*\*  |
-| I(AADTover10k/lnaadt)  | -41.179 (0.938)\*\*\* | —                    |
-| ln(alpha): (Intercept) | 1.558 (0.34)\*\*\*    | -1.447 (0.297)\*\*\* |
-| ln(alpha): lnlength    | 0.022 (0.35)          | -0.116 (0.256)       |
+| I(AADTover10k/lnaadt)  | -41.179 (0.856)\*\*\* | —                    |
+| ln(alpha): (Intercept) | 1.558 (0.35)\*\*\*    | -1.447 (0.297)\*\*\* |
+| ln(alpha): lnlength    | 0.022 (0.345)         | -0.116 (0.254)       |
 | P                      | —                     | 1.686 (0.291)\*\*\*  |
 | N Obs.                 | 1501                  | 1501                 |
 | LL                     | -1062.504             | -1062.206            |

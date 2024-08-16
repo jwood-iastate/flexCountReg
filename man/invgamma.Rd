@@ -19,15 +19,18 @@ rinvgamma(n, shape = 2.5, scale = 1)
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{shape}{numeric value or vector of shape values for the distribution (the values have to be greater than 0).}
+\item{shape}{numeric value or vector of shape values for the distribution
+(the values have to be greater than 0).}
 
-\item{scale}{single value or vector of values for the scale parameter of the distribution (the values have to be greater than 0).}
+\item{scale}{single value or vector of values for the scale parameter of the
+distribution (the values have to be greater than 0).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
 \item{q}{quantile or a vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.}
+\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+otherwise, \eqn{P[X>x]}.}
 
 \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
 
@@ -36,26 +39,36 @@ rinvgamma(n, shape = 2.5, scale = 1)
 \item{n}{the number of random numbers to generate.}
 }
 \description{
-These functions provide the density function, distribution function, quantile function, and random number generation for the Inverse-Gamma (IG) Distribution
+These functions provide the density function, distribution function, quantile
+function, and random number generation for the Inverse-Gamma (IG)
+Distribution
 }
 \details{
 \code{dinvgamma} computes the density (PDF) of the Inverse-Gamma Distribution.
 
 \code{pinvgamma} computes the CDF of the Inverse-Gamma Distribution.
 
-\code{qinvgamma} computes the quantile function of the Inverse-Gamma Distribution.
+\code{qinvgamma} computes the quantile function of the Inverse-Gamma
+Distribution.
 
 \code{rinvgamma} generates random numbers from the Inverse-Gamma Distribution.
 
 The compound Probability Mass Function (PMF) for the Inverse-Gamma distribution:
-\deqn{f(x|\alpha,\beta)=\frac{\beta^\alpha}{\Gamma(\alpha)}\left(\frac{1}{x}\right)^{\alpha+1}e^{-\frac{\beta}{x}}}
+\deqn{f(x | \alpha, \beta) = 
+    \frac{\beta^\alpha}{\Gamma(\alpha)}
+    \left(\frac{1}{x}\right)^{\alpha+1} e^{-\frac{\beta}{x}}}
 
-Where \eqn{\alpha} is the shape parameter and \eqn{\beta} is a scale parameter with the restrictions that \eqn{\alpha>0} and \eqn{\eta>0}, and \eqn{x>0}.
+Where \eqn{\alpha} is the shape parameter and \eqn{\beta} is a scale
+parameter with the restrictions that \eqn{\alpha > 0} and \eqn{\eta > 0}, and
+\eqn{x > 0}.
 
 The CDF of the Inverse-Gamma distribution is:
-\deqn{F(x|\alpha,\beta)=\frac{\alpha. \Gamma\left(\frac{\beta}{x}\right)}{\Gamma(\alpha)}=Q\left(\alpha, \frac{\beta}{x} \right)}
+\deqn{F(x | \alpha, \beta) = 
+   \frac{\alpha. \Gamma \left(\frac{\beta}{x}\right)}{\Gamma(\alpha)} = 
+   Q\left(\alpha, \frac{\beta}{x} \right)}
 
-Where the numerator is the incomplete gamma function and \eqn{Q(\cdot)} is the regularized gamma function.
+Where the numerator is the incomplete gamma function and \eqn{Q(\cdot)} is
+the regularized gamma function.
 
 The mean of the distribution is (provided \eqn{\alpha>1}):
 \deqn{\mu=\frac{\beta}{\alpha-1}}

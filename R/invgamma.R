@@ -59,8 +59,9 @@ dinvgamma <- Vectorize(function(x, shape = 2.5, scale = 1, log = FALSE) {
   # Calculate the log-density using the gamma density function
   # Convert scale to rate for the gamma function
   rate <- 1 / scale
+  
   # Logarithm of the gamma density evaluated at 1/x
-  log.p <- stats::dgamma(1/x, shape, rate = rate, log = TRUE) - 2 * log(x)
+  log.p <- stats::dgamma(1/x, shape, rate = 1/ rate, log = TRUE) - 2 * log(x)
   
   # Return log density or convert log density to density
   if (log) {
@@ -81,7 +82,7 @@ pinvgamma <- Vectorize(function(
   
   p <- stats::pgamma(q = 1 / q, 
                      shape, 
-                     rate = 1 / scale, 
+                     rate = scale, 
                      lower.tail = !lower.tail, 
                      log.p = log.p)
   return(p)
@@ -89,8 +90,14 @@ pinvgamma <- Vectorize(function(
 
 #' @rdname invgamma
 #' @export
-qinvgamma <- Vectorize(function(p,shape=2.5, scale = 1, lower.tail = TRUE,  log.p = FALSE) {
-  q <- stats::qgamma(1-p, shape, rate=1/scale, lower.tail = lower.tail, log.p = log.p)^(-1)
+qinvgamma <- Vectorize(function(
+    p, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALSE) {
+
+  q <- stats::qgamma(1 - p, 
+                     shape, 
+                     rate = scale, 
+                     lower.tail = lower.tail, 
+                     log.p = log.p)^(-1)
   return(q)
 })
 

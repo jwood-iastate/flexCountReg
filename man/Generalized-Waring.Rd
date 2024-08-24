@@ -61,6 +61,10 @@ The mean value is:
 
 Thus, we can use:
 \deqn{a_x=\frac{\mu(\rho-1)}{k}}
+
+This results in a regression model where:
+\deqn{\mu=e^{X\beta}}
+\deqn{\sigma^2=\mu\left(1-\frac{1}{\alpha+\rho+1}\right)+\mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}}
 }
 \examples{
 dgwar(0, mu=1, k=2, rho=3)

@@ -10,7 +10,7 @@
 #'
 #' @import randtoolbox stats lamW modelr rlang 
 #' @importFrom utils head  tail
-#' @include tri.R
+#' @include corr_haltons.R halton_dists.R get_chol.R
 #'
 #' @examples
 #'
@@ -146,80 +146,28 @@ predict.flexCountReg <- function(object, ...){
     else if (method=='Simulated'){
       
       # generate and scale random draws
-      if (length(rpar)>1){
-        if (correlated){ # Generate correlated random draws
-          chol_vals <- model$Cholesky
-          Ch <- matrix(0, N_rand, N_rand)
-          counter = 1
-          for (i in 1:N_rand){
-            for (j in 1:N_rand){
-              if (j<=i){
-                Ch[j,i] <- chol_vals[counter]
-                counter <- counter + 1
-              }
-            }
-          }
-          scaled_draws <- qnorm(hdraws) %*% Ch
-          draws <- apply(scaled_draws, 1, function(x) x + random_coefs_means)
+      if(length(rpar)==1){
+        if(is.null(rpardists)){
+          draws <- halton_dists(dist="n", hdraw=hdraws, mean=random_coefs_means, sdev=rand_sdevs)
         }
         else{
-          rand_sdevs <- rand_sdevs
-          draws <- hdraws #initialize the matrix
-          
-          if (is.null(rpardists)){
-            draws <- apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs))
-          }
-          else{
-            for (i in 1:length(rpar)){
-              if (rpardists[i]=="ln"){
-                draws[,i] <- stats::qlnorm(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
-              }
-              else if (rpardists[i]=="t"){
-                draws[,i] <- qtri(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
-              }
-              else if (rpardists[i]=="u"){
-                draws[,i] <- random_coefs_means[i] + (hdraws[,i] - 0.5)*abs(rand_sdevs[i])
-              }
-              else if (rpardists[i]=="g"){
-                draws[,i] <- stats::qgamma(hdraws[,i], shape=random_coefs_means[i]^2/(rand_sdevs[i]^2), 
-                                           rate=random_coefs_means[i]/(rand_sdevs[i]^2))
-              }
-              else{
-                draws[,i] <- stats::qnorm(hdraws[,i], random_coefs_means[i], abs(rand_sdevs[i]))
-              }
-            }
-          }
-          draws <- t(draws)
-        }
-        xb_rand_mat <- crossprod(t(X_rand), draws)
-      }
-      else{
-        if (is.null(rpardists)){
-          scaled_draws <- hdraws * rand_sdevs
-          draws <- scaled_draws + random_coefs_means[1]
-        }
-        else{
-          if (rpardists[1]=="ln"){
-            draws <- stats::qlnorm(hdraws, random_coefs_means, abs(rand_sdevs))
-          }
-          else if (rpardists[1]=="t"){
-            draws <- qtri(hdraws, random_coefs_means, abs(rand_sdevs))
-          }
-          else if (rpardists[1]=="u"){
-            draws <- random_coefs_means + (hdraws-0.5)*abs(rand_sdevs)
-          }
-          else if (rpardists[1]=="g"){
-            draws <- stats::qgamma(hdraws, shape=random_coefs_means^2/(rand_sdevs^2), 
-                                   rate=random_coefs_means/(rand_sdevs^2))
-          }
-          else{
-            draws <- stats::qnorm(hdraws, random_coefs_means, abs(rand_sdevs))
-          }
-          
+          draws <- halton_dists(dist=rpardists, hdraw=hdraws, mean=random_coefs_means, sdev=rand_sdevs)
         }
         xb_rand_mat <- sapply(draws, function(x) X_rand * x)
+      }else{
+        if (correlated){ # Generate correlated random draws
+          Ch <- get_chol(t, Nrand)
+          draws <- corr_haltons(random_coefs_means, cholesky = Ch, hdraws=hdraws)
+        }else{
+          draws <- hdraws # initialize the matrix
+          for (i in 1:Nrand){
+            draws[,i] <- halton_dists(dist=rpardists[i], hdraw=hdraws[,i], mean=random_coefs_means[i], sdev=rand_sdevs[i])
+          }
+        }
+        draws <- t(draws)
+        xb_rand_mat <- crossprod(t(X_rand), draws)
       }
-      
+ 
       rpar_mat <- exp(xb_rand_mat)
       pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
       mui <- rowMeans(pred_mat)
@@ -228,59 +176,26 @@ predict.flexCountReg <- function(object, ...){
     }
     else if (method=='Individual'){
       # generate and scale random draws
-      if (length(rpar)>1){
-        if (correlated){ # Generate correlated random draws
-          Ch <- model$Cholesky
-          scaled_draws <- qnorm(hdraws) %*% Ch
-          draws <- apply(scaled_draws, 1, function(x) x + random_coefs_means)
+      if(length(rpar)==1){
+        if(is.null(rpardists)){
+          draws <- halton_dists(dist="n", hdraw=hdraws, mean=random_coefs_means, sdev=rand_sdevs)
         }
         else{
-          draws <- hdraws #initialize the matrix
-          
-          if (is.null(rpardists)){
-            draws <- apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs))
-          }
-          else{
-            for (i in 1:length(rpar)){
-              if (rpardists[i]=="ln"){
-                draws[,i] <- stats::qlnorm(hdraws[,i], random_coefs_means[i], rand_sdevs[i])
-              }
-              else if (rpardists[i]=="t"){
-                draws[,i] <- qtri(hdraws[,i], random_coefs_means[i], rand_sdevs[i])
-              }
-              else if (rpardists[i]=="u"){
-                draws[,i] <- random_coefs_means[i] + (hdraws[,i] - 0.5)*rand_sdevs[i]
-              }
-              else{
-                draws[,i] <- stats::qnorm(hdraws[,i], random_coefs_means[i], rand_sdevs[i])
-              }
-            }
-          }
-          draws <- t(draws)
-        }
-        xb_rand_mat <- crossprod(t(X_rand), draws)
-      }
-      else{
-        if (is.null(rpardists)){
-          scaled_draws <- hdraws * rand_sdevs
-          draws <- scaled_draws + random_coefs_means[1]
-        }
-        else{
-          if (rpardists[1]=="ln"){
-            draws <- stats::qlnorm(hdraws, random_coefs_means, rand_sdevs)
-          }
-          else if (rpardists[1]=="t"){
-            draws <- qtri(hdraws, random_coefs_means, rand_sdevs)
-          }
-          else if (rpardists[1]=="u"){
-            draws <- random_coefs_means + (hdraws-0.5)*rand_sdevs
-          }
-          else{
-            draws <- stats::qnorm(hdraws, random_coefs_means, rand_sdevs)
-          }
-          
+          draws <- halton_dists(dist=rpardists, hdraw=hdraws, mean=random_coefs_means, sdev=rand_sdevs)
         }
         xb_rand_mat <- sapply(draws, function(x) X_rand * x)
+      }else{
+        if (correlated){ # Generate correlated random draws
+          Ch <- get_chol(t, Nrand)
+          draws <- corr_haltons(random_coefs_means, cholesky = Ch, hdraws=hdraws)
+        }else{
+          draws <- hdraws # initialize the matrix
+          for (i in 1:Nrand){
+            draws[,i] <- halton_dists(dist=rpardists[i], hdraw=hdraws[,i], mean=random_coefs_means[i], sdev=rand_sdevs[i])
+          }
+        }
+        draws <- t(draws)
+        xb_rand_mat <- crossprod(t(X_rand), draws)
       }
       
       rpar_mat <- exp(xb_rand_mat)

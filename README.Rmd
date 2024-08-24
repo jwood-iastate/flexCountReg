@@ -200,8 +200,8 @@ kable(summary(gen.nb2), caption = "NB-2 Model Summary")
 
 
 ```{r example-cont2}
-tesstats <- regCompTest(gen.nb2)
-knitr::kable(tesstats$statistics)
+teststats <- regCompTest(gen.nb2)
+kable(teststats$statistics)
 ```
 
 Checking the CURE plot:
@@ -218,10 +218,9 @@ gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt  + lnlength + speed50 +
                                 data=washington_roads,
                                 dist="NB2",
                                 method = 'NM')
-gt(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
-
-tesstats <- regCompTest(gen.nb2)
-tesstats$gtTable
+kable(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
+teststats <- regCompTest(gen.nb2)
+kable(teststats$statistics)
 cureplot(gen.nb2, indvar  ="lnaadt")
 ```
 
@@ -235,10 +234,9 @@ gen.nbp <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
                                 data=washington_roads,
                                 dist="NBP",
                                 method = 'NM')
-gt(summary(gen.nbp), caption = "NB-P Model Summary")
-
-tesstats <- regCompTest(gen.nbp)
-tesstats$gtTable
+kable(summary(gen.nbp), caption = "NB-P Model Summary")
+teststats <- regCompTest(gen.nbp)
+kable(teststats$statistics)
 ```
 
 Checking the CURE plot (notice that the CURE plot is MUCH better in this case than the NB-2 without the interaction and still better than the modified NB-2):
@@ -248,7 +246,8 @@ cureplot(gen.nbp, indvar  ="lnaadt")
 
 Creating a table to compare the models:
 ```{r}
-regCompTable(list("Generalized NB-2"=gen.nb2, "Generalized NB-P"=gen.nbp), tableType="gt")
+regCompTable(list("Generalized NB-2"=gen.nb2, "Generalized NB-P"=gen.nbp), tableType="tibble") |> 
+  kable()
 ```
 
 Note that the metrics for comparison are similar. While the models both have the same number of parameters, the NB-P was able to get better performance without requiring the interaction terms (which leads to strange relationships between the exposure metric and the outcome).

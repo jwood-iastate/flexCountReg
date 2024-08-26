@@ -62,7 +62,7 @@ predict.flexCountReg <- function(object, ...){
     rpar <- colnames(X_rand)
     
     N_fixed <- num_vars_fixed <- length(x_fixed_names)
-    N_rand <- num_vars_rand <- length(unname(rpar))
+    Nrand <- N_rand <- num_vars_rand <- length(unname(rpar))
     total_vars <- num_vars_fixed + num_vars_rand
     
     coefs <- unlist(model$estimate, recursive = TRUE, use.names = FALSE)

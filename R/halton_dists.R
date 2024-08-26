@@ -30,31 +30,33 @@
 #'
 #'
 #' @examples
-#' # Generate 500 random draws from a normal distribution with a mean of 3 and a standard deviation of 2
-#' halton_dists("n", 3, 2, ndraws=500)
+#' # Generate 500 random draws from a normal distribution 
+#' halton_dists(dist="n", mean=3, sdev=2, ndraws=500)
 #'
-#' # Generate 500 random draws from a lognormal distribution with a mean of 2 and a standard deviation of 1.5
-#' halton_dists("ln", 2, 1.5, ndraws=500)
+#' # Generate 500 random draws from a lognormal distribution 
+#' halton_dists(dist="ln", mean=2, sdev=1.5, ndraws=500)
 #'
-#' # Generate 500 random draws from a triangular distribution with a median of 1 and a half-width of 0.5
-#' halton_dists("t", 1, 0.5, ndraws=500)
+#' # Generate 500 random draws from a triangular distribution
+#' halton_dists(dist="t", mean=1, sdev=0.5, ndraws=500)
 #'
-#' # Generate 500 random draws from a uniform distribution with a midpoint of 8 and a half-width of 3
-#' halton_dists("u", 8, 3, ndraws=500)
+#' # Generate 500 random draws from a uniform distribution
+#' halton_dists(dist="u", mean=8, sdev=3, ndraws=500)
 #'
-#' # Generate 500 random draws from a gamma distribution with a mean of 0.5 and a standard deviation of 1.5
-#' halton_dists("g", 0.5, 1.5, ndraws=500)
+#' # Generate 500 random draws from a gamma distribution
+#' halton_dists(dist="g", mean=0.5, sdev=1.5, ndraws=500)
 #'
 #' @export
 halton_dists <- function(dist, mean, sdev, hdraw=NULL, ndraws=500) {
   if (is.null(hdraw)) { # If Halton draws are not provided, generate them
-    hdraw <- randtoolbox::halton(hdraw, 2)
+    hdraw <- randtoolbox::halton(ndraws, 2)
   }
   switch(dist,
          "ln" = stats::qlnorm(hdraw, mean, abs(sdev)),
          "t" = qtri(hdraw, mean, abs(sdev)),
          "u" = mean + (hdraw - 0.5) * abs(sdev),
          "g" = stats::qgamma(hdraw, shape = mean^2 / sdev^2, rate = mean / sdev^2),
-         stats::qnorm(hdraw, mean, abs(sdev)) # default case for normal distribution
+         "n" = stats::qnorm(hdraw, mean, abs(sdev)), # default case for normal distribution
+         stop("Invalid distribution type")
   )
 }
+

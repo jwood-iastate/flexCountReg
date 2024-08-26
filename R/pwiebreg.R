@@ -55,18 +55,24 @@ pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
   mod1_frame <- stats::model.frame(formula, data)
   X_Fixed <- stats::model.matrix(formula, data)
   
+  x_names <- colnames(X_Fixed)
+  
   if (!is.null(alpha_formula)) {
     mod_alpha_frame <- stats::model.frame(alpha_formula, data)
     X_alpha <- stats::model.matrix(alpha_formula, data)
+    x_names <- c(x_names, paste0("ln(alpha):",colnames(X_alpha)))
   } else {
     X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if alpha_formula is not provided
+    x_names <- append(x_names, "ln(alpha)")
   }
   
   if (!is.null(beta_formula)) {
     mod_beta_frame <- stats::model.frame(beta_formula, data)
     X_beta <- stats::model.matrix(beta_formula, data)
+    x_names <- c(x_names, paste0("ln(beta):",colnames(X_beta)))
   } else {
     X_beta <- matrix(1, nrow(data), 1)  # Use an intercept-only model if beta_formula is not provided
+    x_names <- append(x_names, "ln(beta)")
   }
   
   y <- stats::model.response(mod1_frame)
@@ -124,6 +130,8 @@ pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
   } else {
     start.vals
   }
+  
+  names(start) <- x_names
   
   # Run the maximum likelihood estimation
   fit <- maxLik::maxLik(p_poisweibull_rp, start = start,

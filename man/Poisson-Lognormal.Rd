@@ -2,12 +2,15 @@
 % Please edit documentation in R/ppoislogn.R
 \name{Poisson-Lognormal}
 \alias{Poisson-Lognormal}
+\alias{dpLnorm_cpp}
 \alias{dpLnorm}
 \alias{ppLnorm}
 \alias{qpLnorm}
 \alias{rpLnorm}
 \title{Poisson-Lognormal Distribution}
 \usage{
+dpLnorm_cpp(x, mean = 1, sigma = 1, ndraws = 1500, log = FALSE)
+
 dpLnorm(x, mean = 1, sigma = 1, ndraws = 1500, log = FALSE)
 
 ppLnorm(

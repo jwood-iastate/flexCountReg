@@ -44,10 +44,43 @@
 #' qplindLnorm(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, sigma=2, ndraws=10)
 #' rplindLnorm(3, mean=0.75, theta=7, sigma=2, ndraws=10)
 #'
-#' @import stats randtoolbox
-#' @include plind.R
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib flexCountReg
 #' @export
 #' @name Poisson-Lindley-Lognormal
+dplindLnorm_cpp <- Vectorize(function(x, mean=1, theta = 1, sigma=1, lambda=NULL, ndraws=1500, log=FALSE, hdraws=NULL){
+  sourceCpp("calculate_pll.cpp")
+  #test to make sure the value of x is an integer
+  tst <- ifelse(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2])>0),FALSE, TRUE)
+  if(tst || x < 0){
+    print("The value of `x` must be a non-negative whole number")
+    stop()
+  }
+  if(is.null(lambda)){
+    if(mean<=0 || theta<=0 || sigma<=0){ 
+      print('The values of `mean`, `theta`, and `sigma` all have to have values greater than 0.')
+      stop()
+    }
+    else{
+      lambda <- mean*theta*(theta+1)/((theta+2) * exp(sigma^2/2))
+    }
+  }
+  else{
+    if(lambda<=0 || theta<=0  || sigma<=0){
+      print('The values of `lambda`, `theta`, and `sigma` all have to have values greater than 0.')
+      stop()
+    }
+  }
+  
+  # Generate Halton draws to use as quantile values
+  if (!is.null(hdraws)) h <- hdraws else h <- randtoolbox::halton(ndraws)
+  
+  # Compute the probabilities
+  p <- calculate_pll_prob(x, mean, theta, sigma, h)
+
+  if (log) return(log(p))
+  else return(p)
+})
 
 #' @rdname Poisson-Lindley-Lognormal
 #' @export
@@ -59,7 +92,7 @@ dplindLnorm <- Vectorize(function(x, mean=1, theta = 1, sigma=1, lambda=NULL, nd
     stop()
   }
   if(is.null(lambda)){
-    if(mean<=0 || theta<=0 || sigma<=0){
+    if(mean<=0 || theta<=0 || sigma<=0){ 
       print('The values of `mean`, `theta`, and `sigma` all have to have values greater than 0.')
       stop()
     }

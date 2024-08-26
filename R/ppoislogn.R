@@ -41,6 +41,26 @@
 #' @import stats randtoolbox
 #' @export
 #' @name Poisson-Lognormal
+#' 
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib flexCountReg
+#' @rdname Poisson-Lognormal
+#' @export
+dpLnorm_cpp <- Vectorize(function(x, mean=1, sigma=1, ndraws=1500, log=FALSE){
+  
+  if(mean<=0 || sigma<=0){
+    print('The values of `mean` and `sigma` have to have values greater than 0.')
+    stop()
+  }
+  
+  # Generate Halton draws to use as quantile values
+  h <- randtoolbox::halton(ndraws)
+  
+  p <- calculate_plogn_prob(x, mean, sigma, h)
+  
+  if (log) return(log(p))
+  else return(p)
+})
 
 #' @rdname Poisson-Lognormal
 #' @export

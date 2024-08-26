@@ -10,6 +10,64 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// dplind_cpp
+double dplind_cpp(int x, double mean, double theta);
+RcppExport SEXP _flexCountReg_dplind_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(dplind_cpp(x, mean, theta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calculate_probability
+double calculate_probability(double x, double mean, double theta, double sigma, const Rcpp::NumericVector& h);
+RcppExport SEXP _flexCountReg_calculate_probability(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP hSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type h(hSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculate_probability(x, mean, theta, sigma, h));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calculate_pll_prob
+double calculate_pll_prob(double x, double mean, double theta, double sigma, const Rcpp::NumericVector& h);
+RcppExport SEXP _flexCountReg_calculate_pll_prob(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP hSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type h(hSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculate_pll_prob(x, mean, theta, sigma, h));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calculate_pll_mean
+double calculate_pll_mean(double x, double mean, double theta, double sigma, const Rcpp::NumericVector& h);
+RcppExport SEXP _flexCountReg_calculate_pll_mean(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP hSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type h(hSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculate_pll_mean(x, mean, theta, sigma, h));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_chol_cpp
 NumericMatrix get_chol_cpp(NumericVector pars, int Nvars);
 RcppExport SEXP _flexCountReg_get_chol_cpp(SEXP parsSEXP, SEXP NvarsSEXP) {
@@ -22,9 +80,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// calculate_plogn_prob
+double calculate_plogn_prob(double x, double mean, double theta, double sigma, const Rcpp::NumericVector& h);
+RcppExport SEXP _flexCountReg_calculate_plogn_prob(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP hSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericVector& >::type h(hSEXP);
+    rcpp_result_gen = Rcpp::wrap(calculate_plogn_prob(x, mean, theta, sigma, h));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_flexCountReg_dplind_cpp", (DL_FUNC) &_flexCountReg_dplind_cpp, 3},
+    {"_flexCountReg_calculate_probability", (DL_FUNC) &_flexCountReg_calculate_probability, 5},
+    {"_flexCountReg_calculate_pll_prob", (DL_FUNC) &_flexCountReg_calculate_pll_prob, 5},
+    {"_flexCountReg_calculate_pll_mean", (DL_FUNC) &_flexCountReg_calculate_pll_mean, 5},
     {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
+    {"_flexCountReg_calculate_plogn_prob", (DL_FUNC) &_flexCountReg_calculate_plogn_prob, 5},
     {NULL, NULL, 0}
 };
 

@@ -2,14 +2,13 @@
 % Please edit documentation in R/plindLnorm.R
 \name{Poisson-Lindley-Lognormal}
 \alias{Poisson-Lindley-Lognormal}
-\alias{dplindLnorm_cpp}
 \alias{dplindLnorm}
 \alias{pplindLnorm}
 \alias{qplindLnorm}
 \alias{rplindLnorm}
 \title{Poisson-Lindley-Lognormal Distribution}
 \usage{
-dplindLnorm_cpp(
+dplindLnorm(
   x,
   mean = 1,
   theta = 1,
@@ -18,16 +17,6 @@ dplindLnorm_cpp(
   ndraws = 1500,
   log = FALSE,
   hdraws = NULL
-)
-
-dplindLnorm(
-  x,
-  mean = 1,
-  theta = 1,
-  sigma = 1,
-  lambda = NULL,
-  ndraws = 1500,
-  log = FALSE
 )
 
 pplindLnorm(

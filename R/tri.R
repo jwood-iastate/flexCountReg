@@ -98,11 +98,13 @@ dtri <- Vectorize(function(
 
 #' @rdname Triangular
 #' @export
-ptri <- Vectorize(function(
-    q, mode = 0, sigma = 1, upper = NULL, lower=NULL, 
-    lower.tail = TRUE, log.p = FALSE){
+ptri <- Vectorize(function(q, mode = 0, sigma = 1, upper = NULL, lower=NULL, 
+                          lower.tail = TRUE, log.p = FALSE){
   c <- mode
-  if (!is.null(upper) & !is.null(lower)){
+  if((is.null(upper)) || (is.null(lower))){
+    a <- c - sigma
+    b <- c + sigma
+  }else{
     if (lower >= upper){
       msg <- 'The value of `lower` must be smaller than the value of `upper`' 
       stop(msg)
@@ -120,13 +122,9 @@ ptri <- Vectorize(function(
     a <- lower
     b <- upper
   }
-  else{
-    a <- c - sigma
-    b <- c + sigma
-  }
   
   # Compute cumulative probabilities
-  if(q < a){
+  if((q < a) || (q > b)){
     p <- 0
   }
   else if (q > b){
@@ -166,12 +164,13 @@ qtri <- Vectorize(function(p, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
 
     a <- lower
     b <- upper
-    p_mode <- ptri(q = mode, mode = mode, upper = upper, lower = lower)
+    p_mode <- ptri(q = mode, mode = mode, upper = b, lower = a)
   } else {
     a <- c - sigma
     b <- c + sigma
-    p_mode <- ptri(mode, mode = mode, sigma = sigma)
+    p_mode <- ptri(q = mode, mode = mode, sigma=sigma)
   }
+  
   if (p <= p_mode) {
     q <- a + sqrt(p * (b - a) * (c - a))
   } else {

@@ -37,6 +37,7 @@ Collate:
     'createFlexCountReg.R'
     'cureplot.R'
     'data.R'
+    'flexCountReg-Package.R'
     'plind.R'
     'plindGamma.R'
     'poisLindGamma.R'
@@ -71,7 +72,6 @@ Collate:
     'regCompTest.R'
     'regCompTable.R'
     'rpnb.predict.R'
-    'rppLind.R'
     'summary_flexCountReg.R'
 Suggests: 
     testthat (>= 3.0.0)

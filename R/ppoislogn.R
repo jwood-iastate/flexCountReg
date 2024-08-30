@@ -46,46 +46,21 @@
 #' @useDynLib flexCountReg
 #' @rdname Poisson-Lognormal
 #' @export
-dpLnorm_cpp <- Vectorize(function(x, mean=1, sigma=1, ndraws=1500, log=FALSE){
-  
-  if(mean<=0 || sigma<=0){
-    print('The values of `mean` and `sigma` have to have values greater than 0.')
-    stop()
-  }
-  
-  # Generate Halton draws to use as quantile values
-  h <- randtoolbox::halton(ndraws)
-  
-  p <- calculate_plogn_prob(x, mean, sigma, h)
-  
-  if (log) return(log(p))
-  else return(p)
-})
-
-#' @rdname Poisson-Lognormal
-#' @export
 dpLnorm <- Vectorize(function(x, mean=1, sigma=1, ndraws=1500, log=FALSE){
-  
+  # sourceCpp("src/ppoislogn.cpp")
   if(mean<=0 || sigma<=0){
     print('The values of `mean` and `sigma` have to have values greater than 0.')
     stop()
   }
   
   # Generate Halton draws to use as quantile values
-  h <- randtoolbox::halton(ndraws)
+  h <- randtoolbox::halton(ndraws, normal=TRUE)
   
-  # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to lognormal values
-  lnormdist <- exp(stats::qnorm(h, 0, sigma))
-  mu_i <- outer(mean, lnormdist)
-  
-  p_plogn.i <- sapply(mu_i, stats::dpois, x=x)
-  
-  p <- mean(p_plogn.i)
+  p <- dpLnorm_cpp(x, mean, sigma, h)
   
   if (log) return(log(p))
   else return(p)
 })
-
 #' @rdname Poisson-Lognormal
 #' @export
 ppLnorm <- Vectorize(function(q, mean=1, sigma=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){

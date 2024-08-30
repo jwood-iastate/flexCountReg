@@ -13,7 +13,6 @@ dplindLnorm(
   mean = 1,
   theta = 1,
   sigma = 1,
-  lambda = NULL,
   ndraws = 1500,
   log = FALSE,
   hdraws = NULL
@@ -43,13 +42,15 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 \item{sigma}{single value or vector of values for the sigma parameter of the lognormal distribution (the values have to be greater than 0).}
 
-\item{lambda}{alternative parameterization (use instead of the mean); numeric value or vector of values for lambda parameter of the distribution (the values have to be greater than 0).}
-
 \item{ndraws}{the number of Halton draws to use for the integration.}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
+\item{hdraws}{and optional vector of Halton draws to use for the integration.}
+
 \item{q}{quantile or a vector of quantiles.}
+
+\item{lambda}{alternative parameterization (use instead of the mean); numeric value or vector of values for lambda parameter of the distribution (the values have to be greater than 0).}
 
 \item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.}
 

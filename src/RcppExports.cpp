@@ -10,6 +10,18 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// get_chol_cpp
+NumericMatrix get_chol_cpp(NumericVector pars, int Nvars);
+RcppExport SEXP _flexCountReg_get_chol_cpp(SEXP parsSEXP, SEXP NvarsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< int >::type Nvars(NvarsSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_chol_cpp(pars, Nvars));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dplindlogn_cpp
 NumericVector dplindlogn_cpp(NumericVector x, NumericVector mean, NumericVector theta, NumericVector sigma, NumericVector h);
 RcppExport SEXP _flexCountReg_dplindlogn_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP sigmaSEXP, SEXP hSEXP) {
@@ -25,33 +37,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// get_chol_cpp
-NumericMatrix get_chol_cpp(NumericVector pars, int Nvars);
-RcppExport SEXP _flexCountReg_get_chol_cpp(SEXP parsSEXP, SEXP NvarsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< int >::type Nvars(NvarsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_chol_cpp(pars, Nvars));
-    return rcpp_result_gen;
-END_RCPP
-}
-// dpois_cpp
-double dpois_cpp(int x, double mean);
-RcppExport SEXP _flexCountReg_dpois_cpp(SEXP xSEXP, SEXP meanSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type x(xSEXP);
-    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
-    rcpp_result_gen = Rcpp::wrap(dpois_cpp(x, mean));
-    return rcpp_result_gen;
-END_RCPP
-}
-// dplogn_cpp
-NumericVector dplogn_cpp(NumericVector x, NumericVector mean, NumericVector sigma, NumericVector h);
-RcppExport SEXP _flexCountReg_dplogn_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP sigmaSEXP, SEXP hSEXP) {
+// dpLnorm_cpp
+NumericVector dpLnorm_cpp(NumericVector x, NumericVector mean, NumericVector sigma, NumericVector h);
+RcppExport SEXP _flexCountReg_dpLnorm_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP sigmaSEXP, SEXP hSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -59,83 +47,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type sigma(sigmaSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type h(hSEXP);
-    rcpp_result_gen = Rcpp::wrap(dplogn_cpp(x, mean, sigma, h));
-    return rcpp_result_gen;
-END_RCPP
-}
-// dtri_cpp
-double dtri_cpp(double x, double mode, double sigma, double upper, double lower, bool log);
-RcppExport SEXP _flexCountReg_dtri_cpp(SEXP xSEXP, SEXP modeSEXP, SEXP sigmaSEXP, SEXP upperSEXP, SEXP lowerSEXP, SEXP logSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type x(xSEXP);
-    Rcpp::traits::input_parameter< double >::type mode(modeSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< double >::type upper(upperSEXP);
-    Rcpp::traits::input_parameter< double >::type lower(lowerSEXP);
-    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
-    rcpp_result_gen = Rcpp::wrap(dtri_cpp(x, mode, sigma, upper, lower, log));
-    return rcpp_result_gen;
-END_RCPP
-}
-// ptri_cpp
-double ptri_cpp(double q, double mode, double sigma, double upper, double lower, bool lower_tail, bool log_p);
-RcppExport SEXP _flexCountReg_ptri_cpp(SEXP qSEXP, SEXP modeSEXP, SEXP sigmaSEXP, SEXP upperSEXP, SEXP lowerSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type q(qSEXP);
-    Rcpp::traits::input_parameter< double >::type mode(modeSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< double >::type upper(upperSEXP);
-    Rcpp::traits::input_parameter< double >::type lower(lowerSEXP);
-    Rcpp::traits::input_parameter< bool >::type lower_tail(lower_tailSEXP);
-    Rcpp::traits::input_parameter< bool >::type log_p(log_pSEXP);
-    rcpp_result_gen = Rcpp::wrap(ptri_cpp(q, mode, sigma, upper, lower, lower_tail, log_p));
-    return rcpp_result_gen;
-END_RCPP
-}
-// qtri_cpp
-double qtri_cpp(double p, double mode, double sigma, double upper, double lower);
-RcppExport SEXP _flexCountReg_qtri_cpp(SEXP pSEXP, SEXP modeSEXP, SEXP sigmaSEXP, SEXP upperSEXP, SEXP lowerSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type p(pSEXP);
-    Rcpp::traits::input_parameter< double >::type mode(modeSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< double >::type upper(upperSEXP);
-    Rcpp::traits::input_parameter< double >::type lower(lowerSEXP);
-    rcpp_result_gen = Rcpp::wrap(qtri_cpp(p, mode, sigma, upper, lower));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rtri_cpp
-Rcpp::NumericVector rtri_cpp(int n, double mode, double sigma, double upper, double lower);
-RcppExport SEXP _flexCountReg_rtri_cpp(SEXP nSEXP, SEXP modeSEXP, SEXP sigmaSEXP, SEXP upperSEXP, SEXP lowerSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< double >::type mode(modeSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
-    Rcpp::traits::input_parameter< double >::type upper(upperSEXP);
-    Rcpp::traits::input_parameter< double >::type lower(lowerSEXP);
-    rcpp_result_gen = Rcpp::wrap(rtri_cpp(n, mode, sigma, upper, lower));
+    rcpp_result_gen = Rcpp::wrap(dpLnorm_cpp(x, mean, sigma, h));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_flexCountReg_dplindlogn_cpp", (DL_FUNC) &_flexCountReg_dplindlogn_cpp, 5},
     {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
-    {"_flexCountReg_dpois_cpp", (DL_FUNC) &_flexCountReg_dpois_cpp, 2},
-    {"_flexCountReg_dplogn_cpp", (DL_FUNC) &_flexCountReg_dplogn_cpp, 4},
-    {"_flexCountReg_dtri_cpp", (DL_FUNC) &_flexCountReg_dtri_cpp, 6},
-    {"_flexCountReg_ptri_cpp", (DL_FUNC) &_flexCountReg_ptri_cpp, 7},
-    {"_flexCountReg_qtri_cpp", (DL_FUNC) &_flexCountReg_qtri_cpp, 5},
-    {"_flexCountReg_rtri_cpp", (DL_FUNC) &_flexCountReg_rtri_cpp, 5},
+    {"_flexCountReg_dplindlogn_cpp", (DL_FUNC) &_flexCountReg_dplindlogn_cpp, 5},
+    {"_flexCountReg_dpLnorm_cpp", (DL_FUNC) &_flexCountReg_dpLnorm_cpp, 4},
     {NULL, NULL, 0}
 };
 

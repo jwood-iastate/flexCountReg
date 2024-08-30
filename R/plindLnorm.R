@@ -16,6 +16,7 @@
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.
+#' @param hdraws and optional vector of Halton draws to use for the integration.
 #'
 #' @details
 #' \code{dplind} computes the density (PDF) of the Poisson-Lindley Distribution.
@@ -48,29 +49,11 @@
 #' @useDynLib flexCountReg
 #' @export
 #' @name Poisson-Lindley-Lognormal
-dplindLnorm <- Vectorize(function(x, mean=1, theta = 1, sigma=1, lambda=NULL, ndraws=1500, log=FALSE, hdraws=NULL){
-  sourceCpp("calculate_pll.cpp")
-  
-  #test to make sure the value of x is an integer
-  tst <- ifelse(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2])>0),FALSE, TRUE)
-  if(tst || x < 0){
-    print("The value of `x` must be a non-negative whole number")
+dplindLnorm <- Vectorize(function(x, mean=1, theta = 1, sigma=1, ndraws=1500, log=FALSE, hdraws=NULL){
+  # sourceCpp("src/ppoislogn.cpp")
+  if(mean<=0 || sigma<=0 || theta<=0){
+    print('The values of `mean`, `theta`, and `sigma` have to have values greater than 0.')
     stop()
-  }
-  if(is.null(lambda)){
-    if(mean<=0 || theta<=0 || sigma<=0){ 
-      print('The values of `mean`, `theta`, and `sigma` all have to have values greater than 0.')
-      stop()
-    }
-    else{
-      lambda <- mean*theta*(theta+1)/((theta+2) * exp(sigma^2/2))
-    }
-  }
-  else{
-    if(lambda<=0 || theta<=0  || sigma<=0){
-      print('The values of `lambda`, `theta`, and `sigma` all have to have values greater than 0.')
-      stop()
-    }
   }
   
   if (!is.null(hdraws)){
@@ -78,9 +61,9 @@ dplindLnorm <- Vectorize(function(x, mean=1, theta = 1, sigma=1, lambda=NULL, nd
   }else{
     h <- randtoolbox::halton(ndraws, normal=TRUE)
   }
- 
-  p <- dplindlogn_cpp(y, mean, theta, sigma, h)
-
+  
+  p <- dplindlogn_cpp(x, mean, theta, sigma, h)
+  
   if (log) return(log(p))
   else return(p)
 })

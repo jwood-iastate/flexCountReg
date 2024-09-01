@@ -22,7 +22,9 @@ Imports:
     gsl,
     methods,
     truncnorm,
-    Rcpp (>= 1.0.12)
+    Rcpp (>= 1.0.12),
+    broom,
+    purrr
 Depends: R (>= 2.10)
 LinkingTo: Rcpp
 SystemRequirements: GNU make

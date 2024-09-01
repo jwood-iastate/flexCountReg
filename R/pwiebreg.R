@@ -52,7 +52,7 @@
 #' 
 #' @export
 pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
-                     ndraws = 1500,  method = 'BHHH', max.iters = 1000,
+                     ndraws = 1500,  method = 'NM', max.iters = 1000,
                      start.vals = NULL, print.level = 0, bootstraps = NULL) {
   
   # Prepare model matrices for fixed effects, alpha parameter, and sigma parameter
@@ -130,7 +130,11 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
   
   # Initialize starting values if not provided
   start <- if (is.null(start.vals)) {
-    rep(0, ncol(X_Fixed) + ncol(X_alpha) + ncol(X_sigma))
+    
+    # Use the NB2 from MASS as starting values
+    p_model <- glm.nb(formula, data = data)
+    start <- unlist(p_model$coefficients)
+    start <- c(start, rep(0, ncol(X_alpha) + ncol(X_sigma)))
   } else {
     start.vals
   }
@@ -163,7 +167,7 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
       X_sigma <- matrix(1, nrow(data), 1)  # Use an intercept-only model if sigma_formula is not provided
     }
     
-    int_res <- maxLik::maxLik(p_poisweibull, start = start,
+    int_res <- maxLik::maxLik(p_poisweibull, start = fit$estimate,
                               y = y, X_Fixed = X_Fixed,  X_alpha = X_alpha, X_sigma = X_sigma,
                               ndraws = ndraws, est_method = method,
                               method = method, control = list(iterlim = max.iters, printLevel = print.level))

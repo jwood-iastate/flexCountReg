@@ -10,7 +10,7 @@ pwiebreg(
   sigma_formula = NULL,
   data,
   ndraws = 1500,
-  method = "BHHH",
+  method = "NM",
   max.iters = 1000,
   start.vals = NULL,
   print.level = 0,

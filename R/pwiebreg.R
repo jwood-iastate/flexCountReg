@@ -171,7 +171,7 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
                               y = y, X_Fixed = X_Fixed,  X_alpha = X_alpha, X_sigma = X_sigma,
                               ndraws = ndraws, est_method = method,
                               method = method, control = list(iterlim = max.iters, printLevel = print.level))
-    return(int_res$estimate)
+    return(int_res)
   }
   
   

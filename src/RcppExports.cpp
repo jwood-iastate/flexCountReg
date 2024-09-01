@@ -10,15 +10,16 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// get_chol_cpp
-NumericMatrix get_chol_cpp(NumericVector pars, int Nvars);
-RcppExport SEXP _flexCountReg_get_chol_cpp(SEXP parsSEXP, SEXP NvarsSEXP) {
+// dplind_cpp
+double dplind_cpp(int x, double mean, double theta);
+RcppExport SEXP _flexCountReg_dplind_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< int >::type Nvars(NvarsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_chol_cpp(pars, Nvars));
+    Rcpp::traits::input_parameter< int >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(dplind_cpp(x, mean, theta));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -51,11 +52,71 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// dpWeib_cpp
+NumericVector dpWeib_cpp(NumericVector x, NumericVector mean, NumericVector alpha, NumericVector sigma, NumericVector h);
+RcppExport SEXP _flexCountReg_dpWeib_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP alphaSEXP, SEXP sigmaSEXP, SEXP hSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type h(hSEXP);
+    rcpp_result_gen = Rcpp::wrap(dpWeib_cpp(x, mean, alpha, sigma, h));
+    return rcpp_result_gen;
+END_RCPP
+}
+// genWaring_cpp
+NumericVector genWaring_cpp(NumericVector x, NumericVector mean, NumericVector k, NumericVector p);
+RcppExport SEXP _flexCountReg_genWaring_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP kSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type k(kSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(genWaring_cpp(x, mean, k, p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_chol_cpp
+NumericMatrix get_chol_cpp(NumericVector pars, int Nvars);
+RcppExport SEXP _flexCountReg_get_chol_cpp(SEXP parsSEXP, SEXP NvarsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type pars(parsSEXP);
+    Rcpp::traits::input_parameter< int >::type Nvars(NvarsSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_chol_cpp(pars, Nvars));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dplindgamma_cpp
+NumericVector dplindgamma_cpp(NumericVector x, NumericVector mean, NumericVector theta, NumericVector alpha, NumericVector h);
+RcppExport SEXP _flexCountReg_dplindgamma_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP alphaSEXP, SEXP hSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type h(hSEXP);
+    rcpp_result_gen = Rcpp::wrap(dplindgamma_cpp(x, mean, theta, alpha, h));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
+    {"_flexCountReg_dplind_cpp", (DL_FUNC) &_flexCountReg_dplind_cpp, 3},
     {"_flexCountReg_dplindlogn_cpp", (DL_FUNC) &_flexCountReg_dplindlogn_cpp, 5},
     {"_flexCountReg_dpLnorm_cpp", (DL_FUNC) &_flexCountReg_dpLnorm_cpp, 4},
+    {"_flexCountReg_dpWeib_cpp", (DL_FUNC) &_flexCountReg_dpWeib_cpp, 5},
+    {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 4},
+    {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
+    {"_flexCountReg_dplindgamma_cpp", (DL_FUNC) &_flexCountReg_dplindgamma_cpp, 5},
     {NULL, NULL, 0}
 };
 

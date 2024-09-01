@@ -21,22 +21,24 @@ Function for estimating a Generalized Waring regression model
 \details{
 # Generalized Waring Probability Mass Function, Mean, and Variance
 The following are the versions of the PMF, mean, and variance used in this function. This is adjusted from the typical formulation by replacing parameter \code{k} with \eqn{\mu}
-\deqn{PMF=\frac{\Gamma(\alpha+\gamma)\Gamma(\alpha+\rho+x)\Gamma(\rho+\gamma)}{\Gamma(\alpha+\rho)\Gamma(\gamma+\rho+x)\Gamma(\alpha+\gamma+\rho+x)}\left(\frac{\rho}{\alpha+\rho}\right)}
-\deqn{\mu=e^{X\beta}=\frac{\alpha\rho}{\gamma(\alpha+\rho)}}
-\deqn{\sigma^2=\frac{\alpha\rho(\alpha+\rho+\gamma)}{\gamma^2(\alpha+\rho)^2(\alpha+\rho+1)}}
+\deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}{y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
+\deqn{\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}}
+\deqn{\sigma^2=\frac{\alpha k(\alpha+k+\rho-1)}{(\rho-1)^2(\rho-2)}}
 
-Where \eqn{\alpha} and \eqn{\rho} are distribution parameters with the constraints that \eqn{\alpha\geq 0} and \eqn{\rho\geq 0}, \eqn{X} is a matrix of predictors, and \eqn{\beta} is a vector of coefficients.
+The distribution parameters are often considered to capture the randomness (parameter \deqn{\alpha}), proneness (parameter \deqn{}k), and liability (parameter \deqn{\rho}) of the data.
 
-If we use:
-\deqn{\gamma=\frac{\mu(\alpha+\rho)}{\alpha\rho}}
+#' If we use:
+\deqn{\alpha=\frac{\mu k}{\rho-1}}
 
 The PMF becomes:
 
-\deqn{PMF=\frac{\Gamma(\alpha + \rho) \Gamma\left(\alpha + \frac{2\mu}{\rho} + x\right) \Gamma\left(\frac{2\mu}{\rho} + \rho\right)}{\Gamma\left(\alpha + \frac{2\mu}{\rho}\right) \Gamma\left(\frac{2\mu}{\rho} + \rho + x\right) \Gamma\left(\alpha + \rho + \frac{2\mu}{\rho} + x\right)} \left( \frac{\frac{2\mu}{\rho}}{\alpha + \frac{2\mu}{\rho}} \right)}
+\deqn{PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)\Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!\Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)\Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}}
 
 #' This results in a regression model where:
 \deqn{\mu=e^{X\beta}}
-\deqn{\sigma^2=\mu\left(1-\frac{1}{\alpha+\rho+1}\right)+\mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}}
+\deqn{\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}{(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}\right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
+
+Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
 }
 \examples{
 \donttest{
@@ -46,6 +48,7 @@ data("washington_roads")
 washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
 genwaring.mod <- genWaring(Total_crashes ~ lnaadt + lnlength + speed50 +
                                 ShouldWidth04 + AADTover10k,
-                                data=washington_roads)
+                                data=washington_roads,
+                                method='BFGS')
 summary(genwaring.mod)}
 }

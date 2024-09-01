@@ -7,9 +7,9 @@
 #'        and the independent variables with fixed effects.
 #' @param alpha_formula A symbolic description of the model for the alpha parameter,
 #'        specifying the distribution parameter as a function of predictor variables.
-#' @param beta_formula A symbolic description of the model for the beta parameter,
+#' @param sigma_formula A symbolic description of the model for the sigma parameter,
 #'        specifying the distribution parameter as a function of predictor variables.
-#' @param data A dataframe containing all variables included in 'formula', 'alpha_formula', and 'beta_formula'.
+#' @param data A dataframe containing all variables included in 'formula', 'alpha_formula', and 'sigma_formula'.
 #' @param ndraws The number of Halton draws for integrating the Weibull distribution.
 #' @param method Optimization method to be used for maximum likelihood estimation.
 #'        See `maxLik` documentation for options.
@@ -20,20 +20,24 @@
 #'        for estimating standard errors.
 #' @import modelr        
 #' @importFrom stats model.frame model.matrix model.response
+#' @importFrom purrr map map_df
+#' @importFrom broom tidy
+#' @importFrom dplyr group_by %>% summarise
+#' @importFrom tibble deframe
 #' @importFrom maxLik maxLik
 #' @include poisWeib.R
 #' 
 #' @details
 #' For the Poisson-Weibull Regression model, the expected values is:
-#' \deqn{E[Y]=\lambda\beta\Gamma\left(1+\frac{1}{\alpha}\right)}
-#' Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is the shape parameter, and \eqn{\beta} is the scale parameter.
+#' \deqn{E[Y]=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
+#' Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is the shape parameter, and \eqn{\sigma} is the scale parameter.
 #' 
 #' To ensure that the regression model predicts the mean value, the regression utilizes:
-#' \deqn{\mu=\exp{X\gamma}=\lambda\beta\Gamma\left(1+\frac{1}{\alpha}\right)}
+#' \deqn{\mu=\exp{X\gamma}=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
 #' Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a vector of coefficients. 
 #' 
 #' This leads to:
-#' \deqn{\lambda=\frac{\mu}{\beta\Gamma\left(1+\frac{1}{\alpha}\right)}}
+#' \deqn{\lambda=\frac{\mu}{\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}}
 #' 
 #' The variance for the Poisson-Weibull regression is:
 #' 
@@ -47,11 +51,11 @@
 #' print(summary(pw_rp))
 #' 
 #' @export
-pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
+pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
                      ndraws = 1500,  method = 'BHHH', max.iters = 1000,
                      start.vals = NULL, print.level = 0, bootstraps = NULL) {
   
-  # Prepare model matrices for fixed effects, alpha parameter, and beta parameter
+  # Prepare model matrices for fixed effects, alpha parameter, and sigma parameter
   mod1_frame <- stats::model.frame(formula, data)
   X_Fixed <- stats::model.matrix(formula, data)
   
@@ -66,19 +70,19 @@ pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
     x_names <- append(x_names, "ln(alpha)")
   }
   
-  if (!is.null(beta_formula)) {
-    mod_beta_frame <- stats::model.frame(beta_formula, data)
-    X_beta <- stats::model.matrix(beta_formula, data)
-    x_names <- c(x_names, paste0("ln(beta):",colnames(X_beta)))
+  if (!is.null(sigma_formula)) {
+    mod_sigma_frame <- stats::model.frame(sigma_formula, data)
+    X_sigma <- stats::model.matrix(sigma_formula, data)
+    x_names <- c(x_names, paste0("ln(sigma):",colnames(X_sigma)))
   } else {
-    X_beta <- matrix(1, nrow(data), 1)  # Use an intercept-only model if beta_formula is not provided
-    x_names <- append(x_names, "ln(beta)")
+    X_sigma <- matrix(1, nrow(data), 1)  # Use an intercept-only model if sigma_formula is not provided
+    x_names <- append(x_names, "ln(sigma)")
   }
   
   y <- stats::model.response(mod1_frame)
   
   # Define the main function for computing log-likelihood
-  p_poisweibull_rp <- function(p, y, X_Fixed, X_alpha, X_beta, ndraws, 
+  p_poisweibull <- function(p, y, X_Fixed, X_alpha, X_sigma, ndraws, 
                                est_method) {
     N_fixed = ncol(X_Fixed)
     coefs <- as.array(p)
@@ -94,25 +98,25 @@ pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
     }
     
     
-    N_beta = ncol(X_beta)
-    if (!is.null(beta_formula)){
-      beta_coefs <- coefs[(N_fixed + N_alpha + 1):(N_fixed + N_alpha + N_beta)]
-      beta <- exp(X_beta %*% beta_coefs)
+    N_sigma = ncol(X_sigma)
+    if (!is.null(sigma_formula)){
+      sigma_coefs <- coefs[(N_fixed + N_alpha + 1):(N_fixed + N_alpha + N_sigma)]
+      sigma <- exp(X_sigma %*% sigma_coefs)
     }
     else{
-      beta <- exp(coefs[(N_fixed + N_alpha + 1)])
+      sigma <- exp(coefs[(N_fixed + N_alpha + 1)])
     }
     
     
     pred <- exp(X_Fixed %*% fixed_coefs)
     
-    lambda <- pred / (beta * gamma(1 + 1 / alpha))
+    lambda <- pred / (sigma * gamma(1 + 1 / alpha))
     
     # Call the provided Poisson-Weibull density function
     probs <- dpoisweibull(x = y, 
                           lambda = lambda, 
                           alpha = alpha,
-                          beta = beta, 
+                          sigma = sigma, 
                           log = FALSE)
     
     ll <- sum(log(probs))
@@ -126,7 +130,7 @@ pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
   
   # Initialize starting values if not provided
   start <- if (is.null(start.vals)) {
-    rep(0, ncol(X_Fixed) + ncol(X_alpha) + ncol(X_beta))
+    rep(0, ncol(X_Fixed) + ncol(X_alpha) + ncol(X_sigma))
   } else {
     start.vals
   }
@@ -134,40 +138,55 @@ pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
   names(start) <- x_names
   
   # Run the maximum likelihood estimation
-  fit <- maxLik::maxLik(p_poisweibull_rp, start = start,
-                        y = y, X_Fixed = X_Fixed,  X_alpha = X_alpha, X_beta = X_beta,
+  fit <- maxLik::maxLik(p_poisweibull, start = start,
+                        y = y, X_Fixed = X_Fixed,  X_alpha = X_alpha, X_sigma = X_sigma,
                         ndraws = ndraws, est_method = method,
                         method = method, control = list(iterlim = max.iters, printLevel = print.level))
   
   # Optionally, compute bootstrapped standard errors
-  if (!is.null(bootstraps) & is.numeric(bootstraps)) {
-    boot_err <- matrix(0, ncol = bootstraps, nrow = length(start))
-    for (i in 1:bootstraps) {
-      # Generate random sample of row indices with replacement - number of samples = number of observations
-      sampled_indices <- sample(nrow(data), nrow(data), replace = TRUE)
-      
-      # Subset matrices and vector using sampled indices
-      sampled_X_Fixed <- X_Fixed[sampled_indices, ]
-      sampled_X_alpha <- if (!is.null(X_alpha)) X_alpha[sampled_indices, ] else NULL
-      sampled_X_beta <- if (!is.null(X_beta)) X_beta[sampled_indices, ] else NULL
-      sampled_y <- y[sampled_indices]
-      
-      model.boot <- maxLik::maxLik(p_poisweibull_rp,
-                                   start = start,
-                                   y = sampled_y,
-                                   X_Fixed = sampled_X_Fixed,
-                                   X_alpha = sampled_X_alpha,
-                                   X_beta = sampled_X_beta,
-                                   ndraws = ndraws,
-                                   est_method = method,
-                                   method = method,
-                                   control = list(iterlim = max.iters, 
-                                                  printLevel = print.level))
-      boot_err[, i] <- fit$estimate - model.boot$estimate
+  # create function to clean data and run maxLik
+  weib.boot <- function(data){
+    mod1_frame <- stats::model.frame(formula, data)
+    X_Fixed <- stats::model.matrix(formula, data)
+    y <- stats::model.response(mod1_frame)
+    
+    if (!is.null(alpha_formula)) {
+      mod_alpha_frame <- stats::model.frame(alpha_formula, data)
+    } else {
+      X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if alpha_formula is not provided
     }
     
-    stderr <- apply(boot_err, 1, sd)
-    fit$bootstrapped_se <- stderr
+    if (!is.null(sigma_formula)) {
+      mod_sigma_frame <- stats::model.frame(sigma_formula, data)
+      X_sigma <- stats::model.matrix(sigma_formula, data)
+    } else {
+      X_sigma <- matrix(1, nrow(data), 1)  # Use an intercept-only model if sigma_formula is not provided
+    }
+    
+    int_res <- maxLik::maxLik(p_poisweibull, start = start,
+                              y = y, X_Fixed = X_Fixed,  X_alpha = X_alpha, X_sigma = X_sigma,
+                              ndraws = ndraws, est_method = method,
+                              method = method, control = list(iterlim = max.iters, printLevel = print.level))
+    return(int_res$estimate)
+  }
+  
+  
+  if (!is.null(bootstraps) & is.numeric(bootstraps)) {
+    bs.data <- modelr::bootstrap(data, n = bootstraps)
+    
+    
+    mod1_frame <- stats::model.frame(formula, data)
+    X_Fixed <- stats::model.matrix(formula, data)
+    y <- stats::model.response(mod1_frame)
+   
+    models <- map(bs.data$strap, ~ weib.boot(data = .))
+    tidied <- map_df(models, broom::tidy, .id = "id")
+    
+    SE <- tidied %>%
+      group_by(term) %>%
+      summarise(sd = sd(estimate)) %>% deframe()
+    
+    fit$bootstrapped_se <- SE
   }
   
   fit$coefficients = fit$estimate
@@ -179,7 +198,7 @@ pwiebreg <- function(formula, alpha_formula = NULL, beta_formula = NULL, data,
   fit$data = data
   fit$formula = formula
   fit$alpha_formula = alpha_formula
-  fit$beta_formula = beta_formula
+  fit$sigma_formula = sigma_formula
   fit$ndraws = ndraws
   fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
   

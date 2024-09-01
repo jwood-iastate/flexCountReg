@@ -57,9 +57,9 @@
 #'
 #' @import stats
 #' @export
-#' @name Poisson-Lindley
+#' @name PoissonLindley
 
-#' @rdname Poisson-Lindley
+#' @rdname PoissonLindley
 #' @export
 dplind <- Vectorize(function(
     x, mean = 1, theta = 1, lambda = NULL, log = FALSE){
@@ -97,7 +97,7 @@ dplind <- Vectorize(function(
   else return(p)
 })
 
-#' @rdname Poisson-Lindley
+#' @rdname PoissonLindley
 #' @export
 pplind <- Vectorize(function(
     q, mean = 1, theta = 1, lambda = NULL, lower.tail = TRUE, log.p = FALSE){
@@ -130,7 +130,7 @@ pplind <- Vectorize(function(
   else return(p)
 })
 
-#' @rdname Poisson-Lindley
+#' @rdname PoissonLindley
 #' @export
 qplind <- Vectorize(function(p, mean=1, theta=1, lambda=NULL) {
   if (is.null(lambda)){
@@ -161,7 +161,7 @@ qplind <- Vectorize(function(p, mean=1, theta=1, lambda=NULL) {
 })
 
 
-#' @rdname Poisson-Lindley
+#' @rdname PoissonLindley
 #' @export
 rplind <- function(n, mean=1, theta=1, lambda=NULL) {
   

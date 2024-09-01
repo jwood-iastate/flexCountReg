@@ -47,15 +47,11 @@
 #'
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
-#' @export
-#' @name Poisson-Lindley-Lognormal
-dplindLnorm <- Vectorize(function(x, mean=1, theta = 1, sigma=1, ndraws=1500, log=FALSE, hdraws=NULL){
-  # sourceCpp("src/ppoislogn.cpp")
-  if(mean<=0 || sigma<=0 || theta<=0){
-    print('The values of `mean`, `theta`, and `sigma` have to have values greater than 0.')
-    stop()
-  }
-  
+#' @name PoissonLindleyLognormal
+#' 
+#' @rdname PoissonLindleyLognormal
+#' @export 
+dplindLnorm <- function(x, mean=1, theta = 1, sigma=1, ndraws=1500, log=FALSE, hdraws=NULL){
   if (!is.null(hdraws)){
     h <- qnorm(hdraws)
   }else{
@@ -66,26 +62,14 @@ dplindLnorm <- Vectorize(function(x, mean=1, theta = 1, sigma=1, ndraws=1500, lo
   
   if (log) return(log(p))
   else return(p)
-})
-#' @rdname Poisson-Lindley-Lognormal
+}
+#' @rdname PoissonLindleyLognormal
 #' @export
 pplindLnorm <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, sigma=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
-  if(is.null(lambda)){
-    if(mean<=0 || theta<=0  || sigma<=0){
-      print('The values of `mean`, `theta`, and `sigma` all have to have values greater than 0.')
-      stop()
-    }
+  if(!is.null(lambda)){
+    mean <- lambda*(theta+2)/(theta*(theta+1))*exp(sigma^2/2)
   }
-  else{
-    if(lambda<=0 || theta<=0  || sigma<=0){
-      print('The values of `lambda`, `theta`, and `sigma` all have to have values greater than 0.')
-      stop()
-    }
-    else{
-      mean <- lambda*(theta+2)/(theta*(theta+1))*exp(sigma^2/2)
-    }
-  }
-  
+
   y <- seq(0,q,1)
   probs <- dplindLnorm(y, mean, theta, sigma=sigma, ndraws=ndraws)
   p <- sum(probs)
@@ -96,7 +80,7 @@ pplindLnorm <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, sigma=1, nd
   else return(p)
 })
 
-#' @rdname Poisson-Lindley-Lognormal
+#' @rdname PoissonLindleyLognormal
 #' @export
 qplindLnorm <- Vectorize(function(p, mean=1, theta=1, sigma=1, ndraws=1500, lambda=NULL) {
   if(is.null(lambda)){
@@ -125,7 +109,7 @@ qplindLnorm <- Vectorize(function(p, mean=1, theta=1, sigma=1, ndraws=1500, lamb
 })
 
 
-#' @rdname Poisson-Lindley-Lognormal
+#' @rdname PoissonLindleyLognormal
 #' @export
 rplindLnorm <- function(n, mean=1, theta=1, sigma=1, ndraws=1500, lambda=NULL) {
   if(is.null(lambda)){

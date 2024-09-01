@@ -35,6 +35,8 @@
 #'                                 method="nm",
 #'                                 max.iters = 1000)
 #' summary(poislindgamma.mod)}
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib flexCountReg
 #' @export
 poisLindGamma <- function(formula, data, method = 'BHHH', max.iters = 1000, print.level=0) {
 

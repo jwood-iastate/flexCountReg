@@ -79,9 +79,9 @@
 #'
 #' @import stats
 #' @export
-#' @name Poisson-Inverse-Gaussian
+#' @name PoissonInverseGaussian
 
-#' @rdname Poisson-Inverse-Gaussian
+#' @rdname PoissonInverseGaussian
 #' @export
 dpinvgaus <- Vectorize(function(x, mu=1, eta = 1, form="Type 1", log=FALSE){
   #test to make sure the value of x is an integer
@@ -116,7 +116,7 @@ dpinvgaus <- Vectorize(function(x, mu=1, eta = 1, form="Type 1", log=FALSE){
   else return(p)
 })
 
-#' @rdname Poisson-Inverse-Gaussian
+#' @rdname PoissonInverseGaussian
 #' @export
 ppinvgaus <- Vectorize(function(q, mu=1, eta = 1, form="Type 1", lower.tail=TRUE, log.p=FALSE){
   y <- seq(0,q,1)
@@ -129,7 +129,7 @@ ppinvgaus <- Vectorize(function(q, mu=1, eta = 1, form="Type 1", lower.tail=TRUE
   else return(p)
 })
 
-#' @rdname Poisson-Inverse-Gaussian
+#' @rdname PoissonInverseGaussian
 #' @export
 qpinvgaus <- Vectorize(function(p, mu=1, eta = 1, form="Type 1") {
   y <- 0
@@ -142,7 +142,7 @@ qpinvgaus <- Vectorize(function(p, mu=1, eta = 1, form="Type 1") {
 })
 
 
-#' @rdname Poisson-Inverse-Gaussian
+#' @rdname PoissonInverseGaussian
 #' @export
 rpinvgaus <- function(n, mu=1, eta = 1, form="Type 1") {
   u <- runif(n)

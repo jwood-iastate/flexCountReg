@@ -7,17 +7,17 @@
 #' The Poisson-Weibull distribution uses the Weibull distribution as a mixing distribution for a 
 #' Poisson process. It is useful for modeling overdispersed count data. The density function 
 #' (probability mass function) for the Poisson-Weibull distribution is given by:
-#' \deqn{P(y|\lambda,\alpha,\beta) = \int_0^\infty \frac{e^{-\lambda} \lambda^y }{y!} f(\theta; \alpha, \beta) d\theta}
-#' where \eqn{f(\theta; \alpha, \beta)} is the PDF of the Weibull distribution and \eqn{\lambda} is the mean of the Poisson distribution.
+#' \deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}\right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
+#' where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and \eqn{\lambda} is the mean of the Poisson distribution.
 #'
 #' @param x A numeric value or vector of values for which the PDF or CDF is calculated.
 #' @param q Quantile or a vector of quantiles.
 #' @param p A numeric value or vector of probabilities for the quantile function.
 #' @param n The number of random samples to generate.
 #' @param alpha Shape parameter of the Weibull distribution (optional if mean and sd are provided).
-#' @param beta Scale parameter of the Weibull distribution (optional if mean and sd are provided).
-#' @param mean_value Mean of the Weibull distribution (optional if alpha and beta are provided).
-#' @param sd_value Standard deviation of the Weibull distribution (optional if alpha and beta are provided).
+#' @param sigma Scale parameter of the Weibull distribution (optional if mean and sd are provided).
+#' @param mean_value Mean of the Weibull distribution (optional if alpha and sigma are provided).
+#' @param sd_value Standard deviation of the Weibull distribution (optional if alpha and sigma are provided).
 #' @param lambda Mean value of the Poisson distribution.
 #' @param log Logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p Logical; if TRUE, probabilities p are given as log(p).
@@ -45,50 +45,56 @@
 #' @import stats randtoolbox
 #' @export
 #' @name PoissonWeibull
-
+#' 
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib flexCountReg
 #' @rdname PoissonWeibull
 #' @export
-dpoisweibull <- Vectorize(function(x, lambda, alpha = NULL, beta = NULL, 
+dpoisweibull <- Vectorize(function(x, lambda = NULL, alpha = NULL, sigma = NULL, 
                                    mean_value = NULL, sd_value = NULL, 
-                                   ndraws=1500, log = FALSE) {
+                                   ndraws = 1500, log = FALSE) {
   if (!is.null(mean_value) && !is.null(sd_value)) {
     params <- calculate_params(mean_value = mean_value, sd_value = sd_value)
     alpha <- params[1]
-    beta <- params[2]
+    sigma <- params[2]
   }
-  
-  if (is.null(alpha) || is.null(beta)) stop("Parameters alpha and beta are required")
+  if (is.null(alpha) || is.null(sigma)) stop("Parameters alpha and sigma are required")
+  if (is.null(lambda) && !is.null(mean_value)) {
+    lambda <- mean_value / (sigma * gamma(1 + 1 / alpha))
+  } else if (is.null(lambda) && is.null(mean_value)) {
+    stop("Parameter lambda or mean_value is required")
+  }
   
   # Generate Halton draws to use as quantile values
   h <- randtoolbox::halton(ndraws)
   
   # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to lognormal values
-  weibullDist <- stats::qweibull(h, shape=alpha, scale=beta)
-  mu_i <- lambda * weibullDist
-  
-  p_pweib.i <- sapply(mu_i, stats::dpois, x=x)
-  
-  p <- mean(p_pweib.i)
+  p <- dpWeib_cpp(x, lambda, alpha, sigma, h)
   
   if (log) return(log(p))
   else return(p)
 })
 
+
 #' @rdname PoissonWeibull
 #' @export
-ppoisweibull <- Vectorize(function(q, lambda, alpha = NULL, beta = NULL, 
+ppoisweibull <- Vectorize(function(q, lambda=NULL, alpha = NULL, sigma = NULL, 
                                    mean_value = NULL, sd_value = NULL, 
                                    ndraws=1500, lower.tail = TRUE, log.p = FALSE) {
   if (!is.null(mean_value) && !is.null(sd_value)) {
     params <- calculate_params(mean_value = mean_value, sd_value = sd_value)
     alpha <- params[1]
-    beta <- params[2]
+    sigma <- params[2]
+  }
+  if (is.null(alpha) || is.null(sigma)) stop("Parameters alpha and sigma are required")
+  if (is.null(lambda) && !is.null(mean_value)){
+    lambda <- mean_value/(sigma*gamma(1+1/alpha))
+  } else if (is.null(lambda) && is.null(mean_value)) {
+    stop("Parameter lambda or mean_value is required")
   }
   
-  if (is.null(alpha) || is.null(beta)) stop("Parameters alpha and beta are required")
-  
   y <- seq(0,q,1)
-  probs <- dpoisweibull(y, lambda=lambda, alpha = alpha, beta = beta, ndraws=ndraws)
+  probs <- dpoisweibull(y, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
   p <- sum(probs)
   
   if(!lower.tail) p <- 1-p
@@ -101,59 +107,71 @@ ppoisweibull <- Vectorize(function(q, lambda, alpha = NULL, beta = NULL,
 
 #' @rdname PoissonWeibull
 #' @export
-qpoisweibull <- Vectorize(function(p, lambda, alpha = NULL, beta = NULL, 
+qpoisweibull <- Vectorize(function(p, lambda=NULL, alpha = NULL, sigma = NULL, 
                                    mean_value = NULL, sd_value = NULL, 
                                    ndraws=1500) {
   if (!is.null(mean_value) && !is.null(sd_value)) {
     params <- calculate_params(mean_value = mean_value, sd_value = sd_value)
     alpha <- params[1]
-    beta <- params[2]
+    sigma <- params[2]
+  }
+  if (is.null(alpha) || is.null(sigma)) stop("Parameters alpha and sigma are required")
+  if (is.null(lambda) && !is.null(mean_value)){
+    lambda <- mean_value/(sigma*gamma(1+1/alpha))
+  } else if (is.null(lambda) && is.null(mean_value)) {
+    stop("Parameter lambda or mean_value is required")
   }
   y <- 0
-  p_value <- ppoisweibull(y, lambda=lambda, alpha = alpha, beta = beta, ndraws=ndraws)
+  p_value <- ppoisweibull(y, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
   while (p_value < p){
     y <- y + 1
-    p_value <- ppoisweibull(y, lambda=lambda, alpha = alpha, beta = beta, ndraws=ndraws)
+    p_value <- ppoisweibull(y, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
   }
   return(y)
 })
 
 #' @rdname PoissonWeibull
 #' @export
-rpoisweibull <- function(n, lambda, alpha = NULL, beta = NULL, 
+rpoisweibull <- function(n, lambda=NULL, alpha = NULL, sigma = NULL, 
                          mean_value = NULL, sd_value = NULL, ndraws=1500) {
   if (!is.null(mean_value) && !is.null(sd_value)) {
     params <- calculate_params(mean_value = mean_value, sd_value = sd_value)
     alpha <- params[1]
-    beta <- params[2]
+    sigma <- params[2]
+  }
+  if (is.null(alpha) || is.null(sigma)) stop("Parameters alpha and sigma are required")
+  if (is.null(lambda) && !is.null(mean_value)){
+    lambda <- mean_value/(sigma*gamma(1+1/alpha))
+  } else if (is.null(lambda) && is.null(mean_value)) {
+    stop("Parameter lambda or mean_value is required")
   }
   
-  if (is.null(alpha) || is.null(beta)) stop("Parameters alpha and beta are required")
+  if (is.null(alpha) || is.null(sigma)) stop("Parameters alpha and sigma are required")
   
   u <- stats::runif(n)
-  y <- qpoisweibull(u, lambda=lambda, alpha = alpha, beta = beta, ndraws=ndraws)
+  y <- qpoisweibull(u, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
   return(y)
 }
 
 
-# Helper function to calculate alpha and beta from mean and standard deviation
+# Helper function to calculate alpha and sigma from mean and standard deviation
 calculate_params <- function(mean_value = NULL, sd_value = NULL) {
   if (!is.null(mean_value) && !is.null(sd_value)) {
     # Function to minimize
     objective_function <- function(alpha, mean_value, sd_value) {
-      beta <- mean_value / gamma(1 + 1/alpha)
-      calculated_mean <- beta * gamma(1 + 1/alpha)
-      calculated_var <- beta^2 * (gamma(1 + 2/alpha) - (gamma(1 + 1/alpha))^2)
+      sigma <- mean_value / gamma(1 + 1/alpha)
+      calculated_mean <- sigma * gamma(1 + 1/alpha)
+      calculated_var <- sigma^2 * (gamma(1 + 2/alpha) - (gamma(1 + 1/alpha))^2)
       (calculated_mean - mean_value)^2 + (sqrt(calculated_var) - sd_value)^2
     }
     
     res <- optimize(objective_function, c(0.1, 5), mean_value = mean_value, sd_value = sd_value)
     alpha <- res$minimum
-    beta <- mean_value / gamma(1 + 1/alpha)
-    c(alpha, beta)
-  } else if (!is.null(alpha) && !is.null(beta)) {
-    c(alpha, beta)
+    sigma <- mean_value / gamma(1 + 1/alpha)
+    c(alpha, sigma)
+  } else if (!is.null(alpha) && !is.null(sigma)) {
+    c(alpha, sigma)
   } else {
-    stop("Insufficient parameters: Provide either mean and standard deviation, or alpha and beta.")
+    stop("Insufficient parameters: Provide either mean and standard deviation, or alpha and sigma.")
   }
 }

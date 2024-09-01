@@ -10,9 +10,9 @@
 \usage{
 dpoisweibull(
   x,
-  lambda,
+  lambda = NULL,
   alpha = NULL,
-  beta = NULL,
+  sigma = NULL,
   mean_value = NULL,
   sd_value = NULL,
   ndraws = 1500,
@@ -21,9 +21,9 @@ dpoisweibull(
 
 ppoisweibull(
   q,
-  lambda,
+  lambda = NULL,
   alpha = NULL,
-  beta = NULL,
+  sigma = NULL,
   mean_value = NULL,
   sd_value = NULL,
   ndraws = 1500,
@@ -33,9 +33,9 @@ ppoisweibull(
 
 qpoisweibull(
   p,
-  lambda,
+  lambda = NULL,
   alpha = NULL,
-  beta = NULL,
+  sigma = NULL,
   mean_value = NULL,
   sd_value = NULL,
   ndraws = 1500
@@ -43,9 +43,9 @@ qpoisweibull(
 
 rpoisweibull(
   n,
-  lambda,
+  lambda = NULL,
   alpha = NULL,
-  beta = NULL,
+  sigma = NULL,
   mean_value = NULL,
   sd_value = NULL,
   ndraws = 1500
@@ -58,11 +58,11 @@ rpoisweibull(
 
 \item{alpha}{Shape parameter of the Weibull distribution (optional if mean and sd are provided).}
 
-\item{beta}{Scale parameter of the Weibull distribution (optional if mean and sd are provided).}
+\item{sigma}{Scale parameter of the Weibull distribution (optional if mean and sd are provided).}
 
-\item{mean_value}{Mean of the Weibull distribution (optional if alpha and beta are provided).}
+\item{mean_value}{Mean of the Weibull distribution (optional if alpha and sigma are provided).}
 
-\item{sd_value}{Standard deviation of the Weibull distribution (optional if alpha and beta are provided).}
+\item{sd_value}{Standard deviation of the Weibull distribution (optional if alpha and sigma are provided).}
 
 \item{ndraws}{the number of Halton draws to use for the integration.}
 
@@ -87,8 +87,8 @@ parameters or by its mean and standard deviation.
 The Poisson-Weibull distribution uses the Weibull distribution as a mixing distribution for a 
 Poisson process. It is useful for modeling overdispersed count data. The density function 
 (probability mass function) for the Poisson-Weibull distribution is given by:
-\deqn{P(y|\lambda,\alpha,\beta) = \int_0^\infty \frac{e^{-\lambda} \lambda^y }{y!} f(\theta; \alpha, \beta) d\theta}
-where \eqn{f(\theta; \alpha, \beta)} is the PDF of the Weibull distribution and \eqn{\lambda} is the mean of the Poisson distribution.
+\deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}\right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
+where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and \eqn{\lambda} is the mean of the Poisson distribution.
 
 
 \code{dpoisweibull} computes the density of the Poisson-Weibull distribution.

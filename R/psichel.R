@@ -45,9 +45,9 @@
 #'
 #' @import stats
 #' @export
-#' @name Sichel-Distribution
+#' @name SichelDistribution
 
-#' @rdname Sichel-Distribution
+#' @rdname SichelDistribution
 #' @export
 dsichel <- Vectorize(function(x, mu=1, sigma = 1, gamma=1, log=FALSE){
   #test to make sure the value of x is an integer
@@ -72,7 +72,7 @@ dsichel <- Vectorize(function(x, mu=1, sigma = 1, gamma=1, log=FALSE){
   else return(p)
 })
 
-#' @rdname Sichel-Distribution
+#' @rdname SichelDistribution
 #' @export
 psichel <- Vectorize(function(q, mu=1, sigma = 1, gamma=1, lower.tail=TRUE, log.p=FALSE){
   
@@ -86,7 +86,7 @@ psichel <- Vectorize(function(q, mu=1, sigma = 1, gamma=1, lower.tail=TRUE, log.
   else return(p)
 })
 
-#' @rdname Sichel-Distribution
+#' @rdname SichelDistribution
 #' @export
 qsichel <- Vectorize(function(p, mu=1, sigma = 1, gamma=1) {
   y <- 0
@@ -102,7 +102,7 @@ qsichel <- Vectorize(function(p, mu=1, sigma = 1, gamma=1) {
   return(y)
 })
 
-#' @rdname Sichel-Distribution
+#' @rdname SichelDistribution
 #' @export
 rsichel <- function(n, mu=1, sigma = 1, gamma=1) {
   u <- runif(n)

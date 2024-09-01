@@ -7,7 +7,7 @@
 pwiebreg(
   formula,
   alpha_formula = NULL,
-  beta_formula = NULL,
+  sigma_formula = NULL,
   data,
   ndraws = 1500,
   method = "BHHH",
@@ -24,10 +24,10 @@ and the independent variables with fixed effects.}
 \item{alpha_formula}{A symbolic description of the model for the alpha parameter,
 specifying the distribution parameter as a function of predictor variables.}
 
-\item{beta_formula}{A symbolic description of the model for the beta parameter,
+\item{sigma_formula}{A symbolic description of the model for the sigma parameter,
 specifying the distribution parameter as a function of predictor variables.}
 
-\item{data}{A dataframe containing all variables included in 'formula', 'alpha_formula', and 'beta_formula'.}
+\item{data}{A dataframe containing all variables included in 'formula', 'alpha_formula', and 'sigma_formula'.}
 
 \item{ndraws}{The number of Halton draws for integrating the Weibull distribution.}
 
@@ -48,15 +48,15 @@ Estimates a Poisson-Weibull regression model.
 }
 \details{
 For the Poisson-Weibull Regression model, the expected values is:
-\deqn{E[Y]=\lambda\beta\Gamma\left(1+\frac{1}{\alpha}\right)}
-Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is the shape parameter, and \eqn{\beta} is the scale parameter.
+\deqn{E[Y]=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
+Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is the shape parameter, and \eqn{\sigma} is the scale parameter.
 
 To ensure that the regression model predicts the mean value, the regression utilizes:
-\deqn{\mu=\exp{X\gamma}=\lambda\beta\Gamma\left(1+\frac{1}{\alpha}\right)}
+\deqn{\mu=\exp{X\gamma}=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
 Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a vector of coefficients. 
 
 This leads to:
-\deqn{\lambda=\frac{\mu}{\beta\Gamma\left(1+\frac{1}{\alpha}\right)}}
+\deqn{\lambda=\frac{\mu}{\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}}
 
 The variance for the Poisson-Weibull regression is:
 

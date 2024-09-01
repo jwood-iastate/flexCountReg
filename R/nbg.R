@@ -118,7 +118,7 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = '
   y <- as.numeric(stats::model.response(mod_df))
   x_names <- colnames(X)
   
-  # Use the Poisson as starting values
+  # Use the NB2 from MASS as starting values
   p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   a <- log(1/p_model$theta)

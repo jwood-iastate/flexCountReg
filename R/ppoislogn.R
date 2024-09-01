@@ -13,6 +13,7 @@
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.
+#' @param hdraws and optional vector of Halton draws to use for the integration.
 #'
 #' @details
 #' \code{dpLnorm} computes the density (PDF) of the Poisson-Lognormal Distribution.
@@ -40,28 +41,25 @@
 #'
 #' @import stats randtoolbox
 #' @export
-#' @name Poisson-Lognormal
+#' @name PoissonLognormal
 #' 
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
-#' @rdname Poisson-Lognormal
+#' @rdname PoissonLognormal
 #' @export
-dpLnorm <- Vectorize(function(x, mean=1, sigma=1, ndraws=1500, log=FALSE){
-  # sourceCpp("src/ppoislogn.cpp")
-  if(mean<=0 || sigma<=0){
-    print('The values of `mean` and `sigma` have to have values greater than 0.')
-    stop()
+dpLnorm <- function(x, mean=1, sigma=1, ndraws=1500, log=FALSE, hdraws=NULL){
+  if (!is.null(hdraws)){
+    h <- qnorm(hdraws)
+  }else{
+    h <- randtoolbox::halton(ndraws, normal=TRUE)
   }
-  
-  # Generate Halton draws to use as quantile values
-  h <- randtoolbox::halton(ndraws, normal=TRUE)
   
   p <- dpLnorm_cpp(x, mean, sigma, h)
   
   if (log) return(log(p))
   else return(p)
-})
-#' @rdname Poisson-Lognormal
+}
+#' @rdname PoissonLognormal
 #' @export
 ppLnorm <- Vectorize(function(q, mean=1, sigma=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
   if(mean<=0 || sigma<=0){
@@ -79,7 +77,7 @@ ppLnorm <- Vectorize(function(q, mean=1, sigma=1, ndraws=1500, lower.tail=TRUE, 
   else return(p)
 })
 
-#' @rdname Poisson-Lognormal
+#' @rdname PoissonLognormal
 #' @export
 qpLnorm <- Vectorize(function(p, mean=1, sigma=1, ndraws=1500) {
   if(mean<=0 || sigma<=0){
@@ -97,7 +95,7 @@ qpLnorm <- Vectorize(function(p, mean=1, sigma=1, ndraws=1500) {
 })
 
 
-#' @rdname Poisson-Lognormal
+#' @rdname PoissonLognormal
 #' @export
 rpLnorm <- function(n, mean=1, sigma=1, ndraws=1500) {
   if(mean<=0  || sigma<=0){

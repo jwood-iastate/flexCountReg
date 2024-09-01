@@ -71,9 +71,9 @@
 #'
 #' @import stats randtoolbox
 #' @export
-#' @name Poisson-Generalized-Exponential
+#' @name PoissonGeneralizedExponential
 
-#' @rdname Poisson-Generalized-Exponential
+#' @rdname PoissonGeneralizedExponential
 #' @export
 dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE){
   
@@ -104,7 +104,7 @@ dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE){
   else return(p)
 })
 
-#' @rdname Poisson-Generalized-Exponential
+#' @rdname PoissonGeneralizedExponential
 #' @export
 ppge <- Vectorize(function(q, mean=1, shape=1, scale=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
   if(mean<=0 || scale<=0 || shape <=0){
@@ -122,7 +122,7 @@ ppge <- Vectorize(function(q, mean=1, shape=1, scale=1, ndraws=1500, lower.tail=
   else return(p)
 })
 
-#' @rdname Poisson-Generalized-Exponential
+#' @rdname PoissonGeneralizedExponential
 #' @export
 qpge <- Vectorize(function(p, mean=1, shape=1, scale=1, ndraws=1500) {
   if(mean<=0 || scale<=0 || shape <=0){
@@ -140,7 +140,7 @@ qpge <- Vectorize(function(p, mean=1, shape=1, scale=1, ndraws=1500) {
 })
 
 
-#' @rdname Poisson-Generalized-Exponential
+#' @rdname PoissonGeneralizedExponential
 #' @export
 rpge <- function(n, mean=1, shape=1, scale=1, ndraws=1500) {
   if(mean<=0 || scale<=0 || shape <=0){

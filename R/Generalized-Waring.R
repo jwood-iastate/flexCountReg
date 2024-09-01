@@ -47,6 +47,8 @@
 #' @import stats
 #' @export
 #' @name Generalized-Waring
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib flexCountReg
 
 #' @rdname Generalized-Waring
 #' @export
@@ -54,20 +56,16 @@ dgwar <- Vectorize(function(y, mu, k, rho, log = FALSE) {
   if (any(y < 0) || !all(y == floor(y))) {
     stop("All y values must be non-negative integers.")
   }
-  if (k < 0 || rho <= 1) {
-    stop("k and rho must be greater than 1.")
+  if(mu <= 0 || k <= 0 || rho <= 0 || rho == 1 || rho == 2){
+    p=0
   }
   
-  a <- mu * (rho - 1) / k
+  a <- mu*k/(rho-1)
   
-  axy <- gamma(a + y) / gamma(a)
-  ky <- gamma(k + y) / gamma(k)
-  akrho <- gamma(a + k + rho + y) / gamma(a + k + rho)
-  
-  # Compute PMF for each y value
-  num <- gamma(a + rho) * gamma(k + rho) * axy * ky
-  denom <- factorial(y) * gamma(rho) * gamma(a + k + rho) * akrho
-  pmf <- num / denom
+  if(a <= 0){
+    p=0
+  }
+  pmf <- gamma(a+y)*gamma(k+y)*gamma(rho+k)*gamma(a+rho)/(gamma(a)*gamma(k)*gamma(rho)*gamma(a+k+rho+y))
   
   if (log) pmf <- log(pmf)
   return(pmf)

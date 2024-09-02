@@ -16,6 +16,11 @@
 #'   estimation. For options, see \code{\link[maxLik]{maxLik}},
 #' @param max.iters the maximum number of iterations to allow the optimization
 #'   method to perform.
+#' @param weights the name of the weighting variable. This is an optional 
+#'   parameter for weighted regression.
+#' @param bootstraps Optional integer specifying the number of bootstrap 
+#'   samples to be used for estimating bootstrapped standard errors. If this is 
+#'   used, bootstrapped standard errors will be calculated.
 #'
 #' @details
 #' The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
@@ -49,8 +54,11 @@
 #' \deqn{\frac{\partial LL_{\text{NBP}}}{\partial \eta} = \alpha \sum_{i=1}^n \left[ \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{\mu_i^{2-p}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right]}
 #' \deqn{\frac{\partial LL_{\text{NBP}}}{\partial p} = \sum_{i=1}^n \left[ \left( \psi\left(y_i + \frac{\mu_i^{2-p}}{\alpha}\right) - \psi\left(\frac{\mu_i^{2-p}}{\alpha}\right) + \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) - \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \cdot \frac{\partial}{\partial p} \left( \frac{\mu_i^{2-p}}{\alpha} \right) \right]}
 #'
-#' @import maxLik  stats modelr
-#' @importFrom MASS glm.nb
+#' @import maxLik  stats modelr MASS
+#' @importFrom purrr map map_df
+#' @importFrom broom tidy
+#' @importFrom dplyr group_by %>% summarise
+#' @importFrom tibble deframe
 #' 
 #' @references 
 #' Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
@@ -78,12 +86,13 @@
 #'                                 ln.alpha.formula = ~ 1+lnlength)
 #' summary(nbp.overdispersion)
 #'
-#' ## NB-1 Model
+#' ## NB-1 Model with Bootstrapping
 #' nb1.base <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
 #'                         ShouldWidth04 + AADTover10k,
 #'                         data=washington_roads, form = 'nb1',
-#'                         method = 'NM',
-#'                         max.iters=3000)
+#'                         method = 'BHHH',
+#'                         max.iters=3000,
+#'                         bootstraps=100)
 #' summary(nb1.base)
 #'
 #' ## Generalize NB-1 Model
@@ -111,15 +120,33 @@
 #' summary(nb2.overdispersion)
 #' 
 #' @export
-nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = 'BHHH', max.iters=200) {
+nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, 
+                method = 'BHHH', max.iters=200, weights=NULL, 
+                bootstraps = NULL, print.level = 0) {
+  
+  if (!form %in% c('nb1', 'nb2', 'nbp')) {
+    stop("Invalid form specified")
+  }
   
   mod_df <- stats::model.frame(formula, data)
   X <- as.matrix(modelr::model_matrix(data, formula))
   y <- as.numeric(stats::model.response(mod_df))
   x_names <- colnames(X)
   
+  # Preparing the weights
+  if (!is.null(weights)){
+    if (is.character(weights) && weights %in% colnames(data)) {
+      # Use weights variable from data
+      weights <- as.numeric(data[[weights]])
+    } else {
+      stop("Weights should be the name of a variable in the data.")
+    }
+  } else {
+    weights <- rep(1, length(y)) # Default weights of 1
+  }
+  
   # Use the NB2 from MASS as starting values
-  p_model <- glm.nb(formula, data = data)
+  p_model <- MASS::glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
   a <- log(1/p_model$theta)
   
@@ -143,7 +170,7 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = '
   if (is.null(ln.alpha.formula)) {
     x_names <- append(x_names, 'ln(alpha)')
   } else {
-    x_names <- append(x_names, paste('ln(alpha): ', alpha_names))
+    x_names <- append(x_names, paste('ln(alpha):', alpha_names))
   }
   
   if (form=='nbp') {
@@ -188,20 +215,21 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = '
     
     probs <- nbp_prob(y, predicted, log_alpha, p)
     
-    ll <- sum(log(probs))
+    ll <- sum(weights*log(probs)) # accounting for weights (values of 1 if not provided)
     if (method == 'bhhh' | method == 'BHHH'){
-      return(log(probs))
+      return(weights*log(probs))
     } else{return(ll)}
   }
   
   # Run the maximum likelihood estimation
   fit <- maxLik::maxLik(reg.run,
-                        start = unname(full_start),
+                        start = full_start,
                         y = y,
                         X = X,
                         alpha_X = alpha_X,
                         method = method,
-                        iterlim = max.iters)
+                        control = list(iterlim = max.iters, 
+                                       printLevel = print.level))
   
   beta_est <- fit$estimate
   alpha_coefs <- beta_est[(modparams + 1):(modparams + alpha_X_cols)]
@@ -222,6 +250,44 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL, method = '
   fit$residuals <- y - fit$predictions
   fit$LL <- fit$maximum # The log-likelihood of the model
   
-  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  # Optionally, compute bootstrapped standard errors
+  # create function to clean data and run maxLik
+  nbg.boot <- function(data){
+    mod1_frame <- stats::model.frame(formula, data)
+    X_Fixed <- stats::model.matrix(formula, data)
+    y <- stats::model.response(mod1_frame)
+    
+    if (is.null(ln.alpha.formula)){
+      if (!is.null(a)) {
+        alpha_X <- NULL
+      }
+    }else{
+      alpha_X <- stats::model.matrix(ln.alpha.formula, data)
+    }
+    
+    int_res <-  maxLik::maxLik(reg.run,
+                               start = fit$estimate,
+                               y = y,
+                               X = X,
+                               alpha_X = alpha_X,
+                               method = method,
+                               iterlim = max.iters)
+    return(int_res)
+  }
+  
+  
+  if (!is.null(bootstraps) & is.numeric(bootstraps)) {
+    bs.data <- modelr::bootstrap(data, n = bootstraps)
+    models <- map(bs.data$strap, ~ nbg.boot(data = .))
+    tidied <- map_df(models, broom::tidy, .id = "id")
+    
+    SE <- tidied %>%
+      group_by(term) %>%
+      summarise(sd = sd(estimate)) %>% deframe()
+    
+    fit$bootstrapped_se <- SE[names(fit$estimate)]
+  }
+  
+    obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }

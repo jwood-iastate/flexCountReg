@@ -39,6 +39,11 @@ summary.flexCountReg <- function(object, ...) {
     mod.sum <- tibble::tibble(parameter = names(object$estimate), 
                               coeff = object$estimate, 
                               `Std. Err.` = object$bootstrapped_se)
+  } else if (!is.null(object$se)) {
+    mod.sum <- tibble::tibble(parameter = names(object$estimate), 
+                              coeff = object$estimate, 
+                              `Std. Err.` = object$se)
+    
   } else {
     se <- sqrt(diag(-1/(object$hessian)))
     mod.sum <- tibble::tibble(parameter = names(object$estimate), 

@@ -143,9 +143,12 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
   
   # Run the maximum likelihood estimation
   fit <- maxLik::maxLik(p_poisweibull, start = start,
-                        y = y, X_Fixed = X_Fixed,  X_alpha = X_alpha, X_sigma = X_sigma,
+                        y = y, X_Fixed = X_Fixed, 
+                        X_alpha = X_alpha, X_sigma = X_sigma,
                         ndraws = ndraws, est_method = method,
-                        method = method, control = list(iterlim = max.iters, printLevel = print.level))
+                        method = method, 
+                        control = list(iterlim = max.iters, 
+                                       printLevel = print.level))
   
   # Optionally, compute bootstrapped standard errors
   # create function to clean data and run maxLik

@@ -11,7 +11,10 @@ nbg(
   form = "nb2",
   ln.alpha.formula = NULL,
   method = "BHHH",
-  max.iters = 200
+  max.iters = 200,
+  weights = NULL,
+  bootstraps = NULL,
+  print.level = 0
 )
 }
 \arguments{
@@ -34,6 +37,13 @@ estimation. For options, see \code{\link[maxLik]{maxLik}},}
 
 \item{max.iters}{the maximum number of iterations to allow the optimization
 method to perform.}
+
+\item{weights}{the name of the weighting variable. This is an optional 
+parameter for weighted regression.}
+
+\item{bootstraps}{Optional integer specifying the number of bootstrap 
+samples to be used for estimating bootstrapped standard errors. If this is 
+used, bootstrapped standard errors will be calculated.}
 }
 \description{
 Function for estimating a variety of negative binomial models (NB-1, NB-2,
@@ -94,12 +104,13 @@ nbp.overdispersion <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
                                 ln.alpha.formula = ~ 1+lnlength)
 summary(nbp.overdispersion)
 
-## NB-1 Model
+## NB-1 Model with Bootstrapping
 nb1.base <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
                         ShouldWidth04 + AADTover10k,
                         data=washington_roads, form = 'nb1',
-                        method = 'NM',
-                        max.iters=3000)
+                        method = 'BHHH',
+                        max.iters=3000,
+                        bootstraps=100)
 summary(nb1.base)
 
 ## Generalize NB-1 Model

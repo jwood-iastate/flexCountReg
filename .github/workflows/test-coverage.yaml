@@ -1,5 +1,3 @@
-# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
-# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
 on:
   push:
     branches: [main, master]
@@ -28,11 +26,20 @@ jobs:
           extra-packages: any::covr, any::xml2
           needs: coverage
 
+      # Ensure Makevars is correctly set up for coverage
+      - name: Setup C++ coverage flags
+        run: |
+          echo 'CXXFLAGS += -g -O0 --coverage' >> ~/.R/Makevars
+          echo 'CFLAGS += -g -O0 --coverage' >> ~/.R/Makevars
+          echo 'LDFLAGS += --coverage' >> ~/.R/Makevars
+        shell: bash
+
       - name: Test coverage
         run: |
           cov <- covr::package_coverage(
             quiet = FALSE,
             clean = FALSE,
+            type = "all", # Ensure coverage for all source types, including C++
             install_path = file.path(normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"), "package")
           )
           covr::to_cobertura(cov)
@@ -42,7 +49,7 @@ jobs:
         with:
           fail_ci_if_error: ${{ github.event_name != 'pull_request' && true || false }}
           file: ./cobertura.xml
-          plugin: noop
+          plugin: gcov  # Enable the gcov plugin to process C++ coverage data
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
 

@@ -25,15 +25,7 @@ jobs:
         with:
           extra-packages: any::covr, any::xml2
           needs: coverage
-
-      # Ensure Makevars is correctly set up for coverage
-      - name: Setup C++ coverage flags
-        run: |
-          echo 'CXXFLAGS += -g -O0 --coverage' >> ~/.R/Makevars
-          echo 'CFLAGS += -g -O0 --coverage' >> ~/.R/Makevars
-          echo 'LDFLAGS += --coverage' >> ~/.R/Makevars
-        shell: bash
-
+  
       - name: Test coverage
         run: |
           cov <- covr::package_coverage(

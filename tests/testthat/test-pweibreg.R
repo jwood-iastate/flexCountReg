@@ -9,7 +9,7 @@ test_that("Poisson-Weibull model runs correctly with alpha_formula", {
                     method = 'NM', 
                     max.iters = 3000)
   
-  expect_named(model$model$estimate, c("lnlength", "lnaadt", "ln(alpha):(Intercept)", "ln(alpha):lnaadt", "ln(sigma)"))
+  expect_named(model$model$estimate, c("(Intercept)", "lnaadt", "lnlength", "ln(alpha):(Intercept)", "ln(alpha):lnaadt", "ln(sigma)"))
 })
 
 # Test the Poisson-Weibull model with sigma_formula
@@ -23,5 +23,5 @@ test_that("Poisson-Weibull model runs correctly with sigma_formula", {
                     method = 'NM', 
                     max.iters = 3000)
   
-  expect_named(model$model$estimate, c("(Intercept)","lnlength", "lnaadt", "ln(alpha)", "ln(sigma):(Intercept)", "ln(sigma):lnaadt"))
+  expect_named(model$model$estimate, c("(Intercept)", "lnaadt", "lnlength", "ln(alpha)", "ln(sigma):(Intercept)", "ln(sigma):lnaadt"))
 })

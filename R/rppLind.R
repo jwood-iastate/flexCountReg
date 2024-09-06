@@ -11,10 +11,19 @@
 #' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform,
 #' @param start.vals an optional vector of starting values for the regression coefficients
-#' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
+#' @param print.level Integer specifying the verbosity of output during optimization.
+#' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
+#'        for estimating standard errors. If not specified, no bootstrapping is performed.
+#' @param weights the name of the weighting variable. This is an optional 
+#'   parameter for weighted regression.
+#'    
 #' @import randtoolbox maxLik stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
+#' @importFrom purrr map map_df
+#' @importFrom broom tidy
+#' @importFrom dplyr group_by %>% summarise
+#' @importFrom tibble deframe
 #' @include tri.R plind.R
 #'
 #' @examples
@@ -36,7 +45,8 @@ rppLind <- function(formula, rpar_formula, data,
                  rpardists = NULL,
                  ndraws = 1500, scrambled = FALSE,
                  correlated = FALSE, method = 'BHHH', max.iters = 1000,
-                 start.vals = NULL, print.level = 0) {
+                 start.vals = NULL, print.level = 0,
+                 weights=NULL, bootstraps=NULL) {
   # start.vals can be a vector or a named vector with the starting values for the parameters
   # print.level is used to determine the level of details for the optimization to print (for the maxLik function call)
 
@@ -74,7 +84,18 @@ rppLind <- function(formula, rpar_formula, data,
   y_name <- all.vars(formula)[1]
   y <- stats::model.response(mod1_frame)
   
-  X_expanded <- cbind(X_Fixed, X_rand, X_rand) # for use in the gradient
+  
+  # Preparing the weights
+  if (!is.null(weights)){
+    if (is.character(weights) && weights %in% colnames(data)) {
+      # Use weights variable from data
+      weights <- as.numeric(data[[weights]])
+    } else {
+      stop("Weights should be the name of a variable in the data.")
+    }
+  } else {
+    weights <- rep(1, length(y)) # Default weights of 1
+  }
 
   # Create named vectors
   fixed_terms <- names(X_Fixed)
@@ -316,6 +337,47 @@ rppLind <- function(formula, rpar_formula, data,
                 correlated = correlated,
                 method = method,
                 control = list(iterlim = max.iters, printLevel = print.level))
+  
+  # Optionally, compute bootstrapped standard errors
+  # create function to clean data and run maxLik
+  plind.boot <- function(data){
+    mod1_frame <- stats::model.frame(formula, data)
+    X_Fixed <- stats::model.matrix(formula, data)
+    y <- stats::model.response(mod1_frame)
+    
+    int_res <- maxLik::maxLik(p_plind_rp,
+                              start = fit$estimate,
+                              y = y,
+                              X_Fixed = X_Fixed,
+                              X_rand = X_rand,
+                              ndraws = ndraws,
+                              rpar = rpar,
+                              correlated = correlated,
+                              method = method,
+                              control = list(iterlim = max.iters, printLevel = print.level))
+    return(int_res)
+  }
+  
+  
+  if (!is.null(bootstraps) & is.numeric(bootstraps)) {
+    bs.data <- modelr::bootstrap(data, n = bootstraps)
+    
+    
+    mod1_frame <- stats::model.frame(formula, data)
+    X_Fixed <- stats::model.matrix(formula, data)
+    y <- stats::model.response(mod1_frame)
+    
+    models <- map(bs.data$strap, ~ plind.boot(data = .))
+    tidied <- map_df(models, broom::tidy, .id = "id")
+    
+    SE <- tidied %>%
+      group_by(term) %>%
+      summarise(sd = sd(estimate)) %>% deframe()
+    
+    fit$bootstrapped_se <- SE
+  }
+  
+  fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
 
   N_fixed = length(x_fixed_names)
   N_rand = length(rpar)

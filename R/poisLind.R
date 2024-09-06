@@ -3,13 +3,22 @@
 #' @name poisLind
 #' @param formula an R formula.
 #' @param method a method to use for optimization in the maximum likelihood 
-#' estimation. For options, see \code{\link[maxLik]{maxLik}},
+#' estimation. For options, see \code{\link[maxLik]{maxLik}}.
 #' @param data a dataframe that has all of the variables in the \code{formula}.
 #' @param max.iters the maximum number of iterations to allow the optimization 
-#' method to perform,
+#' method to perform.
+#' @param print.level Integer specifying the verbosity of output during optimization.
+#' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
+#'        for estimating standard errors. If not specified, no bootstrapping is performed.
+#' @param weights the name of the weighting variable. This is an optional 
+#'   parameter for weighted regression.
 #'
 #' @import maxLik  stats modelr
 #' @importFrom MASS glm.nb
+#' @importFrom purrr map map_df
+#' @importFrom broom tidy
+#' @importFrom dplyr group_by %>% summarise
+#' @importFrom tibble deframe
 #' @include plind.R
 #'
 #' @details
@@ -73,12 +82,26 @@
 #'                                 max.iters = 1000)
 #' summary(poislind.mod)}
 #' @export
-poisLind <- function(formula, data, method = 'BHHH', max.iters = 1000) {
+poisLind <- function(formula, data, method = 'BHHH', max.iters = 1000, 
+                     weights=NULL, print.level=0, bootstraps=NULL) {
 
   mod_df <- stats::model.frame(formula, data)
   X <- as.matrix(modelr::model_matrix(data, formula))
   y <- as.numeric(stats::model.response(mod_df))
   x_names <- colnames(X)
+  weights.def <- weights
+  
+  # Preparing the weights
+  if (!is.null(weights)){
+    if (is.character(weights) && weights %in% colnames(data)) {
+      # Use weights variable from data
+      weights <- as.numeric(data[[weights]])
+    } else {
+      stop("Weights should be the name of a variable in the data.")
+    }
+  } else {
+    weights <- rep(1, length(y)) # Default weights of 1
+  }
 
   # Use the Negative Binomial as starting values
   p_model <- glm.nb(formula, data = data)
@@ -100,7 +123,7 @@ poisLind <- function(formula, data, method = 'BHHH', max.iters = 1000) {
 
     probs <- dplind(y, mean=predicted, theta=theta)
 
-    ll <- sum(log(probs))
+    ll <- sum(weights*log(probs)) # accounting for weights (values of 1 if not provided)
     if (method == 'bhhh' | method == 'BHHH'){
       return(log(probs))
     } else{return(ll)}
@@ -133,14 +156,76 @@ poisLind <- function(formula, data, method = 'BHHH', max.iters = 1000) {
 
     return(cbind(gradX, d_dlnT))
   }
-
+  
+  if (is.null(weights.def)){
+    fit <- maxLik::maxLik(reg.run,
+                          start = full_start,
+                          y = y,
+                          X = X,
+                          grad = if (method == 'BHHH') gradFun else function(...) colSums(gradFun(...)),
+                          method = method,
+                          control = list(iterlim = max.iters, 
+                                         printLevel = print.level))
+  }else{
   fit <- maxLik::maxLik(reg.run,
-                start = full_start,
-                y = y,
-                X = X,
-                grad = if (method == 'BHHH') gradFun else function(...) colSums(gradFun(...)),
-                method = method,
-                control = list(iterlim = max.iters))
+                        start = full_start,
+                        y = y,
+                        X = X,
+                        method = method,
+                        control = list(iterlim = max.iters, 
+                                       printLevel = print.level))
+  }
+
+
+  # Optionally, compute bootstrapped standard errors
+  # create function to clean data and run maxLik
+  plind.boot <- function(data){
+    mod1_frame <- stats::model.frame(formula, data)
+    X_Fixed <- stats::model.matrix(formula, data)
+    y <- stats::model.response(mod1_frame)
+    
+    if (is.null(weights.def)){
+      int_res <- maxLik::maxLik(reg.run,
+                                start = fit$estimate,
+                                y = y,
+                                X = X,
+                                grad = if (method == 'BHHH') gradFun else function(...) colSums(gradFun(...)),
+                                method = method,
+                                control = list(iterlim = max.iters, 
+                                               printLevel = print.level))
+    }else{
+      int_res <- maxLik::maxLik(reg.run,
+                                start = fit$estimate,
+                                y = y,
+                                X = X,
+                                method = method,
+                                control = list(iterlim = max.iters, 
+                                               printLevel = print.level))
+    }
+    
+    return(int_res)
+  }
+  
+  
+  if (!is.null(bootstraps) & is.numeric(bootstraps)) {
+    bs.data <- modelr::bootstrap(data, n = bootstraps)
+    
+    
+    mod1_frame <- stats::model.frame(formula, data)
+    X_Fixed <- stats::model.matrix(formula, data)
+    y <- stats::model.response(mod1_frame)
+    
+    models <- map(bs.data$strap, ~ plind.boot(data = .))
+    tidied <- map_df(models, broom::tidy, .id = "id")
+    
+    SE <- tidied %>%
+      group_by(term) %>%
+      summarise(sd = sd(estimate)) %>% deframe()
+    
+    fit$bootstrapped_se <- SE
+  }
+  
+  fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
 
   beta_est <- fit$estimate
   npars <- length(beta_est)-1

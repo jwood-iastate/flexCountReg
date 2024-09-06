@@ -4,7 +4,15 @@
 \alias{poisLind}
 \title{Function for estimating a Poisson-Lindley regression model}
 \usage{
-poisLind(formula, data, method = "BHHH", max.iters = 1000)
+poisLind(
+  formula,
+  data,
+  method = "BHHH",
+  max.iters = 1000,
+  weights = NULL,
+  print.level = 0,
+  bootstraps = NULL
+)
 }
 \arguments{
 \item{formula}{an R formula.}
@@ -12,10 +20,18 @@ poisLind(formula, data, method = "BHHH", max.iters = 1000)
 \item{data}{a dataframe that has all of the variables in the \code{formula}.}
 
 \item{method}{a method to use for optimization in the maximum likelihood 
-estimation. For options, see \code{\link[maxLik]{maxLik}},}
+estimation. For options, see \code{\link[maxLik]{maxLik}}.}
 
 \item{max.iters}{the maximum number of iterations to allow the optimization 
-method to perform,}
+method to perform.}
+
+\item{weights}{the name of the weighting variable. This is an optional 
+parameter for weighted regression.}
+
+\item{print.level}{Integer specifying the verbosity of output during optimization.}
+
+\item{bootstraps}{Optional integer specifying the number of bootstrap samples to be used
+for estimating standard errors. If not specified, no bootstrapping is performed.}
 }
 \description{
 Function for estimating a Poisson-Lindley regression model

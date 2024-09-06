@@ -288,6 +288,8 @@ nbg <- function(formula, data, form = 'nb2', ln.alpha.formula = NULL,
     fit$bootstrapped_se <- SE[names(fit$estimate)]
   }
   
+  fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
+  
     obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }

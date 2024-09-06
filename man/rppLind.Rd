@@ -15,7 +15,9 @@ rppLind(
   method = "BHHH",
   max.iters = 1000,
   start.vals = NULL,
-  print.level = 0
+  print.level = 0,
+  weights = NULL,
+  bootstraps = NULL
 )
 }
 \arguments{
@@ -39,7 +41,13 @@ rppLind(
 
 \item{start.vals}{an optional vector of starting values for the regression coefficients}
 
-\item{print.level}{determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.}
+\item{print.level}{Integer specifying the verbosity of output during optimization.}
+
+\item{weights}{the name of the weighting variable. This is an optional 
+parameter for weighted regression.}
+
+\item{bootstraps}{Optional integer specifying the number of bootstrap samples to be used
+for estimating standard errors. If not specified, no bootstrapping is performed.}
 }
 \description{
 Function for estimating a random parameter Poisson-Lindley model

@@ -135,6 +135,7 @@ The following functions are included in the `flexCountReg` package, grouped by c
 - `poisLogn ` estimates the Poisson-Lognormal regression model. It allows the standard deviation parameter ($\sigma$) to be specified as a function of predictors.
 - `pwiebreg ` estimates the Poisson-Weibull regression model. It allows the shape and scale parameters to be specified as functions of predictors.
 - `rpnb` estimates the random parameters negative binomial regression (NB-1, NB-2, or NB-P).
+- `rppLind` estimates the random parameters Poisson-Lindley regression model.
 - `sichel ` estimates the Sichel regression model. It allows the scale parameter to be specified as a function of predictors.
 
 **Model Evaluation, Comparison, and Convenience Functions**

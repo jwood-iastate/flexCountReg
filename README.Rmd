@@ -130,6 +130,7 @@ The following functions are included in the `flexCountReg` package, grouped by c
 - `poisGE` estimates the Poisson-Generalized-Exponential regression model. It allows the scale parameter to be specified as a function of predictors.
 - `poisInvGaus` estimates the Poisson-Inverse-Gaussian regression model. 
 - `poisLind` estimates the Poisson-Lindley regression model.
+- `poisLind.re` estimates the Random Effects Poisson-Lindley regression model (panel model).
 - `poisLindGamma` estimates the Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) regression model. 
 - `poisLindLnorm ` estimates the Poisson-Lindley-Lognormal regression model.
 - `poisLogn ` estimates the Poisson-Lognormal regression model. It allows the standard deviation parameter ($\sigma$) to be specified as a function of predictors.

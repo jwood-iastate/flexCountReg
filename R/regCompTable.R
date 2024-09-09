@@ -91,7 +91,11 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     
     coefNames <- names(models[[i]]$model$estimate)
     coefs <- models[[i]]$model$estimate
-    se <- sqrt(diag(-1/(models[[i]]$model$hessian)))
+    if (!is.null(models[[i]]$model$bootstraps)){
+      se <- models[[i]]$model$bootstrapped_se
+    }else{
+      se <- sqrt(diag(-1/(models[[i]]$model$hessian)))
+    }
     t <- abs(coefs / se)
     coefsRounded <- round(coefs, digits)
     seRounded <- round(se, digits)

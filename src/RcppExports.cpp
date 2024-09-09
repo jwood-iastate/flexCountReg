@@ -108,6 +108,34 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pollind_i_group
+double pollind_i_group(NumericVector mu, IntegerVector y, double theta);
+RcppExport SEXP _flexCountReg_pollind_i_group(SEXP muSEXP, SEXP ySEXP, SEXP thetaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
+    rcpp_result_gen = Rcpp::wrap(pollind_i_group(mu, y, theta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// reg_run_RE
+double reg_run_RE(NumericVector beta, IntegerVector y, NumericMatrix X, SEXP group, NumericVector weights);
+RcppExport SEXP _flexCountReg_reg_run_RE(SEXP betaSEXP, SEXP ySEXP, SEXP XSEXP, SEXP groupSEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type group(groupSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(reg_run_RE(beta, y, X, group, weights));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dtri_cpp
 double dtri_cpp(double x, double mode, double sigma, double upper, double lower, bool log);
 RcppExport SEXP _flexCountReg_dtri_cpp(SEXP xSEXP, SEXP modeSEXP, SEXP sigmaSEXP, SEXP upperSEXP, SEXP lowerSEXP, SEXP logSEXP) {
@@ -180,6 +208,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 4},
     {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
     {"_flexCountReg_dplindgamma_cpp", (DL_FUNC) &_flexCountReg_dplindgamma_cpp, 5},
+    {"_flexCountReg_pollind_i_group", (DL_FUNC) &_flexCountReg_pollind_i_group, 3},
+    {"_flexCountReg_reg_run_RE", (DL_FUNC) &_flexCountReg_reg_run_RE, 5},
     {"_flexCountReg_dtri_cpp", (DL_FUNC) &_flexCountReg_dtri_cpp, 6},
     {"_flexCountReg_ptri_cpp", (DL_FUNC) &_flexCountReg_ptri_cpp, 7},
     {"_flexCountReg_qtri_cpp", (DL_FUNC) &_flexCountReg_qtri_cpp, 5},

@@ -69,6 +69,7 @@ Collate:
     'ppoisGE.R'
     'poisGE.R'
     'poisInvGaus.R'
+    'poisLind.re.R'
     'poisWeib.R'
     'predict_flexCountReg.R'
     'pwiebreg.R'

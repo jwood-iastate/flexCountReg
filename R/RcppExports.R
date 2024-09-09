@@ -29,6 +29,14 @@ dplindgamma_cpp <- function(x, mean, theta, alpha, h) {
     .Call('_flexCountReg_dplindgamma_cpp', PACKAGE = 'flexCountReg', x, mean, theta, alpha, h)
 }
 
+pollind_i_group <- function(mu, y, theta) {
+    .Call('_flexCountReg_pollind_i_group', PACKAGE = 'flexCountReg', mu, y, theta)
+}
+
+reg_run_RE <- function(beta, y, X, group, weights) {
+    .Call('_flexCountReg_reg_run_RE', PACKAGE = 'flexCountReg', beta, y, X, group, weights)
+}
+
 dtri_cpp <- function(x, mode = 0, sigma = 1, upper = NA_real_, lower = NA_real_, log = FALSE) {
     .Call('_flexCountReg_dtri_cpp', PACKAGE = 'flexCountReg', x, mode, sigma, upper, lower, log)
 }

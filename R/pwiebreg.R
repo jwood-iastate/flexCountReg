@@ -45,11 +45,16 @@
 #' 
 #' @examples
 #' data("washington_roads")
-#' pw_rp <- pwiebreg(Total_crashes ~ lnlength + lnaadt,
-#'                                  data = washington_roads,
-#'                                  ndraws = 100)
-#' print(summary(pw_rp))
-#' 
+#' pw <- pwiebreg(Total_crashes ~ offset(lnaadt) + lnlength,
+#'                 ndraws = 1500,
+#'                 data = washington_roads,
+#'                 alpha_formula = ~ -1 + lnaadt,
+#'                 sigma_formula = ~ lnaadt,
+#'                 method = 'NM',
+#'                 bootstraps=30)
+#' print(summary(pw))
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib flexCountReg
 #' @export
 pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
                      ndraws = 1500,  method = 'NM', max.iters = 1000,
@@ -81,6 +86,14 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
   
   y <- stats::model.response(mod1_frame)
   
+  # Generate Halton draws to use as quantile values
+  h <- randtoolbox::halton(ndraws)
+  
+  # Efficient computatation of probabilities using C++ code
+  dpoisweibull_cpp <- Vectorize(function(x, lambda, alpha , sigma, h) {
+    p <- dpWeib_cpp(x, lambda, alpha, sigma, h)
+    return(max(p,1e-10))})
+  
   # Define the main function for computing log-likelihood
   p_poisweibull <- function(p, y, X_Fixed, X_alpha, X_sigma, ndraws, 
                                est_method) {
@@ -107,17 +120,15 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
       sigma <- exp(coefs[(N_fixed + N_alpha + 1)])
     }
     
-    
     pred <- exp(X_Fixed %*% fixed_coefs)
-    
+
     lambda <- pred / (sigma * gamma(1 + 1 / alpha))
-    
-    # Call the provided Poisson-Weibull density function
-    probs <- dpoisweibull(x = y, 
+
+    probs <- dpoisweibull_cpp(x = y, 
                           lambda = lambda, 
                           alpha = alpha,
                           sigma = sigma, 
-                          log = FALSE)
+                          h = h)
     
     ll <- sum(log(probs))
     

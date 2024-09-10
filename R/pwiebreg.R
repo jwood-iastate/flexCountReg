@@ -19,7 +19,7 @@
 #' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
 #'        for estimating standard errors.
 #' @import modelr randtoolbox  
-#' @importFrom numDeriv jacobian hessian      
+#' @importFrom numDeriv jacobian      
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df
 #' @importFrom broom tidy
@@ -133,12 +133,12 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
   
   # Gradient and Hessian
   gradnt <- function(p){
-    jacobian(p_poisweibull, p)
+    jacobian(p_poisweibull, p, method="simple")
   }
   
-  hssn <- function(p, y, X_Fixed, X_alpha, X_sigma, haltons, est_method){
-    hessian(p_poisweibull, p)
-  }
+  # hssn <- function(p){
+  #   -abs(hessian(p_poisweibull, p))
+  # }
   
   # Initialize starting values if not provided
   start <- if (is.null(start.vals)) {
@@ -158,7 +158,7 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
                         start = start,
                         method = method, 
                         grad = gradnt,
-                        hess = hssn,
+                        # hess = hssn,
                         control = list(iterlim = max.iters, 
                                        printLevel = print.level))
   
@@ -185,7 +185,7 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
     int_res <- maxLik::maxLik(p_poisweibull, 
                               start = fit$estimate,
                               grad = gradnt,
-                              hess = hssn,
+                              # hess = hssn,
                               method = method, control = list(iterlim = max.iters, printLevel = print.level))
     return(int_res)
   }
@@ -210,7 +210,7 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
   }
   
   fit$coefficients = fit$estimate
-  fit$se = if (!is.null(bootstraps) & is.numeric(bootstraps)) fit$bootstrapped_se else sqrt(diag(fit$hessian))
+  fit$se = if (!is.null(bootstraps) & is.numeric(bootstraps)) fit$bootstrapped_se else sqrt(diag(-1/(fit$hessian)))
   fit$logLik = fit$maximum
   fit$converged = fit$convergence
   fit$model = "rpoisweibull_regression"

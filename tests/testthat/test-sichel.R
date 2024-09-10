@@ -4,7 +4,7 @@ test_that("Sichel regression coefficients", {
   suppressMessages({
     sichel.mod <- sichel(Total_crashes ~ lnaadt + lnlength,
                          data = washington_roads,
-                         method = "NM",
+                         method = "BFGS",
                          max.iters = 1000)
   })
   coefs <- coef(sichel.mod)

@@ -18,7 +18,8 @@
 #' @param print.level Integer specifying the verbosity of output during optimization.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
 #'        for estimating standard errors.
-#' @import modelr        
+#' @import modelr randtoolbox  
+#' @importFrom numDeriv grad hessian      
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df
 #' @importFrom broom tidy
@@ -50,8 +51,7 @@
 #'                 data = washington_roads,
 #'                 alpha_formula = ~ -1 + lnaadt,
 #'                 sigma_formula = ~ lnaadt,
-#'                 method = 'NM',
-#'                 bootstraps=30)
+#'                 method = 'NM')
 #' print(summary(pw))
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
@@ -87,16 +87,12 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
   y <- stats::model.response(mod1_frame)
   
   # Generate Halton draws to use as quantile values
-  h <- randtoolbox::halton(ndraws)
+  haltons <- randtoolbox::halton(ndraws)
   
-  # Efficient computatation of probabilities using C++ code
-  dpoisweibull_cpp <- Vectorize(function(x, lambda, alpha , sigma, h) {
-    p <- dpWeib_cpp(x, lambda, alpha, sigma, h)
-    return(max(p,1e-10))})
+  est_method = method
   
   # Define the main function for computing log-likelihood
-  p_poisweibull <- function(p, y, X_Fixed, X_alpha, X_sigma, ndraws, 
-                               est_method) {
+  p_poisweibull <- function(p) {
     N_fixed = ncol(X_Fixed)
     coefs <- as.array(p)
     fixed_coefs <- head(coefs, N_fixed)
@@ -124,19 +120,24 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
 
     lambda <- pred / (sigma * gamma(1 + 1 / alpha))
 
-    probs <- dpoisweibull_cpp(x = y, 
-                          lambda = lambda, 
-                          alpha = alpha,
-                          sigma = sigma, 
-                          h = h)
+    probs <- dpWeib_cpp(y, lambda, alpha, sigma, haltons)
     
     ll <- sum(log(probs))
     
-    if (est_method == 'bhhh' || method == 'BHHH') {
+    if (est_method == 'bhhh' || est_method == 'BHHH') {
       return(log(probs))
     } else {
       return(ll)
     }
+  }
+  
+  # Gradient and Hessian
+  gradnt <- function(p){
+    grad(p_poisweibull, p)
+  }
+  
+  hssn <- function(p, y, X_Fixed, X_alpha, X_sigma, haltons, est_method){
+    hessian(p_poisweibull, p)
   }
   
   # Initialize starting values if not provided
@@ -153,11 +154,11 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
   names(start) <- x_names
   
   # Run the maximum likelihood estimation
-  fit <- maxLik::maxLik(p_poisweibull, start = start,
-                        y = y, X_Fixed = X_Fixed, 
-                        X_alpha = X_alpha, X_sigma = X_sigma,
-                        ndraws = ndraws, est_method = method,
+  fit <- maxLik::maxLik(p_poisweibull, 
+                        start = start,
                         method = method, 
+                        grad = gradnt,
+                        hess = hssn,
                         control = list(iterlim = max.iters, 
                                        printLevel = print.level))
   
@@ -181,9 +182,10 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
       X_sigma <- matrix(1, nrow(data), 1)  # Use an intercept-only model if sigma_formula is not provided
     }
     
-    int_res <- maxLik::maxLik(p_poisweibull, start = fit$estimate,
-                              y = y, X_Fixed = X_Fixed,  X_alpha = X_alpha, X_sigma = X_sigma,
-                              ndraws = ndraws, est_method = method,
+    int_res <- maxLik::maxLik(p_poisweibull, 
+                              start = fit$estimate,
+                              grad = gradnt,
+                              hess = hssn,
                               method = method, control = list(iterlim = max.iters, printLevel = print.level))
     return(int_res)
   }

@@ -19,7 +19,7 @@
 #' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
 #'        for estimating standard errors.
 #' @import modelr randtoolbox  
-#' @importFrom numDeriv grad hessian      
+#' @importFrom numDeriv jacobian hessian      
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df
 #' @importFrom broom tidy
@@ -133,7 +133,7 @@ pwiebreg <- function(formula, alpha_formula = NULL, sigma_formula = NULL, data,
   
   # Gradient and Hessian
   gradnt <- function(p){
-    grad(p_poisweibull, p)
+    jacobian(p_poisweibull, p)
   }
   
   hssn <- function(p, y, X_Fixed, X_alpha, X_sigma, haltons, est_method){

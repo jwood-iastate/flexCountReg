@@ -69,7 +69,6 @@ pw <- pwiebreg(Total_crashes ~ offset(lnaadt) + lnlength,
                 data = washington_roads,
                 alpha_formula = ~ -1 + lnaadt,
                 sigma_formula = ~ lnaadt,
-                method = 'NM',
-                bootstraps=30)
+                method = 'NM')
 print(summary(pw))
 }

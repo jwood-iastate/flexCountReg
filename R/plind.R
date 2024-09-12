@@ -56,6 +56,8 @@
 #' rplind(30, mean = 0.75, theta = 7)
 #'
 #' @import stats
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib flexCountReg
 #' @export
 #' @name PoissonLindley
 
@@ -89,8 +91,7 @@ dplind <- Vectorize(function(
       stop(msg)
     }
     else{
-      p <- (theta^2 * lambda^x * (theta + lambda + x + 1)) /
-        ((theta + 1) * (theta + lambda)^(x + 2))
+      p <- dplind_cpp(x, mean, theta)
     }
   }
   if (log) return(log(p))

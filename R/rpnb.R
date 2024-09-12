@@ -16,8 +16,8 @@
 #' @import randtoolbox maxLik stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
-#' @include tri.R
-#'
+#' @include tri.R get_chol.R
+#' 
 #' @examples
 #' \donttest{
 #'
@@ -186,7 +186,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
       randparam_means = tail(start, Lrpar)
       rparam_var <- abs(randparam_means)/2
       rparam_var <- diag(rparam_var)
-      Chl <- chol(rparam_var)
+      Chl <- get_chol(rparam_var, rpar)
 
       for (i in 1:length(rpar)){
         for (j in 1:length(rpar)){
@@ -250,16 +250,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     if (length(rpar)>1){
       if (correlated){ # Generate correlated random draws
         chol_vals <- t
-        Ch <- matrix(0, N_rand, N_rand)
-        counter = 1
-        for (i in 1:N_rand){
-          for (j in 1:N_rand){
-            if (j<=i){
-              Ch[j,i] <- chol_vals[counter]
-              counter <- counter + 1
-            }
-          }
-        }
+        Ch <- get_chol(t, N_rand)
         scaled_draws <- qnorm(hdraws) %*% Ch
         draws <- apply(scaled_draws, 1, function(x) x + random_coefs_means)
       }

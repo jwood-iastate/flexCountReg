@@ -66,5 +66,9 @@ summary.flexCountReg <- function(object, ...) {
   mod.sum <- mod.sum %>%
     dplyr::mutate(across(where(is.numeric), round, digits = digits))
   
+  if (!is.null(object$offset)){
+    mod.sum <- tibble::add_row(mod.sum, parameter = paste(object$offset, "(Offset variable)"), coeff = 1, `Std. Err.` = NA_real_, `t-stat` = NA_real_, `p-value` = NA_real_, `lower CI` = NA_real_, `upper CI` = NA_real_)
+  }
+  
   print(mod.sum)
 }

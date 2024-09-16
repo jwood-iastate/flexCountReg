@@ -11,8 +11,8 @@ countreg(
   offset = NULL,
   weights = NULL,
   verbose = FALSE,
-  dis_param_furmula_1 = NULL,
-  dis_param_furmula_2 = NULL,
+  dis_param_formula_1 = NULL,
+  dis_param_formula_2 = NULL,
   ndraws = 1500,
   method = "NM",
   max.iters = 1000,
@@ -38,11 +38,11 @@ as a frequency weight.}
 \item{verbose}{an optional parameter. If `TRUE`, the function will print out 
 the progress of the model fitting. Default is `FALSE`.}
 
-\item{dis_param_furmula_1}{a symbolic description of the model for the 
+\item{dis_param_formula_1}{a symbolic description of the model for the 
 natural log of the dispersion parameter or first parameter of the 
 count distribution used. Further details are provided below.}
 
-\item{dis_param_furmula_2}{a symbolic description of the model for the second
+\item{dis_param_formula_2}{a symbolic description of the model for the second
 parameter of the count distribution used. Further details are provided 
 below.}
 
@@ -114,13 +114,13 @@ For the `family` argument, the following options are available:
  \item "GW" for Generalized Waring distribution with a log link.
  }
  
- The `dis_param_furmula_1` and `dis_param_furmula_2` parameters are used to 
+ The `dis_param_formula_1` and `dis_param_formula_2` parameters are used to 
  estimate the dispersion parameter or other parameters of the count 
  distribution used. This leads to the distributions parameters being 
  functions rather than constants in the model. For example, 
  if the user wants to estimate the overdispersion parameter of the Negative 
  Binomial 2 distribution as a function of the variable `x1` and `x2`, 
- the user would specify `dis_param_furmula_1 = ~ x1 + x2`. In the case of the 
+ the user would specify `dis_param_formula_1 = ~ x1 + x2`. In the case of the 
  Negative Binomial distributions, the model is known as a Generalized 
  Negative Minomial model when the overdispersion parmater is specified as a 
  function.
@@ -130,7 +130,7 @@ For the `family` argument, the following options are available:
  
  The parameters for the different models are as follows:
  
- For `dis_param_furmula_1`, the models are for the parameters:
+ For `dis_param_formula_1`, the models are for the parameters:
  \itemize{
  \item \eqn{\alpha} for the Negative Binomial 1 model.
  \item \eqn{\alpha} for the Negative Binomial 2 model.
@@ -146,7 +146,7 @@ For the `family` argument, the following options are available:
  \item k for the Generalized Waring model.
  }
  
- For `dis_param_furmula_2`, the models are for the parameters:
+ For `dis_param_formula_2`, the models are for the parameters:
  \itemize{
  \item Not Applicable for the Negative Binomial 1 model.
  \item Not Applicable for the Negative Binomial 2 model.

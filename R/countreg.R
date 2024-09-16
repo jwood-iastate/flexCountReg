@@ -14,10 +14,10 @@
 #'        as a frequency weight.
 #' @param verbose an optional parameter. If `TRUE`, the function will print out 
 #'        the progress of the model fitting. Default is `FALSE`.
-#' @param dis_param_furmula_1 a symbolic description of the model for the 
+#' @param dis_param_formula_1 a symbolic description of the model for the 
 #'        natural log of the dispersion parameter or first parameter of the 
 #'        count distribution used. Further details are provided below.
-#' @param dis_param_furmula_2 a symbolic description of the model for the second
+#' @param dis_param_formula_2 a symbolic description of the model for the second
 #'        parameter of the count distribution used. Further details are provided 
 #'        below.
 #' @param ndraws The number of Halton draws for integrating the distribution 
@@ -75,13 +75,13 @@
 #'  \item "GW" for Generalized Waring distribution with a log link.
 #'  }
 #'  
-#'  The `dis_param_furmula_1` and `dis_param_furmula_2` parameters are used to 
+#'  The `dis_param_formula_1` and `dis_param_formula_2` parameters are used to 
 #'  estimate the dispersion parameter or other parameters of the count 
 #'  distribution used. This leads to the distributions parameters being 
 #'  functions rather than constants in the model. For example, 
 #'  if the user wants to estimate the overdispersion parameter of the Negative 
 #'  Binomial 2 distribution as a function of the variable `x1` and `x2`, 
-#'  the user would specify `dis_param_furmula_1 = ~ x1 + x2`. In the case of the 
+#'  the user would specify `dis_param_formula_1 = ~ x1 + x2`. In the case of the 
 #'  Negative Binomial distributions, the model is known as a Generalized 
 #'  Negative Minomial model when the overdispersion parmater is specified as a 
 #'  function.
@@ -91,7 +91,7 @@
 #'  
 #'  The parameters for the different models are as follows:
 #'  
-#'  For `dis_param_furmula_1`, the models are for the parameters:
+#'  For `dis_param_formula_1`, the models are for the parameters:
 #'  \itemize{
 #'  \item \eqn{\alpha} for the Negative Binomial 1 model.
 #'  \item \eqn{\alpha} for the Negative Binomial 2 model.
@@ -107,7 +107,7 @@
 #'  \item k for the Generalized Waring model.
 #'  }
 #'  
-#'  For `dis_param_furmula_2`, the models are for the parameters:
+#'  For `dis_param_formula_2`, the models are for the parameters:
 #'  \itemize{
 #'  \item Not Applicable for the Negative Binomial 1 model.
 #'  \item Not Applicable for the Negative Binomial 2 model.
@@ -423,8 +423,8 @@
 #' @useDynLib flexCountReg
 #' @export
 countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NULL, 
-                      verbose = FALSE, dis_param_furmula_1 = NULL, 
-                      dis_param_furmula_2 = NULL, ndraws = 1500, method = "NM", 
+                      verbose = FALSE, dis_param_formula_1 = NULL, 
+                      dis_param_formula_2 = NULL, ndraws = 1500, method = "NM", 
                       max.iters = 1000, start.vals = NULL, bootstraps = NULL) {
   
   if (verbose){
@@ -455,28 +455,28 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
  
   probFunc <- switch( # get the probability function for the specified distribution
     family,
-    "NB1" = function(y, predicted, alpha) {
+    "NB1" = function(predicted, alpha, sigma) {
       mu <- predicted
       return(stats::dnbinom(y, size = mu/alpha, mu = mu))
     },
-    "NB2" = function(y, predicted, alpha) {
+    "NB2" = function(predicted, alpha, sigma) {
       mu <- predicted
       return(stats::dnbinom(y, size = alpha, mu = mu))
     },
-    "NBP" = function(y, predicted, alpha, sigma) {
+    "NBP" = function(predicted, alpha, sigma){
       mu <- predicted
       return(stats::dnbinom(y, size = (mu^(2-sigma))/alpha, mu = mu))
     },
-    "PLN" = dpLnorm_cpp(x, mean=predicted, sigma=alpha, h=normed_haltons),
-    "PGE" = dpge(y, mean=predicted, shape=alpha, scale=sigma, ndraws=ndraws),
-    "PIG1" = dpinvgaus(y, mu=predicted, eta=alpha),
-    "PIG2" = dpinvgaus(y, mu=predicted, eta=alpha, form="Type 2"),
-    "PL" = dplind(y, mean=predicted, theta=alpha),
-    "PLG" = dplindGamma(x, mean=predicted, theta=alpha, alpha=sigma, hdraws=hdraws),
-    "PLL" = dplindLnorm(x, mean=predicted, theta=alpha, sigma=sigma, hdraws=hdraws),
-    "PW" = dpWeib_cpp(y, lambda=lambda, alpha=alpha, sigma=sigma, haltons=haltons),
-    "SI" = dsichel(y, mu= predicted, sigma=sigma, gamma=gamma),
-    "GW" = dgwar(y, mu= predicted, k=alpha, rho=sigma)
+    "PLN" = function(predicted, alpha, sigma) dpLnorm_cpp(x, mean=predicted, sigma=alpha, h=normed_haltons),
+    "PGE" = function(predicted, alpha, sigma) dpge(y, mean=predicted, shape=alpha, scale=sigma, ndraws=ndraws),
+    "PIG1" = function(predicted, alpha, sigma) dpinvgaus(y, mu=predicted, eta=alpha),
+    "PIG2" = function(predicted, alpha, sigma) dpinvgaus(y, mu=predicted, eta=alpha, form="Type 2"),
+    "PL" = function(predicted, alpha, sigma) dplind(y, mean=predicted, theta=alpha),
+    "PLG" = function(predicted, alpha, sigma) dplindGamma(x, mean=predicted, theta=alpha, alpha=sigma, hdraws=hdraws),
+    "PLL" = function(predicted, alpha, sigma) dplindLnorm(x, mean=predicted, theta=alpha, sigma=sigma, hdraws=hdraws),
+    "PW" = function(predicted, alpha, sigma) dpWeib_cpp(y, mean=predicted, alpha=alpha, sigma=sigma, h=haltons),
+    "SI" = function(predicted, alpha, sigma) dsichel(y, mu= predicted, sigma=alpha, gamma=sigma),
+    "GW" = function(predicted, alpha, sigma) dgwar(y, mu= predicted, k=alpha, rho=sigma)
   )
   
   # Prepare model matrices
@@ -489,22 +489,21 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     X_offset <- data[, offset]
   }
   
-  if (!is.null(dis_param_furmula_1)) {
-    mod_alpha_frame <- stats::model.frame(dis_param_furmula_1, data)
-    X_alpha <- stats::model.matrix(dis_param_furmula_1, data)
+  if (!is.null(dis_param_formula_1)) {
+    mod_alpha_frame <- stats::model.frame(dis_param_formula_1, data)
+    X_alpha <- stats::model.matrix(dis_param_formula_1, data)
     x_names <- c(x_names, paste0(params[1],colnames(X_alpha)))
   } else {
-    X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_furmula_1 is not provided
+    # X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_formula_1 is not provided
     x_names <- append(x_names, params[1])
   }
   
-  if (!is.null(dis_param_furmula_2)) {
-    mod_sigma_frame <- stats::model.frame(dis_param_furmula_2, data)
-    X_sigma <- stats::model.matrix(dis_param_furmula_2, data)
+  if (!is.null(dis_param_formula_2)) {
+    mod_sigma_frame <- stats::model.frame(dis_param_formula_2, data)
+    X_sigma <- stats::model.matrix(dis_param_formula_2, data)
     x_names <- c(x_names, paste0(params[2],colnames(X_sigma)))
-  } else {
-    X_sigma <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_furmula_2 is not provided
-    x_names <- append(x_names, params[2])
+  } else if (!is.null(params[2])) {
+    x_names <- append(x_names, params[2]) # Add the parameter if it is not NULL
   }
   
   y <- stats::model.response(mod1_frame)
@@ -517,9 +516,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   # Some numbers that will be useful
   N_predictors <- ncol(X)
   # N_obs <- length(y)
-  N_params <- length(params)
+  N_params <- length(Filter(Negate(is.null), params)) # No. of params for the distribution
   
-  if (is.null(dis_param_furmula_1)){
+  if (is.null(dis_param_formula_1)){
     N_alpha = 1
   }
   else{
@@ -527,8 +526,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }
   
   if (N_params==2){
-    if(is.null(dis_param_furmula_2)){
-      N_sigma = 1
+    if(is.null(dis_param_formula_2)){
+      if (is.null(params[2])){
+        N_sigma = 0
+      }else{
+        N_sigma = 1
+      }
     }
     else{
       N_sigma <- ncol(mod_sigma_frame)
@@ -546,52 +549,50 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     start <- c(start, rep(0, N_alpha + N_sigma))
   } 
   else {
-    start.vals
+    start <- start.vals
   }
   
-  names(start) <- x_names
+  names(start) <- Filter(Negate(is.null), x_names) # remove NULL values, if they are in the list
+  
+  # Handling Weights
+  if (is.null(weights)){
+    weights.df <- rep(1, length(y))
+  }else{
+    weights.df <- data[,weights]
+  }
   
   # Define the main function for computing log-likelihood
   logLikFunc <- function(p) {
     coefs <- as.array(p)
     fixed_coefs <- head(coefs, N_predictors)
-
-    if (!is.null(dis_param_furmula_1)){
+    
+    if (!is.null(dis_param_formula_1)){
       alpha_coefs <- coefs[(N_predictors + 1):(N_predictors + N_alpha)]
       alpha <- exp(mod_alpha_frame %*% alpha_coefs)
-    }
-    else{
-      alpha <- exp(coefs[(N_alpha + 1)])
+    } else {
+      alpha <- exp(coefs[(N_predictors + 1)])
     }
     
-    
-    N_sigma = ncol(X_sigma)
-    if (!is.null(dis_param_furmula_2)){
+    if (!is.null(dis_param_formula_2)){
       sigma_coefs <- coefs[(N_predictors + N_alpha + 1):(N_predictors + N_alpha + N_sigma)]
       sigma <- exp(mod_sigma_frame %*% sigma_coefs)
-    }
-    else{
+    } else {
       sigma <- exp(coefs[(N_predictors + N_alpha + 1)])
     }
     
     if (!is.null(offset)){
       predicted <- exp(X %*% fixed_coefs + X_offset)
-    }
-    else{
+    } else {
       predicted <- exp(X %*% fixed_coefs)
     }
-
-    if (family=="PW"){
-      lambda <- predicted / (sigma * gamma(1 + 1 / alpha))
-    }
     
+    # Call the probability function
+    probs <- probFunc(predicted, alpha, sigma)
     
-    probs <- probFunc(family)#(y=y, predicted=predicted, alpha=alpha, sigma=sigma)
-    
-    ll <- sum(log(probs))
+    ll <- sum(log(probs)*weights.df) # Accounting for weights, if needed
     
     if (est_method == 'bhhh' || est_method == 'BHHH') {
-      return(log(probs))
+      return(log(probs)*weights.df)
     } else {
       return(ll)
     }
@@ -616,21 +617,21 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
       X_offset <- data[, offset]
     }
     
-    if (!is.null(dis_param_furmula_1)) {
-      mod_alpha_frame <- stats::model.frame(dis_param_furmula_1, data)
-      X_alpha <- stats::model.matrix(dis_param_furmula_1, data)
+    if (!is.null(dis_param_formula_1)) {
+      mod_alpha_frame <- stats::model.frame(dis_param_formula_1, data)
+      X_alpha <- stats::model.matrix(dis_param_formula_1, data)
       x_names <- c(x_names, paste0(params[1],colnames(X_alpha)))
     } else {
-      X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_furmula_1 is not provided
+      X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_formula_1 is not provided
       x_names <- append(x_names, params[1])
     }
     
-    if (!is.null(dis_param_furmula_2)) {
-      mod_sigma_frame <- stats::model.frame(dis_param_furmula_2, data)
-      X_sigma <- stats::model.matrix(dis_param_furmula_2, data)
+    if (!is.null(dis_param_formula_2)) {
+      mod_sigma_frame <- stats::model.frame(dis_param_formula_2, data)
+      X_sigma <- stats::model.matrix(dis_param_formula_2, data)
       x_names <- c(x_names, paste0(params[2],colnames(X_sigma)))
     } else {
-      X_sigma <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_furmula_2 is not provided
+      X_sigma <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_formula_2 is not provided
       x_names <- append(x_names, params[2])
     }
     
@@ -668,10 +669,11 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   fit$method = method
   fit$data = data
   fit$formula = formula
-  fit$dis_param_furmula_1 = dis_param_furmula_1
-  fit$dis_param_furmula_2 = dis_param_furmula_2
+  fit$dis_param_formula_1 = dis_param_formula_1
+  fit$dis_param_formula_2 = dis_param_formula_2
   fit$ndraws = ndraws
   fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
+  fit$offset <- offset
   
   obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)

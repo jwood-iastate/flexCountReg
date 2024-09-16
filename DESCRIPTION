@@ -25,7 +25,8 @@ Imports:
     Rcpp (>= 1.0.12),
     broom,
     purrr,
-    numDeriv
+    numDeriv,
+    stringr
 Depends: R (>= 2.10)
 LinkingTo: Rcpp
 SystemRequirements: GNU make
@@ -38,36 +39,37 @@ Collate:
     'RcppExports.R'
     'cor2cov.R'
     'corr_haltons.R'
+    'plind.R'
+    'ppoisGE.R'
+    'psichel.R'
+    'plindGamma.R'
+    'plindLnorm.R'
+    'ppoislogn.R'
+    'pinvgaus.R'
+    'countreg.R'
     'createFlexCountReg.R'
     'cureplot.R'
     'data.R'
     'flexCountReg-Package.R'
-    'plindGamma.R'
     'poisLindGamma.R'
-    'plindLnorm.R'
     'poisLindLnorm.R'
-    'plind.R'
     'poisLind.R'
-    'psichel.R'
     'sichel.R'
     'nbg.R'
+    'get_chol.R'
     'tri.R'
     'rpnb.R'
     'genWaring.R'
-    'ppoislogn.R'
     'poisLogn.R'
     'flexCountReg.R'
     'flexCountReg.predict.R'
     'flexCountRegClass.R'
     'genexp.R'
-    'get_chol.R'
     'halton_dists.R'
     'invgamma.R'
     'metrics.R'
     'mgf_lognormal.R'
     'mle.predict.R'
-    'pinvgaus.R'
-    'ppoisGE.R'
     'poisGE.R'
     'poisInvGaus.R'
     'poisLind.re.R'

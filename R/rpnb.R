@@ -184,9 +184,9 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
 
     if (correlated){
       randparam_means = tail(start, Lrpar)
-      rparam_var <- abs(randparam_means)/2
+      rparam_var <- rep(0.1, length(randparam_means))
       rparam_var <- diag(rparam_var)
-      Chl <- get_chol(rparam_var, rpar)
+      Chl <- chol(rparam_var)
 
       for (i in 1:length(rpar)){
         for (j in 1:length(rpar)){

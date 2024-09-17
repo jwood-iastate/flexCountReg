@@ -418,7 +418,7 @@
 #' 
 #' @import modelr randtoolbox  
 #' @importFrom stats model.frame model.matrix model.response
-#' @importFrom purrr map map_df compact flatten
+#' @importFrom purrr map map_df compact
 #' @importFrom broom tidy
 #' @importFrom dplyr group_by %>% summarise
 #' @importFrom tibble deframe
@@ -704,8 +704,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }
   
   x_names <- x_names  %>% 
-    compact() %>%  # Remove NULL values
-    flatten()      # Flatten the list
+    compact() #%>%  # Remove NULL values
+    #flatten()      # Flatten the list
   
   names(start) <-x_names[1:length(start)]
 
@@ -836,6 +836,10 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
   fit$offset <- offset
   fit.stderr <- stderr
+  fit$modelType <- "countreg"
+  fit$underreport_formula <- underreport_formula
+  fit$underreport_family <- underreport_family
+  fit$params <- params
   
   obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)

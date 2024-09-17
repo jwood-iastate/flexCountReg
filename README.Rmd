@@ -125,19 +125,10 @@ The following functions are included in the `flexCountReg` package, grouped by c
 
 **Model Estimation Functions**
 
-- `flexCountReg` is a general function for estimating any of the regression models
-- `nbg` estimates negative binomial regression (NB-1, NB-2, or NB-P) and allows the overdispersion parameter to be specified as a function of predictors.
-- `poisGE` estimates the Poisson-Generalized-Exponential regression model. It allows the scale parameter to be specified as a function of predictors.
-- `poisInvGaus` estimates the Poisson-Inverse-Gaussian regression model. 
-- `poisLind` estimates the Poisson-Lindley regression model.
-- `poisLind.re` estimates the Random Effects Poisson-Lindley regression model (panel model).
-- `poisLindGamma` estimates the Poisson-Lindley-Gamma (i.e., Negative Binomial-Lindley) regression model. 
-- `poisLindLnorm ` estimates the Poisson-Lindley-Lognormal regression model.
-- `poisLogn ` estimates the Poisson-Lognormal regression model. It allows the standard deviation parameter ($\sigma$) to be specified as a function of predictors.
-- `pwiebreg ` estimates the Poisson-Weibull regression model. It allows the shape and scale parameters to be specified as functions of predictors.
+- `countreg` is a general function for estimating the non-panel, non-random parameters count regression models
 - `rpnb` estimates the random parameters negative binomial regression (NB-1, NB-2, or NB-P).
 - `rppLind` estimates the random parameters Poisson-Lindley regression model.
-- `sichel ` estimates the Sichel regression model. It allows the scale parameter to be specified as a function of predictors.
+- `poislind.re ` estimates the random effects Poisson-Lindley model
 
 **Model Evaluation, Comparison, and Convenience Functions**
 
@@ -186,13 +177,10 @@ library(flexCountReg)
 library(knitr)
 
 data("washington_roads")
-washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
-gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k,
-                                ln.alpha.formula = ~ 1+lnlength,
-                                data=washington_roads,
-                                dist="NB2",
-                                method = 'NM')
+washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
+gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+               data = washington_roads, family = "NB2",
+               dis_param_formula_1 = ~ speed50,  method='BFGS')
 ```
 
 
@@ -214,12 +202,14 @@ cureplot(gen.nb2, indvar  ="lnaadt")
 Modifying the model to fit better:
 
 ```{r cureplot-updt}
-gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt  + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k + I(AADTover10k/lnaadt),
-                                ln.alpha.formula = ~ 1+lnlength,
-                                data=washington_roads,
-                                dist="NB2",
-                                method = 'NM')
+
+
+gen.nb2 <- countreg(Total_crashes ~ lnaadt  + lnlength + speed50 +
+                                ShouldWidth04 + AADT10kplus + 
+                                I(AADT10kplus/lnaadt),
+                                data = washington_roads, family = "NB2",
+                                dis_param_formula_1 = ~ lnlength,  method='BFGS')
+
 kable(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
 teststats <- regCompTest(gen.nb2)
 kable(teststats$statistics)
@@ -230,12 +220,10 @@ cureplot(gen.nb2, indvar  ="lnaadt")
 Estimating another model (NB-P) - without the interaction:
 
 ```{r}
-gen.nbp <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k,
-                                ln.alpha.formula = ~ 1+lnlength,
-                                data=washington_roads,
-                                dist="NBP",
-                                method = 'NM')
+gen.nbp <- countreg(Total_crashes ~ lnaadt  + lnlength + speed50 +
+                                ShouldWidth04 + AADT10kplus,
+                                data = washington_roads, family = "NBp",
+                                dis_param_formula_1 = ~ lnlength,  method='BFGS')
 kable(summary(gen.nbp), caption = "NB-P Model Summary")
 teststats <- regCompTest(gen.nbp)
 kable(teststats$statistics)

@@ -1,32 +1,31 @@
 Package: flexCountReg
 Type: Package
 Title: Estimation of a variety of count regression models
-Version: 0.1.0
+Version: 0.1.1
 Author: c(person("Wood", "Jonathan", role = c("aut", "cre"), email = "jwood2@iastate.edu", comment = c(ORCID = "0000-0003-0131-6384")))
 Maintainer: Jonathan Wood <jwood2@iastate.edu>
 Description: An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lindley models (which handle excess zeroes), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, and the Sichel model.
 Imports: 
-    MASS,
-    maxLik,
-    nlme,
-    randtoolbox,
-    stats,
-    lamW,
-    modelr,
-    knitr,
+    broom,
     cureplots,
     dplyr,
     gt,
-    tibble,
-    rlang,
-    gsl,
+    knitr,
+    lamW,
+    MASS,
+    maxLik,
     methods,
-    truncnorm,
-    Rcpp (>= 1.0.12),
-    broom,
+    modelr,
     purrr,
-    numDeriv,
-    stringr
+    randtoolbox,
+    Rcpp (>= 1.0.12),
+    rlang,
+    sandwich,
+    stats,
+    stringr,
+    tibble,
+    truncnorm,
+    utils
 Depends: R (>= 2.10)
 LinkingTo: Rcpp
 SystemRequirements: GNU make
@@ -51,34 +50,21 @@ Collate:
     'cureplot.R'
     'data.R'
     'flexCountReg-Package.R'
-    'poisLindGamma.R'
-    'poisLindLnorm.R'
-    'poisLind.R'
-    'sichel.R'
-    'nbg.R'
-    'get_chol.R'
     'tri.R'
-    'rpnb.R'
-    'genWaring.R'
-    'poisLogn.R'
-    'flexCountReg.R'
     'flexCountReg.predict.R'
     'flexCountRegClass.R'
     'genexp.R'
+    'get_chol.R'
     'halton_dists.R'
     'invgamma.R'
     'metrics.R'
     'mgf_lognormal.R'
-    'mle.predict.R'
-    'poisGE.R'
-    'poisInvGaus.R'
     'poisLind.re.R'
     'poisWeib.R'
     'predict_flexCountReg.R'
-    'pwiebreg.R'
     'regCompTest.R'
     'regCompTable.R'
-    'rpnb.predict.R'
+    'rpnb.R'
     'rppLind.R'
     'summary_flexCountReg.R'
 Suggests: 

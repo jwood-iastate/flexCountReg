@@ -2,11 +2,18 @@
 #'
 #' @name predict.flexCountReg
 #' @param object a model object estimated using this R package.
-#' @param ... optional arguments passed to the function. These include `data` and `method`.
+#' @param ... optional arguments passed to the function. These include `data` 
+#'        and `method`.
 #' 
-#' @note optional parameter `data`: a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula}. This can be the data used for estimating the model or another dataframe.
-#' @note optional parameter `method`: Only valid for random parameters models. The method to be used in generating the predictions (options include \code{Simulated}, \code{Exact}, or \code{Individual}).
-#' @note the method option \code{Individual} requires that the outcome be observed for all observations. This is due to the use of Bayesian methods for computing the individual observation coefficients.
+#' @note optional parameter `data`: a dataframe that has all of the variables in 
+#'        the \code{formula} and \code{rpar_formula}. This can be the data used 
+#'        for estimating the model or another dataframe.
+#' @note optional parameter `method`: Only valid for random parameters models. 
+#'        The method to be used in generating the predictions (options include 
+#'        \code{Simulated}, \code{Exact}, or \code{Individual}).
+#' @note the method option \code{Individual} requires that the outcome be 
+#'        observed for all observations. This is due to the use of Bayesian 
+#'        methods for computing the individual observation coefficients.
 #'
 #' @import randtoolbox stats lamW modelr rlang 
 #' @importFrom utils head  tail
@@ -16,18 +23,48 @@
 #'
 #' # Standard Negative Binomial
 #' data("washington_roads")
-#' nbg <- nbg(Total_crashes ~ lnaadt + lnlength + speed50,
-#'            ln.alpha.formula = ~ lnaadt,
-#'            data = washington_roads)
-#' summary(nbg)
+#' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>=10000,1,0)
+#' nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'                data = washington_roads, family = "NB2",
+#'                dis_param_formula_1 = ~ speed50, method='BFGS')
 #'
-#' predict(nbg, data=washington_roads)
+#' predict(nb2, data=washington_roads)
+#' 
+#' # Poisson-Lognormal
+#' pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "PLN", ndraws=10)
+#' predict(pln, data=washington_roads)
+#' 
+#' # Random Parameter NB2
+#' nb2.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
+#'                               rpar_formula = ~ speed50,
+#'                               data = washington_roads,
+#'                               ndraws = 100,
+#'                               correlated = FALSE,
+#'                               rpardists = c(intercept="u", speed50="t"),
+#'                               form = 'nb2',
+#'                               method = "bfgs")
+#'                
+#' predict(nb2.rp, list(data=washington_roads, method="Simulated"))
+#' 
+#' # NB2 with underreporting (logit)
+#' nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "NB2",
+#'               underreport_formula = ~ speed50 + AADT10kplus)
+#' predict(nb2_underreport, data=washington_roads)
+#' 
+#' # Poisson-Lognormal with underreporting (probit)
+#' plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "NB2",
+#'               underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
+#' predict(plogn_underreport, data=washington_roads)
+#' 
 #' @export
 predict.flexCountReg <- function(object, ...){
   # Extract optional parameters from '...'
-  args <- list(...)
-  if (is.null(args$data)) data <- object$data else data <- args$data
-  if (is.null(args$method)) method <- "Exact" else data <- args$method
+  additional_args  <- list(...)
+  if (is.null(additional_args$data)) data <- object$data else data <- as.data.frame(additional_args$data)
+  if (is.null(additional_args$method)) method <- "Exact" else data <- additional_args$method
 
   model <- object$model
   
@@ -50,11 +87,15 @@ predict.flexCountReg <- function(object, ...){
     
     rpar_formula <- model$rpar_formula
     rpardists <- model$rpardists
-    formula <- model$formula
+    formula <- delete.response(model$formula)
+    data <- as.data.frame(data)
     
-    mod1_frame <- stats::model.frame(formula, data)
+    print(formula)
+    print(head(data))
+    
+    
     X_Fixed <- as.matrix(modelr::model_matrix(data, formula))
-    X_rand <- as.matrix(modelr::model_matrix(data, rpar_formula))
+    X_rand <- as.matrix(modelr::model_matrix(data, model$rpar_formula))
     
     X <- cbind(X_Fixed, X_rand)
     
@@ -127,15 +168,18 @@ predict.flexCountReg <- function(object, ...){
     }
     
     if (method == 'Exact'){
-      rand_pred<- rep(1, length(data))
+      rand_pred<- rep(1, length(mu_fixed))
       
       if (length(dists)>1){
         for (i in 1:length(dists)){
+          
+          #print(paste("N Rand Perd =", length(rand_pred), ", dists[i] =", dists[i], ", Coef Mean =", random_coefs_means[i], ", Coef SD =", sd[i], ", N X[,i] =", length(X_rand[,i])) )
           
           rand_pred <- rand_pred*rpar.adjust(dists[i], random_coefs_means[i], sd[i], X_rand[,i])
         }
       }
       else{
+        print(paste(dists, random_coefs_means, sd, length(X_rand)))
         rand_pred <- rpar.adjust(dists, random_coefs_means, sd, X_rand)
       }
       
@@ -202,8 +246,8 @@ predict.flexCountReg <- function(object, ...){
       
       pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
       
-      
-      y <- model.response(mod1_frame)
+      variable_names <- all.vars(model$formula)
+      y <- data[,variable_names[1]]
       n_obs <- length(mu_fixed)
       ind_coefs <- matrix(0, nrow=n_obs, ncol=num_vars_rand)
       ind_var <- matrix(0, nrow=n_obs, ncol=num_vars_rand)
@@ -240,28 +284,48 @@ predict.flexCountReg <- function(object, ...){
     else{print('Please use one of the following methods: Approximate, Simulated, or Individual')}
   }
   else{
-    print(dim(data))
     #mod_df <- stats::model.frame(model$formula, data)
     
     X <- as.matrix(modelr::model_matrix(data, model$formula))
     #y <- as.numeric(stats::model.response(mod_df))
+    coefs <- unlist(model$estimate, recursive = TRUE, use.names = FALSE)
+    N_x <- ncol(X)
+    N_pars <- length(coefs)
     
     
-    beta_pred <- model$beta_pred
     
-    if (modtype=="posLogn"){
-      if (!is.null(model$ln.sigma.formula)){
-        sigma_X <- stats::model.matrix(model$ln.sigma.formula, data)
-        sigma_pars <- model$sigma_coefs
-        sigma <- exp(sigma_X %*% sigma_pars)
-        predictions <- exp(X %*% beta_pred + (sigma^2)/2)
+    beta_pred <- as.vector(coefs[1:ncol(X)])
+    
+    if (!is.null(model$dis_param_formula_1)){
+      alpha_X <- as.matrix(modelr::model_matrix(data, model$dis_param_formula_1))
+      N_alpha <- ncol(alpha_X)
+      alpha_pars <- coefs[(N_x+1):(N_x+N_alpha)]
+      alpha <- exp(alpha_X %*% alpha_pars)
+    }else{
+      N_alpha <- 1
+      alpha <- exp(coefs[N_x+1])
+    }
+    
+    if(!is.null(model$underreport_formula)){
+      X_underreport <- as.matrix(modelr::model_matrix(data, model$underreport_formula))
+      N_underreport <- ncol(X_underreport)
+      underrep_pars <- coefs[(N_pars-N_underreport+1):N_pars]
+      underrep_lin <- X_underreport%*%underrep_pars
+      
+      if(model$underreport_family=="logit"){
+        mu_adj <- 1/(1+exp(-underrep_lin))
       }
       else{
-        predictions <- exp(X %*% beta_pred + (model$sigma^2)/2)
+        mu_adj <- pnorm(underrep_lin, lower.tail = FALSE)
+        
       }
+    }else{mu_adj=1} # If no underreporting model, set the probability to 1
+    
+    if (modtype=="countreg" & model$family=="PLN"){
+      predictions <- exp(X %*% beta_pred + (alpha^2)/2)*mu_adj
     }
     else{
-      predictions <- exp(X %*% beta_pred)
+      predictions <- exp(X %*% beta_pred)*mu_adj
     }
     return(c(predictions))
   }

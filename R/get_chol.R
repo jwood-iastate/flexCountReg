@@ -9,6 +9,5 @@
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
 get_chol <- function(pars, Nvars) {
-  sourceCpp("get_chol.cpp")
   get_chol_cpp(pars, Nvars)
 }

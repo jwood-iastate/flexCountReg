@@ -6,7 +6,8 @@
 # flexCountReg
 
 <!-- badges: start -->
-[![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/graph/badge.svg?token=BX2FJQNPK2)](https://codecov.io/gh/jwood-iastate/flexCountReg)
+
+[![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/branch/main/graph/badge.svg)](https://codecov.io/gh/jwood-iastate/flexCountReg)
 <!-- badges: end -->
 
 The goal of flexCountReg is to provide functions that allow the analyst
@@ -117,30 +118,13 @@ grouped by continuous and count distributions.
 
 **Model Estimation Functions**
 
-- `flexCountReg` is a general function for estimating any of the
-  regression models
-- `nbg` estimates negative binomial regression (NB-1, NB-2, or NB-P) and
-  allows the overdispersion parameter to be specified as a function of
-  predictors.
-- `poisGE` estimates the Poisson-Generalized-Exponential regression
-  model. It allows the scale parameter to be specified as a function of
-  predictors.
-- `poisInvGaus` estimates the Poisson-Inverse-Gaussian regression model.
-- `poisLind` estimates the Poisson-Lindley regression model.
-- `poisLindGamma` estimates the Poisson-Lindley-Gamma (i.e., Negative
-  Binomial-Lindley) regression model.
-- `poisLindLnorm` estimates the Poisson-Lindley-Lognormal regression
-  model.
-- `poisLogn` estimates the Poisson-Lognormal regression model. It allows
-  the standard deviation parameter ($\sigma$) to be specified as a
-  function of predictors.
-- `pwiebreg` estimates the Poisson-Weibull regression model. It allows
-  the shape and scale parameters to be specified as functions of
-  predictors.
+- `countreg` is a general function for estimating the non-panel,
+  non-random parameters count regression models
 - `rpnb` estimates the random parameters negative binomial regression
   (NB-1, NB-2, or NB-P).
-- `sichel` estimates the Sichel regression model. It allows the scale
-  parameter to be specified as a function of predictors.
+- `rppLind` estimates the random parameters Poisson-Lindley regression
+  model.
+- `poislind.re` estimates the random effects Poisson-Lindley model
 
 **Model Evaluation, Comparison, and Convenience Functions**
 
@@ -199,58 +183,47 @@ function of predictor variables:
 ``` r
 library(gt) # used to format summary tables here
 library(flexCountReg)
-#> Registered S3 method overwritten by 'flexCountReg':
-#>   method         from  
-#>   summary.maxLik maxLik
-```
-
-``` r
 library(knitr)
 
 data("washington_roads")
-washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
-gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k,
-                                ln.alpha.formula = ~ 1+lnlength,
-                                data=washington_roads,
-                                dist="NB2",
-                                method = 'NM')
+washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
+gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+               data = washington_roads, family = "NB2",
+               dis_param_formula_1 = ~ speed50,  method='BFGS')
 ```
 
 ``` r
 kable(summary(gen.nb2), caption = "NB-2 Model Summary")
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 +      AADTover10k 
+#>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
 #> 
-#>  Method:  Nelder-Mead maximization 
-#> Iterations:  201 
-#> Convergence:  iteration limit exceeded  
-#> Log-likelihood:  -1073.026 
+#>  Method:  BFGS maximization 
+#> Iterations:  49 
+#> Convergence:  successful convergence  
+#> Log-likelihood:  -1064.876 
 #> 
 #> Parameter Estimates:
-#> # A tibble: 8 × 7
+#> # A tibble: 7 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -8.72        0.049 -178.        0         -8.81      -8.62 
-#> 2 lnaadt              1.06        0.006  185.        0          1.05       1.07 
-#> 3 lnlength            0.934       0.042   22.2       0          0.852      1.02 
-#> 4 speed50            -0.427       0.101   -4.21      0         -0.625     -0.228
-#> 5 ShouldWidth04       0.285       0.07     4.07      0          0.147      0.422
-#> 6 AADTover10k         0.747       0.116    6.42      0          0.519      0.975
-#> 7 ln(alpha):  (Inte…  0.581       0.172    3.37      0.001      0.243      0.919
-#> 8 ln(alpha):  lnlen…  0.058       0.151    0.383     0.701     -0.239      0.355
+#> 1 (Intercept)        -7.40        0.043  -171.       0         -7.49      -7.32 
+#> 2 lnaadt              0.912       0.005   182.       0          0.902      0.921
+#> 3 lnlength            0.843       0.037    22.9      0          0.771      0.915
+#> 4 speed50            -0.47        0.102    -4.62     0         -0.669     -0.27 
+#> 5 AADT10kplus         0.77        0.09      8.60     0          0.594      0.945
+#> 6 ln(alpha):(Interc…  1.62        0.288     5.62     0          1.06       2.18 
+#> 7 ln(alpha):speed50  -1.31        0.458    -2.85     0.004     -2.20      -0.409
 ```
 
-| parameter              |  coeff | Std. Err. |   t-stat | p-value | lower CI | upper CI |
-|:-----------------------|-------:|----------:|---------:|--------:|---------:|---------:|
-| (Intercept)            | -8.716 |     0.049 | -177.505 |   0.000 |   -8.812 |   -8.620 |
-| lnaadt                 |  1.063 |     0.006 |  185.240 |   0.000 |    1.052 |    1.074 |
-| lnlength               |  0.934 |     0.042 |   22.248 |   0.000 |    0.852 |    1.017 |
-| speed50                | -0.427 |     0.101 |   -4.209 |   0.000 |   -0.625 |   -0.228 |
-| ShouldWidth04          |  0.285 |     0.070 |    4.066 |   0.000 |    0.147 |    0.422 |
-| AADTover10k            |  0.747 |     0.116 |    6.417 |   0.000 |    0.519 |    0.975 |
-| ln(alpha): (Intercept) |  0.581 |     0.172 |    3.371 |   0.001 |    0.243 |    0.919 |
-| ln(alpha): lnlength    |  0.058 |     0.151 |    0.383 |   0.701 |   -0.239 |    0.355 |
+| parameter             |  coeff | Std. Err. |   t-stat | p-value | lower CI | upper CI |
+|:----------------------|-------:|----------:|---------:|--------:|---------:|---------:|
+| (Intercept)           | -7.401 |     0.043 | -171.489 |   0.000 |   -7.486 |   -7.317 |
+| lnaadt                |  0.912 |     0.005 |  182.453 |   0.000 |    0.902 |    0.921 |
+| lnlength              |  0.843 |     0.037 |   22.878 |   0.000 |    0.771 |    0.915 |
+| speed50               | -0.470 |     0.102 |   -4.619 |   0.000 |   -0.669 |   -0.270 |
+| AADT10kplus           |  0.770 |     0.090 |    8.599 |   0.000 |    0.594 |    0.945 |
+| ln(alpha):(Intercept) |  1.619 |     0.288 |    5.621 |   0.000 |    1.055 |    2.184 |
+| ln(alpha):speed50     | -1.306 |     0.458 |   -2.853 |   0.004 |   -2.203 |   -0.409 |
 
 NB-2 Model Summary
 
@@ -261,12 +234,12 @@ kable(teststats$statistics)
 
 | Statistic             |     Model | BaseModel |
 |:----------------------|----------:|----------:|
-| AIC                   | 2162.0527 |  3049.659 |
-| BIC                   | 2204.5638 |  3054.973 |
-| LR Test Statistic     |  901.6065 |        NA |
-| LR degrees of freedom |    7.0000 |        NA |
+| AIC                   | 2143.7522 |  3049.659 |
+| BIC                   | 2180.9494 |  3054.973 |
+| LR Test Statistic     |  917.9070 |        NA |
+| LR degrees of freedom |    6.0000 |        NA |
 | LR p-value            |    0.0000 |        NA |
-| McFadden’s Pseudo R^2 |    0.2958 |        NA |
+| McFadden’s Pseudo R^2 |    0.3012 |        NA |
 
 Checking the CURE plot:
 
@@ -281,47 +254,49 @@ cureplot(gen.nb2, indvar  ="lnaadt")
 Modifying the model to fit better:
 
 ``` r
-gen.nb2 <- flexCountReg(Total_crashes ~ lnaadt  + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k + I(AADTover10k/lnaadt),
-                                ln.alpha.formula = ~ 1+lnlength,
-                                data=washington_roads,
-                                dist="NB2",
-                                method = 'NM')
+
+
+gen.nb2 <- countreg(Total_crashes ~ lnaadt  + lnlength + speed50 +
+                                ShouldWidth04 + AADT10kplus + 
+                                I(AADT10kplus/lnaadt),
+                                data = washington_roads, family = "NB2",
+                                dis_param_formula_1 = ~ lnlength,  method='BFGS')
+
 kable(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 +      AADTover10k + I(AADTover10k/lnaadt) 
+#>  Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 +      AADT10kplus + I(AADT10kplus/lnaadt) 
 #> 
-#>  Method:  Nelder-Mead maximization 
-#> Iterations:  202 
-#> Convergence:  iteration limit exceeded  
-#> Log-likelihood:  -1062.504 
+#>  Method:  BFGS maximization 
+#> Iterations:  65 
+#> Convergence:  successful convergence  
+#> Log-likelihood:  -1061.935 
 #> 
 #> Parameter Estimates:
 #> # A tibble: 9 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -7.36        0.043 -173.        0         -7.45      -7.28 
-#> 2 lnaadt              0.894       0.005  181.        0          0.884      0.904
-#> 3 lnlength            0.862       0.037   23.4       0          0.79       0.935
-#> 4 speed50            -0.409       0.092   -4.46      0         -0.589     -0.229
-#> 5 ShouldWidth04       0.251       0.059    4.22      0          0.134      0.367
-#> 6 AADTover10k         5.09        0.09    56.8       0          4.91       5.26 
-#> 7 I(AADTover10k/ln… -41.2         0.856  -48.1       0        -42.9      -39.5  
-#> 8 ln(alpha):  (Int…   1.56        0.35     4.46      0          0.873      2.24 
-#> 9 ln(alpha):  lnle…   0.022       0.345    0.065     0.948     -0.653      0.698
+#> 1 (Intercept)        -7.70        0.043  -180.       0         -7.78      -7.61 
+#> 2 lnaadt              0.932       0.005   188.       0          0.922      0.942
+#> 3 lnlength            0.852       0.038    22.6      0          0.778      0.926
+#> 4 speed50            -0.4         0.091    -4.39     0         -0.579     -0.222
+#> 5 ShouldWidth04       0.26        0.06      4.34     0          0.142      0.377
+#> 6 AADT10kplus         5.12        0.092    55.6      0          4.94       5.30 
+#> 7 I(AADT10kplus/ln… -42.1         0.938   -44.9      0        -44.0      -40.3  
+#> 8 ln(alpha):(Inter…   1.90        0.32      5.93     0          1.27       2.52 
+#> 9 ln(alpha):lnleng…   0.417       0.242     1.72     0.085     -0.057      0.892
 ```
 
-| parameter              |   coeff | Std. Err. |   t-stat | p-value | lower CI | upper CI |
-|:-----------------------|--------:|----------:|---------:|--------:|---------:|---------:|
-| (Intercept)            |  -7.364 |     0.043 | -173.202 |   0.000 |   -7.447 |   -7.281 |
-| lnaadt                 |   0.894 |     0.005 |  181.133 |   0.000 |    0.884 |    0.904 |
-| lnlength               |   0.862 |     0.037 |   23.373 |   0.000 |    0.790 |    0.935 |
-| speed50                |  -0.409 |     0.092 |   -4.458 |   0.000 |   -0.589 |   -0.229 |
-| ShouldWidth04          |   0.251 |     0.059 |    4.224 |   0.000 |    0.134 |    0.367 |
-| AADTover10k            |   5.086 |     0.090 |   56.822 |   0.000 |    4.910 |    5.261 |
-| I(AADTover10k/lnaadt)  | -41.179 |     0.856 |  -48.098 |   0.000 |  -42.857 |  -39.501 |
-| ln(alpha): (Intercept) |   1.558 |     0.350 |    4.459 |   0.000 |    0.873 |    2.244 |
-| ln(alpha): lnlength    |   0.022 |     0.345 |    0.065 |   0.948 |   -0.653 |    0.698 |
+| parameter             |   coeff | Std. Err. |   t-stat | p-value | lower CI | upper CI |
+|:----------------------|--------:|----------:|---------:|--------:|---------:|---------:|
+| (Intercept)           |  -7.695 |     0.043 | -180.126 |   0.000 |   -7.779 |   -7.611 |
+| lnaadt                |   0.932 |     0.005 |  188.011 |   0.000 |    0.922 |    0.942 |
+| lnlength              |   0.852 |     0.038 |   22.566 |   0.000 |    0.778 |    0.926 |
+| speed50               |  -0.400 |     0.091 |   -4.388 |   0.000 |   -0.579 |   -0.222 |
+| ShouldWidth04         |   0.260 |     0.060 |    4.338 |   0.000 |    0.142 |    0.377 |
+| AADT10kplus           |   5.123 |     0.092 |   55.599 |   0.000 |    4.942 |    5.304 |
+| I(AADT10kplus/lnaadt) | -42.146 |     0.938 |  -44.937 |   0.000 |  -43.984 |  -40.307 |
+| ln(alpha):(Intercept) |   1.895 |     0.320 |    5.926 |   0.000 |    1.269 |    2.522 |
+| ln(alpha):lnlength    |   0.417 |     0.242 |    1.723 |   0.085 |   -0.057 |    0.892 |
 
 Modified NB-2 Model Summary
 
@@ -332,12 +307,12 @@ kable(teststats$statistics)
 
 | Statistic             |     Model | BaseModel |
 |:----------------------|----------:|----------:|
-| AIC                   | 2143.0082 |  3049.659 |
-| BIC                   | 2190.8331 |  3054.973 |
-| LR Test Statistic     |  922.6510 |        NA |
+| AIC                   | 2141.8694 |  3049.659 |
+| BIC                   | 2189.6944 |  3054.973 |
+| LR Test Statistic     |  923.7898 |        NA |
 | LR degrees of freedom |    8.0000 |        NA |
 | LR p-value            |    0.0000 |        NA |
-| McFadden’s Pseudo R^2 |    0.3027 |        NA |
+| McFadden’s Pseudo R^2 |    0.3031 |        NA |
 
 ``` r
 cureplot(gen.nb2, indvar  ="lnaadt")
@@ -350,47 +325,45 @@ cureplot(gen.nb2, indvar  ="lnaadt")
 Estimating another model (NB-P) - without the interaction:
 
 ``` r
-gen.nbp <- flexCountReg(Total_crashes ~ lnaadt + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k,
-                                ln.alpha.formula = ~ 1+lnlength,
-                                data=washington_roads,
-                                dist="NBP",
-                                method = 'NM')
+gen.nbp <- countreg(Total_crashes ~ lnaadt  + lnlength + speed50 +
+                                ShouldWidth04 + AADT10kplus,
+                                data = washington_roads, family = "NBp",
+                                dis_param_formula_1 = ~ lnlength,  method='BFGS')
 kable(summary(gen.nbp), caption = "NB-P Model Summary")
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 +      AADTover10k 
+#>  Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 +      AADT10kplus 
 #> 
-#>  Method:  Nelder-Mead maximization 
-#> Iterations:  202 
-#> Convergence:  iteration limit exceeded  
-#> Log-likelihood:  -1062.206 
+#>  Method:  BFGS maximization 
+#> Iterations:  60 
+#> Convergence:  successful convergence  
+#> Log-likelihood:  -1062.195 
 #> 
 #> Parameter Estimates:
 #> # A tibble: 9 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -7.73        0.043 -180.        0         -7.81      -7.64 
-#> 2 lnaadt              0.935       0.005  189.        0          0.925      0.944
-#> 3 lnlength            0.839       0.037   22.5       0          0.766      0.913
-#> 4 speed50            -0.39        0.093   -4.18      0         -0.573     -0.207
-#> 5 ShouldWidth04       0.255       0.059    4.29      0          0.139      0.372
-#> 6 AADTover10k         0.693       0.088    7.92      0          0.522      0.865
-#> 7 ln(alpha):  (Inte… -1.45        0.297   -4.88      0         -2.03      -0.865
-#> 8 ln(alpha):  lnlen… -0.116       0.254   -0.458     0.647     -0.615      0.382
-#> 9 P                   1.69        0.291    5.80      0          1.12       2.26
+#> 1 (Intercept)        -7.76        0.043 -181.        0         -7.85      -7.68 
+#> 2 lnaadt              0.938       0.005  189.        0          0.928      0.948
+#> 3 lnlength            0.836       0.037   22.3       0          0.763      0.91 
+#> 4 speed50            -0.384       0.093   -4.13      0         -0.567     -0.202
+#> 5 ShouldWidth04       0.258       0.06     4.33      0          0.141      0.374
+#> 6 AADT10kplus         0.689       0.088    7.85      0          0.517      0.861
+#> 7 ln(alpha):(Interc… -1.50        0.297   -5.05      0         -2.08      -0.915
+#> 8 ln(alpha):lnlength -0.168       0.245   -0.684     0.494     -0.649      0.313
+#> 9 ln(p)               0.525       0.173    3.03      0.002      0.186      0.864
 ```
 
-| parameter              |  coeff | Std. Err. |   t-stat | p-value | lower CI | upper CI |
-|:-----------------------|-------:|----------:|---------:|--------:|---------:|---------:|
-| (Intercept)            | -7.727 |     0.043 | -180.434 |   0.000 |   -7.811 |   -7.643 |
-| lnaadt                 |  0.935 |     0.005 |  188.818 |   0.000 |    0.925 |    0.944 |
-| lnlength               |  0.839 |     0.037 |   22.456 |   0.000 |    0.766 |    0.913 |
-| speed50                | -0.390 |     0.093 |   -4.183 |   0.000 |   -0.573 |   -0.207 |
-| ShouldWidth04          |  0.255 |     0.059 |    4.293 |   0.000 |    0.139 |    0.372 |
-| AADTover10k            |  0.693 |     0.088 |    7.918 |   0.000 |    0.522 |    0.865 |
-| ln(alpha): (Intercept) | -1.447 |     0.297 |   -4.878 |   0.000 |   -2.028 |   -0.865 |
-| ln(alpha): lnlength    | -0.116 |     0.254 |   -0.458 |   0.647 |   -0.615 |    0.382 |
-| P                      |  1.686 |     0.291 |    5.796 |   0.000 |    1.116 |    2.256 |
+| parameter             |  coeff | Std. Err. |   t-stat | p-value | lower CI | upper CI |
+|:----------------------|-------:|----------:|---------:|--------:|---------:|---------:|
+| (Intercept)           | -7.764 |     0.043 | -181.171 |   0.000 |   -7.848 |   -7.680 |
+| lnaadt                |  0.938 |     0.005 |  189.456 |   0.000 |    0.928 |    0.948 |
+| lnlength              |  0.836 |     0.037 |   22.307 |   0.000 |    0.763 |    0.910 |
+| speed50               | -0.384 |     0.093 |   -4.130 |   0.000 |   -0.567 |   -0.202 |
+| ShouldWidth04         |  0.258 |     0.060 |    4.333 |   0.000 |    0.141 |    0.374 |
+| AADT10kplus           |  0.689 |     0.088 |    7.854 |   0.000 |    0.517 |    0.861 |
+| ln(alpha):(Intercept) | -1.496 |     0.297 |   -5.046 |   0.000 |   -2.078 |   -0.915 |
+| ln(alpha):lnlength    | -0.168 |     0.245 |   -0.684 |   0.494 |   -0.649 |    0.313 |
+| ln(p)                 |  0.525 |     0.173 |    3.034 |   0.002 |    0.186 |    0.864 |
 
 NB-P Model Summary
 
@@ -401,9 +374,9 @@ kable(teststats$statistics)
 
 | Statistic             |     Model | BaseModel |
 |:----------------------|----------:|----------:|
-| AIC                   | 2142.4125 |  3049.659 |
-| BIC                   | 2190.2375 |  3054.973 |
-| LR Test Statistic     |  923.2467 |        NA |
+| AIC                   | 2142.3895 |  3049.659 |
+| BIC                   | 2190.2144 |  3054.973 |
+| LR Test Statistic     |  923.2697 |        NA |
 | LR degrees of freedom |    8.0000 |        NA |
 | LR p-value            |    0.0000 |        NA |
 | McFadden’s Pseudo R^2 |    0.3029 |        NA |
@@ -427,23 +400,23 @@ regCompTable(list("Generalized NB-2"=gen.nb2, "Generalized NB-P"=gen.nbp), table
   kable()
 ```
 
-| Parameter              | Generalized NB-2      | Generalized NB-P     |
-|:-----------------------|:----------------------|:---------------------|
-| (Intercept)            | -7.364 (0.043)\*\*\*  | -7.727 (0.043)\*\*\* |
-| lnaadt                 | 0.894 (0.005)\*\*\*   | 0.935 (0.005)\*\*\*  |
-| lnlength               | 0.862 (0.037)\*\*\*   | 0.839 (0.037)\*\*\*  |
-| speed50                | -0.409 (0.092)\*\*\*  | -0.39 (0.093)\*\*\*  |
-| ShouldWidth04          | 0.251 (0.059)\*\*\*   | 0.255 (0.059)\*\*\*  |
-| AADTover10k            | 5.086 (0.09)\*\*\*    | 0.693 (0.088)\*\*\*  |
-| I(AADTover10k/lnaadt)  | -41.179 (0.856)\*\*\* | —                    |
-| ln(alpha): (Intercept) | 1.558 (0.35)\*\*\*    | -1.447 (0.297)\*\*\* |
-| ln(alpha): lnlength    | 0.022 (0.345)         | -0.116 (0.254)       |
-| P                      | —                     | 1.686 (0.291)\*\*\*  |
-| N Obs.                 | 1501                  | 1501                 |
-| LL                     | -1062.504             | -1062.206            |
-| AIC                    | 2143.008              | 2142.412             |
-| BIC                    | 2190.833              | 2190.237             |
-| Pseudo-R-Sq.           | 0.303                 | 0.303                |
+| Parameter             | Generalized NB-2      | Generalized NB-P     |
+|:----------------------|:----------------------|:---------------------|
+| (Intercept)           | -7.695 (0.043)\*\*\*  | -7.764 (0.043)\*\*\* |
+| lnaadt                | 0.932 (0.005)\*\*\*   | 0.938 (0.005)\*\*\*  |
+| lnlength              | 0.852 (0.038)\*\*\*   | 0.836 (0.037)\*\*\*  |
+| speed50               | -0.4 (0.091)\*\*\*    | -0.384 (0.093)\*\*\* |
+| ShouldWidth04         | 0.26 (0.06)\*\*\*     | 0.258 (0.06)\*\*\*   |
+| AADT10kplus           | 5.123 (0.092)\*\*\*   | 0.689 (0.088)\*\*\*  |
+| I(AADT10kplus/lnaadt) | -42.146 (0.938)\*\*\* | —                    |
+| ln(alpha):(Intercept) | 1.895 (0.32)\*\*\*    | -1.496 (0.297)\*\*\* |
+| ln(alpha):lnlength    | 0.417 (0.242)         | -0.168 (0.245)       |
+| ln(p)                 | —                     | 0.525 (0.173)\*\*    |
+| N Obs.                | 1501                  | 1501                 |
+| LL                    | -1061.935             | -1062.195            |
+| AIC                   | 2141.869              | 2142.389             |
+| BIC                   | 2189.694              | 2190.214             |
+| Pseudo-R-Sq.          | 0.303                 | 0.303                |
 
 Note that the metrics for comparison are similar. While the models both
 have the same number of parameters, the NB-P was able to get better

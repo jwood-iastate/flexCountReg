@@ -18,13 +18,13 @@ regCompTest(
 
 \item{data}{An options data frame containing the variables in the model. If not supplied, the original data used to estimate the model will be used.}
 
-\item{basemodel}{A character string specifying the type of base model to compare against. Default is "Poisson". Other options include any model specified from the \code{\link{flexCountReg}} function.}
+\item{basemodel}{A character string specifying the family of base model to compare against (options include the family from \code{\link{countreg}} or "Poisson"). Default is "Poisson".}
 
 \item{variables}{Logical. If \code{TRUE}, the base model will include the same variables as the provided model. If \code{FALSE}, the base model will be an intercept-only model. Default is \code{FALSE}.}
 
 \item{print}{Logical. If \code{TRUE}, a table of the results will be shown. If \code{FALSE}, the table of results will not be printed to the console.}
 
-\item{...}{Additional arguments to be passed to the base model fitting function - options are any argument from the \code{\link{flexCountReg}} function.}
+\item{...}{Additional arguments to be passed to the base model fitting function - options are any argument from the \code{\link{countreg}} function.}
 }
 \value{
 A list containing the following components:
@@ -65,9 +65,9 @@ The AIC is calculated as \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}, and the BIC 
 data("washington_roads")
 washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
 
-nbp.base <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
+nbp.base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
                     ShouldWidth04 + AADTover10k,
-                    data=washington_roads, form = 'nbp', method = 'NM',
+                    data=washington_roads, family = 'NBP', method = 'NM',
                     max.iters=3000)
 regCompTest(nbp.base, washington_roads, basemodel="NB2", print=TRUE)
 

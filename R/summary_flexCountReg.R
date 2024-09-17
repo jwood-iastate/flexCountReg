@@ -9,15 +9,16 @@
 #' @import tibble 
 #' @importFrom dplyr mutate across  %>% where
 #' @details
-#' This summary method accounts for bootstrapped standard errors (when used). Bootstrapped standard errors are currently only implemented in \code{\link{pwiebreg}}.
+#' This summary method accounts for bootstrapped or robust standard errors (when used).
 #' 
 #' @examples
-#' # Poisson-Weibull
-#' pw_rp <- pwiebreg(Total_crashes ~ lnlength + lnaadt,
-#'                                  data = washington_roads,
-#'                                  ndraws = 10,
-#'                                  bootstraps = 10)
-#' summary(pw_rp)
+#' # NB2 Model
+#' data("washington_roads")
+#' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
+#' nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'                data = washington_roads, family = "NB2",
+#'                dis_param_formula_1 = ~ speed50, method='BFGS')
+#' summary(nb2)
 #' 
 #' @export
 summary.flexCountReg <- function(object, ...) {

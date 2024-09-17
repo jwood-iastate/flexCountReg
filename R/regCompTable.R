@@ -19,24 +19,23 @@
 #' 
 #' @examples
 #' 
-#' # Comparing the NBP model with the NB2 model
+#' # Comparing the NBP model with the NB2 and NB1 models
 #' data("washington_roads")
 #' washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
 #'
-#' nb.1 <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
+#' nb.1 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
 #'                     ShouldWidth04 + AADTover10k,
-#'                     data=washington_roads, form = 'nb1', method = 'NM',
-#'                     max.iters=3000)
+#'                     data=washington_roads, family = 'NB1', method = 'NM')
 #'                     
-#' nb.2 <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
+#' nb.2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
 #'                     ShouldWidth04 + AADTover10k,
-#'                     data=washington_roads, form = 'nb2', method = 'NM',
-#'                     max.iters=3000)
+#'                     data=washington_roads, family = 'NB2', method = 'NM')
 #'                     
-#' nb.p <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
+#'                     
+#' nb.p <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
 #'                     ShouldWidth04 + AADTover10k,
-#'                     data=washington_roads, form = 'nbp', method = 'NM',
-#'                     max.iters=3000)
+#'                     data=washington_roads, family = 'NBP', method = 'NM')
+#'                     
 #'                     
 #' comptable <- regCompTable(list("NB-1"=nb.1, "NB-2"=nb.2, "NB-P"=nb.p), tableType="latex")
 #' print(comptable)

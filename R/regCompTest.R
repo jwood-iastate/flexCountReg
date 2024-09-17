@@ -5,10 +5,10 @@
 #' @name regCompTest
 #' @param model A fitted regression model object.
 #' @param data An options data frame containing the variables in the model. If not supplied, the original data used to estimate the model will be used.
-#' @param basemodel A character string specifying the type of base model to compare against. Default is "Poisson". Other options include any model specified from the \code{\link{flexCountReg}} function.
+#' @param basemodel A character string specifying the family of base model to compare against (options include the family from \code{\link{countreg}} or "Poisson"). Default is "Poisson".
 #' @param variables Logical. If \code{TRUE}, the base model will include the same variables as the provided model. If \code{FALSE}, the base model will be an intercept-only model. Default is \code{FALSE}.
 #' @param print Logical. If \code{TRUE}, a table of the results will be shown. If \code{FALSE}, the table of results will not be printed to the console.
-#' @param ... Additional arguments to be passed to the base model fitting function - options are any argument from the \code{\link{flexCountReg}} function.
+#' @param ... Additional arguments to be passed to the base model fitting function - options are any argument from the \code{\link{countreg}} function.
 #' @return A list containing the following components:
 #' \item{LL}{Log-likelihood of the provided model.}
 #' \item{LLbase}{Log-likelihood of the base model.}
@@ -47,9 +47,9 @@
 #' data("washington_roads")
 #' washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
 #'
-#' nbp.base <- nbg(Total_crashes ~ lnaadt + lnlength + speed50 +
+#' nbp.base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
 #'                     ShouldWidth04 + AADTover10k,
-#'                     data=washington_roads, form = 'nbp', method = 'NM',
+#'                     data=washington_roads, family = 'NBP', method = 'NM',
 #'                     max.iters=3000)
 #' regCompTest(nbp.base, washington_roads, basemodel="NB2", print=TRUE)
 #' 
@@ -72,7 +72,7 @@ regCompTest <- function(model, data=NULL, basemodel = "Poisson", variables = FAL
       base_mod <- glm(formula, data, family = poisson(link = "log"))
     }
     else{
-      base_mod <- flexCountReg(formula, data, dist=basemodel, rpar_formula=NULL, ...)
+      base_mod <- countreg(formula, data, family=basemodel, ...)
       base_mod <- base_mod$model
     }
   }
@@ -81,7 +81,7 @@ regCompTest <- function(model, data=NULL, basemodel = "Poisson", variables = FAL
       base_mod <- glm(y ~ 1, data, family = poisson(link = "log"))
     }
     else{
-      base_mod <- flexCountReg(y ~ 1, data, dist=basemodel, rpar_formula=NULL, ...)
+      base_mod <- countreg(y ~ 1, data, family=basemodel, ...)
       base_mod <- base_mod$model
     }
   }

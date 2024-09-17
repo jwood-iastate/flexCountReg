@@ -558,7 +558,7 @@ summary(sichel)
 # Estimate an NB2 with underreporting (logit)
 nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "NB2",
-              underreport_formula = ~ speed50 + AADT10kplus, underreport_family)
+              underreport_formula = ~ speed50 + AADT10kplus)
 summary(nb2_underreport)
 
 # Estimate an Poisson-Lognormal with underreporting (probit)

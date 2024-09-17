@@ -20,6 +20,15 @@
 #' @param dis_param_formula_2 a symbolic description of the model for the second
 #'        parameter of the count distribution used. Further details are provided 
 #'        below.
+#' @param underreport_formula an optional formula to estimate the underreporting 
+#'        for any of the count model options. The underreporting is estimated as 
+#'        a function (logit or probit) of the predictors in the model. For the 
+#'        model to be tractable, the independent variables cannot be the exact 
+#'        same as the count model. The default is `NULL`.
+#' @param underreport_family the name of the distribution/model type to estimate 
+#'        the underreporting portion of the model when `underreport_formula` is 
+#'        specified. The default is "logit" for a binary logistic regression 
+#'        model. The other option is "probit" for a probit model.
 #' @param ndraws The number of Halton draws for integrating the distribution 
 #'        being compounded with the Poisson distribution when there is not a 
 #'        closed-form solution. Default is 1500. It is recommended to test 
@@ -31,8 +40,12 @@
 #'        "NM" for the Nelder-Mead method.
 #' @param max.iters Maximum number of iterations for the optimization method.
 #' @param start.vals Optional vector of starting values for the optimization.
+#' @param stderr Type of standard errors to use. The default is "normal". Other 
+#'        options include "boot" for bootstrapped standard errors, or "robust" 
+#'        for robust standard errors.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples 
-#'        to be used for estimating standard errors.
+#'        to be used for estimating standard errors when `stderr`= "boot". Note
+#'        that this currently does not work when an offset variable is used.
 #' 
 #' @description
 #' The purpose of this function is to estimate count regression models using 
@@ -93,18 +106,18 @@
 #'  
 #'  For `dis_param_formula_1`, the models are for the parameters:
 #'  \itemize{
-#'  \item \eqn{\alpha} for the Negative Binomial 1 model.
-#'  \item \eqn{\alpha} for the Negative Binomial 2 model.
-#'  \item \eqn{\alpha} for the Negative Binomial P model.
-#'  \item \eqn{\sigma} for the Poisson-Lognormal model.
-#'  \item \eqn{\alpha} for the Poisson-Generalized-Exponential model.
-#'  \item \eqn{\eta} for the Poisson-Inverse-Gaussian model.
-#'  \item \eqn{\theta} for the Poisson-Lindley model.
-#'  \item \eqn{\theta} for the Poisson-Lindley-Gamma model.
-#'  \item \eqn{\theta} for the Poisson-Lindley-Lognormal model.
-#'  \item \eqn{\alpha} for the Poisson-Weibull model.
+#'  \item \eqn{ln(\alpha)} for the Negative Binomial 1 model.
+#'  \item \eqn{ln(\alpha)} for the Negative Binomial 2 model.
+#'  \item \eqn{ln(\alpha)} for the Negative Binomial P model.
+#'  \item \eqn{ln(\sigma)} for the Poisson-Lognormal model.
+#'  \item shape parameter for the Poisson-Generalized-Exponential model.
+#'  \item \eqn{ln(\eta)} for the Poisson-Inverse-Gaussian model.
+#'  \item \eqn{ln(\theta)} for the Poisson-Lindley model.
+#'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
+#'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
+#'  \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
 #'  \item \eqn{\gamma} for the Sichel model.
-#'  \item k for the Generalized Waring model.
+#'  \item \eqn{k} for the Generalized Waring model.
 #'  }
 #'  
 #'  For `dis_param_formula_2`, the models are for the parameters:
@@ -113,14 +126,14 @@
 #'  \item Not Applicable for the Negative Binomial 2 model.
 #'  \item p for the Negative Binomial P model.
 #'  \item Not Applicable for the Poisson-Lognormal model.
-#'  \item Not Applicable for the Poisson-Generalized-Exponential model.
+#'  \item scale parameter for the Poisson-Generalized-Exponential model.
 #'  \item Not Applicable for the Poisson-Inverse-Gaussian model.
 #'  \item Not Applicable for the Poisson-Lindley model.
-#'  \item \eqn{\alpha} for the Poisson-Lindley-Gamma model.
-#'  \item \eqn{\sigma} for the Poisson-Lindley-Lognormal model.
-#'  \item \eqn{\sigma} for the Poisson-Weibull model.
-#'  \item \eqn{\sigma} for the Sichel model.
-#'  \item \eqn{\rho} for the Generalized Waring model.
+#'  \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
+#'  \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
+#'  \item \eqn{ln(\sigma)} for the Poisson-Weibull model.
+#'  \item \eqn{ln(\sigma)} for the Sichel model.
+#'  \item \eqn{ln(\rho)} for the Generalized Waring model.
 #'  }
 #'  
 #'  The `ndraws` parameter is used to estimate the distribution when there is 
@@ -228,7 +241,6 @@
 #' 
 #' **Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models**
 #' The Poisson-Inverse-Gaussian regression model is based on the Poisson-Inverse-Gaussian Distribution. 
-#' @seealso [dpinvgaus()] for additional details of the distribution.
 #' 
 #' The expected value of the distribution in the regression utilizes a log-link function. Thus, the mean is:
 #' \deqn{\mu=e^{X\beta}}
@@ -383,7 +395,17 @@
 #'
 #' Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
 #' 
+#' **Underreporting**
+#' Models for underreporting combine a binary probability model (logit or 
+#' probit) with a count model. This is accomplished using a model for the 
+#' probability of crashes being reported multiplied by the estimated mean for 
+#' the count model, based on the observed data. This is discussed in Wood et. 
+#' al. (2016), Pararai et. al., (2006), and Pararai et. al., (2010). The 
+#' underreporting model is based on:
+#' \deqn{\mu_{true}=\mu_{observed}\cdot P(\text{event is reported})}
 #' 
+#' This allows the inference of both the true event count and the probability of
+#' the event being reported as a function of independent variables. 
 #'  
 #' @return
 #' An object of class `countreg` which is a list with the following components:
@@ -396,26 +418,134 @@
 #' 
 #' @import modelr randtoolbox  
 #' @importFrom stats model.frame model.matrix model.response
-#' @importFrom purrr map map_df
+#' @importFrom purrr map map_df compact flatten
 #' @importFrom broom tidy
 #' @importFrom dplyr group_by %>% summarise
 #' @importFrom tibble deframe
 #' @importFrom maxLik maxLik
 #' @importFrom stringr str_replace_all
+#' @importFrom sandwich sandwich
 #' @include pinvgaus.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R 
 #' 
 #' @examples
 #' # Load the Washington data
 #' data("washington_roads")
+#' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
 #' 
-#' # Estimate an NB2 model
-#' nb2 <- countreg(Total_crashes ~ lnaadt + offset(lnlength) + speed50,
-#'                data = washington_roads, family = "NB2")
+#' # Estimate an NB1 model with the offset option and robust standard errors
+#' nb1 <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
+#'                data = washington_roads, family = "NB1",
+#'                offset = "lnlength",
+#'                stderr = "robust")
+#' summary(nb1)
+#' 
+#' # Estimate an NB2 model with a dispersion parameter as a function of the 
+#' # variable `speed50` (i.e., generalized NB2), verbose output, and use the 
+#' # BFGS optimization method
+#' nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'                data = washington_roads, family = "NB2",
+#'                dis_param_formula_1 = ~ speed50, verbose = TRUE, method='BFGS')
 #' summary(nb2)
+#' 
+#' # Estimate an NBP model
+#' nbp <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'                data = washington_roads, family = "NBP")
+#' summary(nbp)
+#' 
+#' # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
+#' # up the estimation for examples - not recommended in practice)
+#' pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "PLN", ndraws=10)
+#' summary(pln)   
+#' 
+#' # Estimate a Poisson Generalized-Exponential model  (a low number of draws 
+#' # is used to speed up the estimation for examples - not recommended in 
+#' # practice). Also, with this dataset, it fails to give standard errors for 
+#' # some parameters
+#' pge <- countreg(Animal ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "PGE", ndraws=10, 
+#'               method="NM")
+#' summary(pge) 
+#' 
+#' # Estimate a  Poisson-Inverse-Gaussian Type 1 model
+#' pig1 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "PIG1")
+#' summary(pig1)             
+#' 
+#' # Estimate a Poisson-Inverse-Gaussian Type 2 model
+#' pig2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "PIG2")
+#' summary(pig2)   
+#' 
+#' # Estimate a Poisson-Lindley model
+#' plind <- countreg(Rollover ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "PL")
+#' summary(plind)   
+#' 
+#' # Estimate a Poisson-Lindley-Gamma (Negative Binomial-Lindley) model
+#' plindgamma <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus, 
+#'                             verbose=TRUE, offset= "lnlength",
+#'                             data = washington_roads, 
+#'                             family = "PLG", ndraws=10, method="NM")
+#' summary(plindgamma)   
+#' 
+#' # Estimate a Poisson-Lindley-Lognormal model
+#' plindlogn <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus,
+#'               verbose=TRUE, offset = "lnlength", 
+#'               dis_param_formula_2 = ~ 1 + AADT10kplus, 
+#'               data = washington_roads, family = "PLL", 
+#'               ndraws=10, method="NM")
+#'               
+#' summary(plindlogn)   
+#' 
+#' # Estimate a Poisson-Weibull model
+#' pweib <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
+#'               offset = "lnlength", dis_param_formula_1 = ~ 1 + lnlength,
+#'               data = washington_roads, family = "PW", ndraws=10,
+#'               method="BHHH")
+#' summary(pweib)   
+#' 
+#' # Estimate a Sichel model
+#' sichel <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
+#'              offset = "lnlength",
+#'              data = washington_roads, family = "SI")
+#' summary(sichel) 
+#' 
+#' 
+#' # Estimate a Generalized-Waring model
+#' gwaring <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "GW")
+#' summary(gwaring)   
+#' 
+#' # Estimate a NB1 with boostrapping
+#' nb1_boot <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'              data = washington_roads, family = "NB1", bootstraps = 100)
+#' summary(nb1_boot)
+#' 
+#' # Estimate a Sichel model with distribution parameters as functions of other variables
+#' sichel <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'              data = washington_roads, family = "SI",
+#'              dis_param_formula_1 = ~ lnaadt, dis_param_formula_2 = ~ lnlength)
+#' summary(sichel)
+#' 
+#' # Estimate an NB2 with underreporting (logit)
+#' nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "NB2",
+#'               underreport_formula = ~ speed50 + AADT10kplus, underreport_family)
+#' summary(nb2_underreport)
+#' 
+#' # Estimate an Poisson-Lognormal with underreporting (probit)
+#' plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'               data = washington_roads, family = "NB2",
+#'               underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
+#' summary(plogn_underreport)
 #' 
 #' @references
 #' Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
+#' Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression model for underreported counts. Advances and applications in Statistics, 6(3), 305-322.
+#' Pararai, M., Famoye, F., & Lee, C. (2010). Generalized poisson-poisson mixture model for misreported counts with an application to smoking data. Journal of Data Science, 8(4), 607-617.
 #' Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework for modelling overdispersed count data, including the Poisson-shifted generalized inverse Gaussian distribution. Computational Statistics & Data Analysis, 53(2), 381-393.
+#' Wood, J.S., Eric T. Donnell, & Christopher J. Fariss. "A method to account for and estimate underreporting in crash frequency research." Accident Analysis & Prevention 95 (2016): 57-66.
 #' Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data using the Sichel generalized additive models for location, scale and shape. Paper submitted for publication.
 #' 
 #' 
@@ -424,8 +554,11 @@
 #' @export
 countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NULL, 
                       verbose = FALSE, dis_param_formula_1 = NULL, 
-                      dis_param_formula_2 = NULL, ndraws = 1500, method = "NM", 
-                      max.iters = 1000, start.vals = NULL, bootstraps = NULL) {
+                      dis_param_formula_2 = NULL, underreport_formula = NULL,
+                     underreport_family = "logit",
+                     ndraws = 1500, method = "NM", 
+                      max.iters = 1000, start.vals = NULL, 
+                     stderr = "normal", bootstraps = NULL) {
   
   if (verbose){
     print.level=2
@@ -442,14 +575,14 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     "NB2" = list("ln(alpha)", NULL),
     "NBP" = list("ln(alpha)", "ln(p)"),
     "PLN" = list("ln(sigma)", NULL),
-    "PGE" = list("ln(alpha)", NULL),
-    "PIG" = list("ln(eta)", NULL),
+    "PGE" = list("ln(shape)", "ln(scale)"),
+    "PIG1" = list("ln(eta)", NULL),
+    "PIG2" = list("ln(eta)", NULL),
     "PL" = list("ln(theta)", NULL),
-    "PLG1" = list("ln(theta)", "ln(alpha)"),
-    "PLG2" = list("ln(theta)", "ln(alpha)"),
+    "PLG" = list("ln(theta)", "ln(alpha)"),
     "PLL" = list("ln(theta)", "ln(sigma)"),
     "PW" = list("ln(alpha)", "ln(sigma)"),
-    "SI" = list("ln(gamma)", NULL),
+    "SI" = list("gamma", "ln(sigma)"),
     "GW" = list("ln(k)", "ln(rho)")
   )
  
@@ -467,22 +600,33 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
       mu <- predicted
       return(stats::dnbinom(y, size = (mu^(2-sigma))/alpha, mu = mu))
     },
-    "PLN" = function(predicted, alpha, sigma) dpLnorm_cpp(x, mean=predicted, sigma=alpha, h=normed_haltons),
-    "PGE" = function(predicted, alpha, sigma) dpge(y, mean=predicted, shape=alpha, scale=sigma, ndraws=ndraws),
+    "PLN" = function(predicted, alpha, sigma) dpLnorm_cpp(x=y, mean=predicted, sigma=alpha, h=normed_haltons),
+    "PGE" = function(predicted, alpha, sigma) dpge(y, mean=predicted, shape=alpha, scale=sigma, haltons=haltons),
     "PIG1" = function(predicted, alpha, sigma) dpinvgaus(y, mu=predicted, eta=alpha),
     "PIG2" = function(predicted, alpha, sigma) dpinvgaus(y, mu=predicted, eta=alpha, form="Type 2"),
     "PL" = function(predicted, alpha, sigma) dplind(y, mean=predicted, theta=alpha),
-    "PLG" = function(predicted, alpha, sigma) dplindGamma(x, mean=predicted, theta=alpha, alpha=sigma, hdraws=hdraws),
-    "PLL" = function(predicted, alpha, sigma) dplindLnorm(x, mean=predicted, theta=alpha, sigma=sigma, hdraws=hdraws),
+    "PLG" = function(predicted, alpha, sigma) dplindGamma(x=y, mean=predicted, theta=alpha, alpha=sigma, hdraws=haltons),
+    "PLL" = function(predicted, alpha, sigma) dplindLnorm(x=y, mean=predicted, theta=alpha, sigma=sigma, hdraws=normed_haltons),
     "PW" = function(predicted, alpha, sigma) dpWeib_cpp(y, mean=predicted, alpha=alpha, sigma=sigma, h=haltons),
-    "SI" = function(predicted, alpha, sigma) dsichel(y, mu= predicted, sigma=alpha, gamma=sigma),
+    "SI" = function(predicted, alpha, sigma) dsichel(x=y, mu= predicted, sigma=sigma, gamma=log(alpha)),
     "GW" = function(predicted, alpha, sigma) dgwar(y, mu= predicted, k=alpha, rho=sigma)
   )
   
   # Prepare model matrices
   mod1_frame <- stats::model.frame(formula, data)
-  X <- stats::model.matrix(formula, data)
+  X <- as.matrix(modelr::model_matrix(data, formula))
   x_names <- colnames(X)
+  
+  # If underreporting model, create a data matrix for the underreporting model
+  if (!is.null(underreport_formula)){
+    X_underreport <- as.matrix(modelr::model_matrix(data, underreport_formula))
+    N_underreport <- ncol(X_underreport)
+    underreport_names <- paste0("Underreporting:", colnames(X_underreport))
+  }
+  else{
+    N_underreport <- 0
+    underreport_names <- NULL
+  }
   
   # If an offset is specified, create a vector for the offset
   if (!is.null(offset)){
@@ -490,20 +634,21 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }
   
   if (!is.null(dis_param_formula_1)) {
-    mod_alpha_frame <- stats::model.frame(dis_param_formula_1, data)
-    X_alpha <- stats::model.matrix(dis_param_formula_1, data)
-    x_names <- c(x_names, paste0(params[1],colnames(X_alpha)))
+    mod_alpha_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_1))
+    x_names <- c(x_names, paste0(params[1], ":",colnames(mod_alpha_frame)))
   } else {
-    # X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_formula_1 is not provided
     x_names <- append(x_names, params[1])
   }
   
   if (!is.null(dis_param_formula_2)) {
-    mod_sigma_frame <- stats::model.frame(dis_param_formula_2, data)
-    X_sigma <- stats::model.matrix(dis_param_formula_2, data)
-    x_names <- c(x_names, paste0(params[2],colnames(X_sigma)))
-  } else if (!is.null(params[2])) {
-    x_names <- append(x_names, params[2]) # Add the parameter if it is not NULL
+    mod_sigma_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_2))
+    x_names <- c(x_names, paste0(params[2], ":",colnames(mod_sigma_frame)))
+  } else {
+    x_names <- append(x_names, params[2])
+  }
+  
+  if(!is.null(underreport_formula)){
+    x_names <- c(x_names, underreport_names)
   }
   
   y <- stats::model.response(mod1_frame)
@@ -546,14 +691,24 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     # Use the NB2 from MASS as starting values
     p_model <- glm.nb(formula, data = data)
     start <- unlist(p_model$coefficients)
-    start <- c(start, rep(0, N_alpha + N_sigma))
+    
+    if (family=="GW" | family=="SI"){
+      start <- c(start, rep(0.1, N_alpha + N_sigma + N_underreport))
+    }else{
+      start <- c(start, rep(0, N_alpha + N_sigma + N_underreport))
+    }
+    
   } 
   else {
     start <- start.vals
   }
   
-  names(start) <- Filter(Negate(is.null), x_names) # remove NULL values, if they are in the list
+  x_names <- x_names  %>% 
+    compact() %>%  # Remove NULL values
+    flatten()      # Flatten the list
   
+  names(start) <-x_names[1:length(start)]
+
   # Handling Weights
   if (is.null(weights)){
     weights.df <- rep(1, length(y))
@@ -564,38 +719,44 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   # Define the main function for computing log-likelihood
   logLikFunc <- function(p) {
     coefs <- as.array(p)
-    fixed_coefs <- head(coefs, N_predictors)
+    fixed_coefs <- as.vector(head(coefs, N_predictors))
     
     if (!is.null(dis_param_formula_1)){
-      alpha_coefs <- coefs[(N_predictors + 1):(N_predictors + N_alpha)]
+      alpha_coefs <- as.vector(coefs[(N_predictors + 1):(N_predictors + N_alpha)])
       alpha <- exp(mod_alpha_frame %*% alpha_coefs)
     } else {
       alpha <- exp(coefs[(N_predictors + 1)])
     }
     
     if (!is.null(dis_param_formula_2)){
-      sigma_coefs <- coefs[(N_predictors + N_alpha + 1):(N_predictors + N_alpha + N_sigma)]
+      sigma_coefs <- as.vector(coefs[(N_predictors + N_alpha + 1):(N_predictors + N_alpha + N_sigma)])
       sigma <- exp(mod_sigma_frame %*% sigma_coefs)
     } else {
       sigma <- exp(coefs[(N_predictors + N_alpha + 1)])
     }
     
+    if (N_underreport>0){
+      beta_underreport <- coefs[(length(coefs)-N_underreport+1):(length(coefs))]
+      lin_underreport <- X_underreport %*% beta_underreport
+      
+      if (underreport_family == "logit"){
+        underreport_prob <- 1/(1+exp(-lin_underreport))
+      }else{
+        underreport_prob <- pnorm(lin_underreport, lower.tail = FALSE)
+        
+      }
+    }else{underreport_prob=1} # If no underreporting model, set the probability to 1
+    
     if (!is.null(offset)){
-      predicted <- exp(X %*% fixed_coefs + X_offset)
+      predicted <- exp(X %*% fixed_coefs + X_offset)*underreport_prob
     } else {
-      predicted <- exp(X %*% fixed_coefs)
+      predicted <- exp(X %*% fixed_coefs)*underreport_prob
     }
     
     # Call the probability function
     probs <- probFunc(predicted, alpha, sigma)
     
-    ll <- sum(log(probs)*weights.df) # Accounting for weights, if needed
-    
-    if (est_method == 'bhhh' || est_method == 'BHHH') {
-      return(log(probs)*weights.df)
-    } else {
-      return(ll)
-    }
+    return(log(probs)*weights.df)
   }
   # Run the maximum likelihood estimation
   fit <- maxLik::maxLik(logLikFunc, 
@@ -610,7 +771,6 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     # Prepare model matrices
     mod1_frame <- stats::model.frame(formula, data)
     X <- stats::model.matrix(formula, data)
-    x_names <- colnames(X)
     
     # If an offset is specified, create a vector for the offset
     if (!is.null(offset)){
@@ -618,29 +778,21 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     }
     
     if (!is.null(dis_param_formula_1)) {
-      mod_alpha_frame <- stats::model.frame(dis_param_formula_1, data)
-      X_alpha <- stats::model.matrix(dis_param_formula_1, data)
-      x_names <- c(x_names, paste0(params[1],colnames(X_alpha)))
-    } else {
-      X_alpha <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_formula_1 is not provided
-      x_names <- append(x_names, params[1])
-    }
+      mod_alpha_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_1))
+    } 
     
     if (!is.null(dis_param_formula_2)) {
-      mod_sigma_frame <- stats::model.frame(dis_param_formula_2, data)
-      X_sigma <- stats::model.matrix(dis_param_formula_2, data)
-      x_names <- c(x_names, paste0(params[2],colnames(X_sigma)))
-    } else {
-      X_sigma <- matrix(1, nrow(data), 1)  # Use an intercept-only model if dis_param_formula_2 is not provided
-      x_names <- append(x_names, params[2])
-    }
+      mod_sigma_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_2))
+
+    } 
     
+    if (!is.null(underreport_formula)){
+      X_underreport <- as.matrix(modelr::model_matrix(data, underreport_formula))
+    }
     y <- stats::model.response(mod1_frame)
     
-    names(start) <- x_names
-    
     int_res <- maxLik::maxLik(logLikFunc, 
-                              start = start,
+                              start = fit$estimate,
                               method = method, 
                               control = list(iterlim = max.iters, 
                                              printLevel = print.level))
@@ -648,7 +800,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }
   
   
-  if (!is.null(bootstraps) & is.numeric(bootstraps)) {
+  if (stderr=="boot" & is.numeric(bootstraps)) {
     bs.data <- modelr::bootstrap(data, n = bootstraps)
     models <- map(bs.data$strap, ~ mod.boot(data = .))
     tidied <- map_df(models, broom::tidy, .id = "id")
@@ -658,6 +810,15 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
       summarise(sd = sd(estimate)) %>% deframe()
     
     fit$bootstrapped_se <- SE
+  }
+  if (stderr == "normal") {
+    fit$bootstrapped_se <- sqrt(diag(-1/(fit$hessian)))
+  }
+  else if (stderr == "bootstrapped") {
+    fit$bootstrapped_se <- SE
+  }
+  else if (stderr == "Robust"){
+    fit$bootstrapped_se <- sqrt(diag(sandwich::sandwich(fit)))
   }
   
   fit$coefficients = fit$estimate
@@ -674,26 +835,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   fit$ndraws = ndraws
   fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
   fit$offset <- offset
+  fit.stderr <- stderr
   
   obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }
-
-# Possible additional parameters that would be beneficial to add to the function
-# @param validation_type an optional parameter. This is the type of validation 
-#        to be used. Options are "none" (default), "cross-validation", "k-fold"
-#        , and "temporal".
-# @param k an optional parameter that is only used if `validation_type` is 
-#        "k-fold". This is the number of folds to be used in k-fold 
-#        cross-validation. Default is 10.
-# @param test_percent an optional parameter that is only used if 
-#        `validation_type` is "cross-validation". This is the percentage of 
-#        the data to be used as a test set. Default is 0.1.
-# @param train_time_periods an optional parameter that is only used if 
-#        `validation_type` is "temporal". This is a numeric vector of the time 
-#        periods to be used as training data. Default is the ceiling of the 
-#        first 50% of the data.
-# @param test_time_periods an optional parameter that is only used if 
-#        `validation_type` is "temporal". This is a numeric vector of the time 
-#        periods to be used as testing data. Default is the remaining time 
-#        periods after `train_time_periods`.

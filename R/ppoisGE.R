@@ -22,6 +22,7 @@
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
 #'   otherwise, \eqn{P[X>x]}.
+#' @param haltons an optional vector of Halton draws to use instead of ndraws.
 #'
 #' @details
 #' \code{dpge} computes the density (PDF) of the PGE Distribution.
@@ -75,25 +76,26 @@
 
 #' @rdname PoissonGeneralizedExponential
 #' @export
-dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE){
+dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, haltons=NULL){
   
   if(mean<=0 || scale<=0 || shape <=0){
     print('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
     stop()
   }
   
-  qge <- function(p, shape, scale){
-    q <- log((p*shape+1)^(1/shape)+1)/scale
-    return(q)
-  }
-  
+  # qge <- function(p, shape, scale){
+  #   q <- log((p*shape+1)^(1/shape)+1)/scale
+  #   return(q)
+  # }
+  # 
   lambda <- mean * scale /(digamma(shape+1)-digamma(1))
 
   # Generate Halton draws to use as quantile values
-  h <- randtoolbox::halton(ndraws)
+  if (!is.null(haltons)) h <- haltons
+  else h <- randtoolbox::halton(ndraws)
 
   # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to lognormal values
-  gedist <- qge(h, shape, scale)
+  gedist <- log(1-h^(1/shape))/(-scale) # Quantile function of generalized exponential distribution applied to halton draws
   mu_i <- lambda * gedist
 
   p_pge.i <- sapply(mu_i, stats::dpois, x=x)

@@ -54,10 +54,10 @@
 #' @export
 dplindGamma <- function(x, mean=1, theta = 1, alpha=1, log=FALSE, ndraws=1000, hdraws=NULL){
   if (is.null(hdraws)){
-    h <- randtoolbox::halton(ndraws)
+    hdraws <- randtoolbox::halton(ndraws)
   }
   
-  p <- dplindgamma_cpp(x, mean, theta, alpha, h)
+  p <- dplindgamma_cpp(x, mean, theta, alpha, hdraws)
 
   if (log) return(log(p))
   else return(p)

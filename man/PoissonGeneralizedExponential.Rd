@@ -8,7 +8,15 @@
 \alias{rpge}
 \title{Poisson-Generalized-Exponential Distribution}
 \usage{
-dpge(x, mean = 1, shape = 1, scale = 1, ndraws = 1500, log = FALSE)
+dpge(
+  x,
+  mean = 1,
+  shape = 1,
+  scale = 1,
+  ndraws = 1500,
+  log = FALSE,
+  haltons = NULL
+)
 
 ppge(
   q,
@@ -41,6 +49,8 @@ generalized exponential distribution (the values have to be greater than
 \item{ndraws}{the number of Halton draws to use for the integration.}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
+
+\item{haltons}{an optional vector of Halton draws to use instead of ndraws.}
 
 \item{q}{quantile or a vector of quantiles.}
 

@@ -13,10 +13,13 @@ countreg(
   verbose = FALSE,
   dis_param_formula_1 = NULL,
   dis_param_formula_2 = NULL,
+  underreport_formula = NULL,
+  underreport_family = "logit",
   ndraws = 1500,
   method = "NM",
   max.iters = 1000,
   start.vals = NULL,
+  stderr = "normal",
   bootstraps = NULL
 )
 }
@@ -46,6 +49,17 @@ count distribution used. Further details are provided below.}
 parameter of the count distribution used. Further details are provided 
 below.}
 
+\item{underreport_formula}{an optional formula to estimate the underreporting 
+for any of the count model options. The underreporting is estimated as 
+a function (logit or probit) of the predictors in the model. For the 
+model to be tractable, the independent variables cannot be the exact 
+same as the count model. The default is `NULL`.}
+
+\item{underreport_family}{the name of the distribution/model type to estimate 
+the underreporting portion of the model when `underreport_formula` is 
+specified. The default is "logit" for a binary logistic regression 
+model. The other option is "probit" for a probit model.}
+
 \item{ndraws}{The number of Halton draws for integrating the distribution 
 being compounded with the Poisson distribution when there is not a 
 closed-form solution. Default is 1500. It is recommended to test 
@@ -61,8 +75,13 @@ estimation. See `maxLik` documentation for options. The default is
 
 \item{start.vals}{Optional vector of starting values for the optimization.}
 
+\item{stderr}{Type of standard errors to use. The default is "normal". Other 
+options include "boot" for bootstrapped standard errors, or "robust" 
+for robust standard errors.}
+
 \item{bootstraps}{Optional integer specifying the number of bootstrap samples 
-to be used for estimating standard errors.}
+to be used for estimating standard errors when `stderr`= "boot". Note
+that this currently does not work when an offset variable is used.}
 }
 \value{
 An object of class `countreg` which is a list with the following components:
@@ -132,18 +151,18 @@ For the `family` argument, the following options are available:
  
  For `dis_param_formula_1`, the models are for the parameters:
  \itemize{
- \item \eqn{\alpha} for the Negative Binomial 1 model.
- \item \eqn{\alpha} for the Negative Binomial 2 model.
- \item \eqn{\alpha} for the Negative Binomial P model.
- \item \eqn{\sigma} for the Poisson-Lognormal model.
- \item \eqn{\alpha} for the Poisson-Generalized-Exponential model.
- \item \eqn{\eta} for the Poisson-Inverse-Gaussian model.
- \item \eqn{\theta} for the Poisson-Lindley model.
- \item \eqn{\theta} for the Poisson-Lindley-Gamma model.
- \item \eqn{\theta} for the Poisson-Lindley-Lognormal model.
- \item \eqn{\alpha} for the Poisson-Weibull model.
+ \item \eqn{ln(\alpha)} for the Negative Binomial 1 model.
+ \item \eqn{ln(\alpha)} for the Negative Binomial 2 model.
+ \item \eqn{ln(\alpha)} for the Negative Binomial P model.
+ \item \eqn{ln(\sigma)} for the Poisson-Lognormal model.
+ \item shape parameter for the Poisson-Generalized-Exponential model.
+ \item \eqn{ln(\eta)} for the Poisson-Inverse-Gaussian model.
+ \item \eqn{ln(\theta)} for the Poisson-Lindley model.
+ \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
+ \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
+ \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
  \item \eqn{\gamma} for the Sichel model.
- \item k for the Generalized Waring model.
+ \item \eqn{k} for the Generalized Waring model.
  }
  
  For `dis_param_formula_2`, the models are for the parameters:
@@ -152,14 +171,14 @@ For the `family` argument, the following options are available:
  \item Not Applicable for the Negative Binomial 2 model.
  \item p for the Negative Binomial P model.
  \item Not Applicable for the Poisson-Lognormal model.
- \item Not Applicable for the Poisson-Generalized-Exponential model.
+ \item scale parameter for the Poisson-Generalized-Exponential model.
  \item Not Applicable for the Poisson-Inverse-Gaussian model.
  \item Not Applicable for the Poisson-Lindley model.
- \item \eqn{\alpha} for the Poisson-Lindley-Gamma model.
- \item \eqn{\sigma} for the Poisson-Lindley-Lognormal model.
- \item \eqn{\sigma} for the Poisson-Weibull model.
- \item \eqn{\sigma} for the Sichel model.
- \item \eqn{\rho} for the Generalized Waring model.
+ \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
+ \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
+ \item \eqn{ln(\sigma)} for the Poisson-Weibull model.
+ \item \eqn{ln(\sigma)} for the Sichel model.
+ \item \eqn{ln(\rho)} for the Generalized Waring model.
  }
  
  The `ndraws` parameter is used to estimate the distribution when there is 
@@ -267,26 +286,7 @@ This results in:
 Halton draws are used to perform simulation over the lognormal distribution to solve the integral.
 
 **Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models**
-The Poisson-Inverse-Gaussian regression model is based on the Poisson-Inverse-Gaussian Distribution.
-}
-
-\examples{
-# Load the Washington data
-data("washington_roads")
-
-# Estimate an NB2 model
-nb2 <- countreg(Total_crashes ~ lnaadt + offset(lnlength) + speed50,
-               data = washington_roads, family = "NB2")
-summary(nb2)
-
-}
-\references{
-Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
-Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework for modelling overdispersed count data, including the Poisson-shifted generalized inverse Gaussian distribution. Computational Statistics & Data Analysis, 53(2), 381-393.
-Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data using the Sichel generalized additive models for location, scale and shape. Paper submitted for publication.
-}
-\seealso{
-[dpinvgaus()] for additional details of the distribution.
+The Poisson-Inverse-Gaussian regression model is based on the Poisson-Inverse-Gaussian Distribution. 
 
 The expected value of the distribution in the regression utilizes a log-link function. Thus, the mean is:
 \deqn{\mu=e^{X\beta}}
@@ -440,4 +440,139 @@ The PMF becomes:
 \deqn{\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}{(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}\right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
 
 Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
+
+**Underreporting**
+Models for underreporting combine a binary probability model (logit or 
+probit) with a count model. This is accomplished using a model for the 
+probability of crashes being reported multiplied by the estimated mean for 
+the count model, based on the observed data. This is discussed in Wood et. 
+al. (2016), Pararai et. al., (2006), and Pararai et. al., (2010). The 
+underreporting model is based on:
+\deqn{\mu_{true}=\mu_{observed}\cdot P(\text{event is reported})}
+
+This allows the inference of both the true event count and the probability of
+the event being reported as a function of independent variables.
+}
+
+\examples{
+# Load the Washington data
+data("washington_roads")
+washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
+
+# Estimate an NB1 model with the offset option and robust standard errors
+nb1 <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
+               data = washington_roads, family = "NB1",
+               offset = "lnlength",
+               stderr = "robust")
+summary(nb1)
+
+# Estimate an NB2 model with a dispersion parameter as a function of the 
+# variable `speed50` (i.e., generalized NB2), verbose output, and use the 
+# BFGS optimization method
+nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+               data = washington_roads, family = "NB2",
+               dis_param_formula_1 = ~ speed50, verbose = TRUE, method='BFGS')
+summary(nb2)
+
+# Estimate an NBP model
+nbp <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+               data = washington_roads, family = "NBP")
+summary(nbp)
+
+# Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
+# up the estimation for examples - not recommended in practice)
+pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "PLN", ndraws=10)
+summary(pln)   
+
+# Estimate a Poisson Generalized-Exponential model  (a low number of draws 
+# is used to speed up the estimation for examples - not recommended in 
+# practice). Also, with this dataset, it fails to give standard errors for 
+# some parameters
+pge <- countreg(Animal ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "PGE", ndraws=10, 
+              method="NM")
+summary(pge) 
+
+# Estimate a  Poisson-Inverse-Gaussian Type 1 model
+pig1 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "PIG1")
+summary(pig1)             
+
+# Estimate a Poisson-Inverse-Gaussian Type 2 model
+pig2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "PIG2")
+summary(pig2)   
+
+# Estimate a Poisson-Lindley model
+plind <- countreg(Rollover ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "PL")
+summary(plind)   
+
+# Estimate a Poisson-Lindley-Gamma (Negative Binomial-Lindley) model
+plindgamma <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus, 
+                            verbose=TRUE, offset= "lnlength",
+                            data = washington_roads, 
+                            family = "PLG", ndraws=10, method="NM")
+summary(plindgamma)   
+
+# Estimate a Poisson-Lindley-Lognormal model
+plindlogn <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus,
+              verbose=TRUE, offset = "lnlength", 
+              dis_param_formula_2 = ~ 1 + AADT10kplus, 
+              data = washington_roads, family = "PLL", 
+              ndraws=10, method="NM")
+              
+summary(plindlogn)   
+
+# Estimate a Poisson-Weibull model
+pweib <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
+              offset = "lnlength", dis_param_formula_1 = ~ 1 + lnlength,
+              data = washington_roads, family = "PW", ndraws=10,
+              method="BHHH")
+summary(pweib)   
+
+# Estimate a Sichel model
+sichel <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
+             offset = "lnlength",
+             data = washington_roads, family = "SI")
+summary(sichel) 
+
+
+# Estimate a Generalized-Waring model
+gwaring <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "GW")
+summary(gwaring)   
+
+# Estimate a NB1 with boostrapping
+nb1_boot <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+             data = washington_roads, family = "NB1", bootstraps = 100)
+summary(nb1_boot)
+
+# Estimate a Sichel model with distribution parameters as functions of other variables
+sichel <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+             data = washington_roads, family = "SI",
+             dis_param_formula_1 = ~ lnaadt, dis_param_formula_2 = ~ lnlength)
+summary(sichel)
+
+# Estimate an NB2 with underreporting (logit)
+nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "NB2",
+              underreport_formula = ~ speed50 + AADT10kplus, underreport_family)
+summary(nb2_underreport)
+
+# Estimate an Poisson-Lognormal with underreporting (probit)
+plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "NB2",
+              underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
+summary(plogn_underreport)
+
+}
+\references{
+Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
+Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression model for underreported counts. Advances and applications in Statistics, 6(3), 305-322.
+Pararai, M., Famoye, F., & Lee, C. (2010). Generalized poisson-poisson mixture model for misreported counts with an application to smoking data. Journal of Data Science, 8(4), 607-617.
+Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework for modelling overdispersed count data, including the Poisson-shifted generalized inverse Gaussian distribution. Computational Statistics & Data Analysis, 53(2), 381-393.
+Wood, J.S., Eric T. Donnell, & Christopher J. Fariss. "A method to account for and estimate underreporting in crash frequency research." Accident Analysis & Prevention 95 (2016): 57-66.
+Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data using the Sichel generalized additive models for location, scale and shape. Paper submitted for publication.
 }

@@ -38,6 +38,7 @@ Collate:
     'RcppExports.R'
     'cor2cov.R'
     'corr_haltons.R'
+    'helpers.R'
     'plind.R'
     'ppoisGE.R'
     'psichel.R'

@@ -425,7 +425,7 @@
 #' @importFrom maxLik maxLik
 #' @importFrom stringr str_replace_all
 #' @importFrom sandwich sandwich
-#' @include pinvgaus.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R 
+#' @include pinvgaus.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
 #' 
 #' @examples
 #' # Load the Washington data
@@ -453,11 +453,16 @@
 #' 
 #' @references
 #' Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
+#' 
 #' Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression model for underreported counts. Advances and applications in Statistics, 6(3), 305-322.
+#' 
 #' Pararai, M., Famoye, F., & Lee, C. (2010). Generalized poisson-poisson mixture model for misreported counts with an application to smoking data. Journal of Data Science, 8(4), 607-617.
+#' 
 #' Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework for modelling overdispersed count data, including the Poisson-shifted generalized inverse Gaussian distribution. Computational Statistics & Data Analysis, 53(2), 381-393.
+#' 
 #' Wood, J.S., Eric T. Donnell, & Christopher J. Fariss. "A method to account for and estimate underreporting in crash frequency research." Accident Analysis & Prevention 95 (2016): 57-66.
-#' Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data using the Sichel generalized additive models for location, scale and shape. Paper submitted for publication.
+#' 
+#' Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data using the Sichel generalized additive models for location, scale and shape. 
 #' 
 #' 
 #' @importFrom Rcpp sourceCpp
@@ -476,52 +481,17 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }else{
     print.level=0
   }
-  
+
   family <- toupper(str_replace_all(family, "[^[:alnum:]]", "")) # remove non-alphanumeric characters from the family name and ensure all upper case
+  method <- toupper(str_replace_all(method, "[^abcfghmnrsABCFGHMNRS]", "")) # clean the method name
+  if (!(method %in% c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH"))){
+    print('Method must be one of: "SANN", "NM", "BFGS", "BFGSR", "CG", "NR", or "BHHH". Switching to "NM.')
+    method = "NM"
+  }
   
-  # Determine model to estimate, probability distribution to use, and parameters
-  params <- switch(
-    family,
-    "NB1" = list("ln(alpha)", NULL),
-    "NB2" = list("ln(alpha)", NULL),
-    "NBP" = list("ln(alpha)", "ln(p)"),
-    "PLN" = list("ln(sigma)", NULL),
-    "PGE" = list("ln(shape)", "ln(scale)"),
-    "PIG1" = list("ln(eta)", NULL),
-    "PIG2" = list("ln(eta)", NULL),
-    "PL" = list("ln(theta)", NULL),
-    "PLG" = list("ln(theta)", "ln(alpha)"),
-    "PLL" = list("ln(theta)", "ln(sigma)"),
-    "PW" = list("ln(alpha)", "ln(sigma)"),
-    "SI" = list("gamma", "ln(sigma)"),
-    "GW" = list("ln(k)", "ln(rho)")
-  )
- 
-  probFunc <- switch( # get the probability function for the specified distribution
-    family,
-    "NB1" = function(predicted, alpha, sigma) {
-      mu <- predicted
-      return(stats::dnbinom(y, size = mu/alpha, mu = mu))
-    },
-    "NB2" = function(predicted, alpha, sigma) {
-      mu <- predicted
-      return(stats::dnbinom(y, size = alpha, mu = mu))
-    },
-    "NBP" = function(predicted, alpha, sigma){
-      mu <- predicted
-      return(stats::dnbinom(y, size = (mu^(2-sigma))/alpha, mu = mu))
-    },
-    "PLN" = function(predicted, alpha, sigma) dpLnorm_cpp(x=y, mean=predicted, sigma=alpha, h=normed_haltons),
-    "PGE" = function(predicted, alpha, sigma) dpge(y, mean=predicted, shape=alpha, scale=sigma, haltons=haltons),
-    "PIG1" = function(predicted, alpha, sigma) dpinvgaus(y, mu=predicted, eta=alpha),
-    "PIG2" = function(predicted, alpha, sigma) dpinvgaus(y, mu=predicted, eta=alpha, form="Type 2"),
-    "PL" = function(predicted, alpha, sigma) dplind(y, mean=predicted, theta=alpha),
-    "PLG" = function(predicted, alpha, sigma) dplindGamma(x=y, mean=predicted, theta=alpha, alpha=sigma, hdraws=haltons),
-    "PLL" = function(predicted, alpha, sigma) dplindLnorm(x=y, mean=predicted, theta=alpha, sigma=sigma, hdraws=normed_haltons),
-    "PW" = function(predicted, alpha, sigma) dpWeib_cpp(y, mean=predicted, alpha=alpha, sigma=sigma, h=haltons),
-    "SI" = function(predicted, alpha, sigma) dsichel(x=y, mu= predicted, sigma=sigma, gamma=log(alpha)),
-    "GW" = function(predicted, alpha, sigma) dgwar(y, mu= predicted, k=alpha, rho=sigma)
-  )
+  # Get the parameters and probability function
+  params <- get_params(family)
+  probFunc <- get_probFunc(family)
   
   # Prepare model matrices
   mod1_frame <- stats::model.frame(formula, data)
@@ -567,7 +537,6 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   # Generate Halton draws to use as quantile values
   haltons <- randtoolbox::halton(ndraws)
   normed_haltons <- dnorm(haltons)
-  est_method = method
   
   # Some numbers that will be useful
   N_predictors <- ncol(X)
@@ -616,9 +585,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   
   x_names <- x_names  %>% 
     compact() #%>%  # Remove NULL values
-    #flatten()      # Flatten the list
   
-  names(start) <-x_names[1:length(start)]
+  names(start) <-x_names[1:length(start)] # Shouldn't need to do this, but this ensures it runs without having errors from names
 
   # Handling Weights
   if (is.null(weights)){
@@ -665,7 +633,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     }
     
     # Call the probability function
-    probs <- probFunc(predicted, alpha, sigma)
+    probs <- probFunc(y, predicted, alpha, sigma, haltons, normed_haltons)
     
     return(log(probs)*weights.df)
   }
@@ -677,39 +645,6 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
                                        printLevel = print.level))
   
   # Optionally, compute bootstrapped standard errors
-  # create function to clean data and run maxLik
-  mod.boot <- function(data){
-    # Prepare model matrices
-    mod1_frame <- stats::model.frame(formula, data)
-    X <- stats::model.matrix(formula, data)
-    
-    # If an offset is specified, create a vector for the offset
-    if (!is.null(offset)){
-      X_offset <- data[, offset]
-    }
-    
-    if (!is.null(dis_param_formula_1)) {
-      mod_alpha_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_1))
-    } 
-    
-    if (!is.null(dis_param_formula_2)) {
-      mod_sigma_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_2))
-
-    } 
-    
-    if (!is.null(underreport_formula)){
-      X_underreport <- as.matrix(modelr::model_matrix(data, underreport_formula))
-    }
-    y <- stats::model.response(mod1_frame)
-    
-    int_res <- maxLik::maxLik(logLikFunc, 
-                              start = fit$estimate,
-                              method = method, 
-                              control = list(iterlim = max.iters, 
-                                             printLevel = print.level))
-    return(int_res)
-  }
-  
   
   if (stderr=="boot" & is.numeric(bootstraps)) {
     bs.data <- modelr::bootstrap(data, n = bootstraps)
@@ -755,3 +690,4 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }
+

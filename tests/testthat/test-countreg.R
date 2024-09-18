@@ -22,11 +22,13 @@ test_that("NB-1", {
 })
 
 
-test_that("NB-p", {
+test_that("NB-p with sample weights", {
+  set.seed(12345)
   data("washington_roads")
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
+  washington_roads$wgt <- runif(nrow(washington_roads))
   model2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-                    data = washington_roads, family = "NBP")
+                    data = washington_roads, family = "NBP", weights = "wgt")
   
   summary(model2)
   

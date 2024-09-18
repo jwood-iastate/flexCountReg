@@ -38,10 +38,11 @@ package.
 \donttest{
 ## Example using a Negative Binomial model
 data("washington_roads")
-nb_model <- 
-  nbg(Total_crashes ~ lnlength + speed50, 
-      data = washington_roads, 
-      form = 'nb2')
+washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
+nb_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
+                            ShouldWidth04 + AADTover10k,
+                            data = washington_roads, family = 'nb2', 
+                            method = 'NM', max.iters = 3000)
 cureplot(nb_model)
 }
 }

@@ -91,10 +91,6 @@ predict.flexCountReg <- function(object, ...){
     formula <- delete.response(model$formula)
     data <- as.data.frame(data)
     
-    print(formula)
-    print(head(data))
-    
-    
     X_Fixed <- as.matrix(modelr::model_matrix(data, formula))
     X_rand <- as.matrix(modelr::model_matrix(data, model$rpar_formula))
     
@@ -173,14 +169,11 @@ predict.flexCountReg <- function(object, ...){
       
       if (length(dists)>1){
         for (i in 1:length(dists)){
-          
-          #print(paste("N Rand Perd =", length(rand_pred), ", dists[i] =", dists[i], ", Coef Mean =", random_coefs_means[i], ", Coef SD =", sd[i], ", N X[,i] =", length(X_rand[,i])) )
-          
+
           rand_pred <- rand_pred*rpar.adjust(dists[i], random_coefs_means[i], sd[i], X_rand[,i])
         }
       }
       else{
-        print(paste(dists, random_coefs_means, sd, length(X_rand)))
         rand_pred <- rpar.adjust(dists, random_coefs_means, sd, X_rand)
       }
       

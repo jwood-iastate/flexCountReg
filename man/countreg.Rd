@@ -458,14 +458,6 @@ the event being reported as a function of independent variables.
 # Load the Washington data
 data("washington_roads")
 washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
-
-# Estimate an NB1 model with the offset option and robust standard errors
-nb1 <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
-               data = washington_roads, family = "NB1",
-               offset = "lnlength",
-               stderr = "robust")
-summary(nb1)
-
 # Estimate an NB2 model with a dispersion parameter as a function of the 
 # variable `speed50` (i.e., generalized NB2), verbose output, and use the 
 # BFGS optimization method
@@ -474,100 +466,11 @@ nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
                dis_param_formula_1 = ~ speed50, verbose = TRUE, method='BFGS')
 summary(nb2)
 
-# Estimate an NBP model
-nbp <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-               data = washington_roads, family = "NBP")
-summary(nbp)
-
 # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
 # up the estimation for examples - not recommended in practice)
 pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "PLN", ndraws=10)
 summary(pln)  
-
- 
-\dontrun{
-# Estimate a Poisson Generalized-Exponential model  (a low number of draws 
-# is used to speed up the estimation for examples - not recommended in 
-# practice). Also, with this dataset, it fails to give standard errors for 
-# some parameters
-pge <- countreg(Animal ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PGE", ndraws=10, 
-              method="NM")
-summary(pge) 
-}
-
-# Estimate a  Poisson-Inverse-Gaussian Type 1 model
-pig1 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PIG1")
-summary(pig1)             
-
-# Estimate a Poisson-Inverse-Gaussian Type 2 model
-pig2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PIG2")
-summary(pig2)   
-
-# Estimate a Poisson-Lindley model
-plind <- countreg(Rollover ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PL")
-summary(plind)   
-
-\dontrun{
-
-# Estimate a Poisson-Lindley-Gamma (Negative Binomial-Lindley) model
-plindgamma <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus, 
-                            verbose=TRUE, offset= "lnlength",
-                            data = washington_roads, 
-                            family = "PLG", ndraws=10, method="NM")
-summary(plindgamma)   
-
-# Estimate a Poisson-Lindley-Lognormal model
-plindlogn <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus,
-              verbose=TRUE, offset = "lnlength", 
-              dis_param_formula_2 = ~ 1 + AADT10kplus, 
-              data = washington_roads, family = "PLL", 
-              ndraws=10, method="NM")
-              
-summary(plindlogn)   
-
-# Estimate a Poisson-Weibull model
-pweib <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
-              offset = "lnlength", dis_param_formula_1 = ~ 1 + lnlength,
-              data = washington_roads, family = "PW", ndraws=10,
-              method="BHHH")
-summary(pweib)   
-}
-
-# Estimate a Sichel model
-sichel <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
-             offset = "lnlength",
-             data = washington_roads, family = "SI")
-summary(sichel) 
-
-
-# Estimate a Generalized-Waring model
-gwaring <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "GW")
-summary(gwaring)   
-
-\dontrun{
-# Estimate a NB1 with boostrapping
-nb1_boot <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-             data = washington_roads, family = "NB1", bootstraps = 100)
-summary(nb1_boot)
-}
-
-# Estimate a Sichel model with distribution parameters as functions of other variables
-sichel <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-             data = washington_roads, family = "SI",
-             dis_param_formula_1 = ~ lnaadt, dis_param_formula_2 = ~ lnlength)
-summary(sichel)
-
-# Estimate an NB2 with underreporting (logit)
-nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "NB2",
-              underreport_formula = ~ speed50 + AADT10kplus)
-summary(nb2_underreport)
 
 # Estimate an Poisson-Lognormal with underreporting (probit)
 plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,

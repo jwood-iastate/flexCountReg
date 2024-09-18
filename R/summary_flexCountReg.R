@@ -24,8 +24,8 @@
 summary.flexCountReg <- function(object, ...) {
   # Extract optional parameters from '...'
   args <- list(...)
-  if (is.null(args$confint_level)) confint_level <- 0.95 else confint_level <- args$confint_level
-  if (is.null(args$digits)) digits <- 3 else digits <- args$digits
+  if (is.numeric(args$confint_level)) confint_level <- args$confint_level else confint_level <- 0.95  
+  if (is.numeric(args$digits)) digits <- args$digits else digits <- 3  
 
   object <- object$model
   cat("Call:\n", deparse(object$formula), "\n")
@@ -45,13 +45,13 @@ summary.flexCountReg <- function(object, ...) {
                               coeff = object$estimate, 
                               `Std. Err.` = object$se)
     
-  } else {
-    se <- sqrt(diag(-1/(object$hessian)))
-    mod.sum <- tibble::tibble(parameter = names(object$estimate), 
-                              coeff = object$estimate, 
-                              `Std. Err.` = se)
-  }
-  
+  } # else {
+  #   se <- sqrt(diag(-1/(object$hessian)))
+  #   mod.sum <- tibble::tibble(parameter = names(object$estimate), 
+  #                             coeff = object$estimate, 
+  #                             `Std. Err.` = se)
+  # }
+  # 
   mod.sum$`t-stat` <- mod.sum$coeff / mod.sum$`Std. Err.`
   mod.sum$`p-value` <- 2 * pnorm(-1 * abs(mod.sum$`t-stat`), mean = 0, sd = 1)
   
@@ -65,7 +65,10 @@ summary.flexCountReg <- function(object, ...) {
   mod.sum$`upper CI` <- mod.sum$coeff + ci_z.upper * mod.sum$`Std. Err.`
   
   mod.sum <- mod.sum %>%
-    dplyr::mutate(across(where(is.numeric), round, digits = digits))
+    dplyr::mutate(across(where(is.numeric), \(x) round(x, digits = digits)))
+  
+  print(digits)
+  print(confint_level)
   
   if (!is.null(object$offset)){
     mod.sum <- tibble::add_row(mod.sum, parameter = paste(object$offset, "(Offset variable)"), coeff = 1, `Std. Err.` = NA_real_, `t-stat` = NA_real_, `p-value` = NA_real_, `lower CI` = NA_real_, `upper CI` = NA_real_)

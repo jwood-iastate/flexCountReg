@@ -4,6 +4,8 @@ test_that("NB-2 model runs and returns correct output", {
   model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 + AADTover10k,
                data = washington_roads, family = 'nb2', method = 'BHHH', max.iters = 3000)
   
+  summary(model, confint_level=0.8, digits=4)
+  
   expect_s3_class(model, "flexCountReg")  # Check the return class
   expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
 })
@@ -25,6 +27,8 @@ test_that("NB-p", {
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
   model2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
                     data = washington_roads, family = "NBP")
+  
+  summary(model2)
   
   expect_true(length(model2$model$estimate) > 0)  # Ensure estimates are returned
 })
@@ -178,3 +182,18 @@ test_that("Poisson-Lognormal with underreporting (probit)", {
   expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
 })
 
+test_that("Poisson-Lindley RP", {
+  data("washington_roads")
+  washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
+  model <- rppLind(Animal ~ lnlength + lnaadt,
+                   rpar_formula = ~ -1 + speed50,
+                   data = washington_roads,
+                   ndraws = 10,
+                   correlated = FALSE,
+                   rpardists = c(speed50="n"),
+                   method = "nm",
+                   print.level = 2)
+  
+  expect_s3_class(model, "flexCountReg")  # Check the return class
+  expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
+})

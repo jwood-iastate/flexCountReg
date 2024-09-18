@@ -56,7 +56,6 @@ nb2.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
                               method = "bfgs")
                
 predict(nb2.rp, list(data=washington_roads, method="Simulated"))
-}
 
 # NB2 with underreporting (logit)
 nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
@@ -68,6 +67,6 @@ predict(nb2_underreport, data=washington_roads)
 plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "NB2",
               underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
-predict(plogn_underreport, data=washington_roads)
+predict(plogn_underreport, data=washington_roads) }
 
 }

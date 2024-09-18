@@ -59,7 +59,7 @@ data("washington_roads")
 plind.rp <- rppLind(Animal ~ lnlength + lnaadt,
                              rpar_formula = ~ -1 + speed50,
                              data = washington_roads,
-                             ndraws = 100,
+                             ndraws = 10,
                              correlated = FALSE,
                              rpardists = c(speed50="n"),
                              method = "nm",

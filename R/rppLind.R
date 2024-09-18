@@ -33,7 +33,7 @@
 #' plind.rp <- rppLind(Animal ~ lnlength + lnaadt,
 #'                              rpar_formula = ~ -1 + speed50,
 #'                              data = washington_roads,
-#'                              ndraws = 100,
+#'                              ndraws = 10,
 #'                              correlated = FALSE,
 #'                              rpardists = c(speed50="n"),
 #'                              method = "nm",
@@ -63,17 +63,6 @@ rppLind <- function(formula, rpar_formula, data,
     num_params <- length(rpar)
     halton_seq <- randtoolbox::halton(ndraws, num_params, mixed = scrambled)
     return(halton_seq)
-  }
-
-  # function to compute probabilities
-  nb_prob <- function(y, mu, alpha, p) {
-    if (form=='nb2'){
-      return(stats::dnbinom(y, size = alpha, mu = mu))
-    } else if (form=='nb1'){
-      return(stats::dnbinom(y, size = mu/alpha, mu = mu))
-    } else{
-      return(stats::dnbinom(y, size = (mu^(2-p))/alpha, mu = mu))
-    }
   }
 
   # Generating model matrices

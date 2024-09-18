@@ -35,6 +35,7 @@
 #'               data = washington_roads, family = "PLN", ndraws=10)
 #' predict(pln, data=washington_roads)
 #' 
+#' \dontrun{
 #' # Random Parameter NB2
 #' nb2.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
 #'                               rpar_formula = ~ speed50,
@@ -57,7 +58,7 @@
 #' plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 #'               data = washington_roads, family = "NB2",
 #'               underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
-#' predict(plogn_underreport, data=washington_roads)
+#' predict(plogn_underreport, data=washington_roads) }
 #' 
 #' @export
 predict.flexCountReg <- function(object, ...){

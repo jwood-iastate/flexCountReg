@@ -483,8 +483,10 @@ summary(nbp)
 # up the estimation for examples - not recommended in practice)
 pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "PLN", ndraws=10)
-summary(pln)   
+summary(pln)  
 
+ 
+\dontrun{
 # Estimate a Poisson Generalized-Exponential model  (a low number of draws 
 # is used to speed up the estimation for examples - not recommended in 
 # practice). Also, with this dataset, it fails to give standard errors for 
@@ -493,6 +495,7 @@ pge <- countreg(Animal ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "PGE", ndraws=10, 
               method="NM")
 summary(pge) 
+}
 
 # Estimate a  Poisson-Inverse-Gaussian Type 1 model
 pig1 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
@@ -508,6 +511,8 @@ summary(pig2)
 plind <- countreg(Rollover ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "PL")
 summary(plind)   
+
+\dontrun{
 
 # Estimate a Poisson-Lindley-Gamma (Negative Binomial-Lindley) model
 plindgamma <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus, 
@@ -531,6 +536,7 @@ pweib <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
               data = washington_roads, family = "PW", ndraws=10,
               method="BHHH")
 summary(pweib)   
+}
 
 # Estimate a Sichel model
 sichel <- countreg(Total_crashes ~ lnaadt + speed50 + AADT10kplus,
@@ -544,10 +550,12 @@ gwaring <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "GW")
 summary(gwaring)   
 
+\dontrun{
 # Estimate a NB1 with boostrapping
 nb1_boot <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
              data = washington_roads, family = "NB1", bootstraps = 100)
 summary(nb1_boot)
+}
 
 # Estimate a Sichel model with distribution parameters as functions of other variables
 sichel <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,

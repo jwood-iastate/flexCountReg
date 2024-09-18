@@ -44,6 +44,7 @@ pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "PLN", ndraws=10)
 predict(pln, data=washington_roads)
 
+\dontrun{
 # Random Parameter NB2
 nb2.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
                               rpar_formula = ~ speed50,
@@ -55,6 +56,7 @@ nb2.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
                               method = "bfgs")
                
 predict(nb2.rp, list(data=washington_roads, method="Simulated"))
+}
 
 # NB2 with underreporting (logit)
 nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,

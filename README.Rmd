@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 # flexCountReg
 
 <!-- badges: start -->
-[![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/branch/main/graph/badge.svg)](https://codecov.io/gh/jwood-iastate/flexCountReg)
+[![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/branch/main/graph/badge.svg?token=BX2FJQNPK2)](https://codecov.io/gh/jwood-iastate/flexCountReg)
 <!-- badges: end -->
 
 The goal of flexCountReg is to provide functions that allow the analyst to estimate count regression models that can handle multiple analysis issues including excess zeros, overdispersion as a function of variables (i.e., generalized count models), random parameters, etc.

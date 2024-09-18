@@ -7,7 +7,7 @@
 
 <!-- badges: start -->
 
-[![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/branch/main/graph/badge.svg)](https://codecov.io/gh/jwood-iastate/flexCountReg)
+[![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/branch/main/graph/badge.svg?token=BX2FJQNPK2)](https://codecov.io/gh/jwood-iastate/flexCountReg)
 <!-- badges: end -->
 
 The goal of flexCountReg is to provide functions that allow the analyst

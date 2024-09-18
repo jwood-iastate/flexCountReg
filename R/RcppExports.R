@@ -37,19 +37,3 @@ reg_run_RE <- function(beta, y, X, group, weights) {
     .Call('_flexCountReg_reg_run_RE', PACKAGE = 'flexCountReg', beta, y, X, group, weights)
 }
 
-dtri_cpp <- function(x, mode = 0, sigma = 1, upper = NA_real_, lower = NA_real_, log = FALSE) {
-    .Call('_flexCountReg_dtri_cpp', PACKAGE = 'flexCountReg', x, mode, sigma, upper, lower, log)
-}
-
-ptri_cpp <- function(q, mode = 0, sigma = 1, upper = NA_real_, lower = NA_real_, lower_tail = TRUE, log_p = FALSE) {
-    .Call('_flexCountReg_ptri_cpp', PACKAGE = 'flexCountReg', q, mode, sigma, upper, lower, lower_tail, log_p)
-}
-
-qtri_cpp <- function(p, mode = 0, sigma = 1, upper = NA_real_, lower = NA_real_) {
-    .Call('_flexCountReg_qtri_cpp', PACKAGE = 'flexCountReg', p, mode, sigma, upper, lower)
-}
-
-rtri_cpp <- function(n, mode = 0, sigma = 1, upper = NA_real_, lower = NA_real_) {
-    .Call('_flexCountReg_rtri_cpp', PACKAGE = 'flexCountReg', n, mode, sigma, upper, lower)
-}
-

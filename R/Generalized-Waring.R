@@ -53,19 +53,8 @@
 #' @rdname Generalized-Waring
 #' @export
 dgwar <- Vectorize(function(y, mu, k, rho, log = FALSE) {
-  if (any(y < 0) || !all(y == floor(y))) {
-    stop("All y values must be non-negative integers.")
-  }
-  if(mu <= 0 || k <= 0 || rho <= 0 || rho == 1 || rho == 2){
-    p=0
-  }
-  
-  a <- mu*k/(rho-1)
-  
-  if(a <= 0){
-    p=0
-  }
-  pmf <- gamma(a+y)*gamma(k+y)*gamma(rho+k)*gamma(a+rho)/(gamma(a)*gamma(k)*gamma(rho)*gamma(a+k+rho+y))
+
+  pmf <- genWaring_cpp(y, mu, k, rho)
   
   if (log) pmf <- log(pmf)
   return(pmf)

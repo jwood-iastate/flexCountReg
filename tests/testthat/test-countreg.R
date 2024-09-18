@@ -28,7 +28,8 @@ test_that("NB-p with sample weights", {
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
   washington_roads$wgt <- runif(nrow(washington_roads))
   model2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-                    data = washington_roads, family = "NBP", weights = "wgt")
+                    data = washington_roads, family = "NBP", 
+                    weights = "wgt", max.iters=3000)
   
   summary(model2)
   

@@ -186,6 +186,7 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
   
   mu <- exp(X %*% beta_pred)
   fit$predictions <- mu
+  fit$se <- sqrt(diag(-1/(fit$hessian)))
   fit$formula <- formula
   fit$observed <- y
   fit$residuals <- y - fit$predictions

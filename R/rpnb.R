@@ -414,6 +414,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   fit$numdraws <- ndraws
   fit$correlated <- correlated
   fit$bootstraps <- NULL
+  fit$se <- sqrt(diag(-1/(fit$hessian)))
   fit$form = form
   if (!correlated){
     fit$rpardists = rpardists

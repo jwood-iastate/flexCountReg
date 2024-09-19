@@ -424,6 +424,7 @@ rppLind <- function(formula, rpar_formula, data,
   fit$numdraws <- ndraws
   fit$correlated <- correlated
   fit$bootstraps <- NULL
+  fit$se <- sqrt(diag(-1/(fit$hessian)))
   if (!correlated){
     fit$rpardists = rpardists
     names(fit$sd) <- colnames(X_rand)

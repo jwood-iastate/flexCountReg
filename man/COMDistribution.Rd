@@ -38,7 +38,7 @@ rcom(n, mu = NULL, lambda = 1, nu = 1)
 \item{n}{the number of random numbers to generate.}
 }
 \description{
-These functions provide the density function, distribution function, quantile function, and random number generation for the Sichel (SI) Distribution
+These functions provide the density function, distribution function, quantile function, and random number generation for the Conway-Maxwell-Poisson (COM) Distribution
 }
 \details{
 \code{dcom} computes the density (PDF) of the COM Distribution.
@@ -49,9 +49,9 @@ These functions provide the density function, distribution function, quantile fu
 
 \code{rcom} generates random numbers from the COM Distribution.
 
-The compound Probability Mass Function (PMF) for the Conway-Maxwell-Poisson distribution uses:
-\deqn{f(x|\lambda, \nu)=\frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
-#' 
+The Probability Mass Function (PMF) for the Conway-Maxwell-Poisson distribution is:
+\deqn{f(x|\lambda, \nu) = \frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
+
 Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with \eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing constant.
 
 The normalizing constant is given by:
@@ -64,9 +64,9 @@ The mean and variance of the distribution are given by:
 When the mean value is given, the rate parameter (\eqn{\lambda}) is computed using the mean and the decay parameter (\eqn{\nu}). This is useful to allow the calculation of the rate parameter when the mean is known (e.g., in regression))
 }
 \examples{
-dcom(1, mu=0.75, sigma=1, gamma=-3)
-pcom(c(0,1,2,3,5,7,9,10), mu=0.75, sigma=2, gamma=3)
-qcom(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, sigma=1, gamma=15)
-rcom(30, mu=0.75, sigma=0.5, gamma=1)
+dcom(1, mu=0.75, nu=3)
+pcom(c(0,1,2,3,5,7,9,10), lambda=0.75, nu)
+qcom(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, nu=0.75)
+rcom(30, mu=0.75, nu=0.5)
 
 }

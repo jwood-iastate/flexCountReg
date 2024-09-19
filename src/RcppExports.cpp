@@ -10,42 +10,114 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// cmp_normalizer_cpp
-double cmp_normalizer_cpp(double lambda, double nu, int maxval);
-RcppExport SEXP _flexCountReg_cmp_normalizer_cpp(SEXP lambdaSEXP, SEXP nuSEXP, SEXP maxvalSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
-    Rcpp::traits::input_parameter< int >::type maxval(maxvalSEXP);
-    rcpp_result_gen = Rcpp::wrap(cmp_normalizer_cpp(lambda, nu, maxval));
-    return rcpp_result_gen;
-END_RCPP
-}
 // com_expect_cpp
-double com_expect_cpp(double lambda, double nu, int maxval);
-RcppExport SEXP _flexCountReg_com_expect_cpp(SEXP lambdaSEXP, SEXP nuSEXP, SEXP maxvalSEXP) {
+double com_expect_cpp(double lambda, double nu, double rel_tol, int max_iter);
+RcppExport SEXP _flexCountReg_com_expect_cpp(SEXP lambdaSEXP, SEXP nuSEXP, SEXP rel_tolSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
-    Rcpp::traits::input_parameter< int >::type maxval(maxvalSEXP);
-    rcpp_result_gen = Rcpp::wrap(com_expect_cpp(lambda, nu, maxval));
+    Rcpp::traits::input_parameter< double >::type rel_tol(rel_tolSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(com_expect_cpp(lambda, nu, rel_tol, max_iter));
     return rcpp_result_gen;
 END_RCPP
 }
-// com_var_cpp
-double com_var_cpp(double lambda, double nu, int maxval);
-RcppExport SEXP _flexCountReg_com_var_cpp(SEXP lambdaSEXP, SEXP nuSEXP, SEXP maxvalSEXP) {
+// find_lambda_cpp
+double find_lambda_cpp(double mu, double nu, double tol, int max_iter);
+RcppExport SEXP _flexCountReg_find_lambda_cpp(SEXP muSEXP, SEXP nuSEXP, SEXP tolSEXP, SEXP max_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(find_lambda_cpp(mu, nu, tol, max_iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// find_lambda_vec_cpp
+NumericVector find_lambda_vec_cpp(NumericVector mu, NumericVector nu, double tol, int max_iter);
+RcppExport SEXP _flexCountReg_find_lambda_vec_cpp(SEXP muSEXP, SEXP nuSEXP, SEXP tolSEXP, SEXP max_iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< double >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(find_lambda_vec_cpp(mu, nu, tol, max_iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cmp_normalizer_vec_cpp
+NumericVector cmp_normalizer_vec_cpp(NumericVector lambda_vec, NumericVector nu_vec, double rel_tol, int max_iter);
+RcppExport SEXP _flexCountReg_cmp_normalizer_vec_cpp(SEXP lambda_vecSEXP, SEXP nu_vecSEXP, SEXP rel_tolSEXP, SEXP max_iterSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type lambda_vec(lambda_vecSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type nu_vec(nu_vecSEXP);
+    Rcpp::traits::input_parameter< double >::type rel_tol(rel_tolSEXP);
+    Rcpp::traits::input_parameter< int >::type max_iter(max_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(cmp_normalizer_vec_cpp(lambda_vec, nu_vec, rel_tol, max_iter));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dcom_vec_cpp
+NumericVector dcom_vec_cpp(IntegerVector x_vec, NumericVector lambda_values, NumericVector nu_vec, bool log_prob);
+RcppExport SEXP _flexCountReg_dcom_vec_cpp(SEXP x_vecSEXP, SEXP lambda_valuesSEXP, SEXP nu_vecSEXP, SEXP log_probSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type x_vec(x_vecSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type lambda_values(lambda_valuesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type nu_vec(nu_vecSEXP);
+    Rcpp::traits::input_parameter< bool >::type log_prob(log_probSEXP);
+    rcpp_result_gen = Rcpp::wrap(dcom_vec_cpp(x_vec, lambda_values, nu_vec, log_prob));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pcom_vec_cpp
+NumericVector pcom_vec_cpp(IntegerVector q_vec, NumericVector lambda_values, NumericVector nu_vec, bool lower_tail, bool log_p);
+RcppExport SEXP _flexCountReg_pcom_vec_cpp(SEXP q_vecSEXP, SEXP lambda_valuesSEXP, SEXP nu_vecSEXP, SEXP lower_tailSEXP, SEXP log_pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type q_vec(q_vecSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type lambda_values(lambda_valuesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type nu_vec(nu_vecSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower_tail(lower_tailSEXP);
+    Rcpp::traits::input_parameter< bool >::type log_p(log_pSEXP);
+    rcpp_result_gen = Rcpp::wrap(pcom_vec_cpp(q_vec, lambda_values, nu_vec, lower_tail, log_p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// qcom_vec_cpp
+NumericVector qcom_vec_cpp(NumericVector p_vec, NumericVector lambda_values, NumericVector nu_vec);
+RcppExport SEXP _flexCountReg_qcom_vec_cpp(SEXP p_vecSEXP, SEXP lambda_valuesSEXP, SEXP nu_vecSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type p_vec(p_vecSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type lambda_values(lambda_valuesSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type nu_vec(nu_vecSEXP);
+    rcpp_result_gen = Rcpp::wrap(qcom_vec_cpp(p_vec, lambda_values, nu_vec));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcom_cpp
+NumericVector rcom_cpp(int n, double lambda, double nu);
+RcppExport SEXP _flexCountReg_rcom_cpp(SEXP nSEXP, SEXP lambdaSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
-    Rcpp::traits::input_parameter< int >::type maxval(maxvalSEXP);
-    rcpp_result_gen = Rcpp::wrap(com_var_cpp(lambda, nu, maxval));
+    rcpp_result_gen = Rcpp::wrap(rcom_cpp(n, lambda, nu));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -177,9 +249,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_flexCountReg_cmp_normalizer_cpp", (DL_FUNC) &_flexCountReg_cmp_normalizer_cpp, 3},
-    {"_flexCountReg_com_expect_cpp", (DL_FUNC) &_flexCountReg_com_expect_cpp, 3},
-    {"_flexCountReg_com_var_cpp", (DL_FUNC) &_flexCountReg_com_var_cpp, 3},
+    {"_flexCountReg_com_expect_cpp", (DL_FUNC) &_flexCountReg_com_expect_cpp, 4},
+    {"_flexCountReg_find_lambda_cpp", (DL_FUNC) &_flexCountReg_find_lambda_cpp, 4},
+    {"_flexCountReg_find_lambda_vec_cpp", (DL_FUNC) &_flexCountReg_find_lambda_vec_cpp, 4},
+    {"_flexCountReg_cmp_normalizer_vec_cpp", (DL_FUNC) &_flexCountReg_cmp_normalizer_vec_cpp, 4},
+    {"_flexCountReg_dcom_vec_cpp", (DL_FUNC) &_flexCountReg_dcom_vec_cpp, 4},
+    {"_flexCountReg_pcom_vec_cpp", (DL_FUNC) &_flexCountReg_pcom_vec_cpp, 5},
+    {"_flexCountReg_qcom_vec_cpp", (DL_FUNC) &_flexCountReg_qcom_vec_cpp, 3},
+    {"_flexCountReg_rcom_cpp", (DL_FUNC) &_flexCountReg_rcom_cpp, 3},
     {"_flexCountReg_dplind_cpp", (DL_FUNC) &_flexCountReg_dplind_cpp, 3},
     {"_flexCountReg_dplindlogn_cpp", (DL_FUNC) &_flexCountReg_dplindlogn_cpp, 5},
     {"_flexCountReg_dpLnorm_cpp", (DL_FUNC) &_flexCountReg_dpLnorm_cpp, 4},

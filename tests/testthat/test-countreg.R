@@ -188,8 +188,12 @@ test_that("Poisson-Lognormal with underreporting (probit)", {
 test_that("Conway-Maxwell-Poisson Model)", {
   data("washington_roads")
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
-  model <- countreg(countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-                             data = washington_roads, family = "COM"))
+  model <- suppressWarnings(model <- countreg(Total_crashes ~ lnaadt +  speed50
+                                              + AADT10kplus,
+                                              data = washington_roads, 
+                                              family = "COM", 
+                                              offset = "lnlength",
+                                              method='BHHH'))
   
   expect_s3_class(model, "flexCountReg")  # Check the return class
   expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned

@@ -10,6 +10,45 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// cmp_normalizer_cpp
+double cmp_normalizer_cpp(double lambda, double nu, int maxval);
+RcppExport SEXP _flexCountReg_cmp_normalizer_cpp(SEXP lambdaSEXP, SEXP nuSEXP, SEXP maxvalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< int >::type maxval(maxvalSEXP);
+    rcpp_result_gen = Rcpp::wrap(cmp_normalizer_cpp(lambda, nu, maxval));
+    return rcpp_result_gen;
+END_RCPP
+}
+// com_expect_cpp
+double com_expect_cpp(double lambda, double nu, int maxval);
+RcppExport SEXP _flexCountReg_com_expect_cpp(SEXP lambdaSEXP, SEXP nuSEXP, SEXP maxvalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< int >::type maxval(maxvalSEXP);
+    rcpp_result_gen = Rcpp::wrap(com_expect_cpp(lambda, nu, maxval));
+    return rcpp_result_gen;
+END_RCPP
+}
+// com_var_cpp
+double com_var_cpp(double lambda, double nu, int maxval);
+RcppExport SEXP _flexCountReg_com_var_cpp(SEXP lambdaSEXP, SEXP nuSEXP, SEXP maxvalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< int >::type maxval(maxvalSEXP);
+    rcpp_result_gen = Rcpp::wrap(com_var_cpp(lambda, nu, maxval));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dplind_cpp
 double dplind_cpp(int x, double mean, double theta);
 RcppExport SEXP _flexCountReg_dplind_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP) {
@@ -138,6 +177,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_flexCountReg_cmp_normalizer_cpp", (DL_FUNC) &_flexCountReg_cmp_normalizer_cpp, 3},
+    {"_flexCountReg_com_expect_cpp", (DL_FUNC) &_flexCountReg_com_expect_cpp, 3},
+    {"_flexCountReg_com_var_cpp", (DL_FUNC) &_flexCountReg_com_var_cpp, 3},
     {"_flexCountReg_dplind_cpp", (DL_FUNC) &_flexCountReg_dplind_cpp, 3},
     {"_flexCountReg_dplindlogn_cpp", (DL_FUNC) &_flexCountReg_dplindlogn_cpp, 5},
     {"_flexCountReg_dpLnorm_cpp", (DL_FUNC) &_flexCountReg_dpLnorm_cpp, 4},

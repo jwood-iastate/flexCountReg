@@ -122,6 +122,13 @@ The following functions are included in the `flexCountReg` package, grouped by c
   - `psichel` for the cumulative density function
   - `qsichel` for the quantile function
   - `rsichel` for random number generation
+  
+- Conway-Maxwell-Poisson Distribution
+
+  - `dcom` for the density function
+  - `pcom` for the cumulative density function
+  - `qcom` for the quantile function
+  - `rcom` for random number generation
 
 **Model Estimation Functions**
 
@@ -166,6 +173,7 @@ As noted in the list of functions, the probability distributions below are inclu
 - Poisson-Lognormal Distribution
 - Poisson-Weibull Distribution
 - Sichel Distribution
+- Conway-Maxwell-Poisson (COM) Distribution
 
 ## Example
 

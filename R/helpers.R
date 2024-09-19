@@ -50,7 +50,8 @@ get_params <- function(family) {
     "PLL" = list("ln(theta)", "ln(sigma)"),
     "PW" = list("ln(alpha)", "ln(sigma)"),
     "SI" = list("gamma", "ln(sigma)"),
-    "GW" = list("ln(k)", "ln(rho)")
+    "GW" = list("ln(k)", "ln(rho)"),
+    "COM" = list("ln(nu)", NULL),
   )
 }
 
@@ -78,5 +79,7 @@ get_probFunc <- function(family){
   "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dplindLnorm(x=y, mean=predicted, theta=alpha, sigma=sigma, hdraws=normed_haltons),
   "PW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpWeib_cpp(y, mean=predicted, alpha=alpha, sigma=sigma, h=haltons),
   "SI" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dsichel(x=y, mu= predicted, sigma=sigma, gamma=log(alpha)),
-  "GW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dgwar(y, mu= predicted, k=alpha, rho=sigma)
-) }
+  "GW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dgwar(y, mu= predicted, k=alpha, rho=sigma),
+  "COM" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dcom(x=y, mu=predicted, nu=alpha)
+  )
+}

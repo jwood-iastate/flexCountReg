@@ -111,6 +111,7 @@ Estimation (MSLE). The function can estimate the following models:
  \item Poisson-Weibull (PW)
  \item Sichel (SI)
  \item Generalized Waring (GW)
+ \item Conway-Maxwell-Poisson (COM)
 }
 }
 \details{
@@ -131,6 +132,7 @@ For the `family` argument, the following options are available:
  \item "PW" for Poisson-Weibull distribution with a log link.
  \item "SI" for Sichel distribution with a log link.
  \item "GW" for Generalized Waring distribution with a log link.
+ \item "COM" for Conway-Maxwell-Poisson (COM) distribution with a log link.
  }
  
  The `dis_param_formula_1` and `dis_param_formula_2` parameters are used to 
@@ -163,6 +165,7 @@ For the `family` argument, the following options are available:
  \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
  \item \eqn{\gamma} for the Sichel model.
  \item \eqn{k} for the Generalized Waring model.
+ \item \eqn{ln(\nu)} for the Conway-Maxwell-Poisson model.
  }
  
  For `dis_param_formula_2`, the models are for the parameters:
@@ -179,6 +182,7 @@ For the `family` argument, the following options are available:
  \item \eqn{ln(\sigma)} for the Poisson-Weibull model.
  \item \eqn{ln(\sigma)} for the Sichel model.
  \item \eqn{ln(\rho)} for the Generalized Waring model.
+ \item Not Applicable for the Conway-Maxwell-Poisson model.
  }
  
  The `ndraws` parameter is used to estimate the distribution when there is 
@@ -441,6 +445,21 @@ The PMF becomes:
 
 Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
 
+**Conway-Maxwell-Poisson (COM) Model**
+The following is the the PMF for the COM model.
+\deqn{f(x|\lambda, \nu)=\frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
+
+Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with \eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing constant.
+
+The normalizing constant is given by:
+\deqn{Z(\lambda,\nu)=\sum_{n=0}^{\infty}\frac{\lambda^n}{(n!)^\nu}}
+
+The mean and variance are:
+\deqn{\mu=e^{X\beta}=\lambda \frac{\delta}{\delta \lambda} \log(Z(\lambda,\nu))}
+\deqn{\sigma^2=\lambda \frac{\delta}{\delta \lambda} \mu}
+
+Note that the COM distribution parameter \eqn{\lambda} is solved for using \eqn{\mu} and \eqn{\nu}, so the regression model provides direct predictions for the mean.
+
 **Underreporting**
 Models for underreporting combine a binary probability model (logit or 
 probit) with a count model. This is accomplished using a model for the 
@@ -477,6 +496,11 @@ plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT
               data = washington_roads, family = "NB2",
               underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
 summary(plogn_underreport)
+
+# Estimate a Conwa-Maxwell-Poisson model
+com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+              data = washington_roads, family = "COM")
+summary(com_model)
 
 }
 \references{

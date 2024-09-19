@@ -116,6 +116,13 @@ grouped by continuous and count distributions.
   - `qsichel` for the quantile function
   - `rsichel` for random number generation
 
+- Conway-Maxwell-Poisson Distribution
+
+  - `dcom` for the density function
+  - `pcom` for the cumulative density function
+  - `qcom` for the quantile function
+  - `rcom` for random number generation
+
 **Model Estimation Functions**
 
 - `countreg` is a general function for estimating the non-panel,
@@ -173,6 +180,7 @@ are provided in the documentation (help files).
 - Poisson-Lognormal Distribution
 - Poisson-Weibull Distribution
 - Sichel Distribution
+- Conway-Maxwell-Poisson (COM) Distribution
 
 ## Example
 

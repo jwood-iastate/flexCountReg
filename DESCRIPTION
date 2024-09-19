@@ -59,6 +59,7 @@ Collate:
     'invgamma.R'
     'metrics.R'
     'mgf_lognormal.R'
+    'pcom.R'
     'poisLind.re.R'
     'poisWeib.R'
     'predict_flexCountReg.R'

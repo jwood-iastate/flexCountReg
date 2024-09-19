@@ -65,7 +65,7 @@ When the mean value is given, the rate parameter (\eqn{\lambda}) is computed usi
 }
 \examples{
 dcom(1, mu=0.75, nu=3)
-pcom(c(0,1,2,3,5,7,9,10), lambda=0.75, nu)
+pcom(c(0,1,2,3,5,7,9,10), lambda=0.75, nu=0.75)
 qcom(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, nu=0.75)
 rcom(30, mu=0.75, nu=0.5)
 

@@ -38,6 +38,7 @@ mod.boot <- function(data){
 get_params <- function(family) {
   switch(
     family,
+    "Poisson" = list(NULL, NULL),
     "NB1" = list("ln(alpha)", NULL),
     "NB2" = list("ln(alpha)", NULL),
     "NBP" = list("ln(alpha)", "ln(p)"),
@@ -58,6 +59,9 @@ get_params <- function(family) {
 get_probFunc <- function(family){
   switch( # get the probability function for the specified distribution
   family,
+  "Poisson" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
+    return(stats::dpois(y, predicted))
+  }
   "NB1" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
     mu <- predicted
     return(stats::dnbinom(y, size = mu/alpha, mu = mu))

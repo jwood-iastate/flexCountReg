@@ -34,7 +34,7 @@ test_that("Triangular PDF (error 3)", {
 test_that("Triangular CDF", {
   
   pdf_vals <- ptri(c(0, 1, 3, 9, 10), mode = 3, upper=9, lower = 1)
-  pdf_expected <- c(0.00, 0.00, 0.25, 1.00, 0.00)
+  pdf_expected <- c(0.00, 0.00, 0.25, 1.00, 1.00)
   out <- all(pdf_expected == pdf_vals)
   
   expect_true(out)

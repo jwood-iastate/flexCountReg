@@ -43,168 +43,31 @@
 #' qtri(c(0.1, 0.3, 0.5, 0.9, 0.95), mode = 3, upper = 9, lower = 1)
 #' rtri(30, mode = 5, sigma = 3)
 #'
-#' @import stats
+#' @importFrom Rcpp sourceCpp
+#' @useDynLib flexCountReg
 #' @export
 #' @name Triangular
-
+#' 
 #' @rdname Triangular
 #' @export
-dtri <- Vectorize(function(
-    x, mode = 0, sigma = 1, upper = NULL, lower = NULL, log = FALSE){
-
-  c <- mode
-
-  if (!is.null(upper) & !is.null(lower)) {
-    if (lower >= upper){
-      msg <-'The value of `lower` must be smaller than the value of `upper`' 
-      stop(msg)
-    }
-    else if (lower > c){
-      msg <- paste0('The value of `mode` must be greater than or ', 
-                    'equal to the value of `lower`')
-        
-      stop(msg)
-    }
-    else if (c > upper){
-      msg <- paste0('The value of `mode` must be smaller than or ',
-                    'equal to the value of `upper`') 
-      stop(msg)
-    }
-    a <- lower
-    b <- upper
-  }
-  else{
-    a <- c - sigma
-    b <- c + sigma
-  }
-  
-  # Compute probabilities
-  if (x <= a | x >= b) {
-    p <- 0
-  } else if (x < c) {
-    p <- 2 * (x - a) / ((b - a) * (c - a))
-  }
-  else if (x == c){
-    p <- 2 / (b - a)
-  }
-  else {
-    p <- 2 * (b - x) / ((b - a) * (b - c))
-  } 
-  
-  if (log) return(log(p))
-  else return(p)
-})
-
-
-#' @rdname Triangular
-#' @export
-ptri <- Vectorize(function(q, mode = 0, sigma = 1, upper = NULL, lower=NULL, 
-                          lower.tail = TRUE, log.p = FALSE){
-  c <- mode
-  if((is.null(upper)) || (is.null(lower))){
-    a <- c - sigma
-    b <- c + sigma
-  }else{
-    if (lower >= upper){
-      msg <- 'The value of `lower` must be smaller than the value of `upper`' 
-      stop(msg)
-    }
-    else if (lower > c){
-      msg <- paste0('The value of `mode` must be greater than or ', 
-                    'equal to the value of `lower`')
-      stop(msg)
-    }
-    else if (c > upper){
-      msg <- paste0('The value of `mode` must be smaller than or ', 
-                    'equal to the value of `upper`')
-      stop(msg)
-    }
-    a <- lower
-    b <- upper
-  }
-  
-  # Compute cumulative probabilities
-  if((q < a) || (q > b)){
-    p <- 0
-  }
-  else if (q > b){
-    p <- 1
-  }
-  else if (q <= c){
-    p <- (q - a)^2 / ((b - a) * (c - a))
-  }
-  else{
-    p <- 1 - (b - q)^2 / ((b - a) * (b - c))
-  }
-  if(!lower.tail) p <- 1 - p
-  
-  if (log.p) return(log(p))
-  else return(p)
+dtri <- Vectorize(function(x, mode = 0, sigma = 1, upper = NA, lower = NA, log = FALSE) {
+  dtri_cpp(x, mode, sigma, upper, lower, log)
 })
 
 #' @rdname Triangular
 #' @export
-qtri <- Vectorize(function(p, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
-  c <- mode
-  if (!is.null(upper) & !is.null(lower)){
-    if (lower >= upper){
-      msg <- 'The value of `lower` must be smaller than the value of `upper`'
-      stop(msg)
-    }
-    else if (lower > c){
-      msg <- paste0('The value of `mode` must be greater than or ',
-                    'equal to the value of `lower`')
-      stop(msg)
-    }
-    else if (c > upper){
-      msg <- paste0('The value of `mode` must be smaller than or ',
-                    'equal to the value of `upper`')
-      stop(msg)
-    }
-
-    a <- lower
-    b <- upper
-    p_mode <- ptri(q = mode, mode = mode, upper = b, lower = a)
-  } else {
-    a <- c - sigma
-    b <- c + sigma
-    p_mode <- ptri(q = mode, mode = mode, sigma=sigma)
-  }
-  
-  if (p <= p_mode) {
-    q <- a + sqrt(p * (b - a) * (c - a))
-  } else {
-    q <- b - sqrt((1 - p) * (b - a) * (b - c))
-  }
-  return(q)
+ptri <- Vectorize(function(q, mode = 0, sigma = 1, upper = NA, lower = NA, lower.tail = TRUE, log.p = FALSE) {
+  ptri_cpp(q, mode, sigma, upper, lower, lower.tail, log.p)
 })
 
 #' @rdname Triangular
 #' @export
-rtri <- function(n, mode = 0, sigma = 1, upper = NULL, lower = NULL) {
-  
-  c <- mode
-  if (!is.null(upper) & !is.null(lower)){
-    
-    if (lower >= upper){
-      msg <- 'The value of `lower` must be smaller than the value of `upper`'
-      stop(msg)
-    } else if (lower > c){
-      msg <- paste0('The value of `mode` must be greater than or ',
-                    'equal to the value of `lower`')
-      stop(msg)
-    } else if (c > upper){
-      msg <- paste0('The value of `mode` must be smaller than or ',
-                    'equal to the value of `upper`')
-      stop(msg)
-    }
-  }
-    
-  
-  if(is.null(upper) | is.null(lower)){
-    return(qtri(stats::runif(n), mode, sigma))
-  }
-  else(
-    return(qtri(stats::runif(n), mode, sigma, upper, lower))
-  )
+qtri <- Vectorize(function(p, mode = 0, sigma = 1, upper = NA, lower = NA) {
+  qtri_cpp(p, mode, sigma, upper, lower)
+})
+
+#' @rdname Triangular
+#' @export
+rtri <- function(n, mode = 0, sigma = 1, upper = NA, lower = NA) {
+  rtri_cpp(n, mode, sigma, upper, lower)
 }

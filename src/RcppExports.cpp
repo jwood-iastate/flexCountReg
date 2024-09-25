@@ -204,6 +204,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// p_poisweibull_cpp
+NumericVector p_poisweibull_cpp(NumericVector beta, NumericVector x, NumericMatrix X_Fixed, NumericMatrix X_alpha, NumericMatrix X_sigma, NumericVector h);
+RcppExport SEXP _flexCountReg_p_poisweibull_cpp(SEXP betaSEXP, SEXP xSEXP, SEXP X_FixedSEXP, SEXP X_alphaSEXP, SEXP X_sigmaSEXP, SEXP hSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X_Fixed(X_FixedSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X_alpha(X_alphaSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type X_sigma(X_sigmaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type h(hSEXP);
+    rcpp_result_gen = Rcpp::wrap(p_poisweibull_cpp(beta, x, X_Fixed, X_alpha, X_sigma, h));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dplindgamma_cpp
 NumericVector dplindgamma_cpp(NumericVector x, NumericVector mean, NumericVector theta, NumericVector alpha, NumericVector h);
 RcppExport SEXP _flexCountReg_dplindgamma_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP alphaSEXP, SEXP hSEXP) {
@@ -263,6 +279,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_flexCountReg_dpWeib_cpp", (DL_FUNC) &_flexCountReg_dpWeib_cpp, 5},
     {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 4},
     {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
+    {"_flexCountReg_p_poisweibull_cpp", (DL_FUNC) &_flexCountReg_p_poisweibull_cpp, 6},
     {"_flexCountReg_dplindgamma_cpp", (DL_FUNC) &_flexCountReg_dplindgamma_cpp, 5},
     {"_flexCountReg_pollind_i_group", (DL_FUNC) &_flexCountReg_pollind_i_group, 3},
     {"_flexCountReg_reg_run_RE", (DL_FUNC) &_flexCountReg_reg_run_RE, 5},

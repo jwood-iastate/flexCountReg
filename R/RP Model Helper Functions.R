@@ -1,10 +1,35 @@
+# function(formula,
+#          data,
+#          family="NB2",
+#          rpar_formula=NULL, 
+#          panel_rpar_formula=NULL, 
+#          underrport_formula=NULL, 
+#          parmam1_formula=NULL, 
+#          param2_formula=NULL, 
+#          underreport_rpar_formula=NULL, 
+#          het_means_formula=NULL, 
+#          het_variance_formula=NULL, 
+#          panel_ids=NULL){
+#   
+#   
+#   
+# }
+# 
+# 
+# 
+# 
 get_halton_draws <-function(ndraws=500, dim=1, scrambled=FALSE){
 
-  draws <- halton(ndraws, dims, mixed=scrambled)
+  draws <- randtoolbox::halton(ndraws, dim, mixed=scrambled)
   
-  rpardraws <- draws[,1:dim]
-  
-  distdraws <- draws[,draws] # draws used for count distributions that require numerical integration
+  if (dim>1){
+    rpardraws <- draws[,1:dim]
+    distdraws <- draws[,draws] # draws used for count distributions that require numerical integration
+  }
+  else{
+    rpardraws <- draws
+    distdraws <- NULL
+  }
   
   return(c(rpardraws, distdraws))
 }
@@ -104,7 +129,8 @@ get_start_vals <- function(formula,
   
   X_matrix_counts <- get_Nparams(prepped_data, family)
   family_params <- get_params(family)
-  
+  N_family_params <- length(Filter(Negate(is.null),  family_params)) # No. of params for the distribution
+    
   X_fixed <- prepped_data$X_fixed
   X_rand_crosssectional <- prepped_data$X_rand_crosssectional
   X_rand_panel <- prepped_data$X_rand_panel 
@@ -114,6 +140,7 @@ get_start_vals <- function(formula,
   X_underreport_rpar <- prepped_data$X_underreport_rpar 
   X_het_means <- prepped_data$X_het_means 
   X_het_variance <- prepped_data$X_het_variance
+
   
   y_name <- all.vars(formula)[1]
   
@@ -222,18 +249,18 @@ get_start_vals <- function(formula,
     start <- c(start, rep(0.1, N_het_variance))
   }
   
-  if (X_matrix_counts$N_param1 > 0) {
+  if (X_matrix_counts$N_param1 > 0 && N_family_params>0) {
     x_names <- c(x_names, paste0(family_params[1],colnames(X_param1)))
     start <- c(start, rep(0.1, N_param1))
-  }else {
+  }else if (N_family_params>0) {
     x_names <- c(x_names, family_params[1])
     start <- append(start, 0.1)
   }
-  if (X_matrix_counts$N_param2 > 0) {
+  if (X_matrix_counts$N_param2 > 0 && N_family_params==2) {
     x_names <- c(x_names, paste0(family_params[2],colnames(X_param2)))
     start <- c(start, rep(0.1, N_param2))
   }
-  else if (!is.null(family_params[2])) {
+  else if (N_family_params==2) {
     x_names <- c(x_names, family_params[2])
     start <- append(start, 0.1)
   }

@@ -16,6 +16,7 @@ Imports:
     maxLik,
     methods,
     modelr,
+    plm,
     purrr,
     randtoolbox,
     Rcpp (>= 1.0.12),

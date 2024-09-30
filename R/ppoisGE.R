@@ -91,8 +91,7 @@ dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, 
   lambda <- mean * scale /(digamma(shape+1)-digamma(1))
 
   # Generate Halton draws to use as quantile values
-  if (!is.null(haltons)) h <- haltons
-  else h <- randtoolbox::halton(ndraws)
+  if (!is.null(haltons)) h <- haltons else h <- randtoolbox::halton(ndraws)
 
   # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to lognormal values
   gedist <- log(1-h^(1/shape))/(-scale) # Quantile function of generalized exponential distribution applied to halton draws

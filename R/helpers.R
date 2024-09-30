@@ -61,7 +61,7 @@ get_probFunc <- function(family){
   family,
   "Poisson" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
     return(stats::dpois(y, predicted))
-  }
+  },
   "NB1" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
     mu <- predicted
     return(stats::dnbinom(y, size = mu/alpha, mu = mu))

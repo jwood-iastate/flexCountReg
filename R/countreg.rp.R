@@ -218,7 +218,7 @@
 #'  `scrambeled` = TRUE to use scrambled Halton draws (which removes correlation 
 #'  that is inherent between Halton draws with higher base prime numbers)
 #' 
-#' @section Random Parameters Model Details
+#' @section Random Parameters Model Details:
 #' For random parameters, the model captures heterogeneity of effects and other 
 #' unobserved heterogeneity correlated with specified parameters. These can 
 #' accommodate panel (i.e., longitudinal) model specifications. When the model 
@@ -284,7 +284,7 @@
 #'  \item formula: the formula used to fit the model.
 #' }
 #' 
-#' @import modelr randtoolbox  plm
+#' @import modelr randtoolbox
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df compact
 #' @importFrom broom tidy

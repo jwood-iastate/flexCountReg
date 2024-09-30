@@ -11,15 +11,15 @@ poisLind.re(
   data,
   method = "NM",
   max.iters = 1000,
-  weights = NULL,
   print.level = 0,
-  bootstraps = NULL
+  bootstraps = NULL,
+  offset = NULL
 )
 }
 \arguments{
 \item{formula}{an R formula.}
 
-\item{group_var}{the grouping variable indicating random effects (e.g., individual ID).}
+\item{group_var}{the grouping variable(s) indicating random effects (e.g., individual ID).}
 
 \item{data}{a dataframe that has all of the variables in the \code{formula}.}
 
@@ -30,13 +30,12 @@ is not available for this function due to the implementation for the random effe
 \item{max.iters}{the maximum number of iterations to allow the optimization 
 method to perform.}
 
-\item{weights}{the name of the weighting variable. This is an optional 
-parameter for weighted regression.}
-
 \item{print.level}{Integer specifying the verbosity of output during optimization.}
 
 \item{bootstraps}{Optional integer specifying the number of bootstrap samples to be used
 for estimating standard errors. If not specified, no bootstrapping is performed.}
+
+\item{offset}{an optional offset term provided as a string.}
 }
 \description{
 Function for estimating a Random Effects Poisson-Lindley regression model
@@ -69,7 +68,7 @@ poislind.mod <- poisLind.re(Animal ~ lnaadt + lnlength + speed50 +
                                 ShouldWidth04 + AADTover10k,
                                 data=washington_roads,
                                 group_var="ID",
-                                method="nm",
+                                method="BHHH",
                                 max.iters = 1000)
 summary(poislind.mod)}
 }

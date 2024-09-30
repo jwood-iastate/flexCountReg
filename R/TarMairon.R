@@ -31,8 +31,9 @@
 #' @param family the name of the distribution/model type to estimate. The 
 #'        default "NB2" is the standard negative binomial distribution with a 
 #'        log link. other options are listed below. 
-#' @param offset the name of a variable in the data frame that should be used 
-#'        as an offset (i.e., included but forced to have a coefficient of 1).
+#' @param offsets the name of a variable or a vector of names of variables in 
+#'        the dataframe that should be used as an offset (i.e., included but 
+#'        forced to have a coefficient of 1).
 #' @param weights the name of a variable in the data frame that should be used
 #'        as a frequency weight.
 #' @param verbose an optional parameter. If `TRUE`, the function will print out 
@@ -246,7 +247,7 @@
 #'  `scrambeled` = TRUE to use scrambled Halton draws (which removes correlation 
 #'  that is inherent between Halton draws with higher base prime numbers)
 #' 
-#' @section Random Parameters Model Details
+#' @section Random Parameters Model Details:
 #' For random parameters, the model captures heterogeneity of effects and other 
 #' unobserved heterogeneity correlated with specified parameters. These can 
 #' accommodate panel (i.e., longitudinal) model specifications. When the model 
@@ -315,7 +316,7 @@
 #' observation \eqn{i} becomes:
 #' \deqn{\beta_{random, \sigma, i, j}=e^{X_{het \ in \ var}\beta_{het \ in \ var}}\beta_{random, \sigma, j}}
 #' 
-#' @section Count Distributions and Underreporting Models  
+#' @section Count Distributions and Underreporting Models:  
 #' The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
 #' based on Greene (2008).  The details of each of these are provided below.
 #' 
@@ -597,7 +598,7 @@
 #'  \item formula: the formula used to fit the model.
 #' }
 #' 
-#' @import modelr randtoolbox  plm
+#' @import modelr randtoolbox
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df compact
 #' @importFrom broom tidy
@@ -606,7 +607,7 @@
 #' @importFrom maxLik maxLik
 #' @importFrom stringr str_replace_all
 #' @importFrom sandwich sandwich
-#' @include pinvgaus.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R `RP Model Helper Functions.R`
+#' @include pinvgaus.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R RP_Model_Helper_Functions.R
 #' 
 #' @examples
 #' # Load the Washington data
@@ -660,7 +661,7 @@
 isildursBane <- function(formula, 
                      data, 
                      family = "NB2", 
-                     offset = NULL, 
+                     offsets = NULL, 
                      weights = NULL, 
                      verbose = FALSE, 
                      dis_param_formula_1 = NULL, 
@@ -699,23 +700,23 @@ isildursBane <- function(formula,
     method = "NM"
   }
   
-  # if (is.null() && is.null() && is.null())
-  
   # Prep Data for Modeling
-  prepped_data <- data_prep(formula, data, rpar_formula,  panel_rpar_formula,  underrport_formula, 
-                            parmam1_formula, param2_formula,underreport_rpar_formula, 
-                            het_means_formula, het_variance_formula, panel_ids)
+  prepped_data <- data_prep(formula, data, rpar_obs_formula,  rpar_panel_formula,  
+                            underreport_formula, dis_param_formula_1, dis_param_formula_2,
+                            rpar_underreport_formula, het_in_means_formula, 
+                            het_in_var_formula, offsets, panelID)
   
-  y <-                      prepped_data$y
-  X_fixed <-                prepped_data$X_fixed 
-  X_rand_crosssectional <-  prepped_data$X_rand_crosssectional
-  X_rand_panel <-           prepped_data$X_rand_panel 
-  X_underreport <-          prepped_data$X_underreport
-  X_param1 <-               prepped_data$X_param1
-  X_param2 <-               prepped_data$X_param2
-  X_underreport_rpar <-     prepped_data$X_underreport_rpar
-  X_het_means <-            prepped_data$X_het_means
-  X_het_variance <-         prepped_data$X_het_variance
+  y                       <- prepped_data$y
+  X_fixed                 <-prepped_data$X_fixed 
+  X_rand_crosssectional   <-prepped_data$X_rand_crosssectional
+  X_rand_panel            <-prepped_data$X_rand_panel 
+  X_underreport           <-prepped_data$X_underreport
+  X_param1                <-prepped_data$X_param1
+  X_param2                <-prepped_data$X_param2
+  X_underreport_rpar      <-prepped_data$X_underreport_rpar
+  X_het_means             <-prepped_data$X_het_means
+  X_het_variance          <-prepped_data$X_het_variance
+  X_offsets               <-prepped_data$X_offsets
   
   # Get the parameters and probability function
   params <- get_params(family)
@@ -725,17 +726,18 @@ isildursBane <- function(formula,
   # Get number of parameters for model elements
   N_list <- get_Nparams <- function(prepped_data, family)
 
-  N_fixed <- N_list$N_fixed 
+  N_fixed               <- N_list$N_fixed 
   N_rand_crosssectional <- N_list$N_rand_crosssectional 
-  N_rand_panel <- N_list$N_rand_panel
-  N_underreport <- N_list$N_underreport 
-  N_param1 <- N_list$N_param1 
-  N_param2 <- N_list$N_param2 
-  N_underreport_rpar <- N_list$N_underreport_rpar 
-  N_het_means <- N_list$N_het_means 
-  N_het_variance <- N_list$N_het_variance 
-  N_family_params <- N_list$family_params
-  N_rand_total  <- N_list$N_rand_total
+  N_rand_panel          <- N_list$N_rand_panel
+  N_underreport         <- N_list$N_underreport 
+  N_param1              <- N_list$N_param1 
+  N_param2              <- N_list$N_param2 
+  N_underreport_rpar    <- N_list$N_underreport_rpar 
+  N_het_means           <- N_list$N_het_means 
+  N_het_variance        <- N_list$N_het_variance 
+  N_family_params       <- N_list$family_params
+  N_rand_total          <- N_list$N_rand_total
+  N_Offsets             <- N_list$N_Offsets
   
   # If an offset is specified, create a vector for the offset
   if (!is.null(offset)){
@@ -744,7 +746,7 @@ isildursBane <- function(formula,
   
   if (is.null(start.vals)){
     start <- get_start_vals(formula, prepped_data, data, family,
-                            rpar_formula, panel_rpar_formula, correlated)
+                            rpar_obs_formula,  rpar_panel_formula, correlated)
   }
   
   # Generate Halton draws 

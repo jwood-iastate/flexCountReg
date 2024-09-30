@@ -16,7 +16,6 @@ Imports:
     maxLik,
     methods,
     modelr,
-    plm,
     purrr,
     randtoolbox,
     Rcpp (>= 1.0.12),
@@ -36,9 +35,9 @@ LazyData: true
 RoxygenNote: 7.3.2
 Collate: 
     'Generalized-Waring.R'
+    'Lindley.R'
+    'RP_Model_Helper_Functions.R'
     'RcppExports.R'
-    'cor2cov.R'
-    'corr_haltons.R'
     'helpers.R'
     'plind.R'
     'ppoisGE.R'
@@ -47,7 +46,11 @@ Collate:
     'plindLnorm.R'
     'ppoislogn.R'
     'pinvgaus.R'
+    'TarMairon.R'
+    'cor2cov.R'
+    'corr_haltons.R'
     'countreg.R'
+    'countreg.rp.R'
     'createFlexCountReg.R'
     'cureplot.R'
     'data.R'

@@ -2,8 +2,9 @@
 #'
 #' @name poisLindRE
 #' @param formula an R formula.
-#' @param group_var the grouping variable indicating random effects (e.g., individual ID).
+#' @param group_var the grouping variable(s) indicating random effects (e.g., individual ID).
 #' @param data a dataframe that has all of the variables in the \code{formula}.
+#' @param offset an optional offset term provided as a string.
 #' @param method a method to use for optimization in the maximum likelihood 
 #' estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that "BHHH"
 #' is not available for this function due to the implementation for the random effects.
@@ -12,14 +13,12 @@
 #' @param print.level Integer specifying the verbosity of output during optimization.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
 #'        for estimating standard errors. If not specified, no bootstrapping is performed.
-#' @param weights the name of the weighting variable. This is an optional 
-#'   parameter for weighted regression.
-#'
+#'        
 #' @import maxLik  stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom purrr map map_df
 #' @importFrom broom tidy
-#' @importFrom dplyr group_by %>% summarise
+#' @importFrom dplyr group_by %>% summarise across select mutate summarise_all all_of
 #' @importFrom tibble deframe
 #' @include plind.R
 #' 
@@ -51,38 +50,30 @@
 #'                                 ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 group_var="ID",
-#'                                 method="nm",
+#'                                 method="BHHH",
 #'                                 max.iters = 1000)
 #' summary(poislind.mod)}
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
 #' @export
 poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
-                       weights=NULL, print.level=0, bootstraps=NULL) {
+                       print.level=0, bootstraps=NULL, offset=NULL) {
   
-  if (method=="BHHH" | method=="bhhh") {
-    print("The `BHHH` method is not available for poisLindRE. Switching to `NM` method.")
-    method="NM"
-  }
+  # if (method=="BHHH" | method=="bhhh") {
+  #   print("The `BHHH` method is not available for poisLindRE. Switching to `NM` method.")
+  #   method="NM"
+  # }
   
   # Data preparation
   mod_df <- stats::model.frame(formula, data)
   X <- as.matrix(modelr::model_matrix(data, formula))
   y <- as.numeric(stats::model.response(mod_df))
-  group <- data[[group_var]]
+  
+  group_var <- as.character(group_var)
+  data <- data %>%
+    mutate(across(all_of(group_var), as.factor))
+  group <- data %>% select(all_of(group_var)) %>% summarise_all(as.factor) %>% unlist()
   x_names <- colnames(X)
-
-  # Preparing the weights
-  if (!is.null(weights)){
-    if (is.character(weights) && weights %in% colnames(data)) {
-      # Use weights variable from data
-      weights <- as.numeric(data[[weights]])
-    } else {
-      stop("Weights should be the name of a variable in the data.")
-    }
-  } else {
-    weights <- rep(1, length(y)) # Default weights of 1
-  }
   
   # Use the Negative Binomial as starting values
   p_model <- glm.nb(formula, data = data)
@@ -95,41 +86,35 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
   names(full_start) <- x_names
   
   # Log-likelihood function for the Random Effects Poisson-Lindley model
-  # reg.run.RE <- function(beta, y, X, group){
-  #   pars <- length(beta)-1
-  #   coefs <- as.vector(unlist(beta[1:pars]))
-  #   theta <- exp(unlist(beta[length(beta)]))
-  #   mu <- exp(X %*% coefs)
-  #   
-  #   # Compute the log-likelihood contributions per group
-  #   unique_groups <- unique(group)
-  #   
-  #   probs <- sapply(unique_groups, function(g){
-  #     y_group <- y[group == g]
-  #     mu_group <- mu[group == g]
-  #     ps <- pollind_i_group(mu_group, y_group, theta)
-  #     return(ps)
-  #   })
-  #   
-  #   group_weights <- sapply(unique_groups, function(g){
-  #     sum(weights[group == g])
-  #   })
-  #   
-  #   LL_groups <- log(probs)*group_weights
-  #   
-  #   
-  #   # Sum log-likelihood contributions
-  #   ll <- sum(LL_groups)
-  #   return(ll)
-  # }
+  reg.run.RE <- function(beta, y, X, group){
+    pars <- length(beta)-1
+    coefs <- as.vector(unlist(beta[1:pars]))
+    theta <- exp(unlist(beta[length(beta)]))
+    mu <- exp(X %*% coefs)
+    if(!is.null(offset)) mu <- mu * exp(data[[offset]])
+    
+    coef1 <- (theta^2/(theta+1))
+    
+    adj_mu <- mu*theta*(theta+1)/(theta+2)
+    adj_mu_y <- adj_mu^y/factorial(y)
+    adj_mu_div_p_y <- adj_mu_y+y
+    y_2 <- y+2
+
+    
+    df <- data.frame(y=y, adj_mu_y=adj_mu_y, adj_mu=adj_mu, adj_mu_div_p_y=adj_mu_div_p_y, y_2=y_2, group=group)
+    
+    LL <- df %>%
+      group_by(across(group)) %>%
+      summarise(ll = log(coef1 * prod(adj_mu_y) * (factorial(sum(y)) / ((sum(adj_mu) + theta)^sum(y_2)) * (sum(adj_mu_div_p_y) + theta + 1))))
+    return(as.vector(LL$ll))
+  }
   
   # Optimization using maxLik
   # Note: reg_run_RE is from Rcpp
-  fit <- maxLik::maxLik(reg_run_RE,
+  fit <- maxLik::maxLik(reg.run.RE,
                         start = full_start,
                         y = y,
                         X = X,
-                        weights=weights,
                         group = group,
                         method = method,
                         control = list(iterlim = max.iters, 
@@ -146,7 +131,6 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
                                start = fit$estimate,
                                y = y,
                                X = X,
-                               weights=weights,
                                group = group,
                                method = method,
                                control = list(iterlim = max.iters, 

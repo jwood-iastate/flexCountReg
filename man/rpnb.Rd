@@ -13,6 +13,7 @@ rpnb(
   ndraws = 1500,
   scrambled = FALSE,
   correlated = FALSE,
+  panel = NULL,
   method = "BHHH",
   max.iters = 1000,
   start.vals = NULL,
@@ -35,6 +36,8 @@ rpnb(
 \item{scrambled}{if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = TRUE} results in scrambled Halton draws,}
 
 \item{correlated}{if the random parameters should be correlated (\code{correlated = FALSE} results in uncorrelated random coefficients, \code{correlated = TRUE} results in correlated random coefficients). If the random parameters are correlated, only the normal distribution is used for the random coefficients,}
+
+\item{panel}{an optional variable or vector of variables that can be used to specify a panel structure in the data. If this is specified, the function will estimate the random parameters using a panel structure,}
 
 \item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},}
 

@@ -178,6 +178,35 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// dnbGE_cpp
+NumericVector dnbGE_cpp(IntegerVector x, NumericVector mean, NumericVector alpha, NumericVector beta);
+RcppExport SEXP _flexCountReg_dnbGE_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP alphaSEXP, SEXP betaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
+    rcpp_result_gen = Rcpp::wrap(dnbGE_cpp(x, mean, alpha, beta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// dnbCrack_cpp
+NumericVector dnbCrack_cpp(IntegerVector x, NumericVector mean, NumericVector r, NumericVector theta, NumericVector gamma);
+RcppExport SEXP _flexCountReg_dnbCrack_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP rSEXP, SEXP thetaSEXP, SEXP gammaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type r(rSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type gamma(gammaSEXP);
+    rcpp_result_gen = Rcpp::wrap(dnbCrack_cpp(x, mean, r, theta, gamma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // genWaring_cpp
 NumericVector genWaring_cpp(NumericVector x, NumericVector mean, NumericVector k, NumericVector p);
 RcppExport SEXP _flexCountReg_genWaring_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP kSEXP, SEXP pSEXP) {
@@ -340,6 +369,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_flexCountReg_dplindlogn_cpp", (DL_FUNC) &_flexCountReg_dplindlogn_cpp, 5},
     {"_flexCountReg_dpLnorm_cpp", (DL_FUNC) &_flexCountReg_dpLnorm_cpp, 4},
     {"_flexCountReg_dpWeib_cpp", (DL_FUNC) &_flexCountReg_dpWeib_cpp, 5},
+    {"_flexCountReg_dnbGE_cpp", (DL_FUNC) &_flexCountReg_dnbGE_cpp, 4},
+    {"_flexCountReg_dnbCrack_cpp", (DL_FUNC) &_flexCountReg_dnbCrack_cpp, 5},
     {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 4},
     {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
     {"_flexCountReg_p_poisweibull_cpp", (DL_FUNC) &_flexCountReg_p_poisweibull_cpp, 6},

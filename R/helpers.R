@@ -87,3 +87,33 @@ get_probFunc <- function(family){
   "COM" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dcom(x=y, mu=predicted, nu=alpha)
   )
 }
+
+
+# Define the function for generating and scaling random draws using map2()
+generate_draws <- function(hdraws, random_coefs_means, rand_sdevs, rpardists) {
+  
+  # Create a function to handle the random draws based on the distribution type
+  generate_column <- function(draws_col, mean_val, sd_val, dist_type) {
+    switch(dist_type,
+           "n"  = stats::qnorm(draws_col, mean = mean_val, sd = abs(sd_val)),
+           "ln" = stats::qlnorm(draws_col, meanlog = mean_val, sdlog = abs(sd_val)),
+           "t"  = qtri(draws_col, mean_val, abs(sd_val)),  # Assuming qtri() is defined
+           "u"  = mean_val + (draws_col - 0.5) * abs(sd_val),
+           "g"  = {
+             shape_param <- (mean_val^2) / (sd_val^2)
+             rate_param <- mean_val / (sd_val^2)
+             stats::qgamma(draws_col, shape = shape_param, rate = rate_param)
+           },
+           stats::qnorm(draws_col, mean = mean_val, sd = abs(sd_val))  # Default to normal distribution
+    )
+  }
+  
+  # Apply the generate_column function column-wise using map2
+  draws <- purrr::map2(asplit(hdraws, 2), seq_along(random_coefs_means), 
+                ~ generate_column(.x, random_coefs_means[.y], rand_sdevs[.y], rpardists[.y]))
+  
+  # Combine the list of columns back into a matrix
+  draws <- do.call(cbind, draws)
+  
+  return(draws)
+}

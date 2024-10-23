@@ -49,6 +49,14 @@ dpWeib_cpp <- function(x, mean, alpha, sigma, h) {
     .Call('_flexCountReg_dpWeib_cpp', PACKAGE = 'flexCountReg', x, mean, alpha, sigma, h)
 }
 
+dnbGE_cpp <- function(x, mean, alpha, beta) {
+    .Call('_flexCountReg_dnbGE_cpp', PACKAGE = 'flexCountReg', x, mean, alpha, beta)
+}
+
+dnbCrack_cpp <- function(x, mean, r, theta, gamma) {
+    .Call('_flexCountReg_dnbCrack_cpp', PACKAGE = 'flexCountReg', x, mean, r, theta, gamma)
+}
+
 genWaring_cpp <- function(x, mean, k, p) {
     .Call('_flexCountReg_genWaring_cpp', PACKAGE = 'flexCountReg', x, mean, k, p)
 }

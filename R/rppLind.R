@@ -22,7 +22,7 @@
 #' @importFrom utils head  tail
 #' @importFrom purrr map map_df
 #' @importFrom broom tidy
-#' @importFrom dplyr group_by %>% summarise
+#' @importFrom dplyr group_by %>% reframe
 #' @importFrom tibble deframe
 #' @include tri.R plind.R
 #'
@@ -361,7 +361,7 @@ rppLind <- function(formula, rpar_formula, data,
     
     SE <- tidied %>%
       group_by(term) %>%
-      summarise(sd = sd(estimate)) %>% deframe()
+      reframe(sd = sd(estimate))
     
     fit$bootstrapped_se <- SE
   }

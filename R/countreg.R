@@ -439,7 +439,7 @@
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df compact
 #' @importFrom broom tidy
-#' @importFrom dplyr group_by %>% summarise
+#' @importFrom dplyr group_by %>% reframe
 #' @importFrom tibble deframe
 #' @importFrom maxLik maxLik
 #' @importFrom stringr str_replace_all
@@ -677,7 +677,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     
     SE <- tidied %>%
       group_by(term) %>%
-      summarise(sd = sd(estimate)) %>% deframe()
+      reframe(sd = sd(estimate))
     
     fit$bootstrapped_se <- SE
   }

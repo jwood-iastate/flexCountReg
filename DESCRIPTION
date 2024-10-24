@@ -73,6 +73,8 @@ Collate:
     'rpnb.R'
     'rppLind.R'
     'summary_flexCountReg.R'
+    'renb.R'
+    'renbLL.R'
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

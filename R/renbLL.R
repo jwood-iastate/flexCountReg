@@ -2,14 +2,6 @@ renb_ll <- function(y, mu, a, b, panels) { # Random Effects Negative Binomial wi
   require(dplyr)
   require(tibble)
   
-  # Input validation
-  if (length(y) != length(mu) || length(y) != length(panels)) {
-    stop("Lengths of y, mu, and panels must be equal")
-  }
-  if (any(y < 0) || any(mu <= 0) || a <= 0 || b <= 0) {
-    stop("y must be non-negative, mu must be positive, and a,b must be positive")
-  }
-  
   df <- tibble(y = y, mu = mu, panels = panels)
   
   # Calculate panel-level statistics
@@ -24,9 +16,7 @@ renb_ll <- function(y, mu, a, b, panels) { # Random Effects Negative Binomial wi
     )
   
   # Calculate log-likelihood using lgamma for numerical stability
-  log_num <- lgamma(a + b) + 
-    lgamma(a + df_model$sum_mu) + 
-    lgamma(b + df_model$sum_y)
+  log_num <- lgamma(a + b) + lgamma(a + df_model$sum_mu) + lgamma(b + df_model$sum_y)
   
   log_denom <- lgamma(a) + lgamma(b) + 
     lgamma(a + b + df_model$sum_mu + df_model$sum_y)

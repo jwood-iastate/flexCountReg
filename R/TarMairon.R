@@ -686,7 +686,6 @@ isildursBane <- function(formula,
                      stderr = "normal", 
                      bootstraps = NULL) {
   
-  
   if (verbose){
     print.level=2
   }else{
@@ -749,13 +748,46 @@ isildursBane <- function(formula,
                             rpar_obs_formula,  rpar_panel_formula, correlated)
   }
   
-  # Generate Halton draws 
-  halton_list <- get_halton_draws(ndraws, dim=(N_rand_total+1), scrambled=scrambled) 
-  haltons <- halton_list[1]
-  normed_haltons <- dnorm(haltons)
+  # check random parameters. For random parameter equations, if the distributions are not specified, set them to "n". Otherwise, set them to the specified distribution
+  if (N_rand_crosssectional>0 & names(X_rand_crosssectional) != names(rpar_obs_dists)){
+    rpar_obs_dists <- rep("n", N_rand_crosssectional)
+    names(rpar_obs_dists) <- names(X_rand_crosssectional)
+  }
   
-  rpar_haltons <- halton_list[2]
+  if (N_rand_panel>0 & names(X_rand_panel) != names(rpar_panel_dists)){
+    rpar_panel_dists <- rep("n", N_rand_panel)
+    names(rpar_panel_dists) <- names(X_rand_panel)
+  }
+  if (N_underreport>0 & names(X_underreport) != names(rpar_underreport_dists)){
+    rpar_underreport_dists <- rep("n", N_underreport)
+    names(rpar_underreport_dists) <- names(X_underreport)
+  }
   
+  if(!is.null(rpar_obs_dists) & !is.null(rpar_panel_dists) & !is.null(rpar_underreport_dists)){
+    rpar_dists <- c(rpar_obs_dists, rpar_panel_dists, rpar_underreport_dists)
+  }else if(!is.null(rpar_obs_dists) & !is.null(rpar_panel_dists)){
+    rpar_dists <- c(rpar_obs_dists, rpar_panel_dists)
+  }else if(!is.null(rpar_obs_dists) & !is.null(rpar_underreport_dists)){
+    rpar_dists <- c(rpar_obs_dists, rpar_underreport_dists)
+  }else if(!is.null(rpar_panel_dists) & !is.null(rpar_underreport_dists)){
+    rpar_dists <- c(rpar_panel_dists, rpar_underreport_dists)
+  }else if(!is.null(rpar_obs_dists)){
+    rpar_dists <- rpar_obs_dists
+  }else if(!is.null(rpar_panel_dists)){
+    rpar_dists <- rpar_panel_dists
+  }else if(!is.null(rpar_underreport_dists)){
+    rpar_dists <- rpar_underreport_dists
+  }else{
+    stop("No random parameters were specified. Use the rpar_obs_formula, rpar_panel_formula, or rpar_underreport_formula arguments to specify random parameters.")
+  }
+  
+  # Generate halton draws for random parameters
+  rpar_haltons <- get_halton_draws(ndraws, dim=(N_rand_total+1), scrambled=scrambled)
+  
+  # Seperate draws for use later
+  rpardraws <- rpar_haltons$rpardraws
+  distdraws <- rpar_haltons$distdraws
+  normed_distdraws <- stats::pnorm(distdraws)
   
   ##############################################################################
   ## The remainder needs to be revised to fit all of the models ################
@@ -768,31 +800,127 @@ isildursBane <- function(formula,
   }else{
     weights.df <- data[,weights]
   }
-  
+
   # Define the main function for computing log-likelihood
   logLikFunc <- function(p) {
     coefs <- as.array(p)
-    fixed_coefs <- as.vector(head(coefs, N_predictors))
+    coef_vals <- coef_vals(coefs, formula, prepped_data, data,
+                          family=family, correlated=correlated)
+    
+    beta_fixed = coef_vals$beta_fixed
+    beta_underreport = coef_vals$beta_underreport
+    beta_crss_mean = coef_vals$beta_crss_mean
+    beta_panel_mean = coef_vals$beta_panel_mean
+    beta_underreport_rpar = coef_vals$beta_underreport_rpar
+    beta_crss_std = coef_vals$beta_crss_std
+    beta_panel_std = coef_vals$beta_panel_std
+    beta_underreport_rpar_std =  coef_vals$beta_underreport_rpar_std
+    beta_het_means =  coef_vals$beta_het_means
+    beta_het_variance = coef_vals$beta_het_variance
+    beta_param1 = coef_vals$beta_param1
+    beta_param2 = coef_vals$beta_param2
+    beta_chol = coef_vals$beta_chol
+    
+    
+    mu_fixed  <- exp(X_fixed %*% beta_fixed)
     
     if (!is.null(dis_param_formula_1)){
-      alpha_coefs <- as.vector(coefs[(N_predictors + 1):(N_predictors + N_alpha)])
-      alpha <- exp(mod_alpha_frame %*% alpha_coefs)
+      alpha <- exp(X_param1 %*% beta_param1)
     } else {
-      alpha <- exp(coefs[(N_predictors + 1)])
+      alpha <- exp(beta_param1)
     }
     
     if (!is.null(dis_param_formula_2)){
-      sigma_coefs <- as.vector(coefs[(N_predictors + N_alpha + 1):(N_predictors + N_alpha + N_sigma)])
-      sigma <- exp(mod_sigma_frame %*% sigma_coefs)
+      sigma <- exp(X_param2 %*% beta_param2)
     } else {
-      sigma <- exp(coefs[(N_predictors + N_alpha + 1)])
+      sigma <- exp(beta_param2)
     }
     
+    # set up random parameters
+    beta_rand_means = c()
+    beta_rand_sd = c()
+    if(N_rand_crosssectional>0){
+      beta_rand_means = c(beta_rand_means, beta_crss_mean)
+      beta_rand_sd = c(beta_rand_sd, beta_crss_std)
+    }
+    if(N_rand_panel>0){
+      beta_rand_means = c(beta_rand_means, beta_panel_mean)
+      beta_rand_sd = c(beta_rand_sd, beta_panel_std)
+    }
+    if(N_underreport>0){
+      beta_rand_means = c(beta_rand_means, beta_underreport)
+      beta_rand_sd = c(beta_rand_sd, beta_underreport_rpar_std)
+    }
+    
+    # Computations for heterogeneity in means and variances
+    if(N_het_means>0){ # If there is heterogeneity in means, the observation specific means are the mean coefficients multiplied by the X\beta values
+      XB_het_means = exp(X_het_means %*% beta_het_means)
+      # Create a matrix of the means for each observation for each random parameter by multiplying the mean coefficients by the X\beta values
+      rp_means_it = X_het_means %outer% beta_rand_means
+    }else{
+      rp_means_it = beta_rand_means
+    }
+    
+    if(N_het_variance>0){
+      beta_rand_sd = exp(X_het_variance  %*% beta_het_variance)
+      rp_sd_it = X_het_variance %outer% beta_rand_sd
+    }else{
+      rp_sd_it = beta_rand_sd
+    }
+    
+    # If no heterogeneity in means or variances, get the random parameter draws
+    if(N_het_means==0 & N_het_variance==0){
+      draws_converted = generate_draws(rpardraws, rp_means_it, rp_sd_it, rpar_dists)
+      
+      if(N_rand_crosssectional>0){
+        draws_crss = draws_converted[,1:N_rand_crosssectional]
+      }
+      if(N_rand_panel>0){
+        draws_panel = draws_converted[,N_rand_crosssectional+1:(N_rand_crosssectional+N_rand_panel)]
+      }
+      if(N_underreport>0){
+        draws_underreport = draws_converted[,(N_rand_crosssectional+N_rand_panel+1):(N_rand_crosssectional+N_rand_panel+N_underreport)]
+      }
+      
+      if (!is.null(underreport_formula)){
+        lin_underreport <- X_underreport %*% beta_underreport
+        
+        if(N_underreport>0){
+          lin_underreport <- lin_underreport + X_underreport_rpar %*% beta_underreport_rpar
+          
+          if (underreport_family == "logit"){
+            underreport_prob_i <- 1/(1+exp(-lin_underreport))
+          }else{
+            underreport_prob_i <- pnorm(lin_underreport, lower.tail = FALSE)
+          }
+          underreport_prob <- rowMeans(underreport_prob_i)
+          
+        }else{
+          underreport_prob_i <- 1/(1+exp(-lin_underreport))
+        }
+        mu_fixed <- mu_fixed * underreport_prob
+      }
+    
+    # if there is a panel specification, group by the panel ID to do the computations
+      
+      # If there is also individual random parameters, treat those random draws seperately
+    
+    
+    } # end of no heterogeneity of means or variances
+    
+
+    
     if (N_underreport>0){
-      beta_underreport <- coefs[(length(coefs)-N_underreport+1):(length(coefs))]
       lin_underreport <- X_underreport %*% beta_underreport
       
       if (underreport_family == "logit"){
+        # if there are random parameters for underreporting, add them to the linear predictor then compute the probabilities, then take the average for each row
+        if (N_underreport_rpar>0){
+          
+          lin_underreport <- lin_underreport + X_underreport_rpar %*% beta_underreport_rpar
+          underreport_prob <- 1/(1+exp(-lin_underreport))
+        
+        
         underreport_prob <- 1/(1+exp(-lin_underreport))
       }else{
         underreport_prob <- pnorm(lin_underreport, lower.tail = FALSE)
@@ -800,11 +928,22 @@ isildursBane <- function(formula,
       }
     }else{underreport_prob=1} # If no underreporting model, set the probability to 1
     
-    if (!is.null(offset)){
-      predicted <- exp(X %*% fixed_coefs + X_offset)*underreport_prob
-    } else {
-      predicted <- exp(X %*% fixed_coefs)*underreport_prob
+    # multiply the mu_fixed by the probability
+    mu_fixed <- mu_fixed * underreport_prob
+    
+    if(!is.null(offsets)){ # Correct mu for all offsets
+      if (length(offsets)==1){
+        mu_fixed <- mu_fixed * exp(data[[offsets]])
+      }
+      else{
+        for (i in offsets){
+          mu_fixed <- mu_fixed * exp(rowSums(X_offsets))
+        }
+      }
     }
+    
+    
+    
     
     # Call the probability function
     probs <- probFunc(y, predicted, alpha, sigma, haltons, normed_haltons)

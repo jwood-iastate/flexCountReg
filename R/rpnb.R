@@ -20,7 +20,7 @@
 #' @importFrom dplyr mutate %>% row_number group_by across all_of summarize
 #' @importFrom tibble as_tibble
 #' @importFrom purrr map2
-#' @include tri.R get_chol.R helpers.R
+#' @include tri.R get_chol.R helpers.R createFlexCountReg.R
 #' 
 #' @examples
 #' \donttest{
@@ -422,7 +422,7 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
   prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p=p, form=form) # Pitr - individual observation probabilities at each draw
   
-  log_prob_mat <- as_tibble(log(prob_mat)) # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
+  log_prob_mat <- as_tibble(log(prob_mat), .name_repair="minimal") # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
   log_prob_mat$panel_id <- data$panel_id
   
   # get sums of log_probs for each group at each draw value

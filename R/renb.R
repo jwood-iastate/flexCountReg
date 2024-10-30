@@ -14,12 +14,11 @@
 #' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
 #'        for estimating standard errors. If not specified, no bootstrapping is performed.
 #'        
-#' @import maxLik  stats modelr
+#' @import maxLik  stats modelr tibble
 #' @importFrom MASS glm.nb
 #' @importFrom purrr map map_df
 #' @importFrom broom tidy
 #' @importFrom dplyr group_by %>% across select mutate all_of reframe
-#' @importFrom tibble as.tibble
 #' @include renbLL.R
 #' 
 #' @details
@@ -40,7 +39,7 @@
 #' summary(renb.mod)
 #' @export
 renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
-                       print.level=0, bootstraps=NULL, offset=NULL) {
+                 print.level=0, bootstraps=NULL, offset=NULL) {
   
   # Data preparation
   mod_df <- stats::model.frame(formula, data)
@@ -53,18 +52,14 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
       stop("The `group_var` must be defined for this model.")
     } else {
       if (length(group_var) > 1) {
-        # Use tidyr::unite() to combine multiple columns into a single string column
         data <- data %>% unite("panel_id", all_of(group_var), sep = "_", remove = FALSE)
       } else {
-        # Ensure that panel_id is a single vector
         data <- data %>% mutate(panel_id = as.character(data[[group_var]]))
       }
     }
   }
   
-  # Fix: Properly extract panel_id as a vector
   group <- data$panel_id
-  
   x_names <- colnames(X)
   
   # Use the Negative Binomial as starting values
@@ -88,26 +83,22 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
     
     mu <- exp(X %*% coefs)
     
-    if(!is.null(offset)){ # Correct mu for all offsets
+    if(!is.null(offset)){ 
       if (length(offset)==1){
         mu <- mu * exp(data[[offset]])
-      }
-      else{
+      } else {
         for (i in offset){
           mu <- mu * exp(data[[i]])
         }
       }
     }
     
-    # Convert mu to vector to ensure proper dimensions
     mu <- as.vector(mu)
-    
     LL <- renb_ll(y=y, mu=mu, a=a, b=b, panels=group)
     return(as.vector(LL))
   }
   
-  # Optimization using maxLik
-  # Note: reg_run_RE is from Rcpp
+  # Main model fit
   fit <- maxLik::maxLik(reg.run.RE,
                         start = full_start,
                         y = y,
@@ -117,52 +108,79 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
                         control = list(iterlim = max.iters, 
                                        printLevel = print.level))
   
-  # Optionally, compute bootstrapped standard errors
-  # (Similar implementation as in poisLind function)
-  plind.boot <- function(data){
-    mod1_frame <- stats::model.frame(formula, data)
-    X_Fixed <- stats::model.matrix(formula, data)
-    y <- stats::model.response(mod1_frame)
+  # Bootstrap function - Modified to fix the error
+  plind.boot <- function(boot_data, formula, method, max.iters, print.level, offset){
+    # Prepare bootstrapped data
+    mod1_frame <- stats::model.frame(formula, boot_data)
+    X_boot <- as.matrix(modelr::model_matrix(boot_data, formula))
+    y_boot <- as.numeric(stats::model.response(mod1_frame))
+    group_boot <- boot_data$panel_id
     
-    int_res <-  maxLik::maxLik(reg_run_RE,
-                               start = fit$estimate,
-                               y = y,
-                               X = X,
-                               group = group,
-                               method = method,
-                               control = list(iterlim = max.iters, 
-                                              printLevel = print.level))
+    # Fit model to bootstrapped data
+    int_res <- try(maxLik::maxLik(reg.run.RE,  
+                                  start = fit$estimate,
+                                  y = y_boot,
+                                  X = X_boot,
+                                  group = group_boot,
+                                  method = method,
+                                  control = list(iterlim = max.iters, 
+                                                 printLevel = print.level)),
+                   silent = TRUE)
+    
+    # Return NULL if the bootstrap fit failed
+    if(inherits(int_res, "try-error")) return(NULL)
     
     return(int_res)
   }
   
-  
-  if (!is.null(bootstraps) & is.numeric(bootstraps)) {
+  # Perform bootstrapping if requested - Modified bootstrap implementation
+  if (!is.null(bootstraps) && is.numeric(bootstraps)) {
+    # Generate bootstrap samples preserving panel structure
     bs.data <- modelr::bootstrap(data, n = bootstraps)
     
+    # Run bootstrap models with correct parameter passing
+    models <- map(bs.data$strap, ~plind.boot(
+      boot_data = .,
+      formula = formula,
+      method = method,
+      max.iters = max.iters,
+      print.level = print.level,
+      offset = offset
+    ))
     
-    mod1_frame <- stats::model.frame(formula, data)
-    X_Fixed <- stats::model.matrix(formula, data)
-    y <- stats::model.response(mod1_frame)
+    # Remove failed bootstrap iterations
+    models <- models[!sapply(models, is.null)]
     
-    models <- map(bs.data$strap, ~ plind.boot(data = .))
-    tidied <- map_df(models, broom::tidy, .id = "id")
-    
-    SE <- tidied %>%
-      group_by(term) %>%
-      reframe(sd = sd(estimate))
-    
-    fit$bootstrapped_se <- SE
+    # Calculate bootstrap standard errors
+    if(length(models) > 0) {
+      tidied <- map_df(models, ~{
+        if(!is.null(.)) {
+          data.frame(
+            term = names(.x$estimate),
+            estimate = as.numeric(.x$estimate)
+          )
+        }
+      }, .id = "id")
+      
+      SE <- tidied %>%
+        group_by(term) %>%
+        reframe(sd = sd(estimate))
+      
+      fit$bootstrapped_se <- SE
+      fit$successful_bootstraps <- length(models)
+    } else {
+      warning("All bootstrap iterations failed. No bootstrap standard errors computed.")
+      fit$bootstrapped_se <- NULL
+      fit$successful_bootstraps <- 0
+    }
   }
   
-  fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
-  
-  # Processing results
+  # Process results
   beta_est <- fit$estimate
   npars <- length(beta_est)-2
   beta_pred <- as.vector(unlist(beta_est[1:npars]))
-  fit$beta_pred <- beta_pred # save coefficients for predictions
-  fit$a <- exp(unlist(fit$estimate[(length(fit$estimate)-2)]))
+  fit$beta_pred <- beta_pred
+  fit$a <- exp(unlist(fit$estimate[(length(fit$estimate)-1)]))
   fit$b <- exp(unlist(fit$estimate[length(fit$estimate)]))
   
   mu <- exp(X %*% beta_pred)
@@ -171,7 +189,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$formula <- formula
   fit$observed <- y
   fit$residuals <- y - fit$predictions
-  fit$LL <- fit$maximum # The log-likelihood of the model
+  fit$LL <- fit$maximum
   fit$modelType <- "RENB"
   fit$offset <- offset
   

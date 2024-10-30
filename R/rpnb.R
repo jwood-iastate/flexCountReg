@@ -17,8 +17,9 @@
 #' @import randtoolbox maxLik stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
-#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize
+#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize ungroup
 #' @importFrom tibble as_tibble
+#' @importFrom tidyr unite
 #' @importFrom purrr map2
 #' @include tri.R get_chol.R helpers.R createFlexCountReg.R
 #' 
@@ -425,10 +426,16 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   log_prob_mat <- as_tibble(log(prob_mat), .name_repair="minimal") # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
   log_prob_mat$panel_id <- data$panel_id
   
+  # Create column names for the probability matrix
+  draw_names <- paste0("draw_", seq_len(ncol(prob_mat)))
+  log_prob_mat <- as_tibble(log(prob_mat))
+  colnames(log_prob_mat) <- draw_names  # Assign the column names
+  log_prob_mat$panel_id <- data$panel_id  # Add the panel_id column
+  
   # get sums of log_probs for each group at each draw value
   log_probs <- log_prob_mat %>%
     group_by(panel_id) %>%
-    summarize(across(all_of(colnames(log_prob_mat)[1:(length(log_prob_mat)-1)]), sum)) %>%
+    summarize(across(all_of(draw_names), sum)) %>%
     ungroup()
   
   log_probs <- log_probs[,-1] # remove the panelID

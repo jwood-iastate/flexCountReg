@@ -616,7 +616,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   if (is.null(weights)){
     weights.df <- rep(1, length(y))
   }else{
-    weights.df <- data[,weights]
+    weights.df <- data %>% pull(weights)
   }
   
   # Define the main function for computing log-likelihood
@@ -658,6 +658,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     
     # Call the probability function
     probs <- probFunc(y, predicted, alpha, sigma, haltons, normed_haltons)
+    
+    probs_i <- probs^weights.df
     
     return(log(probs)*weights.df)
   }

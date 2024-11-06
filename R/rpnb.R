@@ -12,6 +12,8 @@
 #' @param panel an optional variable or vector of variables that can be used to specify a panel structure in the data. If this is specified, the function will estimate the random parameters using a panel structure,
 #' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform,
+#' #' @param weights the name of a variable in the data frame that should be used
+#'        as a frequency weight.
 #' @param start.vals an optional vector of starting values for the regression coefficients
 #' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
 #' @import randtoolbox maxLik stats modelr
@@ -68,6 +70,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                  rpardists = NULL,
                  ndraws = 1500, scrambled = FALSE,
                  correlated = FALSE, panel=NULL, 
+                 weights=NULL,
                  method = 'BHHH', max.iters = 1000,
                  start.vals = NULL, print.level = 0) {
   # start.vals can be a vector or a named vector with the starting values for the parameters
@@ -95,6 +98,13 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   
   # Now safely convert panel_id to a factor
   data <- data %>% mutate(panel_id = as.factor(panel_id))
+  
+  # Handling Weights
+  if (is.null(weights)){
+    weights.df <- rep(1, length(y))
+  }else{
+    weights.df <- data %>% pull(weights)
+  }
   
 
   # Check and correct the rpardists if the random parameters are correlated
@@ -241,6 +251,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                 rpardists=rpardists,
                 data=data,
                 method = method,
+                weights=weights,
                 control = list(iterlim = max.iters, printLevel = print.level))
   
   N_fixed = ncol(X_Fixed)
@@ -353,7 +364,7 @@ nb_prob <- function(y, mu, alpha, p = NULL, form="nb2") {
 }
 
 # main function for estimating log-likelihoods
-p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data){
+p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights){
   if (!correlated) exact.gradient=TRUE else exact.gradient=FALSE # use numerical gradient if using correlated random parameters
   N_fixed = ncol(X_Fixed)
   N_rand = length(rpar)
@@ -442,7 +453,9 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   
   probs <- rowMeans(exp(log_probs))
   
-  return(log(probs))
+  probs_i <- probs^weights.df
+  
+  return(log(probs)*weights.df)
 }
 
 # Generating Halton Draws

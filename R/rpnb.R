@@ -75,6 +75,11 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                  weights=NULL, offset = NULL,
                  method = 'BHHH', max.iters = 1000,
                  start.vals = NULL, print.level = 0) {
+  
+  # Generating model matrices
+  mod1_frame <- stats::model.frame(formula, data)
+  y_name <- all.vars(formula)[1]
+  y <- stats::model.response(mod1_frame)
   # start.vals can be a vector or a named vector with the starting values for the parameters
   # print.level is used to determine the level of details for the optimization to print (for the maxLik function call)
 
@@ -121,14 +126,12 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     halton_draws_matrix <- randtoolbox::halton(ndraws, num_params, mixed = scrambled)
     return(halton_draws_matrix)
   }
-
+  
   # Generating model matrices
-  mod1_frame <- stats::model.frame(formula, data)
   X_Fixed <- modelr::model_matrix(data, formula)
   X_rand <- modelr::model_matrix(data, rpar_formula)
   #X_rand <-stats::model.matrix(rpar_formula, data)
   y_name <- all.vars(formula)[1]
-  y <- stats::model.response(mod1_frame)
   
   X_expanded <- cbind(X_Fixed, X_rand, X_rand) # for use in the gradient
 
@@ -260,7 +263,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                 rpardists=rpardists,
                 data=data,
                 method = method,
-                weights=weights,
+                weights=weights.df,
                 offset=offset,
                 X_offset = X_offset,
                 control = list(iterlim = max.iters, printLevel = print.level))
@@ -399,12 +402,12 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   if (!is.null(offset)){
     if (length(offset)>1){
       X_offset_i = rowsum(X_offset)
-      mu_fixed <- exp(X %*% fixed_coefs + X_offset_i)
+      mu_fixed <- exp(X_Fixed %*% fixed_coefs + X_offset_i)
     }else{
-      predicted <- exp(X %*% fixed_coefs + X_offset)
+      mu_fixed <- exp(X_Fixed %*% fixed_coefs + X_offset)
     }
   } else {
-    predicted <- exp(X %*% fixed_coefs)
+    mu_fixed <- exp(X_Fixed %*% fixed_coefs)
   }
   
   if(length(rpar)==1){
@@ -454,6 +457,7 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   rpar_mat <- exp(xb_rand_mat)
   pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
   prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p=p, form=form) # Pitr - individual observation probabilities at each draw
+  prob_mat <- apply(prob_mat, 2, function(x) x^weights)
   
   log_prob_mat <- as_tibble(log(prob_mat), .name_repair="minimal") # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
   log_prob_mat$panel_id <- data$panel_id
@@ -463,6 +467,7 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   log_prob_mat <- as_tibble(log(prob_mat))
   colnames(log_prob_mat) <- draw_names  # Assign the column names
   log_prob_mat$panel_id <- data$panel_id  # Add the panel_id column
+  
   
   # get sums of log_probs for each group at each draw value
   log_probs <- log_prob_mat %>%
@@ -474,9 +479,9 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   
   probs <- rowMeans(exp(log_probs))
   
-  probs_i <- probs^weights.df
+  probs_i <- probs
   
-  return(log(probs)*weights.df)
+  return(log(probs_i))
 }
 
 # Generating Halton Draws

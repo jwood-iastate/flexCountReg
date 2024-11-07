@@ -10,16 +10,18 @@
 #' @param scrambled if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = TRUE} results in scrambled Halton draws,
 #' @param correlated if the random parameters should be correlated (\code{correlated = FALSE} results in uncorrelated random coefficients, \code{correlated = TRUE} results in correlated random coefficients). If the random parameters are correlated, only the normal distribution is used for the random coefficients,
 #' @param panel an optional variable or vector of variables that can be used to specify a panel structure in the data. If this is specified, the function will estimate the random parameters using a panel structure,
+#' @param offset offset the name of a variable, or vector of variable names, in the data frame that should be used 
+#'        as an offset (i.e., included but forced to have a coefficient of 1).
 #' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform,
-#' #' @param weights the name of a variable in the data frame that should be used
+#' @param weights the name of a variable in the data frame that should be used
 #'        as a frequency weight.
 #' @param start.vals an optional vector of starting values for the regression coefficients
 #' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
 #' @import randtoolbox maxLik stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
-#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize ungroup
+#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize ungroup reframe pull
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr unite
 #' @importFrom purrr map2
@@ -70,7 +72,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                  rpardists = NULL,
                  ndraws = 1500, scrambled = FALSE,
                  correlated = FALSE, panel=NULL, 
-                 weights=NULL,
+                 weights=NULL, offset = NULL,
                  method = 'BHHH', max.iters = 1000,
                  start.vals = NULL, print.level = 0) {
   # start.vals can be a vector or a named vector with the starting values for the parameters
@@ -179,6 +181,13 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
 
   x_fixed_names <- colnames(X_Fixed)
   rpar <- colnames(X_rand)
+  
+  # If an offset is specified, create a vector for the offset
+  if (!is.null(offset)){
+    X_offset <- data %>% select(offset)
+  } else{
+    X_offset <- NULL
+  }
 
   hdraws <- halton_draws(ndraws, rpar, scrambled)
 
@@ -252,6 +261,8 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                 data=data,
                 method = method,
                 weights=weights,
+                offset=offset,
+                X_offset = X_offset,
                 control = list(iterlim = max.iters, printLevel = print.level))
   
   N_fixed = ncol(X_Fixed)
@@ -364,7 +375,7 @@ nb_prob <- function(y, mu, alpha, p = NULL, form="nb2") {
 }
 
 # main function for estimating log-likelihoods
-p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights){
+p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights, X_offset, offset){
   if (!correlated) exact.gradient=TRUE else exact.gradient=FALSE # use numerical gradient if using correlated random parameters
   N_fixed = ncol(X_Fixed)
   N_rand = length(rpar)
@@ -384,7 +395,17 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   }
   
   alpha <- exp(log_alpha)
-  mu_fixed <- exp(X_Fixed %*% fixed_coefs)
+  
+  if (!is.null(offset)){
+    if (length(offset)>1){
+      X_offset_i = rowsum(X_offset)
+      mu_fixed <- exp(X %*% fixed_coefs + X_offset_i)
+    }else{
+      predicted <- exp(X %*% fixed_coefs + X_offset)
+    }
+  } else {
+    predicted <- exp(X %*% fixed_coefs)
+  }
   
   if(length(rpar)==1){
     rand_sdevs <- coefs[length(coefs)-1]

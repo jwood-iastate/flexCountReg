@@ -14,6 +14,8 @@ rpnb(
   scrambled = FALSE,
   correlated = FALSE,
   panel = NULL,
+  weights = NULL,
+  offset = NULL,
   method = "BHHH",
   max.iters = 1000,
   start.vals = NULL,
@@ -38,6 +40,12 @@ rpnb(
 \item{correlated}{if the random parameters should be correlated (\code{correlated = FALSE} results in uncorrelated random coefficients, \code{correlated = TRUE} results in correlated random coefficients). If the random parameters are correlated, only the normal distribution is used for the random coefficients,}
 
 \item{panel}{an optional variable or vector of variables that can be used to specify a panel structure in the data. If this is specified, the function will estimate the random parameters using a panel structure,}
+
+\item{weights}{the name of a variable in the data frame that should be used
+as a frequency weight.}
+
+\item{offset}{offset the name of a variable, or vector of variable names, in the data frame that should be used 
+as an offset (i.e., included but forced to have a coefficient of 1).}
 
 \item{method}{a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},}
 

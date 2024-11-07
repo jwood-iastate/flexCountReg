@@ -288,7 +288,7 @@
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df compact
 #' @importFrom broom tidy
-#' @importFrom dplyr group_by %>% reframe
+#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize ungroup reframe pull 
 #' @importFrom tibble deframe
 #' @importFrom maxLik maxLik
 #' @importFrom stringr str_replace_all
@@ -341,7 +341,7 @@
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
 #' @export
-countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NULL, 
+countreg.rp <- function(formula, data, family = "NB2", offset = NULL, weights = NULL, 
                       verbose = FALSE, dis_param_formula_1 = NULL, 
                       dis_param_formula_2 = NULL, underreport_formula = NULL,
                      underreport_family = "logit",
@@ -460,6 +460,11 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     compact() #%>%  # Remove NULL values
   
   names(start) <-x_names[1:length(start)] # Shouldn't need to do this, but this ensures it runs without having errors from names
+  
+  # If an offset is specified, create a vector for the offset
+  if (!is.null(offset)){
+    X_offset <- data %>% select(offset)
+  }
 
   # Handling Weights
   if (is.null(weights)){
@@ -501,7 +506,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     }else{underreport_prob=1} # If no underreporting model, set the probability to 1
     
     if (!is.null(offset)){
-      predicted <- exp(X %*% fixed_coefs + X_offset)*underreport_prob
+      if (length(offset)>1){
+        X_offset_i = rowsum(X_offset)
+        predicted <- exp(X %*% fixed_coefs + X_offset_i)*underreport_prob
+      }else{
+        predicted <- exp(X %*% fixed_coefs + X_offset)*underreport_prob
+      }
     } else {
       predicted <- exp(X %*% fixed_coefs)*underreport_prob
     }

@@ -8,7 +8,7 @@
 #' @param family the name of the distribution/model type to estimate. The 
 #'        default "NB2" is the standard negative binomial distribution with a 
 #'        log link. other options are listed below. 
-#' @param offset the name of a variable in the data frame that should be used 
+#' @param offset the name of a variable, or vector of variable names, in the data frame that should be used 
 #'        as an offset (i.e., included but forced to have a coefficient of 1).
 #' @param weights the name of a variable in the data frame that should be used
 #'        as a frequency weight.
@@ -439,7 +439,7 @@
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df compact
 #' @importFrom broom tidy
-#' @importFrom dplyr group_by %>% reframe
+#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize ungroup reframe pull
 #' @importFrom tibble deframe
 #' @importFrom maxLik maxLik
 #' @importFrom stringr str_replace_all
@@ -535,7 +535,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   
   # If an offset is specified, create a vector for the offset
   if (!is.null(offset)){
-    X_offset <- data[, offset]
+    X_offset <- data %>% select(offset)
   }
   
   if (!is.null(dis_param_formula_1)) {
@@ -651,7 +651,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     }else{underreport_prob=1} # If no underreporting model, set the probability to 1
     
     if (!is.null(offset)){
-      predicted <- exp(X %*% fixed_coefs + X_offset)*underreport_prob
+      if (length(offset)>1){
+        X_offset_i = rowsum(X_offset)
+        predicted <- exp(X %*% fixed_coefs + X_offset_i)*underreport_prob
+      }else{
+        predicted <- exp(X %*% fixed_coefs + X_offset)*underreport_prob
+      }
     } else {
       predicted <- exp(X %*% fixed_coefs)*underreport_prob
     }

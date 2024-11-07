@@ -2,6 +2,7 @@
 % Please edit documentation in R/countreg.R, R/countreg.rp.R
 \name{countreg}
 \alias{countreg}
+\alias{countreg.rp}
 \title{Count regression models}
 \usage{
 countreg(
@@ -23,7 +24,7 @@ countreg(
   bootstraps = NULL
 )
 
-countreg(
+countreg.rp(
   formula,
   data,
   family = "NB2",

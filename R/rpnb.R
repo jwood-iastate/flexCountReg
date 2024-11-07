@@ -12,15 +12,18 @@
 #' @param panel an optional variable or vector of variables that can be used to specify a panel structure in the data. If this is specified, the function will estimate the random parameters using a panel structure,
 #' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},
 #' @param max.iters the maximum number of iterations to allow the optimization method to perform,
+#' #' @param weights the name of a variable in the data frame that should be used
+#'        as a frequency weight.
 #' @param start.vals an optional vector of starting values for the regression coefficients
 #' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
 #' @import randtoolbox maxLik stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
-#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize
+#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize ungroup
 #' @importFrom tibble as_tibble
+#' @importFrom tidyr unite
 #' @importFrom purrr map2
-#' @include tri.R get_chol.R helpers.R
+#' @include tri.R get_chol.R helpers.R createFlexCountReg.R
 #' 
 #' @examples
 #' \donttest{
@@ -67,6 +70,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                  rpardists = NULL,
                  ndraws = 1500, scrambled = FALSE,
                  correlated = FALSE, panel=NULL, 
+                 weights=NULL,
                  method = 'BHHH', max.iters = 1000,
                  start.vals = NULL, print.level = 0) {
   # start.vals can be a vector or a named vector with the starting values for the parameters
@@ -94,6 +98,13 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   
   # Now safely convert panel_id to a factor
   data <- data %>% mutate(panel_id = as.factor(panel_id))
+  
+  # Handling Weights
+  if (is.null(weights)){
+    weights.df <- rep(1, length(y))
+  }else{
+    weights.df <- data %>% pull(weights)
+  }
   
 
   # Check and correct the rpardists if the random parameters are correlated
@@ -240,6 +251,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                 rpardists=rpardists,
                 data=data,
                 method = method,
+                weights=weights,
                 control = list(iterlim = max.iters, printLevel = print.level))
   
   N_fixed = ncol(X_Fixed)
@@ -352,7 +364,7 @@ nb_prob <- function(y, mu, alpha, p = NULL, form="nb2") {
 }
 
 # main function for estimating log-likelihoods
-p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data){
+p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights){
   if (!correlated) exact.gradient=TRUE else exact.gradient=FALSE # use numerical gradient if using correlated random parameters
   N_fixed = ncol(X_Fixed)
   N_rand = length(rpar)
@@ -422,20 +434,28 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
   prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p=p, form=form) # Pitr - individual observation probabilities at each draw
   
-  log_prob_mat <- as_tibble(log(prob_mat)) # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
+  log_prob_mat <- as_tibble(log(prob_mat), .name_repair="minimal") # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
   log_prob_mat$panel_id <- data$panel_id
+  
+  # Create column names for the probability matrix
+  draw_names <- paste0("draw_", seq_len(ncol(prob_mat)))
+  log_prob_mat <- as_tibble(log(prob_mat))
+  colnames(log_prob_mat) <- draw_names  # Assign the column names
+  log_prob_mat$panel_id <- data$panel_id  # Add the panel_id column
   
   # get sums of log_probs for each group at each draw value
   log_probs <- log_prob_mat %>%
     group_by(panel_id) %>%
-    summarize(across(all_of(colnames(log_prob_mat)[1:(length(log_prob_mat)-1)]), sum)) %>%
+    summarize(across(all_of(draw_names), sum)) %>%
     ungroup()
   
   log_probs <- log_probs[,-1] # remove the panelID
   
   probs <- rowMeans(exp(log_probs))
   
-  return(log(probs))
+  probs_i <- probs^weights.df
+  
+  return(log(probs)*weights.df)
 }
 
 # Generating Halton Draws

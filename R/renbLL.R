@@ -25,7 +25,7 @@ renb_ll <- function(y, mu, a, b, panels) { # Random Effects Negative Binomial wi
   log_P <- log_num - log_denom + df_model$log_prod_element
   
   # Sum across panels for total log-likelihood
-  total_loglik <- sum(log_P)
+  total_loglik <- log_P
   
   return(total_loglik)
 }

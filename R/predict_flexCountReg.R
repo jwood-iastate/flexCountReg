@@ -314,9 +314,10 @@ predict.flexCountReg <- function(object, ...){
         
       }
     }else{mu_adj=1} # If no underreporting model, set the probability to 1
-    
-    if (modtype=="countreg" & model$family=="PLN"){
-      predictions <- exp(X %*% beta_pred + (alpha^2)/2)*mu_adj
+    if (model$modelType=="countreg"){
+      if (model$family=="PLN"){
+        predictions <- exp(X %*% beta_pred + (alpha^2)/2)*mu_adj
+      }
     }
     else{
       predictions <- exp(X %*% beta_pred)*mu_adj

@@ -86,7 +86,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   sd.start <- 0.1 # starting value for each of the standard deviations of random parameters
   
   # ensure data is a tibble
-  data <- as_tibble(data)
+  data <- as_tibble(data, .name_repair="minimal")
   
   # Generate a panel ID for the model - using the row number if no panel is specified
   if (!("panel_id" %in% names(data))) {
@@ -459,12 +459,12 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p=p, form=form) # Pitr - individual observation probabilities at each draw
   prob_mat <- apply(prob_mat, 2, function(x) x^weights)
   
-  log_prob_mat <- as_tibble(log(prob_mat), .name_repair="unique") # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
+  log_prob_mat <- as_tibble(log(prob_mat), .name_repair="minimal") # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
   log_prob_mat$panel_id <- data$panel_id
   
   # Create column names for the probability matrix
   draw_names <- paste0("draw_", seq_len(ncol(prob_mat)))
-  log_prob_mat <- as_tibble(log(prob_mat))
+  log_prob_mat <- as_tibble(log(prob_mat), .name_repair="minimal")
   colnames(log_prob_mat) <- draw_names  # Assign the column names
   log_prob_mat$panel_id <- data$panel_id  # Add the panel_id column
   

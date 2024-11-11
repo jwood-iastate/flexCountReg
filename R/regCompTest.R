@@ -139,10 +139,6 @@ regCompTest <- function(model, data=NULL, basemodel = "Poisson", variables = FAL
   
   # Compute McFadden's Pseudo R^2, based on a Poisson intercept-only model
   test$PseudoR2 <- 1 - LL / LLbase
-  print(paste("AIC:",AIC))
-  print(paste("BIC:",BIC))
-  print(paste("LR:",LR))
-  print(paste("AIC:",AIC))
   
   # Generate a table of the results and values
   statistics <- tibble::tibble(

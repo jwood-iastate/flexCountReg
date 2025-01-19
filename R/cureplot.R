@@ -16,12 +16,11 @@
 #'   \code{\link{predict.flexCountReg}}.
 #' @param n_resamples Number of resamples for potential resampling in the CURE
 #'   plot, based on the options in \code{\link[cureplots]{cure_plot}}.
-#' @import cureplots stats
 #' @importFrom cureplots calculate_cure_dataframe cure_plot
 #' @importFrom stats model.frame model.response formula
 #' @export
 #' @examples
-#' \donttest{
+#' 
 #' ## Example using a Negative Binomial model
 #' data("washington_roads")
 #' washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
@@ -30,7 +29,7 @@
 #'                             data = washington_roads, family = 'nb2', 
 #'                             method = 'NM', max.iters = 3000)
 #' cureplot(nb_model)
-#' }
+#' 
 cureplot <- function(
     model, data = NULL, indvar = NULL, method = "Simulated", n_resamples = 0) {
 
@@ -43,7 +42,7 @@ cureplot <- function(
   formula <- formula(model)  # Get the model formula to extract the outcome
   
   # Extract the outcome
-  y <- stats::model.response(stats::model.frame(formula, data))  
+  y <- model.response(model.frame(formula, data))  
   
   predictions <- predict(model, data, method)
   resids <- y - predictions

@@ -39,7 +39,8 @@
 #' qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
 #' rpLnorm(30, mean=0.75,  sigma=2, ndraws=10)
 #'
-#' @import stats randtoolbox
+#' @importFrom stats runif qnorm
+#' @importFrom randtoolbox halton
 #' @export
 #' @name PoissonLognormal
 #' 

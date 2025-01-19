@@ -46,6 +46,7 @@ get_params <- function(family) {
     "PGE" = list("ln(shape)", "ln(scale)"),
     "PIG1" = list("ln(eta)", NULL),
     "PIG2" = list("ln(eta)", NULL),
+    "PIG" = list("ln(eta)", NULL),
     "PL" = list("ln(theta)", NULL),
     "PLG" = list("ln(theta)", "ln(alpha)"),
     "PLL" = list("ln(theta)", "ln(sigma)"),
@@ -63,21 +64,19 @@ get_probFunc <- function(family){
     return(stats::dpois(y, predicted))
   },
   "NB1" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
-    mu <- predicted
-    return(stats::dnbinom(y, size = mu/alpha, mu = mu))
+    return(stats::dnbinom(y, size = predicted/alpha, mu = predicted))
   },
   "NB2" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
-    mu <- predicted
-    return(stats::dnbinom(y, size = alpha, mu = mu))
+    return(stats::dnbinom(y, size = alpha, mu = predicted))
   },
   "NBP" = function(y, predicted, alpha, sigma, haltons, normed_haltons){
-    mu <- predicted
-    return(stats::dnbinom(y, size = (mu^(2-sigma))/alpha, mu = mu))
+    return(stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))
   },
   "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpLnorm_cpp(x=y, mean=predicted, sigma=alpha, h=normed_haltons),
   "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpge(y, mean=predicted, shape=alpha, scale=sigma, haltons=haltons),
   "PIG1" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpinvgaus(y, mu=predicted, eta=alpha),
   "PIG2" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpinvgaus(y, mu=predicted, eta=alpha, form="Type 2"),
+  "PIG" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpinvgamma(y, mu=predicted, eta=alpha),
   "PL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dplind(y, mean=predicted, theta=alpha),
   "PLG" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dplindGamma(x=y, mean=predicted, theta=alpha, alpha=sigma, hdraws=haltons),
   "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dplindLnorm(x=y, mean=predicted, theta=alpha, sigma=sigma, hdraws=normed_haltons),
@@ -116,4 +115,50 @@ generate_draws <- function(hdraws, random_coefs_means, rand_sdevs, rpardists) {
   draws <- do.call(cbind, draws)
   
   return(draws)
+}
+
+parse_complex_formula <- function(formula) {
+  # Convert formula to string
+  formula_str <- deparse(formula)
+  
+  # Separate the left-hand side (response variable) from the right-hand side
+  rhs <- strsplit(formula_str, "~")[[1]][2]
+  
+  # Extract random effects terms (e.g., (x|group) or (x|group|cluster))
+  random_effect_matches <- gregexpr("\\((.*?)\\)", rhs)
+  random_effect_terms <- regmatches(rhs, random_effect_matches)[[1]]
+  
+  # Extract fixed effects (everything outside parentheses)
+  fixed_effect_str <- gsub("\\((.*?)\\)", "", rhs) # Remove random effect terms
+  fixed_effects <- strsplit(fixed_effect_str, "\\+|\\-")[[1]] # Split by operators
+  fixed_effects <- trimws(fixed_effects) # Remove whitespace
+  fixed_effects <- fixed_effects[fixed_effects != ""] # Remove empty terms
+  
+  # Parse random effects and build hierarchical structure
+  random_effects <- list()
+  for (term in random_effect_terms) {
+    # Remove parentheses and split by "|"
+    term_clean <- gsub("[()]", "", term)
+    parts <- strsplit(term_clean, "\\|")[[1]]
+    variables <- trimws(parts[1]) # Random effect variables
+    levels <- trimws(parts[-1])  # Grouping levels
+    random_effects[[length(random_effects) + 1]] <- list(variables = variables, levels = levels)
+  }
+  
+  # Aggregate variables by hierarchical level
+  hierarchy <- list()
+  for (effect in random_effects) {
+    levels_key <- paste(effect$levels, collapse = " | ") # Key by levels
+    if (!levels_key %in% names(hierarchy)) {
+      hierarchy[[levels_key]] <- c()
+    }
+    hierarchy[[levels_key]] <- unique(c(hierarchy[[levels_key]], effect$variables))
+  }
+  
+  # Return parsed components
+  list(
+    fixed_effects = fixed_effects,
+    random_effects = random_effects,
+    hierarchy = hierarchy
+  )
 }

@@ -70,7 +70,8 @@
 #' qpge(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, shape=2, scale=1, ndraws=500)
 #' rpge(30, mean=0.75,  shape=2, scale=1, ndraws=500)
 #'
-#' @import stats randtoolbox
+#' @importFrom stats runif
+#' @importFrom randtoolbox halton
 #' @export
 #' @name PoissonGeneralizedExponential
 

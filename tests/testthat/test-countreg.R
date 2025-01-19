@@ -134,7 +134,7 @@ test_that("Sichel", {
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
   model <- countreg(Total_crashes ~ lnaadt + speed50,
                     offset = "lnlength", 
-                    data = washington_roads, family = "SI")
+                    data = washington_roads, family = "SI", method="NM")
   
   expect_s3_class(model, "flexCountReg")  # Check the return class
   expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
@@ -208,7 +208,7 @@ test_that("Poisson-Lindley RP", {
                    ndraws = 10,
                    correlated = FALSE,
                    rpardists = c(speed50="n"),
-                   method = "nm",
+                   method = "BHHH",
                    print.level = 2)
   
   expect_s3_class(model, "flexCountReg")  # Check the return class

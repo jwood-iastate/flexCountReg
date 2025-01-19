@@ -68,7 +68,7 @@ poislind.mod <- poisLind.re(Animal ~ lnaadt + lnlength + speed50 +
                                 ShouldWidth04 + AADTover10k,
                                 data=washington_roads,
                                 group_var="ID",
-                                method="BHHH",
+                                method="NM",
                                 max.iters = 1000)
 summary(poislind.mod)}
 }

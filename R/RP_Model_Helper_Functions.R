@@ -1,6 +1,8 @@
+#' @importFrom randtoolbox halton
+#' @importFrom modelr model_matrix
 get_halton_draws <-function(ndraws=500, dim=1, scrambled=FALSE){
 
-  draws <- randtoolbox::halton(ndraws, dim, mixed=scrambled)
+  draws <- halton(ndraws, dim, mixed=scrambled)
   
   if (dim>1){
     rpardraws <- draws[,1:dim]
@@ -26,10 +28,6 @@ data_prep <- function(formula,
                       het_variance_formula=NULL, 
                       offsets = NULL,
                       panel_ids=NULL){
-  
-  require(modelr)
-  require(dplyr)
-  require(stats)
   
   y_name <- all.vars(formula)[1]
   y <- data[[y_name]]

@@ -18,13 +18,15 @@
 #'        as a frequency weight.
 #' @param start.vals an optional vector of starting values for the regression coefficients
 #' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
-#' @import randtoolbox maxLik stats modelr
+#' @import randtoolbox stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
 #' @importFrom dplyr mutate %>% row_number group_by across all_of summarize ungroup reframe pull
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr unite
 #' @importFrom purrr map2
+#' @importFrom bbmle mle2
+#' @importFrom maxLik maxLik
 #' @include tri.R get_chol.R helpers.R createFlexCountReg.R
 #' 
 #' @examples
@@ -39,7 +41,7 @@
 #'                correlated = FALSE,
 #'                rpardists = c(intercept="u", speed50="t"),
 #'                form = 'nb1',
-#'                method = "bfgs",
+#'                method = "nm",
 #'                print.level = 2)
 #'
 #' summary(nb1.rp)
@@ -49,7 +51,7 @@
 #'                rpar_formula = ~ speed50,
 #'                data = washington_roads,
 #'                ndraws = 100,
-#'                correlated = TRUE,
+#'                correlated = FALSE,
 #'                form = 'nb2',
 #'                method = "bfgs",
 #'                print.level = 1)
@@ -61,7 +63,7 @@
 #'                rpar_formula = ~ speed50,
 #'                data = washington_roads,
 #'                ndraws = 100,
-#'                correlated = TRUE,
+#'                correlated = FALSE,
 #'                form = 'nbp',
 #'                method = "bfgs",
 #'                print.level = 1)
@@ -82,7 +84,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   y <- stats::model.response(mod1_frame)
   # start.vals can be a vector or a named vector with the starting values for the parameters
   # print.level is used to determine the level of details for the optimization to print (for the maxLik function call)
-
+  
   sd.start <- 0.1 # starting value for each of the standard deviations of random parameters
   
   # ensure data is a tibble
@@ -113,13 +115,13 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     weights.df <- data %>% pull(weights)
   }
   
-
+  
   # Check and correct the rpardists if the random parameters are correlated
   if(correlated && !is.null(rpardists) && any(rpardists != "n")){
     warning("When the random parameters are correlated, only the normal distribution is used.")
     rpardists <- NULL
   }
-
+  
   # Function to generate Halton draws
   halton_draws <- function(ndraws, rpar, scrambled) {
     num_params <- length(rpar)
@@ -134,27 +136,27 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   y_name <- all.vars(formula)[1]
   
   X_expanded <- cbind(X_Fixed, X_rand, X_rand) # for use in the gradient
-
+  
   # Create named vectors
   fixed_terms <- names(X_Fixed)
   rand_terms <- names(X_rand)
   predictor_terms <- c(fixed_terms, rand_terms)
   nb_vars <- predictor_terms[!grepl("ntercept", predictor_terms)] # remove the intercept
-
+  
   X_Fixed <- as.matrix(X_Fixed)
   X_rand <- as.matrix(X_rand)
-
+  
   # check if the intercept is included in both the fixed and random parameters
   if("\\(Intercept\\)" %in% colnames(X_Fixed) && "\\(Intercept\\)" %in% colnames(X_rand)){
     stop("Do not include the intercept in both the fixed parameters (in `formula`) and random parameters (in `rpar_formula`). Use `- 1` in the formula you want to remove the intercept from.")
   }
-
-
+  
+  
   if(!is.null(rpardists)){ # check the random parameter distributions for the intercept (and correct, if needed)
     names(rpardists) <- gsub("intercept", "\\(Intercept\\)", names(rpardists)) # correct intercept name
     names(rpardists) <- gsub("constant", "\\(Intercept\\)", names(rpardists)) # correct intercept name
   }
-
+  
   # Check if the specified distributions include all specified random parameters and no extras
   if (!correlated && !is.null(rpardists)){
     prob = FALSE
@@ -167,7 +169,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
         prob = TRUE
       }
     }
-
+    
     for (i in names(rpardists)){
       if (i %in% rand_terms){
         next
@@ -179,21 +181,21 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     }
     if (prob) stop() # if a problem was identified, the instructions were printed and the function will now stop executing
   }
-
+  
   nb_formula <- reformulate(nb_vars, response = y_name)
-
+  
   x_fixed_names <- colnames(X_Fixed)
   rpar <- colnames(X_rand)
   
   # If an offset is specified, create a vector for the offset
   if (!is.null(offset)){
-    X_offset <- data %>% select(offset)
+    X_offset <- data %>% select(all_of(offset))
   } else{
     X_offset <- NULL
   }
-
+  
   hdraws <- halton_draws(ndraws, rpar, scrambled)
-
+  
   if(!is.null(start.vals)){
     params <- unname(start.vals)
     Lparams <- length(params)
@@ -206,26 +208,26 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     params <- coef(nb_model)
     Lparams <- length(params)
     Lrpar = length(rpar)
-
+    
     if (length(rpar)<2){
       correlated = FALSE
     }
-
+    
     start <- params
     # Make sure the start parameters are ordered correctly, including the location of the intercept
     varnameorder <- c(x_fixed_names, rpar)
     match_indices <- match(varnameorder, names(start))
     start <- start[match_indices] # correctly ordered
-
+    
     x_rand_names_mean <- paste0(rpar, ':Mean')
     x_names = c(x_fixed_names, x_rand_names_mean)
-
+    
     if (correlated){
       randparam_means = tail(start, Lrpar)
       rparam_var <- rep(0.1, length(randparam_means))
       rparam_var <- diag(rparam_var)
       Chl <- chol(rparam_var)
-
+      
       for (i in 1:length(rpar)){
         for (j in 1:length(rpar)){
           if (i >= j){
@@ -242,46 +244,67 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     }
     start <- append(start, log(0.1)) # initial log of overdispersion parameter
     x_names <- append(x_names, 'ln(alpha)')
-
+    
     if (form=='nbp'){
       start <- append(start, 1.5) # initial value for parameter P
       x_names <- append(x_names, 'P')
     }
     names(start) <- x_names
   }
-
-  fit <- maxLik::maxLik(p_nb_rp,
-                start = start,
-                y = y,
-                X_Fixed = X_Fixed,
-                X_rand = X_rand,
-                ndraws = ndraws,
-                hdraws=hdraws,
-                rpar = rpar,
-                correlated = correlated,
-                form=form,
-                rpardists=rpardists,
-                data=data,
-                method = method,
-                weights=weights.df,
-                offset=offset,
-                X_offset = X_offset,
-                control = list(iterlim = max.iters, printLevel = print.level))
   
+  # fit <- mle2(
+  #   minuslogl = neg_LL,
+  #   start = start,
+  #   data = list(
+  #     y = y,
+  #     X_Fixed = X_Fixed,
+  #     X_rand = X_rand,
+  #     ndraws = ndraws,
+  #     rpar = rpar,
+  #     correlated = correlated,
+  #     form = form,
+  #     rpardists = rpardists,
+  #     hdraws = hdraws,
+  #     data = data,
+  #     weights = weights.df,
+  #     X_offset = X_offset,
+  #     offset = offset
+  #   ),
+  #   control = list(maxit = max.iters, trace = print.level)
+  # )
+  
+  fit <- maxLik::maxLik(p_nb_rp,
+                        start = start,
+                        y = y,
+                        X_Fixed = X_Fixed,
+                        X_rand = X_rand,
+                        ndraws = ndraws,
+                        hdraws=hdraws,
+                        rpar = rpar,
+                        correlated = correlated,
+                        form=form,
+                        rpardists=rpardists,
+                        data=data,
+                        method = method,
+                        weights=weights.df,
+                        offset=offset,
+                        X_offset = X_offset,
+                        control = list(iterlim = max.iters, printLevel = print.level))
+
   N_fixed = ncol(X_Fixed)
   N_rand = length(rpar)
   
   # names(fit$estimate) <- x_names
-
+  
   param.splits <- as.factor(ifelse((grepl("St. Dev", x_names) + grepl("Cholesky", x_names)==1), "rpr", "coef"))
-
+  
   coefs <- as.array(fit$estimate)
-
+  
   # split.coefs <- split(coefs, param.splits)
-
+  
   betas <- coefs[1:(N_fixed+N_rand)] # includes means of random parameters
   t <- coefs[(N_fixed+N_rand+1):length(coefs)]
-
+  
   if (correlated){
     if(form=='nbp'){
       chol_vals <- coefs[(N_fixed+N_rand+1):(length(coefs)-2)]
@@ -299,7 +322,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
         }
       }
     }
-
+    
     Covariance <- t(Cholesky) %*% Cholesky
     Correlation <- cov2cor(Covariance)
   }
@@ -314,7 +337,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     }
   }
   
-
+  
   if(form =='nbp'){
     t <- tail(coefs,2)
     alpha <- exp(t[1])
@@ -357,7 +380,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     names(dst) <- colnames(X_rand)
     fit$rpardists = dst
   }
-
+  
   fit$modelType <- "rpnb"
   
   obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
@@ -375,6 +398,12 @@ nb_prob <- function(y, mu, alpha, p = NULL, form="nb2") {
   } else {
     stop("Invalid form or missing 'p' for NB-P model.")
   }
+}
+
+
+# Negative LL
+neg_LL <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights, X_offset, offset){
+  -sum(p_nb_rp(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights, X_offset, offset))
 }
 
 # main function for estimating log-likelihoods
@@ -472,8 +501,8 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpard
   # get sums of log_probs for each group at each draw value
   log_probs <- log_prob_mat %>%
     group_by(panel_id) %>%
-    summarize(across(all_of(draw_names), sum)) %>%
-    ungroup()
+    summarize(across(all_of(draw_names), sum)) #%>%
+    # ungroup()
   
   log_probs <- log_probs[,-1] # remove the panelID
   
@@ -528,4 +557,3 @@ generate_scaled_draws <- function(hdraws, random_coefs_means, rand_sdevs, rpardi
     }
   }
 }
-

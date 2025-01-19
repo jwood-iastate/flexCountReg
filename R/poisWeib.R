@@ -42,7 +42,8 @@
 #' qpoisweibull(0.95, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 #' rpoisweibull(10, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 #'
-#' @import stats randtoolbox
+#' @importFrom stats runif
+#' @importFrom randtoolbox halton
 #' @export
 #' @name PoissonWeibull
 #' 

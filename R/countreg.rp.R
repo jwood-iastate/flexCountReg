@@ -1,8 +1,5 @@
 #' Count regression models
 #' 
-#' @name countreg
-#' @aliases countreg
-#' 
 #' @param formula a symbolic description of the model to be fitted.
 #' @param data a data frame containing the variables in the model.
 #' @param family the name of the distribution/model type to estimate. The 
@@ -284,7 +281,8 @@
 #'  \item formula: the formula used to fit the model.
 #' }
 #' 
-#' @import modelr randtoolbox
+#' @importFrom modelr model_matrix
+#' @importFrom randtoolbox halton
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df compact
 #' @importFrom broom tidy
@@ -296,6 +294,7 @@
 #' @include pinvgaus.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
 #' 
 #' @examples
+#' \dontrun{
 #' # Load the Washington data
 #' data("washington_roads")
 #' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
@@ -323,6 +322,7 @@
 #' com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 #'               data = washington_roads, family = "COM")
 #' summary(com_model)
+#' }
 #' 
 #' @references
 #' Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
@@ -367,13 +367,13 @@ countreg.rp <- function(formula, data, family = "NB2", offset = NULL, weights = 
   probFunc <- get_probFunc(family)
   
   # Prepare model matrices
-  mod1_frame <- stats::model.frame(formula, data)
-  X <- as.matrix(modelr::model_matrix(data, formula))
+  mod1_frame <- model.frame(formula, data)
+  X <- as.matrix(model_matrix(data, formula))
   x_names <- colnames(X)
   
   # If underreporting model, create a data matrix for the underreporting model
   if (!is.null(underreport_formula)){
-    X_underreport <- as.matrix(modelr::model_matrix(data, underreport_formula))
+    X_underreport <- as.matrix(model_matrix(data, underreport_formula))
     N_underreport <- ncol(X_underreport)
     underreport_names <- paste0("Underreporting:", colnames(X_underreport))
   }
@@ -388,14 +388,14 @@ countreg.rp <- function(formula, data, family = "NB2", offset = NULL, weights = 
   }
   
   if (!is.null(dis_param_formula_1)) {
-    mod_alpha_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_1))
+    mod_alpha_frame <- as.matrix(model_matrix(data, dis_param_formula_1))
     x_names <- c(x_names, paste0(params[1], ":",colnames(mod_alpha_frame)))
   } else {
     x_names <- append(x_names, params[1])
   }
   
   if (!is.null(dis_param_formula_2)) {
-    mod_sigma_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_2))
+    mod_sigma_frame <- as.matrix(model_matrix(data, dis_param_formula_2))
     x_names <- c(x_names, paste0(params[2], ":",colnames(mod_sigma_frame)))
   } else {
     x_names <- append(x_names, params[2])
@@ -405,10 +405,10 @@ countreg.rp <- function(formula, data, family = "NB2", offset = NULL, weights = 
     x_names <- c(x_names, underreport_names)
   }
   
-  y <- stats::model.response(mod1_frame)
+  y <- model.response(mod1_frame)
   
   # Generate Halton draws to use as quantile values
-  haltons <- randtoolbox::halton(ndraws)
+  haltons <- halton(ndraws)
   normed_haltons <- dnorm(haltons)
   
   # Some numbers that will be useful
@@ -463,7 +463,7 @@ countreg.rp <- function(formula, data, family = "NB2", offset = NULL, weights = 
   
   # If an offset is specified, create a vector for the offset
   if (!is.null(offset)){
-    X_offset <- data %>% select(offset)
+    X_offset <- data %>% select(all_of(offset))
   }
 
   # Handling Weights

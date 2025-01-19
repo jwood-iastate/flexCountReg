@@ -55,7 +55,7 @@
 #' qplind(c(0.1, 0.3, 0.5, 0.9, 0.95), lambda = 4.67, theta = 7)
 #' rplind(30, mean = 0.75, theta = 7)
 #'
-#' @import stats
+#' @importFrom stats runif
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
 #' @export

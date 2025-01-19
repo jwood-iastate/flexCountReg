@@ -27,7 +27,7 @@
 #' @include tri.R plind.R
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' ## Random Parameters Poisson-Lindley
 #' data("washington_roads")
 #' plind.rp <- rppLind(Animal ~ lnlength + lnaadt,

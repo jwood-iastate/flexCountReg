@@ -56,7 +56,7 @@
 #' qinvgamma(c(0.1, 0.3, 0.5, 0.9, 0.95), shape = 3, scale = 2)
 #' rinvgamma(30, shape = 3, scale = 2)
 #'
-#' @import stats
+#' @importFrom stats dgamma pgamma qgamma runif
 #' @export
 #' @name invgamma
 

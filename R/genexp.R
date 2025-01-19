@@ -77,7 +77,7 @@
 #' qpinvgaus(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, eta=0.5, form="Type 2")
 #' rpinvgaus(30, mu=0.75, eta=1.5)
 #'
-#' @import stats
+#' @importFrom stats runif
 #' @export
 #' @name PoissonInverseGaussian
 

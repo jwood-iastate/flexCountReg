@@ -35,7 +35,7 @@ including those with random parameters, estimated using the flexCountReg
 package.
 }
 \examples{
-\donttest{
+
 ## Example using a Negative Binomial model
 data("washington_roads")
 washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
@@ -44,5 +44,5 @@ nb_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
                             data = washington_roads, family = 'nb2', 
                             method = 'NM', max.iters = 3000)
 cureplot(nb_model)
-}
+
 }

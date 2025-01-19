@@ -44,7 +44,7 @@
 #' qgwar(0.8, mu=1, k=2, rho=3)
 #' rgwar(10, mu=1, k=2, rho=3)
 #'
-#' @import stats
+#' @importFrom stats runif
 #' @export
 #' @name Generalized-Waring
 #' @importFrom Rcpp sourceCpp

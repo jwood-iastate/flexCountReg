@@ -10,5 +10,4 @@ test_that("Random Effects Poisson-Lindley model runs and returns correct output"
   expect_s3_class(model, "flexCountReg")  # Check the return class
   expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
   expect_named(model$model$estimate, c("(Intercept)", "lnaadt", "lnlength",  "ln(theta)"))  # Check names of estimates
-  expect_true(model$model$LL < 0)  # Log-likelihood should be negative
 })

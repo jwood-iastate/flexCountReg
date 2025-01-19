@@ -70,7 +70,7 @@ nb1.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
                correlated = FALSE,
                rpardists = c(intercept="u", speed50="t"),
                form = 'nb1',
-               method = "bfgs",
+               method = "nm",
                print.level = 2)
 
 summary(nb1.rp)
@@ -80,7 +80,7 @@ nb2.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
                rpar_formula = ~ speed50,
                data = washington_roads,
                ndraws = 100,
-               correlated = TRUE,
+               correlated = FALSE,
                form = 'nb2',
                method = "bfgs",
                print.level = 1)
@@ -92,7 +92,7 @@ nbp.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
                rpar_formula = ~ speed50,
                data = washington_roads,
                ndraws = 100,
-               correlated = TRUE,
+               correlated = FALSE,
                form = 'nbp',
                method = "bfgs",
                print.level = 1)

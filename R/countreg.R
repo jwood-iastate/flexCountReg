@@ -59,6 +59,7 @@
 #'  \item Poisson-Generalized-Exponential (PGE)
 #'  \item Poisson-Inverse-Gaussian Type 1 (PIG1)
 #'  \item Poisson-Inverse-Gaussian Type 2 (PIG2)
+#'  \item Poisson-Inverse-Gamma (PIG)
 #'  \item Poisson-Lindley (PL)
 #'  \item Poisson-Lindley-Gamma (PLG), also known as the Negative 
 #'        Binomial-Lindley (NBL)
@@ -81,6 +82,7 @@
 #'        link.
 #'  \item "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log link.
 #'  \item "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log link.
+#'  \item "PIG" for Poisson-Inverse-Gamma distribution with a log link.
 #'  \item "PL" for Poisson-Lindley distribution with a log link.
 #'  \item "PLG" for Poisson-Lindley-Gamma distribution with a log link.
 #'  \item "PLL" for Poisson-Lindley-Lognormal distribution with a log link.
@@ -114,6 +116,7 @@
 #'  \item \eqn{ln(\sigma)} for the Poisson-Lognormal model.
 #'  \item shape parameter for the Poisson-Generalized-Exponential model.
 #'  \item \eqn{ln(\eta)} for the Poisson-Inverse-Gaussian model.
+#'  \item \eqn{ln(\eta)} for the Poisson-Inverse-Gamma model.
 #'  \item \eqn{ln(\theta)} for the Poisson-Lindley model.
 #'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
 #'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
@@ -131,6 +134,7 @@
 #'  \item Not Applicable for the Poisson-Lognormal model.
 #'  \item scale parameter for the Poisson-Generalized-Exponential model.
 #'  \item Not Applicable for the Poisson-Inverse-Gaussian model.
+#'  \item Not Applicable for the Poisson-Inverse-Gamma model.
 #'  \item Not Applicable for the Poisson-Lindley model.
 #'  \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
 #'  \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
@@ -147,8 +151,8 @@
 #'  \itemize{
 #'  \item Poisson-Lognormal
 #'  \item Poisson-Generalized-Exponential
-#'  \item Poisson-Lindley-Gamma (more efficient and stable than using 
-#'        hypergeometric functions)
+#'  \item Poisson-Lindley-Gamma (more efficient than using hypergeometric 
+#'  functions)
 #'  \item Poisson-Lindley-Lognormal
 #'  \item Poisson-Weibull
 #'  }
@@ -256,6 +260,18 @@
 #' \deqn{\sigma^2=\mu+\eta\mu^2}
 #' 
 #' The parameter \eqn{\eta} is estimated as the natural logarithm transformed value, \eqn{\ln(\eta)}, to ensure that \eqn{\eta>0}.
+#' 
+#' #' **Poisson-Inverse-Gamma (PIG) Model**
+#' The PDF of the distribution is:
+#' \deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
+#' 
+#' Where \eqn{\eta} is a shape parameter with the restriction that \eqn{\eta>0}, 
+#' \eqn{\mu>0} is the mean value,  \eqn{y} is a non-negative integer, and 
+#' \eqn{K_i(z)} is the modified Bessel function of the second kind. This 
+#' formulation uses the mean directly.
+#'
+#' The variance of the distribution is:
+#' \deqn{\sigma^2=\mu+\eta\mu^2}
 #' 
 #' **Poisson-Lindley (PL) Model**
 #' The Poisson-Lindley regression is based on a compound Poisson-Lindley 
@@ -444,9 +460,10 @@
 #' @importFrom maxLik maxLik
 #' @importFrom stringr str_replace_all
 #' @importFrom sandwich sandwich
-#' @include pinvgaus.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
+#' @include pinvgaus.R pinvgamma.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
 #' 
 #' @examples
+#' #\dontrun{
 #' # Load the Washington data
 #' data("washington_roads")
 #' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
@@ -470,10 +487,11 @@
 #'               underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
 #' summary(plogn_underreport)
 #' 
-#' # Estimate a Conwa-Maxwell-Poisson model
+#' # Estimate a Conway-Maxwell-Poisson model
 #' com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-#'               data = washington_roads, family = "COM")
+#'               data = washington_roads, family = "COM", method="BHHH")
 #' summary(com_model)
+#' #}
 #' 
 #' @references
 #' Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
@@ -518,7 +536,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   probFunc <- get_probFunc(family)
   
   # Prepare model matrices
-  mod1_frame <- stats::model.frame(formula, data)
+  mod1_frame <- model.frame(formula, data)
   X <- as.matrix(modelr::model_matrix(data, formula))
   x_names <- colnames(X)
   
@@ -535,7 +553,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   
   # If an offset is specified, create a vector for the offset
   if (!is.null(offset)){
-    X_offset <- data %>% select(offset)
+    X_offset <- data %>% select(all_of(offset))
   }
   
   if (!is.null(dis_param_formula_1)) {
@@ -662,7 +680,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     }
     
     # Call the probability function
-    probs <- probFunc(y, predicted, alpha, sigma, haltons, normed_haltons)
+    probs <- probFunc(y=y, predicted=predicted, alpha=alpha, sigma=sigma, 
+                      haltons=haltons, normed_haltons=normed_haltons)
     
     probs_i <- probs^weights.df
     

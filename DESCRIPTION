@@ -1,14 +1,16 @@
 Package: flexCountReg
 Type: Package
-Title: Estimation of a variety of count regression models
+Title: Estimation of a Variety of Count Regression Models
 Version: 0.1.1
-Author: c(person("Wood", "Jonathan", role = c("aut", "cre"), email = "jwood2@iastate.edu", comment = c(ORCID = "0000-0003-0131-6384")))
+Authors@R: person("Jonathan", "Wood", role = c("aut", "cre"),
+                  email = "jwood2@iastate.edu", 
+                  comment = c(ORCID = "0000-0003-0131-6384"))
 Maintainer: Jonathan Wood <jwood2@iastate.edu>
 Description: An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lindley models (which handle excess zeroes), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, and the Sichel model.
 Imports: 
+    bbmle,
     broom,
     cureplots,
-    dplyr,
     gt,
     knitr,
     lamW,
@@ -22,6 +24,7 @@ Imports:
     rlang,
     sandwich,
     stats,
+    dplyr,
     stringr,
     tibble,
     tidyr,
@@ -39,6 +42,9 @@ Collate:
     'Lindley.R'
     'RP_Model_Helper_Functions.R'
     'RcppExports.R'
+    'TarMairon.R'
+    'cor2cov.R'
+    'corr_haltons.R'
     'helpers.R'
     'plind.R'
     'ppoisGE.R'
@@ -46,10 +52,8 @@ Collate:
     'plindGamma.R'
     'plindLnorm.R'
     'ppoislogn.R'
+    'pinvgamma.R'
     'pinvgaus.R'
-    'TarMairon.R'
-    'cor2cov.R'
-    'corr_haltons.R'
     'countreg.R'
     'countreg.rp.R'
     'createFlexCountReg.R'
@@ -70,11 +74,11 @@ Collate:
     'predict_flexCountReg.R'
     'regCompTest.R'
     'regCompTable.R'
+    'renbLL.R'
+    'renb.R'
     'rpnb.R'
     'rppLind.R'
     'summary_flexCountReg.R'
-    'renb.R'
-    'renbLL.R'
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

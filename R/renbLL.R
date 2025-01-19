@@ -1,6 +1,6 @@
+#' @import dplyr tibble
+#'
 renb_ll <- function(y, mu, a, b, panels) { # Random Effects Negative Binomial with Beta Distributed Random Effects (NB1)
-  require(dplyr)
-  require(tibble)
   
   df <- tibble(y = y, mu = mu, panels = panels)
   

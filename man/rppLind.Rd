@@ -53,7 +53,7 @@ for estimating standard errors. If not specified, no bootstrapping is performed.
 Function for estimating a random parameter Poisson-Lindley model
 }
 \examples{
-\donttest{
+\dontrun{
 ## Random Parameters Poisson-Lindley
 data("washington_roads")
 plind.rp <- rppLind(Animal ~ lnlength + lnaadt,

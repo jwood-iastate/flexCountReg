@@ -14,7 +14,9 @@
 #' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
 #'        for estimating standard errors. If not specified, no bootstrapping is performed.
 #'        
-#' @import maxLik  stats modelr
+#' @importFrom stats model.frame model.matrix model.response
+#' @importFrom maxLik maxLik
+#' @importFrom modelr model_matrix
 #' @importFrom MASS glm.nb
 #' @importFrom purrr map map_df
 #' @importFrom broom tidy
@@ -50,7 +52,7 @@
 #'                                 ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 group_var="ID",
-#'                                 method="BHHH",
+#'                                 method="NM",
 #'                                 max.iters = 1000)
 #' summary(poislind.mod)}
 #' @importFrom Rcpp sourceCpp

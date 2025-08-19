@@ -41,9 +41,7 @@ RoxygenNote: 7.3.2
 Collate: 
     'Generalized-Waring.R'
     'Lindley.R'
-    'RP_Model_Helper_Functions.R'
     'RcppExports.R'
-    'TarMairon.R'
     'cor2cov.R'
     'corr_haltons.R'
     'helpers.R'

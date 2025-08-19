@@ -49,32 +49,12 @@ dpWeib_cpp <- function(x, mean, alpha, sigma, h) {
     .Call('_flexCountReg_dpWeib_cpp', PACKAGE = 'flexCountReg', x, mean, alpha, sigma, h)
 }
 
-dnbGE_cpp <- function(x, mean, alpha, beta) {
-    .Call('_flexCountReg_dnbGE_cpp', PACKAGE = 'flexCountReg', x, mean, alpha, beta)
-}
-
-dnbCrack_cpp <- function(x, mean, r, theta, gamma) {
-    .Call('_flexCountReg_dnbCrack_cpp', PACKAGE = 'flexCountReg', x, mean, r, theta, gamma)
-}
-
 genWaring_cpp <- function(x, mean, k, p) {
     .Call('_flexCountReg_genWaring_cpp', PACKAGE = 'flexCountReg', x, mean, k, p)
 }
 
 get_chol_cpp <- function(pars, Nvars) {
     .Call('_flexCountReg_get_chol_cpp', PACKAGE = 'flexCountReg', pars, Nvars)
-}
-
-p_poisweibull_cpp <- function(beta, x, X_Fixed, X_alpha, X_sigma, h) {
-    .Call('_flexCountReg_p_poisweibull_cpp', PACKAGE = 'flexCountReg', beta, x, X_Fixed, X_alpha, X_sigma, h)
-}
-
-pollind_i_group <- function(mu, y, theta) {
-    .Call('_flexCountReg_pollind_i_group', PACKAGE = 'flexCountReg', mu, y, theta)
-}
-
-reg_run_RE <- function(beta, y, X, group, weights) {
-    .Call('_flexCountReg_reg_run_RE', PACKAGE = 'flexCountReg', beta, y, X, group, weights)
 }
 
 dtri_cpp <- function(x, mode = 0, sigma = 1, upper = NA_real_, lower = NA_real_, log = FALSE) {

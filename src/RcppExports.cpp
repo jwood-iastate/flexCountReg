@@ -178,35 +178,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dnbGE_cpp
-NumericVector dnbGE_cpp(IntegerVector x, NumericVector mean, NumericVector alpha, NumericVector beta);
-RcppExport SEXP _flexCountReg_dnbGE_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP alphaSEXP, SEXP betaSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
-    rcpp_result_gen = Rcpp::wrap(dnbGE_cpp(x, mean, alpha, beta));
-    return rcpp_result_gen;
-END_RCPP
-}
-// dnbCrack_cpp
-NumericVector dnbCrack_cpp(const IntegerVector& x, const NumericVector& mean, const NumericVector& r, const NumericVector& theta, const NumericVector& gamma);
-RcppExport SEXP _flexCountReg_dnbCrack_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP rSEXP, SEXP thetaSEXP, SEXP gammaSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const IntegerVector& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type mean(meanSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type r(rSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
-    rcpp_result_gen = Rcpp::wrap(dnbCrack_cpp(x, mean, r, theta, gamma));
-    return rcpp_result_gen;
-END_RCPP
-}
 // genWaring_cpp
 NumericVector genWaring_cpp(NumericVector x, NumericVector mean, NumericVector k, NumericVector p);
 RcppExport SEXP _flexCountReg_genWaring_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP kSEXP, SEXP pSEXP) {
@@ -230,50 +201,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type pars(parsSEXP);
     Rcpp::traits::input_parameter< int >::type Nvars(NvarsSEXP);
     rcpp_result_gen = Rcpp::wrap(get_chol_cpp(pars, Nvars));
-    return rcpp_result_gen;
-END_RCPP
-}
-// p_poisweibull_cpp
-NumericVector p_poisweibull_cpp(NumericVector beta, NumericVector x, NumericMatrix X_Fixed, NumericMatrix X_alpha, NumericMatrix X_sigma, NumericVector h);
-RcppExport SEXP _flexCountReg_p_poisweibull_cpp(SEXP betaSEXP, SEXP xSEXP, SEXP X_FixedSEXP, SEXP X_alphaSEXP, SEXP X_sigmaSEXP, SEXP hSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type X_Fixed(X_FixedSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type X_alpha(X_alphaSEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type X_sigma(X_sigmaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type h(hSEXP);
-    rcpp_result_gen = Rcpp::wrap(p_poisweibull_cpp(beta, x, X_Fixed, X_alpha, X_sigma, h));
-    return rcpp_result_gen;
-END_RCPP
-}
-// pollind_i_group
-double pollind_i_group(NumericVector mu, IntegerVector y, double theta);
-RcppExport SEXP _flexCountReg_pollind_i_group(SEXP muSEXP, SEXP ySEXP, SEXP thetaSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
-    Rcpp::traits::input_parameter< double >::type theta(thetaSEXP);
-    rcpp_result_gen = Rcpp::wrap(pollind_i_group(mu, y, theta));
-    return rcpp_result_gen;
-END_RCPP
-}
-// reg_run_RE
-double reg_run_RE(NumericVector beta, IntegerVector y, NumericMatrix X, SEXP group, NumericVector weights);
-RcppExport SEXP _flexCountReg_reg_run_RE(SEXP betaSEXP, SEXP ySEXP, SEXP XSEXP, SEXP groupSEXP, SEXP weightsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
-    Rcpp::traits::input_parameter< NumericMatrix >::type X(XSEXP);
-    Rcpp::traits::input_parameter< SEXP >::type group(groupSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
-    rcpp_result_gen = Rcpp::wrap(reg_run_RE(beta, y, X, group, weights));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -354,13 +281,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_flexCountReg_dplindlogn_cpp", (DL_FUNC) &_flexCountReg_dplindlogn_cpp, 5},
     {"_flexCountReg_dpLnorm_cpp", (DL_FUNC) &_flexCountReg_dpLnorm_cpp, 4},
     {"_flexCountReg_dpWeib_cpp", (DL_FUNC) &_flexCountReg_dpWeib_cpp, 5},
-    {"_flexCountReg_dnbGE_cpp", (DL_FUNC) &_flexCountReg_dnbGE_cpp, 4},
-    {"_flexCountReg_dnbCrack_cpp", (DL_FUNC) &_flexCountReg_dnbCrack_cpp, 5},
     {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 4},
     {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
-    {"_flexCountReg_p_poisweibull_cpp", (DL_FUNC) &_flexCountReg_p_poisweibull_cpp, 6},
-    {"_flexCountReg_pollind_i_group", (DL_FUNC) &_flexCountReg_pollind_i_group, 3},
-    {"_flexCountReg_reg_run_RE", (DL_FUNC) &_flexCountReg_reg_run_RE, 5},
     {"_flexCountReg_dtri_cpp", (DL_FUNC) &_flexCountReg_dtri_cpp, 6},
     {"_flexCountReg_ptri_cpp", (DL_FUNC) &_flexCountReg_ptri_cpp, 7},
     {"_flexCountReg_qtri_cpp", (DL_FUNC) &_flexCountReg_qtri_cpp, 5},

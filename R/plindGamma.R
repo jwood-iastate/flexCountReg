@@ -27,7 +27,7 @@
 #' \code{rplindGamma} generates random numbers from the Poisson-Lindley-Gamma Distribution.
 #'
 #' The compound Probability Mass Function (PMF) for the Poisson-Lindley-Gamma (PLG) distribution is:
-#' \deqn{f(x|\mu,\theta,\alpha)\frac{\alpha  (\theta+2) ^2 \Gamma (x+\alpha ) }{(\mu)^2(\theta +1)^3 \Gamma (\alpha )}\left(\frac{\mu\theta(\theta+1)}{\theta+2} U\left(x+1,2-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)+\alpha(x+1) U\left(x+2,3-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)\right)}
+#' \deqn{f(x|\mu,\theta,\alpha)=\frac{\alpha  (\theta+2) ^2 \Gamma (x+\alpha ) }{(\mu)^2(\theta +1)^3 \Gamma (\alpha )}\left(\frac{\mu\theta(\theta+1)}{\theta+2} U\left(x+1,2-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)+\alpha(x+1) U\left(x+2,3-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)\right)}
 #' 
 #' Where \eqn{\theta} is a distribution parameter from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} a, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, \eqn{mu} is the mean value, and \eqn{x} is a non-negative integer, and \deqn{U(a,b,z)} is the Tricomi's solution to the confluent hypergeometric function - also known as the confluent hypergeometric function of the second kind
 #'

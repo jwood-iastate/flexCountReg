@@ -32,8 +32,10 @@ countreg(
 default "NB2" is the standard negative binomial distribution with a 
 log link. other options are listed below.}
 
-\item{offset}{the name of a variable, or vector of variable names, in the data frame that should be used 
-as an offset (i.e., included but forced to have a coefficient of 1).}
+\item{offset}{the name of a variable, or vector of variable names, in the 
+data frame that should be used as an offset (i.e., included but forced 
+to have a coefficient of 1). The normal method of setting an offset in 
+the equation can also be used (overrides the offset option).}
 
 \item{weights}{the name of a variable in the data frame that should be used
 as a frequency weight.}
@@ -241,10 +243,12 @@ The variance is:
 \deqn{\text{Var}(Y) = \mu + \alpha\mu^P}
 
 **Poisson-Lognormal (PLN) Model**
-The compound Probability Mass Function(PMF) for the Poisson-Lognormal distribution is:
+The compound Probability Mass Function(PMF) for the Poisson-Lognormal 
+distribution is:
 \deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 
-Where \eqn{\sigma} is a parameter for the lognormal distribution with the restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
+Where \eqn{\sigma} is a parameter for the lognormal distribution with the 
+restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 
 The expected value of the distribution is:
 \deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
@@ -265,8 +269,8 @@ model provides a statistically significant improvement in model fit over the
 Poisson model.
 
 **Poisson Generalized-Exponential (PGE) Model**
-#' The Generalized Exponential distribution can be written as a function with a
-shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
+#' The Generalized Exponential distribution can be written as a function with 
+a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
 distribution has strictly positive continuous values. The PDF of the
 distribution is:
 \deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
@@ -291,12 +295,15 @@ To ensure that \eqn{\mu=e^{X\beta}}, \eqn{\lambda} is replaced with:
 This results in:
 \deqn{f(y|\mu,\alpha,\beta)=\int_0^\infty \frac{\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 
-Halton draws are used to perform simulation over the lognormal distribution to solve the integral.
+Halton draws are used to perform simulation over the lognormal distribution 
+to solve the integral.
 
 **Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models**
-The Poisson-Inverse-Gaussian regression model is based on the Poisson-Inverse-Gaussian Distribution. 
+The Poisson-Inverse-Gaussian regression model is based on the 
+Poisson-Inverse-Gaussian Distribution. 
 
-The expected value of the distribution in the regression utilizes a log-link function. Thus, the mean is:
+The expected value of the distribution in the regression utilizes a log-link 
+function. Thus, the mean is:
 \deqn{\mu=e^{X\beta}}
 
 The variance function for the Type 1 distribution (which is the default) is:
@@ -305,7 +312,8 @@ The variance function for the Type 1 distribution (which is the default) is:
 While the variance for the Type 2 distribution is:
 \deqn{\sigma^2=\mu+\eta\mu^2}
 
-The parameter \eqn{\eta} is estimated as the natural logarithm transformed value, \eqn{\ln(\eta)}, to ensure that \eqn{\eta>0}.
+The parameter \eqn{\eta} is estimated as the natural logarithm transformed 
+value, \eqn{\ln(\eta)}, to ensure that \eqn{\eta>0}.
 
 #' **Poisson-Inverse-Gamma (PIG) Model**
 The PDF of the distribution is:
@@ -474,7 +482,9 @@ The mean and variance are:
 \deqn{\mu=e^{X\beta}=\lambda \frac{\delta}{\delta \lambda} \log(Z(\lambda,\nu))}
 \deqn{\sigma^2=\lambda \frac{\delta}{\delta \lambda} \mu}
 
-Note that the COM distribution parameter \eqn{\lambda} is solved for using \eqn{\mu} and \eqn{\nu}, so the regression model provides direct predictions for the mean.
+Note that the COM distribution parameter \eqn{\lambda} is solved for using 
+\eqn{\mu} and \eqn{\nu}, so the regression model provides direct predictions 
+for the mean.
 
 **Underreporting**
 Models for underreporting combine a binary probability model (logit or 
@@ -499,7 +509,8 @@ washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
 # BFGS optimization method
 nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
                data = washington_roads, family = "NB2",
-               dis_param_formula_1 = ~ speed50, verbose = TRUE, method='BFGS')
+               dis_param_formula_1 = ~ speed50, verbose = TRUE, 
+               method='BFGS')
 summary(nb2)
 
 # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
@@ -509,28 +520,42 @@ pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 summary(pln)  
 
 # Estimate an Poisson-Lognormal with underreporting (probit)
-plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
+               AADT10kplus,
               data = washington_roads, family = "NB2",
-              underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
+              underreport_formula = ~ speed50 + AADT10kplus, 
+              underreport_family = "probit")
 summary(plogn_underreport)
 
 # Estimate a Conway-Maxwell-Poisson model
-com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "COM", method="BHHH")
+com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
+                      AADT10kplus,
+                      data = washington_roads, family = "COM", method="BHHH")
 summary(com_model)
 #}
 
 }
 \references{
-Greene, W. (2008). Functional forms for the negative binomial model for count data. Economics Letters, 99(3), 585-590.
+Greene, W. (2008). Functional forms for the negative binomial model for count 
+data. Economics Letters, 99(3), 585-590.
 
-Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression model for underreported counts. Advances and applications in Statistics, 6(3), 305-322.
+Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression 
+model for underreported counts. Advances and applications in Statistics, 
+6(3), 305-322.
 
-Pararai, M., Famoye, F., & Lee, C. (2010). Generalized poisson-poisson mixture model for misreported counts with an application to smoking data. Journal of Data Science, 8(4), 607-617.
+Pararai, M., Famoye, F., & Lee, C. (2010). Generalized poisson-poisson 
+mixture model for misreported counts with an application to smoking data. 
+Journal of Data Science, 8(4), 607-617.
 
-Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework for modelling overdispersed count data, including the Poisson-shifted generalized inverse Gaussian distribution. Computational Statistics & Data Analysis, 53(2), 381-393.
+Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework 
+for modelling overdispersed count data, including the Poisson-shifted 
+generalized inverse Gaussian distribution. Computational Statistics & Data 
+Analysis, 53(2), 381-393.
 
-Wood, J.S., Eric T. Donnell, & Christopher J. Fariss. "A method to account for and estimate underreporting in crash frequency research." Accident Analysis & Prevention 95 (2016): 57-66.
+Wood, J.S., Eric T. Donnell, & Christopher J. Fariss. "A method to account 
+for and estimate underreporting in crash frequency research." Accident 
+Analysis & Prevention 95 (2016): 57-66.
 
-Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data using the Sichel generalized additive models for location, scale and shape.
+Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data 
+using the Sichel generalized additive models for location, scale and shape.
 }

@@ -11,11 +11,9 @@
 #' @param mean numeric value or vector of mean values for the distribution (the values have to be greater than 0).
 #' @param theta single value or vector of values for the theta parameter of the distribution (the values have to be greater than 0).
 #' @param alpha single value or vector of values for the `alpha` parameter of the gamma distribution in the special case that the mean = 1 and the variance = `alpha` (the values for `alpha` have to be greater than 0).
-#' @param ndraws the number of Halton draws to use for the integration.
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.
-#' @param hdraws and optional vector of Halton draws to use for the integration.
 #'
 #' @details
 #' \code{dplindGamma} computes the density (PDF) of the Poisson-Lindley-Gamma Distribution.
@@ -46,22 +44,31 @@
 #' rplindGamma(30, mean=0.5, theta=0.5, alpha=2)
 #'
 #' @importFrom stats runif
-#' @importFrom Rcpp sourceCpp
+#' @importFrom gsl hyperg_U
 #' @useDynLib flexCountReg
 #' @name NegativeBinomialLindley
 #' 
 #' @rdname NegativeBinomialLindley
 #' @export
-dplindGamma <- function(x, mean=1, theta = 1, alpha=1, log=FALSE, ndraws=1000, hdraws=NULL){
-  if (is.null(hdraws)){
-    hdraws <- randtoolbox::halton(ndraws)
+dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, log=FALSE){
+  
+  if(mean <= 0 || theta <= 0 || alpha <= 0){
+    print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+    stop()
   }
   
-  p <- dplindgamma_cpp(x, mean, theta, alpha, hdraws)
-
+  U1 <- gsl::hyperg_U(x + 1, 2 - alpha, (alpha * (theta + 2)) / (mean * (theta + 1)))
+  U2 <- gsl::hyperg_U(x + 2, 3 - alpha, (alpha * (theta + 2)) / (mean * (theta + 1)))
+  co1 <- alpha*(theta+2)^2 * gamma(x+alpha) / (mean^2 * (theta+1)^3 * gamma(alpha))
+  co2 <- mean*theta*(theta+1)/(theta+2)
+  co3 <- alpha*(x+1)
+  
+  
+  p <- co1*(co2*U1 + co3*U2)
+  
   if (log) return(log(p))
   else return(p)
-}
+})
 
 #' @rdname NegativeBinomialLindley
 #' @export
@@ -92,12 +99,12 @@ qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1) {
     print("The value of `p` cannot be an `NA` value")
     stop()
   }
-
+  
   if(mean<=0 || theta<=0 || alpha<=0){
     print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
     stop()
   }
- 
+  
   
   y <- 0
   p_value <- max(pplindGamma(y, mean, theta, alpha=alpha), .Machine$double.xmin)
@@ -113,7 +120,7 @@ qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1) {
 #' @rdname NegativeBinomialLindley
 #' @export
 rplindGamma <- function(n, mean=1, theta=1, alpha=1) {
-
+  
   if(mean<=0 || theta<=0  || alpha<=0){
     print('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
     stop()

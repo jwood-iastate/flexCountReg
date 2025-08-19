@@ -69,10 +69,6 @@ p_poisweibull_cpp <- function(beta, x, X_Fixed, X_alpha, X_sigma, h) {
     .Call('_flexCountReg_p_poisweibull_cpp', PACKAGE = 'flexCountReg', beta, x, X_Fixed, X_alpha, X_sigma, h)
 }
 
-dplindgamma_cpp <- function(x, mean, theta, alpha, h) {
-    .Call('_flexCountReg_dplindgamma_cpp', PACKAGE = 'flexCountReg', x, mean, theta, alpha, h)
-}
-
 pollind_i_group <- function(mu, y, theta) {
     .Call('_flexCountReg_pollind_i_group', PACKAGE = 'flexCountReg', mu, y, theta)
 }

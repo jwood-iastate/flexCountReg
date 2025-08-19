@@ -1,6 +1,5 @@
 test_that("Random Effects Poisson-Lindley model runs and returns correct output", {
   data("washington_roads")
-  washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
   model <- poisLind.re(Animal ~ lnaadt + lnlength ,
                               data=washington_roads,
                               group_var="ID",

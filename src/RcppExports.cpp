@@ -249,21 +249,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// dplindgamma_cpp
-NumericVector dplindgamma_cpp(const NumericVector& x, const NumericVector& mean, const NumericVector& theta, const NumericVector& alpha, const NumericVector& h);
-RcppExport SEXP _flexCountReg_dplindgamma_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP alphaSEXP, SEXP hSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type mean(meanSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< const NumericVector& >::type h(hSEXP);
-    rcpp_result_gen = Rcpp::wrap(dplindgamma_cpp(x, mean, theta, alpha, h));
-    return rcpp_result_gen;
-END_RCPP
-}
 // pollind_i_group
 double pollind_i_group(NumericVector mu, IntegerVector y, double theta);
 RcppExport SEXP _flexCountReg_pollind_i_group(SEXP muSEXP, SEXP ySEXP, SEXP thetaSEXP) {
@@ -374,7 +359,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 4},
     {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
     {"_flexCountReg_p_poisweibull_cpp", (DL_FUNC) &_flexCountReg_p_poisweibull_cpp, 6},
-    {"_flexCountReg_dplindgamma_cpp", (DL_FUNC) &_flexCountReg_dplindgamma_cpp, 5},
     {"_flexCountReg_pollind_i_group", (DL_FUNC) &_flexCountReg_pollind_i_group, 3},
     {"_flexCountReg_reg_run_RE", (DL_FUNC) &_flexCountReg_reg_run_RE, 5},
     {"_flexCountReg_dtri_cpp", (DL_FUNC) &_flexCountReg_dtri_cpp, 6},

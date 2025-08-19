@@ -419,7 +419,7 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form,
                     rpardists, hdraws, data, weights, X_offset = NULL, offset = NULL) {
   
   # Validate inputs
-  validate_inputs(p, y, X_Fixed, X_rand, rpar, form, data, weights)
+  # validate_inputs(p, y, X_Fixed, X_rand, rpar, form, data, weights)
   
   # Set gradient computation method based on correlation
   exact.gradient <- !correlated
@@ -442,14 +442,14 @@ p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form,
 }
 
 # Helper function to validate inputs
-validate_inputs <- function(p, y, X_Fixed, X_rand, rpar, form, data, weights) {
-  if (is.null(p) || length(p) == 0) stop("Parameter vector p cannot be empty")
-  if (is.null(y) || length(y) == 0) stop("Response vector y cannot be empty")
-  if (is.null(X_Fixed) || ncol(X_Fixed) == 0) stop("Fixed effects matrix cannot be empty")
-  if (!form %in% c("nb", "nbp")) stop("Form must be 'nb' or 'nbp'")
-  if (!"panel_id" %in% names(data)) stop("Data must contain panel_id column")
-  if (length(weights) != length(y)) stop("Weights must match response length")
-}
+# validate_inputs <- function(p, y, X_Fixed, X_rand, rpar, form, data, weights) {
+#   if (is.null(p) || length(p) == 0) stop("Parameter vector p cannot be empty")
+#   if (is.null(y) || length(y) == 0) stop("Response vector y cannot be empty")
+#   if (is.null(X_Fixed) || ncol(X_Fixed) == 0) stop("Fixed effects matrix cannot be empty")
+#   if (!form %in% c("nb", "nbp")) stop("Form must be 'nb' or 'nbp'")
+#   if (!"panel_id" %in% names(data)) stop("Data must contain panel_id column")
+#   if (length(weights) != length(y)) stop("Weights must match response length")
+# }
 
 # Helper function to extract coefficients from parameter vector
 extract_coefficients <- function(p, N_fixed, N_rand, form) {

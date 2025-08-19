@@ -74,16 +74,16 @@ get_probFunc <- function(family){
   },
   "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpLnorm_cpp(x=y, mean=predicted, sigma=alpha, h=normed_haltons),
   "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpge(y, mean=predicted, shape=alpha, scale=sigma, haltons=haltons),
-  "PIG1" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpinvgaus(y, mu=predicted, eta=alpha),
-  "PIG2" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpinvgaus(y, mu=predicted, eta=alpha, form="Type 2"),
-  "PIG" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpinvgamma(y, mu=predicted, eta=alpha),
-  "PL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dplind(y, mean=predicted, theta=alpha),
-  "PLG" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dplindGamma(x=y, mean=predicted, theta=alpha, alpha=sigma, hdraws=haltons),
+  "PIG1" = function(y, predicted, alpha, sigma, ...) dpinvgaus(y, mu=predicted, eta=alpha),
+  "PIG2" = function(y, predicted, alpha, sigma, ...) dpinvgaus(y, mu=predicted, eta=alpha, form="Type 2"),
+  "PIG" = function(y, predicted, alpha, sigma, ...) dpinvgamma(y, mu=predicted, eta=alpha),
+  "PL" = function(y, predicted, alpha, sigma, ...) dplind(y, mean=predicted, theta=alpha),
+  "PLG" = function(y, predicted, alpha, sigma, ...) dplindGamma(x=y, mean=predicted, theta=alpha, alpha=sigma),
   "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dplindLnorm(x=y, mean=predicted, theta=alpha, sigma=sigma, hdraws=normed_haltons),
   "PW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpWeib_cpp(y, mean=predicted, alpha=alpha, sigma=sigma, h=haltons),
-  "SI" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dsichel(x=y, mu= predicted, sigma=sigma, gamma=log(alpha)),
-  "GW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dgwar(y, mu= predicted, k=alpha, rho=sigma),
-  "COM" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dcom(x=y, mu=predicted, nu=alpha)
+  "SI" = function(y, predicted, alpha, sigma, ...) dsichel(x=y, mu= predicted, sigma=sigma, gamma=log(alpha)),
+  "GW" = function(y, predicted, alpha, sigma, ...) dgwar(y, mu= predicted, k=alpha, rho=sigma),
+  "COM" = function(y, predicted, alpha, sigma, ...) dcom(x=y, mu=predicted, nu=alpha)
   )
 }
 

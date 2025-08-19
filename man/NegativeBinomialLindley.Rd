@@ -8,15 +8,7 @@
 \alias{rplindGamma}
 \title{Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution}
 \usage{
-dplindGamma(
-  x,
-  mean = 1,
-  theta = 1,
-  alpha = 1,
-  log = FALSE,
-  ndraws = 1000,
-  hdraws = NULL
-)
+dplindGamma(x, mean = 1, theta = 1, alpha = 1, log = FALSE)
 
 pplindGamma(
   q,
@@ -41,10 +33,6 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 \item{alpha}{single value or vector of values for the `alpha` parameter of the gamma distribution in the special case that the mean = 1 and the variance = `alpha` (the values for `alpha` have to be greater than 0).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
-
-\item{ndraws}{the number of Halton draws to use for the integration.}
-
-\item{hdraws}{and optional vector of Halton draws to use for the integration.}
 
 \item{q}{quantile or a vector of quantiles.}
 
@@ -72,7 +60,7 @@ The Poisson-Lindley-Gamma is a count distribution that captures high densities f
 \code{rplindGamma} generates random numbers from the Poisson-Lindley-Gamma Distribution.
 
 The compound Probability Mass Function (PMF) for the Poisson-Lindley-Gamma (PLG) distribution is:
-\deqn{f(x|\mu,\theta,\alpha)\frac{\alpha  (\theta+2) ^2 \Gamma (x+\alpha ) }{(\mu)^2(\theta +1)^3 \Gamma (\alpha )}\left(\frac{\mu\theta(\theta+1)}{\theta+2} U\left(x+1,2-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)+\alpha(x+1) U\left(x+2,3-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)\right)}
+\deqn{f(x|\mu,\theta,\alpha)=\frac{\alpha  (\theta+2) ^2 \Gamma (x+\alpha ) }{(\mu)^2(\theta +1)^3 \Gamma (\alpha )}\left(\frac{\mu\theta(\theta+1)}{\theta+2} U\left(x+1,2-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)+\alpha(x+1) U\left(x+2,3-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)\right)}
 
 Where \eqn{\theta} is a distribution parameter from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} a, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, \eqn{mu} is the mean value, and \eqn{x} is a non-negative integer, and \deqn{U(a,b,z)} is the Tricomi's solution to the confluent hypergeometric function - also known as the confluent hypergeometric function of the second kind
 

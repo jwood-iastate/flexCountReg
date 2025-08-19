@@ -578,12 +578,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   
   # If an offset is specified, create a vector for the offset
   if (!is.null(offset)){
-    X_offset <- data %>% select(all_of(offset))
+    X_offset <- data[,offset]
   }
   
-  if(grepl("offset", formula)) { # If offset() is used in the formula, use that as the offset
-    offset_variable <- str_extract(formula, "(?<=offset\\().*?(?=\\))")
-    X_offset <- data %>% select(offset)
+  if(any(grepl("offset", deparse(formula)))) { # If offset() is used in the formula, use that as the offset
+    offset_variable <- str_extract(deparse(formula), "(?<=offset\\().*?(?=\\))")
+    X_offset <- data[,offset]
   }
   
   if (!is.null(dis_param_formula_1)) {

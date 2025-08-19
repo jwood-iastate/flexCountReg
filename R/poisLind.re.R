@@ -143,7 +143,7 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
     X_Fixed <- stats::model.matrix(formula, data)
     y <- stats::model.response(mod1_frame)
     
-    int_res <-  maxLik::maxLik(reg_run_RE,
+    int_res <-  maxLik::maxLik(reg.run.RE,
                                start = fit$estimate,
                                y = y,
                                X = X,

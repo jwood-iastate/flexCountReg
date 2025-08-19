@@ -37,7 +37,7 @@
 #'                              correlated = FALSE,
 #'                              rpardists = c(speed50="n"),
 #'                              method = "nm",
-#'                              print.level = 2)
+#'                              print.level = 0)
 #'
 #' summary(plind.rp)}
 #' @export
@@ -247,7 +247,7 @@ rppLind <- function(formula, rpar_formula, data,
         draws <- hdraws #initialize the matrix
 
         if (is.null(rpardists)){
-          draws <- apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs))
+          draws <- apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, abs(rand_sdevs)))
         }
         else{
           for (i in 1:length(rpar)){

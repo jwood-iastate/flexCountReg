@@ -545,8 +545,8 @@ generate_single_param_draws <- function(hdraws, random_coefs_means, rand_sdevs, 
          "u" = mean_val + (hdraws - 0.5) * sd_val,
          "g" = stats::qgamma(hdraws, shape = mean_val^2 / sd_val^2, 
                              rate = mean_val / sd_val^2),
-         "n" = stats::qnorm(hdraws, mean_val, sd_val),
-         stats::qnorm(hdraws, mean_val, sd_val)  # default to normal
+         "n" = stats::qnorm(hdraws, mean_val, abs(sd_val)),
+         stats::qnorm(hdraws, mean_val, abs(sd_val))  # default to normal
   )
 }
 
@@ -606,7 +606,7 @@ generate_scaled_draws <- function(hdraws, random_coefs_means, rand_sdevs,
   # Multiple parameters case
   if (is.null(rpardists)) {
     # Default normal distribution
-    return(apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs)))
+    return(apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, abs(rand_sdevs))))
   }
   
   # Custom distributions
@@ -623,8 +623,8 @@ generate_scaled_draws <- function(hdraws, random_coefs_means, rand_sdevs,
                          "u" = mean_val + (hdraws[, i] - 0.5) * sd_val,
                          "g" = stats::qgamma(hdraws[, i], shape = mean_val^2 / sd_val^2, 
                                              rate = mean_val / sd_val^2),
-                         "n" = stats::qnorm(hdraws[, i], mean_val, sd_val),
-                         stats::qnorm(hdraws[, i], mean_val, sd_val)  # default to normal
+                         "n" = stats::qnorm(hdraws[, i], mean_val, abs(sd_val)),
+                         stats::qnorm(hdraws[, i], mean_val, abs(sd_val))  # default to normal
     )
   }
   

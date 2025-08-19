@@ -63,7 +63,7 @@ plind.rp <- rppLind(Animal ~ lnlength + lnaadt,
                              correlated = FALSE,
                              rpardists = c(speed50="n"),
                              method = "nm",
-                             print.level = 2)
+                             print.level = 0)
 
 summary(plind.rp)}
 }

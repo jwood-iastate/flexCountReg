@@ -91,15 +91,19 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   data <- as_tibble(data, .name_repair="minimal")
   
   # Generate a panel ID for the model - using the row number if no panel is specified
-  if (!("panel_id" %in% names(data))) {
+  if (!"panel_id" %in% names(data)) {
     if (is.null(panel)) {
       data <- data %>% mutate(panel_id = row_number())
     } else {
+      # Check if panel columns exist
+      missing_cols <- setdiff(panel, names(data))
+      if (length(missing_cols) > 0) {
+        stop("Panel columns not found in data: ", paste(missing_cols, collapse = ", "))
+      }
+      
       if (length(panel) > 1) {
-        # Use tidyr::unite() to combine multiple columns into a single string column
         data <- data %>% unite("panel_id", all_of(panel), sep = "_", remove = FALSE)
       } else {
-        # Ensure that panel_id is a single vector
         data <- data %>% mutate(panel_id = as.character(data[[panel]]))
       }
     }
@@ -204,7 +208,11 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     x_names <- names(start.vals)
   }
   else{
-    nb_model <- glm.nb(nb_formula, data)
+    nb_model <- tryCatch({
+      MASS::glm.nb(nb_formula, data)
+    }, error = function(e) {
+      stop("Error fitting initial NB model for starting values: ", e$message)
+    })
     params <- coef(nb_model)
     Lparams <- length(params)
     Lrpar = length(rpar)
@@ -312,14 +320,14 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
     else{
       chol_vals <-coefs[(N_fixed+N_rand+1):(length(coefs)-1)]
     }
+   
+    
     Cholesky <- matrix(0, N_rand, N_rand)
-    counter = 1
-    for (i in 1:N_rand){
-      for (j in 1:N_rand){
-        if (j<=i){
-          Cholesky[j,i] <- chol_vals[counter]
-          counter <- counter + 1
-        }
+    chol_idx <- 1
+    for (i in 1:N_rand) {
+      for (j in 1:i) {  # Only lower triangle
+        Cholesky[i, j] <- chol_vals[chol_idx]
+        chol_idx <- chol_idx + 1
       }
     }
     
@@ -406,154 +414,237 @@ neg_LL <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardi
   -sum(p_nb_rp(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights, X_offset, offset))
 }
 
-# main function for estimating log-likelihoods
-p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights, X_offset, offset){
-  if (!correlated) exact.gradient=TRUE else exact.gradient=FALSE # use numerical gradient if using correlated random parameters
-  N_fixed = ncol(X_Fixed)
-  N_rand = length(rpar)
-  coefs <- as.array(p)
-  fixed_coefs <- head(coefs,N_fixed)
-  h <- head(coefs, (N_fixed + N_rand))
-  random_coefs_means <- tail(h, N_rand)
+# Improved main function for estimating log-likelihoods
+p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, 
+                    rpardists, hdraws, data, weights, X_offset = NULL, offset = NULL) {
   
-  if (form=='nbp'){
-    dist_params <- tail(coefs,2)
+  # Validate inputs
+  validate_inputs(p, y, X_Fixed, X_rand, rpar, form, data, weights)
+  
+  # Set gradient computation method based on correlation
+  exact.gradient <- !correlated
+  
+  # Extract coefficients
+  coef_info <- extract_coefficients(p, ncol(X_Fixed), length(rpar), form)
+  
+  # Compute fixed effects
+  mu_fixed <- compute_fixed_effects(X_Fixed, coef_info$fixed_coefs, X_offset, offset)
+  
+  # Generate random draws
+  draws_info <- generate_random_draws(hdraws, coef_info$random_coefs_means, 
+                                      coef_info$rand_sdevs, rpardists, rpar, X_rand)
+  
+  # Compute probabilities and log-likelihoods
+  log_probs <- compute_log_likelihoods(draws_info, mu_fixed, y, coef_info$alpha, 
+                                       coef_info$p, form, weights, data$panel_id)
+  
+  return(log_probs)
+}
+
+# Helper function to validate inputs
+validate_inputs <- function(p, y, X_Fixed, X_rand, rpar, form, data, weights) {
+  if (is.null(p) || length(p) == 0) stop("Parameter vector p cannot be empty")
+  if (is.null(y) || length(y) == 0) stop("Response vector y cannot be empty")
+  if (is.null(X_Fixed) || ncol(X_Fixed) == 0) stop("Fixed effects matrix cannot be empty")
+  if (!form %in% c("nb", "nbp")) stop("Form must be 'nb' or 'nbp'")
+  if (!"panel_id" %in% names(data)) stop("Data must contain panel_id column")
+  if (length(weights) != length(y)) stop("Weights must match response length")
+}
+
+# Helper function to extract coefficients from parameter vector
+extract_coefficients <- function(p, N_fixed, N_rand, form) {
+  coefs <- as.array(p)
+  
+  # Extract fixed coefficients
+  fixed_coefs <- head(coefs, N_fixed)
+  
+  # Extract random coefficients means
+  random_coefs_means <- coefs[(N_fixed + 1):(N_fixed + N_rand)]
+  
+  # Extract distribution parameters
+  if (form == 'nbp') {
+    dist_params <- tail(coefs, 2)
     log_alpha <- dist_params[1]
-    p <- dist_params[2]
-  } else{
-    dist_params <- tail(coefs,1)
+    p_param <- dist_params[2]
+    sdev_end_offset <- 2
+  } else {
+    dist_params <- tail(coefs, 1)
     log_alpha <- dist_params[1]
-    p <- NULL
+    p_param <- NULL
+    sdev_end_offset <- 1
   }
   
   alpha <- exp(log_alpha)
   
-  if (!is.null(offset)){
-    if (length(offset)>1){
-      X_offset_i = rowsum(X_offset)
-      mu_fixed <- exp(X_Fixed %*% fixed_coefs + X_offset_i)
-    }else{
-      mu_fixed <- exp(X_Fixed %*% fixed_coefs + X_offset)
-    }
+  # Extract random coefficients standard deviations
+  if (N_rand == 1) {
+    rand_sdevs <- coefs[length(coefs) - sdev_end_offset]
   } else {
-    mu_fixed <- exp(X_Fixed %*% fixed_coefs)
+    start_idx <- N_fixed + N_rand + 1
+    end_idx <- length(coefs) - sdev_end_offset
+    rand_sdevs <- coefs[start_idx:end_idx]
   }
   
-  if(length(rpar)==1){
-    rand_sdevs <- coefs[length(coefs)-1]
-  }else{
-    numtail <- length(coefs) - N_fixed - N_rand
-    t <- tail(coefs, numtail)
-    if (form=='nbp'){
-      rand_sdevs <- head(t,-2)
-    } else{
-      rand_sdevs <- head(t,-1)
-    } 
+  return(list(
+    fixed_coefs = fixed_coefs,
+    random_coefs_means = random_coefs_means,
+    rand_sdevs = rand_sdevs,
+    alpha = alpha,
+    p = p_param
+  ))
+}
+
+# Helper function to compute fixed effects
+compute_fixed_effects <- function(X_Fixed, fixed_coefs, X_offset, offset) {
+  linear_pred <- X_Fixed %*% fixed_coefs
+  
+  if (!is.null(offset)) {
+    if (length(offset) > 1) {
+      X_offset_i <- rowsum(X_offset)
+      linear_pred <- linear_pred + X_offset_i
+    } else {
+      linear_pred <- linear_pred + offset
+    }
   }
   
-  # generate and scale random draws
-  if (length(rpar)>1){
-    draws <- generate_scaled_draws(hdraws, random_coefs_means, rand_sdevs, rpardists, rpar)
+  return(exp(linear_pred))
+}
+
+# Helper function to generate random draws
+generate_random_draws <- function(hdraws, random_coefs_means, rand_sdevs, 
+                                  rpardists, rpar, X_rand) {
+  if (length(rpar) > 1) {
+    draws <- generate_scaled_draws(hdraws, random_coefs_means, rand_sdevs, 
+                                   rpardists, rpar)
     xb_rand_mat <- crossprod(t(X_rand), draws)
-  }
-  else{
-    if (is.null(rpardists)){
-      scaled_draws <- hdraws * rand_sdevs
-      draws <- scaled_draws + random_coefs_means[1]
-    }
-    else{
-      if (rpardists[1]=="ln"){
-        draws <- stats::qlnorm(hdraws, random_coefs_means, abs(rand_sdevs))
-      }
-      else if (rpardists[1]=="t"){
-        draws <- qtri(hdraws, random_coefs_means, abs(rand_sdevs))
-      }
-      else if (rpardists[1]=="u"){
-        draws <- random_coefs_means + (hdraws-0.5)*abs(rand_sdevs)
-      }
-      else if (rpardists[1]=="g"){
-        draws <- stats::qgamma(hdraws, shape=random_coefs_means^2/(rand_sdevs^2), 
-                               rate=random_coefs_means/(rand_sdevs^2))
-      }
-      else if (rpardists[1]=="n"){
-        draws <- stats::qnorm(hdraws, random_coefs_means, abs(rand_sdevs))
-      }
-      
-    }
+  } else {
+    draws <- generate_single_param_draws(hdraws, random_coefs_means, rand_sdevs, 
+                                         rpardists)
     xb_rand_mat <- sapply(draws, function(x) X_rand * x)
   }
   
-  rpar_mat <- exp(xb_rand_mat)
-  pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
-  prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p=p, form=form) # Pitr - individual observation probabilities at each draw
-  prob_mat <- apply(prob_mat, 2, function(x) x^weights)
-  
-  log_prob_mat <- as_tibble(log(prob_mat), .name_repair="minimal") # log(Pitr) # to use to get column sums  - more accurate than using the products of probabilities with long panels
-  log_prob_mat$panel_id <- data$panel_id
-  
-  # Create column names for the probability matrix
-  draw_names <- paste0("draw_", seq_len(ncol(prob_mat)))
-  log_prob_mat <- as_tibble(log(prob_mat), .name_repair="minimal")
-  colnames(log_prob_mat) <- draw_names  # Assign the column names
-  log_prob_mat$panel_id <- data$panel_id  # Add the panel_id column
-  
-  
-  # get sums of log_probs for each group at each draw value
-  log_probs <- log_prob_mat %>%
-    group_by(panel_id) %>%
-    summarize(across(all_of(draw_names), sum)) #%>%
-    # ungroup()
-  
-  log_probs <- log_probs[,-1] # remove the panelID
-  
-  probs <- rowMeans(exp(log_probs))
-  
-  probs_i <- probs
-  
-  return(log(probs_i))
+  return(list(
+    draws = draws,
+    xb_rand_mat = xb_rand_mat
+  ))
 }
 
-# Generating Halton Draws
-generate_draws <- function(ndraws, num_params, scrambled) {
+# Helper function for single parameter draws
+generate_single_param_draws <- function(hdraws, random_coefs_means, rand_sdevs, rpardists) {
+  if (is.null(rpardists)) {
+    return(hdraws * rand_sdevs + random_coefs_means[1])
+  }
+  
+  dist_type <- rpardists[1]
+  mean_val <- random_coefs_means[1]
+  sd_val <- abs(rand_sdevs)
+  
+  switch(dist_type,
+         "ln" = stats::qlnorm(hdraws, mean_val, sd_val),
+         "t" = qtri(hdraws, mean_val, sd_val),
+         "u" = mean_val + (hdraws - 0.5) * sd_val,
+         "g" = stats::qgamma(hdraws, shape = mean_val^2 / sd_val^2, 
+                             rate = mean_val / sd_val^2),
+         "n" = stats::qnorm(hdraws, mean_val, sd_val),
+         stats::qnorm(hdraws, mean_val, sd_val)  # default to normal
+  )
+}
+
+# Helper function to compute log-likelihoods
+compute_log_likelihoods <- function(draws_info, mu_fixed, y, alpha, p, form, 
+                                    weights, panel_id) {
+  # Compute random parameter matrix
+  rpar_mat <- exp(draws_info$xb_rand_mat)
+  
+  # Compute predictions
+  pred_mat <- sweep(rpar_mat, 1, mu_fixed, "*")  # More efficient than apply
+  
+  # Compute probabilities
+  prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p = p, form = form)
+  
+  # Apply weights
+  prob_mat <- prob_mat^weights
+  
+  # Compute log probabilities
+  log_prob_mat <- log(prob_mat)
+  
+  # Create data frame for grouping
+  log_prob_df <- as.data.frame(log_prob_mat)
+  colnames(log_prob_df) <- paste0("draw_", seq_len(ncol(log_prob_mat)))
+  log_prob_df$panel_id <- panel_id
+  
+  # Aggregate by panel
+  log_probs <- aggregate(. ~ panel_id, data = log_prob_df, FUN = sum)
+  log_probs$panel_id <- NULL  # Remove panel_id column
+  
+  # Convert to matrix for efficiency
+  log_probs_mat <- as.matrix(log_probs)
+  
+  # Compute final probabilities
+  probs <- rowMeans(exp(log_probs_mat))
+  
+  return(log(probs))
+}
+
+# Improved function for generating Halton draws
+generate_draws <- function(ndraws, num_params, scrambled = FALSE) {
+  if (ndraws <= 0 || num_params <= 0) {
+    stop("Number of draws and parameters must be positive")
+  }
+  
   randtoolbox::halton(ndraws, num_params, mixed = scrambled)
 }
 
-generate_scaled_draws <- function(hdraws, random_coefs_means, rand_sdevs, rpardists, rpar) {
-  if (length(rpar) > 1) {
-    if (is.null(rpardists)) {
-      apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs))
-    } else {
-      draws <- hdraws
-      for (i in 1:length(rpar)) {
-        if (rpardists[i] == "ln") {
-          draws[, i] <- stats::qlnorm(hdraws[, i], random_coefs_means[i], abs(rand_sdevs[i]))
-        } else if (rpardists[i] == "t") {
-          draws[, i] <- qtri(hdraws[, i], random_coefs_means[i], abs(rand_sdevs[i]))
-        } else if (rpardists[i] == "u") {
-          draws[, i] <- random_coefs_means[i] + (hdraws[, i] - 0.5) * abs(rand_sdevs[i])
-        } else if (rpardists[i] == "g") {
-          draws[, i] <- stats::qgamma(hdraws[, i], shape = random_coefs_means[i]^2 / (rand_sdevs[i]^2), rate = random_coefs_means[i] / (rand_sdevs[i]^2))
-        } else {
-          draws[, i] <- stats::qnorm(hdraws[, i], random_coefs_means[i], abs(rand_sdevs[i]))
-        }
-      }
-      t(draws)
-    }
-  } else {
-    if (is.null(rpardists)) {
-      hdraws * rand_sdevs + random_coefs_means[1]
-    } else {
-      if (rpardists[1] == "ln") {
-        stats::qlnorm(hdraws, random_coefs_means, abs(rand_sdevs))
-      } else if (rpardists[1] == "t") {
-        qtri(hdraws, random_coefs_means, abs(rand_sdevs))
-      } else if (rpardists[1] == "u") {
-        random_coefs_means + (hdraws - 0.5) * abs(rand_sdevs)
-      } else if (rpardists[1] == "g") {
-        stats::qgamma(hdraws, shape = random_coefs_means^2 / (rand_sdevs^2), rate = random_coefs_means / (rand_sdevs^2))
-      } else {
-        stats::qnorm(hdraws, random_coefs_means, abs(rand_sdevs))
-      }
-    }
+# Improved function for generating scaled draws
+generate_scaled_draws <- function(hdraws, random_coefs_means, rand_sdevs, 
+                                  rpardists, rpar) {
+  
+  if (length(rpar) == 1) {
+    return(generate_single_param_draws(hdraws, random_coefs_means, rand_sdevs, rpardists))
   }
+  
+  # Multiple parameters case
+  if (is.null(rpardists)) {
+    # Default normal distribution
+    return(apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, rand_sdevs)))
+  }
+  
+  # Custom distributions
+  draws <- hdraws
+  n_params <- length(rpar)
+  
+  for (i in seq_len(n_params)) {
+    mean_val <- random_coefs_means[i]
+    sd_val <- abs(rand_sdevs[i])
+    
+    draws[, i] <- switch(rpardists[i],
+                         "ln" = stats::qlnorm(hdraws[, i], mean_val, sd_val),
+                         "t" = qtri(hdraws[, i], mean_val, sd_val),
+                         "u" = mean_val + (hdraws[, i] - 0.5) * sd_val,
+                         "g" = stats::qgamma(hdraws[, i], shape = mean_val^2 / sd_val^2, 
+                                             rate = mean_val / sd_val^2),
+                         "n" = stats::qnorm(hdraws[, i], mean_val, sd_val),
+                         stats::qnorm(hdraws[, i], mean_val, sd_val)  # default to normal
+    )
+  }
+  
+  return(t(draws))
+}
+
+# Additional utility function for parameter extraction validation
+validate_parameter_vector <- function(p, expected_length) {
+  if (length(p) != expected_length) {
+    stop(paste("Parameter vector length mismatch. Expected:", expected_length, 
+               "Got:", length(p)))
+  }
+}
+
+# Function to create coefficient summary
+summarize_coefficients <- function(coef_info) {
+  list(
+    n_fixed = length(coef_info$fixed_coefs),
+    n_random = length(coef_info$random_coefs_means),
+    alpha = coef_info$alpha,
+    has_p_param = !is.null(coef_info$p)
+  )
 }

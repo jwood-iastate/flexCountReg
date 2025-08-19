@@ -193,16 +193,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // dnbCrack_cpp
-NumericVector dnbCrack_cpp(IntegerVector x, NumericVector mean, NumericVector r, NumericVector theta, NumericVector gamma);
+NumericVector dnbCrack_cpp(const IntegerVector& x, const NumericVector& mean, const NumericVector& r, const NumericVector& theta, const NumericVector& gamma);
 RcppExport SEXP _flexCountReg_dnbCrack_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP rSEXP, SEXP thetaSEXP, SEXP gammaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type r(rSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type gamma(gammaSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type r(rSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type gamma(gammaSEXP);
     rcpp_result_gen = Rcpp::wrap(dnbCrack_cpp(x, mean, r, theta, gamma));
     return rcpp_result_gen;
 END_RCPP
@@ -250,16 +250,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // dplindgamma_cpp
-NumericVector dplindgamma_cpp(NumericVector x, NumericVector mean, NumericVector theta, NumericVector alpha, NumericVector h);
+NumericVector dplindgamma_cpp(const NumericVector& x, const NumericVector& mean, const NumericVector& theta, const NumericVector& alpha, const NumericVector& h);
 RcppExport SEXP _flexCountReg_dplindgamma_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP thetaSEXP, SEXP alphaSEXP, SEXP hSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type theta(thetaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type alpha(alphaSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type h(hSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type h(hSEXP);
     rcpp_result_gen = Rcpp::wrap(dplindgamma_cpp(x, mean, theta, alpha, h));
     return rcpp_result_gen;
 END_RCPP

@@ -1,4 +1,5 @@
-#' @import dplyr tibble
+#' @importFrom dplyr group_by reframe %>%
+#' @importFrom tibble tibble
 #'
 renb_ll <- function(y, mu, a, b, panels) { # Random Effects Negative Binomial with Beta Distributed Random Effects (NB1)
   

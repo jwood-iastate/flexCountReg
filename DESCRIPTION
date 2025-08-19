@@ -76,6 +76,7 @@ Collate:
     'regCompTable.R'
     'renbLL.R'
     'renb.R'
+    'rpcount.R'
     'rpnb.R'
     'rppLind.R'
     'summary_flexCountReg.R'

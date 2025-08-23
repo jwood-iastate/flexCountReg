@@ -78,7 +78,7 @@ predict.flexCountReg <- function(object, ...){
     # function to compute probabilities
     nb_prob <- function(y, mu, alpha, p) {
       if (form=='nb2'){
-        return(stats::dnbinom(y, size = alpha, mu = mu))
+        return(stats::dnbinom(y, size = 1/alpha, mu = mu))
       } else if (form=='nb1'){
         return(stats::dnbinom(y, size = mu/alpha, mu = mu))
       } else{

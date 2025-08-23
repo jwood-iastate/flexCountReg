@@ -67,7 +67,7 @@ get_probFunc <- function(family){
     return(stats::dnbinom(y, size = predicted/alpha, mu = predicted))
   },
   "NB2" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
-    return(stats::dnbinom(y, size = alpha, mu = predicted))
+    return(stats::dnbinom(y, size = 1/alpha, mu = predicted))
   },
   "NBP" = function(y, predicted, alpha, sigma, haltons, normed_haltons){
     return(stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))

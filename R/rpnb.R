@@ -398,7 +398,7 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
 # function to compute probabilities
 nb_prob <- function(y, mu, alpha, p = NULL, form="nb2") {
   if (form == 'nb2') {
-    return(stats::dnbinom(y, size = alpha, mu = mu))
+    return(stats::dnbinom(y, size = 1/alpha, mu = mu))
   } else if (form == 'nb1') {
     return(stats::dnbinom(y, size = mu / alpha, mu = mu))
   } else if (form == 'nbp' && !is.null(p)) {

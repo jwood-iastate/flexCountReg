@@ -162,7 +162,7 @@
 #'  }
 #' 
 #' @section Model Details: 
-#' **Poisson Model**
+#' ## Poisson Model
 #' This implements the Poisson regression model using Maximum Liklelihood 
 #' Estimation, as opposed to the Iteratively Reweighted Least Squares (IRLS) 
 #' method used in the `glm` function.
@@ -177,12 +177,12 @@
 #' The variance is:
 #' \deqn{\text{Var}(Y) = \mu}
 #' 
-#' **Negative Binomial Models**
+#' ## Negative Binomial Models**
 #' 
 #' The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
 #' based on Greene (2008).  The details of each of these are provided below.
 #' 
-#' **NB-1 Model**
+#' ### NB-1 Model
 #' The PMF and log-likelihood functions are:
 #' \deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu}{\alpha})}{y! \, \Gamma(\frac{\mu}{\alpha})} \left( \frac{\frac{\mu}{\alpha}}{\frac{\mu}{\alpha} + \mu} \right)^{\frac{\mu}{\alpha}} \left( \frac{\mu}{\frac{\mu}{\alpha} + \mu} \right)^y}
 #' \deqn{LL_{\text{NB1}}(\beta, \alpha) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i}{\alpha} \right) - \ln y_i! + \frac{\mu_i}{\alpha} \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \right]}
@@ -193,7 +193,7 @@
 #' The variance is:
 #' \deqn{\text{Var}(Y) = \mu + \alpha\mu}
 #' 
-#' **NB-2 Model**
+#' ### NB-2 Model
 #' The PMF and log-likelihood functions are:
 #' \deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} \left( \frac{\alpha}{\alpha + \mu} \right)^\alpha \left( \frac{\mu}{\alpha + \mu} \right)^y}
 #' \deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - \ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
@@ -204,7 +204,7 @@
 #' The variance is:
 #' \deqn{\text{Var}(Y) = \mu + \alpha\mu^2}
 #' 
-#' **NB-P Model**
+#' ### NB-P Model
 #' The PMF and log-likelihood functions are:
 #' \deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu^{2-p}}{\alpha})}{y! \, \Gamma(\frac{\mu^{2-p}}{\alpha})} \left( \frac{\frac{\mu^{2-p}}{\alpha}}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^{\frac{\mu^{2-p}}{\alpha}} \left( \frac{\mu}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^y}
 #' \deqn{LL_{\text{NBP}}(\beta, \alpha, p) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i^{2-p}}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i^{2-p}}{\alpha} \right) - \ln y_i! + \frac{\mu_i^{2-p}}{\alpha} \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \right]}
@@ -215,7 +215,7 @@
 #' The variance is:
 #' \deqn{\text{Var}(Y) = \mu + \alpha\mu^P}
 #' 
-#' **Poisson-Lognormal (PLN) Model**
+#' ## Poisson-Lognormal (PLN) Model
 #' The compound Probability Mass Function(PMF) for the Poisson-Lognormal 
 #' distribution is:
 #' \deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
@@ -241,8 +241,8 @@
 #' model provides a statistically significant improvement in model fit over the
 #' Poisson model.
 #' 
-#' **Poisson Generalized-Exponential (PGE) Model**
-#' #' The Generalized Exponential distribution can be written as a function with 
+#' ## Poisson Generalized-Exponential (PGE) Model
+#' The Generalized Exponential distribution can be written as a function with 
 #' a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
 #' distribution has strictly positive continuous values. The PDF of the
 #' distribution is:
@@ -271,7 +271,7 @@
 #' Halton draws are used to perform simulation over the lognormal distribution 
 #' to solve the integral.
 #' 
-#' **Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models**
+#' ## Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models
 #' The Poisson-Inverse-Gaussian regression model is based on the 
 #' Poisson-Inverse-Gaussian Distribution. 
 #' 
@@ -288,7 +288,7 @@
 #' The parameter \eqn{\eta} is estimated as the natural logarithm transformed 
 #' value, \eqn{\ln(\eta)}, to ensure that \eqn{\eta>0}.
 #' 
-#' #' **Poisson-Inverse-Gamma (PIG) Model**
+#' ## Poisson-Inverse-Gamma (PIG) Model
 #' The PDF of the distribution is:
 #' \deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
 #' 
@@ -300,7 +300,7 @@
 #' The variance of the distribution is:
 #' \deqn{\sigma^2=\mu+\eta\mu^2}
 #' 
-#' **Poisson-Lindley (PL) Model**
+#' ## Poisson-Lindley (PL) Model
 #' The Poisson-Lindley regression is based on a compound Poisson-Lindley 
 #' distribution. It handles count outcomes with high levels of zero 
 #' observations (or other high densities at low outcome values) that standard 
@@ -347,7 +347,7 @@
 #' Poisson regression. This indicates the statistical significance of the 
 #' `theta` parameter.
 #' 
-#' **Poisson-Lindley-Gamma (PLG) Model**
+#' ## Poisson-Lindley-Gamma (PLG) Model
 #' The Poisson-Lindley-Gamma regression is based on a compound Poisson-Lindley-
 #' Gamma distribution. Details of the distribution can be seen at 
 #' \code{\link[flexCountReg]{dplindGamma}}.
@@ -362,7 +362,7 @@
 #' `ln(alpha)` in the model summary are testing if the parameter `theta` and 
 #' `alpha` are equal to a value of 1.
 #' 
-#' **Poisson-Lindley-Lognormal (PLL) Model**
+#' ## Poisson-Lindley-Lognormal (PLL) Model
 #' The Poisson-Lindley-Lognormal regression is based on a compound Poisson-
 #' Lindley-Lognormal distribution. Details of the distribution can be seen at 
 #' \code{\link[flexCountReg]{dplindLnorm}}.
@@ -377,7 +377,7 @@
 #' `ln(sigma)` in the model summary are testing if the parameter `theta` and 
 #' `sigma` are equal to a value of 1.
 #'
-#' **Poisson-Weibull (PW) Model**
+#' ## Poisson-Weibull (PW) Model
 #' The Poisson-Weibull distribution uses the Weibull distribution as a mixing 
 #' distribution for a Poisson process. It is useful for modeling overdispersed 
 #' count data. The density function (probability mass function) for the 
@@ -403,7 +403,7 @@
 #' The variance for the Poisson-Weibull regression is:
 #' \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}{\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
 #' 
-#' **Sichel (SI) Model**
+#' ## Sichel (SI) Model
 #' The compound Probability Mass Function (PMF) for the Sichel distribution uses 
 #' the formulation from Zhou et al. (2011) and Rigby et al. (2008):
 #' \deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
@@ -417,7 +417,7 @@
 #' The variance of the distribution is:
 #' \deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)\mu^2}
 #' 
-#' **Generalized Waring (GW) Model**
+#' ## Generalized Waring (GW) Model
 #' The following are the versions of the PMF, mean, and variance used for the 
 #' Generaalized Waring model. This is adjusted from the typical formulation by 
 #' replacing parameter \code{k} with \eqn{\mu}
@@ -429,20 +429,20 @@
 #' (parameter \deqn{\alpha}), proneness (parameter \deqn{}k), and liability 
 #' (parameter \deqn{\rho}) of the data.
 #'
-#' #' If we use:
+#' If we use:
 #' \deqn{\alpha=\frac{\mu k}{\rho-1}}
 #' 
 #' The PMF becomes:
 #' 
 #' \deqn{PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)\Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!\Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)\Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}}
 #' 
-#' #' This results in a regression model where:
+#' This results in a regression model where:
 #' \deqn{\mu=e^{X\beta}}
 #' \deqn{\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}{(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}\right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
 #'
 #' Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
 #' 
-#' **Conway-Maxwell-Poisson (COM) Model**
+#' ## Conway-Maxwell-Poisson (COM) Model
 #' The following is the the PMF for the COM model.
 #' \deqn{f(x|\lambda, \nu)=\frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
 #' 
@@ -459,7 +459,7 @@
 #' \eqn{\mu} and \eqn{\nu}, so the regression model provides direct predictions 
 #' for the mean.
 #' 
-#' **Underreporting**
+#' ## Underreporting
 #' Models for underreporting combine a binary probability model (logit or 
 #' probit) with a count model. This is accomplished using a model for the 
 #' probability of crashes being reported multiplied by the estimated mean for 

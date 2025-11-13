@@ -54,6 +54,7 @@
 #' maximum likelihood estimation (MLE) or Maximum Simulated Likelihood 
 #' Estimation (MSLE). The function can estimate the following models:
 #' \itemize{
+#'  \item Poisson (Poisson)
 #'  \item Negative Binomial 1 (NB1)
 #'  \item Negative Binomial 2 (NB2)
 #'  \item Negative Binomial P (NBP)
@@ -75,6 +76,7 @@
 #' @details
 #' For the `family` argument, the following options are available:
 #' \itemize{
+#' \item "Poisson" for Poisson distribution with a log link.
 #'  \item "NB1" for Negative Binomial 1 distribution with a log link.
 #'  \item "NB2" for Negative Binomial 2 distribution with a log link (i.e., the 
 #'        standard negative binomial model).
@@ -160,6 +162,23 @@
 #'  }
 #' 
 #' @section Model Details: 
+#' **Poisson Model**
+#' This implements the Poisson regression model using Maximum Liklelihood 
+#' Estimation, as opposed to the Iteratively Reweighted Least Squares (IRLS) 
+#' method used in the `glm` function.
+#' 
+#' The PMF and log-likelihood functions are:
+#' \deqn{P(Y = y) = \frac{e^{-\mu} \mu^y}{y!}}
+#' \deqn{LL_{\text{Poisson}}(\beta) = \sum_{i=1}^n \left[ -\mu_i + y_i \ln(\mu_i) - \ln(y_i!) \right]}
+#' 
+#' The mean is:
+#' \deqn{\mu = exp(X\beta)}
+#' 
+#' The variance is:
+#' \deqn{\text{Var}(Y) = \mu}
+#' 
+#' **Negative Binomial Models**
+#' 
 #' The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
 #' based on Greene (2008).  The details of each of these are provided below.
 #' 
@@ -473,7 +492,7 @@
 #' @include pinvgaus.R pinvgamma.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
 #' 
 #' @examples
-#' #\dontrun{
+#' \donttest{
 #' # Load the Washington data
 #' data("washington_roads")
 #' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
@@ -485,6 +504,7 @@
 #'                dis_param_formula_1 = ~ speed50, verbose = TRUE, 
 #'                method='BFGS')
 #' summary(nb2)
+#' 
 #' 
 #' # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
 #' # up the estimation for examples - not recommended in practice)
@@ -615,10 +635,11 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   # N_obs <- length(y)
   N_params <- length(Filter(Negate(is.null), params)) # No. of params for the distribution
   
-  if (is.null(dis_param_formula_1)){
+  if (is.null(params[[1]])) {
+    N_alpha = 0
+  } else if (is.null(dis_param_formula_1)) {
     N_alpha = 1
-  }
-  else{
+  } else {
     N_alpha <- ncol(mod_alpha_frame)
   }
   
@@ -640,9 +661,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   # Initialize starting values if not provided
   start <- if (is.null(start.vals)) {
     
-    # Use the NB2 from MASS as starting values
-    p_model <- glm.nb(formula, data = data)
-    start <- unlist(p_model$coefficients)
+    # Use glm (Poisson) as starting values for betas
+    p_model <- glm(formula, data = data, family = poisson(link = "log"))
+    start <- p_model$coefficients
     
     if (family=="GW" | family=="SI"){
       start <- c(start, rep(0.1, N_alpha + N_sigma + N_underreport))
@@ -672,18 +693,26 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     coefs <- as.array(p)
     fixed_coefs <- as.vector(head(coefs, N_predictors))
     
-    if (!is.null(dis_param_formula_1)){
-      alpha_coefs <- as.vector(coefs[(N_predictors + 1):(N_predictors + N_alpha)])
-      alpha <- exp(mod_alpha_frame %*% alpha_coefs)
-    } else {
-      alpha <- exp(coefs[(N_predictors + 1)])
+    # Initialize alpha and sigma
+    alpha <- NULL
+    sigma <- NULL
+    
+    if (N_alpha > 0) {
+      if (!is.null(dis_param_formula_1)){
+        alpha_coefs <- as.vector(coefs[(N_predictors + 1):(N_predictors + N_alpha)])
+        alpha <- exp(mod_alpha_frame %*% alpha_coefs)
+      } else {
+        alpha <- exp(coefs[(N_predictors + 1)])
+      }
     }
     
-    if (!is.null(dis_param_formula_2)){
-      sigma_coefs <- as.vector(coefs[(N_predictors + N_alpha + 1):(N_predictors + N_alpha + N_sigma)])
-      sigma <- exp(mod_sigma_frame %*% sigma_coefs)
-    } else {
-      sigma <- exp(coefs[(N_predictors + N_alpha + 1)])
+    if (N_sigma > 0) {
+      if (!is.null(dis_param_formula_2)){
+        sigma_coefs <- as.vector(coefs[(N_predictors + N_alpha + 1):(N_predictors + N_alpha + N_sigma)])
+        sigma <- exp(mod_sigma_frame %*% sigma_coefs)
+      } else {
+        sigma <- exp(coefs[(N_predictors + N_alpha + 1)])
+      }
     }
     
     if (N_underreport>0){

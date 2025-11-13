@@ -99,6 +99,7 @@ The purpose of this function is to estimate count regression models using
 maximum likelihood estimation (MLE) or Maximum Simulated Likelihood 
 Estimation (MSLE). The function can estimate the following models:
 \itemize{
+ \item Poisson (Poisson)
  \item Negative Binomial 1 (NB1)
  \item Negative Binomial 2 (NB2)
  \item Negative Binomial P (NBP)
@@ -120,6 +121,7 @@ Estimation (MSLE). The function can estimate the following models:
 \details{
 For the `family` argument, the following options are available:
 \itemize{
+\item "Poisson" for Poisson distribution with a log link.
  \item "NB1" for Negative Binomial 1 distribution with a log link.
  \item "NB2" for Negative Binomial 2 distribution with a log link (i.e., the 
        standard negative binomial model).
@@ -206,6 +208,23 @@ For the `family` argument, the following options are available:
 }
 \section{Model Details}{
  
+**Poisson Model**
+This implements the Poisson regression model using Maximum Liklelihood 
+Estimation, as opposed to the Iteratively Reweighted Least Squares (IRLS) 
+method used in the `glm` function.
+
+The PMF and log-likelihood functions are:
+\deqn{P(Y = y) = \frac{e^{-\mu} \mu^y}{y!}}
+\deqn{LL_{\text{Poisson}}(\beta) = \sum_{i=1}^n \left[ -\mu_i + y_i \ln(\mu_i) - \ln(y_i!) \right]}
+
+The mean is:
+\deqn{\mu = exp(X\beta)}
+
+The variance is:
+\deqn{\text{Var}(Y) = \mu}
+
+**Negative Binomial Models**
+
 The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
 based on Greene (2008).  The details of each of these are provided below.
 
@@ -500,7 +519,7 @@ the event being reported as a function of independent variables.
 }
 
 \examples{
-#\dontrun{
+\donttest{
 # Load the Washington data
 data("washington_roads")
 washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
@@ -512,6 +531,7 @@ nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
                dis_param_formula_1 = ~ speed50, verbose = TRUE, 
                method='BFGS')
 summary(nb2)
+
 
 # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
 # up the estimation for examples - not recommended in practice)

@@ -27,6 +27,7 @@
 #' 
 #' 
 #' @examples
+#' \donttest{
 #' ## RENB Model
 #' data("washington_roads")
 #' washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
@@ -37,6 +38,7 @@
 #'                                 method="nm",
 #'                                 max.iters = 1000)
 #' summary(renb.mod)
+#' }
 #' @export
 renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
                  print.level=0, bootstraps=NULL, offset=NULL) {

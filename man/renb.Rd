@@ -44,6 +44,7 @@ This function estimates a random effects negative binomial (RENB) regression mod
 \deqn{f(y_{it}|\mu_{it}, a, b)=\frac{\Gamma(a+b)+\Gamma(a+\sum_{t=1}^{n_i}\mu_{it})+\Gamma(b+\sum_{t=1}^{n_i}y_{it})}{\Gamma(a)\Gamma(b)\Gamma(a+b+\sum_{t=1}^{n_i}\mu_{it}+\sum_{t=1}^{n_i}y_{it})}\prod_{t=1}^{n_i}\frac{\Gamma(\mu_{it}+y_{it})}{\Gamma(\mu_{it})\Gamma(y_{it})}}
 }
 \examples{
+\donttest{
 ## RENB Model
 data("washington_roads")
 washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
@@ -54,4 +55,5 @@ renb.mod <- renb(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
                                 method="nm",
                                 max.iters = 1000)
 summary(renb.mod)
+}
 }

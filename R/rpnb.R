@@ -1,23 +1,52 @@
 #' Function for estimating a random parameter negative binomial with the ability to specify if the NB-1, NB-2, or NB-P should be used
 #'
 #' @name rpnb
-#' @param formula an R formula.. This formula should specify the outcome and the independent variables that have fixed parameters.
-#' @param rpar_formula a symbolic description of the model related specifically to the random parameters. This should not include an outcome variable. If the intercept is random, include it in this formula. If the intercept is fixed, include it in \code{formula} but not in \code{rpar_formula}. To remove the intercept, use \code{0 + vars} or \code{-1 + vars},
-#' @param data a dataframe that has all of the variables in the \code{formula} and \code{rpar_formula},
-#' @param form the version of the negative binomial to estimate (\code{"nb2"} estimates the NB-2, \code{"nb1"} estimates the NB-1, \code{"nbp"} estimates the NB-P)
-#' @param rpardists an optional named vector whose names are the random parameters and values the distribution. The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma ("g"). If this is not provided, normal distributions are used for all random coefficients,
-#' @param ndraws the number of Halton draws to use for estimating the random parameters,
-#' @param scrambled if the Halton draws should be scrambled or not. \code{scrambled = FALSE} results in standard Halton draws while \code{scrambled = TRUE} results in scrambled Halton draws,
-#' @param correlated if the random parameters should be correlated (\code{correlated = FALSE} results in uncorrelated random coefficients, \code{correlated = TRUE} results in correlated random coefficients). If the random parameters are correlated, only the normal distribution is used for the random coefficients,
-#' @param panel an optional variable or vector of variables that can be used to specify a panel structure in the data. If this is specified, the function will estimate the random parameters using a panel structure,
-#' @param offset offset the name of a variable, or vector of variable names, in the data frame that should be used 
-#'        as an offset (i.e., included but forced to have a coefficient of 1).
-#' @param method a method to use for optimization in the maximum likelihood estimation. For options, see \code{\link[maxLik]{maxLik}},
-#' @param max.iters the maximum number of iterations to allow the optimization method to perform,
+#' @param formula an R formula.. This formula should specify the outcome and the 
+#'        independent variables that have fixed parameters.
+#' @param rpar_formula a symbolic description of the model related specifically 
+#'        to the random parameters. This should not include an outcome variable. 
+#'        If the intercept is random, include it in this formula. If the 
+#'        intercept is fixed, include it in \code{formula} but not in 
+#'        \code{rpar_formula}. To remove the intercept, use \code{0 + vars} or 
+#'        \code{-1 + vars},
+#' @param data a dataframe that has all of the variables in the \code{formula} 
+#'        and \code{rpar_formula},
+#' @param form the version of the negative binomial to estimate (\code{"nb2"} 
+#'        estimates the NB-2, \code{"nb1"} estimates the NB-1, \code{"nbp"} 
+#'        estimates the NB-P)
+#' @param rpardists an optional named vector whose names are the random 
+#'        parameters and values the distribution. The distribution options 
+#'        include normal ("n"), lognormal ("ln"), triangular ("t"), uniform 
+#'        ("u"), and gamma ("g"). If this is not provided, normal distributions 
+#'        are used for all random coefficients,
+#' @param ndraws the number of Halton draws to use for estimating the random 
+#'        parameters,
+#' @param scrambled if the Halton draws should be scrambled or not. 
+#'        \code{scrambled = FALSE} results in standard Halton draws while 
+#'        \code{scrambled = TRUE} results in scrambled Halton draws,
+#' @param correlated if the random parameters should be correlated 
+#'        (\code{correlated = FALSE} results in uncorrelated random 
+#'        coefficients, \code{correlated = TRUE} results in correlated random 
+#'        coefficients). If the random parameters are correlated, only the 
+#'        normal distribution is used for the random coefficients,
+#' @param panel an optional variable or vector of variables that can be used to 
+#'        specify a panel structure in the data. If this is specified, the 
+#'        function will estimate the random parameters using a panel structure,
+#' @param offset offset the name of a variable, or vector of variable names, in 
+#'        the data frame that should be used as an offset (i.e., included but 
+#'        forced to have a coefficient of 1).
+#' @param method a method to use for optimization in the maximum likelihood 
+#'        estimation. For options, see \code{\link[maxLik]{maxLik}},
+#' @param max.iters the maximum number of iterations to allow the optimization 
+#'        method to perform,
 #' @param weights the name of a variable in the data frame that should be used
 #'        as a frequency weight.
-#' @param start.vals an optional vector of starting values for the regression coefficients
-#' @param print.level determines the level of verbosity for printing details of the optimization as it is computed. A value of 0 does not print out any information, a value of 1 prints minimal information, and a value of 2 prints the most information.
+#' @param start.vals an optional vector of starting values for the regression 
+#'        coefficients
+#' @param verbose determines the level of verbosity for printing details of the 
+#'        optimization as it is computed. A value of `FALSE` indicates no 
+#'        intermediate output while `TRUE` indicates full output. Default is 
+#'        `FALSE`.
 #' @import randtoolbox stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
@@ -42,7 +71,7 @@
 #'                rpardists = c(intercept="u", speed50="t"),
 #'                form = 'nb1',
 #'                method = "nm",
-#'                print.level = 2)
+#'                verbose = FALSE)
 #'
 #' summary(nb1.rp)
 #'
@@ -54,7 +83,7 @@
 #'                correlated = FALSE,
 #'                form = 'nb2',
 #'                method = "bfgs",
-#'                print.level = 1)
+#'                verbose = TRUE)
 #'
 #' summary(nb2.rp)
 #'
@@ -66,7 +95,7 @@
 #'                correlated = FALSE,
 #'                form = 'nbp',
 #'                method = "bfgs",
-#'                print.level = 1)
+#'                verbose = TRUE)
 #'
 #' summary(nbp.rp)}
 #' @export
@@ -76,8 +105,9 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                  correlated = FALSE, panel=NULL, 
                  weights=NULL, offset = NULL,
                  method = 'BHHH', max.iters = 1000,
-                 start.vals = NULL, print.level = 0) {
+                 start.vals = NULL, verbose = FALSE) {
   
+  print.level = ifelse(verbose, 2, 0)
   # Generating model matrices
   mod1_frame <- stats::model.frame(formula, data)
   y_name <- all.vars(formula)[1]
@@ -136,7 +166,23 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
   # Generating model matrices
   X_Fixed <- modelr::model_matrix(data, formula)
   X_rand <- modelr::model_matrix(data, rpar_formula)
-  #X_rand <-stats::model.matrix(rpar_formula, data)
+  
+  # Get column names
+  fix_col_names <- colnames(X_Fixed)
+  rand_col_names <- colnames(X_rand)
+  
+  # Check for overlaps (excluding Intercept, which is handled specifically below)
+  # distinct columns "x" and "x:z" will NOT match here, which is what you want.
+  # identical columns "x" and "x" WILL match here, triggering the error.
+  common_terms <- intersect(setdiff(fix_col_names, "(Intercept)"), 
+                            setdiff(rand_col_names, "(Intercept)"))
+  
+  if(length(common_terms) > 0){
+    stop(paste0("The following terms are included in both the fixed and random parts of the model: ",
+                paste(common_terms, collapse = ", "),
+                ".\nVariables allowed as a main effect in one part and an interaction in the other, but the exact same term cannot be in both."))
+  }
+  
   y_name <- all.vars(formula)[1]
   
   X_expanded <- cbind(X_Fixed, X_rand, X_rand) # for use in the gradient

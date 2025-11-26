@@ -9,7 +9,6 @@
 #'        the \code{formula} and \code{rpar_formula}.
 #' @note optional parameter `method`: Only valid for random parameters models. 
 #'        Options include \code{Simulated} (default) or \code{Individual}. 
-#'        \code{Exact} is only available for the older `rpnb` class.
 #'
 #' @import randtoolbox stats lamW modelr rlang 
 #' @importFrom utils head tail
@@ -97,7 +96,7 @@ predict.flexCountReg <- function(object, ...){
   
   # Handle method argument
   if (is.null(additional_args$method)) {
-    if(modtype %in% c("rpnb", "rppois", "countreg.rp")) {
+    if(modtype %in% c("rppois", "countreg.rp")) {
       method <- "Simulated"
     } else {
       method <- "Exact"
@@ -107,9 +106,9 @@ predict.flexCountReg <- function(object, ...){
   }
   
   # =========================================================================
-  # RANDOM PARAMETERS MODELS (RPNB / RPPOIS / COUNTREG.RP)
+  # RANDOM PARAMETERS MODELS (RPPOIS / COUNTREG.RP)
   # =========================================================================
-  if(modtype %in% c("rpnb", "rppois", "countreg.rp")){
+  if(modtype %in% c("rppois", "countreg.rp")){
     
     # --- 1. Setup & Matrix Generation ---
     form <- model$form

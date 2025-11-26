@@ -20,6 +20,5 @@ optional parameter `data`: a dataframe that has all of the variables in
        the \code{formula} and \code{rpar_formula}.
 
 optional parameter `method`: Only valid for random parameters models. 
-       Options include \code{Simulated} (default) or \code{Individual}. 
-       \code{Exact} is only available for the older `rpnb` class.
+       Options include \code{Simulated} (default) or \code{Individual}.
 }

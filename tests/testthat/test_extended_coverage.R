@@ -71,29 +71,6 @@ test_that("countreg.rp: Correlated Random Parameters", {
   expect_false(!is.null(model$model$Covariance))
 })
 
-test_that("rpnb: Heterogeneity in Means and Variances", {
-  data("washington_roads")
-  washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
-  
-  # Test het_mean and het_var arguments in rpnb
-  model <- suppressWarnings(
-    rpnb(Total_crashes ~ lnlength,
-         rpar_formula = ~ -1 + lnaadt,
-         het_mean_formula = ~ speed50,
-         het_var_formula = ~ AADT10kplus,
-         data = washington_roads,
-         ndraws = 20,
-         form = 'nb2',
-         verbose = FALSE)
-  )
-  
-  expect_s3_class(model, "flexCountReg")
-  # Check if heterogeneity coefficients exist
-  expect_true(!is.null(model$model$het_mean_coefs))
-  expect_true(!is.null(model$model$het_var_coefs))
-})
-
-
 test_that("poisLind.re: Bootstrapping", {
   data("washington_roads")
   

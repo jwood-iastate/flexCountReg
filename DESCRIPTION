@@ -8,7 +8,6 @@ Authors@R: person("Jonathan", "Wood", role = c("aut", "cre"),
 Maintainer: Jonathan Wood <jwood2@iastate.edu>
 Description: An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lindley models (which handle excess zeroes), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, and the Sichel model.
 Imports: 
-    bbmle,
     broom,
     cureplots,
     gsl,
@@ -76,7 +75,6 @@ Collate:
     'regCompTable.R'
     'renbLL.R'
     'renb.R'
-    'rpnb.R'
     'summary_flexCountReg.R'
 Suggests: 
     testthat (>= 3.0.0)

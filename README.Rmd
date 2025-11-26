@@ -133,8 +133,7 @@ The following functions are included in the `flexCountReg` package, grouped by c
 **Model Estimation Functions**
 
 - `countreg` is a general function for estimating the non-panel, non-random parameters count regression models
-- `rpnb` estimates the random parameters negative binomial regression (NB-1, NB-2, or NB-P).
-- `rppLind` estimates the random parameters Poisson-Lindley regression model.
+- `countreg.rp` estimates the random parameters count models.
 - `poislind.re ` estimates the random effects Poisson-Lindley model
 - `renb` estimates the random effects negative binomial regression model.
 

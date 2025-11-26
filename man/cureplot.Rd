@@ -9,7 +9,8 @@ cureplot(
   data = NULL,
   indvar = NULL,
   method = "Simulated",
-  n_resamples = 0
+  n_resamples = 0,
+  ...
 )
 }
 \arguments{
@@ -18,16 +19,18 @@ cureplot(
 \item{data}{Optional dataframe. If not provided, the data used to fit the
 model will be used.}
 
-\item{indvar}{Optional independent variable name. This is the continuous
-independent variable to plot the cumulative residuals against. If not
-provided, the plot will be against the predicted values.}
+\item{indvar}{Optional independent variable name (character string). This is 
+the continuous independent variable to plot the cumulative residuals 
+against. If not provided, the plot will be against the predicted values.}
 
 \item{method}{Optional parameter to pass to the predict function. This is
-only used for random parameters models. For further details, see
-\code{\link{predict.flexCountReg}}.}
+only used for random parameters models (e.g., "Simulated" or "Individual"). 
+For further details, see \code{\link{predict.flexCountReg}}.}
 
 \item{n_resamples}{Number of resamples for potential resampling in the CURE
-plot, based on the options in \code{\link[cureplots]{cure_plot}}.}
+plot confidence bands. Default is 0 (no bands).}
+
+\item{...}{Additional arguments passed to \code{\link[cureplots]{cure_plot}}.}
 }
 \description{
 This function generates a Cumulative Residuals (CURE) plot for count models,
@@ -35,14 +38,21 @@ including those with random parameters, estimated using the flexCountReg
 package.
 }
 \examples{
-
+\donttest{
 ## Example using a Negative Binomial model
 data("washington_roads")
 washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
+
 nb_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
                             ShouldWidth04 + AADTover10k,
                             data = washington_roads, family = 'nb2', 
-                            method = 'NM', max.iters = 3000)
-cureplot(nb_model)
+                            method = 'NM', max.iters = 500)
+                            
+# 1. Plot against fitted values (default) with confidence bands
+cureplot(nb_model, n_resamples = 20)
+
+# 2. Plot against a specific covariate (e.g., lnlength)
+cureplot(nb_model, indvar = "lnlength", n_resamples = 20)
+}
 
 }

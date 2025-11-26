@@ -76,7 +76,7 @@
 #' @details
 #' For the `family` argument, the following options are available:
 #' \itemize{
-#' \item "Poisson" for Poisson distribution with a log link.
+#' \item "POISSON" for Poisson distribution with a log link.
 #'  \item "NB1" for Negative Binomial 1 distribution with a log link.
 #'  \item "NB2" for Negative Binomial 2 distribution with a log link (i.e., the 
 #'        standard negative binomial model).
@@ -556,11 +556,11 @@
 #' @useDynLib flexCountReg
 #' @export
 countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NULL, 
-                      verbose = FALSE, dis_param_formula_1 = NULL, 
-                      dis_param_formula_2 = NULL, underreport_formula = NULL,
+                     verbose = FALSE, dis_param_formula_1 = NULL, 
+                     dis_param_formula_2 = NULL, underreport_formula = NULL,
                      underreport_family = "logit",
                      ndraws = 1500, method = "NM", 
-                      max.iters = 1000, start.vals = NULL, 
+                     max.iters = 1000, start.vals = NULL, 
                      stderr = "normal", bootstraps = NULL) {
   
   if (verbose){
@@ -568,17 +568,18 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }else{
     print.level=0
   }
-
+  
+  # Get the parameters and probability function
   family <- toupper(str_replace_all(family, "[^[:alnum:]]", "")) # remove non-alphanumeric characters from the family name and ensure all upper case
+  params <- get_params(family)
+  
   method <- toupper(str_replace_all(method, "[^abcfghmnrsABCFGHMNRS]", "")) # clean the method name
   if (!(method %in% c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH"))){
     print('Method must be one of: "SANN", "NM", "BFGS", "BFGSR", "CG", "NR", or "BHHH". Switching to "NM.')
     method = "NM"
   }
   
-  # Get the parameters and probability function
-  params <- get_params(family)
-  probFunc <- get_probFunc(family)
+  
   
   # Prepare model matrices
   mod1_frame <- model.frame(formula, data)
@@ -598,12 +599,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   
   # If an offset is specified, create a vector for the offset
   if (!is.null(offset)){
-    X_offset <- data[,offset]
+    X_offset <- as.matrix(data[, offset, drop = FALSE])
   }
   
   if(any(grepl("offset", deparse(formula)))) { # If offset() is used in the formula, use that as the offset
     offset_variable <- str_extract(deparse(formula), "(?<=offset\\().*?(?=\\))")
-    X_offset <- data[,offset]
+    X_offset <- as.matrix(data[, offset, drop = FALSE])
   }
   
   if (!is.null(dis_param_formula_1)) {
@@ -680,7 +681,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     compact() #%>%  # Remove NULL values
   
   names(start) <-x_names[1:length(start)] # Shouldn't need to do this, but this ensures it runs without having errors from names
-
+  
   # Handling Weights
   if (is.null(weights)){
     weights.df <- rep(1, length(y))
@@ -690,6 +691,15 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   
   # Define the main function for computing log-likelihood
   logLikFunc <- function(p) {
+    # Ensure local_probFunc is available in this scope
+    local_probFunc <- get_probFunc(family)
+    
+    # Critical Check: If get_probFunc returned NULL (e.g. invalid family matching), we cannot proceed.
+    # This prevents the obscure "could not find function 'local_probFunc'" or "attempt to apply non-function" error later.
+    if(is.null(local_probFunc)) {
+      stop(paste0("Probability function not found for family: ", family, ". Please check family name and helpers.R definition."))
+    }
+    
     coefs <- as.array(p)
     fixed_coefs <- as.vector(head(coefs, N_predictors))
     
@@ -738,11 +748,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
       predicted <- exp(X %*% fixed_coefs)*underreport_prob
     }
     
-    # Call the probability function
-    probs <- probFunc(y=y, predicted=predicted, alpha=alpha, sigma=sigma, 
-                      haltons=haltons, normed_haltons=normed_haltons)
-    
-    probs_i <- probs^weights.df
+    # Call the probability function using the local variable
+    probs <- local_probFunc(y=y, predicted=predicted, alpha=alpha, sigma=sigma, 
+                            haltons=haltons, normed_haltons=normed_haltons)
     
     return(log(probs)*weights.df)
   }
@@ -757,12 +765,27 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   
   if (stderr=="boot" & is.numeric(bootstraps)) {
     bs.data <- modelr::bootstrap(data, n = bootstraps)
-    models <- map(bs.data$strap, ~ mod.boot(data = .))
+    # Reuse current estimates as starting values for bootstrap
+    start_vals_boot <- fit$estimate
+    
+    models <- map(bs.data$strap, ~ mod.boot(data = ., 
+                                            formula = formula, 
+                                            family = family, 
+                                            offset = offset, 
+                                            weights = weights, 
+                                            dis_param_formula_1 = dis_param_formula_1, 
+                                            dis_param_formula_2 = dis_param_formula_2, 
+                                            underreport_formula = underreport_formula, 
+                                            underreport_family = underreport_family, 
+                                            ndraws = ndraws, 
+                                            method = method, 
+                                            max.iters = max.iters, 
+                                            start.vals = start_vals_boot))
     tidied <- map_df(models, broom::tidy, .id = "id")
     
     SE <- tidied %>%
       group_by(term) %>%
-      reframe(sd = sd(estimate))
+      reframe(sd = sd(estimate, na.rm=TRUE))
     
     fit$bootstrapped_se <- SE
   }
@@ -799,4 +822,3 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }
-

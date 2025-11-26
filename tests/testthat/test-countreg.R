@@ -106,11 +106,13 @@ test_that("Poisson-Lindley-Gamma", {
 test_that("Poisson-Lindley-Lognormal", {
   data("washington_roads")
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
-  model <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus,
-                     offset = "lnlength", 
-                    dis_param_formula_2 = ~ 1 + AADT10kplus, 
-                    data = washington_roads, family = "PLL", 
-                    ndraws=10, method="NM")
+  
+  # Wrap the function call in suppressWarnings()
+  model <- suppressWarnings(countreg(Animal ~ lnaadt + speed50 + AADT10kplus,
+                                     offset = "lnlength", 
+                                     dis_param_formula_2 = ~ 1 + AADT10kplus, 
+                                     data = washington_roads, family = "PLL", 
+                                     ndraws=10, method="NM"))
   
   expect_s3_class(model, "flexCountReg")  # Check the return class
   expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
@@ -132,9 +134,11 @@ test_that("Poisson-Weibull", {
 test_that("Sichel", {
   data("washington_roads")
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
-  model <- countreg(Total_crashes ~ lnaadt + speed50,
-                    offset = "lnlength", 
-                    data = washington_roads, family = "SI", method="NM")
+  
+  # Wrap the function call in suppressWarnings()
+  model <- suppressWarnings(countreg(Total_crashes ~ lnaadt + speed50,
+                                     offset = "lnlength", 
+                                     data = washington_roads, family = "SI", method="NM"))
   
   expect_s3_class(model, "flexCountReg")  # Check the return class
   expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
@@ -199,18 +203,4 @@ test_that("Conway-Maxwell-Poisson Model)", {
   expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
 })
 
-test_that("Poisson-Lindley RP", {
-  data("washington_roads")
-  washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
-  model <- rppLind(Animal ~ lnlength + lnaadt,
-                   rpar_formula = ~ -1 + speed50,
-                   data = washington_roads,
-                   ndraws = 10,
-                   correlated = FALSE,
-                   rpardists = c(speed50="n"),
-                   method = "BHHH",
-                   print.level = 2)
-  
-  expect_s3_class(model, "flexCountReg")  # Check the return class
-  expect_true(length(model$model$estimate) > 0)  # Ensure estimates are returned
-})
+

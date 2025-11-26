@@ -1,4 +1,4 @@
-#' Predictions for non-random parameters count models
+#' Predictions for flexCountReg models
 #'
 #' @name predict.flexCountReg
 #' @param object a model object estimated using this R package.
@@ -6,287 +6,309 @@
 #'        and `method`.
 #' 
 #' @note optional parameter `data`: a dataframe that has all of the variables in 
-#'        the \code{formula} and \code{rpar_formula}. This can be the data used 
-#'        for estimating the model or another dataframe.
+#'        the \code{formula} and \code{rpar_formula}.
 #' @note optional parameter `method`: Only valid for random parameters models. 
-#'        The method to be used in generating the predictions (options include 
-#'        \code{Simulated}, \code{Exact}, or \code{Individual}).
-#' @note the method option \code{Individual} requires that the outcome be 
-#'        observed for all observations. This is due to the use of Bayesian 
-#'        methods for computing the individual observation coefficients.
+#'        Options include \code{Simulated} (default) or \code{Individual}. 
+#'        \code{Exact} is only available for the older `rpnb` class.
 #'
 #' @import randtoolbox stats lamW modelr rlang 
-#' @importFrom utils head  tail
-#' @include corr_haltons.R halton_dists.R get_chol.R
-#'
-#' @examples
-#'
-#' # Standard Negative Binomial
+#' @importFrom utils head tail
+#' @include corr_haltons.R halton_dists.R get_chol.R helpers.R
+#' 
+#' #' @examples
+#' \donttest{
+#' # Load data and create a dummy variable
 #' data("washington_roads")
-#' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>=10000,1,0)
-#' nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-#'                data = washington_roads, family = "NB2",
-#'                dis_param_formula_1 = ~ speed50, method='BFGS')
-#'
-#' predict(nb2, data=washington_roads)
+#' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
 #' 
-#' # Poisson-Lognormal
-#' pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-#'               data = washington_roads, family = "PLN", ndraws=10)
-#' predict(pln, data=washington_roads)
+#' # =========================================================================
+#' # 1. Fixed Parameter Model (Standard Countreg)
+#' # =========================================================================
+#' nb2_fixed <- countreg(Total_crashes ~ lnaadt + lnlength + speed50,
+#'                       data = washington_roads, 
+#'                       family = "NB2")
 #' 
-#' \dontrun{
-#' # Random Parameter NB2
-#' nb2.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
-#'                               rpar_formula = ~ speed50,
-#'                               data = washington_roads,
-#'                               ndraws = 100,
-#'                               correlated = FALSE,
-#'                               rpardists = c(intercept="u", speed50="t"),
-#'                               form = 'nb2',
-#'                               method = "bfgs")
-#'                
-#' predict(nb2.rp, list(data=washington_roads, method="Simulated"))
+#' # Standard prediction (Expected value: mu)
+#' pred_fixed <- predict(nb2_fixed, data = washington_roads)
+#' head(pred_fixed)
 #' 
-#' # NB2 with underreporting (logit)
-#' nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-#'               data = washington_roads, family = "NB2",
-#'               underreport_formula = ~ speed50 + AADT10kplus)
-#' predict(nb2_underreport, data=washington_roads)
+#' # =========================================================================
+#' # 2. Random Parameters Model (Countreg.rp)
+#' # =========================================================================
+#' # Estimate a Random Parameters NB2 model
+#' rp_nb2 <- countreg.rp(Total_crashes ~ lnaadt + lnlength,
+#'                       rpar_formula = ~ -1 + speed50,
+#'                       data = washington_roads,
+#'                       family = "NB2",
+#'                       rpardists = c(speed50 = "n"),
+#'                       ndraws = 100)
 #' 
-#' # Poisson-Lognormal with underreporting (probit)
-#' plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-#'               data = washington_roads, family = "NB2",
-#'               underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
-#' predict(plogn_underreport, data=washington_roads) }
+#' # --- Method A: Simulated Prediction (Population Average) ---
+#' # Calculates E[y] = Mean over draws of exp(X*beta + random_draws)
+#' # This is the standard prediction for forecasting on new data.
+#' pred_sim <- predict(rp_nb2, data = washington_roads, method = "Simulated")
+#' head(pred_sim)
 #' 
+#' # --- Method B: Individual Prediction (Bayesian Posterior) ---
+#' # Calculates E[y_new | y_observed]
+#' # This conditions the random parameters on the specific observed counts 
+#' # for that site/observation. Useful for identifying high-risk sites.
+#' # Note: The 'data' object MUST contain the outcome variable.
+#' pred_ind <- predict(rp_nb2, data = washington_roads, method = "Individual")
+#' head(pred_ind)
+#' 
+#' # =========================================================================
+#' # 3. Generalized Random Parameters (Complex Structure)
+#' # =========================================================================
+#' # Model where dispersion (alpha) is a function of 'lnlength'
+#' rp_gen <- countreg.rp(Total_crashes ~ lnaadt,
+#'                       rpar_formula = ~ -1 + speed50,
+#'                       dis_param_formula_1 = ~ lnlength,
+#'                       data = washington_roads,
+#'                       family = "NB2",
+#'                       ndraws = 100)
+#' 
+#' # Predict takes into account the varying dispersion parameter
+#' pred_gen <- predict(rp_gen, data = washington_roads, method = "Simulated")
+#' head(pred_gen)
+#' }
 #' @export
 predict.flexCountReg <- function(object, ...){
+  
   # Extract optional parameters from '...'
   additional_args  <- list(...)
-  if (is.null(additional_args$data)) data <- object$data else data <- as.data.frame(additional_args$data)
-  if (is.null(additional_args$method)) method <- "Exact" else data <- additional_args$method
-
+  
+  # Handle data argument
+  if (is.null(additional_args$data)) {
+    data <- object$data 
+  } else {
+    data <- as.data.frame(additional_args$data)
+  }
+  
   model <- object$model
   
-  modtype <- model$modelType 
-  if(modtype=="rpnb" || modtype=="rppois"){
-    # The Individual method uses a Bayesian approach to get individual coefficients and variance of the coefficients
-    
-    form <- model$form
-    
-    # function to compute probabilities
-    nb_prob <- function(y, mu, alpha, p) {
-      if (form=='nb2'){
-        return(stats::dnbinom(y, size = 1/alpha, mu = mu))
-      } else if (form=='nb1'){
-        return(stats::dnbinom(y, size = mu/alpha, mu = mu))
-      } else{
-        return(stats::dnbinom(y, size = (mu^(2-p))/alpha, mu = mu))
-      }
+  if (!is.null(object$modelType)) {
+    modtype <- object$modelType
+  } else if (!is.null(model$modelType)) {
+    modtype <- model$modelType
+  } else {
+    modtype <- "countreg" 
+  }
+  
+  # Handle method argument
+  if (is.null(additional_args$method)) {
+    if(modtype %in% c("rpnb", "rppois", "countreg.rp")) {
+      method <- "Simulated"
+    } else {
+      method <- "Exact"
     }
+  } else {
+    method <- additional_args$method
+  }
+  
+  # =========================================================================
+  # RANDOM PARAMETERS MODELS (RPNB / RPPOIS / COUNTREG.RP)
+  # =========================================================================
+  if(modtype %in% c("rpnb", "rppois", "countreg.rp")){
     
+    # --- 1. Setup & Matrix Generation ---
+    form <- model$form
+    family <- if(!is.null(model$family)) model$family else "NB2" 
     rpar_formula <- model$rpar_formula
     rpardists <- model$rpardists
-    formula <- delete.response(model$formula)
-    data <- as.data.frame(data)
-    
-    X_Fixed <- as.matrix(modelr::model_matrix(data, formula))
-    X_rand <- as.matrix(modelr::model_matrix(data, model$rpar_formula))
-    
-    X <- cbind(X_Fixed, X_rand)
-    
-    x_fixed_names <- colnames(X_Fixed)
-    rpar <- colnames(X_rand)
-    
-    N_fixed <- num_vars_fixed <- length(x_fixed_names)
-    Nrand <- N_rand <- num_vars_rand <- length(unname(rpar))
-    total_vars <- num_vars_fixed + num_vars_rand
-    
-    coefs <- unlist(model$estimate, recursive = TRUE, use.names = FALSE)
-    fixed_coefs <- head(coefs,num_vars_fixed)
-    h <- head(coefs, total_vars)
-    random_coefs_means <- tail(h, num_vars_rand)
-    
-    
-    if (N_rand > 1) {
-      rand_sdevs <- abs(coefs[(total_vars+ 1):(total_vars+N_rand)])
-    } 
-    else {
-      rand_sdevs <- abs(coefs[(N_fixed + 2)])
-    }
-    
-    sd <- rpar_sd <- rand_sdevs
-
-    if (modtype=="rpnb" ){
-      alpha <- model$alpha
-      p <- model$P
-    }
-    
-    mu_fixed <- exp(X_Fixed %*% fixed_coefs)
     correlated <- model$correlated
     scrambled <- model$scrambled
-    ndraws <- max(model$numdraws,2000)
-    dists <- model$rpardists
+    ndraws <- max(model$ndraws, 500)
     
-    hdraws <- randtoolbox::halton(ndraws, num_vars_rand, mixed = scrambled)
+    formula_fixed <- delete.response(terms(model$formula))
+    data <- as.data.frame(data)
     
-    # function to adjust for random distributions
-    rpar.adjust <- function(dist, mu, sigma, xrand){ 
-      if(dist=="n"){
-        adj <- exp(xrand*mu + xrand^2*sigma^2/2)
-        return(adj)
+    if (!is.null(model$offset)){
+      if(length(model$offset) > 1 || !model$offset %in% names(data)) {
+        X_offset <- rep(0, nrow(data))
+      } else {
+        X_offset <- data[[model$offset]]
       }
-      else if (dist=="ln"){
-        if (sigma<=sqrt(exp(-mu-1))){
-          W <- lamW::lambertW0(-xrand*sigma^2*exp(mu))
-          W <- ifelse(is.na(W), lamW::lambertWm1(-xrand*sigma^2*exp(mu)), W)
-          adj <- ifelse(xrand*exp(mu-W)-1/(sigma^2)==0,1,(exp(xrand*exp(mu-W))-W^2/(2*sigma^2))/(sigma*sqrt(abs(xrand*exp(mu-W)-1/(sigma^2)))))
-        }
-        else{
-          draws <- stats::qlnorm(randtoolbox::halton(ndraws, 1), random_coefs_means, rand_sdevs)
-          xs <- exp(crossprod(xrand, draws))
-          adj <- rowMeans(xs)
-        }
-        return(adj)
-      }
-      else if (dist=="t"){
-        adj <- ifelse(xrand!=0, (exp(2*sigma*xrand)-2*exp(sigma*xrand)+1)*exp(xrand*(mu-sigma))/(sigma^2*xrand^2), 1)
-        return(adj)
-      }
-      else if (dist=="u"){
-        adj <- ifelse(xrand!=0,(-exp(xrand*(mu-sigma))+exp(xrand*(mu+sigma)))/(2*xrand*sigma),1)
-        return(adj)
-      }
-      else if (dist=="g"){
-        adj <- ifelse(xrand*sigma^2/(mu)==1,1,((mu-sigma^2*xrand)/mu)^(-1*(mu^2/(sigma^2))))
-        return(adj)
+    } else {
+      X_offset <- rep(0, nrow(data))
+    }
+    
+    # Matrices
+    X_Fixed <- as.matrix(modelr::model_matrix(data, formula_fixed))
+    X_rand <- as.matrix(modelr::model_matrix(data, rpar_formula))
+    
+    # INTERCEPT CLEANUP (Match estimation logic)
+    if("(Intercept)" %in% colnames(X_rand) && !is.null(rpardists)){
+      if(!any(grepl("intercept", names(rpardists), ignore.case=TRUE))){
+        X_rand <- X_rand[ , colnames(X_rand) != "(Intercept)", drop=FALSE]
       }
     }
     
-    if (method == 'Exact'){
-      rand_pred<- rep(1, length(mu_fixed))
-      
-      if (length(dists)>1){
-        for (i in 1:length(dists)){
-
-          rand_pred <- rand_pred*rpar.adjust(dists[i], random_coefs_means[i], sd[i], X_rand[,i])
-        }
-      }
-      else{
-        rand_pred <- rpar.adjust(dists, random_coefs_means, sd, X_rand)
-      }
-      
-      fixed_predictions <- exp(X_Fixed %*% fixed_coefs)
-      predictions <- fixed_predictions*rand_pred
-      return(as.vector(predictions))
+    # Heterogeneity Matrices
+    if (!is.null(model$het_mean_formula)) {
+      X_het_mean <- model.matrix(model$het_mean_formula, data)
+      if ("(Intercept)" %in% colnames(X_het_mean)) X_het_mean <- X_het_mean[, -1, drop=FALSE]
+    } else { X_het_mean <- NULL }
+    
+    if (!is.null(model$het_var_formula)) {
+      X_het_var <- model.matrix(model$het_var_formula, data)
+      if ("(Intercept)" %in% colnames(X_het_var)) X_het_var <- X_het_var[, -1, drop=FALSE]
+    } else { X_het_var <- NULL }
+    
+    # Distribution Parameter Matrices
+    X_dis_1 <- NULL
+    X_dis_2 <- NULL
+    vec_1 <- NULL
+    vec_2 <- NULL
+    
+    # --- 2. Extract Coefficients ---
+    coefs <- unlist(model$estimate, recursive = TRUE, use.names = FALSE)
+    N_fixed <- ncol(X_Fixed)
+    N_rand <- ncol(X_rand)
+    
+    current_idx <- 0
+    
+    # Fixed
+    fixed_coefs <- coefs[(current_idx + 1):(current_idx + N_fixed)]
+    current_idx <- current_idx + N_fixed
+    
+    # Random Means
+    random_coefs_means <- coefs[(current_idx + 1):(current_idx + N_rand)]
+    current_idx <- current_idx + N_rand
+    
+    # Random Vars
+    n_var_params <- if(correlated) N_rand * (N_rand + 1) / 2 else N_rand
+    rand_var_params <- coefs[(current_idx + 1):(current_idx + n_var_params)]
+    current_idx <- current_idx + n_var_params
+    
+    # Heterogeneity
+    het_mean_coefs <- NULL
+    if (!is.null(X_het_mean)) {
+      N_het_mean <- ncol(X_het_mean)
+      het_mean_coefs <- coefs[(current_idx + 1):(current_idx + N_het_mean)]
+      current_idx <- current_idx + N_het_mean
     }
-    else if (method=='Simulated'){
-      
-      # generate and scale random draws
-      if(length(rpar)==1){
-        if(is.null(rpardists)){
-          draws <- halton_dists(dist="n", hdraw=hdraws, mean=random_coefs_means, sdev=rand_sdevs)
-        }
-        else{
-          draws <- halton_dists(dist=rpardists, hdraw=hdraws, mean=random_coefs_means, sdev=rand_sdevs)
-        }
-        xb_rand_mat <- sapply(draws, function(x) X_rand * x)
-      }else{
-        if (correlated){ # Generate correlated random draws
-          Ch <- get_chol(t, Nrand)
-          draws <- corr_haltons(random_coefs_means, cholesky = Ch, hdraws=hdraws)
-        }else{
-          draws <- hdraws # initialize the matrix
-          for (i in 1:Nrand){
-            draws[,i] <- halton_dists(dist=rpardists[i], hdraw=hdraws[,i], mean=random_coefs_means[i], sdev=rand_sdevs[i])
-          }
-        }
-        draws <- t(draws)
-        xb_rand_mat <- crossprod(t(X_rand), draws)
-      }
- 
-      rpar_mat <- exp(xb_rand_mat)
-      pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
-      mui <- rowMeans(pred_mat)
-      
-      return(mui)
+    
+    het_var_coefs <- NULL
+    if (!is.null(X_het_var)) {
+      N_het_var <- ncol(X_het_var)
+      het_var_coefs <- coefs[(current_idx + 1):(current_idx + N_het_var)]
+      current_idx <- current_idx + N_het_var
     }
-    else if (method=='Individual'){
-      # generate and scale random draws
-      if(length(rpar)==1){
-        if(is.null(rpardists)){
-          draws <- halton_dists(dist="n", hdraw=hdraws, mean=random_coefs_means, sdev=rand_sdevs)
-        }
-        else{
-          draws <- halton_dists(dist=rpardists, hdraw=hdraws, mean=random_coefs_means, sdev=rand_sdevs)
-        }
-        xb_rand_mat <- sapply(draws, function(x) X_rand * x)
-      }else{
-        if (correlated){ # Generate correlated random draws
-          Ch <- get_chol(t, Nrand)
-          draws <- corr_haltons(random_coefs_means, cholesky = Ch, hdraws=hdraws)
-        }else{
-          draws <- hdraws # initialize the matrix
-          for (i in 1:Nrand){
-            draws[,i] <- halton_dists(dist=rpardists[i], hdraw=hdraws[,i], mean=random_coefs_means[i], sdev=rand_sdevs[i])
-          }
-        }
-        draws <- t(draws)
-        xb_rand_mat <- crossprod(t(X_rand), draws)
+    
+    if(modtype == "countreg.rp"){
+      params <- get_params(family)
+      
+      # Param 1
+      if (!is.null(model$dis_param_formula_1)) {
+        X_dis_1 <- as.matrix(modelr::model_matrix(data, model$dis_param_formula_1))
+        N_dis_1 <- ncol(X_dis_1)
+        p_dis_1 <- coefs[(current_idx + 1):(current_idx + N_dis_1)]
+        current_idx <- current_idx + N_dis_1
+        vec_1 <- exp(as.vector(X_dis_1 %*% p_dis_1))
+      } else if (!is.null(params[[1]])) {
+        p_dis_1 <- coefs[(current_idx + 1):(current_idx + 1)]
+        current_idx <- current_idx + 1
+        vec_1 <- rep(exp(p_dis_1), nrow(data))
       }
       
-      rpar_mat <- exp(xb_rand_mat)
-      
-      pred_mat <- apply(rpar_mat, 2, function(x) x * mu_fixed)
-      
-      variable_names <- all.vars(model$formula)
-      y <- data[,variable_names[1]]
-      n_obs <- length(mu_fixed)
-      ind_coefs <- matrix(0, nrow=n_obs, ncol=num_vars_rand)
-      ind_var <- matrix(0, nrow=n_obs, ncol=num_vars_rand)
-      if (modtype=="rpnb"){
-        prob_mat <- apply(pred_mat, 2, nb_prob, y=y, alpha=alpha, p=p)
-      }
-      else{
-        prob_mat <- apply(pred_mat, 2, dpois, x=y)
+      # Param 2
+      if (!is.null(model$dis_param_formula_2)) {
+        X_dis_2 <- as.matrix(modelr::model_matrix(data, model$dis_param_formula_2))
+        N_dis_2 <- ncol(X_dis_2)
+        p_dis_2 <- coefs[(current_idx + 1):(current_idx + N_dis_2)]
+        current_idx <- current_idx + N_dis_2
+        vec_2 <- exp(as.vector(X_dis_2 %*% p_dis_2))
+      } else if (!is.null(params[[2]])) {
+        p_dis_2 <- coefs[(current_idx + 1):(current_idx + 1)]
+        current_idx <- current_idx + 1
+        vec_2 <- rep(exp(p_dis_2), nrow(data))
       }
       
+    } else {
+      if(!is.null(model$alpha)) vec_1 <- rep(model$alpha, nrow(data))
+      if(!is.null(model$P)) vec_2 <- rep(model$P, nrow(data))
+    }
+    
+    # --- 3. Draw Generation ---
+    hdraws <- as.matrix(randtoolbox::halton(ndraws, N_rand, mixed = scrambled))
+    
+    draws_info <- generate_random_draws(hdraws = hdraws, 
+                                        random_coefs_means = random_coefs_means, 
+                                        rand_var_params = rand_var_params, 
+                                        rpardists = rpardists, 
+                                        rpar = colnames(X_rand), 
+                                        X_rand = X_rand,
+                                        het_mean_coefs = het_mean_coefs, 
+                                        X_het_mean = X_het_mean,
+                                        het_var_coefs = het_var_coefs, 
+                                        X_het_var = X_het_var,
+                                        correlated = correlated)
+    
+    rpar_mat <- exp(draws_info$xb_rand_mat)
+    mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
+    pred_mat <- sweep(rpar_mat, 1, mu_fixed, "*")
+    
+    if(family == "PLN" && !is.null(vec_1)){
+      adj_factor <- exp((vec_1^2)/2)
+      pred_mat <- sweep(pred_mat, 1, adj_factor, "*")
+    }
+    
+    # --- 4. Method Implementation ---
+    if (method == 'Simulated') {
+      return(rowMeans(pred_mat))
+    }
+    else if (method == 'Individual') {
+      y_name <- all.vars(model$formula)[1]
+      if(!y_name %in% names(data)) stop("Method 'Individual' requires outcome variable in data.")
+      y_obs <- data[[y_name]]
       
-      pred_i <- rep(0,n_obs)
+      probFunc <- get_probFunc(family) 
       
-      if(num_vars_rand>1){
-        ind_coefs_pred <- matrix(0, nrow=n_obs, ncol=num_vars_rand)
-        for (i in 1:num_vars_rand){
-          hals <- draws[i,]
-          b_i <- t(apply(prob_mat, 1, function(x) hals * x))
-          bb_i <- t(apply(prob_mat, 1, function(x) hals * hals * x))
-          bi <- rowSums(b_i)/rowSums(prob_mat)
-          bbi <- rowSums(bb_i)/rowSums(prob_mat)
-          var <- bbi - bi^2
-          ind_coefs[,i] <- bi
-          ind_var[,i] <- var
-          ind_coefs_pred[,i] <- bi + var/2
-        }
+      N <- nrow(pred_mat)
+      D <- ncol(pred_mat)
+      
+      flat_y <- rep(y_obs, times = D)
+      flat_pred <- as.vector(pred_mat)
+      flat_alpha <- if(!is.null(vec_1)) rep(vec_1, times = D) else NULL
+      flat_sigma <- if(!is.null(vec_2)) rep(vec_2, times = D) else NULL
+      
+      dist_haltons <- randtoolbox::halton(max(model$ndraws, 50), 1)
+      normed_dist_haltons <- stats::qnorm(dist_haltons)
+      
+      if(family == "PLN" && !is.null(vec_1)){
+        adj_factor <- exp((vec_1^2)/2)
+        flat_lambda <- flat_pred / rep(adj_factor, times = D)
+      } else {
+        flat_lambda <- flat_pred
       }
       
-      xr <- exp(rowSums(ind_coefs_pred * X_rand))
-      pred_i <- diag(outer(xr, as.vector(mu_fixed)))
+      probs_flat <- probFunc(y = flat_y, 
+                             predicted = flat_lambda, 
+                             alpha = flat_alpha, 
+                             sigma = flat_sigma,
+                             haltons = dist_haltons,
+                             normed_haltons = normed_dist_haltons)
+      
+      prob_mat <- matrix(probs_flat, nrow = N, ncol = D)
+      
+      numerator <- rowSums(pred_mat * prob_mat)
+      denominator <- rowSums(prob_mat)
+      pred_i <- ifelse(denominator == 0, rowMeans(pred_mat), numerator / denominator)
       return(pred_i)
     }
-    
-    else{print('Please use one of the following methods: Approximate, Simulated, or Individual')}
+    else if (method == 'Exact') {
+      stop("Exact method not supported for random parameter models. Use 'Simulated'.")
+    }
   }
-  else{
-    #mod_df <- stats::model.frame(model$formula, data)
-    
+  
+  # =========================================================================
+  # FIXED PARAMETER MODELS (CountReg)
+  # =========================================================================
+  else {
     X <- as.matrix(modelr::model_matrix(data, model$formula))
-    #y <- as.numeric(stats::model.response(mod_df))
     coefs <- unlist(model$estimate, recursive = TRUE, use.names = FALSE)
     N_x <- ncol(X)
-    N_pars <- length(coefs)
-    
-    
     
     beta_pred <- as.vector(coefs[1:ncol(X)])
     
@@ -295,37 +317,39 @@ predict.flexCountReg <- function(object, ...){
       N_alpha <- ncol(alpha_X)
       alpha_pars <- coefs[(N_x+1):(N_x+N_alpha)]
       alpha <- exp(alpha_X %*% alpha_pars)
-    }else{
-      N_alpha <- 1
-      alpha <- exp(coefs[N_x+1])
+    } else {
+      params <- get_params(model$family)
+      if(!is.null(params[[1]])){
+        alpha <- exp(coefs[N_x+1])
+      } else {
+        alpha <- NULL
+      }
     }
     
     if(!is.null(model$underreport_formula)){
       X_underreport <- as.matrix(modelr::model_matrix(data, model$underreport_formula))
       N_underreport <- ncol(X_underreport)
+      N_pars <- length(coefs)
       underrep_pars <- coefs[(N_pars-N_underreport+1):N_pars]
-      underrep_lin <- X_underreport%*%underrep_pars
+      underrep_lin <- X_underreport %*% underrep_pars
       
       if(model$underreport_family=="logit"){
         mu_adj <- 1/(1+exp(-underrep_lin))
+      } else {
+        mu_adj <- stats::pnorm(underrep_lin, lower.tail = FALSE)
       }
-      else{
-        mu_adj <- pnorm(underrep_lin, lower.tail = FALSE)
-        
-      }
-    }else{mu_adj=rep(1,nrow(X))} # If no underreporting model, set the probability to 1
-    # print(mu_adj)
-    if (modtype=="countreg"){
-      if (model$family=="PLN"){
-        predictions <- exp(X %*% beta_pred + (alpha^2)/2)*mu_adj
-      }
-      else{
-        predictions <- exp(X %*% beta_pred)*mu_adj
-      }
+    } else {
+      mu_adj <- rep(1, nrow(X))
     }
-    else{
-      predictions <- exp(X %*% beta_pred)*mu_adj
+    
+    pred_base <- exp(X %*% beta_pred)
+    
+    if (modtype=="countreg" && model$family=="PLN"){
+      predictions <- pred_base * exp((alpha^2)/2) * mu_adj
+    } else {
+      predictions <- pred_base * mu_adj
     }
-    return(predictions)
+    
+    return(as.vector(predictions))
   }
 }

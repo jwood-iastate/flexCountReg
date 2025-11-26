@@ -6,14 +6,15 @@ using namespace Rcpp;
 using Rcpp::NumericVector;
 
 
-double com_adjustFactor_cpp(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 1000){
+double com_adjustFactor_cpp(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 10000){
   int x = 0;
   double sumval = 0;
   double iterval = 0;
   bool notconverged = true;
   
   while (notconverged) {
-    iterval = std::pow(lambda,x) / std::pow(std::tgamma(x+1),nu);
+    double log_term = x * std::log(lambda) - nu * std::lgamma(x + 1);
+    iterval = std::exp(log_term);
     sumval += iterval;
     if (iterval<rel_tol){
       notconverged = false;
@@ -198,36 +199,28 @@ NumericVector pcom_vec_cpp(IntegerVector q_vec, NumericVector lambda_values, Num
 }
 
 double qcom_cpp(double p, double lambda, double nu) {
+  if (p < 0 || p > 1) return NAN;
+  if (p == 1.0) return INFINITY; 
+  
   double adjuster = com_adjustFactor_cpp(lambda, nu);
-  int lower = 0;
-  int upper = 1000; // Adjust upper limit as needed
-  int x = -1;
-  
-  // Precompute cumulative probabilities up to upper
-  std::vector<double> cum_probs(upper + 1);
+  double log_adjuster = std::log(adjuster);
   double cum_prob = 0.0;
-  for (int k = 0; k <= upper; ++k) {
-    double log_p = k * std::log(lambda) - nu * std::lgamma(k + 1) - std::log(adjuster);
+  int x = 0;
+  
+  // Safety break to prevent infinite loops in extreme cases
+  int safety_max = 100000; 
+  
+  while(x < safety_max) {
+    double log_p = x * std::log(lambda) - nu * std::lgamma(x + 1) - log_adjuster;
     cum_prob += std::exp(log_p);
-    cum_probs[k] = cum_prob;
-  }
-  
-  // Binary search
-  while (lower <= upper) {
-    int mid = (lower + upper) / 2;
-    if (cum_probs[mid] < p) {
-      lower = mid + 1;
-    } else {
-      upper = mid - 1;
-      x = mid;
+    
+    if (cum_prob >= p) {
+      return x;
     }
+    x++;
   }
   
-  if (x == -1) {
-    Rcpp::warning("Quantile not found within the upper limit.");
-    x = upper;
-  }
-  
+  Rcpp::warning("qcom_cpp did not converge within safety limit.");
   return x;
 }
 

@@ -1,52 +1,61 @@
 #' Function for estimating a random parameter negative binomial with the ability to specify if the NB-1, NB-2, or NB-P should be used
 #'
 #' @name rpnb
-#' @param formula an R formula.. This formula should specify the outcome and the 
+#' @param formula an R formula. This formula should specify the outcome and the 
 #'        independent variables that have fixed parameters.
 #' @param rpar_formula a symbolic description of the model related specifically 
 #'        to the random parameters. This should not include an outcome variable. 
 #'        If the intercept is random, include it in this formula. If the 
 #'        intercept is fixed, include it in \code{formula} but not in 
 #'        \code{rpar_formula}. To remove the intercept, use \code{0 + vars} or 
-#'        \code{-1 + vars},
+#'        \code{-1 + vars}.
 #' @param data a dataframe that has all of the variables in the \code{formula} 
-#'        and \code{rpar_formula},
+#'        and \code{rpar_formula}.
 #' @param form the version of the negative binomial to estimate (\code{"nb2"} 
 #'        estimates the NB-2, \code{"nb1"} estimates the NB-1, \code{"nbp"} 
-#'        estimates the NB-P)
+#'        estimates the NB-P).
 #' @param rpardists an optional named vector whose names are the random 
 #'        parameters and values the distribution. The distribution options 
 #'        include normal ("n"), lognormal ("ln"), triangular ("t"), uniform 
 #'        ("u"), and gamma ("g"). If this is not provided, normal distributions 
-#'        are used for all random coefficients,
+#'        are used for all random coefficients.
+#' @param het_mean_formula an optional symbolic description of the model 
+#'        (formula) for the heterogeneity in the means of the random parameters. 
+#'        Variables included here act as multipliers on the mean of the random 
+#'        parameters.
+#' @param het_var_formula an optional symbolic description of the model 
+#'        (formula) for the heterogeneity in the variances (standard deviations) 
+#'        of the random parameters. Variables included here act as multipliers 
+#'        on the standard deviation of the random parameters.
 #' @param ndraws the number of Halton draws to use for estimating the random 
-#'        parameters,
+#'        parameters.
 #' @param scrambled if the Halton draws should be scrambled or not. 
 #'        \code{scrambled = FALSE} results in standard Halton draws while 
-#'        \code{scrambled = TRUE} results in scrambled Halton draws,
+#'        \code{scrambled = TRUE} results in scrambled Halton draws.
 #' @param correlated if the random parameters should be correlated 
 #'        (\code{correlated = FALSE} results in uncorrelated random 
 #'        coefficients, \code{correlated = TRUE} results in correlated random 
 #'        coefficients). If the random parameters are correlated, only the 
-#'        normal distribution is used for the random coefficients,
+#'        normal distribution is used for the random coefficients.
 #' @param panel an optional variable or vector of variables that can be used to 
 #'        specify a panel structure in the data. If this is specified, the 
-#'        function will estimate the random parameters using a panel structure,
+#'        function will estimate the random parameters using a panel structure.
 #' @param offset offset the name of a variable, or vector of variable names, in 
 #'        the data frame that should be used as an offset (i.e., included but 
 #'        forced to have a coefficient of 1).
 #' @param method a method to use for optimization in the maximum likelihood 
-#'        estimation. For options, see \code{\link[maxLik]{maxLik}},
+#'        estimation. For options, see \code{\link[maxLik]{maxLik}}.
 #' @param max.iters the maximum number of iterations to allow the optimization 
-#'        method to perform,
+#'        method to perform.
 #' @param weights the name of a variable in the data frame that should be used
 #'        as a frequency weight.
 #' @param start.vals an optional vector of starting values for the regression 
-#'        coefficients
+#'        coefficients.
 #' @param verbose determines the level of verbosity for printing details of the 
 #'        optimization as it is computed. A value of `FALSE` indicates no 
 #'        intermediate output while `TRUE` indicates full output. Default is 
 #'        `FALSE`.
+#' @include helpers.R
 #' @import randtoolbox stats modelr
 #' @importFrom MASS glm.nb
 #' @importFrom utils head  tail
@@ -97,10 +106,27 @@
 #'                method = "bfgs",
 #'                verbose = TRUE)
 #'
-#' summary(nbp.rp)}
+#' summary(nbp.rp)
+#' 
+#' ## Random Parameters NB-2 with Heterogeneity in Means and Variances
+#' # In this example, the mean of the random parameter (lnaadt) is shifted 
+#' # by 'speed50', and the variance of the random parameter is scaled by 'speed50'.
+#' nb2.het <- rpnb(Total_crashes ~ lnlength,
+#'                 rpar_formula = ~ -1 + lnaadt,
+#'                 het_mean_formula = ~ speed50,
+#'                 het_var_formula = ~ speed50,
+#'                 data = washington_roads,
+#'                 ndraws = 50, 
+#'                 form = 'nb2',
+#'                 verbose = TRUE)
+#'                 
+#' summary(nb2.het)
+#' }
 #' @export
 rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                  rpardists = NULL,
+                 het_mean_formula = NULL, 
+                 het_var_formula = NULL,
                  ndraws = 1500, scrambled = FALSE,
                  correlated = FALSE, panel=NULL, 
                  weights=NULL, offset = NULL,
@@ -108,29 +134,21 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
                  start.vals = NULL, verbose = FALSE) {
   
   print.level = ifelse(verbose, 2, 0)
-  # Generating model matrices
+  
+  # --- Data Preparation ---
   mod1_frame <- stats::model.frame(formula, data)
   y_name <- all.vars(formula)[1]
   y <- stats::model.response(mod1_frame)
-  # start.vals can be a vector or a named vector with the starting values for the parameters
-  # print.level is used to determine the level of details for the optimization to print (for the maxLik function call)
   
-  sd.start <- 0.1 # starting value for each of the standard deviations of random parameters
-  
-  # ensure data is a tibble
   data <- as_tibble(data, .name_repair="minimal")
   
-  # Generate a panel ID for the model - using the row number if no panel is specified
+  # Generate panel ID
   if (!"panel_id" %in% names(data)) {
     if (is.null(panel)) {
       data <- data %>% mutate(panel_id = row_number())
     } else {
-      # Check if panel columns exist
       missing_cols <- setdiff(panel, names(data))
-      if (length(missing_cols) > 0) {
-        stop("Panel columns not found in data: ", paste(missing_cols, collapse = ", "))
-      }
-      
+      if (length(missing_cols) > 0) stop("Panel columns not found.")
       if (length(panel) > 1) {
         data <- data %>% unite("panel_id", all_of(panel), sep = "_", remove = FALSE)
       } else {
@@ -138,559 +156,241 @@ rpnb <- function(formula, rpar_formula, data, form = 'nb2',
       }
     }
   }
-  
-  # Now safely convert panel_id to a factor
   data <- data %>% mutate(panel_id = as.factor(panel_id))
   
-  # Handling Weights
+  # Weights
   if (is.null(weights)){
     weights.df <- rep(1, length(y))
   }else{
     weights.df <- data %>% pull(weights)
   }
   
-  
-  # Check and correct the rpardists if the random parameters are correlated
   if(correlated && !is.null(rpardists) && any(rpardists != "n")){
-    warning("When the random parameters are correlated, only the normal distribution is used.")
-    rpardists <- NULL
+    warning("When correlated=TRUE, only normal distribution is used. Resetting rpardists to 'n'.")
+    rpardists <- NULL 
   }
   
-  # Function to generate Halton draws
-  halton_draws <- function(ndraws, rpar, scrambled) {
-    num_params <- length(rpar)
-    halton_draws_matrix <- randtoolbox::halton(ndraws, num_params, mixed = scrambled)
-    return(halton_draws_matrix)
-  }
-  
-  # Generating model matrices
+  # --- Matrix Generation ---
   X_Fixed <- modelr::model_matrix(data, formula)
   X_rand <- modelr::model_matrix(data, rpar_formula)
   
-  # Get column names
+  # Heterogeneity Matrices
+  if (!is.null(het_mean_formula)) {
+    X_het_mean <- model.matrix(het_mean_formula, data)
+    if ("(Intercept)" %in% colnames(X_het_mean)) {
+      X_het_mean <- X_het_mean[, -which(colnames(X_het_mean) == "(Intercept)"), drop = FALSE]
+    }
+    N_het_mean <- ncol(X_het_mean)
+  } else {
+    X_het_mean <- NULL
+    N_het_mean <- 0
+  }
+  
+  if (!is.null(het_var_formula)) {
+    X_het_var <- model.matrix(het_var_formula, data)
+    if ("(Intercept)" %in% colnames(X_het_var)) {
+      X_het_var <- X_het_var[, -which(colnames(X_het_var) == "(Intercept)"), drop = FALSE]
+    }
+    N_het_var <- ncol(X_het_var)
+  } else {
+    X_het_var <- NULL
+    N_het_var <- 0
+  }
+  
+  # --- Checks & Setup ---
   fix_col_names <- colnames(X_Fixed)
   rand_col_names <- colnames(X_rand)
   
-  # Check for overlaps (excluding Intercept, which is handled specifically below)
-  # distinct columns "x" and "x:z" will NOT match here, which is what you want.
-  # identical columns "x" and "x" WILL match here, triggering the error.
   common_terms <- intersect(setdiff(fix_col_names, "(Intercept)"), 
                             setdiff(rand_col_names, "(Intercept)"))
-  
   if(length(common_terms) > 0){
-    stop(paste0("The following terms are included in both the fixed and random parts of the model: ",
-                paste(common_terms, collapse = ", "),
-                ".\nVariables allowed as a main effect in one part and an interaction in the other, but the exact same term cannot be in both."))
+    stop("Terms cannot be in both fixed and random parts: ", paste(common_terms, collapse = ", "))
   }
   
-  y_name <- all.vars(formula)[1]
+  if("\\(Intercept\\)" %in% colnames(X_Fixed) && "\\(Intercept\\)" %in% colnames(X_rand)){
+    stop("Do not include Intercept in both fixed and random formulas.")
+  }
   
-  X_expanded <- cbind(X_Fixed, X_rand, X_rand) # for use in the gradient
-  
-  # Create named vectors
-  fixed_terms <- names(X_Fixed)
-  rand_terms <- names(X_rand)
-  predictor_terms <- c(fixed_terms, rand_terms)
-  nb_vars <- predictor_terms[!grepl("ntercept", predictor_terms)] # remove the intercept
+  if(!is.null(rpardists)){ 
+    names(rpardists) <- gsub("intercept", "\\(Intercept\\)", names(rpardists))
+    names(rpardists) <- gsub("constant", "\\(Intercept\\)", names(rpardists))
+  }
   
   X_Fixed <- as.matrix(X_Fixed)
   X_rand <- as.matrix(X_rand)
-  
-  # check if the intercept is included in both the fixed and random parameters
-  if("\\(Intercept\\)" %in% colnames(X_Fixed) && "\\(Intercept\\)" %in% colnames(X_rand)){
-    stop("Do not include the intercept in both the fixed parameters (in `formula`) and random parameters (in `rpar_formula`). Use `- 1` in the formula you want to remove the intercept from.")
-  }
-  
-  
-  if(!is.null(rpardists)){ # check the random parameter distributions for the intercept (and correct, if needed)
-    names(rpardists) <- gsub("intercept", "\\(Intercept\\)", names(rpardists)) # correct intercept name
-    names(rpardists) <- gsub("constant", "\\(Intercept\\)", names(rpardists)) # correct intercept name
-  }
-  
-  # Check if the specified distributions include all specified random parameters and no extras
-  if (!correlated && !is.null(rpardists)){
-    prob = FALSE
-    for (i in rand_terms){
-      if(i %in% names(rpardists)){
-        next
-      }
-      else{
-        print(paste("Variable ", i, " is specified as random but is not included in the `rpardists`. Please include it or do not specify the distributions."))
-        prob = TRUE
-      }
-    }
-    
-    for (i in names(rpardists)){
-      if (i %in% rand_terms){
-        next
-      }
-      else{
-        print(paste("Variable ", i, " is included in `rpardists` but is not in the specified random parameters. Please include it as a random parameter or remove it from `rpardists`."))
-        prob = TRUE
-      }
-    }
-    if (prob) stop() # if a problem was identified, the instructions were printed and the function will now stop executing
-  }
-  
-  nb_formula <- reformulate(nb_vars, response = y_name)
-  
-  x_fixed_names <- colnames(X_Fixed)
   rpar <- colnames(X_rand)
   
-  # If an offset is specified, create a vector for the offset
+  halton_draws <- function(ndraws, rpar, scrambled) {
+    as.matrix(randtoolbox::halton(ndraws, length(rpar), mixed = scrambled))
+  }
+  hdraws <- halton_draws(ndraws, rpar, scrambled)
+  
   if (!is.null(offset)){
     X_offset <- data %>% select(all_of(offset))
   } else{
     X_offset <- NULL
   }
   
-  hdraws <- halton_draws(ndraws, rpar, scrambled)
+  # --- Starting Values ---
+  sd.start <- 0.1
   
   if(!is.null(start.vals)){
-    params <- unname(start.vals)
-    Lparams <- length(params)
-    Lrpar = length(rpar)
-    start <- params
+    start <- unname(start.vals)
     x_names <- names(start.vals)
-  }
-  else{
+  } else {
+    # Initial GLM NB for fixed effects
+    # BUG FIX: Use colnames() instead of names() because X_Fixed/X_rand are now matrices
+    nb_vars <- c(colnames(X_Fixed), colnames(X_rand))
+    nb_vars <- nb_vars[!grepl("ntercept", nb_vars)]
+    nb_formula <- reformulate(nb_vars, response = y_name)
+    
     nb_model <- tryCatch({
       MASS::glm.nb(nb_formula, data)
     }, error = function(e) {
-      stop("Error fitting initial NB model for starting values: ", e$message)
+      stop("Error fitting initial NB model: ", e$message)
     })
+    
     params <- coef(nb_model)
-    Lparams <- length(params)
-    Lrpar = length(rpar)
     
-    if (length(rpar)<2){
-      correlated = FALSE
-    }
+    # 1. Fixed parameters
+    start <- params[match(colnames(X_Fixed), names(params))]
+    if(any(is.na(start))) start[is.na(start)] <- 0 
+    x_names <- colnames(X_Fixed)
     
-    start <- params
-    # Make sure the start parameters are ordered correctly, including the location of the intercept
-    varnameorder <- c(x_fixed_names, rpar)
-    match_indices <- match(varnameorder, names(start))
-    start <- start[match_indices] # correctly ordered
+    # 2. Random Means
+    rand_means <- params[match(rpar, names(params))]
+    if(any(is.na(rand_means))) rand_means[is.na(rand_means)] <- 0
+    start <- c(start, rand_means)
+    x_names <- c(x_names, paste0(rpar, ':Mean'))
     
-    x_rand_names_mean <- paste0(rpar, ':Mean')
-    x_names = c(x_fixed_names, x_rand_names_mean)
-    
+    # 3. Random Variances
     if (correlated){
-      randparam_means = tail(start, Lrpar)
-      rparam_var <- rep(0.1, length(randparam_means))
-      rparam_var <- diag(rparam_var)
-      Chl <- chol(rparam_var)
-      
+      chol_starts <- numeric(0)
       for (i in 1:length(rpar)){
-        for (j in 1:length(rpar)){
-          if (i >= j){
-            start <- append(start, Chl[j,i])
-            x_names <- append(x_names, paste('Cholesky Value for' ,paste(rpar[j], rpar[i], sep=":")))
-          }
+        for (j in 1:i){
+          val <- if(i==j) 0.1 else 0
+          chol_starts <- c(chol_starts, val)
+          x_names <- c(x_names, paste0('Chol:', rpar[i], '_', rpar[j]))
         }
       }
+      start <- c(start, chol_starts)
+    } else {
+      start <- c(start, rep(sd.start, length(rpar)))
+      x_names <- c(x_names, paste0(rpar, ':St.Dev'))
     }
-    else{
-      start <- append(start, rep(sd.start, length(rpar)))
-      x_rand_names_sd <- paste0(rpar, ':St. Dev.')
-      x_names <- c(x_names, x_rand_names_sd)
+    
+    # 4. Heterogeneity
+    if (N_het_mean > 0) {
+      start <- c(start, rep(0, N_het_mean))
+      x_names <- c(x_names, paste0("HetMean:", colnames(X_het_mean)))
     }
-    start <- append(start, log(0.1)) # initial log of overdispersion parameter
-    x_names <- append(x_names, 'ln(alpha)')
+    
+    if (N_het_var > 0) {
+      start <- c(start, rep(0, N_het_var))
+      x_names <- c(x_names, paste0("HetVar:", colnames(X_het_var)))
+    }
+    
+    # 5. Distribution Params
+    start <- c(start, log(0.1)) 
+    x_names <- c(x_names, 'ln(alpha)')
     
     if (form=='nbp'){
-      start <- append(start, 1.5) # initial value for parameter P
-      x_names <- append(x_names, 'P')
+      start <- c(start, 1.5) 
+      x_names <- c(x_names, 'P')
     }
     names(start) <- x_names
   }
   
-  # fit <- mle2(
-  #   minuslogl = neg_LL,
-  #   start = start,
-  #   data = list(
-  #     y = y,
-  #     X_Fixed = X_Fixed,
-  #     X_rand = X_rand,
-  #     ndraws = ndraws,
-  #     rpar = rpar,
-  #     correlated = correlated,
-  #     form = form,
-  #     rpardists = rpardists,
-  #     hdraws = hdraws,
-  #     data = data,
-  #     weights = weights.df,
-  #     X_offset = X_offset,
-  #     offset = offset
-  #   ),
-  #   control = list(maxit = max.iters, trace = print.level)
-  # )
-  
+  # --- Optimization ---
   fit <- maxLik::maxLik(p_nb_rp,
                         start = start,
                         y = y,
                         X_Fixed = X_Fixed,
                         X_rand = X_rand,
                         ndraws = ndraws,
-                        hdraws=hdraws,
+                        hdraws = hdraws,
                         rpar = rpar,
                         correlated = correlated,
-                        form=form,
-                        rpardists=rpardists,
-                        data=data,
+                        form = form,
+                        rpardists = rpardists,
+                        data = data,
                         method = method,
-                        weights=weights.df,
-                        offset=offset,
+                        weights = weights.df,
+                        offset = offset,
                         X_offset = X_offset,
+                        X_het_mean = X_het_mean, 
+                        X_het_var = X_het_var,   
                         control = list(iterlim = max.iters, printLevel = print.level))
-
-  N_fixed = ncol(X_Fixed)
-  N_rand = length(rpar)
   
-  # names(fit$estimate) <- x_names
+  # --- Result Processing ---
+  fit$x_names <- names(start)
+  names(fit$estimate) <- names(start)
   
-  param.splits <- as.factor(ifelse((grepl("St. Dev", x_names) + grepl("Cholesky", x_names)==1), "rpr", "coef"))
+  coefs <- fit$estimate
+  N_fixed <- ncol(X_Fixed)
+  N_rand <- length(rpar)
+  current_idx <- 0
   
-  coefs <- as.array(fit$estimate)
+  # 1. Fixed
+  fit$coefs <- coefs[(current_idx + 1):(current_idx + N_fixed)]
+  current_idx <- current_idx + N_fixed
   
-  # split.coefs <- split(coefs, param.splits)
+  # 2. Random Means
+  current_idx <- current_idx + N_rand
   
-  betas <- coefs[1:(N_fixed+N_rand)] # includes means of random parameters
-  t <- coefs[(N_fixed+N_rand+1):length(coefs)]
-  
-  if (correlated){
-    if(form=='nbp'){
-      chol_vals <- coefs[(N_fixed+N_rand+1):(length(coefs)-2)]
-    }
-    else{
-      chol_vals <-coefs[(N_fixed+N_rand+1):(length(coefs)-1)]
-    }
-   
+  # 3. Random Variances
+  if(correlated){
+    n_var <- N_rand * (N_rand + 1) / 2
+    chol_vals <- coefs[(current_idx + 1):(current_idx + n_var)]
     
     Cholesky <- matrix(0, N_rand, N_rand)
-    chol_idx <- 1
+    idx <- 1
     for (i in 1:N_rand) {
-      for (j in 1:i) {  # Only lower triangle
-        Cholesky[i, j] <- chol_vals[chol_idx]
-        chol_idx <- chol_idx + 1
+      for (j in 1:i) {
+        Cholesky[i, j] <- chol_vals[idx]
+        idx <- idx + 1
       }
     }
-    
-    Covariance <- t(Cholesky) %*% Cholesky
-    Correlation <- cov2cor(Covariance)
-  }
-  else{
-    if(form=='nbp'){
-      sd <- abs(coefs[(N_fixed+N_rand+1):(length(coefs)-2)])
-      fit$estimate[(N_fixed+N_rand+1):(length(coefs)-2)] <- sd
-    }
-    else{
-      sd <- abs(coefs[(N_fixed+N_rand+1):(length(coefs)-1)])
-      fit$estimate[(N_fixed+N_rand+1):(length(coefs)-1)] <- sd
-    }
-  }
-  
-  
-  if(form =='nbp'){
-    t <- tail(coefs,2)
-    alpha <- exp(t[1])
-    P <- t[2]
-  }
-  else{
-    alpha <- exp(tail(fit$estimate,1))
-    P <- NULL
-  }
-  #names(fit$estimate) <- x_names
-  if(correlated){
     fit$Cholesky <- Cholesky
-    fit$Covariance <- Covariance
-    fit$Correlation <- Correlation
-    fit$sd <- as.vector(sqrt(diag(Covariance)))
+    fit$Covariance <- Cholesky %*% t(Cholesky)
+    fit$Correlation <- cov2cor(fit$Covariance)
+    fit$sd <- sqrt(diag(fit$Covariance))
+    current_idx <- current_idx + n_var
+  } else {
+    fit$sd <- abs(coefs[(current_idx + 1):(current_idx + N_rand)])
+    current_idx <- current_idx + N_rand
   }
-  else{
-    fit$sd <- abs(sd)
-  }
-  fit$coefs <- betas
-  fit$alpha = alpha
-  fit$P <- P
-  #fit$estimate <- ifelse(grepl("St.", names(fit$estimate)), abs(fit$estimate ), fit$estimate)
-  names(fit$estimate) <- x_names # ensure it retains the names
+  
+  # 4. Heterogeneity
+  fit$het_mean_coefs <- if(N_het_mean > 0) coefs[(current_idx + 1):(current_idx + N_het_mean)] else NULL
+  current_idx <- current_idx + N_het_mean
+  
+  fit$het_var_coefs <- if(N_het_var > 0) coefs[(current_idx + 1):(current_idx + N_het_var)] else NULL
+  current_idx <- current_idx + N_het_var
+  
+  # 5. Alpha / P
+  fit$alpha <- exp(coefs[current_idx + 1])
+  fit$P <- if(form == 'nbp') coefs[current_idx + 2] else NULL
+  
+  # Meta info
   fit$formula <- formula
-  fit$x_names <- x_names
   fit$rpar_formula <- rpar_formula
+  fit$het_mean_formula <- het_mean_formula
+  fit$het_var_formula <- het_var_formula
   fit$scrambled <- scrambled
   fit$numdraws <- ndraws
   fit$correlated <- correlated
-  fit$bootstraps <- NULL
-  fit$se <- sqrt(diag(-1/(fit$hessian)))
-  fit$form = form
-  if (!correlated){
-    fit$rpardists = rpardists
-    names(fit$sd) <- colnames(X_rand)
-  }
-  else{
-    dst <- as.list(rep("n", length(colnames(X_rand))))
-    names(dst) <- colnames(X_rand)
-    fit$rpardists = dst
-  }
-  
+  fit$form <- form
   fit$modelType <- "rpnb"
+  fit$se <- sqrt(diag(-1/(fit$hessian)))
+  
+  if(correlated || is.null(rpardists)) {
+    fit$rpardists <- rep("n", N_rand)
+    names(fit$rpardists) <- rpar
+  } else {
+    fit$rpardists <- rpardists
+  }
   
   obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
-}
-
-# function to compute probabilities
-nb_prob <- function(y, mu, alpha, p = NULL, form="nb2") {
-  if (form == 'nb2') {
-    return(stats::dnbinom(y, size = 1/alpha, mu = mu))
-  } else if (form == 'nb1') {
-    return(stats::dnbinom(y, size = mu / alpha, mu = mu))
-  } else if (form == 'nbp' && !is.null(p)) {
-    return(stats::dnbinom(y, size = (mu^(2 - p)) / alpha, mu = mu))
-  } else {
-    stop("Invalid form or missing 'p' for NB-P model.")
-  }
-}
-
-
-# Negative LL
-neg_LL <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights, X_offset, offset){
-  -sum(p_nb_rp(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, rpardists, hdraws, data, weights, X_offset, offset))
-}
-
-# Improved main function for estimating log-likelihoods
-p_nb_rp <- function(p, y, X_Fixed, X_rand, ndraws, rpar, correlated, form, 
-                    rpardists, hdraws, data, weights, X_offset = NULL, offset = NULL) {
-  
-  # Validate inputs
-  # validate_inputs(p, y, X_Fixed, X_rand, rpar, form, data, weights)
-  
-  # Set gradient computation method based on correlation
-  exact.gradient <- !correlated
-  
-  # Extract coefficients
-  coef_info <- extract_coefficients(p, ncol(X_Fixed), length(rpar), form)
-  
-  # Compute fixed effects
-  mu_fixed <- compute_fixed_effects(X_Fixed, coef_info$fixed_coefs, X_offset, offset)
-  
-  # Generate random draws
-  draws_info <- generate_random_draws(hdraws, coef_info$random_coefs_means, 
-                                      coef_info$rand_sdevs, rpardists, rpar, X_rand)
-  
-  # Compute probabilities and log-likelihoods
-  log_probs <- compute_log_likelihoods(draws_info, mu_fixed, y, coef_info$alpha, 
-                                       coef_info$p, form, weights, data$panel_id)
-  
-  return(log_probs)
-}
-
-# Helper function to validate inputs
-# validate_inputs <- function(p, y, X_Fixed, X_rand, rpar, form, data, weights) {
-#   if (is.null(p) || length(p) == 0) stop("Parameter vector p cannot be empty")
-#   if (is.null(y) || length(y) == 0) stop("Response vector y cannot be empty")
-#   if (is.null(X_Fixed) || ncol(X_Fixed) == 0) stop("Fixed effects matrix cannot be empty")
-#   if (!form %in% c("nb", "nbp")) stop("Form must be 'nb' or 'nbp'")
-#   if (!"panel_id" %in% names(data)) stop("Data must contain panel_id column")
-#   if (length(weights) != length(y)) stop("Weights must match response length")
-# }
-
-# Helper function to extract coefficients from parameter vector
-extract_coefficients <- function(p, N_fixed, N_rand, form) {
-  coefs <- as.array(p)
-  
-  # Extract fixed coefficients
-  fixed_coefs <- head(coefs, N_fixed)
-  
-  # Extract random coefficients means
-  random_coefs_means <- coefs[(N_fixed + 1):(N_fixed + N_rand)]
-  
-  # Extract distribution parameters
-  if (form == 'nbp') {
-    dist_params <- tail(coefs, 2)
-    log_alpha <- dist_params[1]
-    p_param <- dist_params[2]
-    sdev_end_offset <- 2
-  } else {
-    dist_params <- tail(coefs, 1)
-    log_alpha <- dist_params[1]
-    p_param <- NULL
-    sdev_end_offset <- 1
-  }
-  
-  alpha <- exp(log_alpha)
-  
-  # Extract random coefficients standard deviations
-  if (N_rand == 1) {
-    rand_sdevs <- coefs[length(coefs) - sdev_end_offset]
-  } else {
-    start_idx <- N_fixed + N_rand + 1
-    end_idx <- length(coefs) - sdev_end_offset
-    rand_sdevs <- coefs[start_idx:end_idx]
-  }
-  
-  return(list(
-    fixed_coefs = fixed_coefs,
-    random_coefs_means = random_coefs_means,
-    rand_sdevs = rand_sdevs,
-    alpha = alpha,
-    p = p_param
-  ))
-}
-
-# Helper function to compute fixed effects
-compute_fixed_effects <- function(X_Fixed, fixed_coefs, X_offset, offset) {
-  linear_pred <- X_Fixed %*% fixed_coefs
-  
-  if (!is.null(offset)) {
-    if (length(offset) > 1) {
-      X_offset_i <- rowsum(X_offset)
-      linear_pred <- linear_pred + X_offset_i
-    } else {
-      linear_pred <- linear_pred + offset
-    }
-  }
-  
-  return(exp(linear_pred))
-}
-
-# Helper function to generate random draws
-generate_random_draws <- function(hdraws, random_coefs_means, rand_sdevs, 
-                                  rpardists, rpar, X_rand) {
-  if (length(rpar) > 1) {
-    draws <- generate_scaled_draws(hdraws, random_coefs_means, rand_sdevs, 
-                                   rpardists, rpar)
-    xb_rand_mat <- crossprod(t(X_rand), draws)
-  } else {
-    draws <- generate_single_param_draws(hdraws, random_coefs_means, rand_sdevs, 
-                                         rpardists)
-    xb_rand_mat <- sapply(draws, function(x) X_rand * x)
-  }
-  
-  return(list(
-    draws = draws,
-    xb_rand_mat = xb_rand_mat
-  ))
-}
-
-# Helper function for single parameter draws
-generate_single_param_draws <- function(hdraws, random_coefs_means, rand_sdevs, rpardists) {
-  if (is.null(rpardists)) {
-    return(hdraws * rand_sdevs + random_coefs_means[1])
-  }
-  
-  dist_type <- rpardists[1]
-  mean_val <- random_coefs_means[1]
-  sd_val <- abs(rand_sdevs)
-  
-  switch(dist_type,
-         "ln" = stats::qlnorm(hdraws, mean_val, sd_val),
-         "t" = qtri(hdraws, mean_val, sd_val),
-         "u" = mean_val + (hdraws - 0.5) * sd_val,
-         "g" = stats::qgamma(hdraws, shape = mean_val^2 / sd_val^2, 
-                             rate = mean_val / sd_val^2),
-         "n" = stats::qnorm(hdraws, mean_val, abs(sd_val)),
-         stats::qnorm(hdraws, mean_val, abs(sd_val))  # default to normal
-  )
-}
-
-# Helper function to compute log-likelihoods
-compute_log_likelihoods <- function(draws_info, mu_fixed, y, alpha, p, form, 
-                                    weights, panel_id) {
-  # Compute random parameter matrix
-  rpar_mat <- exp(draws_info$xb_rand_mat)
-  
-  # Compute predictions
-  pred_mat <- sweep(rpar_mat, 1, mu_fixed, "*")  # More efficient than apply
-  
-  # Compute probabilities
-  prob_mat <- apply(pred_mat, 2, nb_prob, y = y, alpha = alpha, p = p, form = form)
-  
-  # Apply weights
-  prob_mat <- prob_mat^weights
-  
-  # Compute log probabilities
-  log_prob_mat <- log(prob_mat)
-  
-  # Create data frame for grouping
-  log_prob_df <- as.data.frame(log_prob_mat)
-  colnames(log_prob_df) <- paste0("draw_", seq_len(ncol(log_prob_mat)))
-  log_prob_df$panel_id <- panel_id
-  
-  # Aggregate by panel
-  log_probs <- aggregate(. ~ panel_id, data = log_prob_df, FUN = sum)
-  log_probs$panel_id <- NULL  # Remove panel_id column
-  
-  # Convert to matrix for efficiency
-  log_probs_mat <- as.matrix(log_probs)
-  
-  # Compute final probabilities
-  probs <- rowMeans(exp(log_probs_mat))
-  
-  return(log(probs))
-}
-
-# Improved function for generating Halton draws
-generate_draws <- function(ndraws, num_params, scrambled = FALSE) {
-  if (ndraws <= 0 || num_params <= 0) {
-    stop("Number of draws and parameters must be positive")
-  }
-  
-  randtoolbox::halton(ndraws, num_params, mixed = scrambled)
-}
-
-# Improved function for generating scaled draws
-generate_scaled_draws <- function(hdraws, random_coefs_means, rand_sdevs, 
-                                  rpardists, rpar) {
-  
-  if (length(rpar) == 1) {
-    return(generate_single_param_draws(hdraws, random_coefs_means, rand_sdevs, rpardists))
-  }
-  
-  # Multiple parameters case
-  if (is.null(rpardists)) {
-    # Default normal distribution
-    return(apply(hdraws, 1, function(x) stats::qnorm(x, random_coefs_means, abs(rand_sdevs))))
-  }
-  
-  # Custom distributions
-  draws <- hdraws
-  n_params <- length(rpar)
-  
-  for (i in seq_len(n_params)) {
-    mean_val <- random_coefs_means[i]
-    sd_val <- abs(rand_sdevs[i])
-    
-    draws[, i] <- switch(rpardists[i],
-                         "ln" = stats::qlnorm(hdraws[, i], mean_val, sd_val),
-                         "t" = qtri(hdraws[, i], mean_val, sd_val),
-                         "u" = mean_val + (hdraws[, i] - 0.5) * sd_val,
-                         "g" = stats::qgamma(hdraws[, i], shape = mean_val^2 / sd_val^2, 
-                                             rate = mean_val / sd_val^2),
-                         "n" = stats::qnorm(hdraws[, i], mean_val, abs(sd_val)),
-                         stats::qnorm(hdraws[, i], mean_val, abs(sd_val))  # default to normal
-    )
-  }
-  
-  return(t(draws))
-}
-
-# Additional utility function for parameter extraction validation
-validate_parameter_vector <- function(p, expected_length) {
-  if (length(p) != expected_length) {
-    stop(paste("Parameter vector length mismatch. Expected:", expected_length, 
-               "Got:", length(p)))
-  }
-}
-
-# Function to create coefficient summary
-summarize_coefficients <- function(coef_info) {
-  list(
-    n_fixed = length(coef_info$fixed_coefs),
-    n_random = length(coef_info$random_coefs_means),
-    alpha = coef_info$alpha,
-    has_p_param = !is.null(coef_info$p)
-  )
 }

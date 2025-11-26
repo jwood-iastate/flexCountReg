@@ -121,7 +121,7 @@ Estimation (MSLE). The function can estimate the following models:
 \details{
 For the `family` argument, the following options are available:
 \itemize{
-\item "Poisson" for Poisson distribution with a log link.
+\item "POISSON" for Poisson distribution with a log link.
  \item "NB1" for Negative Binomial 1 distribution with a log link.
  \item "NB2" for Negative Binomial 2 distribution with a log link (i.e., the 
        standard negative binomial model).

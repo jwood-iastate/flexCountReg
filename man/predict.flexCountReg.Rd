@@ -2,7 +2,7 @@
 % Please edit documentation in R/predict_flexCountReg.R
 \name{predict.flexCountReg}
 \alias{predict.flexCountReg}
-\title{Predictions for non-random parameters count models}
+\title{Predictions for flexCountReg models}
 \usage{
 \method{predict}{flexCountReg}(object, ...)
 }
@@ -13,60 +13,13 @@
 and `method`.}
 }
 \description{
-Predictions for non-random parameters count models
+Predictions for flexCountReg models
 }
 \note{
 optional parameter `data`: a dataframe that has all of the variables in 
-       the \code{formula} and \code{rpar_formula}. This can be the data used 
-       for estimating the model or another dataframe.
+       the \code{formula} and \code{rpar_formula}.
 
 optional parameter `method`: Only valid for random parameters models. 
-       The method to be used in generating the predictions (options include 
-       \code{Simulated}, \code{Exact}, or \code{Individual}).
-
-the method option \code{Individual} requires that the outcome be 
-       observed for all observations. This is due to the use of Bayesian 
-       methods for computing the individual observation coefficients.
-}
-\examples{
-
-# Standard Negative Binomial
-data("washington_roads")
-washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>=10000,1,0)
-nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-               data = washington_roads, family = "NB2",
-               dis_param_formula_1 = ~ speed50, method='BFGS')
-
-predict(nb2, data=washington_roads)
-
-# Poisson-Lognormal
-pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PLN", ndraws=10)
-predict(pln, data=washington_roads)
-
-\dontrun{
-# Random Parameter NB2
-nb2.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
-                              rpar_formula = ~ speed50,
-                              data = washington_roads,
-                              ndraws = 100,
-                              correlated = FALSE,
-                              rpardists = c(intercept="u", speed50="t"),
-                              form = 'nb2',
-                              method = "bfgs")
-               
-predict(nb2.rp, list(data=washington_roads, method="Simulated"))
-
-# NB2 with underreporting (logit)
-nb2_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "NB2",
-              underreport_formula = ~ speed50 + AADT10kplus)
-predict(nb2_underreport, data=washington_roads)
-
-# Poisson-Lognormal with underreporting (probit)
-plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "NB2",
-              underreport_formula = ~ speed50 + AADT10kplus, underreport_family = "probit")
-predict(plogn_underreport, data=washington_roads) }
-
+       Options include \code{Simulated} (default) or \code{Individual}. 
+       \code{Exact} is only available for the older `rpnb` class.
 }

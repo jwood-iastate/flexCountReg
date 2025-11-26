@@ -10,6 +10,8 @@ rpnb(
   data,
   form = "nb2",
   rpardists = NULL,
+  het_mean_formula = NULL,
+  het_var_formula = NULL,
   ndraws = 1500,
   scrambled = FALSE,
   correlated = FALSE,
@@ -23,7 +25,7 @@ rpnb(
 )
 }
 \arguments{
-\item{formula}{an R formula.. This formula should specify the outcome and the 
+\item{formula}{an R formula. This formula should specify the outcome and the 
 independent variables that have fixed parameters.}
 
 \item{rpar_formula}{a symbolic description of the model related specifically 
@@ -31,37 +33,47 @@ to the random parameters. This should not include an outcome variable.
 If the intercept is random, include it in this formula. If the 
 intercept is fixed, include it in \code{formula} but not in 
 \code{rpar_formula}. To remove the intercept, use \code{0 + vars} or 
-\code{-1 + vars},}
+\code{-1 + vars}.}
 
 \item{data}{a dataframe that has all of the variables in the \code{formula} 
-and \code{rpar_formula},}
+and \code{rpar_formula}.}
 
 \item{form}{the version of the negative binomial to estimate (\code{"nb2"} 
 estimates the NB-2, \code{"nb1"} estimates the NB-1, \code{"nbp"} 
-estimates the NB-P)}
+estimates the NB-P).}
 
 \item{rpardists}{an optional named vector whose names are the random 
 parameters and values the distribution. The distribution options 
 include normal ("n"), lognormal ("ln"), triangular ("t"), uniform 
 ("u"), and gamma ("g"). If this is not provided, normal distributions 
-are used for all random coefficients,}
+are used for all random coefficients.}
+
+\item{het_mean_formula}{an optional symbolic description of the model 
+(formula) for the heterogeneity in the means of the random parameters. 
+Variables included here act as multipliers on the mean of the random 
+parameters.}
+
+\item{het_var_formula}{an optional symbolic description of the model 
+(formula) for the heterogeneity in the variances (standard deviations) 
+of the random parameters. Variables included here act as multipliers 
+on the standard deviation of the random parameters.}
 
 \item{ndraws}{the number of Halton draws to use for estimating the random 
-parameters,}
+parameters.}
 
 \item{scrambled}{if the Halton draws should be scrambled or not. 
 \code{scrambled = FALSE} results in standard Halton draws while 
-\code{scrambled = TRUE} results in scrambled Halton draws,}
+\code{scrambled = TRUE} results in scrambled Halton draws.}
 
 \item{correlated}{if the random parameters should be correlated 
 (\code{correlated = FALSE} results in uncorrelated random 
 coefficients, \code{correlated = TRUE} results in correlated random 
 coefficients). If the random parameters are correlated, only the 
-normal distribution is used for the random coefficients,}
+normal distribution is used for the random coefficients.}
 
 \item{panel}{an optional variable or vector of variables that can be used to 
 specify a panel structure in the data. If this is specified, the 
-function will estimate the random parameters using a panel structure,}
+function will estimate the random parameters using a panel structure.}
 
 \item{weights}{the name of a variable in the data frame that should be used
 as a frequency weight.}
@@ -71,13 +83,13 @@ the data frame that should be used as an offset (i.e., included but
 forced to have a coefficient of 1).}
 
 \item{method}{a method to use for optimization in the maximum likelihood 
-estimation. For options, see \code{\link[maxLik]{maxLik}},}
+estimation. For options, see \code{\link[maxLik]{maxLik}}.}
 
 \item{max.iters}{the maximum number of iterations to allow the optimization 
-method to perform,}
+method to perform.}
 
 \item{start.vals}{an optional vector of starting values for the regression 
-coefficients}
+coefficients.}
 
 \item{verbose}{determines the level of verbosity for printing details of the 
 optimization as it is computed. A value of `FALSE` indicates no 
@@ -126,5 +138,20 @@ nbp.rp <- rpnb(Total_crashes ~ - 1 + lnlength + lnaadt,
                method = "bfgs",
                verbose = TRUE)
 
-summary(nbp.rp)}
+summary(nbp.rp)
+
+## Random Parameters NB-2 with Heterogeneity in Means and Variances
+# In this example, the mean of the random parameter (lnaadt) is shifted 
+# by 'speed50', and the variance of the random parameter is scaled by 'speed50'.
+nb2.het <- rpnb(Total_crashes ~ lnlength,
+                rpar_formula = ~ -1 + lnaadt,
+                het_mean_formula = ~ speed50,
+                het_var_formula = ~ speed50,
+                data = washington_roads,
+                ndraws = 50, 
+                form = 'nb2',
+                verbose = TRUE)
+                
+summary(nb2.het)
+}
 }

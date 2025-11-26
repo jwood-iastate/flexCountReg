@@ -192,18 +192,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// get_chol_cpp
-NumericMatrix get_chol_cpp(NumericVector pars, int Nvars);
-RcppExport SEXP _flexCountReg_get_chol_cpp(SEXP parsSEXP, SEXP NvarsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type pars(parsSEXP);
-    Rcpp::traits::input_parameter< int >::type Nvars(NvarsSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_chol_cpp(pars, Nvars));
-    return rcpp_result_gen;
-END_RCPP
-}
 // dtri_cpp
 double dtri_cpp(double x, double mode, double sigma, double upper, double lower, bool log);
 RcppExport SEXP _flexCountReg_dtri_cpp(SEXP xSEXP, SEXP modeSEXP, SEXP sigmaSEXP, SEXP upperSEXP, SEXP lowerSEXP, SEXP logSEXP) {
@@ -282,7 +270,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_flexCountReg_dpLnorm_cpp", (DL_FUNC) &_flexCountReg_dpLnorm_cpp, 4},
     {"_flexCountReg_dpWeib_cpp", (DL_FUNC) &_flexCountReg_dpWeib_cpp, 5},
     {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 4},
-    {"_flexCountReg_get_chol_cpp", (DL_FUNC) &_flexCountReg_get_chol_cpp, 2},
     {"_flexCountReg_dtri_cpp", (DL_FUNC) &_flexCountReg_dtri_cpp, 6},
     {"_flexCountReg_ptri_cpp", (DL_FUNC) &_flexCountReg_ptri_cpp, 7},
     {"_flexCountReg_qtri_cpp", (DL_FUNC) &_flexCountReg_qtri_cpp, 5},

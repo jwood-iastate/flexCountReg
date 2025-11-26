@@ -54,7 +54,6 @@ Collate:
     'pinvgaus.R'
     'countreg.R'
     'createFlexCountReg.R'
-    'get_chol.R'
     'tri.R'
     'countregrp.R'
     'cureplot.R'

@@ -53,10 +53,6 @@ genWaring_cpp <- function(x, mean, k, p) {
     .Call('_flexCountReg_genWaring_cpp', PACKAGE = 'flexCountReg', x, mean, k, p)
 }
 
-get_chol_cpp <- function(pars, Nvars) {
-    .Call('_flexCountReg_get_chol_cpp', PACKAGE = 'flexCountReg', pars, Nvars)
-}
-
 dtri_cpp <- function(x, mode = 0, sigma = 1, upper = NA_real_, lower = NA_real_, log = FALSE) {
     .Call('_flexCountReg_dtri_cpp', PACKAGE = 'flexCountReg', x, mode, sigma, upper, lower, log)
 }

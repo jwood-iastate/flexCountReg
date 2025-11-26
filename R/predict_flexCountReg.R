@@ -12,7 +12,7 @@
 #'
 #' @import randtoolbox stats lamW modelr rlang 
 #' @importFrom utils head tail
-#' @include corr_haltons.R halton_dists.R get_chol.R helpers.R
+#' @include corr_haltons.R halton_dists.R  helpers.R
 #' 
 #' #' @examples
 #' \donttest{

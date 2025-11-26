@@ -5,3 +5,4 @@ README.Rmd
 .github/
 .github (jwood2@iastate.edu)/
 codecov.yml
+^\.github$

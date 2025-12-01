@@ -164,6 +164,7 @@ As noted in the list of functions, the probability distributions below are inclu
 
 **Count Distributions**
 
+- Poisson
 - Generalized Waring Distribution
 - Negative Binomial in various forms (NB-1, NB-2, and NB-P)
 - Poisson-Generalized-Exponential Distribution

@@ -22,7 +22,8 @@
 #' @include renbLL.R
 #' 
 #' @details
-#' This function estimates a random effects negative binomial (RENB) regression model. This model is based on the NB-1 model. The PDF for the RENB is:
+#' This function estimates a random effects negative binomial (RENB) regression 
+#' model. This model is based on the NB-1 model. The PDF for the RENB is:
 #' \deqn{f(y_{it}|\mu_{it}, a, b)=\frac{\Gamma(a+b)+\Gamma(a+\sum_{t=1}^{n_i}\mu_{it})+\Gamma(b+\sum_{t=1}^{n_i}y_{it})}{\Gamma(a)\Gamma(b)\Gamma(a+b+\sum_{t=1}^{n_i}\mu_{it}+\sum_{t=1}^{n_i}y_{it})}\prod_{t=1}^{n_i}\frac{\Gamma(\mu_{it}+y_{it})}{\Gamma(\mu_{it})\Gamma(y_{it})}}
 #' 
 #' 

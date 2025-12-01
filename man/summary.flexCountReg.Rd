@@ -23,12 +23,14 @@ Optional parameter `confint_level`: A numeric value between 0 and 1 indicating t
 Optional parameter `digits`: Number of digits (decimal places) to round to. Default is 3.
 }
 \examples{
+\donttest{
 # NB2 Model
 data("washington_roads")
 washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
 nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-               data = washington_roads, family = "NB2",
-               dis_param_formula_1 = ~ speed50, method='BFGS')
+                data = washington_roads, family = "NB2",
+                dis_param_formula_1 = ~ speed50, method='BFGS')
 summary(nb2)
+}
 
 }

@@ -32,7 +32,9 @@
 #' The function is similar to the  poisLind  function, but it includes 
 #' additional terms to account for the random effects. 
 #' 
-#' The PDF for the Random Effects Poisson-Lindley model is:
+#' The Random Effects Poisson-Lindley model is useful for panel data and assumes 
+#' that the random effects follow a gamma distribution. The PDF for the Random 
+#' Effects Poisson-Lindley model is:
 #' \deqn{f(y_{it}|\mu_{it},\theta)=\frac{\theta^2}{\theta+1} \prod_{t=1}^{n_i} \frac{\left(\mu_{it} \frac{\theta(\theta+1)}{\theta+2}\right)^{y_{it}}}{y_{it}!} \cdot \frac{\left(\sum_{t=1}^{n_i} y_{it}\right)! \left(\sum_{t=1}^{n_i} \mu_{it} \frac{\theta(\theta+1)}{\theta+2} + \theta + \sum_{t=1}^{n_i} y_{it} + 1\right)}{\left(\sum_{t=1}^{n_i} \mu_{it} \frac{\theta(\theta+1)}{\theta+2} + \theta\right)^{\sum_{t=1}^{n_i} y_{it} + 2}}}
 #' 
 #' The log-likelihood function for the Random Effects Poisson-Lindley model is:

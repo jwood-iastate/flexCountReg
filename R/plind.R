@@ -61,11 +61,12 @@
 #' @export
 #' @name PoissonLindley
 
-#' @rdname PoissonLindley
+
 
 msg1 <- ("The value of `x` must be a non-negative whole number")
 msg2 <- ('The values of `mean` and `theta` both have to have values greater than 0.')
 
+#' @rdname PoissonLindley
 #' @export
 dplind <- Vectorize(function(
     x, mean = 1, theta = 1, lambda = NULL, log = FALSE){

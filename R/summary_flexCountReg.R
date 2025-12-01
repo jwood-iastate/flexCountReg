@@ -53,11 +53,12 @@ summary.flexCountReg <- function(object, ...) {
       # Try to match by name if 'term' and 'sd' columns exist
       if(all(c("term", "sd") %in% names(model_obj$bootstrapped_se))){
         match_idx <- match(params, model_obj$bootstrapped_se$term)
-        se_vec <- model_obj$bootstrapped_se$sd[match_idx]
+        # FIX: Explicitly convert to numeric to prevent type issues (e.g., list columns or attributes)
+        se_vec <- as.numeric(model_obj$bootstrapped_se$sd[match_idx])
       } else {
         # Fallback: if lengths match, assume specific column order (2nd col)
         if(nrow(model_obj$bootstrapped_se) == length(coeffs)){
-          se_vec <- model_obj$bootstrapped_se[[2]] 
+          se_vec <- as.numeric(model_obj$bootstrapped_se[[2]])
         }
       }
     } else {
@@ -77,8 +78,10 @@ summary.flexCountReg <- function(object, ...) {
   }
   
   # Standardize invalid SEs (NaN, Inf) to NA to ensure propagation works as requested
+  # Note: is.finite() fails on non-numeric types, so we check numeric status implicit in se_vec definition above
   se_vec[!is.finite(se_vec)] <- NA_real_
   
+  # Create tibble with explicit numeric columns
   mod.sum <- tibble::tibble(parameter = params, 
                             coeff = coeffs, 
                             `Std. Err.` = se_vec)

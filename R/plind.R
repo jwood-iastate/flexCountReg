@@ -62,21 +62,20 @@
 #' @name PoissonLindley
 
 #' @rdname PoissonLindley
+
+msg1 <- ("The value of `x` must be a non-negative whole number")
+msg2 <- ('The values of `mean` and `theta` both have to have values greater than 0.')
+
 #' @export
 dplind <- Vectorize(function(
     x, mean = 1, theta = 1, lambda = NULL, log = FALSE){
   
   # Test to make sure the value of x is an integer
   tst <- !(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2]) > 0))
-  if(tst | x < 0){
-    msg <- ("The value of `x` must be a non-negative whole number")
-    stop(msg)
-  }
+  if(tst | x < 0) stop(msg1)
   if(is.null(lambda)){
     if(mean <= 0 | theta <= 0){
-      msg <- paste0('The values of `mean` and `theta` both ',
-                    'have to have values greater than 0.')
-      stop(msg)
+      stop(msg2)
     }
     else{
       lambda <- mean * theta * (theta + 1) / (theta + 2)
@@ -86,9 +85,7 @@ dplind <- Vectorize(function(
   }
   else{
     if(lambda <= 0 | theta <= 0){
-      msg <- paste0('The values of `lambda` and `theta` both',
-                    ' have to have values greater than 0.')
-      stop(msg)
+      stop(msg2)
     }
     else{
       p <- dplind_cpp(x, mean, theta)
@@ -104,17 +101,11 @@ pplind <- Vectorize(function(
     q, mean = 1, theta = 1, lambda = NULL, lower.tail = TRUE, log.p = FALSE){
   
   if (is.null(lambda)){
-    if(mean <= 0 | theta <= 0){
-      msg <- paste0('The values of `mean` and `theta` both ',
-                    'have to have values greater than 0.')
-      stop(msg)
-    }
+    if(mean <= 0 | theta <= 0) stop(msg2)
   }
   else{
     if(lambda <= 0 | theta <= 0){
-      msg <- paste0('The values of `lambda` and `theta` both have ',
-                    'to have values greater than 0.')
-      stop(msg)
+      stop(msg2)
     }
     else{
       mean <- lambda * (theta + 2) / (theta * (theta + 1))
@@ -136,9 +127,7 @@ pplind <- Vectorize(function(
 qplind <- Vectorize(function(p, mean=1, theta=1, lambda=NULL) {
   if (is.null(lambda)){
     if(mean<=0 || theta<=0){
-      msg <- paste0('The values of `mean` and `theta` both have to ',
-                    'have values greater than 0.')
-      stop(msg)
+      stop(msg2)
     }
   }
   else{
@@ -168,16 +157,12 @@ rplind <- function(n, mean=1, theta=1, lambda=NULL) {
   
   if(is.null(lambda)){
     if(mean <= 0 | theta <= 0){
-      msg <- paste0('The values of `mean` and `theta` both have to ',
-                    'have values greater than 0.')
-      stop(msg)
+      stop(msg2)
     }
   }
   else{
     if(lambda <= 0 | theta <= 0){
-      msg <- paste0('The values of `lambda` and `theta` both have to ',
-                    'have values greater than 0.')
-      stop(msg)
+      stop(msg2)
     }
     else{
       mean <- lambda * (theta + 2) / (theta * (theta + 1))

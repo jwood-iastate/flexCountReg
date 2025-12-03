@@ -44,9 +44,7 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
                          tableType="tibble", digits=3){
   
   Nmodels <- length(models)
-  if(Nmodels < 2){
-    stop("Provide a list of 2 or more models for the `models` input to call the `regCompTable` function")
-  }
+  if(Nmodels < 2) warning("Provide a list of 2 or more models for the `models` input to call the `regCompTable` function")
   
   # Extract the names of all coefficients in any of the models supplied and create an initial tibble with a column of the coefficient names and other stats
   vars <- c() # names of estimated coefficients

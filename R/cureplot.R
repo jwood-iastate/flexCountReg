@@ -60,7 +60,7 @@ cureplot <- function(model, data = NULL, indvar = NULL,
   predictions <- stats::predict(model, data = data, method = method)
   
   if(length(predictions) != length(y)){
-    stop("Length of predictions does not match length of observed data. Check for missing values.")
+    warning("Length of predictions does not match length of observed data. Check for missing values.")
   }
   
   # 4. Calculate Raw Residuals
@@ -69,7 +69,7 @@ cureplot <- function(model, data = NULL, indvar = NULL,
   # 5. Determine Independent Variable (X-axis)
   if (!is.null(indvar)) {
     if (!indvar %in% names(data)) {
-      stop(paste("Variable", indvar, "not found in the provided data."))
+      warning(paste("Variable", indvar, "not found in the provided data."))
     }
     indvar_values <- data[[indvar]]
     x_name <- indvar

@@ -62,29 +62,49 @@ dpLnorm <- function(x, mean=1, sigma=1, ndraws=1500, log=FALSE, hdraws=NULL){
 }
 #' @rdname PoissonLognormal
 #' @export
-ppLnorm <- Vectorize(function(q, mean=1, sigma=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
-  if(mean<=0 || sigma<=0){
-    print('The values of `mean` and `sigma` have to have values greater than 0.')
-    stop()
+ppLnorm <- function(q, mean=1, sigma=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
+  
+  # Input Validation
+  if(any(mean <= 0) || any(sigma <= 0)) warning("The values of `mean` and `sigma` must be greater than 0.")
+  
+  # 1. Generate Halton draws ONCE for the entire batch
+  h <- randtoolbox::halton(ndraws, normal=FALSE)
+  
+  # 2. Vectorization Setup
+  n <- max(length(q), length(mean), length(sigma))
+  q <- rep_len(q, n)
+  mean <- rep_len(mean, n)
+  sigma <- rep_len(sigma, n)
+  
+  cdf <- numeric(n)
+  
+  # 3. Efficient Calculation
+  # Group by parameters to avoid redundant PMF calculations if parameters are shared
+  # (Simplest approach shown here: loop over N, but use pre-calculated 'h')
+  
+  for(i in 1:n) {
+    if(is.na(q[i]) || q[i] < 0) {
+      cdf[i] <- 0
+      next
+    }
+    
+    # Calculate PMF for 0 to q[i]
+    # Pass the PRE-GENERATED 'h' (hdraws) to dpLnorm
+    y_seq <- 0:floor(q[i])
+    probs <- dpLnorm(y_seq, mean[i], sigma[i], ndraws=ndraws, hdraws=h)
+    
+    cdf[i] <- sum(probs)
   }
   
-  y <- seq(0,q,1)
-  probs <- dpLnorm(y, mean, sigma=sigma, ndraws=ndraws)
-  p <- sum(probs)
-  
-  if(!lower.tail) p <- 1-p
-  
-  if (log.p) return(log(p))
-  else return(p)
-})
+  if(!lower.tail) cdf <- 1-cdf
+  if(log.p) return(log(cdf))
+  return(cdf)
+}
 
 #' @rdname PoissonLognormal
 #' @export
 qpLnorm <- Vectorize(function(p, mean=1, sigma=1, ndraws=1500) {
-  if(mean<=0 || sigma<=0){
-    print('The values of `mean`  and `sigma` have to have values greater than 0.')
-    stop()
-  }
+  if(mean<=0 || sigma<=0) warning('The values of `mean`  and `sigma` have to have values greater than 0.')
   
   y <- 0
   p_value <- ppLnorm(y, mean, sigma=sigma, ndraws=ndraws)
@@ -99,10 +119,7 @@ qpLnorm <- Vectorize(function(p, mean=1, sigma=1, ndraws=1500) {
 #' @rdname PoissonLognormal
 #' @export
 rpLnorm <- function(n, mean=1, sigma=1, ndraws=1500) {
-  if(mean<=0  || sigma<=0){
-    print('The values of `mean` and `sigma` have to have values greater than 0.')
-    stop()
-  }
+  if(mean<=0  || sigma<=0) warning('The values of `mean` and `sigma` have to have values greater than 0.')
   
   u <- stats::runif(n)
   y <- sapply(u, function(p) qpLnorm(p, mean, sigma=sigma, ndraws=ndraws))

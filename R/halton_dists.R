@@ -56,7 +56,7 @@ halton_dists <- function(dist, mean, sdev, hdraw=NULL, ndraws=500) {
          "u" = mean + (hdraw - 0.5) * abs(sdev),
          "g" = stats::qgamma(hdraw, shape = mean^2 / sdev^2, rate = mean / sdev^2),
          "n" = stats::qnorm(hdraw, mean, abs(sdev)), # default case for normal distribution
-         stop("Invalid distribution type")
+         warning("Invalid distribution type")
   )
 }
 

@@ -63,26 +63,98 @@ dgwar <- Vectorize(function(y, mu, k, rho, log = FALSE) {
 
 #' @rdname Generalized-Waring
 #' @export
-pgwar <- Vectorize(function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
-  if (any(q < 0) || !all(q == floor(q))) {
-    stop("All q values must be non-negative integers.")
+pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
+  
+  
+  # --- Input Validation ---
+  
+  if (any(mu <= 0, na.rm = TRUE)) warning("'mu' must be positive")
+  if (any(k <= 0, na.rm = TRUE)) warning("'k' must be positive")
+  if (any(rho <= 1, na.rm = TRUE)) warning("'rho' must be greater than 1")
+  
+  
+  # --- Vectorization Setup ---
+  
+  n <- max(length(q), length(mu), length(k), length(rho))
+  q <- rep_len(as.integer(floor(q)), n)
+  mu <- rep_len(mu, n)
+  k <- rep_len(k, n)
+  rho <- rep_len(rho, n)
+  
+  
+  # --- Initialize Result ---
+  
+  cdf <- rep(NA_real_, n)
+  
+  
+  # --- Handle Special Cases ---
+  
+  invalid_q <- is.na(q) | q < 0
+  cdf[invalid_q] <- 0
+  
+  
+  # --- Compute CDF for Valid Cases ---
+  
+  valid <- !invalid_q
+  
+  if (any(valid)) {
+    for (i in which(valid)) {
+      mu_i <- mu[i]
+      k_i <- k[i]
+      rho_i <- rho[i]
+      q_i <- q[i]
+      
+      # Compute a = mu * k / (rho - 1)
+      a_i <- mu_i * k_i / (rho_i - 1)
+      
+      if (a_i <= 0) {
+        cdf[i] <- NA_real_
+        next
+      }
+      
+      # Compute log-PMF for 0:q_i using lgamma for stability
+      log_pmf <- numeric(q_i + 1)
+      
+      for (y in 0:q_i) {
+        ay <- a_i + y
+        ky <- k_i + y
+        pk <- k_i + rho_i
+        ap <- a_i + rho_i
+        akpy <- ay + pk
+        
+        log_num <- lgamma(ay) + lgamma(ky) + lgamma(pk) + lgamma(ap)
+        log_den <- lgamma(a_i) + lgamma(k_i) + lgamma(rho_i) + lgamma(akpy) + lgamma(y + 1)
+        
+        log_pmf[y + 1] <- log_num - log_den
+      }
+      
+      # Log-sum-exp
+      max_log <- max(log_pmf[is.finite(log_pmf)])
+      if (!is.finite(max_log)) {
+        cdf[i] <- NA_real_
+        next
+      }
+      
+      log_cdf <- max_log + log(sum(exp(log_pmf - max_log)))
+      cdf[i] <- exp(log_cdf)
+    }
   }
-  y <- seq(0, q, 1)
-  probs <- dgwar(y, mu, k = k, rho = rho)
-  p <- sum(probs)
   
-  if (!lower.tail) p <- 1 - p
   
-  if (log.p) return(log(p))
-  else return(p)
-})
+  # --- Apply Tail and Log Options ---
+  
+  if (!lower.tail) cdf <- 1 - cdf
+  if (log.p) cdf <- log(cdf)
+  
+  return(cdf)
+}
 
 
 #' @rdname Generalized-Waring
 #' @export
 qgwar <- Vectorize(function(p, mu, k, rho) {
   if (any(p < 0 | p > 1)) {
-    stop("All p values must be in the interval [0, 1].")
+    warning("All p values must be in the interval [0, 1].")
   }
   
   y <- 0

@@ -79,10 +79,7 @@
 #' @export
 dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, haltons=NULL){
   
-  if(mean<=0 || scale<=0 || shape <=0){
-    print('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
-    stop()
-  }
+  if(mean<=0 || scale<=0 || shape <=0) warning('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
   
   # qge <- function(p, shape, scale){
   #   q <- log((p*shape+1)^(1/shape)+1)/scale
@@ -108,28 +105,114 @@ dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, 
 
 #' @rdname PoissonGeneralizedExponential
 #' @export
-ppge <- Vectorize(function(q, mean=1, shape=1, scale=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
-  if(mean<=0 || scale<=0 || shape <=0){
-    print('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
-    stop()
+ppge <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
+                 lower.tail = TRUE, log.p = FALSE, haltons = NULL) {
+  
+  
+  # --- Input Validation ---
+  
+  if (any(mean <= 0, na.rm = TRUE)) warning("'mean' must be positive")
+  if (any(shape <= 0, na.rm = TRUE)) warning("'shape' must be positive")
+  if (any(scale <= 0, na.rm = TRUE))  warning("'scale' must be positive")
+  
+  
+  # --- Vectorization Setup ---
+  
+  n <- max(length(q), length(mean), length(shape), length(scale))
+  q <- rep_len(as.integer(floor(q)), n)
+  mean <- rep_len(mean, n)
+  shape <- rep_len(shape, n)
+  scale <- rep_len(scale, n)
+  
+  
+  # --- Initialize Result ---
+  
+  cdf <- rep(NA_real_, n)
+  
+  
+  # --- Handle Special Cases ---
+  
+  invalid_q <- is.na(q) | q < 0
+  cdf[invalid_q] <- 0
+  
+  
+  # --- Pre-compute Halton draws (shared across all evaluations) ---
+  
+  if (is.null(haltons)) {
+    haltons <- randtoolbox::halton(ndraws)
   }
-
-  y <- seq(0,q,1)
-  probs <- dpge(y, mean, shape, scale, ndraws=ndraws)
-  p <- sum(probs)
-
-  if(!lower.tail) p <- 1-p
-
-  if (log.p) return(log(p))
-  else return(p)
-})
-
+  
+  
+  # --- Compute CDF for Valid Cases ---
+  
+  valid <- !invalid_q
+  
+  if (any(valid)) {
+    # Group by unique parameter combinations
+    param_df <- data.frame(
+      idx = which(valid),
+      q = q[valid],
+      mean = mean[valid],
+      shape = shape[valid],
+      scale = scale[valid]
+    )
+    
+    unique_params <- unique(param_df[, c("mean", "shape", "scale")])
+    
+    for (j in seq_len(nrow(unique_params))) {
+      m_j <- unique_params$mean[j]
+      sh_j <- unique_params$shape[j]
+      sc_j <- unique_params$scale[j]
+      
+      # Find all indices with these parameters
+      mask <- param_df$mean == m_j & param_df$shape == sh_j & param_df$scale == sc_j
+      indices <- param_df$idx[mask]
+      q_vals <- param_df$q[mask]
+      max_q <- max(q_vals)
+      
+      # Compute lambda for this parameter set
+      lambda_j <- m_j * sc_j / (digamma(sh_j + 1) - digamma(1))
+      
+      # Generate GE quantiles from Halton draws
+      # Quantile function of GE: Q(p) = -log(1 - p^(1/shape)) / scale
+      ge_quantiles <- -log(1 - haltons^(1 / sh_j)) / sc_j
+      
+      # Compute mu values for each Halton draw
+      mu_draws <- lambda_j * ge_quantiles
+      
+      # Compute PMF for 0:max_q by averaging over Halton draws
+      pmf <- numeric(max_q + 1)
+      
+      for (y in 0:max_q) {
+        # Average Poisson PMF over all draws
+        pmf[y + 1] <- mean(stats::dpois(y, mu_draws))
+      }
+      
+      # Compute cumulative sums
+      cum_pmf <- cumsum(pmf)
+      
+      # Assign CDF values
+      for (k in seq_along(indices)) {
+        idx_k <- indices[k]
+        q_k <- q_vals[k]
+        cdf[idx_k] <- cum_pmf[q_k + 1]
+      }
+    }
+  }
+  
+  
+  # --- Apply Tail and Log Options ---
+  
+  if (!lower.tail) cdf <- 1 - cdf
+  if (log.p) cdf <- log(cdf)
+  
+  return(cdf)
+}
 #' @rdname PoissonGeneralizedExponential
 #' @export
 qpge <- Vectorize(function(p, mean=1, shape=1, scale=1, ndraws=1500) {
   if(mean<=0 || scale<=0 || shape <=0){
-    print('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
-    stop()
+    warning('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
   }
 
   y <- 0
@@ -146,8 +229,7 @@ qpge <- Vectorize(function(p, mean=1, shape=1, scale=1, ndraws=1500) {
 #' @export
 rpge <- function(n, mean=1, shape=1, scale=1, ndraws=1500) {
   if(mean<=0 || scale<=0 || shape <=0){
-    print('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
-    stop()
+    warning('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
   }
 
   u <- runif(n)

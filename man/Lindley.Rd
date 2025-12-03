@@ -11,7 +11,7 @@ dlindley(x, theta = 1, log = FALSE)
 
 plindley(q, theta = 1, lower.tail = TRUE, log.p = FALSE)
 
-qlindley(p, theta = 1, log.p = FALSE)
+qlindley(p, theta = 1, lower.tail = TRUE, log.p = FALSE)
 
 rlindley(n, theta = 1)
 }

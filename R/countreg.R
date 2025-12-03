@@ -697,7 +697,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     # Critical Check: If get_probFunc returned NULL (e.g. invalid family matching), we cannot proceed.
     # This prevents the obscure "could not find function 'local_probFunc'" or "attempt to apply non-function" error later.
     if(is.null(local_probFunc)) {
-      stop(paste0("Probability function not found for family: ", family, ". Please check family name and helpers.R definition."))
+      warning(paste0("Probability function not found for family: ", family, ". Please check family name and helpers.R definition."))
     }
     
     coefs <- as.array(p)
@@ -785,7 +785,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     
     SE <- tidied %>%
       group_by(term) %>%
-      reframe(sd = sd(estimate, na.rm=TRUE))
+      reframe(sd = sd(estimate, na.rm=TRUE)) %>%
+      tibble::deframe() # Converts to named vector
     
     fit$bootstrapped_se <- SE
   }

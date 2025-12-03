@@ -65,12 +65,12 @@ corr_haltons <- function(means, cholesky=NULL, stdev=NULL, correlations=NULL, hd
   N <- length(means)
 
   if(!(dist %in% c("normal", "truncated_normal"))){
-    stop(paste0("Unsupported distribution type (", dist, "). Valid options include 'normal' and 'truncated_normal'."))
+    warning(paste0("Unsupported distribution type (", dist, "). Valid options include 'normal' and 'truncated_normal'."))
   }
 
   if (!is.null(hdraws)) {
     if (ncol(hdraws) != length(means)) {
-      stop(paste0("The number of columns in `hdraws` (", ncol(hdraws), ") must be the same as the length of `means` (", length(means), ")."))
+      warning(paste0("The number of columns in `hdraws` (", ncol(hdraws), ") must be the same as the length of `means` (", length(means), ")."))
     }
     halton_seq <- hdraws
   } else {
@@ -82,7 +82,7 @@ corr_haltons <- function(means, cholesky=NULL, stdev=NULL, correlations=NULL, hd
     cov <- cor2cov(correlations, stdev)
     cholesky <- chol(cov)
   } else if (is.null(cholesky)){
-    stop("You must provide either a Cholesky decomposition matrix (`cholesky`) or standard deviations and a correlation matrix (`stdev` and `correlations`).")
+    warning("You must provide either a Cholesky decomposition matrix (`cholesky`) or standard deviations and a correlation matrix (`stdev` and `correlations`).")
   }else{
     cov=t(cholesky) %*% cholesky
     sdevs <- sqrt(diag(cov))

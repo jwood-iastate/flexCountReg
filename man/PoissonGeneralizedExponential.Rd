@@ -25,7 +25,8 @@ ppge(
   scale = 1,
   ndraws = 1500,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  haltons = NULL
 )
 
 qpge(p, mean = 1, shape = 1, scale = 1, ndraws = 1500)

@@ -12,62 +12,55 @@ dsichel(x, mu = 1, sigma = 1, gamma = 1, log = FALSE)
 
 psichel(q, mu = 1, sigma = 1, gamma = 1, lower.tail = TRUE, log.p = FALSE)
 
-qsichel(p, mu = 1, sigma = 1, gamma = 1)
+qsichel(p, mu = 1, sigma = 1, gamma = 1, lower.tail = TRUE, log.p = FALSE)
 
 rsichel(n, mu = 1, sigma = 1, gamma = 1)
 }
 \arguments{
-\item{x}{numeric value or a vector of values.}
+\item{x}{numeric value or vector of non-negative integer values.}
 
-\item{mu}{numeric value or vector of mean values for the distribution (the values have to be greater than 0).}
+\item{mu}{numeric; mean of the distribution (mu > 0).}
 
-\item{sigma}{single value or vector of values for the scale parameter of the distribution (the values have to be greater than 0).}
+\item{sigma}{numeric; scale parameter (sigma > 0).}
 
-\item{gamma}{single value or vector of values for the shape parameter of the distribution.}
+\item{gamma}{numeric; shape parameter (can be any real number).}
 
-\item{log}{logical; if TRUE, probabilities p are given as log(p).}
+\item{log, log.p}{logical; if TRUE, probabilities are given as log(p).}
 
-\item{q}{quantile or a vector of quantiles.}
+\item{q}{quantile or vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.}
+\item{lower.tail}{logical; if TRUE, probabilities are P[X <= x].}
 
-\item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
+\item{p}{probability or vector of probabilities.}
 
-\item{p}{probability or a vector of probabilities.}
-
-\item{n}{the number of random numbers to generate.}
+\item{n}{number of random values to generate.}
 }
 \description{
-These functions provide the density function, distribution function, quantile function, and random number generation for the Sichel (SI) Distribution
+Density, distribution function, quantile function, and random generation
+for the Sichel distribution.
 }
 \details{
-\code{dsichel} computes the density (PDF) of the Sichel Distribution.
+The Sichel distribution is a three-parameter discrete distribution that
+generalizes the Poisson-inverse Gaussian distribution. It is useful for
+modeling overdispersed count data.
 
-\code{psichel} computes the CDF of the Sichel Distribution.
-
-\code{qsichel} computes the quantile function of the Sichel Distribution.
-
-\code{rsichel} generates random numbers from the Sichel Distribution.
-
-The compound Probability Mass Function (PMF) for the Sichel distribution uses the formulation from Zhou et al. (2011) and Rigby et al. (2008):
-\deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
-
-Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with \eqn{-\infty < \gamma < \infty} and \eqn{\sigma>0}, 
-\eqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, \eqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
-a mean value of \eqn{\mu}, \eqn{y} is a non-negative integer, and \eqn{K_j(x)} is a modified Bessel function of the third kind with order \eqn{j} and argument \eqn{x}.
-
-The variance of the distribution is:
-\deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)\mu^2}
+The PMF is:
+\deqn{f(y|\mu, \sigma, \gamma) = \frac{(\mu/c)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma) y! (\alpha\sigma)^{y+\gamma}}}
 }
 \examples{
-dsichel(1, mu=0.75, sigma=1, gamma=-3)
-psichel(c(0,1,2,3,5,7,9,10), mu=0.75, sigma=2, gamma=3)
-qsichel(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, sigma=1, gamma=15)
-rsichel(30, mu=0.75, sigma=0.5, gamma=1)
+# Basic usage
+dsichel(0:10, mu = 5, sigma = 1, gamma = -0.5)
+
+# Log-probabilities for numerical stability
+dsichel(0:10, mu = 5, sigma = 1, gamma = -0.5, log = TRUE)
+
+# CDF
+psichel(5, mu = 5, sigma = 1, gamma = -0.5)
 
 }
 \references{
-Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data using the Sichel generalized additive models for location, scale and shape. Paper submitted for publication.
-
-Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework for modelling overdispersed count data, including the Poisson-shifted generalized inverse Gaussian distribution. Computational Statistics & Data Analysis, 53(2), 381-393.
+Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008).
+A framework for modelling overdispersed count data, including the
+Poisson-shifted generalized inverse Gaussian distribution.
+Computational Statistics & Data Analysis, 53(2), 381-393.
 }

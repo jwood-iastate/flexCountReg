@@ -59,66 +59,125 @@
 #' @importFrom stats dgamma pgamma qgamma runif
 #' @export
 #' @name invgamma
-
 #' @rdname invgamma
 #' @export
-dinvgamma <- Vectorize(function(x, shape = 2.5, scale = 1, log = FALSE) {
-
-  if (x <= 0) { # Ensure the input x is strictly positive
-    # warning("x must be greater than 0")
-    return(0)  # Return NA for invalid input values
+dinvgamma <- function(x, shape = 2.5, scale = 1, log = FALSE) {
+  
+  # --- Input Validation ---
+  if (any(shape <= 0, na.rm = TRUE)) {
+    warning("'shape' must be positive")
+  }
+  if (any(scale <= 0, na.rm = TRUE)) {
+    warning("'scale' must be positive")
   }
   
-  # Calculate the log-density using the gamma density function
-  # Convert scale to rate for the gamma function
-  rate <- 1 / scale
+  # --- Vectorization Setup ---
+  n <- max(length(x), length(shape), length(scale))
+  x <- rep_len(x, n)
+  shape <- rep_len(shape, n)
+  scale <- rep_len(scale, n)
   
-  # Logarithm of the gamma density evaluated at 1/x
-  log.p <- stats::dgamma(1/x, shape, rate = 1/ rate, log = TRUE) - 2 * log(x)
+  # --- Compute Log-Density ---
+  # f(x) = (scale^shape / Gamma(shape)) * x^(-shape-1) * exp(-scale/x)
+  # log f(x) = shape*log(scale) - lgamma(shape) - (shape+1)*log(x) - scale/x
   
-  # Return log density or convert log density to density
+  log_p <- shape * log(scale) - lgamma(shape) - (shape + 1) * log(x) - scale / x
+  
+  # Handle invalid x (must be positive)
+  invalid <- is.na(x) | x <= 0
+  log_p[invalid] <- -Inf
+  
+  # --- Return ---
   if (log) {
-    return(log.p)
+    return(log_p)
   } else {
-    return(exp(log.p))
+    return(exp(log_p))
   }
-})
+}
 
 
 #' @rdname invgamma
 #' @export
-pinvgamma <- Vectorize(function(
-    q, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALSE){
-
-  if (q < 0 & lower.tail) return (0)
-  if (q < 0 & !lower.tail) return (1)
+pinvgamma <- function(q, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALSE) {
   
-  p <- stats::pgamma(q = 1 / q, 
-                     shape, 
-                     rate = scale, 
-                     lower.tail = !lower.tail, 
-                     log.p = log.p)
-  return(p)
-})
+  # --- Input Validation ---
+  if (any(shape <= 0, na.rm = TRUE)) warning("'shape' must be positive")
+  if (any(scale <= 0, na.rm = TRUE)) warning("'scale' must be positive")
+  
+  # --- Vectorization Setup ---
+  n <- max(length(q), length(shape), length(scale))
+  q <- rep_len(q, n)
+  shape <- rep_len(shape, n)
+  scale <- rep_len(scale, n)
+  
+  # --- Compute CDF ---
+  # If X ~ InvGamma(shape, scale), then 1/X ~ Gamma(shape, rate = scale)
+  # P(X <= q) = P(1/X >= 1/q) = 1 - P(1/X < 1/q) = 1 - pgamma(1/q, shape, rate = scale)
+  # Or equivalently: P(X <= q) = pgamma(1/q, shape, rate = scale, lower.tail = FALSE)
+  
+  cdf <- pgamma(1/q, shape = shape, rate = scale, lower.tail = FALSE)
+  
+  # Handle boundaries
+  cdf[q <= 0] <- 0
+  cdf[!is.finite(q) & q > 0] <- 1
+  
+  # --- Apply Tail and Log Options ---
+  if (!lower.tail) cdf <- 1 - cdf
+  if (log.p) cdf <- log(cdf)
+  
+  return(cdf)
+}
+
 
 #' @rdname invgamma
 #' @export
-qinvgamma <- Vectorize(function(
-    p, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALSE) {
-
-  q <- stats::qgamma(1 - p, 
-                     shape, 
-                     rate = scale, 
-                     lower.tail = lower.tail, 
-                     log.p = log.p)^(-1)
-  return(q)
-})
+qinvgamma <- function(p, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALSE) {
+  
+  # --- Input Handling ---
+  if (log.p) p <- exp(p)
+  if (!lower.tail) p <- 1 - p
+  
+  # --- Input Validation ---
+  if (any(shape <= 0, na.rm = TRUE)) warning("'shape' must be positive")
+  if (any(scale <= 0, na.rm = TRUE)) warning("'scale' must be positive")
+  if (any(p < 0 | p > 1, na.rm = TRUE)) warning("'p' must be in [0, 1]")
+  
+  # --- Vectorization Setup ---
+  n <- max(length(p), length(shape), length(scale))
+  p <- rep_len(p, n)
+  shape <- rep_len(shape, n)
+  scale <- rep_len(scale, n)
+  
+  # --- Compute Quantile ---
+  # Q_InvGamma(p) = 1 / Q_Gamma(1-p)
+  # where Q_Gamma uses the same shape and rate = scale
+  
+  q_gamma <- qgamma(1 - p, shape = shape, rate = scale)
+  q_val <- 1 / q_gamma
+  
+  # Handle boundaries
+  q_val[p == 0] <- 0
+  q_val[p == 1] <- Inf
+  
+  return(q_val)
+}
 
 
 #' @rdname invgamma
 #' @export
-rinvgamma <- function(n, shape=2.5, scale = 1) {
-  u <- runif(n)
-  y <- sapply(u, function(p) qinvgamma(p, shape, scale))
-  return(y)
+rinvgamma <- function(n, shape = 2.5, scale = 1) {
+  
+  if (length(n) != 1 || n < 0 || n != floor(n)) warning("'n' must be a non-negative integer")
+  if (n == 0) return(numeric(0))
+  
+  # Input validation
+  if (any(shape <= 0)) warning("'shape' must be positive")
+  if (any(scale <= 0)) warning("'scale' must be positive")
+  
+  # Recycle parameters
+  shape <- rep_len(shape, n)
+  scale <- rep_len(scale, n)
+  
+  # Generate: If Y ~ Gamma(shape, rate = scale), then 1/Y ~ InvGamma(shape, scale)
+  1 / rgamma(n, shape = shape, rate = scale)
 }

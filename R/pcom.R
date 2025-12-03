@@ -70,7 +70,7 @@ dcom <- function(x, mu = NULL, lambda = 1, nu = 1, log = FALSE){
           lambda <- find_lambda_vec_cpp(mu, nu)
         }
         else{
-          stop("`nu` must be a single value or a vector with the same length as `x`")
+          warning("`nu` must be a single value or a vector with the same length as `x`")
         }
       }
       else if (length(mu)==N_obs){
@@ -78,20 +78,20 @@ dcom <- function(x, mu = NULL, lambda = 1, nu = 1, log = FALSE){
           nu <- rep(nu, N_obs)
         }
         else if (length(nu)!=N_obs){
-          stop("`nu` must be a single value or a vector with the same length as `x`")
+          warning("`nu` must be a single value or a vector with the same length as `x`")
         }
         lambda <- find_lambda_vec_cpp(mu, nu)
-      }else stop("`mu` must be a single value or a vector with the same length as `x`.")
+      }else warning("`mu` must be a single value or a vector with the same length as `x`.")
     }else{
       if (length(lambda)==1){
         lambda <- rep(lambda, N_obs)
       }
-      else if (length(lambda)!=N_obs) stop("`lambda` must be a single value or a vector with the same length as `x`")
+      else if (length(lambda)!=N_obs) warning("`lambda` must be a single value or a vector with the same length as `x`")
     }
     if(length(nu)==1 & N_obs>1){
       nu <- rep(nu, N_obs)
     }
-    else if (length(nu)!=N_obs) stop("`nu` must be a single value or a vector with the same length as `x`")
+    else if (length(nu)!=N_obs) warning("`nu` must be a single value or a vector with the same length as `x`")
   }
   else{ # if x is a single value and mu is provided
     if (!is.null(mu) & length(mu)==1 & length(nu)==1) lambda <- find_lambda_cpp(mu, nu)
@@ -106,8 +106,8 @@ dcom <- function(x, mu = NULL, lambda = 1, nu = 1, log = FALSE){
 #' @export
 pcom <- function(q, mu = NULL, lambda = 1, nu = 1, lower.tail = TRUE, log.p = FALSE){
   
-  if (any(!is.numeric(q)) | any(q < 0) | any(floor(q) != q))  stop("The value of `q` must be a non-negative whole number.")
-  if (any(lambda <= 0) | any(nu <= 0) | any(mu <=0)) stop("The values of `mu`, lambda`, and `nu` must all be greater than 0.")
+  if (any(!is.numeric(q)) | any(q < 0) | any(floor(q) != q))  warning("The value of `q` must be a non-negative whole number.")
+  if (any(lambda <= 0) | any(nu <= 0) | any(mu <=0)) warning("The values of `mu`, lambda`, and `nu` must all be greater than 0.")
   q <- as.integer(q)
   N_obs <- length(q)
   
@@ -123,7 +123,7 @@ pcom <- function(q, mu = NULL, lambda = 1, nu = 1, lower.tail = TRUE, log.p = FA
           lambda <- find_lambda_vec_cpp(mu, nu)
         }
         else{
-          stop("`nu` must be a single value or a vector with the same length as `q`")
+          warning("`nu` must be a single value or a vector with the same length as `q`")
         }
       }
       else if (length(mu)==N_obs){
@@ -131,20 +131,20 @@ pcom <- function(q, mu = NULL, lambda = 1, nu = 1, lower.tail = TRUE, log.p = FA
           nu <- rep(nu, N_obs)
         }
         else if (length(nu)!=N_obs){
-          stop("`nu` must be a single value or a vector with the same length as `q`")
+          warning("`nu` must be a single value or a vector with the same length as `q`")
         }
         lambda <- find_lambda_vec_cpp(mu, nu)
-      }else stop("`mu` must be a single value or a vector with the same length as `q`.")
+      }else warning("`mu` must be a single value or a vector with the same length as `q`.")
     }else{
       if (length(lambda)==1){
         lambda <- rep(lambda, N_obs)
       }
-      else if (length(lambda)!=N_obs) stop("`lambda` must be a single value or a vector with the same length as `q`")
+      else if (length(lambda)!=N_obs) warning("`lambda` must be a single value or a vector with the same length as `q`")
     }
     if(length(nu)==1 & N_obs>1){
       nu <- rep(nu, N_obs)
     }
-    else if (length(nu)!=N_obs) stop("`nu` must be a single value or a vector with the same length as `q`")
+    else if (length(nu)!=N_obs) warning("`nu` must be a single value or a vector with the same length as `q`")
   }
   else{ # if q is a single value and mu is provided
     if (!is.null(mu) & length(mu)==1 & length(nu)==1) lambda <- find_lambda_cpp(mu, nu) 
@@ -158,8 +158,8 @@ pcom <- function(q, mu = NULL, lambda = 1, nu = 1, lower.tail = TRUE, log.p = FA
 #' @rdname COMDistribution
 #' @export
 qcom<- function(p, mu = NULL, lambda = 1, nu = 1) {
-  if (any(p <= 0) | any(p >= 1)) stop("The values for `p` must be greater than 0 and less than 1.")
-  if (any(lambda <= 0) | any(nu <= 0) | any(mu <=0)) stop("The values of `mu`, lambda`, and `nu` must all be greater than 0.")
+  if (any(p <= 0) | any(p >= 1)) warning("The values for `p` must be greater than 0 and less than 1.")
+  if (any(lambda <= 0) | any(nu <= 0) | any(mu <=0)) warning("The values of `mu`, lambda`, and `nu` must all be greater than 0.")
   
   N_obs <- length(p)
   
@@ -175,7 +175,7 @@ qcom<- function(p, mu = NULL, lambda = 1, nu = 1) {
           lambda <- find_lambda_vec_cpp(mu, nu)
         }
         else{
-          stop("`nu` must be a single value or a vector with the same length as `p`")
+          warning("`nu` must be a single value or a vector with the same length as `p`")
         }
       }
       else if (length(mu)==N_obs){
@@ -183,20 +183,20 @@ qcom<- function(p, mu = NULL, lambda = 1, nu = 1) {
           nu <- rep(nu, N_obs)
         }
         else if (length(nu)!=N_obs){
-          stop("`nu` must be a single value or a vector with the same length as `p`")
+          warning("`nu` must be a single value or a vector with the same length as `p`")
         }
         lambda <- find_lambda_vec_cpp(mu, nu)
-      }else stop("`mu` must be a single value or a vector with the same length as `p`.")
+      }else warning("`mu` must be a single value or a vector with the same length as `p`.")
     }else{
       if (length(lambda)==1){
         lambda <- rep(lambda, N_obs)
       }
-      else if (length(lambda)!=N_obs) stop("`lambda` must be a single value or a vector with the same length as `p`")
+      else if (length(lambda)!=N_obs) warning("`lambda` must be a single value or a vector with the same length as `p`")
     }
     if(length(nu)==1 & N_obs>1){
       nu <- rep(nu, N_obs)
     }
-    else if (length(nu)!=N_obs) stop("`nu` must be a single value or a vector with the same length as `p`")
+    else if (length(nu)!=N_obs) warning("`nu` must be a single value or a vector with the same length as `p`")
   }
   else{ # if p is a single value and mu is provided
     if (!is.null(mu) & length(mu)==1 & length(nu)==1) lambda <- find_lambda_cpp(mu, nu)
@@ -211,9 +211,9 @@ qcom<- function(p, mu = NULL, lambda = 1, nu = 1) {
 #' @rdname COMDistribution
 #' @export
 rcom <- function(n, mu = NULL, lambda = 1, nu = 1) {
-  if (length(n) != 1 || !is.numeric(n) || n <= 0 || floor(n) != n) stop("`n` must be a single positive integer.")
+  if (length(n) != 1 || !is.numeric(n) || n <= 0 || floor(n) != n) warning("`n` must be a single positive integer.")
   
-  if ((lambda <= 0) | (nu <= 0) | (mu <=0)) stop("The values of `mu`, lambda`, and `nu` must all be greater than 0.")
+  if ((lambda <= 0) | (nu <= 0) | (mu <=0)) warning("The values of `mu`, lambda`, and `nu` must all be greater than 0.")
   
   if (!is.null(mu)) {
     lambda <- find_lambda_cpp(mu, nu)

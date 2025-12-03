@@ -68,14 +68,8 @@
 dpinvgaus <- Vectorize(function(x, mu=1, eta = 1, form="Type 1", log=FALSE){
   #test to make sure the value of x is an integer
   tst <- ifelse(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2])>0),FALSE, TRUE)
-  if(tst || x < 0){
-    print("The value of `x` must be a non-negative whole number")
-    stop()
-  }
-  if(eta<=0){
-    print("The value of `eta` must be greater than 0.")
-    stop()
-  }
+  if(tst || x < 0) warning("The value of `x` must be a non-negative whole number")
+  if(eta<=0) warning("The value of `eta` must be greater than 0.")
   if(form=='Type 2'){
     eta <- eta*mu # make adjusted value for Type 2 formulation
   }
@@ -100,16 +94,109 @@ dpinvgaus <- Vectorize(function(x, mu=1, eta = 1, form="Type 1", log=FALSE){
 
 #' @rdname PoissonInverseGaussian
 #' @export
-ppinvgaus <- Vectorize(function(q, mu=1, eta = 1, form="Type 1", lower.tail=TRUE, log.p=FALSE){
-  y <- seq(0,q,1)
-  probs <- dpinvgaus(y, mu, eta, form)
-  p <- sum(probs)
-
-  if(!lower.tail) p <- 1-p
-
-  if (log.p) return(log(p))
-  else return(p)
-})
+ppinvgaus <- function(q, mu = 1, eta = 1, form = "Type 1", 
+                      lower.tail = TRUE, log.p = FALSE) {
+  
+  
+  # --- Input Validation ---
+  
+  if (any(eta <= 0, na.rm = TRUE)) warning("'eta' must be positive")
+  if (any(mu <= 0, na.rm = TRUE)) warning("'mu' must be positive")
+  form <- match.arg(form, c("Type 1", "Type 2"))
+  
+  
+  # --- Vectorization Setup ---
+  
+  n <- max(length(q), length(mu), length(eta))
+  q <- rep_len(as.integer(floor(q)), n)
+  mu <- rep_len(mu, n)
+  eta <- rep_len(eta, n)
+  
+  
+  # --- Initialize Result ---
+  
+  cdf <- rep(NA_real_, n)
+  
+  
+  # --- Handle Special Cases ---
+  
+  invalid_q <- is.na(q) | q < 0
+  cdf[invalid_q] <- 0
+  
+  
+  # --- Compute CDF for Valid Cases ---
+  
+  valid <- !invalid_q
+  
+  if (any(valid)) {
+    for (i in which(valid)) {
+      mu_i <- mu[i]
+      eta_i <- eta[i]
+      q_i <- q[i]
+      
+      # Adjust eta for Type 2 formulation
+      eta_adj <- if (form == "Type 2") eta_i * mu_i else eta_i
+      
+      # Compute log-PMF for 0:q_i
+      log_pmf <- numeric(q_i + 1)
+      
+      # P(Y=0) = exp(mu/eta * (1 - sqrt(1 + 2*eta)))
+      sqrt_term <- sqrt(1 + 2 * eta_adj)
+      log_p0 <- mu_i / eta_adj * (1 - sqrt_term)
+      
+      log_pmf[1] <- log_p0  # y = 0
+      
+      if (q_i > 0) {
+        # For y > 0:
+        # P(y) = P(0) * (mu^y / y!) * (1 + 2*eta)^(-y/2) * sum_j(...)
+        
+        log_1_plus_2eta <- log(1 + 2 * eta_adj)
+        
+        for (y in 1:q_i) {
+          # Compute the summation term
+          j_seq <- 0:(y - 1)
+          
+          # log of each term in sum:
+          # log(gamma(y+j)) - log(gamma(y-j)) - log(gamma(j+1)) + j*log(eta/(2*mu)) - j/2*log(1+2*eta)
+          log_sum_terms <- lgamma(y + j_seq) - lgamma(y - j_seq) - lgamma(j_seq + 1) +
+            j_seq * log(eta_adj / (2 * mu_i)) -
+            j_seq / 2 * log_1_plus_2eta
+          
+          # Log-sum-exp for the summation
+          max_log_term <- max(log_sum_terms[is.finite(log_sum_terms)])
+          if (!is.finite(max_log_term)) {
+            log_sum <- -Inf
+          } else {
+            log_sum <- max_log_term + log(sum(exp(log_sum_terms - max_log_term)))
+          }
+          
+          # Full log-PMF for y
+          # log(P(y)) = log(P(0)) + y*log(mu) - lgamma(y+1) - y/2*log(1+2*eta) + log(sum)
+          log_pmf[y + 1] <- log_p0 + y * log(mu_i) - lgamma(y + 1) -
+            y / 2 * log_1_plus_2eta + log_sum
+        }
+      }
+      
+      # Log-sum-exp for CDF
+      finite_mask <- is.finite(log_pmf)
+      if (!any(finite_mask)) {
+        cdf[i] <- NA_real_
+      } else {
+        max_log <- max(log_pmf[finite_mask])
+        log_cdf <- max_log + log(sum(exp(log_pmf[finite_mask] - max_log)))
+        cdf[i] <- exp(log_cdf)
+      }
+    }
+  }
+  
+  
+  # --- Apply Tail and Log Options ---
+  
+  if (!lower.tail) cdf <- 1 - cdf
+  if (log.p) cdf <- log(cdf)
+  
+  return(cdf)
+}
 
 #' @rdname PoissonInverseGaussian
 #' @export

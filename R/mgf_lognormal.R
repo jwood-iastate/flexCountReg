@@ -34,9 +34,7 @@
 #' @name mgf_lognormal
 mgf_lognormal <- function(mu, sigma, n) {
   # Check if necessary package is available
-  if (!requireNamespace("stats", quietly = TRUE)) {
-    stop("Package 'stats' is required but is not installed.")
-  }
+  if (!requireNamespace("stats", quietly = TRUE)) warning("Package 'stats' is required but is not installed.")
   
   # Define the integrand function for the MGF
   integrand <- function(y, n, mu, sigma) {

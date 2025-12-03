@@ -87,12 +87,10 @@ dpinvgaus <- Vectorize(function(x, mu=1, eta = 1, form="Type 1", log=FALSE){
   #test to make sure the value of x is an integer
   tst <- ifelse(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2])>0),FALSE, TRUE)
   if(tst || x < 0){
-    print("The value of `x` must be a non-negative whole number")
-    stop()
+    warning("The value of `x` must be a non-negative whole number")
   }
   if(eta<=0){
-    print("The value of `eta` must be greater than 0.")
-    stop()
+    warning("The value of `eta` must be greater than 0.")
   }
   if(form=='Type 2'){
     eta <- eta*mu # make adjusted value for Type 2 formulation

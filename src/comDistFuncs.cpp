@@ -6,27 +6,60 @@ using namespace Rcpp;
 using Rcpp::NumericVector;
 
 
-double com_adjustFactor_cpp(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 10000){
-  int x = 0;
-  double sumval = 0;
-  double iterval = 0;
-  bool notconverged = true;
+// double com_adjustFactor_cpp(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 10000){
+//   int x = 0;
+//   double sumval = 0;
+//   double iterval = 0;
+//   bool notconverged = true;
+//   
+//   while (notconverged) {
+//     double log_term = x * std::log(lambda) - nu * std::lgamma(x + 1);
+//     iterval = std::exp(log_term);
+//     sumval += iterval;
+//     if (iterval<rel_tol){
+//       notconverged = false;
+//     }
+//     x += 1;
+//     if (x>=max_iter){
+//       Rcpp::warning("Maximum number of iterations reached in com_adjustFactor_cpp.");
+//       notconverged = false;
+//     }
+//   }
+//   
+//   return(sumval);
+// }
+
+double com_adjustFactor_cpp(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 10000) {
+  // Use log-sum-exp trick for numerical stability
+  std::vector<double> log_terms;
+  log_terms.reserve(1000);
   
-  while (notconverged) {
+  double max_log_term = -INFINITY;
+  int x = 0;
+  bool converged = false;
+  
+  while (!converged && x < max_iter) {
     double log_term = x * std::log(lambda) - nu * std::lgamma(x + 1);
-    iterval = std::exp(log_term);
-    sumval += iterval;
-    if (iterval<rel_tol){
-      notconverged = false;
+    log_terms.push_back(log_term);
+    
+    if (log_term > max_log_term) {
+      max_log_term = log_term;
     }
-    x += 1;
-    if (x>=max_iter){
-      Rcpp::warning("Maximum number of iterations reached in com_adjustFactor_cpp.");
-      notconverged = false;
+    
+    // Check convergence based on contribution to sum
+    if (x > 0 && std::exp(log_term - max_log_term) < rel_tol) {
+      converged = true;
     }
+    x++;
   }
   
-  return(sumval);
+  // Log-sum-exp computation
+  double sum = 0.0;
+  for (const auto& lt : log_terms) {
+    sum += std::exp(lt - max_log_term);
+  }
+  
+  return std::exp(max_log_term + std::log(sum));
 }
 
 // derivative of the log-transformed adjustment factor

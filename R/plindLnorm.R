@@ -63,36 +63,50 @@ dplindLnorm <- function(x, mean=1, theta = 1, sigma=1, ndraws=1500, log=FALSE, h
   if (log) return(log(p))
   else return(p)
 }
+
 #' @rdname PoissonLindleyLognormal
 #' @export
-pplindLnorm <- Vectorize(function(q, mean=1, theta = 1, lambda=NULL, sigma=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
+pplindLnorm <- function(q, mean=1, theta = 1, lambda=NULL, sigma=1, ndraws=1500, lower.tail=TRUE, log.p=FALSE){
+  
   if(!is.null(lambda)){
     mean <- lambda*(theta+2)/(theta*(theta+1))*exp(sigma^2/2)
   }
-
-  y <- seq(0,q,1)
-  probs <- dplindLnorm(y, mean, theta, sigma=sigma, ndraws=ndraws)
-  p <- sum(probs)
   
-  if(!lower.tail) p <- 1-p
+  # FIX: Set normal=FALSE. 
+  # dplindLnorm expects uniform draws because it applies qnorm() internally.
+  h <- randtoolbox::halton(ndraws, normal=FALSE)
   
-  if (log.p) return(log(p))
-  else return(p)
-})
-
+  n <- max(length(q), length(mean), length(theta), length(sigma))
+  q <- rep_len(q, n)
+  mean <- rep_len(mean, n)
+  theta <- rep_len(theta, n)
+  sigma <- rep_len(sigma, n)
+  
+  cdf <- numeric(n)
+  
+  for(i in 1:n) {
+    if(q[i] < 0) {
+      cdf[i] <- 0
+      next
+    }
+    y_seq <- 0:floor(q[i])
+    probs <- dplindLnorm(y_seq, mean[i], theta[i], sigma[i], ndraws=ndraws, hdraws=h)
+    cdf[i] <- sum(probs)
+  }
+  
+  if(!lower.tail) cdf <- 1-cdf
+  if(log.p) return(log(cdf))
+  return(cdf)
+}
 #' @rdname PoissonLindleyLognormal
 #' @export
 qplindLnorm <- Vectorize(function(p, mean=1, theta=1, sigma=1, ndraws=1500, lambda=NULL) {
   if(is.null(lambda)){
-    if(mean<=0 || theta<=0  || sigma<=0){
-      print('The values of `mean`, `theta`, and `sigma` all have to have values greater than 0.')
-      stop()
-    }
+    if(mean<=0 || theta<=0  || sigma<=0) warning('The values of `mean`, `theta`, and `sigma` all have to have values greater than 0.')
   }
   else{
     if(lambda<=0 || theta<=0  || sigma<=0){
-      print('The values of `lambda`, `theta`, and `sigma` all have to have values greater than 0.')
-      stop()
+      warning('The values of `lambda`, `theta`, and `sigma` all have to have values greater than 0.')
     }
     else{
       mean <- lambda*(theta+2)/(theta*(theta+1))*exp(sigma^2/2)
@@ -113,15 +127,11 @@ qplindLnorm <- Vectorize(function(p, mean=1, theta=1, sigma=1, ndraws=1500, lamb
 #' @export
 rplindLnorm <- function(n, mean=1, theta=1, sigma=1, ndraws=1500, lambda=NULL) {
   if(is.null(lambda)){
-    if(mean<=0 || theta<=0  || sigma<=0){
-      print('The values of `mean`, `theta`, and `sigma` allboth have to have values greater than 0.')
-      stop()
-    }
+    if(mean<=0 || theta<=0  || sigma<=0) warning('The values of `mean`, `theta`, and `sigma` allboth have to have values greater than 0.')
   }
   else{
     if(lambda<=0 || theta<=0  || sigma<=0){
-      print('The values of `lambda`, `theta`, and `sigma` all have to have values greater than 0.')
-      stop()
+      warning('The values of `lambda`, `theta`, and `sigma` all have to have values greater than 0.')
     }
     else{
       mean <- lambda*(theta+2)/(theta*(theta+1))*exp(sigma^2/2)

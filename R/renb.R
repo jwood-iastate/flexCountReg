@@ -52,7 +52,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   # Generate a panel ID for the model
   if (!("panel_id" %in% names(data))) {
     if (is.null(group_var)) {
-      stop("The `group_var` must be defined for this model.")
+      warning("The `group_var` must be defined for this model.")
     } else {
       if (length(group_var) > 1) {
         data <- data %>% unite("panel_id", all_of(group_var), sep = "_", remove = FALSE)

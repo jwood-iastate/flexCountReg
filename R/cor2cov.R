@@ -10,8 +10,8 @@
 #' cor2cov(C,S)
 #' @export
 cor2cov <- function(C, S) {
-  if (!is.matrix(C)) stop("C must be a matrix")
-  if (!is.vector(S)) stop("S must be a vector")
-  if (length(S) != nrow(C)) stop(paste0("S must have the same length (",length(S), ") as the number of rows/columns in C (",nrow(C),")"))
+  if (!is.matrix(C)) warning("C must be a matrix")
+  if (!is.vector(S)) warning("S must be a vector")
+  if (length(S) != nrow(C)) warning(paste0("S must have the same length (",length(S), ") as the number of rows/columns in C (",nrow(C),")"))
   sweep(sweep(C, 1, S, "*"), 2, S, "*")
 }

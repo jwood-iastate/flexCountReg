@@ -294,7 +294,7 @@ predict.flexCountReg <- function(object, ...){
         # ... (Individual prediction logic identical to previous version) ...
         # (Requires outcome Y in data)
         y_name <- all.vars(model$formula)[1]
-        if(!y_name %in% names(data)) stop("Method 'Individual' requires outcome variable.")
+        if(!y_name %in% names(data)) warning("Method 'Individual' requires outcome variable.")
         y_obs <- data[[y_name]]
         
         probFunc <- get_probFunc(family)

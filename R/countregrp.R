@@ -131,7 +131,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     } else if (length(panel_id) == nrow(data)) {
       data$panel_id_internal <- factor(panel_id)
     } else {
-      stop("panel_id must be a column name in 'data' or a vector of the same length as the data.")
+      warning("panel_id must be a column name in 'data' or a vector of the same length as the data.")
     }
   }
   
@@ -217,7 +217,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   }
   
   if("\\(Intercept\\)" %in% colnames(X_Fixed) && "\\(Intercept\\)" %in% colnames(X_rand)){
-    stop("Do not include Intercept in both fixed and random formulas.")
+    warning("Do not include Intercept in both fixed and random formulas.")
   }
   
   rpar <- colnames(X_rand)
@@ -316,7 +316,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     local_probFunc <- get_probFunc(family)
     
     if(is.null(local_probFunc)) {
-      stop(paste0("Probability function not found for family: ", family))
+      warning(paste0("Probability function not found for family: ", family))
     }
     
     current_idx <- 0

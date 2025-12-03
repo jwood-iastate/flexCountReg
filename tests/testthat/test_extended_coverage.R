@@ -199,3 +199,65 @@ test_that("Random parameter generation handles non-Normal distributions", {
   )
   
 })
+
+###################################
+## dsichel and related
+###################################
+
+# Test cases
+test_that("dsichel handles normal cases", {
+  p <- dsichel(0:10, mu = 5, sigma = 1, gamma = -0.5)
+  expect_true(all(is.finite(p)))
+  expect_true(all(p >= 0))
+  expect_true(all(p <= 1))
+  expect_equal(sum(dsichel(0:1000, mu = 5, sigma = 1, gamma = -0.5)), 1, tolerance = 0.001)
+})
+
+test_that("dsichel handles extreme sigma (small)", {
+  # Small sigma = large 1/sigma argument to besselK
+  p <- dsichel(0:10, mu = 5, sigma = 0.01, gamma = -0.5)
+  expect_true(all(is.finite(p)))
+})
+
+test_that("dsichel handles extreme sigma (large)", {
+  # Large sigma = small 1/sigma argument to besselK
+  p <- dsichel(0:10, mu = 5, sigma = 100, gamma = -0.5)
+  expect_true(all(is.finite(p)))
+})
+
+test_that("dsichel handles extreme gamma", {
+  # Large positive gamma
+  p <- dsichel(0:10, mu = 5, sigma = 1, gamma = 50)
+  expect_true(all(is.finite(p)))
+  
+  # Large negative gamma
+  p <- dsichel(0:10, mu = 5, sigma = 1, gamma = -50)
+  expect_true(all(is.finite(p)))
+})
+
+test_that("dsichel handles large x", {
+  # x = 200 would cause factorial overflow
+  p <- dsichel(200, mu = 100, sigma = 1, gamma = -0.5)
+  expect_true(is.finite(p))
+})
+
+test_that("dsichel log option works correctly", {
+  p <- dsichel(5, mu = 5, sigma = 1, gamma = -0.5)
+  log_p <- dsichel(5, mu = 5, sigma = 1, gamma = -0.5, log = TRUE)
+  expect_equal(log(p), log_p, tolerance = 1e-10)
+})
+
+test_that("psichel CDF is monotonic", {
+  cdf <- psichel(0:20, mu = 5, sigma = 1, gamma = -0.5)
+  expect_true(all(diff(cdf) >= 0))
+  expect_true(all(cdf >= 0 & cdf <= 1))
+})
+
+test_that("qsichel is inverse of psichel", {
+  p_vals <- c(0.1, 0.25, 0.5, 0.75, 0.9)
+  q_vals <- qsichel(p_vals, mu = 5, sigma = 1, gamma = -0.5)
+  p_back <- psichel(q_vals, mu = 5, sigma = 1, gamma = -0.5)
+  
+  # p_back should be >= p_vals (since we return smallest q where CDF >= p)
+  expect_true(all(p_back >= p_vals - 0.01))
+})

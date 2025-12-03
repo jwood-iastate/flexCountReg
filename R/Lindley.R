@@ -48,35 +48,133 @@
 #'
 #' @rdname Lindley
 #' @export
-dlindley <- Vectorize(function(x, theta=1, log = FALSE){
-  if (theta<=0) stop("Requirements: theta > 0 & x > 0")
-  p <- theta^2 / (1 + theta) * (1+x) * exp(-theta * x)
-  if(log) return(log(p)) else return(p)
-})
-
-#' @rdname Lindley
-#' @export
-plindley <- Vectorize(function(q, theta=1, lower.tail = TRUE, log.p = FALSE){
-  if (theta<=0 || q<=0) stop("Requirements: theta > 0 & q > 0")
-  CDF <- 1-(1+theta+theta*q)/(1+theta)*exp(-theta*q)
-  UpperTail <- 1-CDF
-  return_val <- ifelse(lower.tail, CDF, UpperTail)
-  if(log.p) return(log(return_val)) else return(return_val)
-})
-
-#' @rdname Lindley
-#' @export
-qlindley <- Vectorize(function(p, theta=1, log.p = FALSE){
-  if (log.p) p <- exp(p) else p <- p
-  if (theta<=0 || p<=0 || p>=1) stop("Requirements: theta > 0 & p > 0 & p < 1")
+dlindley <- function(x, theta = 1, log = FALSE) {
   
-  qval <- -1-1/theta-lambertWm1((1+theta)*(p-1)*exp(-(1+theta)))/theta
-  return(qval)
-})
+  
+  # --- Input Validation ---
+  
+  if (any(theta <= 0, na.rm = TRUE)) {
+    warning("'theta' must be positive")
+  }
+  
+  
+  # --- Vectorization Setup ---
+  
+  n <- max(length(x), length(theta))
+  x <- rep_len(x, n)
+  theta <- rep_len(theta, n)
+  
+  
+  # --- Compute in Log-Space ---
+  
+  # log(p) = 2*log(theta) - log(1+theta) + log(1+x) - theta*x
+  log_p <- 2 * log(theta) - log(1 + theta) + log(1 + x) - theta * x
+  
+  # Handle invalid x (x must be > 0 for Lindley)
+  invalid <- is.na(x) | x <= 0
+  log_p[invalid] <- -Inf
+  
+  
+  # --- Return ---
+  
+  if (log) {
+    return(log_p)
+  } else {
+    return(exp(log_p))
+  }
+}
+
 
 #' @rdname Lindley
 #' @export
-rlindley <- function(n, theta=1){
-  if (theta<=0 || n<=0) stop("Requirements: theta > 0 & n > 0")
-  qlindley(runif(n), theta)
+plindley <- function(q, theta = 1, lower.tail = TRUE, log.p = FALSE) {
+  
+  # --- Input Validation ---
+  if (any(theta <= 0, na.rm = TRUE)) {
+    warning("'theta' must be positive")
+  }
+  
+  # --- Vectorization Setup ---
+  n <- max(length(q), length(theta))
+  q <- rep_len(q, n)
+  theta <- rep_len(theta, n)
+  
+  # --- Compute CDF ---
+  # F(x) = 1 - (1 + theta*x/(1+theta)) * exp(-theta*x)
+  # This is already a closed-form expression - fully vectorizable
+  
+  cdf <- 1 - (1 + theta * q / (1 + theta)) * exp(-theta * q)
+  
+  # Handle boundaries
+  cdf[q <= 0] <- 0
+  cdf[!is.finite(q) & q > 0] <- 1
+  
+  # --- Apply Tail and Log Options ---
+  if (!lower.tail) cdf <- 1 - cdf
+  if (log.p) cdf <- log(cdf)
+  
+  return(cdf)
+}
+
+
+#' @rdname Lindley
+#' @export
+qlindley <- function(p, theta = 1, lower.tail = TRUE, log.p = FALSE) {
+  
+  # --- Input Handling ---
+  if (log.p) p <- exp(p)
+  if (!lower.tail) p <- 1 - p
+  
+  # --- Input Validation ---
+  if (any(theta <= 0, na.rm = TRUE)) {
+    warning("'theta' must be positive")
+  }
+  if (any(p < 0 | p > 1, na.rm = TRUE)) {
+    warning("'p' must be in [0, 1]")
+  }
+  
+  # --- Vectorization Setup ---
+  n <- max(length(p), length(theta))
+  p <- rep_len(p, n)
+  theta <- rep_len(theta, n)
+  
+  # --- Compute Quantile ---
+  # Q(p) = -1 - 1/theta - W_{-1}((1+theta)(p-1)*exp(-(1+theta))) / theta
+  # where W_{-1} is the -1 branch of Lambert W function
+  # This is closed-form and vectorizable using lamW package
+  
+  # Argument to Lambert W
+  w_arg <- (1 + theta) * (p - 1) * exp(-(1 + theta))
+  
+  # Lambert W (negative branch)
+  w_val <- lamW::lambertWm1(w_arg)
+  
+  # Quantile
+  q_val <- -1 - 1/theta - w_val/theta
+  
+  # Handle boundaries
+  q_val[p == 0] <- 0
+  q_val[p == 1] <- Inf
+  
+  return(q_val)
+}
+
+
+#' @rdname Lindley
+#' @export
+rlindley <- function(n, theta = 1) {
+  
+  if (length(n) != 1 || n < 0 || n != floor(n)) {
+    warning("'n' must be a non-negative integer")
+  }
+  if (any(theta <= 0)) {
+    warning("'theta' must be positive")
+  }
+  
+  # Recycle theta if needed
+  theta <- rep_len(theta, n)
+  
+  # Generate via inverse CDF (fully vectorized)
+  u <- runif(n)
+  qlindley(u, theta = theta)
 }

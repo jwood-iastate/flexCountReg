@@ -6,7 +6,7 @@
 #' @param means A numeric vector of means for each variable.
 #' @param cholesky A Cholesky decomposition matrix to introduce correlation.
 #' @param stdev A numeric vector of standard deviations for each variable. If provided, the function will use these values instead of the Cholesky decomposition matrix (must also provide a correlation matrix if providing standard deviations). Default is NULL.
-#' @param correlations A correlation matrix to introduce correlation. If provided, the function will use these values instead of the Cholesky decomposition matrix (must alkso provide standard deviations). Default is NULL.
+#' @param correlations A correlation matrix to introduce correlation. If provided, the function will use these values instead of the Cholesky decomposition matrix (must also provide standard deviations). Default is NULL.
 #' @param hdraws A matrix of Halton or scrambled Halton draws. If provided, the function will use these draws instead of generating new ones. Default is NULL.
 #' @param ndraws An integer specifying the number of values to simulate for each variable. Default is 500.
 #' @param scrambled A logical value indicating whether to use scrambled Halton draws. Default is FALSE.

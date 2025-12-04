@@ -24,7 +24,7 @@ corr_haltons(
 
 \item{stdev}{A numeric vector of standard deviations for each variable. If provided, the function will use these values instead of the Cholesky decomposition matrix (must also provide a correlation matrix if providing standard deviations). Default is NULL.}
 
-\item{correlations}{A correlation matrix to introduce correlation. If provided, the function will use these values instead of the Cholesky decomposition matrix (must alkso provide standard deviations). Default is NULL.}
+\item{correlations}{A correlation matrix to introduce correlation. If provided, the function will use these values instead of the Cholesky decomposition matrix (must also provide standard deviations). Default is NULL.}
 
 \item{hdraws}{A matrix of Halton or scrambled Halton draws. If provided, the function will use these draws instead of generating new ones. Default is NULL.}
 

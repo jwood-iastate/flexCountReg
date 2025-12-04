@@ -149,7 +149,7 @@ For the `family` argument, the following options are available:
  Binomial 2 distribution as a function of the variable `x1` and `x2`, 
  the user would specify `dis_param_formula_1 = ~ x1 + x2`. In the case of the 
  Negative Binomial distributions, the model is known as a Generalized 
- Negative Minomial model when the overdispersion parmater is specified as a 
+ Negative Binomial model when the overdispersion parameter is specified as a 
  function.
  
  The function linking the distribution parameters to the predictors is:
@@ -209,7 +209,7 @@ For the `family` argument, the following options are available:
 \section{Model Details}{
  
 ## Poisson Model
-This implements the Poisson regression model using Maximum Liklelihood 
+This implements the Poisson regression model using Maximum Likelihood 
 Estimation, as opposed to the Iteratively Reweighted Least Squares (IRLS) 
 method used in the `glm` function.
 
@@ -465,7 +465,7 @@ The variance of the distribution is:
 
 ## Generalized Waring (GW) Model
 The following are the versions of the PMF, mean, and variance used for the 
-Generaalized Waring model. This is adjusted from the typical formulation by 
+Generalized Waring model. This is adjusted from the typical formulation by 
 replacing parameter \code{k} with \eqn{\mu}
 \deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}{y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
 \deqn{\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}}
@@ -563,7 +563,7 @@ Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression
 model for underreported counts. Advances and applications in Statistics, 
 6(3), 305-322.
 
-Pararai, M., Famoye, F., & Lee, C. (2010). Generalized poisson-poisson 
+Pararai, M., Famoye, F., & Lee, C. (2010). Generalized Poisson-Poisson 
 mixture model for misreported counts with an application to smoking data. 
 Journal of Data Science, 8(4), 607-617.
 

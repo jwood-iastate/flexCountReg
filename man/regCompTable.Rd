@@ -23,7 +23,7 @@ regCompTable(
 
 \item{BIC}{A logical. The default value `TRUE` indicates that BIC values for the models should be included.}
 
-\item{RSquare}{A logical. The default value `TRUE` indicates that the McFadden's Psuedo-R-Squared statistic (comparing against a Poisson regression model) should be included.}
+\item{RSquare}{A logical. The default value `TRUE` indicates that the McFadden's Pseudo-R-Squared statistic (comparing against a Poisson regression model) should be included.}
 
 \item{tableType}{The type of table format to return. Options include "tibble" for returning the table as a tibble, "gt" for a \link[gt]{gt} table object, or "latex" for a latex table. The default is "tibble".}
 

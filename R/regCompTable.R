@@ -7,7 +7,7 @@
 #' @param coefs A logical. The default value `TRUE` indicates that the coefficients from the models should be included in the table of comparisons.
 #' @param AIC A logical. The default value `TRUE` indicates that AIC values for the models should be included.
 #' @param BIC A logical. The default value `TRUE` indicates that BIC values for the models should be included.
-#' @param RSquare A logical. The default value `TRUE` indicates that the McFadden's Psuedo-R-Squared statistic (comparing against a Poisson regression model) should be included.
+#' @param RSquare A logical. The default value `TRUE` indicates that the McFadden's Pseudo-R-Squared statistic (comparing against a Poisson regression model) should be included.
 #' @param tableType The type of table format to return. Options include "tibble" for returning the table as a tibble, "gt" for a \link[gt]{gt} table object, or "latex" for a latex table. The default is "tibble".
 #' @param digits An integer value indicating the number of decimals to round the table values to.
 #'

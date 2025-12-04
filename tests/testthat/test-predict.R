@@ -60,3 +60,4 @@ test_that("Poisson-Lognormal with underreporting (probit) model runs and returns
   
   expect_true(length(pred) > 0)  # Ensure predictions are returned
 })
+

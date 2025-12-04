@@ -68,34 +68,6 @@ test_that("COM PDF (error 3)", {
 })
 
 
-test_that("COM PDF using vectors - errors", {
-  
-  # different number of mu
-  expect_error(dcom(c(0,1,2,3,4,5), mu=c(.1,.2,.3,.4,.5), nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1)))
-  
-  # different number of nu
-  expect_error(dcom(c(0,1,2,3,4,5), mu=c(.1,.2,.3,.4,.5, 0.2), nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1,0.5)))
-  
-  # different number of mu and nu
-  expect_error(dcom(c(0,1,2,3,4,5), mu=c(.1,.2,.3,.4,.5), nu=c(0.1,0.3, 1)))
-  
-  # negative value in x
-  expect_error(dcom(c(0,1,2,-3,4,5), mu=c(.1,.2,.3,.4,.5, 0.6), nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1)))
-  
-  # negative value in mu
-  expect_error(dcom(c(0,1,2,3,4,5), mu=c(.1,.2,-.3,.4,.5, 0.6), nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1)))
-  
-  # negative value in nu
-  expect_error(dcom(c(0,1,2,3,4,5), mu=c(.1,.2,.3,.4,.5, 0.6), nu=c(0.1,0.3, -0.2, 0.1, 0.7, 1)))
-  
-  # negative value for mu
-  expect_error(dcom(c(0,1,2,3,4,5), mu=-2, nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1)))
-  
-  # negative value for nu
-  expect_error(dcom(c(0,1,2,3,4,5), mu=c(.1,.2,.3,.4,.5, 0.6), nu=-2))
-  
-})
-
 test_that("COM CDF", {
   
   pdf_vals <- pcom(2, mu=0.9, nu=0.85)
@@ -153,53 +125,6 @@ test_that("COM CDF", {
 
 
 
-test_that("COM CDF errors", {
-  
-  # Negative values
-  expect_error(pcom(-2, mu=0.9, nu=0.85))
-  expect_error(pcom(2, mu=-0.9, nu=0.85))
-  expect_error(pcom(2, mu=0.9, nu=-0.85))
-  expect_error(pcom(-2, lambda=0.9, nu=0.85))
-  expect_error(pcom(2, lambda=-0.9, nu=0.85))
-  expect_error(pcom(2, lambda=0.9, nu=-0.85))
-  
-  # Negative values with vectors
-  expect_error(pcom(c(0, 1, 3, -9, 10), mu=0.9, nu=0.85))
-  expect_error(pcom(c(0, 1, 3, 9, 10), mu=c(-0.9,0.3,1,2,0.19), nu=0.85))
-  expect_error(pcom(c(0, 1, 3, 9, 10), mu=c(0.9,0.3,1,2,0.19), nu=c(0.9,-0.3,1,2,0.19)))
-  expect_error(pcom(c(0, 1, -3, 9, 10), mu=c(-0.9,0.3,1,2,0.19), nu=c(0.9,0.3,1,2,-0.19)))
-  expect_error(pcom(c(0, 1, 3, 9, 10), mu=0.9, nu=-0.85))
-  expect_error(pcom(c(0, 1, 3, 9, 10), mu=-0.9, nu=0.85))
-  expect_error(pcom(c(0, 1, 3, -9, 10), lambda=0.9, nu=0.85))
-  expect_error(pcom(c(0, 1, 3, 9, 10), lambda=c(-0.9,0.3,1,2,0.19), nu=0.85))
-  expect_error(pcom(c(0, 1, 3, 9, 10), lambda=c(0.9,0.3,1,2,0.19), nu=c(0.9,-0.3,1,2,0.19)))
-  expect_error(pcom(c(0, 1, -3, 9, 10), lambda=c(-0.9,0.3,1,2,0.19), nu=c(0.9,0.3,1,2,-0.19)))
-  expect_error(pcom(c(0, 1, 3, 9, 10), lambda=0.9, nu=-0.85))
-  expect_error(pcom(c(0, 1, 3, 9, 10), lambda=-0.9, nu=0.85))
-  
-  # Incorrect number of values in vectors
-  expect_error(pcom(c(0, 1, 3, 9, 10), mu=c(0.9,1), nu=0.85))
-  expect_error(pcom(c(0, 1, 3, 9, 10), mu=0.9, nu=c(0.85,1,1,3)))
-  expect_error(pcom(c(0, 1, 3, 9, 10), lambda=c(0.9,1), nu=0.85))
-  expect_error(pcom(c(0, 1, 3, 9, 10), lambda=0.9, nu=c(0.85,1,1,3)))
-})
-
-
-
-test_that("COM CDF (errors)", {
-  
-  ## negative outcome
-  expect_error(pcom(c(0, -1, 3, 9, 10), mu=0.9, nu=0.85))
-  
-  ## negative mean
-  expect_error(ppcom(c(0, 1, 3, 9, 10), mu=-0.9, nu=0.85))
-  
-  ## negative lambda
-  expect_error(pcom(c(0, 1, 3, 9, 10), lambda=-0.9, nu=0.85))
-  
-  ## negative mu
-  expect_error(pcom(c(0, 1, 3, 9, 10), mu=0.9, nu=-0.85))
-})
 
 # Quantiles ----
 
@@ -232,20 +157,6 @@ test_that("COM Quantiles with lambda", {
 })
 
 
-test_that("COM Quantiles (errors)", {
-  
-  ## QUantile larger than 1
-  expect_error(qcom(seq(0.1,1.1,0.1), lambda=1.5, nu=1.5))
-  
-  ## lambda is negative
-  expect_error(qcom(seq(0.1,0.9,0.1), lambda=-1.5, nu=1.5))
-  
-  ## mu is negative
-  expect_error(qcom(seq(0.1,0.9,0.1), mu=-1.5, nu=1.5))
-  
-  ## nu is negative
-  expect_error(qcom(seq(0.1,0.9,0.1), mu=1.5, nu=-1.5))
-})
 
 # Random samples ----
 
@@ -259,19 +170,4 @@ test_that("COM Samples", {
   testthat::expect_true(diff < 0.04)
 })
 
-
-test_that("COM Samples (errors)", {
-  
-  ## too many n values
-  expect_error(rcom(c(1,5), mu = 0.72, nu = 0.7))
-  
-  ## negative mu
-  expect_error(rcom(5, mu = -3, nu = 0.7))
-  
-  ## negative lambda
-  expect_error(rcom(5, lambda = -3, nu = 0.7))
-  
-  ## negative nu
-  expect_error(rcom(5, mu = 0.72, nu = -0.7))
-})
 

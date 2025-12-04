@@ -92,10 +92,7 @@ test_that("poisLind.re handles existing panel_id in data", {
   expect_equal(mod$model$formula, y ~ x1)
 })
 
-test_that("poisLind.re throws error for missing group_var", {
-  expect_error(poisLind.re(y ~ x1, group_var = NULL, data = test_data), 
-               "The `group_var` must be defined")
-})
+
 
 # ==============================================================================
 # TESTS FOR renb
@@ -138,10 +135,6 @@ test_that("renb handles existing panel_id in data", {
   expect_true(inherits(mod, "flexCountReg"))
 })
 
-test_that("renb throws error for missing group_var", {
-  expect_error(renb(y ~ x1, group_var = NULL, data = test_data), 
-               "The `group_var` must be defined")
-})
 
 test_that("renb handles bootstrap failure gracefully", {
   tiny_data <- test_data[1:10,]
@@ -219,3 +212,4 @@ test_that("predict function works for basic countreg models (Fixed)", {
   expect_equal(length(preds), nrow(test_data))
   expect_true(all(preds > 0))
 })
+

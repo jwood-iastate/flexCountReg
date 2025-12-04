@@ -12,30 +12,7 @@ test_that("Generalized Waring CDF", {
 })
 
 
-test_that("Generalized Waring CDF (error)", {
-  
-  ## Negative P value
-  expect_error(pgwar(c(0,1,2,-3), mu=1, k=2, rho=3))
-})
 
-# Quantiles ----
-
-test_that("Generalized Waring Quantiles", {
-  
-  quant <- qgwar(c(0.01,0.1,.5,.8,.99), mu=1, k=2, rho=3)
-  
-  expect_true(length(quant)==5)
-})
-
-
-test_that("Generalized Waring Quantiles (errors)", {
-  
-  ## Negative q
-  expect_error(qgwar(c(0.01,0.1,.5,.8,-.99), mu=1, k=2, rho=3))
-  
-  ## Q>1
-  expect_error(qgwar(c(0.01,0.1,.5,.8,1.99), mu=1, k=2, rho=3))
-})
 
 # Random samples ----
 

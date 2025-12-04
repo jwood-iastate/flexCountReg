@@ -196,7 +196,7 @@ library(flexCountReg)
 library(knitr)
 
 data("washington_roads")
-washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
+washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
 gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
                data = washington_roads, family = "NB2",
                dis_param_formula_1 = ~ speed50,  method='BFGS')
@@ -207,12 +207,13 @@ kable(summary(gen.nb2), caption = "NB-2 Model Summary")
 #> Call:
 #>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
 #> 
-#>  Method:  BFGS maximization 
+#>  Method:  countreg 
 #> Iterations:  44 
 #> Convergence:  successful convergence  
 #> Log-likelihood:  -1064.876 
 #> 
 #> Parameter Estimates:
+#> (Using bootstrapped standard errors)
 #> # A tibble: 7 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
@@ -276,12 +277,13 @@ kable(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
 #> Call:
 #>  Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 +      AADT10kplus + I(AADT10kplus/lnaadt) 
 #> 
-#>  Method:  BFGS maximization 
+#>  Method:  countreg 
 #> Iterations:  56 
 #> Convergence:  successful convergence  
 #> Log-likelihood:  -1061.914 
 #> 
 #> Parameter Estimates:
+#> (Using bootstrapped standard errors)
 #> # A tibble: 9 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
@@ -343,12 +345,13 @@ kable(summary(gen.nbp), caption = "NB-P Model Summary")
 #> Call:
 #>  Total_crashes ~ lnaadt + lnlength + speed50 + ShouldWidth04 +      AADT10kplus 
 #> 
-#>  Method:  BFGS maximization 
+#>  Method:  countreg 
 #> Iterations:  53 
 #> Convergence:  successful convergence  
 #> Log-likelihood:  -1062.195 
 #> 
 #> Parameter Estimates:
+#> (Using bootstrapped standard errors)
 #> # A tibble: 9 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>

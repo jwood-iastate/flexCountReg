@@ -10,9 +10,9 @@
 #'        \code{rpar_formula}.
 #' @param data a dataframe that has all of the variables in the \code{formula} 
 #'        and \code{rpar_formula}.
-#' @param family the name of the distribution/model type to estimate. Default is "NB2".
-#'        Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel", etc.
-#'        (See \code{\link{countreg}} for full list).
+#' @param family the name of the distribution/model type to estimate. Default is
+#'   "NB2". Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel",
+#'   etc. (See \code{\link{countreg}} for full list).
 #' @param rpardists an optional named vector whose names are the random 
 #'        parameters and values the distribution. The distribution options 
 #'        include normal ("n"), lognormal ("ln"), triangular ("t"), uniform 
@@ -90,7 +90,8 @@
 #' 
 #' @importFrom maxLik maxLik
 #' @importFrom randtoolbox halton
-#' @importFrom stats model.frame model.matrix model.response terms reformulate coef
+#' @importFrom stats model.frame model.matrix model.response
+#' @importFrom terms reformulate coef
 #' @importFrom dplyr mutate pull select all_of
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr unite
@@ -113,7 +114,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   # --- 1. Family and Parameter Setup ---
   family <- toupper(gsub("[^[:alnum:]]", "", family))
   params <- get_params(family) # From helpers.R
-  # NOTE: probFunc is now retrieved inside the likelihood function to prevent scoping issues.
+  # NOTE: probFunc is now retrieved inside the likelihood function to prevent
+  # scoping issues.
   
   # --- 2. Data Preparation ---
   mod1_frame <- stats::model.frame(formula, data)
@@ -127,12 +129,16 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     nn <- nrow(data)
     data$panel_id_internal <- factor(1:nn)
   } else {
-    if (length(panel_id) == 1 && is.character(panel_id) && panel_id %in% names(data)) {
+    cond1 <- (length(panel_id) == 1) && (is.character(panel_id)) && 
+      (panel_id %in% names(data))
+    if (cond1) {
       data$panel_id_internal <- factor(data[[panel_id]])
     } else if (length(panel_id) == nrow(data)) {
       data$panel_id_internal <- factor(panel_id)
     } else {
-      warning("panel_id must be a column name in 'data' or a vector of the same length as the data.")
+      msg <- paste0("panel_id must be a column name in 'data' or a vector of ", 
+                    "the same length as the data.")
+      warning(msg)
     }
   }
   
@@ -147,15 +153,24 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   
   # Offset
   if (!is.null(offset)){
+    
     X_offset <- data %>% select(all_of(offset))
-    if(ncol(X_offset) > 1) X_offset <- rowSums(X_offset) else X_offset <- X_offset[[1]]
+    
+    if (ncol(X_offset) > 1){
+      X_offset <- rowSums(X_offset) 
+    } else {
+      X_offset <- X_offset[[1]]
+      }
   } else {
+    
     X_offset <- rep(0, nrow(data))
   }
   
   # Handle Correlated Flag
   if(correlated && !is.null(rpardists) && any(rpardists != "n")){
-    warning("When correlated=TRUE, only normal distribution is used. Resetting rpardists to 'n'.")
+    msg <- paste0("When correlated=TRUE, only normal distribution is used. ", 
+                  "Resetting rpardists to 'n'.")
+    warning(msg)
     rpardists <- NULL 
   }
   
@@ -168,12 +183,13 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   X_rand <- as.matrix(modelr::model_matrix(data, rpar_formula))
   
   # FIX: Auto-remove Intercept if present but not in rpardists
-  # This prevents mismatch errors when formula is ~var but rpardists = c(var="n")
+  # This prevents mismatch errors when formula is ~var but rpardists =
+  # c(var="n")
   if("(Intercept)" %in% colnames(X_rand) && !is.null(rpardists)){
     # Check if user explicitly named "Intercept" or "(Intercept)" in rpardists
-    if(!any(grepl("intercept", names(rpardists), ignore.case=TRUE))){
+    if(!any(grepl("intercept", names(rpardists), ignore.case = TRUE))){
       # If not, remove the intercept column
-      X_rand <- X_rand[ , colnames(X_rand) != "(Intercept)", drop=FALSE]
+      X_rand <- X_rand[ , colnames(X_rand) != "(Intercept)", drop = FALSE]
     }
   }
   
@@ -200,7 +216,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   if (!is.null(het_mean_formula)) {
     X_het_mean <- model.matrix(het_mean_formula, data)
     if ("(Intercept)" %in% colnames(X_het_mean)) {
-      X_het_mean <- X_het_mean[, -which(colnames(X_het_mean) == "(Intercept)"), drop = FALSE]
+      X_het_mean <- X_het_mean[, -which(colnames(X_het_mean) == "(Intercept)"), 
+                               drop = FALSE]
     }
     N_het_mean <- ncol(X_het_mean)
   } else {
@@ -210,14 +227,18 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   if (!is.null(het_var_formula)) {
     X_het_var <- model.matrix(het_var_formula, data)
     if ("(Intercept)" %in% colnames(X_het_var)) {
-      X_het_var <- X_het_var[, -which(colnames(X_het_var) == "(Intercept)"), drop = FALSE]
+      X_het_var <- X_het_var[, -which(colnames(X_het_var) == "(Intercept)"), 
+                             drop = FALSE]
     }
     N_het_var <- ncol(X_het_var)
   } else {
     X_het_var <- NULL; N_het_var <- 0
   }
   
-  if("\\(Intercept\\)" %in% colnames(X_Fixed) && "\\(Intercept\\)" %in% colnames(X_rand)){
+  cond <- 
+    "\\(Intercept\\)" %in% colnames(X_Fixed) && 
+    "\\(Intercept\\)" %in% colnames(X_rand) 
+  if (cond){
     warning("Do not include Intercept in both fixed and random formulas.")
   }
   
@@ -226,7 +247,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   N_rand <- length(rpar)
   
   # Draws
-  hdraws <- as.matrix(randtoolbox::halton(ndraws, length(rpar), mixed = scrambled))
+  hdraws <- 
+    as.matrix(randtoolbox::halton(ndraws, length(rpar), mixed = scrambled))
   
   # Haltons for the Distribution
   dist_haltons <- randtoolbox::halton(ndraws, 1) 
@@ -242,7 +264,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     all_vars <- all_vars[!grepl("ntercept", all_vars)] 
     init_form <- reformulate(all_vars, response = y_name)
     
-    glm_mod <- tryCatch(glm(init_form, data=data, family=poisson), error=function(e) NULL)
+    glm_mod <- tryCatch(glm(init_form, data = data, family = poisson), 
+                        error = function(e) NULL)
     
     if(is.null(glm_mod)) {
       start <- rep(0, N_fixed + N_rand)
@@ -430,10 +453,11 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   }
   
   # --- 6. Optimization ---
-  fit <- maxLik::maxLik(ll_countreg_rp,
-                        start = start,
-                        method = method,
-                        control = list(iterlim = max.iters, printLevel = print.level))
+  fit <- maxLik::maxLik(
+    ll_countreg_rp,
+    start = start,
+    method = method,
+    control = list(iterlim = max.iters, printLevel = print.level))
   
   # --- 7. Result Packaging ---
   fit$x_names <- names(start)
@@ -459,6 +483,9 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   
   fit$se <- sqrt(diag(-1/(fit$hessian)))
   
-  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  obj <- .createFlexCountReg(model = fit, 
+                             data = data, 
+                             call = match.call(), 
+                             formula = formula)
   return(obj)
 }

@@ -39,9 +39,9 @@ intercept is fixed, include it in \code{formula} but not in
 \item{data}{a dataframe that has all of the variables in the \code{formula} 
 and \code{rpar_formula}.}
 
-\item{family}{the name of the distribution/model type to estimate. Default is "NB2".
-Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel", etc.
-(See \code{\link{countreg}} for full list).}
+\item{family}{the name of the distribution/model type to estimate. Default is
+"NB2". Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel",
+etc. (See \code{\link{countreg}} for full list).}
 
 \item{rpardists}{an optional named vector whose names are the random 
 parameters and values the distribution. The distribution options 

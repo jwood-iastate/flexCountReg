@@ -8,50 +8,50 @@
 #' @param family the name of the distribution/model type to estimate. The 
 #'        default "NB2" is the standard negative binomial distribution with a 
 #'        log link. other options are listed below. 
-#' @param offset the name of a variable, or vector of variable names, in the 
-#'        data frame that should be used as an offset (i.e., included but forced 
-#'        to have a coefficient of 1). The normal method of setting an offset in 
-#'        the equation can also be used (overrides the offset option).
+#' @param offset the name of a variable, or vector of variable names, in the
+#'   data frame that should be used as an offset (i.e., included but forced to
+#'   have a coefficient of 1). The normal method of setting an offset in the
+#'   equation can also be used (overrides the offset option).
 #' @param weights the name of a variable in the data frame that should be used
-#'        as a frequency weight.
-#' @param verbose an optional parameter. If `TRUE`, the function will print out 
-#'        the progress of the model fitting. Default is `FALSE`.
-#' @param dis_param_formula_1 a symbolic description of the model for the 
-#'        natural log of the dispersion parameter or first parameter of the 
-#'        count distribution used. Further details are provided below.
+#'   as a frequency weight.
+#' @param verbose an optional parameter. If `TRUE`, the function will print out
+#'   the progress of the model fitting. Default is `FALSE`.
+#' @param dis_param_formula_1 a symbolic description of the model for the
+#'   natural log of the dispersion parameter or first parameter of the count
+#'   distribution used. Further details are provided below.
 #' @param dis_param_formula_2 a symbolic description of the model for the second
-#'        parameter of the count distribution used. Further details are provided 
-#'        below.
-#' @param underreport_formula an optional formula to estimate the underreporting 
-#'        for any of the count model options. The underreporting is estimated as 
-#'        a function (logit or probit) of the predictors in the model. For the 
-#'        model to be tractable, the independent variables cannot be the exact 
-#'        same as the count model. The default is `NULL`.
-#' @param underreport_family the name of the distribution/model type to estimate 
-#'        the underreporting portion of the model when `underreport_formula` is 
-#'        specified. The default is "logit" for a binary logistic regression 
-#'        model. The other option is "probit" for a probit model.
-#' @param ndraws The number of Halton draws for integrating the distribution 
-#'        being compounded with the Poisson distribution when there is not a 
-#'        closed-form solution. Default is 1500. It is recommended to test 
-#'        different numbers of draws to determine if the model is stable (i.e., 
-#'        doesn't change or has minimal change as the number of draws changes 
-#'        within a reasonable range).
-#' @param method Optimization method to be used for maximum likelihood 
-#'        estimation. See `maxLik` documentation for options. The default is 
-#'        "NM" for the Nelder-Mead method.
+#'   parameter of the count distribution used. Further details are provided
+#'   below.
+#' @param underreport_formula an optional formula to estimate the underreporting
+#'   for any of the count model options. The underreporting is estimated as a
+#'   function (logit or probit) of the predictors in the model. For the model to
+#'   be tractable, the independent variables cannot be the exact same as the
+#'   count model. The default is `NULL`.
+#' @param underreport_family the name of the distribution/model type to estimate
+#'   the underreporting portion of the model when `underreport_formula` is
+#'   specified. The default is "logit" for a binary logistic regression model.
+#'   The other option is "probit" for a probit model.
+#' @param ndraws The number of Halton draws for integrating the distribution
+#'   being compounded with the Poisson distribution when there is not a
+#'   closed-form solution. Default is 1500. It is recommended to test different
+#'   numbers of draws to determine if the model is stable (i.e., doesn't change
+#'   or has minimal change as the number of draws changes within a reasonable
+#'   range).
+#' @param method Optimization method to be used for maximum likelihood
+#'   estimation. See `maxLik` documentation for options. The default is "NM" for
+#'   the Nelder-Mead method.
 #' @param max.iters Maximum number of iterations for the optimization method.
 #' @param start.vals Optional vector of starting values for the optimization.
-#' @param stderr Type of standard errors to use. The default is "normal". Other 
-#'        options include "boot" for bootstrapped standard errors, or "robust" 
-#'        for robust standard errors.
-#' @param bootstraps Optional integer specifying the number of bootstrap samples 
-#'        to be used for estimating standard errors when `stderr`= "boot". Note
-#'        that this currently does not work when an offset variable is used.
+#' @param stderr Type of standard errors to use. The default is "normal". Other
+#'   options include "boot" for bootstrapped standard errors, or "robust" for
+#'   robust standard errors.
+#' @param bootstraps Optional integer specifying the number of bootstrap samples
+#'   to be used for estimating standard errors when `stderr`= "boot". Note that
+#'   this currently does not work when an offset variable is used.
 #' 
 #' @description
-#' The purpose of this function is to estimate count regression models using 
-#' maximum likelihood estimation (MLE) or Maximum Simulated Likelihood 
+#' The purpose of this function is to estimate count regression models using
+#' maximum likelihood estimation (MLE) or Maximum Simulated Likelihood
 #' Estimation (MSLE). The function can estimate the following models:
 #' \itemize{
 #'  \item Poisson (Poisson)
@@ -98,16 +98,15 @@
 #'  \item "COM" for Conway-Maxwell-Poisson (COM) distribution with a log link.
 #'  }
 #'  
-#'  The `dis_param_formula_1` and `dis_param_formula_2` parameters are used to 
-#'  estimate the dispersion parameter or other parameters of the count 
-#'  distribution used. This leads to the distributions parameters being 
-#'  functions rather than constants in the model. For example, 
-#'  if the user wants to estimate the overdispersion parameter of the Negative 
-#'  Binomial 2 distribution as a function of the variable `x1` and `x2`, 
-#'  the user would specify `dis_param_formula_1 = ~ x1 + x2`. In the case of the 
-#'  Negative Binomial distributions, the model is known as a Generalized 
-#'  Negative Binomial model when the overdispersion parameter is specified as a 
-#'  function.
+#'  The `dis_param_formula_1` and `dis_param_formula_2` parameters are used to
+#'  estimate the dispersion parameter or other parameters of the count
+#'  distribution used. This leads to the distributions parameters being
+#'  functions rather than constants in the model. For example, if the user wants
+#'  to estimate the overdispersion parameter of the Negative Binomial 2
+#'  distribution as a function of the variable `x1` and `x2`, the user would
+#'  specify `dis_param_formula_1 = ~ x1 + x2`. In the case of the Negative
+#'  Binomial distributions, the model is known as a Generalized Negative
+#'  Binomial model when the overdispersion parameter is specified as a function.
 #'  
 #'  The function linking the distribution parameters to the predictors is:
 #'  \deqn{Param = \exp((Intercept) + \sum \beta X)}
@@ -325,9 +324,9 @@
 #' ^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}
 #' K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
 #' 
-#' Where \eqn{\eta} is a shape parameter with the restriction that \eqn{\eta>0}, 
-#' \eqn{\mu>0} is the mean value,  \eqn{y} is a non-negative integer, and 
-#' \eqn{K_i(z)} is the modified Bessel function of the second kind. This 
+#' Where \eqn{\eta} is a shape parameter with the restriction that \eqn{\eta>0},
+#' \eqn{\mu>0} is the mean value,  \eqn{y} is a non-negative integer, and
+#' \eqn{K_i(z)} is the modified Bessel function of the second kind. This
 #' formulation uses the mean directly.
 #'
 #' The variance of the distribution is:
@@ -382,7 +381,7 @@
 #' 
 #' ## Poisson-Lindley-Gamma (PLG) Model
 #' The Poisson-Lindley-Gamma regression is based on a compound Poisson-Lindley-
-#' Gamma distribution. Details of the distribution can be seen at 
+#' Gamma distribution. Details of the distribution can be seen at
 #' \code{\link[flexCountReg]{dplindGamma}}.
 #'
 #' The mean for the regression model is:
@@ -441,7 +440,7 @@
 #' {\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
 #' 
 #' ## Sichel (SI) Model
-#' The compound Probability Mass Function (PMF) for the Sichel distribution uses 
+#' The compound Probability Mass Function (PMF) for the Sichel distribution uses
 #' the formulation from Zhou et al. (2011) and Rigby et al. (2008):
 #' \deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y 
 #' K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
@@ -519,7 +518,7 @@
 #' \deqn{\mu_{true}=\mu_{observed}\cdot P(\text{event is reported})}
 #' 
 #' This allows the inference of both the true event count and the probability of
-#' the event being reported as a function of independent variables. 
+#' the event being reported as a function of independent variables.
 #'  
 #' @return
 #' An object of class `countreg` which is a list with the following components:
@@ -580,7 +579,7 @@
 #' #}
 #' 
 #' @references
-#' Greene, W. (2008). Functional forms for the negative binomial model for count 
+#' Greene, W. (2008). Functional forms for the negative binomial model for count
 #' data. Economics Letters, 99(3), 585-590.
 #' 
 #' Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression 
@@ -872,7 +871,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     fit$bootstrapped_se <- sqrt(diag(sandwich::sandwich(fit)))
   }
   
-  fit$coefficients = fit$estimate
+  fit$coefficients <- fit$estimate
   fit$se <- if (!is.null(bootstraps) & is.numeric(bootstraps)) 
     fit$bootstrapped_se else sqrt(diag(-1/(fit$hessian)))
   fit$logLik <- fit$maximum

@@ -2,7 +2,8 @@
 % Please edit documentation in R/cor2cov.R
 \name{cor2cov}
 \alias{cor2cov}
-\title{Generate a covariance matrix using a correlation matrix and vector of standard deviations}
+\title{Generate a covariance matrix using a correlation matrix and vector of
+standard deviations}
 \usage{
 cor2cov(C, S)
 }
@@ -15,7 +16,8 @@ cor2cov(C, S)
 A covariance matrix
 }
 \description{
-Generate a covariance matrix using a correlation matrix and vector of standard deviations
+Generate a covariance matrix using a correlation matrix and vector of
+standard deviations
 }
 \examples{
 C <- matrix(c(1,-0.3,0.7,-0.3,1,-0.2,0.7,-0.2,1), 3, 3)

@@ -1,4 +1,5 @@
-#' Generate a covariance matrix using a correlation matrix and vector of standard deviations
+#' Generate a covariance matrix using a correlation matrix and vector of
+#' standard deviations
 #'
 #' @param C A correlation matrix.
 #' @param S A vector of standard deviations.
@@ -12,6 +13,11 @@
 cor2cov <- function(C, S) {
   if (!is.matrix(C)) warning("C must be a matrix")
   if (!is.vector(S)) warning("S must be a vector")
-  if (length(S) != nrow(C)) warning(paste0("S must have the same length (",length(S), ") as the number of rows/columns in C (",nrow(C),")"))
+  if (length(S) != nrow(C)) {
+    msg <- paste0(
+      "S must have the same length (", length(S), 
+      ") as the number of rows/columns in C (", nrow(C), ")")
+    warning(msg)
+  }
   sweep(sweep(C, 1, S, "*"), 2, S, "*")
 }

@@ -22,28 +22,43 @@ corr_haltons(
 
 \item{cholesky}{A Cholesky decomposition matrix to introduce correlation.}
 
-\item{stdev}{A numeric vector of standard deviations for each variable. If provided, the function will use these values instead of the Cholesky decomposition matrix (must also provide a correlation matrix if providing standard deviations). Default is NULL.}
+\item{stdev}{A numeric vector of standard deviations for each variable. If
+provided, the function will use these values instead of the Cholesky
+decomposition matrix (must also provide a correlation matrix if providing
+standard deviations). Default is NULL.}
 
-\item{correlations}{A correlation matrix to introduce correlation. If provided, the function will use these values instead of the Cholesky decomposition matrix (must also provide standard deviations). Default is NULL.}
+\item{correlations}{A correlation matrix to introduce correlation. If
+provided, the function will use these values instead of the Cholesky
+decomposition matrix (must also provide standard deviations). Default is
+NULL.}
 
-\item{hdraws}{A matrix of Halton or scrambled Halton draws. If provided, the function will use these draws instead of generating new ones. Default is NULL.}
+\item{hdraws}{A matrix of Halton or scrambled Halton draws. If provided, the
+function will use these draws instead of generating new ones. Default is
+NULL.}
 
-\item{ndraws}{An integer specifying the number of values to simulate for each variable. Default is 500.}
+\item{ndraws}{An integer specifying the number of values to simulate for each
+variable. Default is 500.}
 
-\item{scrambled}{A logical value indicating whether to use scrambled Halton draws. Default is FALSE.}
+\item{scrambled}{A logical value indicating whether to use scrambled Halton
+draws. Default is FALSE.}
 
-\item{dist}{A character string specifying the distribution type. Options are "normal" and "truncated_normal". Default is "normal".}
+\item{dist}{A character string specifying the distribution type. Options are
+"normal" and "truncated_normal". Default is "normal".}
 
-\item{lower}{A numeric value specifying the lower bound for truncated normal distribution. Default is -Inf.}
+\item{lower}{A numeric value specifying the lower bound for truncated normal
+distribution. Default is -Inf.}
 
-\item{upper}{A numeric value specifying the upper bound for truncated normal distribution. Default is Inf.}
+\item{upper}{A numeric value specifying the upper bound for truncated normal
+distribution. Default is Inf.}
 }
 \value{
-A matrix with \code{N} columns and \code{ndraws} rows containing the simulated values for the correlated random variables.
+A matrix with \code{N} columns and \code{ndraws} rows containing the
+  simulated values for the correlated random variables.
 }
 \description{
-This function generates \code{N} correlated random variables using Halton or scrambled Halton draws.
-The function supports normal and truncated normal distributions.
+This function generates \code{N} correlated random variables using Halton or
+scrambled Halton draws. The function supports normal and truncated normal
+distributions.
 }
 \examples{
 # Define mean, correlation, and standard deviations

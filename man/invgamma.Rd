@@ -44,16 +44,19 @@ function, and random number generation for the Inverse-Gamma (IG)
 Distribution
 }
 \details{
-\code{dinvgamma} computes the density (PDF) of the Inverse-Gamma Distribution.
+\code{dinvgamma} computes the density (PDF) of the Inverse-Gamma
+Distribution.
 
 \code{pinvgamma} computes the CDF of the Inverse-Gamma Distribution.
 
 \code{qinvgamma} computes the quantile function of the Inverse-Gamma
 Distribution.
 
-\code{rinvgamma} generates random numbers from the Inverse-Gamma Distribution.
+\code{rinvgamma} generates random numbers from the Inverse-Gamma
+Distribution.
 
-The compound Probability Mass Function (PMF) for the Inverse-Gamma distribution:
+The compound Probability Mass Function (PMF) for the Inverse-Gamma
+distribution:
 \deqn{f(x | \alpha, \beta) = 
     \frac{\beta^\alpha}{\Gamma(\alpha)}
     \left(\frac{1}{x}\right)^{\alpha+1} e^{-\frac{\beta}{x}}}

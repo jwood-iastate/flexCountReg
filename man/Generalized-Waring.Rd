@@ -29,7 +29,8 @@ rgwar(n, mu, k, rho)
 
 \item{q}{non-negative integer vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.}
+\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+otherwise, \eqn{P[X>x]}.}
 
 \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
 
@@ -38,10 +39,12 @@ rgwar(n, mu, k, rho)
 \item{n}{integer number of random numbers to generate.}
 }
 \description{
-These functions provide density, distribution function, quantile function, and random number generation for the Generalized Waring Distribution.
+These functions provide density, distribution function, quantile function,
+and random number generation for the Generalized Waring Distribution.
 }
 \details{
-The Generalized Waring distribution is a 3-parameter count distribution that is used to model overdispersed count data.
+The Generalized Waring distribution is a 3-parameter count distribution that
+is used to model overdispersed count data.
 
 
 \code{dgwar} computes the density (PMF) of the Generalized Waring Distribution.
@@ -53,8 +56,11 @@ The Generalized Waring distribution is a 3-parameter count distribution that is 
 \code{rwaring} generates random numbers from the Generalized Waring Distribution.
 
 The Probability Mass Function (PMF) for the Generalized Waring (GW) distribution is:
-\deqn{f(y|a_x,k,\rho)=\frac{\Gamma(a_x+\rho)\Gamma(k+\rho)\left(a_x\right)_y(k)_y}{y!\Gamma(\rho)\Gamma(a_x+k+\rho)(a_x+k+\rho)_y}}
-Where \eqn{(\alpha)_r=\frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}}, and \eqn{a_x, \ k, \ \rho)>0}.
+\deqn{f(y|a_x,k,\rho) = 
+   \frac{\Gamma(a_x+\rho)\Gamma(k+\rho)\left(a_x\right)_y(k)_y}
+   {y!\Gamma(\rho)\Gamma(a_x+k+\rho)(a_x+k+\rho)_y}}
+Where \eqn{(\alpha)_r=\frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}}, 
+and \eqn{a_x, \ k, \ \rho)>0}.
 
 The mean value is:
 \deqn{E[Y]=\frac{a_x K}{\rho-1}}
@@ -64,7 +70,9 @@ Thus, we can use:
 
 This results in a regression model where:
 \deqn{\mu=e^{X\beta}}
-\deqn{\sigma^2=\mu\left(1-\frac{1}{\alpha+\rho+1}\right)+\mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}}
+\deqn{\sigma^2 =
+  \mu \left(1-\frac{1}{\alpha+\rho+1} \right) + 
+  \mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}}
 }
 \examples{
 dgwar(0, mu=1, k=2, rho=3)

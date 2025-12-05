@@ -1,32 +1,55 @@
 #' Generate pseudo-random draws from specified distributions using Halton draws
 #'
-#' @param dist The distribution type to use. The distribution options include normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma ("g").
+#' @param dist The distribution type to use. The distribution options include
+#'   normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma
+#'   ("g").
 #' @param mean The mean value for the random draws.
 #' @param sdev The standard deviation value for the random draws.
-#' @param hdraw An optional vector of Halton draws to convert to the specified distribution. If not provided, the function will generate Halton draws.
-#' @param ndraws The number of random draws to generate. This is only used if `hdraw` is not provided.
+#' @param hdraw An optional vector of Halton draws to convert to the specified
+#'   distribution. If not provided, the function will generate Halton draws.
+#' @param ndraws The number of random draws to generate. This is only used if
+#'   `hdraw` is not provided.
 #'
 #' @importFrom randtoolbox halton
 #' @importFrom stats qlnorm qgamma qnorm
 #' @include tri.R
 #' @details
-#' This function is used to convert Halton draws to the specified distribution. The function can be used to generate random draws for use in random parameter models, generating Halton-based pseudo-random draws for specified distributions, etc.
+#' This function is used to convert Halton draws to the specified distribution.
+#' The function can be used to generate random draws for use in random parameter
+#' models, generating Halton-based pseudo-random draws for specified
+#' distributions, etc.
 #'
-#' The distributions generated all use the `mean` (\deqn{\mu}) and `sdev` (\deqn{\sigma}) parameters to generate the random draws. The density functions for the distributions are as follows:
+#' The distributions generated all use the `mean` (\deqn{\mu}) and `sdev`
+#' (\deqn{\sigma}) parameters to generate the random draws. The density
+#' functions for the distributions are as follows:
 #' The Normal distribution is:
-#' \eqn{f(x) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left(-\frac{(x - \mu)^2}{2\sigma^2}\right)}
+#' \eqn{f(x) = \frac{1}{\sqrt{2\pi\sigma^2}} 
+#'   \exp\left(-\frac{(x - \mu)^2}{2\sigma^2}\right)}
 #'
 #' The Lognormal distribution is:
-#' \eqn{f(x) = \frac{1}{x\sigma\sqrt{2\pi}} \exp\left(-\frac{(\log(x) - \mu)^2}{2\sigma^2}\right)}
+#' \eqn{f(x) = 
+#'   \frac{1}{x\sigma\sqrt{2\pi}} 
+#'   \exp\left(-\frac{(\log(x) - \mu)^2}{2\sigma^2}\right)}
 #'
-#' The Triangular distribution is (note that this is a symmetrical triangular distribution where \deqn{\mu} is the median and \deqn{\sigma} is the half-width):
-#' \eqn{f(x) = \begin{cases}\frac{(x - \mu + \sigma)}{\sigma^2}, & \text{for } \mu - \sigma \leq x \leq \mu \\\frac{(\mu + \sigma - x)}{\sigma^2}, & \text{for } \mu < x \leq \mu + \sigma \\0, & \text{otherwise}\end{cases}}
+#' The Triangular distribution is (note that this is a symmetrical triangular
+#' distribution where \deqn{\mu} is the median and \deqn{\sigma} is the
+#' half-width):
+#' \eqn{f(x) = \begin{cases} 
+#'   \frac{(x - \mu + \sigma)}{\sigma^2}, & \text{for } \mu - 
+#'     \sigma \leq x \leq \mu \\
+#'   \frac{(\mu + \sigma - x)}{\sigma^2}, & \text{for } 
+#'     \mu < x \leq \mu + \sigma \\0, & \text{otherwise}\end{cases}}
 #'
-#' The Uniform distribution is (note that \eqn{\mu} is the midpoint and \eqn{\sigma} is the half-width):
-#' \eqn{f(x) = \frac{1}{(\beta_{\mu}+\beta_{\sigma})-(\beta_{\mu}-\beta_{\sigma})}=\frac{1}{2\beta_{\sigma}}}
+#' The Uniform distribution is (note that \eqn{\mu} is the midpoint and
+#' \eqn{\sigma} is the half-width):
+#' \eqn{f(x) = \frac{1}{(\beta_{\mu}+\beta_{\sigma}) - 
+#'   (\beta_{\mu}-\beta_{\sigma})}=\frac{1}{2\beta_{\sigma}}}
 #'
 #' The Gamma distribution is based on \deqn{\mu = \frac{\alpha}{\beta}} and \deqn{\sigma^2 = \frac{\alpha}{\beta^2}}:
-#' \eqn{f(x) = \frac{\left(\frac{\mu}{\sigma^2}\right)^{\frac{\mu^2}{\sigma^2}}}{\Gamma\left(\frac{\mu^2}{\sigma^2}\right)} x^{\frac{\mu^2}{\sigma^2} - 1} e^{-\frac{\mu}{\sigma^2} x}}
+#' \eqn{f(x) = 
+#'   \frac{\left(\frac{\mu}{\sigma^2}\right)^
+#'     {\frac{\mu^2}{\sigma^2}}}{\Gamma\left(\frac{\mu^2}{\sigma^2}\right)} 
+#'     x^{\frac{\mu^2}{\sigma^2} - 1} e^{-\frac{\mu}{\sigma^2} x}}
 #'
 #'
 #' @examples
@@ -55,7 +78,8 @@ halton_dists <- function(dist, mean, sdev, hdraw=NULL, ndraws=500) {
          "t" = qtri(hdraw, mean, abs(sdev)),
          "u" = mean + (hdraw - 0.5) * abs(sdev),
          "g" = stats::qgamma(hdraw, shape = mean^2 / sdev^2, rate = mean / sdev^2),
-         "n" = stats::qnorm(hdraw, mean, abs(sdev)), # default case for normal distribution
+         # default case for normal distribution
+         "n" = stats::qnorm(hdraw, mean, abs(sdev)), 
          warning("Invalid distribution type")
   )
 }

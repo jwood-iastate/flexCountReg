@@ -18,16 +18,19 @@
 #'   otherwise, \eqn{P[X>x]}.
 #'
 #' @details
-#' \code{dinvgamma} computes the density (PDF) of the Inverse-Gamma Distribution.
+#' \code{dinvgamma} computes the density (PDF) of the Inverse-Gamma
+#' Distribution.
 #'
 #' \code{pinvgamma} computes the CDF of the Inverse-Gamma Distribution.
 #'
 #' \code{qinvgamma} computes the quantile function of the Inverse-Gamma
 #' Distribution.
 #'
-#' \code{rinvgamma} generates random numbers from the Inverse-Gamma Distribution.
+#' \code{rinvgamma} generates random numbers from the Inverse-Gamma
+#' Distribution.
 #'
-#' The compound Probability Mass Function (PMF) for the Inverse-Gamma distribution:
+#' The compound Probability Mass Function (PMF) for the Inverse-Gamma
+#' distribution:
 #' \deqn{f(x | \alpha, \beta) = 
 #'     \frac{\beta^\alpha}{\Gamma(\alpha)}
 #'     \left(\frac{1}{x}\right)^{\alpha+1} e^{-\frac{\beta}{x}}}
@@ -81,7 +84,8 @@ dinvgamma <- function(x, shape = 2.5, scale = 1, log = FALSE) {
   # f(x) = (scale^shape / Gamma(shape)) * x^(-shape-1) * exp(-scale/x)
   # log f(x) = shape*log(scale) - lgamma(shape) - (shape+1)*log(x) - scale/x
   
-  log_p <- shape * log(scale) - lgamma(shape) - (shape + 1) * log(x) - scale / x
+  log_p <- 
+    shape * log(scale) - lgamma(shape) - (shape + 1) * log(x) - scale / x
   
   # Handle invalid x (must be positive)
   invalid <- is.na(x) | x <= 0
@@ -98,7 +102,8 @@ dinvgamma <- function(x, shape = 2.5, scale = 1, log = FALSE) {
 
 #' @rdname invgamma
 #' @export
-pinvgamma <- function(q, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALSE) {
+pinvgamma <- function(q, shape = 2.5, scale = 1, 
+                      lower.tail = TRUE, log.p = FALSE) {
   
   # --- Input Validation ---
   if (any(shape <= 0, na.rm = TRUE)) warning("'shape' must be positive")
@@ -112,8 +117,10 @@ pinvgamma <- function(q, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALS
   
   # --- Compute CDF ---
   # If X ~ InvGamma(shape, scale), then 1/X ~ Gamma(shape, rate = scale)
-  # P(X <= q) = P(1/X >= 1/q) = 1 - P(1/X < 1/q) = 1 - pgamma(1/q, shape, rate = scale)
-  # Or equivalently: P(X <= q) = pgamma(1/q, shape, rate = scale, lower.tail = FALSE)
+  # P(X <= q) = P(1/X >= 1/q) 
+  ##         = 1 - P(1/X < 1/q) = 1 - pgamma(1/q, shape, rate = scale)
+  # Or equivalently: 
+  # P(X <= q) = pgamma(1/q, shape, rate = scale, lower.tail = FALSE)
   
   cdf <- pgamma(1/q, shape = shape, rate = scale, lower.tail = FALSE)
   
@@ -131,7 +138,8 @@ pinvgamma <- function(q, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALS
 
 #' @rdname invgamma
 #' @export
-qinvgamma <- function(p, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALSE) {
+qinvgamma <- function(p, shape = 2.5, scale = 1, 
+                      lower.tail = TRUE, log.p = FALSE) {
   
   # --- Input Handling ---
   if (log.p) p <- exp(p)
@@ -167,7 +175,9 @@ qinvgamma <- function(p, shape = 2.5, scale = 1, lower.tail = TRUE, log.p = FALS
 #' @export
 rinvgamma <- function(n, shape = 2.5, scale = 1) {
   
-  if (length(n) != 1 || n < 0 || n != floor(n)) warning("'n' must be a non-negative integer")
+  if (length(n) != 1 || n < 0 || n != floor(n)) {
+    warning("'n' must be a non-negative integer")
+  }
   if (n == 0) return(numeric(0))
   
   # Input validation
@@ -178,6 +188,7 @@ rinvgamma <- function(n, shape = 2.5, scale = 1) {
   shape <- rep_len(shape, n)
   scale <- rep_len(scale, n)
   
-  # Generate: If Y ~ Gamma(shape, rate = scale), then 1/Y ~ InvGamma(shape, scale)
+  # Generate: 
+  # If Y ~ Gamma(shape, rate = scale), then 1/Y ~ InvGamma(shape, scale)
   1 / rgamma(n, shape = shape, rate = scale)
 }

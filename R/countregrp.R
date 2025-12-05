@@ -91,7 +91,7 @@
 #' @importFrom maxLik maxLik
 #' @importFrom randtoolbox halton
 #' @importFrom stats model.frame model.matrix model.response
-#' @importFrom terms reformulate coef
+#' @importFrom stats terms reformulate coef
 #' @importFrom dplyr mutate pull select all_of
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr unite

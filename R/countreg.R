@@ -84,8 +84,10 @@
 #'  \item "PLN" for Poisson-Lognormal distribution with a log link.
 #'  \item "PGE" for Poisson-Generalized-Exponential distribution with a log 
 #'        link.
-#'  \item "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log link.
-#'  \item "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log link.
+#'  \item "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log
+#'  link.
+#'  \item "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log
+#'  link.
 #'  \item "PIG" for Poisson-Inverse-Gamma distribution with a log link.
 #'  \item "PL" for Poisson-Lindley distribution with a log link.
 #'  \item "PLG" for Poisson-Lindley-Gamma distribution with a log link.
@@ -169,7 +171,8 @@
 #' 
 #' The PMF and log-likelihood functions are:
 #' \deqn{P(Y = y) = \frac{e^{-\mu} \mu^y}{y!}}
-#' \deqn{LL_{\text{Poisson}}(\beta) = \sum_{i=1}^n \left[ -\mu_i + y_i \ln(\mu_i) - \ln(y_i!) \right]}
+#' \deqn{LL_{\text{Poisson}}(\beta) = 
+#'        \sum_{i=1}^n \left[ -\mu_i + y_i \ln(\mu_i) - \ln(y_i!) \right]}
 #' 
 #' The mean is:
 #' \deqn{\mu = exp(X\beta)}
@@ -184,8 +187,16 @@
 #' 
 #' ### NB-1 Model
 #' The PMF and log-likelihood functions are:
-#' \deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu}{\alpha})}{y! \, \Gamma(\frac{\mu}{\alpha})} \left( \frac{\frac{\mu}{\alpha}}{\frac{\mu}{\alpha} + \mu} \right)^{\frac{\mu}{\alpha}} \left( \frac{\mu}{\frac{\mu}{\alpha} + \mu} \right)^y}
-#' \deqn{LL_{\text{NB1}}(\beta, \alpha) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i}{\alpha} \right) - \ln y_i! + \frac{\mu_i}{\alpha} \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \right]}
+#' \deqn{P(Y = y) = 
+#'     \frac{\Gamma(y + \frac{\mu}{\alpha})}{y! \, \Gamma(\frac{\mu}{\alpha})}
+#'     \left( \frac{\frac{\mu}{\alpha}}{\frac{\mu}{\alpha} + \mu} \right)
+#'     ^{\frac{\mu}{\alpha}} \left( \frac{\mu}{\frac{\mu}{\alpha} + \mu} 
+#'     \right)^y}
+#' \deqn{LL_{\text{NB1}}(\beta, \alpha) = \sum_{i=1}^n \left[ \ln \Gamma\left( 
+#' y_i + \frac{\mu_i}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i}{\alpha} 
+#' \right) - \ln y_i! + \frac{\mu_i}{\alpha} \ln \left( 
+#' \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) + y_i 
+#' \ln \left( \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \right]}
 #' 
 #' The mean is:
 #' \deqn{\mu = exp(X\beta)}
@@ -195,8 +206,12 @@
 #' 
 #' ### NB-2 Model
 #' The PMF and log-likelihood functions are:
-#' \deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} \left( \frac{\alpha}{\alpha + \mu} \right)^\alpha \left( \frac{\mu}{\alpha + \mu} \right)^y}
-#' \deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - \ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
+#' \deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} 
+#' \left( \frac{\alpha}{\alpha + \mu} \right)^\alpha 
+#' \left( \frac{\mu}{\alpha + \mu} \right)^y}
+#' \deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - 
+#' \ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + 
+#' \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
 #' 
 #' The mean is:
 #' \deqn{\mu = exp(X\beta)}
@@ -206,8 +221,16 @@
 #' 
 #' ### NB-P Model
 #' The PMF and log-likelihood functions are:
-#' \deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu^{2-p}}{\alpha})}{y! \, \Gamma(\frac{\mu^{2-p}}{\alpha})} \left( \frac{\frac{\mu^{2-p}}{\alpha}}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^{\frac{\mu^{2-p}}{\alpha}} \left( \frac{\mu}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^y}
-#' \deqn{LL_{\text{NBP}}(\beta, \alpha, p) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i^{2-p}}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i^{2-p}}{\alpha} \right) - \ln y_i! + \frac{\mu_i^{2-p}}{\alpha} \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \right]}
+#' \deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu^{2-p}}{\alpha})}{y! \, 
+#' \Gamma(\frac{\mu^{2-p}}{\alpha})} \left( \frac{\frac{\mu^{2-p}}{\alpha}}
+#' {\frac{\mu^{2-p}}{\alpha} + \mu} \right)^{\frac{\mu^{2-p}}{\alpha}} 
+#' \left( \frac{\mu}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^y}
+#' \deqn{LL_{\text{NBP}}(\beta, \alpha, p) = \sum_{i=1}^n \left[ \ln 
+#' \Gamma\left( y_i + \frac{\mu_i^{2-p}}{\alpha} \right) - \ln \Gamma\left( 
+#' \frac{\mu_i^{2-p}}{\alpha} \right) - \ln y_i! + \frac{\mu_i^{2-p}}{\alpha} 
+#' \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + 
+#' \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + 
+#' \mu_i} \right) \right]}
 #' 
 #' The mean is:
 #' \deqn{\mu = exp(X\beta)}
@@ -218,7 +241,8 @@
 #' ## Poisson-Lognormal (PLN) Model
 #' The compound Probability Mass Function(PMF) for the Poisson-Lognormal 
 #' distribution is:
-#' \deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
+#' \deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}
+#' {y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 #'
 #' Where \eqn{\sigma} is a parameter for the lognormal distribution with the 
 #' restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
@@ -246,11 +270,14 @@
 #' a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
 #' distribution has strictly positive continuous values. The PDF of the
 #' distribution is:
-#' \deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
+#' \deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
+#' \right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
 #' 
 #' Thus, the compound Probability Mass Function(PMF) for the PGE distribution
 #' is:
-#' \deqn{f(y|\lambda,\alpha,\beta)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
+#' \deqn{f(y|\lambda,\alpha,\beta)=\int_0^\infty \frac{\lambda^y x^y 
+#' e^{-\lambda x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
+#' \right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 #' 
 #' The expected value of the distribution is:
 #' \deqn{E[y]=\mu=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right)}
@@ -258,7 +285,8 @@
 #' Where \eqn{\psi(\cdot)} is the digamma function.
 #' 
 #' The variance is:
-#' \deqn{\sigma^2=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
+#' \deqn{\sigma^2=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + 
+#' \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
 #' 
 #' Where \eqn{\psi'(\cdot)} is the trigamma function.
 #' 
@@ -266,7 +294,10 @@
 #' \deqn{\lambda=\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}}
 #' 
 #' This results in:
-#' \deqn{f(y|\mu,\alpha,\beta)=\int_0^\infty \frac{\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
+#' \deqn{f(y|\mu,\alpha,\beta)=\int_0^\infty \frac{\left(\frac{\gamma 
+#' e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma 
+#' e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}
+#' \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 #' 
 #' Halton draws are used to perform simulation over the lognormal distribution 
 #' to solve the integral.
@@ -290,7 +321,9 @@
 #' 
 #' ## Poisson-Inverse-Gamma (PIG) Model
 #' The PDF of the distribution is:
-#' \deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
+#' \deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)
+#' ^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}
+#' K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
 #' 
 #' Where \eqn{\eta} is a shape parameter with the restriction that \eqn{\eta>0}, 
 #' \eqn{\mu>0} is the mean value,  \eqn{y} is a non-negative integer, and 
@@ -371,7 +404,8 @@
 #' \deqn{\mu=e^{X\beta}}
 #'
 #' The variance function is defined as:
-#' \deqn{\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}{2}}}+e^{\sigma^2}-1\right)\mu^2}
+#' \deqn{\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}
+#' {2}}}+e^{\sigma^2}-1\right)\mu^2}
 #'
 #' It should be noted that the p-value for the parameters `ln(theta)` and 
 #' `ln(sigma)` in the model summary are testing if the parameter `theta` and 
@@ -382,7 +416,9 @@
 #' distribution for a Poisson process. It is useful for modeling overdispersed 
 #' count data. The density function (probability mass function) for the 
 #' Poisson-Weibull distribution is given by:
-#' \deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}\right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
+#' \deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} 
+#' \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}
+#' \right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
 #' where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and 
 #' \eqn{\lambda} is the mean of the Poisson distribution.
 #' 
@@ -401,27 +437,33 @@
 #' \deqn{\lambda=\frac{\mu}{\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}}
 #' 
 #' The variance for the Poisson-Weibull regression is:
-#' \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}{\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+#' \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}
+#' {\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
 #' 
 #' ## Sichel (SI) Model
 #' The compound Probability Mass Function (PMF) for the Sichel distribution uses 
 #' the formulation from Zhou et al. (2011) and Rigby et al. (2008):
-#' \deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
+#' \deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y 
+#' K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
 #' 
-#' Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with \eqn{-\infty < \gamma < \infty} and \eqn{\sigma>0}, 
-#' \eqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, \eqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
+#' Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with 
+#' \eqn{-\infty < \gamma < \infty} and \eqn{\sigma>0}, 
+#' \eqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, 
+#' \eqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
 #' a mean value of \eqn{\mu}, \eqn{y} is a non-negative integer, and 
 #' \eqn{K_j(x)} is a modified Bessel function of the third kind with order 
 #' \eqn{j} and argument \eqn{x}.
 #'
 #' The variance of the distribution is:
-#' \deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)\mu^2}
+#' \deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)
+#' \mu^2}
 #' 
 #' ## Generalized Waring (GW) Model
 #' The following are the versions of the PMF, mean, and variance used for the 
 #' Generalized Waring model. This is adjusted from the typical formulation by 
 #' replacing parameter \code{k} with \eqn{\mu}
-#' \deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}{y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
+#' \deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}
+#' {y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
 #' \deqn{\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}}
 #' \deqn{\sigma^2=\frac{\alpha k(\alpha+k+\rho-1)}{(\rho-1)^2(\rho-2)}}
 #' 
@@ -434,11 +476,16 @@
 #' 
 #' The PMF becomes:
 #' 
-#' \deqn{PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)\Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!\Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)\Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}}
+#' \deqn{PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)
+#' \Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!
+#' \Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)
+#' \Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}}
 #' 
 #' This results in a regression model where:
 #' \deqn{\mu=e^{X\beta}}
-#' \deqn{\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}{(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}\right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
+#' \deqn{\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}
+#' {(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}
+#' \right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
 #'
 #' Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
 #' 
@@ -446,13 +493,16 @@
 #' The following is the the PMF for the COM model.
 #' \deqn{f(x|\lambda, \nu)=\frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
 #' 
-#' Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with \eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing constant.
+#' Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with 
+#' \eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing 
+#' constant.
 #' 
 #' The normalizing constant is given by:
 #' \deqn{Z(\lambda,\nu)=\sum_{n=0}^{\infty}\frac{\lambda^n}{(n!)^\nu}}
 #' 
 #' The mean and variance are:
-#' \deqn{\mu=e^{X\beta}=\lambda \frac{\delta}{\delta \lambda} \log(Z(\lambda,\nu))}
+#' \deqn{\mu=e^{X\beta}=\lambda \frac{\delta}{\delta \lambda} \log(Z(\lambda,
+#' \nu))}
 #' \deqn{\sigma^2=\lambda \frac{\delta}{\delta \lambda} \mu}
 #' 
 #' Note that the COM distribution parameter \eqn{\lambda} is solved for using 
@@ -484,12 +534,14 @@
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom purrr map map_df compact
 #' @importFrom broom tidy
-#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize ungroup reframe pull
+#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize 
+#' @importFrom dplyr ungroup reframe pull
 #' @importFrom tibble deframe
 #' @importFrom maxLik maxLik
 #' @importFrom stringr str_replace_all str_extract
 #' @importFrom sandwich sandwich
-#' @include pinvgaus.R pinvgamma.R ppoislogn.R plindLnorm.R plindGamma.R psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
+#' @include pinvgaus.R pinvgamma.R ppoislogn.R plindLnorm.R plindGamma.R 
+#' @include psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
 #' 
 #' @examples
 #' \donttest{
@@ -555,8 +607,9 @@
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
 #' @export
-countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NULL, 
-                     verbose = FALSE, dis_param_formula_1 = NULL, 
+countreg <- function(formula, data, family = "NB2", offset = NULL, 
+                     weights = NULL, verbose = FALSE, 
+                     dis_param_formula_1 = NULL, 
                      dis_param_formula_2 = NULL, underreport_formula = NULL,
                      underreport_family = "logit",
                      ndraws = 1500, method = "NM", 
@@ -570,12 +623,16 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }
   
   # Get the parameters and probability function
-  family <- toupper(str_replace_all(family, "[^[:alnum:]]", "")) # remove non-alphanumeric characters from the family name and ensure all upper case
+  # remove non-alphanumeric characters from the family name and ensure 
+  # all upper case
+  family <- toupper(str_replace_all(family, "[^[:alnum:]]", "")) 
   params <- get_params(family)
   
-  method <- toupper(str_replace_all(method, "[^abcfghmnrsABCFGHMNRS]", "")) # clean the method name
+  # clean the method name
+  method <- toupper(str_replace_all(method, "[^abcfghmnrsABCFGHMNRS]", "")) 
   if (!(method %in% c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH"))){
-    print('Method must be one of: "SANN", "NM", "BFGS", "BFGSR", "CG", "NR", or "BHHH". Switching to "NM.')
+    print(paste('Method must be one of: "SANN", "NM", "BFGS", "BFGSR", "CG",', 
+                '"NR", or "BHHH". Switching to "NM.'))
     method <- "NM"
   }
   
@@ -602,20 +659,23 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     X_offset <- as.matrix(data[, offset, drop = FALSE])
   }
   
-  if(any(grepl("offset", deparse(formula)))) { # If offset() is used in the formula, use that as the offset
+  # If offset() is used in the formula, use that as the offset
+  if(any(grepl("offset", deparse(formula)))) { 
     offset_variable <- str_extract(deparse(formula), "(?<=offset\\().*?(?=\\))")
     X_offset <- as.matrix(data[, offset, drop = FALSE])
   }
   
   if (!is.null(dis_param_formula_1)) {
-    mod_alpha_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_1))
+    mod_alpha_frame <- as.matrix(modelr::model_matrix(data, 
+                                                      dis_param_formula_1))
     x_names <- c(x_names, paste0(params[1], ":",colnames(mod_alpha_frame)))
   } else {
     x_names <- append(x_names, params[1])
   }
   
   if (!is.null(dis_param_formula_2)) {
-    mod_sigma_frame <- as.matrix(modelr::model_matrix(data, dis_param_formula_2))
+    mod_sigma_frame <- as.matrix(modelr::model_matrix(data, 
+                                                      dis_param_formula_2))
     x_names <- c(x_names, paste0(params[2], ":",colnames(mod_sigma_frame)))
   } else {
     x_names <- append(x_names, params[2])
@@ -634,7 +694,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   # Some numbers that will be useful
   N_predictors <- ncol(X)
   # N_obs <- length(y)
-  N_params <- length(Filter(Negate(is.null), params)) # No. of params for the distribution
+  # No. of params for the distribution
+  N_params <- length(Filter(Negate(is.null), params)) 
   
   if (is.null(params[[1]])) {
     N_alpha <- 0
@@ -680,7 +741,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   x_names <- x_names  %>% 
     compact() #%>%  # Remove NULL values
   
-  names(start) <- x_names[seq_along(start)] # Shouldn't need to do this, but this ensures it runs without having errors from names
+  # Shouldn't need to do this, but this ensures it runs without having errors 
+  # from names
+  names(start) <- x_names[seq_along(start)] 
   
   # Handling Weights
   if (is.null(weights)){
@@ -694,10 +757,13 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     # Ensure local_probFunc is available in this scope
     local_probFunc <- get_probFunc(family)
     
-    # Critical Check: If get_probFunc returned NULL (e.g. invalid family matching), we cannot proceed.
-    # This prevents the obscure "could not find function 'local_probFunc'" or "attempt to apply non-function" error later.
+    # Critical Check: If get_probFunc returned NULL (e.g. invalid family 
+    # matching), we cannot proceed. This prevents the obscure "could not find 
+    # function 'local_probFunc'" or "attempt to apply non-function" error 
+    # later.
     if(is.null(local_probFunc)) {
-      warning(paste0("Probability function not found for family: ", family, ". Please check family name and helpers.R definition."))
+      warning(paste0("Probability function not found for family: ", family, 
+                     ". Please check family name and helpers.R definition."))
     }
     
     coefs <- as.array(p)
@@ -709,7 +775,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     
     if (N_alpha > 0) {
       if (!is.null(dis_param_formula_1)){
-        alpha_coefs <- as.vector(coefs[(N_predictors + 1):(N_predictors + N_alpha)])
+        alpha_coefs <- as.vector(coefs[(N_predictors + 1):
+                                         (N_predictors + N_alpha)])
         alpha <- exp(mod_alpha_frame %*% alpha_coefs)
       } else {
         alpha <- exp(coefs[(N_predictors + 1)])
@@ -718,7 +785,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
     
     if (N_sigma > 0) {
       if (!is.null(dis_param_formula_2)){
-        sigma_coefs <- as.vector(coefs[(N_predictors + N_alpha + 1):(N_predictors + N_alpha + N_sigma)])
+        sigma_coefs <- as.vector(coefs[(N_predictors + N_alpha + 1):
+                                         (N_predictors + N_alpha + N_sigma)])
         sigma <- exp(mod_sigma_frame %*% sigma_coefs)
       } else {
         sigma <- exp(coefs[(N_predictors + N_alpha + 1)])
@@ -735,7 +803,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
         underreport_prob <- pnorm(lin_underreport, lower.tail = FALSE)
         
       }
-    }else{underreport_prob <- 1} # If no underreporting model, set the probability to 1
+    }else{underreport_prob <- 1} # If no underreporting model, set prob to 1
     
     if (!is.null(offset)){
       if (length(offset) > 1){
@@ -773,10 +841,14 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
                                             family = family, 
                                             offset = offset, 
                                             weights = weights, 
-                                            dis_param_formula_1 = dis_param_formula_1, 
-                                            dis_param_formula_2 = dis_param_formula_2, 
-                                            underreport_formula = underreport_formula, 
-                                            underreport_family = underreport_family, 
+                                            dis_param_formula_1 = 
+                                              dis_param_formula_1, 
+                                            dis_param_formula_2 = 
+                                              dis_param_formula_2, 
+                                            underreport_formula = 
+                                              underreport_formula, 
+                                            underreport_family = 
+                                              underreport_family, 
                                             ndraws = ndraws, 
                                             method = method, 
                                             max.iters = max.iters, 
@@ -801,7 +873,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }
   
   fit$coefficients = fit$estimate
-  fit$se <- if (!is.null(bootstraps) & is.numeric(bootstraps)) fit$bootstrapped_se else sqrt(diag(-1/(fit$hessian)))
+  fit$se <- if (!is.null(bootstraps) & is.numeric(bootstraps)) 
+    fit$bootstrapped_se else sqrt(diag(-1/(fit$hessian)))
   fit$logLik <- fit$maximum
   fit$converged <-  fit$convergence
   fit$model <- family
@@ -820,6 +893,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   fit$underreport_family <- underreport_family
   fit$params <- params
   
-  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), 
+                             formula = formula)
   return(obj)
 }

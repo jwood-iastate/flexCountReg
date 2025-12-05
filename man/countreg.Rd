@@ -129,8 +129,10 @@ For the `family` argument, the following options are available:
  \item "PLN" for Poisson-Lognormal distribution with a log link.
  \item "PGE" for Poisson-Generalized-Exponential distribution with a log 
        link.
- \item "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log link.
- \item "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log link.
+ \item "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log
+ link.
+ \item "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log
+ link.
  \item "PIG" for Poisson-Inverse-Gamma distribution with a log link.
  \item "PL" for Poisson-Lindley distribution with a log link.
  \item "PLG" for Poisson-Lindley-Gamma distribution with a log link.
@@ -215,7 +217,8 @@ method used in the `glm` function.
 
 The PMF and log-likelihood functions are:
 \deqn{P(Y = y) = \frac{e^{-\mu} \mu^y}{y!}}
-\deqn{LL_{\text{Poisson}}(\beta) = \sum_{i=1}^n \left[ -\mu_i + y_i \ln(\mu_i) - \ln(y_i!) \right]}
+\deqn{LL_{\text{Poisson}}(\beta) = 
+       \sum_{i=1}^n \left[ -\mu_i + y_i \ln(\mu_i) - \ln(y_i!) \right]}
 
 The mean is:
 \deqn{\mu = exp(X\beta)}
@@ -230,8 +233,16 @@ based on Greene (2008).  The details of each of these are provided below.
 
 ### NB-1 Model
 The PMF and log-likelihood functions are:
-\deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu}{\alpha})}{y! \, \Gamma(\frac{\mu}{\alpha})} \left( \frac{\frac{\mu}{\alpha}}{\frac{\mu}{\alpha} + \mu} \right)^{\frac{\mu}{\alpha}} \left( \frac{\mu}{\frac{\mu}{\alpha} + \mu} \right)^y}
-\deqn{LL_{\text{NB1}}(\beta, \alpha) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i}{\alpha} \right) - \ln y_i! + \frac{\mu_i}{\alpha} \ln \left( \frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \right]}
+\deqn{P(Y = y) = 
+    \frac{\Gamma(y + \frac{\mu}{\alpha})}{y! \, \Gamma(\frac{\mu}{\alpha})}
+    \left( \frac{\frac{\mu}{\alpha}}{\frac{\mu}{\alpha} + \mu} \right)
+    ^{\frac{\mu}{\alpha}} \left( \frac{\mu}{\frac{\mu}{\alpha} + \mu} 
+    \right)^y}
+\deqn{LL_{\text{NB1}}(\beta, \alpha) = \sum_{i=1}^n \left[ \ln \Gamma\left( 
+y_i + \frac{\mu_i}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i}{\alpha} 
+\right) - \ln y_i! + \frac{\mu_i}{\alpha} \ln \left( 
+\frac{\frac{\mu_i}{\alpha}}{\frac{\mu_i}{\alpha} + \mu_i} \right) + y_i 
+\ln \left( \frac{\mu_i}{\frac{\mu_i}{\alpha} + \mu_i} \right) \right]}
 
 The mean is:
 \deqn{\mu = exp(X\beta)}
@@ -241,8 +252,12 @@ The variance is:
 
 ### NB-2 Model
 The PMF and log-likelihood functions are:
-\deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} \left( \frac{\alpha}{\alpha + \mu} \right)^\alpha \left( \frac{\mu}{\alpha + \mu} \right)^y}
-\deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - \ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
+\deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} 
+\left( \frac{\alpha}{\alpha + \mu} \right)^\alpha 
+\left( \frac{\mu}{\alpha + \mu} \right)^y}
+\deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - 
+\ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + 
+\mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
 
 The mean is:
 \deqn{\mu = exp(X\beta)}
@@ -252,8 +267,16 @@ The variance is:
 
 ### NB-P Model
 The PMF and log-likelihood functions are:
-\deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu^{2-p}}{\alpha})}{y! \, \Gamma(\frac{\mu^{2-p}}{\alpha})} \left( \frac{\frac{\mu^{2-p}}{\alpha}}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^{\frac{\mu^{2-p}}{\alpha}} \left( \frac{\mu}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^y}
-\deqn{LL_{\text{NBP}}(\beta, \alpha, p) = \sum_{i=1}^n \left[ \ln \Gamma\left( y_i + \frac{\mu_i^{2-p}}{\alpha} \right) - \ln \Gamma\left( \frac{\mu_i^{2-p}}{\alpha} \right) - \ln y_i! + \frac{\mu_i^{2-p}}{\alpha} \ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + \mu_i} \right) \right]}
+\deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu^{2-p}}{\alpha})}{y! \, 
+\Gamma(\frac{\mu^{2-p}}{\alpha})} \left( \frac{\frac{\mu^{2-p}}{\alpha}}
+{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^{\frac{\mu^{2-p}}{\alpha}} 
+\left( \frac{\mu}{\frac{\mu^{2-p}}{\alpha} + \mu} \right)^y}
+\deqn{LL_{\text{NBP}}(\beta, \alpha, p) = \sum_{i=1}^n \left[ \ln 
+\Gamma\left( y_i + \frac{\mu_i^{2-p}}{\alpha} \right) - \ln \Gamma\left( 
+\frac{\mu_i^{2-p}}{\alpha} \right) - \ln y_i! + \frac{\mu_i^{2-p}}{\alpha} 
+\ln \left( \frac{\frac{\mu_i^{2-p}}{\alpha}}{\frac{\mu_i^{2-p}}{\alpha} + 
+\mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\frac{\mu_i^{2-p}}{\alpha} + 
+\mu_i} \right) \right]}
 
 The mean is:
 \deqn{\mu = exp(X\beta)}
@@ -264,7 +287,8 @@ The variance is:
 ## Poisson-Lognormal (PLN) Model
 The compound Probability Mass Function(PMF) for the Poisson-Lognormal 
 distribution is:
-\deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
+\deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}
+{y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 
 Where \eqn{\sigma} is a parameter for the lognormal distribution with the 
 restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
@@ -292,11 +316,14 @@ The Generalized Exponential distribution can be written as a function with
 a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
 distribution has strictly positive continuous values. The PDF of the
 distribution is:
-\deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
+\deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
+\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
 
 Thus, the compound Probability Mass Function(PMF) for the PGE distribution
 is:
-\deqn{f(y|\lambda,\alpha,\beta)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
+\deqn{f(y|\lambda,\alpha,\beta)=\int_0^\infty \frac{\lambda^y x^y 
+e^{-\lambda x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
+\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 
 The expected value of the distribution is:
 \deqn{E[y]=\mu=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right)}
@@ -304,7 +331,8 @@ The expected value of the distribution is:
 Where \eqn{\psi(\cdot)} is the digamma function.
 
 The variance is:
-\deqn{\sigma^2=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
+\deqn{\sigma^2=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + 
+\left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
 
 Where \eqn{\psi'(\cdot)} is the trigamma function.
 
@@ -312,7 +340,10 @@ To ensure that \eqn{\mu=e^{X\beta}}, \eqn{\lambda} is replaced with:
 \deqn{\lambda=\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}}
 
 This results in:
-\deqn{f(y|\mu,\alpha,\beta)=\int_0^\infty \frac{\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
+\deqn{f(y|\mu,\alpha,\beta)=\int_0^\infty \frac{\left(\frac{\gamma 
+e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma 
+e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}
+\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 
 Halton draws are used to perform simulation over the lognormal distribution 
 to solve the integral.
@@ -336,7 +367,9 @@ value, \eqn{\ln(\eta)}, to ensure that \eqn{\eta>0}.
 
 ## Poisson-Inverse-Gamma (PIG) Model
 The PDF of the distribution is:
-\deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
+\deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)
+^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}
+K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
 
 Where \eqn{\eta} is a shape parameter with the restriction that \eqn{\eta>0}, 
 \eqn{\mu>0} is the mean value,  \eqn{y} is a non-negative integer, and 
@@ -417,7 +450,8 @@ The mean for the regression model is:
 \deqn{\mu=e^{X\beta}}
 
 The variance function is defined as:
-\deqn{\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}{2}}}+e^{\sigma^2}-1\right)\mu^2}
+\deqn{\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}
+{2}}}+e^{\sigma^2}-1\right)\mu^2}
 
 It should be noted that the p-value for the parameters `ln(theta)` and 
 `ln(sigma)` in the model summary are testing if the parameter `theta` and 
@@ -428,7 +462,9 @@ The Poisson-Weibull distribution uses the Weibull distribution as a mixing
 distribution for a Poisson process. It is useful for modeling overdispersed 
 count data. The density function (probability mass function) for the 
 Poisson-Weibull distribution is given by:
-\deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}\right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
+\deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} 
+\lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}
+\right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
 where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and 
 \eqn{\lambda} is the mean of the Poisson distribution.
 
@@ -447,27 +483,33 @@ This leads to:
 \deqn{\lambda=\frac{\mu}{\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}}
 
 The variance for the Poisson-Weibull regression is:
-\deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}{\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+\deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}
+{\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
 
 ## Sichel (SI) Model
 The compound Probability Mass Function (PMF) for the Sichel distribution uses 
 the formulation from Zhou et al. (2011) and Rigby et al. (2008):
-\deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
+\deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y 
+K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
 
-Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with \eqn{-\infty < \gamma < \infty} and \eqn{\sigma>0}, 
-\eqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, \eqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
+Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with 
+\eqn{-\infty < \gamma < \infty} and \eqn{\sigma>0}, 
+\eqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, 
+\eqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
 a mean value of \eqn{\mu}, \eqn{y} is a non-negative integer, and 
 \eqn{K_j(x)} is a modified Bessel function of the third kind with order 
 \eqn{j} and argument \eqn{x}.
 
 The variance of the distribution is:
-\deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)\mu^2}
+\deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)
+\mu^2}
 
 ## Generalized Waring (GW) Model
 The following are the versions of the PMF, mean, and variance used for the 
 Generalized Waring model. This is adjusted from the typical formulation by 
 replacing parameter \code{k} with \eqn{\mu}
-\deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}{y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
+\deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}
+{y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
 \deqn{\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}}
 \deqn{\sigma^2=\frac{\alpha k(\alpha+k+\rho-1)}{(\rho-1)^2(\rho-2)}}
 
@@ -480,11 +522,16 @@ If we use:
 
 The PMF becomes:
 
-\deqn{PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)\Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!\Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)\Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}}
+\deqn{PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)
+\Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!
+\Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)
+\Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}}
 
 This results in a regression model where:
 \deqn{\mu=e^{X\beta}}
-\deqn{\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}{(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}\right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
+\deqn{\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}
+{(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}
+\right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
 
 Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
 
@@ -492,13 +539,16 @@ Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
 The following is the the PMF for the COM model.
 \deqn{f(x|\lambda, \nu)=\frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
 
-Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with \eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing constant.
+Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with 
+\eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing 
+constant.
 
 The normalizing constant is given by:
 \deqn{Z(\lambda,\nu)=\sum_{n=0}^{\infty}\frac{\lambda^n}{(n!)^\nu}}
 
 The mean and variance are:
-\deqn{\mu=e^{X\beta}=\lambda \frac{\delta}{\delta \lambda} \log(Z(\lambda,\nu))}
+\deqn{\mu=e^{X\beta}=\lambda \frac{\delta}{\delta \lambda} \log(Z(\lambda,
+\nu))}
 \deqn{\sigma^2=\lambda \frac{\delta}{\delta \lambda} \mu}
 
 Note that the COM distribution parameter \eqn{\lambda} is solved for using 

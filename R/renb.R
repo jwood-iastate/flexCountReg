@@ -196,6 +196,6 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$modelType <- "RENB"
   fit$offset <- offset
   
-  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }

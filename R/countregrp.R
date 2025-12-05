@@ -108,7 +108,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          method = 'BHHH', max.iters = 1000,
                          start.vals = NULL, verbose = FALSE) {
   
-  print.level = ifelse(verbose, 2, 0)
+  print.level <- ifelse(verbose, 2, 0)
   
   # --- 1. Family and Parameter Setup ---
   family <- toupper(gsub("[^[:alnum:]]", "", family))
@@ -458,6 +458,6 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   
   fit$se <- sqrt(diag(-1/(fit$hessian)))
   
-  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }

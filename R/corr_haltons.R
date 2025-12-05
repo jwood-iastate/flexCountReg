@@ -84,7 +84,7 @@ corr_haltons <- function(means, cholesky=NULL, stdev=NULL, correlations=NULL, hd
   } else if (is.null(cholesky)){
     warning("You must provide either a Cholesky decomposition matrix (`cholesky`) or standard deviations and a correlation matrix (`stdev` and `correlations`).")
   }else{
-    cov=t(cholesky) %*% cholesky
+    cov <- t(cholesky) %*% cholesky
     sdevs <- sqrt(diag(cov))
   }
 

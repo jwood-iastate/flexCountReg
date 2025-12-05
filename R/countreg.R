@@ -564,9 +564,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
                      stderr = "normal", bootstraps = NULL) {
   
   if (verbose){
-    print.level=2
+    print.level <- 2
   }else{
-    print.level=0
+    print.level <- 0
   }
   
   # Get the parameters and probability function
@@ -576,7 +576,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   method <- toupper(str_replace_all(method, "[^abcfghmnrsABCFGHMNRS]", "")) # clean the method name
   if (!(method %in% c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH"))){
     print('Method must be one of: "SANN", "NM", "BFGS", "BFGSR", "CG", "NR", or "BHHH". Switching to "NM.')
-    method = "NM"
+    method <- "NM"
   }
   
   
@@ -637,9 +637,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   N_params <- length(Filter(Negate(is.null), params)) # No. of params for the distribution
   
   if (is.null(params[[1]])) {
-    N_alpha = 0
+    N_alpha <- 0
   } else if (is.null(dis_param_formula_1)) {
-    N_alpha = 1
+    N_alpha <- 1
   } else {
     N_alpha <- ncol(mod_alpha_frame)
   }
@@ -647,16 +647,16 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   if (N_params==2){
     if(is.null(dis_param_formula_2)){
       if (is.null(params[2])){
-        N_sigma = 0
+        N_sigma <- 0
       }else{
-        N_sigma = 1
+        N_sigma <- 1
       }
     }
     else{
       N_sigma <- ncol(mod_sigma_frame)
     }
   }else{
-    N_sigma = 0
+    N_sigma <- 0
   }
   
   # Initialize starting values if not provided
@@ -735,13 +735,13 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
         underreport_prob <- pnorm(lin_underreport, lower.tail = FALSE)
         
       }
-    }else{underreport_prob=1} # If no underreporting model, set the probability to 1
+    }else{underreport_prob <- 1} # If no underreporting model, set the probability to 1
     
     if (!is.null(offset)){
-      if (length(offset)>1){
-        X_offset_i = rowSums(X_offset)
-        predicted <- exp(X %*% fixed_coefs + X_offset_i)*underreport_prob
-      }else{
+      if (length(offset) > 1){
+        X_offset_i <- rowSums(X_offset)
+        predicted <- exp(X %*% fixed_coefs + X_offset_i) * underreport_prob
+      } else {
         predicted <- exp(X %*% fixed_coefs + X_offset)*underreport_prob
       }
     } else {
@@ -801,18 +801,18 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   }
   
   fit$coefficients = fit$estimate
-  fit$se = if (!is.null(bootstraps) & is.numeric(bootstraps)) fit$bootstrapped_se else sqrt(diag(-1/(fit$hessian)))
-  fit$logLik = fit$maximum
-  fit$converged = fit$convergence
-  fit$model = family
-  fit$family = family
-  fit$method = method
-  fit$data = data
-  fit$formula = formula
-  fit$dis_param_formula_1 = dis_param_formula_1
-  fit$dis_param_formula_2 = dis_param_formula_2
-  fit$ndraws = ndraws
-  fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
+  fit$se <- if (!is.null(bootstraps) & is.numeric(bootstraps)) fit$bootstrapped_se else sqrt(diag(-1/(fit$hessian)))
+  fit$logLik <- fit$maximum
+  fit$converged <-  fit$convergence
+  fit$model <- family
+  fit$family <- family
+  fit$method <- method
+  fit$data <- data
+  fit$formula <- formula
+  fit$dis_param_formula_1 <- dis_param_formula_1
+  fit$dis_param_formula_2 <- dis_param_formula_2
+  fit$ndraws <- ndraws
+  fit$bootstraps <- if (!is.null(bootstraps)) bootstraps else NULL
   fit$offset <- offset
   fit.stderr <- stderr
   fit$modelType <- "countreg"
@@ -820,6 +820,6 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   fit$underreport_family <- underreport_family
   fit$params <- params
   
-  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }

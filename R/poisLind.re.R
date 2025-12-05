@@ -176,7 +176,7 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
     fit$bootstrapped_se <- SE
   }
   
-  fit$bootstraps = if (!is.null(bootstraps)) bootstraps else NULL
+  fit$bootstraps <- if (!is.null(bootstraps)) bootstraps else NULL
   
   # Processing results
   beta_est <- fit$estimate
@@ -195,6 +195,6 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
   fit$LL <- fit$maximum # The log-likelihood of the model
   fit$modelType <- "poisLindRE"
   
-  obj = .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }

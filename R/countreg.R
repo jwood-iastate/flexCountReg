@@ -680,7 +680,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL, weights = NUL
   x_names <- x_names  %>% 
     compact() #%>%  # Remove NULL values
   
-  names(start) <-x_names[1:length(start)] # Shouldn't need to do this, but this ensures it runs without having errors from names
+  names(start) <- x_names[seq_along(start)] # Shouldn't need to do this, but this ensures it runs without having errors from names
   
   # Handling Weights
   if (is.null(weights)){

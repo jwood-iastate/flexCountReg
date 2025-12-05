@@ -124,7 +124,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   
   # Panel ID Generation
   if (is.null(panel_id)) {
-    data$panel_id_internal <- factor(1:nrow(data))
+    nn <- nrow(data)
+    data$panel_id_internal <- factor(1:nn)
   } else {
     if (length(panel_id) == 1 && is.character(panel_id) && panel_id %in% names(data)) {
       data$panel_id_internal <- factor(data[[panel_id]])
@@ -261,7 +262,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     if (correlated){
       chol_starts <- numeric(0)
       chol_names <- numeric(0)
-      for (i in 1:length(rpar)){
+      for (i in seq_along(rpar)){
         for (j in 1:i){
           val <- if(i==j) 0.1 else 0
           chol_starts <- c(chol_starts, val)

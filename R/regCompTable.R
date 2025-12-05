@@ -44,12 +44,16 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
                          tableType="tibble", digits=3){
   
   Nmodels <- length(models)
-  if(Nmodels < 2) warning("Provide a list of 2 or more models for the `models` input to call the `regCompTable` function")
+  if(Nmodels < 2) {
+    msg <- paste0("Provide a list of 2 or more models for the `models` input ", 
+                  "to call the `regCompTable` function")
+    warning(msg)
+  }
   
   # Extract the names of all coefficients in any of the models supplied and create an initial tibble with a column of the coefficient names and other stats
   vars <- c() # names of estimated coefficients
   modNames <- names(models)
-  for (i in 1:length(models)){
+  for (i in seq_along(models)){
     variables <- names(models[[i]]$model$estimate) # Get the variable names
     for (item in variables) { # Add any new, unique, variables/coefficient names
       if (!(item %in% vars)) {
@@ -72,7 +76,7 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
   
   summaryTibble <- tibble(`Parameter` = vars) # Initial tibble
   
-  for (i in 1:length(modNames)){ 
+  for (i in seq_along(modNames)){ 
     formula <- as.formula(models[[i]]$formula) # not including random parameters
     data <- models[[i]]$data
     mod_df <- model.frame(formula, data)
@@ -98,9 +102,9 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     seRounded <- round(se, digits)
     tablecoefs <- c()
     
-    for (j in 1:length(vars)){
+    for (j in seq_along(vars)){
       if (vars[j] %in% coefNames){
-        for (k in 1:length(coefNames)){
+        for (k in seq_along(coefNames)){
           if (coefNames[k] == vars[j]){
             if(t[k] >= 3.29){
               coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")***")

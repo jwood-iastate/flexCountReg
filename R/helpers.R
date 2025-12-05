@@ -1,6 +1,7 @@
 # Helper functions for the flexCountReg package
 
-#' @importFrom stats model.frame model.matrix model.response dnbinom dpois qnorm qgamma dnorm
+#' @importFrom stats model.frame model.matrix model.response
+#' @importFrom stats dnbinom dpois qnorm qgamma dnorm
 #' @importFrom randtoolbox halton
 NULL
 
@@ -16,7 +17,8 @@ mod.boot <- function(data, formula, family, offset, weights,
   
   # Recursively call countreg with the bootstrap sample
   # We set stderr = "none" to prevent infinite recursion
-  # We use the provided start.vals (from the original fit) to speed up convergence
+  # We use the provided start.vals (from the original fit) to speed up
+  # convergence
   fit <- tryCatch({
     countreg(formula = formula, 
              data = df, 
@@ -78,18 +80,31 @@ get_probFunc <- function(family){
     "NBP" = function(y, predicted, alpha, sigma, haltons, normed_haltons){
       return(stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))
     },
-    "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpLnorm_cpp(x=y, mean=predicted, sigma=alpha, h=normed_haltons),
-    "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpge(y, mean=predicted, shape=alpha, scale=sigma, haltons=haltons),
-    "PIG1" = function(y, predicted, alpha, sigma, ...) dpinvgaus(y, mu=predicted, eta=alpha),
-    "PIG2" = function(y, predicted, alpha, sigma, ...) dpinvgaus(y, mu=predicted, eta=alpha, form="Type 2"),
-    "PIG" = function(y, predicted, alpha, sigma, ...) dpinvgamma(y, mu=predicted, eta=alpha),
-    "PL" = function(y, predicted, alpha, sigma, ...) dplind(y, mean=predicted, theta=alpha),
-    "PLG" = function(y, predicted, alpha, sigma, ...) dplindGamma(x=y, mean=predicted, theta=alpha, alpha=sigma),
-    "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dplindLnorm(x=y, mean=predicted, theta=alpha, sigma=sigma, hdraws=normed_haltons),
-    "PW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) dpWeib_cpp(y, mean=predicted, alpha=alpha, sigma=sigma, h=haltons),
-    "SI" = function(y, predicted, alpha, sigma, ...) dsichel(x=y, mu= predicted, sigma=sigma, gamma=log(alpha)),
-    "GW" = function(y, predicted, alpha, sigma, ...) dgwar(y, mu= predicted, k=alpha, rho=sigma),
-    "COM" = function(y, predicted, alpha, sigma, ...) dcom(x=y, mu=predicted, nu=alpha)
+    "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
+      dpLnorm_cpp(x = y, mean = predicted, sigma = alpha, h = normed_haltons),
+    "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
+      dpge(y, mean = predicted, shape = alpha, scale = sigma, haltons = haltons),
+    "PIG1" = function(y, predicted, alpha, sigma, ...) 
+      dpinvgaus(y, mu = predicted, eta = alpha),
+    "PIG2" = function(y, predicted, alpha, sigma, ...) 
+      dpinvgaus(y, mu=predicted, eta = alpha, form = "Type 2"),
+    "PIG" = function(y, predicted, alpha, sigma, ...) 
+      dpinvgamma(y, mu = predicted, eta = alpha),
+    "PL" = function(y, predicted, alpha, sigma, ...) 
+      dplind(y, mean = predicted, theta = alpha),
+    "PLG" = function(y, predicted, alpha, sigma, ...) 
+      dplindGamma(x = y, mean = predicted, theta = alpha, alpha = sigma),
+    "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
+      dplindLnorm(x = y, mean = predicted, theta = alpha, sigma = sigma, 
+                  hdraws = normed_haltons),
+    "PW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
+      dpWeib_cpp(y, mean = predicted, alpha = alpha, sigma = sigma, h =haltons),
+    "SI" = function(y, predicted, alpha, sigma, ...) 
+      dsichel(x = y, mu = predicted, sigma = sigma, gamma = log(alpha)),
+    "GW" = function(y, predicted, alpha, sigma, ...) 
+      dgwar(y, mu = predicted, k = alpha, rho = sigma),
+    "COM" = function(y, predicted, alpha, sigma, ...) 
+      dcom(x = y, mu = predicted, nu = alpha)
   )
 }
 
@@ -125,7 +140,8 @@ generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params,
     z_draws <- stats::qnorm(hdraws) 
     corr_draws <- z_draws %*% t(L) 
     
-    mu_matrix <- matrix(random_coefs_means, nrow=n_obs, ncol=n_params, byrow=TRUE)
+    mu_matrix <- 
+      matrix(random_coefs_means, nrow = n_obs, ncol = n_params, byrow = TRUE)
     xb_deterministic <- rowSums(X_rand * mu_matrix * mean_multiplier)
     
     W_variance <- X_rand * var_multiplier
@@ -155,7 +171,8 @@ generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params,
         
         param_draws <- matrix(0, nrow = n_obs, ncol = n_draws)
         for (d in 1:n_draws) {
-          param_draws[, d] <- stats::qgamma(h_col[d], shape = shape_vec, rate = rate_vec)
+          param_draws[, d] <- 
+            stats::qgamma(h_col[d], shape = shape_vec, rate = rate_vec)
         }
         xb_rand_mat <- xb_rand_mat + (X_rand[, k] * param_draws)
         

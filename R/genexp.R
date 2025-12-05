@@ -57,19 +57,29 @@
 #' The alternative parametrization by Dean et. al. (1987) replaces \eqn{\eta}
 #' with \eqn{\eta\mu}. This version (Type 2) has the PMF:
 #' \deqn{f(y|\eta,\mu)=\begin{cases}
-#'                              f(y=0)= \exp\left(\frac{1}{\eta}\left(1-\sqrt{1+2\eta\mu}\right)\right) \\
-#'                              f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2}\right)^2(1+2\eta\mu)^{-j/2}
+#'      f(y=0) = \exp \left(\frac{1}{\eta} 
+#'                         \left(1-\sqrt{1+2\eta\mu}\right) \right) \\
+#'      f(y|y > 0) = f(y=0) 
+#'                   \frac{\mu^y}{y!}
+#'                     (1+2\eta\mu)^{-y/2} \cdot 
+#'                       \sum_{j=0}^{y-1} 
+#'                         \frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}
+#'                           \left(\frac{\eta}{2} \right)^2(1+2\eta\mu)^{-j/2}
 #'                              \end{cases}}
 #' 
 #'  This results in the variance of:
 #' \deqn{\sigma^2=\mu+\eta\mu^2}
 #'
 #' @references 
-#' Cameron, A. C., & Trivedi, P. K. (2013). Regression analysis of count data, 2nd Edition. Cambridge university press.
+#' Cameron, A. C., & Trivedi, P. K. (2013). Regression analysis of count data,
+#' 2nd Edition. Cambridge university press.
 #' 
-#' Dean, C., Lawless, J. F., & Willmot, G. E. (1989). A mixed Poisson–Inverse‐Gaussian regression model. Canadian Journal of Statistics, 17(2), 171-181.
+#' Dean, C., Lawless, J. F., & Willmot, G. E. (1989). A mixed
+#' Poisson–Inverse‐Gaussian regression model. Canadian Journal of Statistics,
+#' 17(2), 171-181.
 #' 
-#' Hilbe, J. M. (2011). Negative binomial regression. Cambridge University Press.
+#' Hilbe, J. M. (2011). Negative binomial regression. Cambridge University
+#' Press.
 #' 
 #' @examples
 #' dpinvgaus(1, mu=0.75, eta=1)
@@ -85,7 +95,10 @@
 #' @export
 dpinvgaus <- Vectorize(function(x, mu=1, eta = 1, form="Type 1", log=FALSE){
   #test to make sure the value of x is an integer
-  tst <- ifelse(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2])>0),FALSE, TRUE)
+  tst <- ifelse(
+    test = is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2]) > 0),
+    yes = FALSE, 
+    no = TRUE)
   if(tst || x < 0){
     warning("The value of `x` must be a non-negative whole number")
   }
@@ -104,8 +117,11 @@ dpinvgaus <- Vectorize(function(x, mu=1, eta = 1, form="Type 1", log=FALSE){
     else{
       j <- 0
     }
-    e2 <- sum(gamma(x+j)/(gamma(x-j)*gamma(j+1))*(eta/(2*mu))^j *(1+2*eta)^(-j/2))
-    p <- p0 * (mu^x)/gamma(x+1)*(1+2*eta)^(-x/2) * e2
+    e2 <- sum(gamma(x + j) / 
+                (gamma(x - j) * gamma(j + 1)) * 
+                (eta / (2 * mu))^j * 
+                (1 + 2 * eta)^(-j/2))
+    p <- p0 * (mu^x) / gamma(x + 1) * (1 + 2*eta)^(-x / 2) * e2
   }
   else{
     p <- p0
@@ -116,12 +132,13 @@ dpinvgaus <- Vectorize(function(x, mu=1, eta = 1, form="Type 1", log=FALSE){
 
 #' @rdname PoissonInverseGaussian
 #' @export
-ppinvgaus <- Vectorize(function(q, mu=1, eta = 1, form="Type 1", lower.tail=TRUE, log.p=FALSE){
-  y <- seq(0,q,1)
+ppinvgaus <- Vectorize(function(q, mu = 1, eta = 1, form = "Type 1", 
+                                lower.tail = TRUE, log.p = FALSE) {
+  y <- seq(0, q, 1)
   probs <- dpinvgaus(y, mu, eta, form)
   p <- sum(probs)
 
-  if(!lower.tail) p <- 1-p
+  if(!lower.tail) p <- 1 - p
 
   if (log.p) return(log(p))
   else return(p)
@@ -129,7 +146,7 @@ ppinvgaus <- Vectorize(function(q, mu=1, eta = 1, form="Type 1", lower.tail=TRUE
 
 #' @rdname PoissonInverseGaussian
 #' @export
-qpinvgaus <- Vectorize(function(p, mu=1, eta = 1, form="Type 1") {
+qpinvgaus <- Vectorize(function(p, mu = 1, eta = 1, form = "Type 1") {
   y <- 0
   p_value <- ppinvgaus(y, mu, eta, form)
   while(p_value < p){

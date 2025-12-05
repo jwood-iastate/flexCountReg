@@ -19,12 +19,12 @@ cureplot(
 \item{data}{Optional dataframe. If not provided, the data used to fit the
 model will be used.}
 
-\item{indvar}{Optional independent variable name (character string). This is 
-the continuous independent variable to plot the cumulative residuals 
+\item{indvar}{Optional independent variable name (character string). This is
+the continuous independent variable to plot the cumulative residuals
 against. If not provided, the plot will be against the predicted values.}
 
 \item{method}{Optional parameter to pass to the predict function. This is
-only used for random parameters models (e.g., "Simulated" or "Individual"). 
+only used for random parameters models (e.g., "Simulated" or "Individual").
 For further details, see \code{\link{predict.flexCountReg}}.}
 
 \item{n_resamples}{Number of resamples for potential resampling in the CURE

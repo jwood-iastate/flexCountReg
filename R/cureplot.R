@@ -8,14 +8,14 @@
 #' @param model A model object estimated using this R package.
 #' @param data Optional dataframe. If not provided, the data used to fit the
 #'    model will be used.
-#' @param indvar Optional independent variable name (character string). This is 
-#'    the continuous independent variable to plot the cumulative residuals 
-#'    against. If not provided, the plot will be against the predicted values.
+#' @param indvar Optional independent variable name (character string). This is
+#'   the continuous independent variable to plot the cumulative residuals
+#'   against. If not provided, the plot will be against the predicted values.
 #' @param method Optional parameter to pass to the predict function. This is
-#'    only used for random parameters models (e.g., "Simulated" or "Individual"). 
-#'    For further details, see \code{\link{predict.flexCountReg}}.
+#'   only used for random parameters models (e.g., "Simulated" or "Individual").
+#'   For further details, see \code{\link{predict.flexCountReg}}.
 #' @param n_resamples Number of resamples for potential resampling in the CURE
-#'    plot confidence bands. Default is 0 (no bands).
+#'   plot confidence bands. Default is 0 (no bands).
 #' @param ... Additional arguments passed to \code{\link[cureplots]{cure_plot}}.
 #' 
 #' @importFrom cureplots calculate_cure_dataframe cure_plot
@@ -50,8 +50,9 @@ cureplot <- function(model, data = NULL, indvar = NULL,
   }
   
   # 2. Extract Response Variable (y)
-  # We use the formula from the model object to ensure we get the correct response
-  # even if transformations were used in the formula, though strict matching is safer.
+  # We use the formula from the model object to ensure we get the correct
+  # response even if transformations were used in the formula, though strict
+  # matching is safer.
   mf <- stats::model.frame(model$formula, data = data)
   y <- stats::model.response(mf)
   
@@ -60,7 +61,9 @@ cureplot <- function(model, data = NULL, indvar = NULL,
   predictions <- stats::predict(model, data = data, method = method)
   
   if(length(predictions) != length(y)){
-    warning("Length of predictions does not match length of observed data. Check for missing values.")
+    msg <- paste0("Length of predictions does not match length of observed", 
+                  "data. Check for missing values.")
+    warning(msg)
   }
   
   # 4. Calculate Raw Residuals
@@ -80,7 +83,8 @@ cureplot <- function(model, data = NULL, indvar = NULL,
   
   # 6. Create CURE Dataframe
   # Using cureplots package structure
-  cure.df <- cureplots::calculate_cure_dataframe(covariate = indvar_values, residuals = resids)
+  cure.df <- cureplots::calculate_cure_dataframe(covariate = indvar_values, 
+                                                 residuals = resids)
   
   # Rename the first column to the variable name so the plot label is correct
   names(cure.df)[1] <- x_name

@@ -27,26 +27,25 @@ countreg.rp(
 )
 }
 \arguments{
-\item{formula}{an R formula. This formula should specify the outcome and the 
+\item{formula}{an R formula. This formula should specify the outcome and the
 independent variables that have fixed parameters.}
 
-\item{rpar_formula}{a symbolic description of the model related specifically 
-to the random parameters. This should not include an outcome variable. 
-If the intercept is random, include it in this formula. If the 
-intercept is fixed, include it in \code{formula} but not in 
-\code{rpar_formula}.}
+\item{rpar_formula}{a symbolic description of the model related specifically
+to the random parameters. This should not include an outcome variable. If
+the intercept is random, include it in this formula. If the intercept is
+fixed, include it in \code{formula} but not in \code{rpar_formula}.}
 
-\item{data}{a dataframe that has all of the variables in the \code{formula} 
+\item{data}{a dataframe that has all of the variables in the \code{formula}
 and \code{rpar_formula}.}
 
 \item{family}{the name of the distribution/model type to estimate. Default is
 "NB2". Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel",
 etc. (See \code{\link{countreg}} for full list).}
 
-\item{rpardists}{an optional named vector whose names are the random 
-parameters and values the distribution. The distribution options 
-include normal ("n"), lognormal ("ln"), triangular ("t"), uniform 
-("u"), and gamma ("g"). If not provided, normal is used.}
+\item{rpardists}{an optional named vector whose names are the random
+parameters and values the distribution. The distribution options include
+normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma
+("g"). If not provided, normal is used.}
 
 \item{dis_param_formula_1}{a symbolic description of the model for the 
 first parameter of the count distribution (e.g., ln(alpha) for NB2).}
@@ -68,9 +67,9 @@ parameters.}
 \item{correlated}{if the random parameters should be correlated. 
 If TRUE, only normal distributions are used.}
 
-\item{panel_id}{an optional variable name (string) or vector defining the 
-panel structure (repeated measures). If provided, the standard errors 
-and likelihood are estimated accounting for the panel structure.}
+\item{panel_id}{an optional variable name (string) or vector defining the
+panel structure (repeated measures). If provided, the standard errors and
+likelihood are estimated accounting for the panel structure.}
 
 \item{weights}{variable name to be used as frequency weights.}
 

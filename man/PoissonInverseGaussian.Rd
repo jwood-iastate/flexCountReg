@@ -142,8 +142,14 @@ The variance of the distribution is:
 The alternative parametrization by Dean et. al. (1987) replaces \eqn{\eta}
 with \eqn{\eta\mu}. This version (Type 2) has the PMF:
 \deqn{f(y|\eta,\mu)=\begin{cases}
-                             f(y=0)= \exp\left(\frac{1}{\eta}\left(1-\sqrt{1+2\eta\mu}\right)\right) \\
-                             f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2}\right)^2(1+2\eta\mu)^{-j/2}
+     f(y=0) = \exp \left(\frac{1}{\eta} 
+                        \left(1-\sqrt{1+2\eta\mu}\right) \right) \\
+     f(y|y > 0) = f(y=0) 
+                  \frac{\mu^y}{y!}
+                    (1+2\eta\mu)^{-y/2} \cdot 
+                      \sum_{j=0}^{y-1} 
+                        \frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}
+                          \left(\frac{\eta}{2} \right)^2(1+2\eta\mu)^{-j/2}
                              \end{cases}}
 
  This results in the variance of:
@@ -168,9 +174,13 @@ Dean, C., Lawless, J. F., & Willmot, G. E. (1989). A mixed Poisson–Inverse‐G
 
 Hilbe, J. M. (2011). Negative binomial regression. Cambridge University Press.
 
-Cameron, A. C., & Trivedi, P. K. (2013). Regression analysis of count data, 2nd Edition. Cambridge university press.
+Cameron, A. C., & Trivedi, P. K. (2013). Regression analysis of count data,
+2nd Edition. Cambridge university press.
 
-Dean, C., Lawless, J. F., & Willmot, G. E. (1989). A mixed Poisson–Inverse‐Gaussian regression model. Canadian Journal of Statistics, 17(2), 171-181.
+Dean, C., Lawless, J. F., & Willmot, G. E. (1989). A mixed
+Poisson–Inverse‐Gaussian regression model. Canadian Journal of Statistics,
+17(2), 171-181.
 
-Hilbe, J. M. (2011). Negative binomial regression. Cambridge University Press.
+Hilbe, J. M. (2011). Negative binomial regression. Cambridge University
+Press.
 }

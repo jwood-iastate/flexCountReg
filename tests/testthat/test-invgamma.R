@@ -7,7 +7,7 @@ test_that("Inverse Gamma Tests", {
   # plot(\(x) dinvgamma(x, alpha, beta), -0.2, 4)
   delta <- 0.01
   x <- seq(-1, 4, by = delta)
-  y <- dinvgamma(x, alpha, beta)
+  y <- suppressWarnings(dinvgamma(x, alpha, beta))
   riemann_sum <- delta * sum(y)
   expect_equal(riemann_sum, 1, tolerance = 0.01)
 

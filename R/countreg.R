@@ -761,7 +761,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     # function 'local_probFunc'" or "attempt to apply non-function" error 
     # later.
     if(is.null(local_probFunc)) {
-      warning(paste0("Probability function not found for family: ", family, 
+      stop(paste0("Probability function not found for family: ", family, 
                      ". Please check family name and helpers.R definition."))
     }
     

@@ -89,11 +89,7 @@ dlindley <- function(x, theta = 1, log = FALSE) {
 #' @export
 plindley <- function(q, theta = 1, lower.tail = TRUE, log.p = FALSE) {
   
-  # --- Input Validation ---
-  if (any(theta <= 0, na.rm = TRUE)) {
-    warning("'theta' must be positive")
-  }
-  
+
   # --- Vectorization Setup ---
   n <- max(length(q), length(theta))
   q <- rep_len(q, n)
@@ -121,16 +117,39 @@ plindley <- function(q, theta = 1, lower.tail = TRUE, log.p = FALSE) {
 #' @export
 qlindley <- function(p, theta = 1, lower.tail = TRUE, log.p = FALSE) {
   
-  # --- Input Handling ---
-  if (log.p) p <- exp(p)
-  if (!lower.tail) p <- 1 - p
+  # Calculate the probability value (P[X <= q])
+  if (log.p) {
+    # 1. Handle log.p and lower.tail simultaneously using log(1 - exp(x))
+    if (!lower.tail) {
+      # p is log(P[X > q]). We need log(P[X <= q]) = log(1 - P[X > q])
+      # Use log1p(x) = log(1+x) for stability. log(1 - exp(p)) is stable.
+      p_val <- log(1 - exp(p)) 
+    } else {
+      # p is already log(P[X <= q])
+      p_val <- p
+    }
+    
+    # 2. Check for valid log-probabilities (must be <= 0)
+    if (any(p_val > 0, na.rm = TRUE)) {
+      warning("'p' must be <= 0 when log.p = TRUE and lower.tail = TRUE")
+    }
+    
+    # 3. Convert to probability (0 < P < 1)
+    p <- exp(p_val) 
+    
+  } else {
+    # If not log.p, handle lower.tail directly
+    if (!lower.tail) p <- 1 - p
+    
+    # Check for valid probabilities (0 <= P <= 1)
+    if (any(p < 0 | p > 1, na.rm = TRUE)) {
+      warning("'p' must be in [0, 1]")
+    }
+  }
   
-  # --- Input Validation ---
+  # --- Input Validation (Existing Checks) ---
   if (any(theta <= 0, na.rm = TRUE)) {
     warning("'theta' must be positive")
-  }
-  if (any(p < 0 | p > 1, na.rm = TRUE)) {
-    warning("'p' must be in [0, 1]")
   }
   
   # --- Vectorization Setup ---
@@ -138,11 +157,7 @@ qlindley <- function(p, theta = 1, lower.tail = TRUE, log.p = FALSE) {
   p <- rep_len(p, n)
   theta <- rep_len(theta, n)
   
-  # --- Compute Quantile ---
-  # Q(p) = -1 - 1/theta - W_{-1}((1+theta)(p-1)*exp(-(1+theta))) / theta
-  # where W_{-1} is the -1 branch of Lambert W function
-  # This is closed-form and vectorizable using lamW package
-  
+  # --- Compute Quantile (Rest of code is correct) ---
   # Argument to Lambert W
   w_arg <- (1 + theta) * (p - 1) * exp(-(1 + theta))
   
@@ -159,16 +174,12 @@ qlindley <- function(p, theta = 1, lower.tail = TRUE, log.p = FALSE) {
   return(q_val)
 }
 
-
 #' @rdname Lindley
 #' @export
 rlindley <- function(n, theta = 1) {
   
-  if (length(n) != 1 || n < 0 || n != floor(n)) {
+  if (length(n) != 1 || n < 0 || n != floor(n) || n==round(n)) {
     warning("'n' must be a non-negative integer")
-  }
-  if (any(theta <= 0)) {
-    warning("'theta' must be positive")
   }
   
   # Recycle theta if needed

@@ -73,84 +73,81 @@ dgwar <- Vectorize(function(y, mu, k, rho, log = FALSE) {
 #' @export
 pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
   
-  
-  # --- Input Validation ---
-  
-  if (any(mu <= 0, na.rm = TRUE)) warning("'mu' must be positive")
-  if (any(k <= 0, na.rm = TRUE)) warning("'k' must be positive")
-  if (any(rho <= 1, na.rm = TRUE)) warning("'rho' must be greater than 1")
-  
-  
-  # --- Vectorization Setup ---
-  
+  # --- 1. Vectorization Setup ---
+  # Ensure all inputs are the same length before checking values
   n <- max(length(q), length(mu), length(k), length(rho))
-  q <- rep_len(as.integer(floor(q)), n)
-  mu <- rep_len(mu, n)
-  k <- rep_len(k, n)
+  q   <- rep_len(q, n)
+  mu  <- rep_len(mu, n)
+  k   <- rep_len(k, n)
   rho <- rep_len(rho, n)
   
+  # --- 2. Initialize Result ---
+  # Default to NaN. If parameters are invalid, this remains NaN.
+  cdf <- rep(NaN, n)
   
-  # --- Initialize Result ---
+  # --- 3. Identify Cases ---
   
-  cdf <- rep(NA_real_, n)
+  # Valid parameters: mu > 0, k > 0, rho > 1 (rho must be >1 for the mean formula used)
+  valid_params <- (mu > 0) & (k > 0) & (rho > 1) & !is.na(mu) & !is.na(k) & !is.na(rho)
   
+  # Case A: Parameters are valid, but q < 0. CDF is 0.
+  # (We treat NA in q as resulting in NA, so we check !is.na(q))
+  is_neg_q <- valid_params & !is.na(q) & (q < 0)
+  cdf[is_neg_q] <- 0
   
-  # --- Handle Special Cases ---
+  # Case B: Parameters are valid and q >= 0. Calculate CDF.
+  calc_idx <- which(valid_params & !is.na(q) & (q >= 0))
   
-  invalid_q <- is.na(q) | q < 0
-  cdf[invalid_q] <- 0
-  
-  
-  # --- Compute CDF for Valid Cases ---
-  
-  valid <- !invalid_q
-  
-  if (any(valid)) {
-    for (i in which(valid)) {
-      mu_i <- mu[i]
-      k_i <- k[i]
+  # --- 4. Compute CDF for Valid Cases ---
+  if (length(calc_idx) > 0) {
+    for (i in calc_idx) {
+      mu_i  <- mu[i]
+      k_i   <- k[i]
       rho_i <- rho[i]
-      q_i <- q[i]
+      q_i   <- floor(q[i]) # Integers only for summation
       
-      # Compute a = mu * k / (rho - 1)
+      # Calculate parameter 'a' derived from the mean formula
       a_i <- mu_i * k_i / (rho_i - 1)
       
+      # Double check a_i valid just in case
       if (a_i <= 0) {
-        cdf[i] <- NA_real_
+        cdf[i] <- NaN
         next
       }
       
-      # Compute log-PMF for 0:q_i using lgamma for stability
-      log_pmf <- numeric(q_i + 1)
+      # Compute log-PMF for y in 0..q_i
+      # We calculate vectorially for 0:q_i to avoid inner loops overhead
+      y_seq <- 0:q_i
       
-      for (y in 0:q_i) {
-        ay <- a_i + y
-        ky <- k_i + y
-        pk <- k_i + rho_i
-        ap <- a_i + rho_i
-        akpy <- ay + pk
-        
-        log_num <- lgamma(ay) + lgamma(ky) + lgamma(pk) + lgamma(ap)
-        log_den <- lgamma(a_i) + lgamma(k_i) + lgamma(rho_i) + 
-          lgamma(akpy) + lgamma(y + 1)
-        
-        log_pmf[y + 1] <- log_num - log_den
-      }
+      # Prepare terms for lgamma
+      # Numerator terms: Gamma(a+y) + Gamma(k+y) + Gamma(k+rho) + Gamma(a+rho)
+      log_num <- lgamma(a_i + y_seq) + lgamma(k_i + y_seq) + 
+        lgamma(k_i + rho_i) + lgamma(a_i + rho_i)
       
-      # Log-sum-exp
-      max_log <- max(log_pmf[is.finite(log_pmf)])
+      # Denominator terms: Gamma(a) + Gamma(k) + Gamma(rho) + Gamma(a+k+rho+y) + y!
+      # Note: (a+k+rho)_y in denominator combines with Gamma(a+k+rho) to form Gamma(a+k+rho+y)
+      log_den <- lgamma(a_i) + lgamma(k_i) + lgamma(rho_i) + 
+        lgamma(a_i + k_i + rho_i + y_seq) + lgamma(y_seq + 1)
+      
+      log_pmf <- log_num - log_den
+      
+      # Log-sum-exp for stability
+      max_log <- max(log_pmf)
+      
+      # Check for numerical issues
       if (!is.finite(max_log)) {
-        cdf[i] <- NA_real_
-        next
+        cdf[i] <- NaN 
+      } else {
+        log_cdf <- max_log + log(sum(exp(log_pmf - max_log)))
+        cdf[i]  <- exp(log_cdf)
       }
-      
-      log_cdf <- max_log + log(sum(exp(log_pmf - max_log)))
-      cdf[i] <- exp(log_cdf)
     }
   }
   
+  # --- 5. Apply Tail and Log Options ---
   
-  # --- Apply Tail and Log Options ---
+  # Clamp result to [0,1] to handle tiny floating point errors
+  cdf[valid_params & (q >= 0) & !is.nan(cdf)] <- pmin(pmax(cdf[valid_params & (q >= 0) & !is.nan(cdf)], 0), 1)
   
   if (!lower.tail) cdf <- 1 - cdf
   if (log.p) cdf <- log(cdf)

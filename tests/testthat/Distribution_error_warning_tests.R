@@ -1,9 +1,3 @@
-library(testthat)
-library(dplyr)
-library(flexCountReg)
-
-# expect_warning
-
 test_that("log dqwar and others", {
   expect_equal(dgwar(0, mu=1, k=2, rho=3, log=TRUE), -0.510825624)
   expect_equal(pgwar(1, mu=1, k=2, rho=3, log=TRUE, lower.tail=FALSE), -1.609437912)

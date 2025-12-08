@@ -1,7 +1,3 @@
-library(testthat)
-library(flexCountReg)
-library(dplyr)
-
 # Create a larger synthetic dataset for stability
 # Random Effects models need sufficient groups and obs/group to converge
 set.seed(123)

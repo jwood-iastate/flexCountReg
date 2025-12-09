@@ -57,8 +57,9 @@ mgf_lognormal <- function(mu, sigma, n) {
     integrand, lower = 0, upper = upper.limit, n = n, mu = mu, sigma = sigma)
   
   if (result$message != "OK") {
-    warning(
-      "Numerical integration may not be accurate. Consider adjusting the limits.")
+    msg <- paste("Numerical integration may not be accurate.",
+                 "Consider adjusting the limits.")
+    warning(msg)
   }
   
   return(result$value)

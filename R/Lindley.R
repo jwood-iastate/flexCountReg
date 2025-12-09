@@ -1,6 +1,7 @@
 #' @title One-Parameter Lindley Distribution
 #' 
-#' @description Distribution function for the one-parameter Lindley distribution with parameter theta.
+#' @description Distribution function for the one-parameter Lindley distribution
+#'   with parameter theta.
 #'
 #' @param x a single value or vector of positive values.
 #' @param p a single value or vector of probabilities.

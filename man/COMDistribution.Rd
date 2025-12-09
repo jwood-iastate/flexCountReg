@@ -19,17 +19,22 @@ rcom(n, mu = NULL, lambda = 1, nu = 1)
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{mu}{optional. Numeric value or vector of mean values for the distribution (the values have to be greater than 0).}
+\item{mu}{optional. Numeric value or vector of mean values for the
+distribution (the values have to be greater than 0).}
 
-\item{lambda}{optional. Numeric value or vector of values for the rate parameter of the distribution (the values have to be greater than 0). If `mu` is provided, `lambda` is ignored.}
+\item{lambda}{optional. Numeric value or vector of values for the rate
+parameter of the distribution (the values have to be greater than 0). If
+`mu` is provided, `lambda` is ignored.}
 
-\item{nu}{optional. Numeric value or vector of values for the decay parameter of the distribution ((the values have to be greater than 0).}
+\item{nu}{optional. Numeric value or vector of values for the decay parameter
+of the distribution ((the values have to be greater than 0).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
 \item{q}{quantile or a vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.}
+\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+otherwise, \eqn{P[X>x]}.}
 
 \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
 
@@ -38,7 +43,9 @@ rcom(n, mu = NULL, lambda = 1, nu = 1)
 \item{n}{the number of random numbers to generate.}
 }
 \description{
-These functions provide the density function, distribution function, quantile function, and random number generation for the Conway-Maxwell-Poisson (COM) Distribution
+These functions provide the density function, distribution function, quantile
+function, and random number generation for the Conway-Maxwell-Poisson (COM)
+Distribution
 }
 \details{
 \code{dcom} computes the density (PDF) of the COM Distribution.
@@ -49,10 +56,13 @@ These functions provide the density function, distribution function, quantile fu
 
 \code{rcom} generates random numbers from the COM Distribution.
 
-The Probability Mass Function (PMF) for the Conway-Maxwell-Poisson distribution is:
+The Probability Mass Function (PMF) for the Conway-Maxwell-Poisson
+distribution is:
 \deqn{f(x|\lambda, \nu) = \frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
 
-Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with \eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing constant.
+Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with
+\eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing
+constant.
 
 The normalizing constant is given by:
 \deqn{Z(\lambda,\nu)=\sum_{n=0}^{\infty}\frac{\lambda^n}{(n!)^\nu}}
@@ -61,7 +71,10 @@ The mean and variance of the distribution are given by:
 \deqn{E[x]=\mu=\lambda \frac{\delta}{\delta \lambda} \log(Z(\lambda,\nu))}
 \deqn{Var(x)=\lambda \frac{\delta}{\delta \lambda} \mu}
 
-When the mean value is given, the rate parameter (\eqn{\lambda}) is computed using the mean and the decay parameter (\eqn{\nu}). This is useful to allow the calculation of the rate parameter when the mean is known (e.g., in regression))
+When the mean value is given, the rate parameter (\eqn{\lambda}) is computed
+using the mean and the decay parameter (\eqn{\nu}). This is useful to allow
+the calculation of the rate parameter when the mean is known (e.g., in
+regression))
 }
 \examples{
 dcom(1, mu=0.75, nu=3)

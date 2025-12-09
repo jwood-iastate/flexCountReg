@@ -15,12 +15,14 @@ mae(y, mu)
 Numeric value representing the MAE.
 }
 \description{
-This function calculates the Mean Absolute Error (MAE) between observed and predicted values.
+This function calculates the Mean Absolute Error (MAE) between observed and
+predicted values.
 }
 \details{
 The MAE is calculated using the formula:
 \deqn{MAE = \frac{1}{n} \sum_{i=1}^{n} |y_i - \mu_i|}
-Where \eqn{y} is the vector of observed values and \eqn{\mu} is the vector of predicted values.
+Where \eqn{y} is the vector of observed values and \eqn{\mu} is the vector of
+predicted values.
 }
 \examples{
 y <- c(1, 2, 3)

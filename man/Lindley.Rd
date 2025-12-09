@@ -33,7 +33,8 @@ returned, otherwise \eqn{P(X > x)} is returned. Default is TRUE.}
 \item{n}{number of random values to generate.}
 }
 \description{
-Distribution function for the one-parameter Lindley distribution with parameter theta.
+Distribution function for the one-parameter Lindley distribution
+  with parameter theta.
 }
 \details{
 Probability density function (PDF)

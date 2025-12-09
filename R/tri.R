@@ -50,13 +50,16 @@
 #' 
 #' @rdname Triangular
 #' @export
-dtri <- Vectorize(function(x, mode = 0, sigma = 1, upper = NA, lower = NA, log = FALSE) {
+dtri <- Vectorize(function(
+    x, mode = 0, sigma = 1, upper = NA, lower = NA, log = FALSE) {
   dtri_cpp(x, mode, sigma, upper, lower, log)
 })
 
 #' @rdname Triangular
 #' @export
-ptri <- Vectorize(function(q, mode = 0, sigma = 1, upper = NA, lower = NA, lower.tail = TRUE, log.p = FALSE) {
+ptri <- Vectorize(function(
+    q, mode = 0, sigma = 1, upper = NA, 
+    lower = NA, lower.tail = TRUE, log.p = FALSE) {
   ptri_cpp(q, mode, sigma, upper, lower, lower.tail, log.p)
 })
 

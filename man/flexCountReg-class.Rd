@@ -14,7 +14,8 @@ A class to represent various objects created by the flexCountReg package.
 
 \item{\code{data}}{The data used for fitting the model (data frame).}
 
-\item{\code{formula}}{The R formula used in the regression model (main formula, not including random parameters, etc.)}
+\item{\code{formula}}{The R formula used in the regression model (main formula, not
+including random parameters, etc.)}
 
 \item{\code{call}}{The matched call (language).}
 

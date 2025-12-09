@@ -20,7 +20,9 @@ cor2cov <- function(C, S) {
     return(NULL) # Exit to prevent crash
   } 
   if (length(S) != nrow(C)) {
-    warning(paste0("S must have the same length (", length(S), ") as the number of rows/columns in C (", nrow(C), ")")) 
+    msg <- paste0("S must have the same length (", length(S), 
+                  ") as the number of rows/columns in C (", nrow(C), ")")
+    warning(msg) 
     return(NULL) # Exit to prevent crash
   }
   sweep(sweep(C, 1, S, "*"), 2, S, "*")

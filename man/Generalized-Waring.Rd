@@ -47,15 +47,19 @@ The Generalized Waring distribution is a 3-parameter count distribution that
 is used to model overdispersed count data.
 
 
-\code{dgwar} computes the density (PMF) of the Generalized Waring Distribution.
+\code{dgwar} computes the density (PMF) of the Generalized Waring
+Distribution.
 
 \code{pgwar} computes the CDF of the Generalized Waring Distribution.
 
-\code{qwaring} computes the quantile function of the Generalized Waring Distribution.
+\code{qwaring} computes the quantile function of the Generalized Waring
+Distribution.
 
-\code{rwaring} generates random numbers from the Generalized Waring Distribution.
+\code{rwaring} generates random numbers from the Generalized Waring
+Distribution.
 
-The Probability Mass Function (PMF) for the Generalized Waring (GW) distribution is:
+The Probability Mass Function (PMF) for the Generalized Waring (GW)
+distribution is:
 \deqn{f(y|a_x,k,\rho) = 
    \frac{\Gamma(a_x+\rho)\Gamma(k+\rho)\left(a_x\right)_y(k)_y}
    {y!\Gamma(\rho)\Gamma(a_x+k+\rho)(a_x+k+\rho)_y}}

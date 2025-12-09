@@ -19,15 +19,19 @@
 #'   otherwise, \eqn{P[X>x]}.
 #'
 #' @details
-#' \code{dgwar} computes the density (PMF) of the Generalized Waring Distribution.
+#' \code{dgwar} computes the density (PMF) of the Generalized Waring
+#' Distribution.
 #'
 #' \code{pgwar} computes the CDF of the Generalized Waring Distribution.
 #'
-#' \code{qwaring} computes the quantile function of the Generalized Waring Distribution.
+#' \code{qwaring} computes the quantile function of the Generalized Waring
+#' Distribution.
 #'
-#' \code{rwaring} generates random numbers from the Generalized Waring Distribution.
+#' \code{rwaring} generates random numbers from the Generalized Waring
+#' Distribution.
 #'
-#' The Probability Mass Function (PMF) for the Generalized Waring (GW) distribution is:
+#' The Probability Mass Function (PMF) for the Generalized Waring (GW)
+#' distribution is:
 #' \deqn{f(y|a_x,k,\rho) = 
 #'    \frac{\Gamma(a_x+\rho)\Gamma(k+\rho)\left(a_x\right)_y(k)_y}
 #'    {y!\Gamma(\rho)\Gamma(a_x+k+\rho)(a_x+k+\rho)_y}}
@@ -87,8 +91,10 @@ pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
   
   # --- 3. Identify Cases ---
   
-  # Valid parameters: mu > 0, k > 0, rho > 1 (rho must be >1 for the mean formula used)
-  valid_params <- (mu > 0) & (k > 0) & (rho > 1) & !is.na(mu) & !is.na(k) & !is.na(rho)
+  # Valid parameters: mu > 0, k > 0, rho > 1 (rho must be >1 for the mean
+  # formula used)
+  valid_params <- 
+    (mu > 0) & (k > 0) & (rho > 1) & !is.na(mu) & !is.na(k) & !is.na(rho)
   
   # Case A: Parameters are valid, but q < 0. CDF is 0.
   # (We treat NA in q as resulting in NA, so we check !is.na(q))
@@ -124,8 +130,11 @@ pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
       log_num <- lgamma(a_i + y_seq) + lgamma(k_i + y_seq) + 
         lgamma(k_i + rho_i) + lgamma(a_i + rho_i)
       
-      # Denominator terms: Gamma(a) + Gamma(k) + Gamma(rho) + Gamma(a+k+rho+y) + y!
-      # Note: (a+k+rho)_y in denominator combines with Gamma(a+k+rho) to form Gamma(a+k+rho+y)
+      # Denominator terms: 
+      # Gamma(a) + Gamma(k) + Gamma(rho) + Gamma(a+k+rho+y) + y!
+      # Note: 
+      # (a+k+rho)_y in denominator combines with 
+      # Gamma(a+k+rho) to form Gamma(a+k+rho+y)
       log_den <- lgamma(a_i) + lgamma(k_i) + lgamma(rho_i) + 
         lgamma(a_i + k_i + rho_i + y_seq) + lgamma(y_seq + 1)
       
@@ -147,7 +156,8 @@ pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
   # --- 5. Apply Tail and Log Options ---
   
   # Clamp result to [0,1] to handle tiny floating point errors
-  cdf[valid_params & (q >= 0) & !is.nan(cdf)] <- pmin(pmax(cdf[valid_params & (q >= 0) & !is.nan(cdf)], 0), 1)
+  cdf[valid_params & (q >= 0) & !is.nan(cdf)] <- 
+    pmin(pmax(cdf[valid_params & (q >= 0) & !is.nan(cdf)], 0), 1)
   
   if (!lower.tail) cdf <- 1 - cdf
   if (log.p) cdf <- log(cdf)

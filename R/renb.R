@@ -2,17 +2,21 @@
 #'
 #' @name renb
 #' @param formula an R formula.
-#' @param group_var the grouping variable(s) for the random effects (e.g., individual ID or other panel ID variables).
+#' @param group_var the grouping variable(s) for the random effects (e.g.,
+#'   individual ID or other panel ID variables).
 #' @param data a dataframe that has all of the variables in the \code{formula}.
 #' @param offset an optional offset term provided as a string.
-#' @param method a method to use for optimization in the maximum likelihood 
-#' estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that "BHHH"
-#' is not available for this function due to the implementation for the random effects.
-#' @param max.iters the maximum number of iterations to allow the optimization 
-#' method to perform.
-#' @param print.level Integer specifying the verbosity of output during optimization.
-#' @param bootstraps Optional integer specifying the number of bootstrap samples to be used
-#'        for estimating standard errors. If not specified, no bootstrapping is performed.
+#' @param method a method to use for optimization in the maximum likelihood
+#'   estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that "BHHH"
+#'   is not available for this function due to the implementation for the random
+#'   effects.
+#' @param max.iters the maximum number of iterations to allow the optimization
+#'   method to perform.
+#' @param print.level Integer specifying the verbosity of output during
+#'   optimization.
+#' @param bootstraps Optional integer specifying the number of bootstrap samples
+#'   to be used for estimating standard errors. If not specified, no
+#'   bootstrapping is performed.
 #'        
 #' @import maxLik  stats modelr tibble
 #' @importFrom MASS glm.nb
@@ -24,14 +28,21 @@
 #' @details
 #' This function estimates a random effects negative binomial (RENB) regression 
 #' model. This model is based on the NB-1 model. The PDF for the RENB is:
-#' \deqn{f(y_{it}|\mu_{it}, a, b)=\frac{\Gamma(a+b)+\Gamma(a+\sum_{t=1}^{n_i}\mu_{it})+\Gamma(b+\sum_{t=1}^{n_i}y_{it})}{\Gamma(a)\Gamma(b)\Gamma(a+b+\sum_{t=1}^{n_i}\mu_{it}+\sum_{t=1}^{n_i}y_{it})}\prod_{t=1}^{n_i}\frac{\Gamma(\mu_{it}+y_{it})}{\Gamma(\mu_{it})\Gamma(y_{it})}}
+#' \deqn{f(y_{it}|\mu_{it}, a, b) = 
+#'   \frac{\Gamma(a+b) + 
+#'     \Gamma(a + \sum_{t = 1}^{n_i} \mu_{it}) + 
+#'     \Gamma(b + \sum_{t=1}^{n_i}y_{it})}
+#'     {\Gamma(a) \Gamma(b) \Gamma(a + b + 
+#'        \sum_{t=1}^{n_i}\mu_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
+#'        \frac{\Gamma(\mu_{it}+y_{it})}{\Gamma(\mu_{it})\Gamma(y_{it})}}
 #' 
 #' 
 #' @examples
 #' \donttest{
 #' ## RENB Model
 #' data("washington_roads")
-#' washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
+#' washington_roads$AADTover10k <- 
+#'   ifelse(washington_roads$AADT > 10000, 1, 0) # create a dummy variable
 #' renb.mod <- renb(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
 #'                                 offset = "lnlength",
@@ -55,7 +66,8 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
       warning("The `group_var` must be defined for this model.")
     } else {
       if (length(group_var) > 1) {
-        data <- data %>% unite("panel_id", all_of(group_var), sep = "_", remove = FALSE)
+        data <- data %>% 
+          unite("panel_id", all_of(group_var), sep = "_", remove = FALSE)
       } else {
         data <- data %>% mutate(panel_id = as.character(data[[group_var]]))
       }
@@ -112,7 +124,8 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
                                        printLevel = print.level))
   
   # Bootstrap function - Modified to fix the error
-  plind.boot <- function(boot_data, formula, method, max.iters, print.level, offset){
+  plind.boot <- function(boot_data, formula, method, 
+                         max.iters, print.level, offset) {
     # Prepare bootstrapped data
     mod1_frame <- stats::model.frame(formula, boot_data)
     X_boot <- as.matrix(modelr::model_matrix(boot_data, formula))
@@ -172,7 +185,10 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
       fit$bootstrapped_se <- SE
       fit$successful_bootstraps <- length(models)
     } else {
-      warning("All bootstrap iterations failed. No bootstrap standard errors computed.")
+      msg <- paste(
+        "All bootstrap iterations failed.", 
+        "No bootstrap standard errors computed.")
+      warning(msg)
       fit$bootstrapped_se <- NULL
       fit$successful_bootstraps <- 0
     }
@@ -196,6 +212,9 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$modelType <- "RENB"
   fit$offset <- offset
   
-  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  obj <- .createFlexCountReg(model = fit, 
+                             data = data, 
+                             call = match.call(), 
+                             formula = formula)
   return(obj)
 }

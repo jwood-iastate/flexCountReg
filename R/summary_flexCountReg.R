@@ -3,13 +3,16 @@
 #' @param object A flexCountReg model object.
 #' @param ... Optional parameters that include `confint_level` and `digits`.
 #' 
-#' @note Optional parameter `confint_level`: A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
-#' @note Optional parameter `digits`: Number of digits (decimal places) to round to. Default is 3.
+#' @note Optional parameter `confint_level`: A numeric value between 0 and 1
+#'   indicating the confidence level for confidence intervals. Default is 0.95.
+#' @note Optional parameter `digits`: Number of digits (decimal places) to round
+#'   to. Default is 3.
 #' 
 #' @import tibble 
 #' @importFrom dplyr mutate across  %>% where
 #' @details
-#' This summary method accounts for bootstrapped or robust standard errors (when used).
+#' This summary method accounts for bootstrapped or robust standard errors (when
+#' used).
 #' 
 #' @examples
 #' \donttest{
@@ -26,16 +29,28 @@
 summary.flexCountReg <- function(object, ...) {
   # Extract optional parameters from '...'
   args <- list(...)
-  if (!is.null(args$confint_level) && is.numeric(args$confint_level)) confint_level <- args$confint_level else confint_level <- 0.95  
-  if (!is.null(args$digits) && is.numeric(args$digits)) digits <- args$digits else digits <- 3  
+  if (!is.null(args$confint_level) && is.numeric(args$confint_level)) {
+    confint_level <- args$confint_level
+    } else {
+      confint_level <- 0.95
+  }
+  if (!is.null(args$digits) && is.numeric(args$digits)) {
+    digits <- args$digits
+    } else {
+      digits <- 3  
+  }
   
   model_obj <- object$model
   
   cat("Call:\n", deparse(model_obj$formula), "\n")
-  if(!is.null(model_obj$modelType)) cat("\n", "Method: ", model_obj$modelType, "\n")
-  if(!is.null(model_obj$iterations)) cat("Iterations: ", model_obj$iterations, "\n")
-  if(!is.null(model_obj$message)) cat("Convergence: ", model_obj$message, "\n")
-  if(!is.null(model_obj$maximum)) cat("Log-likelihood: ", model_obj$maximum, "\n")
+  if(!is.null(model_obj$modelType)) 
+    cat("\n", "Method: ", model_obj$modelType, "\n")
+  if(!is.null(model_obj$iterations)) 
+    cat("Iterations: ", model_obj$iterations, "\n")
+  if(!is.null(model_obj$message)) 
+    cat("Convergence: ", model_obj$message, "\n")
+  if(!is.null(model_obj$maximum)) 
+    cat("Log-likelihood: ", model_obj$maximum, "\n")
   
   cat("\nParameter Estimates:\n")
   
@@ -48,12 +63,14 @@ summary.flexCountReg <- function(object, ...) {
   using_bootstrap <- FALSE
   
   if (!is.null(model_obj$bootstrapped_se)) {
-    # Check if it's a data frame (common output from broom logic in tests) or vector
+    # Check if it's a data frame (common output from broom logic in tests) or
+    # vector
     if (is.data.frame(model_obj$bootstrapped_se)) {
       # Try to match by name if 'term' and 'sd' columns exist
       if(all(c("term", "sd") %in% names(model_obj$bootstrapped_se))){
         match_idx <- match(params, model_obj$bootstrapped_se$term)
-        # FIX: Explicitly convert to numeric to prevent type issues (e.g., list columns or attributes)
+        # FIX: Explicitly convert to numeric to prevent type issues (e.g., list
+        # columns or attributes)
         se_vec <- as.numeric(model_obj$bootstrapped_se$sd[match_idx])
       } else {
         # Fallback: if lengths match, assume specific column order (2nd col)
@@ -72,13 +89,16 @@ summary.flexCountReg <- function(object, ...) {
     se_vec <- as.numeric(model_obj$se)
   }
   
-  # Final length check: if SE vector doesn't match coeffs, force all to NA to prevent crash
+  # Final length check: if SE vector doesn't match coeffs, force all to NA to
+  # prevent crash
   if(length(se_vec) != length(coeffs)) {
     se_vec <- rep(NA_real_, length(coeffs))
   }
   
-  # Standardize invalid SEs (NaN, Inf) to NA to ensure propagation works as requested
-  # Note: is.finite() fails on non-numeric types, so we check numeric status implicit in se_vec definition above
+  # Standardize invalid SEs (NaN, Inf) to NA to ensure propagation works as
+  # requested
+  # Note: is.finite() fails on non-numeric types, so we check numeric status
+  # implicit in se_vec definition above
   se_vec[!is.finite(se_vec)] <- NA_real_
   
   # Create tibble with explicit numeric columns

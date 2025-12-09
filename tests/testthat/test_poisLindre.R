@@ -10,7 +10,8 @@ test_that(
                                           max.iters = 1000))
     
     expect_s3_class(model, "flexCountReg")  # Check the return class
-    expect_true(length(model$model$estimate) > 0) # Ensure estimates are returned
+    # Ensure estimates are returned
+    expect_true(length(model$model$estimate) > 0) 
     # Check names of estimates
     expect_named(model$model$estimate, 
                  c("(Intercept)", "lnaadt", "lnlength",  "ln(theta)"))  

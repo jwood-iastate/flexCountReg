@@ -53,16 +53,18 @@ test_that("Countreg Bootstrapping",{
   data("washington_roads")
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
 
-  mod <- countreg(Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
-                  data = washington_roads, family = "PIG", verbose = TRUE,
-                  method='SN',
-                  stderr = "boot",
-                  bootstraps = 3)
+  mod <- countreg(
+    Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
+    data = washington_roads, family = "PIG", verbose = TRUE,
+    method='SN',
+    stderr = "boot",
+    bootstraps = 3)
   
   expect_s3_class(mod, "flexCountReg")
   
-  expect_error(countreg(Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
-                        data = washington_roads, family = "Lindley"))
+  expect_error(countreg(
+    Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
+    data = washington_roads, family = "Lindley"))
   mod.rp <- countreg.rp(Total_crashes ~ lnlength + speed50,
                         rpar_formula = ~ -1 + lnaadt,
                         data = washington_roads,

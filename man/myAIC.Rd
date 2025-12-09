@@ -9,18 +9,21 @@ myAIC(LL, nparam)
 \arguments{
 \item{LL}{Numeric value representing the log-likelihood of the model.}
 
-\item{nparam}{Numeric value representing the number of parameters in the model.}
+\item{nparam}{Numeric value representing the number of parameters in the
+model.}
 }
 \value{
 Numeric value representing the AIC.
 }
 \description{
-This function calculates the Akaike Information Criterion (AIC) for a given model.
+This function calculates the Akaike Information Criterion (AIC) for a given
+model.
 }
 \details{
 The AIC is calculated using the formula:
 \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}
-Where \eqn{LL} is the log-likelihood of the model and \eqn{nparam} is the number of parameters.
+Where \eqn{LL} is the log-likelihood of the model and \eqn{nparam} is the
+number of parameters.
 }
 \examples{
 LL <- -120.5

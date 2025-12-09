@@ -16,7 +16,9 @@ test_that("COM PDF using mu", {
 
 test_that("COM PDF using vectors", {
   
-  val <- dcom(c(0,1,2,3,4,5), mu=c(.1,.2,.3,.4,.5,.6), nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1))
+  val <- dcom(c(0,1,2,3,4,5), 
+              mu=c(.1,.2,.3,.4,.5,.6), 
+              nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1))
   expected <- c(0.9085289259, 0.1475683696, 0.0403047769, 
                 0.0157318300, 0.0028058045, 0.0003556299)
   expect_equal(val, expected, tolerance = 0.000001)
@@ -37,7 +39,9 @@ test_that("COM PDF using vectors", {
 
 test_that("COM PDF using vectors (lambda)", {
   
-  val <- dcom(c(0,1,2,3,4,5), lambda=c(.1,.2,.3,.4,.5,.6), nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1))
+  val <- dcom(c(0,1,2,3,4,5), 
+              lambda = c(.1,.2,.3,.4,.5,.6), 
+              nu = c(0.1, 0.3, 0.2, 0.1, 0.7, 1))
   expected <- c(0.9007014296, 0.1615683242, 0.0558568176, 
                 0.0328045144, 0.0039801598, 0.0003556299)
   expect_equal(val, expected, tolerance = 0.000001)

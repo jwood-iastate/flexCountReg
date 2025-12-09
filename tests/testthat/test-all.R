@@ -269,11 +269,13 @@
 # 
 # # Poisson-Lindley Model
 # data("washington_roads")
-# washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
-# poislind.mod <- poisLind(Animal ~ lnaadt + lnlength + speed50 + ShouldWidth04 + AADTover10k,
-#                          data=washington_roads,
-#                          method="nm",
-#                          max.iters = 1000)
+# washington_roads$AADTover10k <- 
+#   ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
+# poislind.mod <- poisLind(
+#   Animal ~ lnaadt + lnlength + speed50 + ShouldWidth04 + AADTover10k,
+#   data=washington_roads,
+#   method="nm",
+#   max.iters = 1000)
 # summary(poislind.mod)
 # 
 # 
@@ -288,7 +290,8 @@
 # 
 # ## Poisson-Lindley-Gamma Model
 # data("washington_roads")
-# washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
+# washington_roads$AADTover10k <- 
+#   ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
 # poislindgamma.mod <- poisLindGamma(Animal ~ lnaadt + lnlength + speed50 +
 #                                      ShouldWidth04 + AADTover10k,
 #                                    data=washington_roads,
@@ -308,7 +311,8 @@
 # 
 # ## Poisson-Lindley-Lognormal Model
 # data("washington_roads")
-# washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
+# washington_roads$AADTover10k <- 
+#   ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
 # poislindlnorm.mod <- poisLindLnorm(Animal ~ lnaadt + lnlength + speed50 
 #                                    + ShouldWidth04 + AADTover10k,
 #                                    data=washington_roads,
@@ -384,7 +388,8 @@
 # 
 # dplindLnorm(0, mean=0.75, theta=7, sigma=2, ndraws=100)
 # pplindLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, theta=7, sigma=2, ndraws=100)
-# qplindLnorm(c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, sigma=2, ndraws=100)
+# qplindLnorm(
+#   c(0.1,0.3,0.5,0.9,0.95), lambda=4.67, theta=7, sigma=2, ndraws=100)
 # rplindLnorm(30, mean=0.75, theta=7, sigma=2, ndraws=100)
 # 
 # 
@@ -468,7 +473,8 @@
 #                   ShouldWidth04 + AADTover10k,
 #                 data=washington_roads, form = 'nbp', method = 'NM',
 #                 max.iters=3000)
-# comptests <- regCompTest(nbp.base, washington_roads, basemodel="NB2", print=TRUE)
+# comptests <- 
+#   regCompTest(nbp.base, washington_roads, basemodel="NB2", print=TRUE)
 # 
 # 
 # 

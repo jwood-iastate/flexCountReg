@@ -9,7 +9,8 @@ myBIC(LL, nparam, n)
 \arguments{
 \item{LL}{Numeric value representing the log-likelihood of the model.}
 
-\item{nparam}{Numeric value representing the number of parameters in the model.}
+\item{nparam}{Numeric value representing the number of parameters in the
+model.}
 
 \item{n}{Numeric value representing the number of observations.}
 }
@@ -17,12 +18,14 @@ myBIC(LL, nparam, n)
 Numeric value representing the BIC.
 }
 \description{
-This function calculates the Bayesian Information Criterion (BIC) for a given model.
+This function calculates the Bayesian Information Criterion (BIC) for a given
+model.
 }
 \details{
 The BIC is calculated using the formula:
 \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}
-Where \eqn{LL} is the log-likelihood of the model, \eqn{nparam} is the number of parameters, and \eqn{n} is the number of observations.
+Where \eqn{LL} is the log-likelihood of the model, \eqn{nparam} is the number
+of parameters, and \eqn{n} is the number of observations.
 }
 \examples{
 LL <- -120.5

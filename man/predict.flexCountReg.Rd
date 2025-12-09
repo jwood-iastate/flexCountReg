@@ -4,13 +4,14 @@
 \alias{predict.flexCountReg}
 \title{Predictions for flexCountReg models}
 \usage{
-\method{predict}{flexCountReg}(object, ...)
+\method{predict}{flexCountReg}(object, newdata = NULL, ...)
 }
 \arguments{
 \item{object}{a model object estimated using this R package.}
 
-\item{...}{optional arguments passed to the function. These include `data` 
-and `method`.}
+\item{newdata}{optional dataframe for which to generate predictions.}
+
+\item{...}{optional arguments passed to the function. This includes `method`.}
 }
 \description{
 Generates predictions for the expected count (lambda) for observations.
@@ -25,7 +26,7 @@ For \strong{countreg.rp} (Random Parameters) models, three methods are available
 For \strong{countreg}, \strong{poisLindRE}, and \strong{RENB} models, the function calculates the expected value \eqn{\mu = \exp(X\beta)} (with appropriate adjustments for specific families like PLN or underreporting).
 }
 \note{
-optional parameter `data`: a dataframe that has all of the variables in 
+optional parameter `newdata`: a dataframe that has all of the variables in 
        the \code{formula} and \code{rpar_formula}.
 
 optional parameter `method`: Only valid for random parameters models (`countreg.rp`). 

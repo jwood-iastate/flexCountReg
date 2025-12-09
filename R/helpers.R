@@ -34,11 +34,35 @@ mod.boot <- function(data, formula, family, offset, weights,
              method = method, 
              max.iters = max.iters, 
              start.vals = start.vals, 
-             stderr = "none", 
+             stderr = "normal", 
              bootstraps = NULL)
   }, error = function(e) return(NULL)) # Handle failures in bootstrap samples
   
   return(fit)
+}
+
+#' Tidy a flexCountReg object
+#'
+#' @param x An object of class flexCountReg
+#' @param ... Additional arguments
+#' @importFrom tibble tibble
+#' @export
+tidy.flexCountReg <- function(x, ...) {
+  # Attempt to locate coefficients based on standard countreg structure
+  # Check if coefficients are at the top level or inside a 'model' slot
+  if (!is.null(x$coefficients)) {
+    ests <- x$coefficients
+  } else if (!is.null(x$model) && !is.null(x$model$coefficients)) {
+    ests <- x$model$coefficients
+  } else {
+    stop("Could not find coefficients in flexCountReg object for tidying.")
+  }
+  
+  # Return the tibble structure required by broom
+  tibble::tibble(
+    term = names(ests),
+    estimate = as.numeric(ests)
+  )
 }
 
 

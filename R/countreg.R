@@ -864,16 +864,20 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   if (stderr == "normal") {
     fit$bootstrapped_se <- sqrt(diag(-1/(fit$hessian)))
   }
-  else if (stderr == "bootstrapped") {
+  else if (stderr == "boot") {
     fit$bootstrapped_se <- SE
   }
-  else if (stderr == "Robust"){
+  else if (stderr == "robust"){
     fit$bootstrapped_se <- sqrt(diag(sandwich::sandwich(fit)))
   }
   
   fit$coefficients <- fit$estimate
-  fit$se <- if (!is.null(bootstraps) & is.numeric(bootstraps)) 
-    fit$bootstrapped_se else sqrt(diag(-1/(fit$hessian)))
+  fit$se <- if (stderr == "boot" & is.numeric(bootstraps)){
+    fit$bootstrapped_se 
+  } else {
+    sqrt(diag(-1/(fit$hessian)))
+  }
+    
   fit$logLik <- fit$maximum
   fit$converged <-  fit$convergence
   fit$model <- family

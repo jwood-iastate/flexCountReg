@@ -2,6 +2,7 @@
 
 S3method(predict,flexCountReg)
 S3method(summary,flexCountReg)
+S3method(tidy,flexCountReg)
 export(cor2cov)
 export(corr_haltons)
 export(countreg)

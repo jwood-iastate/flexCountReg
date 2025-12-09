@@ -45,6 +45,7 @@ test_that("Countreg Bootstrapping",{
   mod <- countreg(Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
                   data = washington_roads, family = "PIG", verbose = TRUE,
                   method='SN',
+                  stderr = "boot",
                   bootstraps = 3)
   
   expect_s3_class(mod, "flexCountReg")

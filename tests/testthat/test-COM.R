@@ -17,16 +17,19 @@ test_that("COM PDF using mu", {
 test_that("COM PDF using vectors", {
   
   val <- dcom(c(0,1,2,3,4,5), mu=c(.1,.2,.3,.4,.5,.6), nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1))
-  expected <- c(0.9085289259, 0.1475683696, 0.0403047769, 0.0157318300, 0.0028058045, 0.0003556299)
+  expected <- c(0.9085289259, 0.1475683696, 0.0403047769, 
+                0.0157318300, 0.0028058045, 0.0003556299)
   expect_equal(val, expected, tolerance = 0.000001)
   
   
   val <- dcom(c(0,1,2,3,4,5), mu=0.5, nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1))
-  expected <- c(0.6587951083, 0.2486166660, 0.0770023700, 0.0238262615, 0.0028058045, 0.0001579507)
+  expected <- c(0.6587951083, 0.2486166660, 0.0770023700, 
+                0.0238262615, 0.0028058045, 0.0001579507)
   expect_equal(val, expected, tolerance = 0.000001)
   
   val <- dcom(c(0,1,2,3,4,5), mu=c(.1,.2,.3,.4,.5,.6), nu=1.1)
-  expected <- c(0.9045414667, 0.1656661440, 0.0322230252, 0.0064112827, 0.0012901245, 0.0002613611)
+  expected <- c(0.9045414667, 0.1656661440, 0.0322230252, 
+                0.0064112827, 0.0012901245, 0.0002613611)
   expect_equal(val, expected, tolerance = 0.000001)
   
 })
@@ -35,16 +38,19 @@ test_that("COM PDF using vectors", {
 test_that("COM PDF using vectors (lambda)", {
   
   val <- dcom(c(0,1,2,3,4,5), lambda=c(.1,.2,.3,.4,.5,.6), nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1))
-  expected <- c(0.9007014296, 0.1615683242, 0.0558568176, 0.0328045144, 0.0039801598, 0.0003556299)
+  expected <- c(0.9007014296, 0.1615683242, 0.0558568176, 
+                0.0328045144, 0.0039801598, 0.0003556299)
   expect_equal(val, expected, tolerance = 0.000001)
   
   
   val <- dcom(c(0,1,2,3,4,5), lambda=0.5, nu=c(0.1,0.3, 0.2, 0.1, 0.7, 1))
-  expected <- c(00.5218466915, 0.2761512603, 0.1172372363, 0.0545302919, 0.0039801598, 0.0001579507)
+  expected <- c(00.5218466915, 0.2761512603, 0.1172372363, 
+                0.0545302919, 0.0039801598, 0.0001579507)
   expect_equal(val, expected, tolerance = 0.000001)
   
   val <- dcom(c(0,1,2,3,4,5), lambda=c(.1,.2,.3,.4,.5,.6), nu=1.1)
-  expected <- c(0.9051349952, 0.1639578793, 0.0311933627, 0.0060071028, 0.0011583352, 0.0002227429)
+  expected <- c(0.9051349952, 0.1639578793, 0.0311933627, 
+                0.0060071028, 0.0011583352, 0.0002227429)
   expect_equal(val, expected, tolerance = 0.000001)
   
 })
@@ -85,7 +91,9 @@ test_that("COM CDF", {
   
   expect_true(isTRUE(all.equal(pdf_vals, pdf_expected, tolerance = 0.000001)))
   
-  pdf_vals <- pcom(c(0, 1, 3, 9, 10), mu=c(0.9,0.3,1,2,0.19), nu=c(0.9,0.3,1,2,0.19))
+  pdf_vals <- pcom(c(0, 1, 3, 9, 10), 
+                   mu = c(0.9,0.3,1,2,0.19), 
+                   nu = c(0.9,0.3,1,2,0.19))
   pdf_expected <- c(0.4158138, 0.9515524, 0.9810118, 0.9999999, 1.0000000)
   
   expect_true(isTRUE(all.equal(pdf_vals, pdf_expected, tolerance = 0.000001)))
@@ -112,7 +120,10 @@ test_that("COM CDF", {
   
   expect_true(isTRUE(all.equal(pdf_vals, pdf_expected, tolerance = 0.000001)))
   
-  pdf_vals <- pcom(c(0, 1, 3, 9, 10), lambda=c(0.9,0.3,1,2,0.19), nu=c(0.9,0.3,1,2,0.19))
+  pdf_vals <- pcom(
+    c(0, 1, 3, 9, 10), 
+    lambda = c(0.9,0.3,1,2,0.19), 
+    nu = c(0.9,0.3,1,2,0.19))
   pdf_expected <- c(0.3957888, 0.9334406, 0.9810118, 1.0000000, 1.0000000)
   
   expect_true(isTRUE(all.equal(pdf_vals, pdf_expected, tolerance = 0.000001)))

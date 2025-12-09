@@ -13,15 +13,16 @@ off1 <- rep(0.1, n_groups * n_per_group)
 off2 <- rep(0.05, n_groups * n_per_group)
 
 # Generate Random Effects
-# Adding a true random effect stabilizes the estimation of RE models (poisLind.re/renb)
-# preventing parameters from hitting boundaries/crashing during bootstrap.
+# Adding a true random effect stabilizes the estimation of RE models
+# (poisLind.re/renb) preventing parameters from hitting boundaries/crashing
+# during bootstrap.
 re_sd <- 0.3
 group_effects <- rnorm(n_groups, mean = 0, sd = re_sd)
 re_vec <- rep(group_effects, each = n_per_group)
 
 # Generate counts
-# Use Negative Binomial to ensure overdispersion, helping the RE models fit better
-# Include the random effect (re_vec) in the linear predictor
+# Use Negative Binomial to ensure overdispersion, helping the RE models fit
+# better Include the random effect (re_vec) in the linear predictor
 mu <- exp(0.5 + 0.5 * x1 + off1 + re_vec)
 theta_sim <- 2 
 y <- MASS::rnegbin(n_groups * n_per_group, mu = mu, theta = theta_sim)
@@ -69,7 +70,8 @@ test_that("poisLind.re handles bootstrapping and offsets", {
 
 test_that("poisLind.re handles composite grouping variables", {
   mod <- suppressWarnings(
-    poisLind.re(y ~ x1, group_var = c("id", "id2"), data = test_data, max.iters = 50)
+    poisLind.re(
+      y ~ x1, group_var = c("id", "id2"), data = test_data, max.iters = 50)
   )
   
   expect_true(inherits(mod, "flexCountReg"))
@@ -137,7 +139,8 @@ test_that("renb handles bootstrap failure gracefully", {
   
   # Suppress warnings to ignore convergence issues on tiny data
   mod <- suppressWarnings(
-    renb(y ~ x1, group_var = "id", data = tiny_data, bootstraps = 2, max.iters = 5)
+    renb(
+      y ~ x1, group_var = "id", data = tiny_data, bootstraps = 2, max.iters = 5)
   )
   
   expect_true(inherits(mod, "flexCountReg"))
@@ -171,33 +174,34 @@ test_that("predict function works for renb models", {
   expect_true(is.numeric(preds))
 })
 
-test_that("predict function works for countreg.rp models (Exact vs Simulated)", {
-  # Estimate a quick Random Parameter model
-  # Suppress warnings for cleaner test output
-  rp_mod <- suppressWarnings(
-    countreg.rp(y ~ x1, 
-                rpar_formula = ~ 1, 
-                data = test_data,
-                family = "NB2",
-                rpardists = c("(Intercept)" = "n"),
-                ndraws = 25, 
-                max.iters = 20)
-  )
-  
-  # 1. Test Simulated Method
-  pred_sim <- predict(rp_mod, method = "Simulated")
-  expect_equal(length(pred_sim), nrow(test_data))
-  expect_true(all(pred_sim > 0))
-  
-  # 2. Test Exact Method
-  pred_exact <- predict(rp_mod, method = "Exact")
-  expect_equal(length(pred_exact), nrow(test_data))
-  expect_true(all(pred_exact > 0))
-  
-  # 3. Comparison
-  # The correlation should be high between the two methods
-  expect_true(cor(pred_sim, pred_exact) > 0.8)
-})
+test_that(
+  "predict function works for countreg.rp models (Exact vs Simulated)", {
+    # Estimate a quick Random Parameter model
+    # Suppress warnings for cleaner test output
+    rp_mod <- suppressWarnings(
+      countreg.rp(y ~ x1, 
+                  rpar_formula = ~ 1, 
+                  data = test_data,
+                  family = "NB2",
+                  rpardists = c("(Intercept)" = "n"),
+                  ndraws = 25, 
+                  max.iters = 20)
+    )
+    
+    # 1. Test Simulated Method
+    pred_sim <- predict(rp_mod, method = "Simulated")
+    expect_equal(length(pred_sim), nrow(test_data))
+    expect_true(all(pred_sim > 0))
+    
+    # 2. Test Exact Method
+    pred_exact <- predict(rp_mod, method = "Exact")
+    expect_equal(length(pred_exact), nrow(test_data))
+    expect_true(all(pred_exact > 0))
+    
+    # 3. Comparison
+    # The correlation should be high between the two methods
+    expect_true(cor(pred_sim, pred_exact) > 0.8)
+  })
 
 test_that("predict function works for basic countreg models (Fixed)", {
   mod <- suppressWarnings(

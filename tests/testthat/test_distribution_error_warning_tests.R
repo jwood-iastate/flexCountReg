@@ -1,7 +1,9 @@
 test_that("log dqwar and others", {
   expect_equal(dgwar(0, mu=1, k=2, rho=3, log=TRUE), -0.510825624)
-  expect_equal(pgwar(1, mu=1, k=2, rho=3, log=TRUE, lower.tail=FALSE), -1.609437912)
-  expect_equal(plindley(0.5, 1.5, log=TRUE, lower.tail=FALSE), -0.487635736)
+  expect_equal(
+    pgwar(1, mu=1, k=2, rho=3, log=TRUE, lower.tail=FALSE), -1.609437912)
+  expect_equal(
+    plindley(0.5, 1.5, log=TRUE, lower.tail=FALSE), -0.487635736)
   expect_equal(plindley(0.5, 1.5, log=TRUE), -0.952116164)
   expect_equal(qlindley(-1, theta = 1.5, log.p = TRUE), 0.4720311)
 })
@@ -27,13 +29,22 @@ test_that("cor2cov", {
 
 test_that("Correlated Halton Draws",{
   
-  expect_warning(corr_haltons(c(3, 2, 0.9), c(0.25,1.5,0.8), correlations=matrix(c(1, -0.3, 0.5, -0.3, 1, -0.2, 0.5, -0.2, 1), 3, 3),
-                              ndraws=5000, scrambled=TRUE,
-                              dist="lognormal"))
+  expect_warning(corr_haltons(
+    c(3, 2, 0.9), 
+    c(0.25,1.5,0.8), 
+    correlations = matrix(c( 1,    -0.3, 0.5, 
+                            -0.3,   1,  -0.2, 
+                             0.5,  -0.2, 1), 3, 3),
+    ndraws=5000, scrambled=TRUE,
+    dist="lognormal"))
   
-  expect_error(corr_haltons(corr_haltons(c(3, 2, 0.9), c(0.25,1.5,0.8),,hdraws=matrix(c(0.1,0.3,0.9, 0.5,0.6,0.2), ncol=3), correlations=matrix(c(1, -0.3, 0.5, -0.3, 1, -0.2, 0.5, -0.2, 1), 3, 3),
-               dist="normal")))
-
+  expect_error(corr_haltons(corr_haltons(
+    c(3, 2, 0.9), 
+    c(0.25,1.5,0.8),,
+    hdraws = matrix(c(0.1,0.3,0.9, 0.5,0.6,0.2), ncol = 3), 
+    correlations = matrix(c(1, -0.3, 0.5, -0.3, 1, -0.2, 0.5, -0.2, 1), 3, 3),
+    dist="normal")))
+  
 })
 
 

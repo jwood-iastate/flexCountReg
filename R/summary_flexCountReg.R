@@ -131,16 +131,21 @@ summary.flexCountReg <- function(object, ...) {
   # Add Offset row if present
   if (!is.null(model_obj$offset)){
     # Handle multiple offsets case
-    offset_name <- if(length(model_obj$offset) > 1) "Offset" else model_obj$offset
+    offset_name <- if (length(model_obj$offset) > 1) {
+      "Offset" 
+      } else { 
+        model_obj$offset
+      }
     
-    mod.sum <- tibble::add_row(mod.sum, 
-                               parameter = paste(offset_name, "(Offset variable)"), 
-                               coeff = 1, 
-                               `Std. Err.` = NA_real_, 
-                               `t-stat` = NA_real_, 
-                               `p-value` = NA_real_, 
-                               `lower CI` = NA_real_, 
-                               `upper CI` = NA_real_)
+    mod.sum <- tibble::add_row(
+      mod.sum, 
+      parameter = paste(offset_name, "(Offset variable)"), 
+      coeff = 1, 
+      `Std. Err.` = NA_real_, 
+      `t-stat` = NA_real_, 
+      `p-value` = NA_real_, 
+      `lower CI` = NA_real_, 
+      `upper CI` = NA_real_)
   }
   
   print(mod.sum)

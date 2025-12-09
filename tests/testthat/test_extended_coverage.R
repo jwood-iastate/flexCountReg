@@ -96,7 +96,8 @@ test_that("Metrics calculations are mathematically correct", {
   expect_equal(myAIC(LL = 0, nparam = 0), 0)
   
   # Test myBIC
-  expect_equal(myBIC(LL = -100, nparam = 5, n = 100), -2 * (-100) + 5 * log(100))
+  expect_equal(myBIC(
+    LL = -100, nparam = 5, n = 100), -2 * (-100) + 5 * log(100))
   
   # Test RMSE
   y <- c(1, 2, 3)
@@ -117,10 +118,16 @@ test_that("regCompTable handles formats and errors", {
   data("washington_roads")
   small_data <- washington_roads[1:300, ]
   
-  m1 <- countreg(Total_crashes ~ lnaadt, data = small_data, family = "NB1", max.iters = 100)
-  m2 <- countreg(Total_crashes ~ lnaadt + lnlength, data = small_data, family = "NB2", max.iters = 100)
+  m1 <- countreg(
+    Total_crashes ~ lnaadt, data = small_data, family = "NB1", max.iters = 100)
+  m2 <- countreg(
+    Total_crashes ~ lnaadt + lnlength, 
+    data = small_data, 
+    family = "NB2", 
+    max.iters = 100)
   
-  tbl_latex <- regCompTable(models = list("Small" = m1, "Large" = m2), tableType = "latex")
+  tbl_latex <- regCompTable(
+    models = list("Small" = m1, "Large" = m2), tableType = "latex")
   expect_s3_class(tbl_latex, "knitr_kable")
 })
 
@@ -128,14 +135,19 @@ test_that("regCompTest calculates LR statistics correctly", {
   data("washington_roads")
   small_data <- washington_roads[1:300, ]
   
-  m_full <- countreg(Total_crashes ~ lnaadt + lnlength, data = small_data, family = "NB2", max.iters = 100)
+  m_full <- countreg(
+    Total_crashes ~ lnaadt + lnlength, 
+    data = small_data, 
+    family = "NB2", 
+    max.iters = 100)
   
   res_def <- regCompTest(m_full, small_data)
   expect_type(res_def, "list")
   expect_true(!is.null(res_def$LR))
   expect_true(res_def$LR_pvalue <= 1)
   
-  res_spec <- regCompTest(m_full, small_data, basemodel = "Poisson", variables = TRUE)
+  res_spec <- regCompTest(
+    m_full, small_data, basemodel = "Poisson", variables = TRUE)
   expect_true(res_spec$LL > res_spec$LLbase)
 })
 
@@ -143,7 +155,11 @@ test_that("cureplot runs with various arguments", {
   data("washington_roads")
   small_data <- washington_roads[1:200, ]
   
-  model <- countreg(Total_crashes ~ lnaadt, data = small_data, family = "POISSON", max.iters = 50)
+  model <- countreg(
+    Total_crashes ~ lnaadt, 
+    data = small_data, 
+    family = "POISSON", 
+    max.iters = 50)
   
   expect_error(cureplot(model, n_resamples = 0), NA)
   expect_error(cureplot(model, indvar = "lnaadt", n_resamples = 0), NA)
@@ -191,7 +207,8 @@ test_that("dsichel handles normal cases", {
   expect_true(all(p >= 0))
   expect_true(all(p <= 1))
   # Reduced range for sum check
-  expect_equal(sum(dsichel(0:100, mu = 5, sigma = 1, gamma = -0.5)), 1, tolerance = 0.01)
+  expect_equal(
+    sum(dsichel(0:100, mu = 5, sigma = 1, gamma = -0.5)), 1, tolerance = 0.01)
 })
 
 test_that("dsichel handles extreme parameters", {

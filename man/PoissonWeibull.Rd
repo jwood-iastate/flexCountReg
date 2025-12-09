@@ -52,17 +52,22 @@ rpoisweibull(
 )
 }
 \arguments{
-\item{x}{A numeric value or vector of values for which the PDF or CDF is calculated.}
+\item{x}{A numeric value or vector of values for which the PDF or CDF is
+calculated.}
 
 \item{lambda}{Mean value of the Poisson distribution.}
 
-\item{alpha}{Shape parameter of the Weibull distribution (optional if mean and sd are provided).}
+\item{alpha}{Shape parameter of the Weibull distribution (optional if mean
+and sd are provided).}
 
-\item{sigma}{Scale parameter of the Weibull distribution (optional if mean and sd are provided).}
+\item{sigma}{Scale parameter of the Weibull distribution (optional if mean
+and sd are provided).}
 
-\item{mean_value}{Mean of the Weibull distribution (optional if alpha and sigma are provided).}
+\item{mean_value}{Mean of the Weibull distribution (optional if alpha and
+sigma are provided).}
 
-\item{sd_value}{Standard deviation of the Weibull distribution (optional if alpha and sigma are provided).}
+\item{sd_value}{Standard deviation of the Weibull distribution (optional if
+alpha and sigma are provided).}
 
 \item{ndraws}{the number of Halton draws to use for the integration.}
 
@@ -70,7 +75,8 @@ rpoisweibull(
 
 \item{q}{Quantile or a vector of quantiles.}
 
-\item{lower.tail}{Logical; if TRUE, probabilities are P[X <= x], otherwise P[X > x].}
+\item{lower.tail}{Logical; if TRUE, probabilities are P[X <= x], otherwise
+P[X > x].}
 
 \item{log.p}{Logical; if TRUE, probabilities p are given as log(p).}
 
@@ -79,28 +85,39 @@ rpoisweibull(
 \item{n}{The number of random samples to generate.}
 }
 \description{
-These functions provide density, distribution function, quantile function, and random number 
-generation for the Poisson-Weibull Distribution, which is specified either by its shape and scale 
-parameters or by its mean and standard deviation.
+These functions provide density, distribution function, quantile function,
+and random number generation for the Poisson-Weibull Distribution, which is
+specified either by its shape and scale parameters or by its mean and
+standard deviation.
 }
 \details{
-The Poisson-Weibull distribution uses the Weibull distribution as a mixing distribution for a 
-Poisson process. It is useful for modeling overdispersed count data. The density function 
-(probability mass function) for the Poisson-Weibull distribution is given by:
-\deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}\right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
-where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and \eqn{\lambda} is the mean of the Poisson distribution.
+The Poisson-Weibull distribution uses the Weibull distribution as a mixing
+distribution for a Poisson process. It is useful for modeling overdispersed
+count data. The density function (probability mass function) for the
+Poisson-Weibull distribution is given by:
+\deqn{P(y|\lambda,\alpha,\sigma) = 
+\int_0^\infty \frac{e^{-\lambda x} \lambda^y x^y }{y!} 
+  \left(\frac{\alpha}{\sigma}\right) 
+  \left(\frac{x}{\sigma}\right)^{\alpha-1}
+  e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
+where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and
+\eqn{\lambda} is the mean of the Poisson distribution.
 
 
 \code{dpoisweibull} computes the density of the Poisson-Weibull distribution.
 
-\code{ppoisweibull} computes the distribution function of the Poisson-Weibull distribution.
+\code{ppoisweibull} computes the distribution function of the Poisson-Weibull
+distribution.
 
-\code{qpoisweibull} computes the quantile function of the Poisson-Weibull distribution.
+\code{qpoisweibull} computes the quantile function of the Poisson-Weibull
+distribution.
 
-\code{rpoisweibull} generates random numbers following the Poisson-Weibull distribution.
+\code{rpoisweibull} generates random numbers following the Poisson-Weibull
+distribution.
 
-The shape and scale parameters directly define the Weibull distribution, whereas the mean and 
-standard deviation are used to compute these parameters indirectly.
+The shape and scale parameters directly define the Weibull distribution,
+whereas the mean and standard deviation are used to compute these parameters
+indirectly.
 }
 \examples{
 dpoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=0.5, ndraws=10)

@@ -56,7 +56,8 @@ The Uniform distribution is (note that \eqn{\mu} is the midpoint and
 \eqn{f(x) = \frac{1}{(\beta_{\mu}+\beta_{\sigma}) - 
   (\beta_{\mu}-\beta_{\sigma})}=\frac{1}{2\beta_{\sigma}}}
 
-The Gamma distribution is based on \deqn{\mu = \frac{\alpha}{\beta}} and \deqn{\sigma^2 = \frac{\alpha}{\beta^2}}:
+The Gamma distribution is based on \deqn{\mu = \frac{\alpha}{\beta}} and
+\deqn{\sigma^2 = \frac{\alpha}{\beta^2}}:
 \eqn{f(x) = 
   \frac{\left(\frac{\mu}{\sigma^2}\right)^
     {\frac{\mu^2}{\sigma^2}}}{\Gamma\left(\frac{\mu^2}{\sigma^2}\right)} 

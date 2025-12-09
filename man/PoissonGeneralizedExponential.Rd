@@ -82,11 +82,18 @@ The Generalized Exponential distribution can be written as a function with a
 shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
 distribution has strictly positive continuous values. The PDF of the
 distribution is:
-\deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
+\deqn{f(x|\alpha,\gamma) = 
+  \frac{\alpha}{\gamma} 
+  \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1} 
+  e^{-\frac{x}{\gamma}}} 
 
 Thus, the compound Probability Mass Function(PMF) for the PGE distribution
 is:
-\deqn{f(y|\lambda,\alpha,\beta)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
+\deqn{f(y|\lambda,\alpha,\beta) = 
+  \int_0^\infty 
+     \frac{\lambda^y x^y e^{-\lambda x}}{y!}
+     \frac{\alpha}{\gamma}
+     \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 
 The expected value of the distribution is:
 \deqn{E[y]=\mu=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right)}
@@ -94,7 +101,9 @@ The expected value of the distribution is:
 Where \eqn{\psi(\cdot)} is the digamma function.
 
 The variance is:
-\deqn{\sigma^2=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
+\deqn{\sigma^2 = 
+  \lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + 
+          \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
 
 Where \eqn{\psi'(\cdot)} is the trigamma function.
 
@@ -102,9 +111,32 @@ To ensure that \eqn{\mu=e^{X\beta}}, \eqn{\lambda} is replaced with:
 \deqn{\lambda=\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}}
 
 This results in:
-\deqn{f(y|\mu,\alpha,\beta)=\int_0^\infty \frac{\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
+\deqn{
+  f(y|\mu,\alpha,\beta) =
+  \int_0^\infty
+    \frac{
+      \left(
+        \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}
+      \right)^y
+      x^y
+      e^{
+        -\left(
+          \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}
+        \right) x
+      }
+    }{
+      y!
+    }
+    \frac{\alpha}{\gamma}
+    \left(
+      1-e^{-\frac{x}{\gamma}}
+    \right)^{\alpha-1}
+    e^{-\frac{x}{\gamma}}
+    dx
+}
 
-Halton draws are used to perform simulation over the lognormal distribution to solve the integral.
+Halton draws are used to perform simulation over the lognormal distribution
+to solve the integral.
 }
 \examples{
 dpge(0, mean=0.75, shape=2, scale=1, ndraws=2000)
@@ -114,5 +146,7 @@ rpge(30, mean=0.75,  shape=2, scale=1, ndraws=500)
 
 }
 \references{
-Gupta, R. D., & Kundu, D. (2007). Generalized exponential distribution: Existing results and some recent developments. Journal of Statistical planning and inference, 137(11), 3537-3547.
+Gupta, R. D., & Kundu, D. (2007). Generalized exponential distribution:
+Existing results and some recent developments. Journal of Statistical
+planning and inference, 137(11), 3537-3547.
 }

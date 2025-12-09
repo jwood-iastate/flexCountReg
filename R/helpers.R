@@ -102,12 +102,13 @@ get_probFunc <- function(family){
       return(stats::dnbinom(y, size = 1/alpha, mu = predicted))
     },
     "NBP" = function(y, predicted, alpha, sigma, haltons, normed_haltons){
-      return(stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))
+      return(
+        stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))
     },
     "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
       dpLnorm_cpp(x = y, mean = predicted, sigma = alpha, h = normed_haltons),
     "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
-      dpge(y, mean = predicted, shape = alpha, scale = sigma, haltons = haltons),
+      dpge(y, mean = predicted, shape = alpha, scale = sigma,haltons = haltons),
     "PIG1" = function(y, predicted, alpha, sigma, ...) 
       dpinvgaus(y, mu = predicted, eta = alpha),
     "PIG2" = function(y, predicted, alpha, sigma, ...) 

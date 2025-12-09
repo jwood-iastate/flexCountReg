@@ -7,18 +7,24 @@
 #' @param q a single value or vector of quantiles.
 #' @param n number of random values to generate.
 #' @param theta distribution parameter value. Default is 1.
-#' @param log,log.p logical; If TRUE, probabilities p are given as log(p). If FALSE, probabilities p are given directly. Default is FALSE.
-#' @param lower.tail logical; If TRUE, (default), \eqn{P(X \leq x)} are returned, otherwise \eqn{P(X > x)} is returned. Default is TRUE.
+#' @param log,log.p logical; If TRUE, probabilities p are given as log(p). If
+#'   FALSE, probabilities p are given directly. Default is FALSE.
+#' @param lower.tail logical; If TRUE, (default), \eqn{P(X \leq x)} are
+#'   returned, otherwise \eqn{P(X > x)} is returned. Default is TRUE.
 #'
 #' @details
 #' Probability density function (PDF)
 #' \deqn{f(x\mid \theta )=\frac{\theta ^{2}}{(1+\theta )}(1+x)e^{-\theta x}}
 #'
 #' Cumulative distribution function (CDF)
-#' \deqn{F(x\mid \theta ) =1 - \left(1+ \frac{\theta x}{1+\theta }\right)e^{-\theta x}}
+#' \deqn{F(x\mid \theta ) =
+#'   1 - \left(1+ \frac{\theta x}{1+\theta }\right)e^{-\theta x}}
 #'
 #' Quantile function (Inverse CDF)
-#' \deqn{Q(p\mid \theta )=-1-\frac{1}{\theta }-\frac{1}{\theta }W_{-1}\left((1+\theta)( p-1)e^{-(1+\theta) }\right)}
+#' \deqn{
+#' Q(p\mid\theta) = -1 - \frac{1}{\theta}
+#'   - \frac{1}{\theta} W_{-1}\!\left((1+\theta)(p-1)e^{-(1+\theta)}\right)
+#' }
 #'
 #' where \eqn{W_{-1}()} is the negative branch of the Lambert W function.
 #' 

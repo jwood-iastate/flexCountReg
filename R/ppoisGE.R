@@ -37,11 +37,18 @@
 #' shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
 #' distribution has strictly positive continuous values. The PDF of the
 #' distribution is:
-#' \deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
+#' \deqn{f(x|\alpha,\gamma) = 
+#'   \frac{\alpha}{\gamma} 
+#'   \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1} 
+#'   e^{-\frac{x}{\gamma}}} 
 #' 
 #' Thus, the compound Probability Mass Function(PMF) for the PGE distribution
 #' is:
-#' \deqn{f(y|\lambda,\alpha,\beta)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
+#' \deqn{f(y|\lambda,\alpha,\beta) = 
+#'   \int_0^\infty 
+#'      \frac{\lambda^y x^y e^{-\lambda x}}{y!}
+#'      \frac{\alpha}{\gamma}
+#'      \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 #' 
 #' The expected value of the distribution is:
 #' \deqn{E[y]=\mu=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right)}
@@ -49,7 +56,9 @@
 #' Where \eqn{\psi(\cdot)} is the digamma function.
 #' 
 #' The variance is:
-#' \deqn{\sigma^2=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
+#' \deqn{\sigma^2 = 
+#'   \lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + 
+#'           \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
 #' 
 #' Where \eqn{\psi'(\cdot)} is the trigamma function.
 #' 
@@ -57,12 +66,37 @@
 #' \deqn{\lambda=\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}}
 #' 
 #' This results in:
-#' \deqn{f(y|\mu,\alpha,\beta)=\int_0^\infty \frac{\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
+#' \deqn{
+#'   f(y|\mu,\alpha,\beta) =
+#'   \int_0^\infty
+#'     \frac{
+#'       \left(
+#'         \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}
+#'       \right)^y
+#'       x^y
+#'       e^{
+#'         -\left(
+#'           \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}
+#'         \right) x
+#'       }
+#'     }{
+#'       y!
+#'     }
+#'     \frac{\alpha}{\gamma}
+#'     \left(
+#'       1-e^{-\frac{x}{\gamma}}
+#'     \right)^{\alpha-1}
+#'     e^{-\frac{x}{\gamma}}
+#'     dx
+#' }
 #' 
-#' Halton draws are used to perform simulation over the lognormal distribution to solve the integral.
+#' Halton draws are used to perform simulation over the lognormal distribution
+#' to solve the integral.
 #'
 #' @references
-#' Gupta, R. D., & Kundu, D. (2007). Generalized exponential distribution: Existing results and some recent developments. Journal of Statistical planning and inference, 137(11), 3537-3547.
+#' Gupta, R. D., & Kundu, D. (2007). Generalized exponential distribution:
+#' Existing results and some recent developments. Journal of Statistical
+#' planning and inference, 137(11), 3537-3547.
 #'
 #' @examples
 #' dpge(0, mean=0.75, shape=2, scale=1, ndraws=2000)
@@ -79,7 +113,12 @@
 #' @export
 dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, haltons=NULL){
   
-  if(mean<=0 || scale<=0 || shape <=0) warning('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
+  if(mean<=0 || scale<=0 || shape <=0) {
+    msg <- paste(
+      'The values of `mean`, `shape`,",
+      "and `scale` have to have values greater than 0.')
+    warning(msg)
+  }
   
   # qge <- function(p, shape, scale){
   #   q <- log((p*shape+1)^(1/shape)+1)/scale
@@ -91,8 +130,12 @@ dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, 
   # Generate Halton draws to use as quantile values
   if (!is.null(haltons)) h <- haltons else h <- randtoolbox::halton(ndraws)
 
-  # Evaluate the density of the normal distribution at those quantiles and use the exponent to transform to lognormal values
-  gedist <- log(1-h^(1/shape))/(-scale) # Quantile function of generalized exponential distribution applied to halton draws
+  # Evaluate the density of the normal distribution at those quantiles and use
+  # the exponent to transform to lognormal values
+  gedist <- 
+    # Quantile function of generalized exponential distribution applied to halton
+    # draws
+    log(1 - h^(1 / shape)) / (-scale) 
   mu_i <- lambda * gedist
 
   p_pge.i <- sapply(mu_i, stats::dpois, x=x)
@@ -165,7 +208,8 @@ ppge <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
       sc_j <- unique_params$scale[j]
       
       # Find all indices with these parameters
-      mask <- param_df$mean == m_j & param_df$shape == sh_j & param_df$scale == sc_j
+      mask <- 
+        param_df$mean == m_j & param_df$shape == sh_j & param_df$scale == sc_j
       indices <- param_df$idx[mask]
       q_vals <- param_df$q[mask]
       max_q <- max(q_vals)
@@ -212,7 +256,9 @@ ppge <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
 #' @export
 qpge <- Vectorize(function(p, mean=1, shape=1, scale=1, ndraws=1500) {
   if(mean<=0 || scale<=0 || shape <=0){
-    warning('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
+    msg <- paste('The values of `mean`, `shape`, and `scale` have to", 
+                 "have values greater than 0.')
+    warning(msg)
   }
 
   y <- 0
@@ -228,8 +274,10 @@ qpge <- Vectorize(function(p, mean=1, shape=1, scale=1, ndraws=1500) {
 #' @rdname PoissonGeneralizedExponential
 #' @export
 rpge <- function(n, mean=1, shape=1, scale=1, ndraws=1500) {
-  if(mean<=0 || scale<=0 || shape <=0){
-    warning('The values of `mean`, `shape`, and `scale` have to have values greater than 0.')
+  if(mean <= 0 || scale <= 0 || shape <= 0){
+    msg <- paste('The values of `mean`, `shape`, and `scale` have", 
+                 "to have values greater than 0.')
+    warning(msg)
   }
 
   u <- runif(n)

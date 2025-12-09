@@ -1,40 +1,57 @@
 #' Poisson-Weibull Distribution Functions
 #'
-#' These functions provide density, distribution function, quantile function, and random number 
-#' generation for the Poisson-Weibull Distribution, which is specified either by its shape and scale 
-#' parameters or by its mean and standard deviation.
+#' These functions provide density, distribution function, quantile function,
+#' and random number generation for the Poisson-Weibull Distribution, which is
+#' specified either by its shape and scale parameters or by its mean and
+#' standard deviation.
 #'
-#' The Poisson-Weibull distribution uses the Weibull distribution as a mixing distribution for a 
-#' Poisson process. It is useful for modeling overdispersed count data. The density function 
-#' (probability mass function) for the Poisson-Weibull distribution is given by:
-#' \deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}\right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
-#' where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and \eqn{\lambda} is the mean of the Poisson distribution.
+#' The Poisson-Weibull distribution uses the Weibull distribution as a mixing
+#' distribution for a Poisson process. It is useful for modeling overdispersed
+#' count data. The density function (probability mass function) for the
+#' Poisson-Weibull distribution is given by:
+#' \deqn{P(y|\lambda,\alpha,\sigma) = 
+#' \int_0^\infty \frac{e^{-\lambda x} \lambda^y x^y }{y!} 
+#'   \left(\frac{\alpha}{\sigma}\right) 
+#'   \left(\frac{x}{\sigma}\right)^{\alpha-1}
+#'   e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
+#' where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and
+#' \eqn{\lambda} is the mean of the Poisson distribution.
 #'
-#' @param x A numeric value or vector of values for which the PDF or CDF is calculated.
+#' @param x A numeric value or vector of values for which the PDF or CDF is
+#'   calculated.
 #' @param q Quantile or a vector of quantiles.
 #' @param p A numeric value or vector of probabilities for the quantile function.
 #' @param n The number of random samples to generate.
-#' @param alpha Shape parameter of the Weibull distribution (optional if mean and sd are provided).
-#' @param sigma Scale parameter of the Weibull distribution (optional if mean and sd are provided).
-#' @param mean_value Mean of the Weibull distribution (optional if alpha and sigma are provided).
-#' @param sd_value Standard deviation of the Weibull distribution (optional if alpha and sigma are provided).
+#' @param alpha Shape parameter of the Weibull distribution (optional if mean
+#'   and sd are provided).
+#' @param sigma Scale parameter of the Weibull distribution (optional if mean
+#'   and sd are provided).
+#' @param mean_value Mean of the Weibull distribution (optional if alpha and
+#'   sigma are provided).
+#' @param sd_value Standard deviation of the Weibull distribution (optional if
+#'   alpha and sigma are provided).
 #' @param lambda Mean value of the Poisson distribution.
 #' @param log Logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p Logical; if TRUE, probabilities p are given as log(p).
-#' @param lower.tail Logical; if TRUE, probabilities are P[X <= x], otherwise P[X > x].
+#' @param lower.tail Logical; if TRUE, probabilities are P[X <= x], otherwise
+#'   P[X > x].
 #' @param ndraws the number of Halton draws to use for the integration.
 #'
 #' @details
 #' \code{dpoisweibull} computes the density of the Poisson-Weibull distribution.
 #'
-#' \code{ppoisweibull} computes the distribution function of the Poisson-Weibull distribution.
+#' \code{ppoisweibull} computes the distribution function of the Poisson-Weibull
+#' distribution.
 #'
-#' \code{qpoisweibull} computes the quantile function of the Poisson-Weibull distribution.
+#' \code{qpoisweibull} computes the quantile function of the Poisson-Weibull
+#' distribution.
 #'
-#' \code{rpoisweibull} generates random numbers following the Poisson-Weibull distribution.
+#' \code{rpoisweibull} generates random numbers following the Poisson-Weibull
+#' distribution.
 #'
-#' The shape and scale parameters directly define the Weibull distribution, whereas the mean and 
-#' standard deviation are used to compute these parameters indirectly.
+#' The shape and scale parameters directly define the Weibull distribution,
+#' whereas the mean and standard deviation are used to compute these parameters
+#' indirectly.
 #'
 #' @examples
 #' dpoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=0.5, ndraws=10)
@@ -62,7 +79,8 @@ dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL,
     sigma <- params[2]
   }
   
-  if (is.null(alpha) || is.null(sigma)) warning("Parameters alpha and sigma are required")
+  if (is.null(alpha) || is.null(sigma)) 
+    warning("Parameters alpha and sigma are required")
   
   if (is.null(lambda)) {
     if (!is.null(mean_value)) {
@@ -134,17 +152,20 @@ qpoisweibull <- Vectorize(function(p, lambda=NULL, alpha = NULL, sigma = NULL,
     alpha <- params[1]
     sigma <- params[2]
   }
-  if (is.null(alpha) || is.null(sigma)) warning("Parameters alpha and sigma are required")
+  if (is.null(alpha) || is.null(sigma)) 
+    warning("Parameters alpha and sigma are required")
   if (is.null(lambda) && !is.null(mean_value)){
     lambda <- mean_value/(sigma*gamma(1+1/alpha))
   } else if (is.null(lambda) && is.null(mean_value)) {
     warning("Parameter lambda or mean_value is required")
   }
   y <- 0
-  p_value <- ppoisweibull(y, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
+  p_value <- 
+    ppoisweibull(y, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
   while (p_value < p){
     y <- y + 1
-    p_value <- ppoisweibull(y, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
+    p_value <- ppoisweibull(
+      y, lambda = lambda, alpha = alpha, sigma = sigma, ndraws = ndraws)
   }
   return(y)
 })
@@ -158,17 +179,20 @@ rpoisweibull <- function(n, lambda=NULL, alpha = NULL, sigma = NULL,
     alpha <- params[1]
     sigma <- params[2]
   }
-  if (is.null(alpha) || is.null(sigma)) warning("Parameters alpha and sigma are required")
+  if (is.null(alpha) || is.null(sigma)) 
+    warning("Parameters alpha and sigma are required")
   if (is.null(lambda) && !is.null(mean_value)){
     lambda <- mean_value/(sigma*gamma(1+1/alpha))
   } else if (is.null(lambda) && is.null(mean_value)) {
     warning("Parameter lambda or mean_value is required")
   }
   
-  if (is.null(alpha) || is.null(sigma)) warning("Parameters alpha and sigma are required")
+  if (is.null(alpha) || is.null(sigma)) 
+    warning("Parameters alpha and sigma are required")
   
   u <- stats::runif(n)
-  y <- qpoisweibull(u, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
+  y <- 
+    qpoisweibull(u, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
   return(y)
 }
 
@@ -184,13 +208,21 @@ calculate_params <- function(mean_value = NULL, sd_value = NULL) {
       (calculated_mean - mean_value)^2 + (sqrt(calculated_var) - sd_value)^2
     }
     
-    res <- optimize(objective_function, c(0.1, 5), mean_value = mean_value, sd_value = sd_value)
+    res <- 
+      optimize(objective_function, 
+               c(0.1, 5), 
+               mean_value = mean_value, 
+               sd_value = sd_value)
     alpha <- res$minimum
     sigma <- mean_value / gamma(1 + 1/alpha)
     c(alpha, sigma)
   } else if (!is.null(alpha) && !is.null(sigma)) {
     c(alpha, sigma)
   } else {
-    warning("Insufficient parameters: Provide either mean and standard deviation, or alpha and sigma.")
+    msg <- paste(
+      "Insufficient parameters: Provide either mean and standard deviation,",
+      "or alpha and sigma."
+    )
+    warning(msg)
   }
 }

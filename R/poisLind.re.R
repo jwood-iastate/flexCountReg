@@ -25,20 +25,41 @@
 #' @include plind.R
 #' 
 #' @details
-#' The function  poisLindRE  is similar to the  poisLind  function, but it 
-#' includes an additional argument  group_var  that specifies the grouping 
-#' variable for the random effects. The function estimates a Random Effects 
-#' Poisson-Lindley regression model using the maximum likelihood method. 
-#' The function is similar to the  poisLind  function, but it includes 
-#' additional terms to account for the random effects. 
+#' The function  poisLindRE  is similar to the  poisLind  function, but it
+#' includes an additional argument  group_var  that specifies the grouping
+#' variable for the random effects. The function estimates a Random Effects
+#' Poisson-Lindley regression model using the maximum likelihood method.
+#' The function is similar to the  poisLind  function, but it includes
+#' additional terms to account for the random effects.
 #' 
-#' The Random Effects Poisson-Lindley model is useful for panel data and assumes 
-#' that the random effects follow a gamma distribution. The PDF for the Random 
+#' The Random Effects Poisson-Lindley model is useful for panel data and assumes
+#' that the random effects follow a gamma distribution. The PDF for the Random
 #' Effects Poisson-Lindley model is:
-#' \deqn{f(y_{it}|\mu_{it},\theta)=\frac{\theta^2}{\theta+1} \prod_{t=1}^{n_i} \frac{\left(\mu_{it} \frac{\theta(\theta+1)}{\theta+2}\right)^{y_{it}}}{y_{it}!} \cdot \frac{\left(\sum_{t=1}^{n_i} y_{it}\right)! \left(\sum_{t=1}^{n_i} \mu_{it} \frac{\theta(\theta+1)}{\theta+2} + \theta + \sum_{t=1}^{n_i} y_{it} + 1\right)}{\left(\sum_{t=1}^{n_i} \mu_{it} \frac{\theta(\theta+1)}{\theta+2} + \theta\right)^{\sum_{t=1}^{n_i} y_{it} + 2}}}
+#' \deqn{
+#' f(y_{it}|\mu_{it},\theta)=\frac{\theta^2}{\theta+1}
+#' \prod_{t=1}^{n_i}\frac{\left(\mu_{it}\frac{\theta(\theta+1)}{\theta+2}\right)^{y_{it}}}{y_{it}!}
+#' \cdot
+#' \frac{
+#' \left(\sum_{t=1}^{n_i}y_{it}\right)!
+#' \left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}+\theta+\sum_{t=1}^{n_i}y_{it}+1\right)
+#' }{
+#' \left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}+\theta\right)^{\sum_{t=1}^{n_i}y_{it}+2}
+#' }
+#' }
 #' 
 #' The log-likelihood function for the Random Effects Poisson-Lindley model is:
-#' \deqn{LL=2\log(\theta) - \log(\theta+1) + \sum_{t=1}^{n_i} y_{it} \log(\mu_{it}) + \sum_{t=1}^{n_i} y_{it} \log\left(\frac{\theta(\theta+1)}{\theta+2}\right) -\sum_{t=1}^{n_i} \log(y_{it}!) + \log\left(\left(\sum_{t=1}^{n_i} y_{it}\right)!\right) + \log\left(\sum_{t=1}^{n_i} \mu_{it} \frac{\theta(\theta+1)}{\theta+2} + \theta + \sum_{t=1}^{n_i} y_{it} + 1\right) - \left(\sum_{t=1}^{n_i} y_{it} + 2\right) \log\left(\sum_{t=1}^{n_i} \mu_{it} \frac{\theta(\theta+1)}{\theta+2} + \theta\right)}
+#' \deqn{
+#' LL = 2\log(\theta) - \log(\theta+1)
+#'   + \sum_{t=1}^{n_i} y_{it}\log(\mu_{it})
+#'   + \sum_{t=1}^{n_i} y_{it}\log\!\left(\frac{\theta(\theta+1)}{\theta+2}\right)
+#'   - \sum_{t=1}^{n_i}\log(y_{it}!)
+#'   + \log\!\left(\left(\sum_{t=1}^{n_i}y_{it}\right)!\right)
+#'   + \log\!\left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}
+#'               + \theta + \sum_{t=1}^{n_i}y_{it} + 1\right)
+#'   - \left(\sum_{t=1}^{n_i}y_{it} + 2\right)
+#'     \log\!\left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}
+#'                + \theta\right)
+#' }
 #'  
 #' The mean and variance are:
 #' \deqn{\mu_{it}=\exp(X_{it} \beta)}
@@ -49,7 +70,8 @@
 #'
 #' ## Poisson-Lindley Random Effects Model
 #' data("washington_roads")
-#' washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
+#' washington_roads$AADTover10k <- 
+#'  ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
 #' poislind.mod <- poisLind.re(Animal ~ lnaadt + lnlength + speed50 +
 #'                                 ShouldWidth04 + AADTover10k,
 #'                                 data=washington_roads,
@@ -64,7 +86,11 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
                        print.level=0, bootstraps=NULL, offset=NULL) {
   
   # if (method=="BHHH" | method=="bhhh") {
-  #   print("The `BHHH` method is not available for poisLindRE. Switching to `NM` method.")
+  #   msg <- paste(
+  #     "The `BHHH` method is not available for poisLindRE.", 
+  #     "Switching to `NM` method."
+  #    )
+  #   print(msg)
   #   method="NM"
   # }
   
@@ -79,8 +105,10 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
       warning("The `group_var` must be defined for this model.")
     } else {
       if (length(group_var) > 1) {
-        # Use tidyr::unite() to combine multiple columns into a single string column
-        data <- data %>% unite("panel_id", all_of(group_var), sep = "_", remove = FALSE)
+        # Use tidyr::unite() to combine multiple columns into a single string
+        # column
+        data <- data %>% 
+          unite("panel_id", all_of(group_var), sep = "_", remove = FALSE)
       } else {
         # Ensure that panel_id is a single vector
         data <- data %>% mutate(panel_id = as.character(data[[group_var]]))
@@ -119,11 +147,23 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
     y_2 <- y+2
 
     
-    df <- data.frame(y=y, adj_mu_y=adj_mu_y, adj_mu=adj_mu, adj_mu_div_p_y=adj_mu_div_p_y, y_2=y_2, group=group)
+    df <- data.frame(
+      y = y, 
+      adj_mu_y = adj_mu_y, 
+      adj_mu = adj_mu, 
+      adj_mu_div_p_y = adj_mu_div_p_y, 
+      y_2 = y_2, 
+      group = group)
     
     LL <- df %>%
       group_by(across(group)) %>%
-      reframe(ll = log(coef1 * prod(adj_mu_y) * (factorial(sum(y)) / ((sum(adj_mu) + theta)^sum(y_2)) * (sum(adj_mu_div_p_y) + theta + 1))))
+      reframe(ll = log(
+        coef1 * 
+          prod(adj_mu_y) * 
+          (factorial(sum(y)) / 
+             ((sum(adj_mu) + theta)^sum(y_2)) * 
+             (sum(adj_mu_div_p_y) + theta + 1)))
+        )
     return(as.vector(LL$ll))
   }
   
@@ -195,6 +235,7 @@ poisLind.re <- function(formula, group_var, data, method = 'NM', max.iters = 100
   fit$LL <- fit$maximum # The log-likelihood of the model
   fit$modelType <- "poisLindRE"
   
-  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), formula = formula)
+  obj <- .createFlexCountReg(
+    model = fit, data = data, call = match.call(), formula = formula)
   return(obj)
 }

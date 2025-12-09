@@ -15,12 +15,15 @@
 Custom summary method for flexCountReg models
 }
 \details{
-This summary method accounts for bootstrapped or robust standard errors (when used).
+This summary method accounts for bootstrapped or robust standard errors (when
+used).
 }
 \note{
-Optional parameter `confint_level`: A numeric value between 0 and 1 indicating the confidence level for confidence intervals. Default is 0.95.
+Optional parameter `confint_level`: A numeric value between 0 and 1
+  indicating the confidence level for confidence intervals. Default is 0.95.
 
-Optional parameter `digits`: Number of digits (decimal places) to round to. Default is 3.
+Optional parameter `digits`: Number of digits (decimal places) to round
+  to. Default is 3.
 }
 \examples{
 \donttest{

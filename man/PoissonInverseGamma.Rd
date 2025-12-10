@@ -19,17 +19,18 @@ rpinvgamma(n, mu = 1, eta = 1)
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{mu}{numeric value or vector of mean values for the distribution (the 
+\item{mu}{numeric value or vector of mean values for the distribution (the
 values have to be greater than 0).}
 
-\item{eta}{single value or vector of values for the scale parameter of the 
+\item{eta}{single value or vector of values for the scale parameter of the
 distribution (the values have to be greater than 0).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
 \item{q}{quantile or a vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.}
+\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+otherwise, \eqn{P[X>x]}.}
 
 \item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
 
@@ -38,27 +39,34 @@ distribution (the values have to be greater than 0).}
 \item{n}{the number of random numbers to generate.}
 }
 \description{
-These functions provide the density function, distribution function, quantile 
-function, and random number generation for the Poisson-Inverse-Gamma 
-(PInvGamma) Distribution
+These functions provide the density function, distribution function,
+quantile function, and random number generation for the
+Poisson-Inverse-Gamma (PInvGamma) Distribution
 }
 \details{
-\code{dpinvgamma} computes the density (PDF) of the Poisson-Inverse-Gamma Distribution.
+\code{dpinvgamma} computes the density (PDF) of the Poisson-Inverse-Gamma
+Distribution.
 
 \code{ppinvgamma} computes the CDF of the Poisson-Inverse-Gama Distribution.
 
-\code{qpinvgamma} computes the quantile function of the Poisson-Inverse-Gamma Distribution.
+\code{qpinvgamma} computes the quantile function of the
+Poisson-Inverse-Gamma Distribution.
 
-\code{rpinvgamma} generates random numbers from the Poisson-Inverse-Gamma Distribution.
+\code{rpinvgamma} generates random numbers from the Poisson-Inverse-Gamma
+Distribution.
 
-The compound Probability Mass Function (PMF) for the Poisson-Inverse-Gamma 
+The compound Probability Mass Function (PMF) for the Poisson-Inverse-Gamma
 distribution is:
-\deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
+\deqn{
+f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)^{
+\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}
+K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)
+}
 
-Where \eqn{\eta} is a shape parameter with the restriction that \eqn{\eta>0}, 
-\eqn{\mu>0} is the mean value,  \eqn{y} is a non-negative integer, and 
-\eqn{K_i(z)} is the modified Bessel function of the second kind. This 
-formulation uses the mean directly.
+Where \eqn{\eta} is a shape parameter with the restriction that
+\eqn{\eta>0}, \eqn{\mu>0} is the mean value,  \eqn{y} is a non-negative
+integer, and \eqn{K_i(z)} is the modified Bessel function of the second
+kind. This formulation uses the mean directly.
 
 The variance of the distribution is:
 \deqn{\sigma^2=\mu+\eta\mu^2}

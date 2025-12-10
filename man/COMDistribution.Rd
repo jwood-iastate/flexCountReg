@@ -23,11 +23,11 @@ rcom(n, mu = NULL, lambda = 1, nu = 1)
 distribution (the values have to be greater than 0).}
 
 \item{lambda}{optional. Numeric value or vector of values for the rate
-parameter of the distribution (the values have to be greater than 0). If
-`mu` is provided, `lambda` is ignored.}
+parameter of the distribution (the values have to be greater than 0).
+If `mu` is provided, `lambda` is ignored.}
 
-\item{nu}{optional. Numeric value or vector of values for the decay parameter
-of the distribution ((the values have to be greater than 0).}
+\item{nu}{optional. Numeric value or vector of values for the decay
+parameter of the distribution ((the values have to be greater than 0).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
@@ -43,9 +43,9 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \description{
-These functions provide the density function, distribution function, quantile
-function, and random number generation for the Conway-Maxwell-Poisson (COM)
-Distribution
+These functions provide the density function, distribution function,
+quantile function, and random number generation for the
+Conway-Maxwell-Poisson (COM) Distribution
 }
 \details{
 \code{dcom} computes the density (PDF) of the COM Distribution.
@@ -61,8 +61,8 @@ distribution is:
 \deqn{f(x|\lambda, \nu) = \frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
 
 Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with
-\eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing
-constant.
+\eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the
+normalizing constant.
 
 The normalizing constant is given by:
 \deqn{Z(\lambda,\nu)=\sum_{n=0}^{\infty}\frac{\lambda^n}{(n!)^\nu}}
@@ -71,10 +71,10 @@ The mean and variance of the distribution are given by:
 \deqn{E[x]=\mu=\lambda \frac{\delta}{\delta \lambda} \log(Z(\lambda,\nu))}
 \deqn{Var(x)=\lambda \frac{\delta}{\delta \lambda} \mu}
 
-When the mean value is given, the rate parameter (\eqn{\lambda}) is computed
-using the mean and the decay parameter (\eqn{\nu}). This is useful to allow
-the calculation of the rate parameter when the mean is known (e.g., in
-regression))
+When the mean value is given, the rate parameter (\eqn{\lambda}) is
+computed using the mean and the decay parameter (\eqn{\nu}). This is
+useful to allow the calculation of the rate parameter when the mean is
+known (e.g., in regression))
 }
 \examples{
 dcom(1, mu=0.75, nu=3)

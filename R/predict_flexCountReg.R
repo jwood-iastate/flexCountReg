@@ -278,7 +278,8 @@ predict.flexCountReg <- function(object, newdata = NULL, ...){
       
     } else {
       # Simulated or Individual
-      hdraws <- as.matrix(randtoolbox::halton(ndraws, N_rand, mixed = scrambled))
+      hdraws <- 
+        as.matrix(randtoolbox::halton(ndraws, N_rand, mixed = scrambled))
       
       # Re-extract heterogeneity for generation function
       het_mean_coefs <- NULL

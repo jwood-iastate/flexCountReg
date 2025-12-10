@@ -45,7 +45,9 @@ generalizes the Poisson-inverse Gaussian distribution. It is useful for
 modeling overdispersed count data.
 
 The PMF is:
-\deqn{f(y|\mu, \sigma, \gamma) = \frac{(\mu/c)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma) y! (\alpha\sigma)^{y+\gamma}}}
+\deqn{f(y|\mu, \sigma, \gamma) = 
+\frac{(\mu/c)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma) y! 
+(\alpha\sigma)^{y+\gamma}}}
 }
 \examples{
 # Basic usage

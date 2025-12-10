@@ -16,15 +16,23 @@ regCompTest(
 \arguments{
 \item{model}{A fitted regression model object.}
 
-\item{data}{An options data frame containing the variables in the model. If not supplied, the original data used to estimate the model will be used.}
+\item{data}{An options data frame containing the variables in the model. If
+not supplied, the original data used to estimate the model will be used.}
 
-\item{basemodel}{A character string specifying the family of base model to compare against (options include the family from \code{\link{countreg}} or "Poisson"). Default is "Poisson".}
+\item{basemodel}{A character string specifying the family of base model to
+compare against (options include the family from \code{\link{countreg}} or
+"Poisson"). Default is "Poisson".}
 
-\item{variables}{Logical. If \code{TRUE}, the base model will include the same variables as the provided model. If \code{FALSE}, the base model will be an intercept-only model. Default is \code{FALSE}.}
+\item{variables}{Logical. If \code{TRUE}, the base model will include the
+same variables as the provided model. If \code{FALSE}, the base model will
+be an intercept-only model. Default is \code{FALSE}.}
 
-\item{print}{Logical. If \code{TRUE}, a table of the results will be shown. If \code{FALSE}, the table of results will not be printed to the console.}
+\item{print}{Logical. If \code{TRUE}, a table of the results will be shown.
+If \code{FALSE}, the table of results will not be printed to the console.}
 
-\item{...}{Additional arguments to be passed to the base model fitting function - options are any argument from the \code{\link{countreg}} function.}
+\item{...}{Additional arguments to be passed to the base model fitting
+function - options are any argument from the \code{\link{countreg}}
+function.}
 }
 \value{
 A list containing the following components:
@@ -44,20 +52,28 @@ A list containing the following components:
 \item{htmlTable}{HTML table summarizing the results.}
 }
 \description{
-This function compares a given regression model to a base model using the Likelihood Ratio (LR) test, Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC).
+This function compares a given regression model to a base model using the
+Likelihood Ratio (LR) test, Akaike Information Criterion (AIC), and Bayesian
+Information Criterion (BIC).
 }
 \details{
 The function performs the following steps:
 \enumerate{
-\item Fits the base model, either a Poisson regression or another specified model.
-\item Computes the log-likelihoods of both the provided model and the base model.
+\item Fits the base model, either a Poisson regression or another specified
+model.
+\item Computes the log-likelihoods of both the provided model and the base
+model.
 \item Calculates the AIC and BIC for both models.
-\item Conducts a Likelihood Ratio test to compare the models (if the provided model has more parameters than the base model).
+\item Conducts a Likelihood Ratio test to compare the models (if the provided
+model has more parameters than the base model).
 \item Computes McFadden's Pseudo R^2.
 }
 
-The Likelihood-Ratio test is computed as \deqn{LR = -2 (LL_{base \ model}-LL_{model})}. The test is chi-squared with degrees of freedom \deqn{dof=N_{model \ params}-N_{base \ mode \ params}}.
-The AIC is calculated as \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}, and the BIC is calculated as \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}.
+The Likelihood-Ratio test is computed as \deqn{LR = -2 (LL_{base \
+model}-LL_{model})}. The test is chi-squared with degrees of freedom
+\deqn{dof=N_{model \ params}-N_{base \ mode \ params}}.
+The AIC is calculated as \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}, and the
+BIC is calculated as \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}.
 }
 \examples{
 

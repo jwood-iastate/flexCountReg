@@ -136,7 +136,8 @@ ppoisweibull <- Vectorize(function(
   y <- 0:floor(q)
   
   # Note: dpoisweibull now handles the heavy lifting
-  probs <- dpoisweibull(y, lambda=lambda, alpha=alpha, sigma=sigma, ndraws=ndraws)
+  probs <- 
+    dpoisweibull(y, lambda=lambda, alpha=alpha, sigma=sigma, ndraws=ndraws)
   p <- sum(probs)
   
   if(!lower.tail) p <- 1-p

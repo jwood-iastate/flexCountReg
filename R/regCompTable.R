@@ -158,8 +158,9 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
   # Adding a row with the notation
   # notation_row <- tibble(
   #   Parameter = "Note",
-  #   !!!setNames(rep("p-value codes: * (p<=0.05), ** (p<=0.01), *** (p<=0.001)", 
-  #                   length(modNames)), modNames)
+  #   !!!setNames(
+  #     rep("p-value codes: * (p<=0.05), ** (p<=0.01), *** (p<=0.001)",
+  #         length(modNames)), modNames)
   # )
   
   

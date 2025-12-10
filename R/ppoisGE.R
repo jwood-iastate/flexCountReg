@@ -134,12 +134,18 @@ dpge <- Vectorize(function(
   # Evaluate the density of the normal distribution at those quantiles and use
   # the exponent to transform to lognormal values
   gedist <- 
-    # Quantile function of generalized exponential distribution applied to halton
-    # draws
+    # Quantile function of generalized exponential distribution applied to
+    # halton draws
     log(1 - h^(1 / shape)) / (-scale) 
   mu_i <- lambda * gedist
 
-  p_pge.i <- sapply(mu_i, stats::dpois, x=x)
+  p_pge.i <- vapply(
+    mu_i,
+    FUN = stats::dpois,
+    FUN.VALUE = numeric(1),
+    x = x
+  )
+  
 
   p <- mean(p_pge.i)
 
@@ -282,6 +288,8 @@ rpge <- function(n, mean=1, shape=1, scale=1, ndraws=1500) {
   }
 
   u <- runif(n)
-  y <- sapply(u, function(p) qpge(p, mean, shape, scale, ndraws))
+  y <- vapply(X = u, 
+              FUN = \(p) qpge(p, mean, shape, scale, ndraws), 
+              FUN.VALUE = numeric(1))
   return(y)
 }

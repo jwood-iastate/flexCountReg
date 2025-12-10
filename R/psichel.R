@@ -20,7 +20,9 @@
 #' modeling overdispersed count data.
 #'
 #' The PMF is:
-#' \deqn{f(y|\mu, \sigma, \gamma) = \frac{(\mu/c)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma) y! (\alpha\sigma)^{y+\gamma}}}
+#' \deqn{f(y|\mu, \sigma, \gamma) = 
+#' \frac{(\mu/c)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma) y! 
+#' (\alpha\sigma)^{y+\gamma}}}
 #'
 #' @references
 #' Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008).
@@ -381,7 +383,8 @@ qsichel <- function(p, mu = 1, sigma = 1, gamma = 1,
 #' @export
 rsichel <- function(n, mu = 1, sigma = 1, gamma = 1) {
   
-  if (length(n) != 1 || n < 0 || n != floor(n)) warning("'n' must be a non-negative integer")
+  if (length(n) != 1 || n < 0 || n != floor(n)) 
+    warning("'n' must be a non-negative integer")
   
   if (n == 0) return(integer(0))
   

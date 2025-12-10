@@ -20,7 +20,8 @@
 #' @param x A numeric value or vector of values for which the PDF or CDF is
 #'   calculated.
 #' @param q Quantile or a vector of quantiles.
-#' @param p A numeric value or vector of probabilities for the quantile function.
+#' @param p A numeric value or vector of probabilities for the quantile
+#'   function.
 #' @param n The number of random samples to generate.
 #' @param alpha Shape parameter of the Weibull distribution (optional if mean
 #'   and sd are provided).
@@ -114,9 +115,10 @@ dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL,
 
 #' @rdname PoissonWeibull
 #' @export
-ppoisweibull <- Vectorize(function(q, lambda=NULL, alpha = NULL, sigma = NULL, 
-                                   mean_value = NULL, sd_value = NULL, 
-                                   ndraws=1500, lower.tail = TRUE, log.p = FALSE) {
+ppoisweibull <- Vectorize(function(
+    q, lambda=NULL, alpha = NULL, sigma = NULL, 
+    mean_value = NULL, sd_value = NULL, 
+    ndraws=1500, lower.tail = TRUE, log.p = FALSE) {
   
   # Parameter logic repeated ensures safety inside Vectorize
   if (!is.null(mean_value) && !is.null(sd_value)) {

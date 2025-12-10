@@ -16,21 +16,31 @@
 \description{
 Generates predictions for the expected count (lambda) for observations.
 
-For \strong{countreg.rp} (Random Parameters) models, three methods are available:
+For \strong{countreg.rp} (Random Parameters) models, three methods are
+available:
 \itemize{
-  \item \strong{Simulated}: Uses Halton draws to simulate the random parameters and averages the outcomes. This is a simulation-based approximation.
-  \item \strong{Individual}: Estimates observation-specific coefficients (conditional on observed outcomes) using Empirical Bayes. Requires the outcome variable to be present in \code{data}.
-  \item \strong{Exact}: Uses the analytical Moment Generating Functions (MGFs) of the random parameter distributions to calculate the exact expected value. This method is faster and removes simulation error.
+  \item \strong{Simulated}: Uses Halton draws to simulate the random
+  parameters and averages the outcomes. This is a simulation-based
+  approximation.
+  \item \strong{Individual}: Estimates observation-specific coefficients
+  (conditional on observed outcomes) using Empirical Bayes. Requires the
+  outcome variable to be present in \code{data}.
+  \item \strong{Exact}: Uses the analytical Moment Generating Functions
+  (MGFs) of the random parameter distributions to calculate the exact
+  expected value. This method is faster and removes simulation error.
 }
 
-For \strong{countreg}, \strong{poisLindRE}, and \strong{RENB} models, the function calculates the expected value \eqn{\mu = \exp(X\beta)} (with appropriate adjustments for specific families like PLN or underreporting).
+For \strong{countreg}, \strong{poisLindRE}, and \strong{RENB} models, the
+function calculates the expected value \eqn{\mu = \exp(X\beta)} (with
+appropriate adjustments for specific families like PLN or underreporting).
 }
 \note{
-optional parameter `newdata`: a dataframe that has all of the variables in 
-       the \code{formula} and \code{rpar_formula}.
+optional parameter `newdata`: a dataframe that has all of the variables
+  in the \code{formula} and \code{rpar_formula}.
 
-optional parameter `method`: Only valid for random parameters models (`countreg.rp`). 
-       Options include \code{Simulated} (default), \code{Individual}, or \code{Exact}.
+optional parameter `method`: Only valid for random parameters models
+  (`countreg.rp`). Options include \code{Simulated} (default),
+  \code{Individual}, or \code{Exact}.
 }
 \examples{
 \donttest{
@@ -72,5 +82,7 @@ pred_pl_re <- predict(pl_re, data = washington_roads)
 }
 }
 \references{
-Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and interpretation for random parameter generalized linear models. \emph{Accident Analysis and Prevention}, 220, 108147.
+Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and interpretation for
+random parameter generalized linear models. \emph{Accident Analysis and
+Prevention}, 220, 108147.
 }

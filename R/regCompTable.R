@@ -1,15 +1,27 @@
-#' Create a Table Comparing Regression Models with AIC, BIC, and McFadden's Pseudo-R-Squared
+#' Create a Table Comparing Regression Models with AIC, BIC, and McFadden's
+#' Pseudo-R-Squared
 #'
-#' This function creates tables comparing the flexCountReg package models supplied to the function. 
+#' This function creates tables comparing the flexCountReg package models
+#' supplied to the function.
 #'
 #' @name regCompTable
-#' @param models A named list of fitted flexCountReg model objects. This must include 2 or more models.
-#' @param coefs A logical. The default value `TRUE` indicates that the coefficients from the models should be included in the table of comparisons.
-#' @param AIC A logical. The default value `TRUE` indicates that AIC values for the models should be included.
-#' @param BIC A logical. The default value `TRUE` indicates that BIC values for the models should be included.
-#' @param RSquare A logical. The default value `TRUE` indicates that the McFadden's Pseudo-R-Squared statistic (comparing against a Poisson regression model) should be included.
-#' @param tableType The type of table format to return. Options include "tibble" for returning the table as a tibble, "gt" for a \link[gt]{gt} table object, or "latex" for a latex table. The default is "tibble".
-#' @param digits An integer value indicating the number of decimals to round the table values to.
+#' @param models A named list of fitted flexCountReg model objects. This must
+#'   include 2 or more models.
+#' @param coefs A logical. The default value `TRUE` indicates that the
+#'   coefficients from the models should be included in the table of
+#'   comparisons.
+#' @param AIC A logical. The default value `TRUE` indicates that AIC values for
+#'   the models should be included.
+#' @param BIC A logical. The default value `TRUE` indicates that BIC values for
+#'   the models should be included.
+#' @param RSquare A logical. The default value `TRUE` indicates that the
+#'   McFadden's Pseudo-R-Squared statistic (comparing against a Poisson
+#'   regression model) should be included.
+#' @param tableType The type of table format to return. Options include "tibble"
+#'   for returning the table as a tibble, "gt" for a \link[gt]{gt} table object,
+#'   or "latex" for a latex table. The default is "tibble".
+#' @param digits An integer value indicating the number of decimals to round the
+#'   table values to.
 #'
 #' @include regCompTest.R
 #' @import tibble knitr  
@@ -37,7 +49,8 @@
 #'                     data=washington_roads, family = 'NBP', method = 'NM')
 #'                     
 #'                     
-#' comptable <- regCompTable(list("NB-1"=nb.1, "NB-2"=nb.2, "NB-P"=nb.p), tableType="latex")
+#' comptable <- 
+#'  regCompTable(list("NB-1"=nb.1, "NB-2"=nb.2, "NB-P"=nb.p), tableType="latex")
 #' print(comptable)
 #' @export
 regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE, 
@@ -50,7 +63,9 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     warning(msg)
   }
   
-  # Extract the names of all coefficients in any of the models supplied and create an initial tibble with a column of the coefficient names and other stats
+  # Extract the names of all coefficients in any of the models supplied and
+  # create an initial tibble with a column of the coefficient names and other
+  # stats
   vars <- c() # names of estimated coefficients
   modNames <- names(models)
   for (i in seq_along(models)){
@@ -81,7 +96,8 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     data <- models[[i]]$data
     mod_df <- model.frame(formula, data)
     y <- as.numeric(model.response(mod_df))
-    LL <- as.numeric(models[[i]]$model$maximum) # The log-likelihood of the original model
+    # The log-likelihood of the original model
+    LL <- as.numeric(models[[i]]$model$maximum) 
     base_mod <- glm(y ~ 1, data, family = poisson(link = "log"))
     LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
     n.coef <- length(models[[i]]$model$estimate)
@@ -94,7 +110,7 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     coefs <- models[[i]]$model$estimate
     if (!is.null(models[[i]]$model$bootstraps)){
       se <- models[[i]]$model$bootstrapped_se
-    }else{
+    } else {
       se <- sqrt(diag(-1/(models[[i]]$model$hessian)))
     }
     t <- abs(coefs / se)
@@ -142,7 +158,8 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
   # Adding a row with the notation
   # notation_row <- tibble(
   #   Parameter = "Note",
-  #   !!!setNames(rep("p-value codes: * (p<=0.05), ** (p<=0.01), *** (p<=0.001)", length(modNames)), modNames)
+  #   !!!setNames(rep("p-value codes: * (p<=0.05), ** (p<=0.01), *** (p<=0.001)", 
+  #                   length(modNames)), modNames)
   # )
   
   
@@ -161,7 +178,10 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     return(gtTable)
   }
   else if (tableType == "latex"){
-    latexTable <- knitr::kable(summaryTibble, format = "latex", booktabs = TRUE, caption = "Model Comparison Statistics")
+    latexTable <- knitr::kable(summaryTibble, 
+                               format = "latex", 
+                               booktabs = TRUE, 
+                               caption = "Model Comparison Statistics")
     return(latexTable)
   }
 }

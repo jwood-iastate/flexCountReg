@@ -111,7 +111,8 @@
 
 #' @rdname PoissonGeneralizedExponential
 #' @export
-dpge <- Vectorize(function(x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, haltons=NULL){
+dpge <- Vectorize(function(
+    x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, haltons=NULL){
   
   if(mean<=0 || scale<=0 || shape <=0) {
     msg <- paste(

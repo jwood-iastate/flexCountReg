@@ -64,7 +64,8 @@
 
 
 msg1 <- ("The value of `x` must be a non-negative whole number")
-msg2 <- ('The values of `mean` and `theta` both have to have values greater than 0.')
+msg2 <- 
+  ('The values of `mean` and `theta` both have to have values greater than 0.')
 
 #' @rdname PoissonLindley
 #' @export
@@ -103,9 +104,11 @@ pplind <- function(q, mean = 1, theta = 1, lambda = NULL,
   
   # --- Input Validation ---
   if (is.null(lambda)) {
-    if (any(mean <= 0, na.rm = TRUE) || any(theta <= 0, na.rm = TRUE)) warning("'mean' and 'theta' must be positive")
+    if (any(mean <= 0, na.rm = TRUE) || any(theta <= 0, na.rm = TRUE)) 
+      warning("'mean' and 'theta' must be positive")
   } else {
-    if (any(lambda <= 0, na.rm = TRUE) || any(theta <= 0, na.rm = TRUE)) warning("'lambda' and 'theta' must be positive")
+    if (any(lambda <= 0, na.rm = TRUE) || any(theta <= 0, na.rm = TRUE)) 
+      warning("'lambda' and 'theta' must be positive")
     # Convert lambda to mean
     mean <- lambda * (theta + 2) / (theta * (theta + 1))
   }

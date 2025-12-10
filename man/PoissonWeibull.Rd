@@ -80,7 +80,8 @@ P[X > x].}
 
 \item{log.p}{Logical; if TRUE, probabilities p are given as log(p).}
 
-\item{p}{A numeric value or vector of probabilities for the quantile function.}
+\item{p}{A numeric value or vector of probabilities for the quantile
+function.}
 
 \item{n}{The number of random samples to generate.}
 }

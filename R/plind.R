@@ -241,7 +241,7 @@ rplind <- function(n, mean=1, theta=1, lambda=NULL) {
   }
 
   u <- runif(n)
-  y <- sapply(u, function(p) qplind(p, mean, theta))
+  y <- vapply(X = u, FUN = \(p) qplind(p, mean, theta), FUN.VALUE = numeric(1))
   return(y)
 }
 

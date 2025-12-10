@@ -177,12 +177,10 @@ rplindLnorm <- function(n, mean=1, theta=1, sigma=1,
   }
   
   u <- runif(n)
-  y <- sapply(
-    u,
-    function(p) qplindLnorm(
-      p, mean, theta, sigma = sigma,
-      ndraws = ndraws
-    )
+  y <- vapply(
+    X = u, 
+    FUN = \(p) qplindLnorm(p, mean, theta, sigma = sigma, ndraws = ndraws), 
+    FUN.VALUE = numeric(1)
   )
   
   return(y)

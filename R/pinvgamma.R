@@ -210,6 +210,6 @@ qpinvgamma <- Vectorize(function(p, mu=1, eta = 1) {
 #' @export
 rpinvgamma <- function(n, mu=1, eta = 1) {
   u <- runif(n)
-  y <- sapply(u, function(p) qpinvgamma(p, mu, eta))
+  y <- vapply(X = u, FUN = \(p) qpinvgamma(p, mu, eta), FUN.VALUE = numeric(1))
   return(y)
 }

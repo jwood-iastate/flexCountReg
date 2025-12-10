@@ -206,7 +206,10 @@ qpinvgaus <- Vectorize(function(p, mu=1, eta=1, form="Type 1") {
 #' @export
 rpinvgaus <- function(n, mu=1, eta=1, form="Type 1") {
   u <- runif(n)
-  y <- sapply(u, function(p) qpinvgaus(p, mu, eta, form))
+  y <- vapply(
+    X = u, 
+    FUN = \(p) qpinvgaus(p, mu, eta, form), 
+    FUN.VALUE = numeric(1))
   return(y)
 }
 

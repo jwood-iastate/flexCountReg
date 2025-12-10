@@ -250,7 +250,8 @@
 # 
 # # Poisson-Inverse-Gaussian Model
 # data("washington_roads")
-# washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
+# washington_roads$AADTover10k <- 
+#   ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
 # 
 # poisinvgaus.mod <- poisInvGaus(Total_crashes ~ lnaadt + lnlength + speed50 + 
 #                                  ShouldWidth04 + AADTover10k,

@@ -212,7 +212,8 @@ log_besselK_safe <- function(x, nu) {
   
   # For large x, use scaled version
   if (any(needs_scaling)) {
-    K_scaled <- besselK(x_v[needs_scaling], nu_v[needs_scaling], expon.scaled = TRUE)
+    K_scaled <- besselK(
+      x_v[needs_scaling], nu_v[needs_scaling], expon.scaled = TRUE)
     
     # log(K_nu(x)) = log(exp(-x) * K_scaled) = -x + log(K_scaled)
     K_scaled[K_scaled == 0] <- .Machine$double.xmin

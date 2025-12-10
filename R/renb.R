@@ -165,7 +165,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
     ))
     
     # Remove failed bootstrap iterations
-    models <- models[!sapply(models, is.null)]
+    models <- models[!vapply(models, is.null, logical(1))]
     
     # Calculate bootstrap standard errors
     if(length(models) > 0) {

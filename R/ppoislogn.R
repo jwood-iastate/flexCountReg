@@ -145,6 +145,9 @@ rpLnorm <- function(n, mean=1, sigma=1, ndraws=1500) {
   }
   
   u <- stats::runif(n)
-  y <- sapply(u, function(p) qpLnorm(p, mean, sigma = sigma, ndraws = ndraws))
-  return(y)
+  y <- vapply(
+    X = u, 
+    FUN = \(p) qpLnorm(p, mean, sigma = sigma, ndraws = ndraws), 
+    FUN.VALUE = numeric(1))
+    return(y)
 }

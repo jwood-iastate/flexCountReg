@@ -2,7 +2,8 @@
 % Please edit documentation in R/regCompTable.R
 \name{regCompTable}
 \alias{regCompTable}
-\title{Create a Table Comparing Regression Models with AIC, BIC, and McFadden's Pseudo-R-Squared}
+\title{Create a Table Comparing Regression Models with AIC, BIC, and McFadden's
+Pseudo-R-Squared}
 \usage{
 regCompTable(
   models,
@@ -15,22 +16,33 @@ regCompTable(
 )
 }
 \arguments{
-\item{models}{A named list of fitted flexCountReg model objects. This must include 2 or more models.}
+\item{models}{A named list of fitted flexCountReg model objects. This must
+include 2 or more models.}
 
-\item{coefs}{A logical. The default value `TRUE` indicates that the coefficients from the models should be included in the table of comparisons.}
+\item{coefs}{A logical. The default value `TRUE` indicates that the
+coefficients from the models should be included in the table of
+comparisons.}
 
-\item{AIC}{A logical. The default value `TRUE` indicates that AIC values for the models should be included.}
+\item{AIC}{A logical. The default value `TRUE` indicates that AIC values for
+the models should be included.}
 
-\item{BIC}{A logical. The default value `TRUE` indicates that BIC values for the models should be included.}
+\item{BIC}{A logical. The default value `TRUE` indicates that BIC values for
+the models should be included.}
 
-\item{RSquare}{A logical. The default value `TRUE` indicates that the McFadden's Pseudo-R-Squared statistic (comparing against a Poisson regression model) should be included.}
+\item{RSquare}{A logical. The default value `TRUE` indicates that the
+McFadden's Pseudo-R-Squared statistic (comparing against a Poisson
+regression model) should be included.}
 
-\item{tableType}{The type of table format to return. Options include "tibble" for returning the table as a tibble, "gt" for a \link[gt]{gt} table object, or "latex" for a latex table. The default is "tibble".}
+\item{tableType}{The type of table format to return. Options include "tibble"
+for returning the table as a tibble, "gt" for a \link[gt]{gt} table object,
+or "latex" for a latex table. The default is "tibble".}
 
-\item{digits}{An integer value indicating the number of decimals to round the table values to.}
+\item{digits}{An integer value indicating the number of decimals to round the
+table values to.}
 }
 \description{
-This function creates tables comparing the flexCountReg package models supplied to the function.
+This function creates tables comparing the flexCountReg package models
+supplied to the function.
 }
 \examples{
 
@@ -52,6 +64,7 @@ nb.p <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
                     data=washington_roads, family = 'NBP', method = 'NM')
                     
                     
-comptable <- regCompTable(list("NB-1"=nb.1, "NB-2"=nb.2, "NB-P"=nb.p), tableType="latex")
+comptable <- 
+ regCompTable(list("NB-1"=nb.1, "NB-2"=nb.2, "NB-P"=nb.p), tableType="latex")
 print(comptable)
 }

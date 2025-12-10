@@ -19,21 +19,26 @@ poisLind.re(
 \arguments{
 \item{formula}{an R formula.}
 
-\item{group_var}{the grouping variable(s) indicating random effects (e.g., individual ID).}
+\item{group_var}{the grouping variable(s) indicating random effects
+(e.g., individual ID).}
 
-\item{data}{a dataframe that has all of the variables in the \code{formula}.}
+\item{data}{a dataframe that has all of the variables in the
+\code{formula}.}
 
-\item{method}{a method to use for optimization in the maximum likelihood 
-estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that "BHHH"
-is not available for this function due to the implementation for the random effects.}
+\item{method}{a method to use for optimization in the maximum likelihood
+estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that
+"BHHH" is not available for this function due to the implementation
+for the random effects.}
 
-\item{max.iters}{the maximum number of iterations to allow the optimization 
-method to perform.}
+\item{max.iters}{the maximum number of iterations to allow the
+optimization method to perform.}
 
-\item{print.level}{Integer specifying the verbosity of output during optimization.}
+\item{print.level}{Integer specifying the verbosity of output during
+optimization.}
 
-\item{bootstraps}{Optional integer specifying the number of bootstrap samples to be used
-for estimating standard errors. If not specified, no bootstrapping is performed.}
+\item{bootstraps}{Optional integer specifying the number of bootstrap
+samples to be used for estimating standard errors. If not specified,
+no bootstrapping is performed.}
 
 \item{offset}{an optional offset term provided as a string.}
 }
@@ -41,58 +46,74 @@ for estimating standard errors. If not specified, no bootstrapping is performed.
 Function for estimating a Random Effects Poisson-Lindley regression model
 }
 \details{
-The function  poisLindRE  is similar to the  poisLind  function, but it
-includes an additional argument  group_var  that specifies the grouping
-variable for the random effects. The function estimates a Random Effects
-Poisson-Lindley regression model using the maximum likelihood method.
-The function is similar to the  poisLind  function, but it includes
+The function \code{poisLindRE} is similar to the \code{poisLind}
+function, but it includes an additional argument \code{group_var} that
+specifies the grouping variable for the random effects. The function
+estimates a Random Effects Poisson-Lindley regression model using
+maximum likelihood. It is similar to \code{poisLind}, but includes
 additional terms to account for the random effects.
 
-The Random Effects Poisson-Lindley model is useful for panel data and assumes
-that the random effects follow a gamma distribution. The PDF for the Random
-Effects Poisson-Lindley model is:
+The Random Effects Poisson-Lindley model is useful for panel data and
+assumes that the random effects follow a gamma distribution. The PDF is
 \deqn{
 f(y_{it}|\mu_{it},\theta)=\frac{\theta^2}{\theta+1}
-\prod_{t=1}^{n_i}\frac{\left(\mu_{it}\frac{\theta(\theta+1)}{\theta+2}\right)^{y_{it}}}{y_{it}!}
+\prod_{t=1}^{n_i}\frac{\left(\mu_{it}\frac{\theta(\theta+1)}
+{\theta+2}\right)^{y_{it}}}{y_{it}!}
 \cdot
 \frac{
 \left(\sum_{t=1}^{n_i}y_{it}\right)!
-\left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}+\theta+\sum_{t=1}^{n_i}y_{it}+1\right)
+\left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}
+      + \theta + \sum_{t=1}^{n_i}y_{it} + 1\right)
 }{
-\left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}+\theta\right)^{\sum_{t=1}^{n_i}y_{it}+2}
+\left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}
+      + \theta\right)^{\sum_{t=1}^{n_i}y_{it}+2}
 }
 }
 
-The log-likelihood function for the Random Effects Poisson-Lindley model is:
+The log-likelihood function is:
 \deqn{
 LL = 2\log(\theta) - \log(\theta+1)
   + \sum_{t=1}^{n_i} y_{it}\log(\mu_{it})
-  + \sum_{t=1}^{n_i} y_{it}\log\!\left(\frac{\theta(\theta+1)}{\theta+2}\right)
+  + \sum_{t=1}^{n_i} y_{it}\log\!\left(
+      \frac{\theta(\theta+1)}{\theta+2}
+    \right)
   - \sum_{t=1}^{n_i}\log(y_{it}!)
-  + \log\!\left(\left(\sum_{t=1}^{n_i}y_{it}\right)!\right)
-  + \log\!\left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}
-              + \theta + \sum_{t=1}^{n_i}y_{it} + 1\right)
+  + \log\!\left(
+      \left(\sum_{t=1}^{n_i}y_{it}\right)!
+    \right)
+  + \log\!\left(
+      \sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}
+      + \theta + \sum_{t=1}^{n_i}y_{it} + 1
+    \right)
   - \left(\sum_{t=1}^{n_i}y_{it} + 2\right)
-    \log\!\left(\sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}
-               + \theta\right)
+    \log\!\left(
+      \sum_{t=1}^{n_i}\mu_{it}\frac{\theta(\theta+1)}{\theta+2}
+      + \theta
+    \right)
 }
- 
+
 The mean and variance are:
 \deqn{\mu_{it}=\exp(X_{it} \beta)}
-\deqn{V(\mu_{it})=\\mu_{it}+\left(1-\frac{2}{(\theta+2)^2}\right)\mu_{it}^2}
+\deqn{
+V(\mu_{it})=\mu_{it}+
+\left(1-\frac{2}{(\theta+2)^2}\right)\mu_{it}^2
+}
 }
 \examples{
 \donttest{
-
-## Poisson-Lindley Random Effects Model
 data("washington_roads")
-washington_roads$AADTover10k <- 
- ifelse(washington_roads$AADT>10000,1,0) # create a dummy variable
-poislind.mod <- poisLind.re(Animal ~ lnaadt + lnlength + speed50 +
-                                ShouldWidth04 + AADTover10k,
-                                data=washington_roads,
-                                group_var="ID",
-                                method="NM",
-                                max.iters = 1000)
-summary(poislind.mod)}
+washington_roads$AADTover10k <-
+  ifelse(washington_roads$AADT > 10000, 1, 0)
+
+poislind.mod <- poisLind.re(
+  Animal ~ lnaadt + lnlength + speed50 +
+    ShouldWidth04 + AADTover10k,
+  data      = washington_roads,
+  group_var = "ID",
+  method    = "NM",
+  max.iters = 1000
+)
+summary(poislind.mod)
+}
+
 }

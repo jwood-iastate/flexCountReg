@@ -101,7 +101,8 @@ dcom <- function(x, mu = NULL, lambda = 1, nu = 1, log = FALSE){
         }
         lambda <- find_lambda_vec_cpp(mu, nu)
       } else {
-        msg <- "`mu` must be a single value or a vector with the same length as `x`."
+        msg <- 
+          "`mu` must be a single value or a vector with the same length as `x`."
         warning(msg)
       }
     } else {

@@ -65,44 +65,53 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \description{
-These functions provide the density function, distribution function, quantile function, and random number generation for the Poisson-Inverse-Gaussian (PInvGaus) Distribution
+These functions provide the density function, distribution function,
+quantile function, and random number generation for the
+Poisson-Inverse-Gaussian (PInvGaus) Distribution.
 
 These functions provide the density function, distribution function, quantile
 function, and random number generation for the Poisson-Inverse-Gaussian
 (PInvGaus) Distribution
 }
 \details{
-The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
-distribution, as noted by Cameron & Trivedi (2013). It is also known as a
+The Poisson-Inverse-Gaussian distribution is a special case of the
+Sichel distribution (Cameron & Trivedi, 2013). It is also known as a
 univariate Sichel distribution (Hilbe, 2011).
 
 
-\code{dpinvgaus} computes the density (PDF) of the Poisson-Inverse-Gaussian Distribution.
+\code{dpinvgaus} computes the PDF of the Poisson-Inverse-Gaussian dist.
 
-\code{ppinvgaus} computes the CDF of the Poisson-Inverse-Gaussian Distribution.
+\code{ppinvgaus} computes the CDF of the Poisson-Inverse-Gaussian dist.
 
-\code{qpinvgaus} computes the quantile function of the Poisson-Inverse-Gaussian Distribution.
+\code{qpinvgaus} computes quantiles of the Poisson-Inverse-Gaussian dist.
 
-\code{rpinvgaus} generates random numbers from the Poisson-Inverse-Gamma Distribution.
+\code{rpinvgaus} generates random numbers from the distribution.
 
-The compound Probability Mass Function (PMF) for the Poisson-Inverse-Gaussian distribution (Type 1) is (Cameron & Trivedi, 2013):
-\deqn{f(y|\eta,\mu)=\begin{cases}
-                             f(y=0)=\exp\left(\frac{\mu}{\eta}\left(1-\sqrt{1+2\eta}\right)\right) \\
-                             f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2\mu}\right)^2(1+2\eta)^{-j/2}
-                             \end{cases}}
+The PMF (Type 1) is:
+\deqn{
+f(y|\eta,\mu)=\begin{cases}
+f(0)=\exp\left(\frac{\mu}{\eta}(1-\sqrt{1+2\eta})\right)\\
+f(y>0)=f(0)\frac{\mu^y}{y!}(1+2\eta)^{-y/2}
+    \sum_{j=0}^{y-1}\frac{\Gamma(y+j)}
+    {\Gamma(y-j)\Gamma(j+1)}
+    \left(\frac{\eta}{2\mu}\right)^j(1+2\eta)^{-j/2}
+\end{cases}}
 
-Where \eqn{\eta} is a scale parameter with the restriction that \eqn{\eta>0}, \eqn{\mu} is the mean value, and \eqn{y} is a non-negative integer.
-
-The variance of the distribution is:
+The variance is:
 \deqn{\sigma^2=\mu+\eta\mu}
 
-The alternative parameterization by Dean et. al. (1987) replaces \eqn{\eta} with \eqn{\eta\mu}. This version (Type 2) has the PMF:
-\deqn{f(y|\eta,\mu)=\begin{cases}
-                             f(y=0)=\exp\left(\frac{1}{\eta}\left(1-\sqrt{1+2\eta\mu}\right)\right) \\
-                             f(y|y>0)=f(y=0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}\cdot\sum_{j=0}^{y-1}\frac{\Gamma(y+j)}{\Gamma(y-j)\Gamma(j+1)}\left(\frac{\eta}{2}\right)^2(1+2\eta\mu)^{-j/2}
-                             \end{cases}}
+Type 2 modifies \eqn{\eta} → \eqn{\eta\mu}:
+\deqn{
+f(0)=\exp\left(\frac{1}{\eta}(1-\sqrt{1+2\eta\mu})\right)
+}
+\deqn{
+f(y>0)=f(0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}
+  \sum_{j=0}^{y-1}\frac{\Gamma(y+j)}
+  {\Gamma(y-j)\Gamma(j+1)}
+  \left(\frac{\eta}{2}\right)^j(1+2\eta\mu)^{-j/2}
+}
 
- This results in the variance of:
+Resulting variance:
 \deqn{\sigma^2=\mu+\eta\mu^2}
 
 The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
@@ -168,11 +177,9 @@ rpinvgaus(30, mu=0.75, eta=1.5)
 
 }
 \references{
-Cameron, A. C., & Trivedi, P. K. (2013). Regression analysis of count data, 2nd Edition. Cambridge university press.
-
-Dean, C., Lawless, J. F., & Willmot, G. E. (1989). A mixed Poisson–Inverse‐Gaussian regression model. Canadian Journal of Statistics, 17(2), 171-181.
-
-Hilbe, J. M. (2011). Negative binomial regression. Cambridge University Press.
+Cameron & Trivedi (2013). Regression Analysis of Count Data.
+Dean, Lawless & Willmot (1989). Mixed Poisson–Inverse Gaussian Models.
+Hilbe (2011). Negative Binomial Regression.
 
 Cameron, A. C., & Trivedi, P. K. (2013). Regression analysis of count data,
 2nd Edition. Cambridge university press.

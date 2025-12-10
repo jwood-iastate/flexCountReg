@@ -1,41 +1,84 @@
 #' Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
 #'
-#' These functions provide density, distribution function, quantile function, and random number generation for the Poisson-Lindley-Gamma (PLG) Distribution
+#' These functions provide density, distribution function, quantile
+#' function, and random number generation for the Poisson-Lindley-Gamma
+#' (PLG) Distribution
 #'
-#' The Poisson-Lindley-Gamma is a count distribution that captures high densities for small integer values and provides flexibility for heavier tails.
+#' The Poisson-Lindley-Gamma is a count distribution that captures high
+#' densities for small integer values and provides flexibility for heavier
+#' tails.
 #'
 #' @param x numeric value or a vector of values.
 #' @param q quantile or a vector of quantiles.
 #' @param p probability or a vector of probabilities.
 #' @param n the number of random numbers to generate.
-#' @param mean numeric value or vector of mean values for the distribution (the values have to be greater than 0).
-#' @param theta single value or vector of values for the theta parameter of the distribution (the values have to be greater than 0).
-#' @param alpha single value or vector of values for the `alpha` parameter of the gamma distribution in the special case that the mean = 1 and the variance = `alpha` (the values for `alpha` have to be greater than 0).
+#' @param mean numeric value or vector of mean values for the distribution
+#'   (the values have to be greater than 0).
+#' @param theta single value or vector of values for the theta parameter of
+#'   the distribution (the values have to be greater than 0).
+#' @param alpha single value or vector of values for the `alpha` parameter
+#'   of the gamma distribution in the special case that the mean = 1 and
+#'   the variance = `alpha` (the values for `alpha` have to be greater
+#'   than 0).
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
-#' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]} otherwise, \eqn{P[X>x]}.
+#' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+#'   otherwise, \eqn{P[X>x]}.
 #'
 #' @details
-#' \code{dplindGamma} computes the density (PDF) of the Poisson-Lindley-Gamma Distribution.
+#' \code{dplindGamma} computes the density (PDF) of the
+#' Poisson-Lindley-Gamma Distribution.
 #'
-#' \code{pplindGamma} computes the CDF of the Poisson-Lindley-Gamma Distribution.
+#' \code{pplindGamma} computes the CDF of the Poisson-Lindley-Gamma
+#' Distribution.
 #'
-#' \code{qplindGamma} computes the quantile function of the Poisson-Lindley-Gamma Distribution.
+#' \code{qplindGamma} computes the quantile function of the
+#' Poisson-Lindley-Gamma Distribution.
 #'
-#' \code{rplindGamma} generates random numbers from the Poisson-Lindley-Gamma Distribution.
+#' \code{rplindGamma} generates random numbers from the
+#' Poisson-Lindley-Gamma Distribution.
 #'
-#' The compound Probability Mass Function (PMF) for the Poisson-Lindley-Gamma (PLG) distribution is:
-#' \deqn{f(x|\mu,\theta,\alpha)=\frac{\alpha  (\theta+2) ^2 \Gamma (x+\alpha ) }{(\mu)^2(\theta +1)^3 \Gamma (\alpha )}\left(\frac{\mu\theta(\theta+1)}{\theta+2} U\left(x+1,2-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)+\alpha(x+1) U\left(x+2,3-\alpha ,\frac{\alpha  (\theta+2) }{\mu(\theta+1)}\right)\right)}
-#' 
-#' Where \eqn{\theta} is a distribution parameter from the Poisson-Lindley distribution with the restrictions that \eqn{\theta>0} a, \eqn{\alpha} is a parameter for the gamma distribution with the restriction \eqn{\alpha>0}, \eqn{mu} is the mean value, and \eqn{x} is a non-negative integer, and \deqn{U(a,b,z)} is the Tricomi's solution to the confluent hypergeometric function - also known as the confluent hypergeometric function of the second kind
+#' The compound Probability Mass Function (PMF) for the
+#' Poisson-Lindley-Gamma (PLG) distribution is:
+#' \deqn{
+#' f(x|\mu,\theta,\alpha)=
+#' \frac{
+#'   \alpha(\theta+2)^2\Gamma(x+\alpha)
+#' }{
+#'   \mu^2(\theta+1)^3\Gamma(\alpha)
+#' }
+#' \left(
+#'   \frac{\mu\theta(\theta+1)}{\theta+2}
+#'   U\left(
+#'     x+1,2-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)}
+#'   \right)
+#'   + \alpha(x+1)
+#'   U\left(
+#'     x+2,3-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)}
+#'   \right)
+#' \right)
+#' }
+#'
+#' Where \eqn{\theta} is a distribution parameter from the Poisson-Lindley
+#' distribution with the restrictions that \eqn{\theta>0}, \eqn{\alpha} is
+#' a parameter for the gamma distribution with the restriction
+#' \eqn{\alpha>0}, \eqn{mu} is the mean value, and \eqn{x} is a
+#' non-negative integer, and \deqn{U(a,b,z)} is the Tricomi's solution to
+#' the confluent hypergeometric function - also known as the confluent
+#' hypergeometric function of the second kind
 #'
 #' The expected value of the distribution is:
 #' \deqn{E[x]=\mu}
 #'
 #' The variance is:
 #' \deqn{\sigma^2=\mu+\left(\alpha+1-\frac{2}{(\theta+2)^2}\right)\mu^2}
-#' 
-#' While the distribution can be computed using the confluent hypergeometric function, that function has limitations in value it can be computed at (along with accuracy, in come cases). For this reason, the function uses Halton draws to perform simulation over the gamma distribution to solve the integral. This is sometimes more computationally efficient as well.
+#'
+#' While the distribution can be computed using the confluent
+#' hypergeometric function, that function has limitations in value it can
+#' be computed at (along with accuracy, in come cases). For this reason,
+#' the function uses Halton draws to perform simulation over the gamma
+#' distribution to solve the integral. This is sometimes more
+#' computationally efficient as well.
 #'
 #' @examples
 #' dplindGamma(0, mean=0.75, theta=7, alpha=2)
@@ -47,21 +90,33 @@
 #' @importFrom gsl hyperg_U
 #' @useDynLib flexCountReg
 #' @name NegativeBinomialLindley
-#' 
+#'
 #' @rdname NegativeBinomialLindley
 #' @export
 dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, log=FALSE){
   
-  if(mean <= 0 || theta <= 0 || alpha <= 0) warning('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+  if(mean <= 0 || theta <= 0 || alpha <= 0)
+    warning(paste(
+      "The values of `mean`, `theta`, and `alpha` all have to have",
+      "values greater than 0."
+    ))
   
-  U1 <- gsl::hyperg_U(x + 1, 2 - alpha, (alpha * (theta + 2)) / (mean * (theta + 1)))
-  U2 <- gsl::hyperg_U(x + 2, 3 - alpha, (alpha * (theta + 2)) / (mean * (theta + 1)))
-  co1 <- alpha*(theta+2)^2 * gamma(x+alpha) / (mean^2 * (theta+1)^3 * gamma(alpha))
-  co2 <- mean*theta*(theta+1)/(theta+2)
-  co3 <- alpha*(x+1)
+  U1 <- gsl::hyperg_U(
+    x + 1,
+    2 - alpha,
+    (alpha * (theta + 2)) / (mean * (theta + 1))
+  )
+  U2 <- gsl::hyperg_U(
+    x + 2,
+    3 - alpha,
+    (alpha * (theta + 2)) / (mean * (theta + 1))
+  )
+  co1 <- alpha * (theta+2)^2 * gamma(x+alpha) /
+    (mean^2 * (theta+1)^3 * gamma(alpha))
+  co2 <- mean * theta * (theta+1) / (theta+2)
+  co3 <- alpha * (x+1)
   
-  
-  p <- co1*(co2*U1 + co3*U2)
+  p <- co1 * (co2 * U1 + co3 * U2)
   
   if (log) return(log(p))
   else return(p)
@@ -71,7 +126,6 @@ dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, log=FALSE){
 #' @export
 pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
                         lower.tail = TRUE, log.p = FALSE) {
-  
   
   # --- Input Validation ---
   
@@ -134,7 +188,8 @@ pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
       z_arg <- alpha_i * (theta_i + 2) / (mean_i * (theta_i + 1))
       
       # Common coefficient parts (in log-space)
-      # co1 = alpha * (theta+2)^2 * Gamma(x+alpha) / (mean^2 * (theta+1)^3 * Gamma(alpha))
+      # co1 = alpha * (theta+2)^2 * Gamma(x+alpha) /
+      #       (mean^2 * (theta+1)^3 * Gamma(alpha))
       log_co1_base <- log(alpha_i) + 2 * log(theta_i + 2) -
         2 * log(mean_i) - 3 * log(theta_i + 1) - lgamma(alpha_i)
       
@@ -158,9 +213,10 @@ pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
         log_co3 <- log(alpha_i) + log(y + 1)
         
         # PMF = co1 * Gamma(y+alpha) * (co2 * U1 + co3_val * U2)
-        # In log-space: need to compute log(co2 * U1 + alpha*(y+1) * U2)
+        # In log-space: need log(co2 * U1 + alpha*(y+1) * U2)
         
-        # This is tricky - we need log(a + b) where a = co2 * U1, b = alpha*(y+1) * U2
+        # This is tricky - we need log(a + b) where a = co2 * U1,
+        # b = alpha*(y+1) * U2
         log_term1 <- log_co2 + log_U1
         log_term2 <- log_co3 + log_U2
         
@@ -173,7 +229,9 @@ pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
           log_sum_terms <- log_term1
         } else {
           max_term <- max(log_term1, log_term2)
-          log_sum_terms <- max_term + log(exp(log_term1 - max_term) + exp(log_term2 - max_term))
+          log_sum_terms <- max_term + log(
+            exp(log_term1 - max_term) + exp(log_term2 - max_term)
+          )
         }
         
         log_pmf[y + 1] <- log_co1_base + log_gamma_y_alpha + log_sum_terms
@@ -203,28 +261,39 @@ pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
 #' @rdname NegativeBinomialLindley
 #' @export
 qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1) {
-  if(p < 0) warning("The value of `p` must be a value greater than 0 and less than 1.")
+  if(p < 0)
+    warning("The value of `p` must be a value greater than 0 and less than 1.")
   if(is.na(p)) warning("The value of `p` cannot be an `NA` value")
   
-  if(mean<=0 || theta<=0 || alpha<=0) warning('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
-  
+  if(mean<=0 || theta<=0 || alpha<=0)
+    warning(paste(
+      "The values of `mean`, `theta`, and `alpha` all have to have",
+      "values greater than 0."
+    ))
   
   y <- 0
-  p_value <- max(pplindGamma(y, mean, theta, alpha=alpha), .Machine$double.xmin)
+  p_value <- max(
+    pplindGamma(y, mean, theta, alpha=alpha),
+    .Machine$double.xmin
+  )
   while(p_value < p){
     y <- y + 1
-    p_value_new <- max(pplindGamma(y, mean, theta, alpha=alpha), .Machine$double.xmin)
+    p_value_new <- max(
+      pplindGamma(y, mean, theta, alpha=alpha),
+      .Machine$double.xmin
+    )
     if (!is.na(p_value_new)) p_value <- p_value_new else break
   }
   return(y)
 })
 
-
 #' @rdname NegativeBinomialLindley
 #' @export
 rplindGamma <- function(n, mean=1, theta=1, alpha=1) {
   
-  if(mean<=0 || theta<=0  || alpha<=0) warning('The values of `mean`, `theta`, and `alpha` all have to have values greater than 0.')
+  if(mean<=0 || theta<=0  || alpha<=0)
+    warning(paste('The values of `mean`, `theta`, and `alpha` all", 
+                  "have to have values greater than 0.'))
   
   u <- runif(n)
   y <- lapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha))

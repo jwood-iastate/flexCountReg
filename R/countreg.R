@@ -388,7 +388,8 @@
 #' \deqn{\mu=e^{X\beta}}
 #'
 #' The variance function is defined as:
-#' \deqn{\sigma^2=\mu+\left(\alpha+1-\frac{2}{(\theta+2)^2}\right)\mu^2}
+#' \deqn{\sigma^2=\mu+\left(2\alpha+1-\frac{2(1+\alpha)}
+#' {(\theta+2)^2}\right)\mu^2}
 #'
 #' It should be noted that the p-value for the parameters `ln(theta)` and 
 #' `ln(alpha)` in the model summary are testing if the parameter `theta` and 

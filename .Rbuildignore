@@ -6,3 +6,6 @@ README.Rmd
 .github (jwood2@iastate.edu)/
 codecov.yml
 ^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$

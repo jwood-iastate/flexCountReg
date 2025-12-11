@@ -106,7 +106,8 @@ The expected value of the distribution is:
 \deqn{E[x]=\mu}
 
 The variance is:
-\deqn{\sigma^2=\mu+\left(\alpha+1-\frac{2}{(\theta+2)^2}\right)\mu^2}
+\deqn{\sigma^2=\mu+\left(2\alpha+1-\frac{2(1+\alpha)}
+{(\theta+2)^2}\right)\mu^2}
 
 While the distribution can be computed using the confluent
 hypergeometric function, that function has limitations in value it can

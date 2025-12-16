@@ -19,7 +19,7 @@
 #'   "Type 1" (standard) or "Type 2" (Dean et al., 1987).
 #' @param log logical; if TRUE, probabilities p are returned as log(p).
 #' @param log.p logical; if TRUE, probabilities p are returned as log(p).
-#' @param lower.tail logical; if TRUE, returns P[X ≤ x], otherwise P[X > x].
+#' @param lower.tail logical; if TRUE, returns \eqn{P[X\leq x]}, otherwise P[X > x].
 #'
 #' @details
 #' \code{dpinvgaus} computes the PDF of the Poisson-Inverse-Gaussian dist.

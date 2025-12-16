@@ -52,7 +52,7 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 \item{lambda}{optional lambda parameter (>0).}
 
-\item{lower.tail}{TRUE returns P[X ≤ x].}
+\item{lower.tail}{TRUE returns P[X \deqn{\leq} x].}
 
 \item{log.p}{return log-CDF.}
 

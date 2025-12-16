@@ -2,9 +2,12 @@ Package: flexCountReg
 Type: Package
 Title: Estimation of a Variety of Count Regression Models
 Version: 0.1.1
-Authors@R: person("Jonathan", "Wood", role = c("aut", "cre"),
+Authors@R: c(person("Jonathan", "Wood", role = c("aut", "cre"),
                   email = "jwood2@iastate.edu", 
-                  comment = c(ORCID = "0000-0003-0131-6384"))
+                  comment = c(ORCID = "0000-0003-0131-6384")),
+           person("Guillermo", "Basulto-Elias", role = c("aut"),
+                  email = "basulto@iastate.edu", 
+                  comment = c(ORCID = "0000-0002-5205-2190")))
 Maintainer: Jonathan Wood <jwood2@iastate.edu>
 Description: An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lindley models (which handle excess zeroes), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, and the Sichel model.
 Imports: 

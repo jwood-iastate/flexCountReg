@@ -37,7 +37,7 @@
 #' random parameter generalized linear models. \emph{Accident Analysis and
 #' Prevention}, 220, 108147.
 #'
-#' @import randtoolbox stats lamW modelr rlang 
+#' @import randtoolbox stats modelr rlang 
 #' @importFrom utils head tail
 #' @include corr_haltons.R halton_dists.R  helpers.R
 #' 

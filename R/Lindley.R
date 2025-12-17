@@ -35,8 +35,6 @@
 #' The distribution mean and variance are:
 #' \deqn{\mu=\frac{\theta+2}{\theta(1+\theta)}}
 #' \deqn{\sigma^2=\frac{\mu}{\theta+2}\left(\frac{6}{\theta}-4\right)-\mu^2}
-#' 
-#' @importFrom lamW lambertWm1
 #'
 #' @examples
 #' x <- seq(0, 5, by = 0.1)

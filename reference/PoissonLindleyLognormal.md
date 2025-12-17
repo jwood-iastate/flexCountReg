@@ -72,7 +72,7 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 - lower.tail:
 
-  TRUE returns P\[X ≤ x\].
+  TRUE returns P\[X \$\$\leq\$\$ x\].
 
 - log.p:
 

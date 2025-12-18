@@ -7,9 +7,7 @@
 
 <!-- badges: start -->
 
-[![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/graph/badge.svg?token=BX2FJQNPK2)](https://codecov.io/gh/jwood-iastate/flexCountReg)
-[![Codecov test
-coverage](https://codecov.io/gh/jwood-iastate/flexCountReg/graph/badge.svg)](https://app.codecov.io/gh/jwood-iastate/flexCountReg)
+[![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/graph/badge.svg?token=BX2FJQNPK2)](https://app.codecov.io/gh/jwood-iastate/flexCountReg)
 <!-- badges: end -->
 
 The goal of flexCountReg is to provide functions that allow the analyst
@@ -69,12 +67,19 @@ grouped by continuous and count distributions.
   - `qpge` for the quantile function
   - `rpge` for random number generation
 
-- Poisson-Inverse-Gaussian Distribution
+- Poisson-Inverse-Gaussian Distribution (Types 1 and 2)
 
   - `dpinvgaus` for the density function
   - `ppinvgaus` for the cumulative density function
   - `qpinvgaus` for the quantile function
   - `rpinvgaus` for random number generation
+
+- Poisson-Inverse-Gamma Distribution
+
+  - `dpinvgamma` for the density function
+  - `ppinvgamma` for the cumulative density function
+  - `qpinvgamma` for the quantile function
+  - `rpinvgamma` for random number generation
 
 - Poisson-Lindley Distribution
 
@@ -169,20 +174,30 @@ are provided in the documentation (help files).
 - Inverse Gamma Distribution
 - Triangle Distribution
 
-**Count Distributions**
+**Count Distributions** *Distributions that Handle Equidispersion*
 
 - Poisson
-- Generalized Waring Distribution
+
+*Distributions that handle Underdispersion*
+
+- Conway-Maxwell-Poisson (COM) Distribution
+
+*Distributions that Handle Overdispersion*
+
 - Negative Binomial in various forms (NB-1, NB-2, and NB-P)
-- Poisson-Generalized-Exponential Distribution
-- Poisson-Inverse-Gaussian Distribution
-- Poisson-Lindley Distribution
-- Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
-- Poisson-Lindley-Lognormal Distribution
+- Poisson-Inverse-Gaussian Distribution (Types 1 and 2)
+- Poisson-Inverse-Gamma
 - Poisson-Lognormal Distribution
 - Poisson-Weibull Distribution
 - Sichel Distribution
-- Conway-Maxwell-Poisson (COM) Distribution
+- Generalized Waring Distribution
+
+*Distributions that Handle Excess Zeros*
+
+- Poisson-Generalized-Exponential Distribution
+- Poisson-Lindley Distribution
+- Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
+- Poisson-Lindley-Lognormal Distribution
 
 ## Example
 

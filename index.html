@@ -16,8 +16,8 @@
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Estimation of a Variety of Count Regression Models">
-<meta name="description" content="An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lindley models (which handle excess zeroes), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, and the Sichel model.">
-<meta property="og:description" content="An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lindley models (which handle excess zeroes), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, and the Sichel model.">
+<meta name="description" content="An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, etc.">
+<meta property="og:description" content="An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, etc.">
 <meta property="og:image" content="https://jwood-iastate.github.io/flexCountReg/logo.png">
 </head>
 <body>
@@ -137,7 +137,7 @@
 </ul>
 </li>
 <li>
-<p>Poisson-Inverse-Gaussian Distribution</p>
+<p>Poisson-Inverse-Gaussian Distribution (Types 1 and 2)</p>
 <ul>
 <li>
 <code>dpinvgaus</code> for the density function</li>
@@ -147,6 +147,19 @@
 <code>qpinvgaus</code> for the quantile function</li>
 <li>
 <code>rpinvgaus</code> for random number generation</li>
+</ul>
+</li>
+<li>
+<p>Poisson-Inverse-Gamma Distribution</p>
+<ul>
+<li>
+<code>dpinvgamma</code> for the density function</li>
+<li>
+<code>ppinvgamma</code> for the cumulative density function</li>
+<li>
+<code>qpinvgamma</code> for the quantile function</li>
+<li>
+<code>rpinvgamma</code> for random number generation</li>
 </ul>
 </li>
 <li>
@@ -283,20 +296,30 @@
 <li>Inverse Gamma Distribution</li>
 <li>Triangle Distribution</li>
 </ul>
-<p><strong>Count Distributions</strong></p>
+<p><strong>Count Distributions</strong> <em>Distributions that Handle Equidispersion</em></p>
 <ul>
 <li>Poisson</li>
-<li>Generalized Waring Distribution</li>
+</ul>
+<p><em>Distributions that handle Underdispersion</em></p>
+<ul>
+<li>Conway-Maxwell-Poisson (COM) Distribution</li>
+</ul>
+<p><em>Distributions that Handle Overdispersion</em></p>
+<ul>
 <li>Negative Binomial in various forms (NB-1, NB-2, and NB-P)</li>
-<li>Poisson-Generalized-Exponential Distribution</li>
-<li>Poisson-Inverse-Gaussian Distribution</li>
-<li>Poisson-Lindley Distribution</li>
-<li>Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution</li>
-<li>Poisson-Lindley-Lognormal Distribution</li>
+<li>Poisson-Inverse-Gaussian Distribution (Types 1 and 2)</li>
+<li>Poisson-Inverse-Gamma</li>
 <li>Poisson-Lognormal Distribution</li>
 <li>Poisson-Weibull Distribution</li>
 <li>Sichel Distribution</li>
-<li>Conway-Maxwell-Poisson (COM) Distribution</li>
+<li>Generalized Waring Distribution</li>
+</ul>
+<p><em>Distributions that Handle Excess Zeros</em></p>
+<ul>
+<li>Poisson-Generalized-Exponential Distribution</li>
+<li>Poisson-Lindley Distribution</li>
+<li>Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution</li>
+<li>Poisson-Lindley-Lognormal Distribution</li>
 </ul>
 </div>
 </div>
@@ -953,8 +976,7 @@
 <div class="dev-status">
 <h2 data-toc-skip>Dev status</h2>
 <ul class="list-unstyled">
-<li><a href="https://codecov.io/gh/jwood-iastate/flexCountReg" class="external-link"><img src="https://codecov.io/gh/jwood-iastate/flexCountReg/graph/badge.svg?token=BX2FJQNPK2" alt="codecov"></a></li>
-<li><a href="https://app.codecov.io/gh/jwood-iastate/flexCountReg" class="external-link"><img src="https://codecov.io/gh/jwood-iastate/flexCountReg/graph/badge.svg" alt="Codecov test coverage"></a></li>
+<li><a href="https://app.codecov.io/gh/jwood-iastate/flexCountReg" class="external-link"><img src="https://codecov.io/gh/jwood-iastate/flexCountReg/graph/badge.svg?token=BX2FJQNPK2" alt="codecov"></a></li>
 </ul>
 </div>
 

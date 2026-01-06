@@ -40,6 +40,12 @@ or "latex" for a latex table. The default is "tibble".}
 \item{digits}{An integer value indicating the number of decimals to round the
 table values to.}
 }
+\value{
+A table comparing the models supplied to the function in the format 
+ specified The table includes coefficients, standard errors, statistical 
+ significance, AIC, BIC, and McFadden's Pseudo-R-Squared. Table formats 
+ include: "tibble", "gt", and "latex".
+}
 \description{
 This function creates tables comparing the flexCountReg package models
 supplied to the function.

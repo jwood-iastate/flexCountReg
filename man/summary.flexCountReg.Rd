@@ -11,6 +11,13 @@
 
 \item{...}{Optional parameters that include `confint_level` and `digits`.}
 }
+\value{
+Prints the model formula, method used for estimation, number of 
+ iterations used, if the model converged, and the log-likelihood. Then, it 
+ prints a table containing parameter estimates, standard errors, 
+ t-statistics, p-values, and confidence intervals. Also quietly returns a 
+ tibble with these values.
+}
 \description{
 Custom summary method for flexCountReg models
 }

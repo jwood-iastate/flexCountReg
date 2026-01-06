@@ -90,6 +90,14 @@ E[y]=\mu=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
 }
 
 Halton draws are used to evaluate the integral.
+
+
+dplindLnorm gives the density, pplindLnorm gives the distribution 
+ function, qplindLnorm gives the quantile function, and rplindLnorm generates
+ random  deviates.
+
+ The length of the result is determined by n for rplindLnorm, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
 }
 \examples{
 dplindLnorm(0, mean=0.75, theta=7, sigma=2, ndraws=10)

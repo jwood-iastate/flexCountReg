@@ -29,6 +29,11 @@
 #' @importFrom stats as.formula model.frame model.response dpois glm
 #' @importFrom gt gt tab_header fmt_number
 #' 
+#' @returns A table comparing the models supplied to the function in the format 
+#'  specified The table includes coefficients, standard errors, statistical 
+#'  significance, AIC, BIC, and McFadden's Pseudo-R-Squared. Table formats 
+#'  include: "tibble", "gt", and "latex".
+#' 
 #' @examples
 #' 
 #' # Comparing the NBP model with the NB2 and NB1 models

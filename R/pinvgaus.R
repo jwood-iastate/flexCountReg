@@ -61,6 +61,13 @@
 #' Cameron & Trivedi (2013). Regression Analysis of Count Data.
 #' Dean, Lawless & Willmot (1989). Mixed Poisson–Inverse Gaussian Models.
 #' Hilbe (2011). Negative Binomial Regression.
+#' 
+#' @details dpinvgaus gives the density, ppinvgaus gives the distribution 
+#'  function, qpinvgaus gives the quantile function, and rpinvgaus generates
+#'  random  deviates.
+#' 
+#'  The length of the result is determined by n for rpinvgaus, and is the 
+#'  maximum of the lengths of the numerical arguments for the other functions.
 #'
 #' @examples
 #' dpinvgaus(1, mu=0.75, eta=1)

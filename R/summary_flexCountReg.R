@@ -14,6 +14,12 @@
 #' This summary method accounts for bootstrapped or robust standard errors (when
 #' used).
 #' 
+#' @returns Prints the model formula, method used for estimation, number of 
+#'  iterations used, if the model converged, and the log-likelihood. Then, it 
+#'  prints a table containing parameter estimates, standard errors, 
+#'  t-statistics, p-values, and confidence intervals. Also quietly returns a 
+#'  tibble with these values.
+#' 
 #' @examples
 #' \donttest{
 #' # NB2 Model

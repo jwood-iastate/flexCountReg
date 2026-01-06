@@ -77,6 +77,13 @@ This results in a regression model where:
 \deqn{\sigma^2 =
   \mu \left(1-\frac{1}{\alpha+\rho+1} \right) + 
   \mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}}
+  
+
+dgwar gives the density, pgwar gives the distribution function, 
+ qgwar gives the quantile function, and rgwar generates random  deviates.
+
+ The length of the result is determined by n for rgwar, and is the maximum of 
+ the lengths of the numerical arguments for the other functions.
 }
 \examples{
 dgwar(0, mu=1, k=2, rho=3)

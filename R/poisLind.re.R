@@ -82,6 +82,15 @@
 #' V(\mu_{it})=\mu_{it}+
 #' \left(1-\frac{2}{(\theta+2)^2}\right)\mu_{it}^2
 #' }
+#' 
+#' @return
+#' An object of class `countreg` which is a list with the following components:
+#' \itemize{
+#'  \item model: the fitted model object.
+#'  \item data: the data frame used to fit the model.
+#'  \item call: the matched call.
+#'  \item formula: the formula used to fit the model.
+#' }
 #'
 #' @examples
 #' \donttest{

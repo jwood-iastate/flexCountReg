@@ -83,6 +83,15 @@ likelihood are estimated accounting for the panel structure.}
 
 \item{verbose}{logical.}
 }
+\value{
+An object of class `countreg` which is a list with the following components:
+\itemize{
+ \item model: the fitted model object.
+ \item data: the data frame used to fit the model.
+ \item call: the matched call.
+ \item formula: the formula used to fit the model.
+}
+}
 \description{
 Random Parameters Count Regression Models
 }

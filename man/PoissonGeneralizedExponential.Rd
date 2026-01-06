@@ -137,6 +137,13 @@ This results in:
 
 Halton draws are used to perform simulation over the lognormal distribution
 to solve the integral.
+
+dpge gives the density, ppge gives the distribution 
+ function, qpge gives the quantile function, and rpge generates
+ random  deviates.
+
+ The length of the result is determined by n for rpge, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
 }
 \examples{
 dpge(0, mean=0.75, shape=2, scale=1, ndraws=2000)

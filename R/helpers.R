@@ -45,6 +45,7 @@ mod.boot <- function(data, formula, family, offset, weights,
 #'
 #' @param x An object of class flexCountReg
 #' @param ... Additional arguments
+#' @returns A tibble object with columns: term, estimate
 #' @importFrom tibble tibble
 #' @export
 tidy.flexCountReg <- function(x, ...) {

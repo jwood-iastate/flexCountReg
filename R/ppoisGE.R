@@ -97,6 +97,13 @@
 #' Gupta, R. D., & Kundu, D. (2007). Generalized exponential distribution:
 #' Existing results and some recent developments. Journal of Statistical
 #' planning and inference, 137(11), 3537-3547.
+#' 
+#' @details dpge gives the density, ppge gives the distribution 
+#'  function, qpge gives the quantile function, and rpge generates
+#'  random  deviates.
+#' 
+#'  The length of the result is determined by n for rpge, and is the 
+#'  maximum of the lengths of the numerical arguments for the other functions.
 #'
 #' @examples
 #' dpge(0, mean=0.75, shape=2, scale=1, ndraws=2000)

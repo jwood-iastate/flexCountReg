@@ -49,6 +49,15 @@
 #' useful to allow the calculation of the rate parameter when the mean is
 #' known (e.g., in regression))
 #'
+#' @details dcom gives the density, pcom gives the distribution function, qcom 
+#'  gives the quantile function, and rcom generates random deviates.
+#' 
+#'  The length of the result is determined by n for rcom, and is the maximum of 
+#'  the lengths of the numerical arguments for the other functions.
+#' 
+#'  The numerical arguments other than n are recycled to the length of the 
+#'  result. Only the first elements of the logical arguments are used.
+#' 
 #' @examples
 #' dcom(1, mu=0.75, nu=3)
 #' pcom(c(0,1,2,3,5,7,9,10), lambda=0.75, nu=0.75)

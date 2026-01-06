@@ -36,6 +36,14 @@
 #'        \sum_{t=1}^{n_i}\mu_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
 #'        \frac{\Gamma(\mu_{it}+y_{it})}{\Gamma(\mu_{it})\Gamma(y_{it})}}
 #' 
+#' @return
+#' An object of class `countreg` which is a list with the following components:
+#' \itemize{
+#'  \item model: the fitted model object.
+#'  \item data: the data frame used to fit the model.
+#'  \item call: the matched call.
+#'  \item formula: the formula used to fit the model.
+#' }
 #' 
 #' @examples
 #' \donttest{

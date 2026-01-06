@@ -13,6 +13,11 @@
 
 \item{...}{optional arguments passed to the function. This includes `method`.}
 }
+\value{
+A numeric vector of predicted expected counts for each observation 
+ in the provided data. If no data is provided, the predictions for the data 
+ used in estimating the model are provided.
+}
 \description{
 Generates predictions for the expected count (lambda) for observations.
 

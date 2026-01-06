@@ -53,6 +53,9 @@
 #'     x^{\frac{\mu^2}{\sigma^2} - 1} e^{-\frac{\mu}{\sigma^2} x}}
 #'
 #'
+#' @return A vector of psudo-random draws from the specified distribution, based 
+#'  on Halton draws.
+#' 
 #' @examples
 #' # Generate 500 random draws from a normal distribution 
 #' halton_dists(dist="n", mean=3, sdev=2, ndraws=500)

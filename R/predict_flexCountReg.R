@@ -36,6 +36,10 @@
 #' Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and interpretation for
 #' random parameter generalized linear models. \emph{Accident Analysis and
 #' Prevention}, 220, 108147.
+#' 
+#' @returns A numeric vector of predicted expected counts for each observation 
+#'  in the provided data. If no data is provided, the predictions for the data 
+#'  used in estimating the model are provided.
 #'
 #' @import randtoolbox stats modelr rlang 
 #' @importFrom utils head tail

@@ -20,6 +20,9 @@
 #' 
 #' @importFrom cureplots calculate_cure_dataframe cure_plot
 #' @importFrom stats model.frame model.response formula predict
+#' 
+#' @returns A CURE plot generated with \pkg{cureplots}.
+#' 
 #' @export
 #' @examples
 #' \donttest{

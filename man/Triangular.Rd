@@ -73,6 +73,16 @@ b], increases linearly from a to c, and decreases linearly from c to b.
 The mode and standard deviation parameters define the distribution's location
 and scale, respectively, while the lower and upper bounds explicitly set the
 minimum and maximum values of the distribution.
+
+
+dtri gives the density, ptri gives the distribution function, qtri 
+gives the quantile function, and rtri generates random deviates.
+
+The length of the result is determined by n for rtri, and is the maximum of 
+the lengths of the numerical arguments for the other functions.
+
+The numerical arguments other than n are recycled to the length of the 
+result. Only the first elements of the logical arguments are used.
 }
 \examples{
 dtri(4, mode=8, upper=13, lower=1)

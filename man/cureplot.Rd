@@ -32,6 +32,9 @@ plot confidence bands. Default is 0 (no bands).}
 
 \item{...}{Additional arguments passed to \code{\link[cureplots]{cure_plot}}.}
 }
+\value{
+A CURE plot generated with \pkg{cureplots}.
+}
 \description{
 This function generates a Cumulative Residuals (CURE) plot for count models,
 including those with random parameters, estimated using the flexCountReg

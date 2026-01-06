@@ -11,6 +11,9 @@
 
 \item{...}{Additional arguments}
 }
+\value{
+A tibble object with columns: term, estimate
+}
 \description{
 Tidy a flexCountReg object
 }

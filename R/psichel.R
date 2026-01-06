@@ -29,6 +29,13 @@
 #' A framework for modelling overdispersed count data, including the
 #' Poisson-shifted generalized inverse Gaussian distribution.
 #' Computational Statistics & Data Analysis, 53(2), 381-393.
+#' 
+#' @details dsichel gives the density, psichel gives the distribution 
+#'  function, qsichel gives the quantile function, and rsichel 
+#'  generates random  deviates.
+#' 
+#'  The length of the result is determined by n for rsichel, and is the 
+#'  maximum of the lengths of the numerical arguments for the other functions.
 #'
 #' @examples
 #' # Basic usage

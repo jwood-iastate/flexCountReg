@@ -58,6 +58,13 @@ The moment generating function (MGF) is:
 The distribution mean and variance are:
 \deqn{\mu=\frac{\theta+2}{\theta(1+\theta)}}
 \deqn{\sigma^2=\frac{\mu}{\theta+2}\left(\frac{6}{\theta}-4\right)-\mu^2}
+
+dlindley gives the density, plindley gives the distribution 
+ function, qlindley gives the quantile function, and rlindley generates
+ random  deviates.
+
+ The length of the result is determined by n for rlindley, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
 }
 \examples{
 x <- seq(0, 5, by = 0.1)

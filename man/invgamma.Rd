@@ -78,6 +78,13 @@ The mean of the distribution is (provided \eqn{\alpha>1}):
 
 The variance of the distribution is (for \eqn{\alpha>2}):
 \deqn{\sigma^2=\frac{\beta^2}{(\alpha-1)^2(\alpha-2)}}
+
+dinvgamma gives the density, pinvgamma gives the distribution 
+ function, qinvgamma gives the quantile function, and rinvgamma generates
+ random  deviates.
+
+ The length of the result is determined by n for rinvgamma, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
 }
 \examples{
 dinvgamma(1, shape = 3, scale = 2)

@@ -21,6 +21,10 @@ distribution. If not provided, the function will generate Halton draws.}
 \item{ndraws}{The number of random draws to generate. This is only used if
 `hdraw` is not provided.}
 }
+\value{
+A vector of psudo-random draws from the specified distribution, based 
+ on Halton draws.
+}
 \description{
 Generate pseudo-random draws from specified distributions using Halton draws
 }

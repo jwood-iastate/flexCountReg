@@ -39,6 +39,15 @@
 #' @param start.vals optional vector of starting values.
 #' @param verbose logical.
 #' 
+#' @return
+#' An object of class `countreg` which is a list with the following components:
+#' \itemize{
+#'  \item model: the fitted model object.
+#'  \item data: the data frame used to fit the model.
+#'  \item call: the matched call.
+#'  \item formula: the formula used to fit the model.
+#' }
+#' 
 #' @examples
 #' \donttest{
 #' # Load data

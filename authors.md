@@ -10,14 +10,14 @@
 
 ## Citation
 
-Wood J, Basulto-Elias G (2025). *flexCountReg: Estimation of a Variety
+Wood J, Basulto-Elias G (2026). *flexCountReg: Estimation of a Variety
 of Count Regression Models*. R package version 0.1.1,
 <https://jwood-iastate.github.io/flexCountReg/>.
 
     @Manual{,
       title = {flexCountReg: Estimation of a Variety of Count Regression Models},
       author = {Jonathan Wood and Guillermo Basulto-Elias},
-      year = {2025},
+      year = {2026},
       note = {R package version 0.1.1},
       url = {https://jwood-iastate.github.io/flexCountReg/},
     }

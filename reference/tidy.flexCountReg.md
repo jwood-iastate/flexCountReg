@@ -18,3 +18,7 @@ tidy(x, ...)
 - ...:
 
   Additional arguments
+
+## Value
+
+A tibble object with columns: term, estimate

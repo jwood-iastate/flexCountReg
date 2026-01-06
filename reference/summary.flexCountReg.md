@@ -19,6 +19,14 @@ summary(object, ...)
 
   Optional parameters that include \`confint_level\` and \`digits\`.
 
+## Value
+
+Prints the model formula, method used for estimation, number of
+iterations used, if the model converged, and the log-likelihood. Then,
+it prints a table containing parameter estimates, standard errors,
+t-statistics, p-values, and confidence intervals. Also quietly returns a
+tibble with these values.
+
 ## Details
 
 This summary method accounts for bootstrapped or robust standard errors
@@ -60,9 +68,9 @@ summary(nb2)
 #> 1 (Intercept)        -7.40        0.043  -172.       0         -7.49      -7.32 
 #> 2 lnaadt              0.912       0.005   182.       0          0.902      0.921
 #> 3 lnlength            0.843       0.037    22.9      0          0.771      0.915
-#> 4 speed50            -0.47        0.102    -4.61     0         -0.67      -0.27 
-#> 5 AADT10kplus         0.77        0.09      8.59     0          0.594      0.945
+#> 4 speed50            -0.47        0.102    -4.62     0         -0.669     -0.27 
+#> 5 AADT10kplus         0.77        0.089     8.61     0          0.594      0.945
 #> 6 ln(alpha):(Interc… -1.62        0.288    -5.62     0         -2.18      -1.06 
-#> 7 ln(alpha):speed50   1.31        0.458     2.85     0.004      0.409      2.20 
+#> 7 ln(alpha):speed50   1.31        0.447     2.92     0.003      0.43       2.18 
 # }
 ```

@@ -98,6 +98,14 @@ The expected value of the distribution is:
 are used to perform simulation over the lognormal distribution to solve
 the integral.
 
+dpLnorm gives the density, ppLnorm gives the distribution function,
+qpLnorm gives the quantile function, and rpLnorm generates random
+deviates.
+
+The length of the result is determined by n for rpLnorm, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Examples
 
 ``` r

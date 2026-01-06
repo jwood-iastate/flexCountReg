@@ -57,6 +57,13 @@ regCompTable(
   An integer value indicating the number of decimals to round the table
   values to.
 
+## Value
+
+A table comparing the models supplied to the function in the format
+specified The table includes coefficients, standard errors, statistical
+significance, AIC, BIC, and McFadden's Pseudo-R-Squared. Table formats
+include: "tibble", "gt", and "latex".
+
 ## Examples
 
 ``` r
@@ -92,12 +99,12 @@ print(comptable)
 #> (Intercept) & -7.807 (0.041)*** & -7.151 (0.043)*** & -7.798 (0.043)***\\
 #> lnaadt & 0.942 (0.005)*** & 0.866 (0.005)*** & 0.942 (0.005)***\\
 #> lnlength & 0.821 (0.036)*** & 0.836 (0.037)*** & 0.834 (0.037)***\\
-#> speed50 & -0.368 (0.093)*** & -0.401 (0.092)*** & -0.386 (0.094)***\\
+#> speed50 & -0.368 (0.092)*** & -0.401 (0.092)*** & -0.386 (0.094)***\\
 #> ShouldWidth04 & 0.255 (0.056)*** & 0.231 (0.061)*** & 0.258 (0.059)***\\
 #> \addlinespace
-#> AADTover10k & 0.649 (0.077)*** & 0.828 (0.093)*** & 0.686 (0.086)***\\
-#> ln(alpha) & -1.714 (0.35)*** & -1.328 (0.283)*** & -1.327 (0.291)***\\
-#> ln(p) & --- & --- & 0.499 (0.173)**\\
+#> AADTover10k & 0.649 (0.077)*** & 0.828 (0.093)*** & 0.686 (0.087)***\\
+#> ln(alpha) & -1.714 (0.34)*** & -1.328 (0.273)*** & -1.327 (0.294)***\\
+#> ln(p) & --- & --- & 0.499 (0.174)**\\
 #> N Obs. & 1501 & 1501 & 1501\\
 #> LL & -1065.086 & -1063.673 & -1062.266\\
 #> \addlinespace

@@ -126,6 +126,19 @@ countreg.rp(
 
   logical.
 
+## Value
+
+An object of class \`countreg\` which is a list with the following
+components:
+
+- model: the fitted model object.
+
+- data: the data frame used to fit the model.
+
+- call: the matched call.
+
+- formula: the formula used to fit the model.
+
 ## Examples
 
 ``` r
@@ -196,7 +209,7 @@ summary(rp_gen)
 #> 2 lnaadt              0.965     6   e-3   174.       0        9.54e-1    9.76e-1
 #> 3 speed50:Mean       -0.834     1.15e-1    -7.28     0       -1.06e+0   -6.1 e-1
 #> 4 speed50:St.Dev      0.83      1.52e-1     5.46     0        5.32e-1    1.13e+0
-#> 5 HetMean:AADT10kp… -18.4       7.41e+7     0        1       -1.45e+8    1.45e+8
+#> 5 HetMean:AADT10kp… -18.4       7.00e+7     0        1       -1.37e+8    1.37e+8
 #> 6 ln(alpha):(Inter…  -1.21      1.92e-1    -6.29     0       -1.58e+0   -8.31e-1
 #> 7 ln(alpha):lnleng…  -0.49      1.45e-1    -3.38     0.001   -7.74e-1   -2.06e-1
 

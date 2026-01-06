@@ -52,6 +52,10 @@ cureplot(
   Additional arguments passed to
   [`cure_plot`](https://gbasulto.github.io/cureplots/reference/cure_plot.html).
 
+## Value
+
+A CURE plot generated with cureplots.
+
 ## Examples
 
 ``` r

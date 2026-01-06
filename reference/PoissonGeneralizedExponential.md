@@ -136,6 +136,12 @@ e^{ -\left( \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)} \right) x }
 Halton draws are used to perform simulation over the lognormal
 distribution to solve the integral.
 
+dpge gives the density, ppge gives the distribution function, qpge gives
+the quantile function, and rpge generates random deviates.
+
+The length of the result is determined by n for rpge, and is the maximum
+of the lengths of the numerical arguments for the other functions.
+
 ## References
 
 Gupta, R. D., & Kundu, D. (2007). Generalized exponential distribution:

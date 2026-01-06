@@ -94,6 +94,15 @@ computed using the mean and the decay parameter (\\\nu\\). This is
 useful to allow the calculation of the rate parameter when the mean is
 known (e.g., in regression))
 
+dcom gives the density, pcom gives the distribution function, qcom gives
+the quantile function, and rcom generates random deviates.
+
+The length of the result is determined by n for rcom, and is the maximum
+of the lengths of the numerical arguments for the other functions.
+
+The numerical arguments other than n are recycled to the length of the
+result. Only the first elements of the logical arguments are used.
+
 ## Examples
 
 ``` r

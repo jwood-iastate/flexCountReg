@@ -59,6 +59,19 @@ renb(
 
   an optional offset term provided as a string.
 
+## Value
+
+An object of class \`countreg\` which is a list with the following
+components:
+
+- model: the fitted model object.
+
+- data: the data frame used to fit the model.
+
+- call: the matched call.
+
+- formula: the formula used to fit the model.
+
 ## Details
 
 This function estimates a random effects negative binomial (RENB)
@@ -97,13 +110,13 @@ summary(renb.mod)
 #> # A tibble: 8 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -7.05        0.127   -55.7      0         -7.30      -6.80 
+#> 1 (Intercept)        -7.05        0.128   -55.2      0         -7.30      -6.8  
 #> 2 lnaadt              0.972       0.015    64.6      0          0.942      1.00 
-#> 3 speed50            -0.985       0.301    -3.27     0.001     -1.58      -0.395
-#> 4 ShouldWidth04      -0.414       0.212    -1.96     0.051     -0.828      0.001
-#> 5 AADTover10k        -0.861       0.447    -1.92     0.054     -1.74       0.015
-#> 6 ln(a)               3.01        0.115    26.2      0          2.78       3.23 
-#> 7 ln(b)               0.604       0.122     4.97     0          0.366      0.843
+#> 3 speed50            -0.985       0.303    -3.25     0.001     -1.58      -0.39 
+#> 4 ShouldWidth04      -0.414       0.211    -1.96     0.05      -0.827      0    
+#> 5 AADTover10k        -0.861       0.463    -1.86     0.063     -1.77       0.047
+#> 6 ln(a)               3.01        0.116    26.0      0          2.78       3.23 
+#> 7 ln(b)               0.604       0.122     4.96     0          0.365      0.843
 #> 8 lnlength (Offset …  1          NA        NA       NA         NA         NA    
 # }
 ```

@@ -41,6 +41,12 @@ predict(object, newdata = NULL, ...)
 
   optional arguments passed to the function. This includes \`method\`.
 
+## Value
+
+A numeric vector of predicted expected counts for each observation in
+the provided data. If no data is provided, the predictions for the data
+used in estimating the model are provided.
+
 ## Note
 
 optional parameter \`newdata\`: a dataframe that has all of the

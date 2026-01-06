@@ -36,6 +36,11 @@ halton_dists(dist, mean, sdev, hdraw = NULL, ndraws = 500)
   The number of random draws to generate. This is only used if \`hdraw\`
   is not provided.
 
+## Value
+
+A vector of psudo-random draws from the specified distribution, based on
+Halton draws.
+
 ## Details
 
 This function is used to convert Halton draws to the specified

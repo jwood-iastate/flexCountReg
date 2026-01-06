@@ -631,8 +631,10 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   # clean the method name
   method <- toupper(str_replace_all(method, "[^abcfghmnrsABCFGHMNRS]", "")) 
   if (!(method %in% c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH"))){
-    print(paste('Method must be one of: "SANN", "NM", "BFGS", "BFGSR", "CG",', 
-                '"NR", or "BHHH". Switching to "NM.'))
+    msg <- 
+      paste('Method must be one of: "SANN", "NM", "BFGS", "BFGSR", "CG",', 
+            '"NR", or "BHHH". Switching to "NM.')
+    warning(msg)
     method <- "NM"
   }
   

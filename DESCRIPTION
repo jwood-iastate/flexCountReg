@@ -21,7 +21,7 @@ Description: Description: An implementation of multiple regression models for
     under-reporting in count models, see Wood et al. (2016)
     <doi:10.1016/j.aap.2016.06.013>. For prediction methods in random
     parameter models, see Wood and Gayah (2025)
-    <doi:10.1016/j.aap.2025.10814>. For estimating random parameters using
+    <doi:10.1016/j.aap.2025.108147>. For estimating random parameters using
     maximum simulated likelihood, see Greene and Hill (2010)
     <doi:10.1108/S0731-9053(2010)26>; Gourieroux and Monfort (1996)
     <doi:10.1093/0198774753.001.0001>; or Hensher et al. (2015)

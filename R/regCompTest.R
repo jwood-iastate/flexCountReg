@@ -19,7 +19,7 @@
 #' @param ... Additional arguments to be passed to the base model fitting
 #'   function - options are any argument from the \code{\link{countreg}}
 #'   function.
-#' @return A list containing the following components:
+#' @returns A list containing the following components:
 #' \item{LL}{Log-likelihood of the provided model.}
 #' \item{LLbase}{Log-likelihood of the base model.}
 #' \item{LR}{Likelihood Ratio statistic.}

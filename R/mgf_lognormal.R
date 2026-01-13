@@ -13,7 +13,7 @@
 #' @param n The point at which to evaluate the MGF, often denoted as \eqn{t} in
 #'   the definition of the MGF. This parameter essentially specifies the order
 #'   of the moment generating function.
-#' @return The estimated value of the moment generating function (MGF) for the
+#' @returns The estimated value of the moment generating function (MGF) for the
 #'   specified lognormal distribution at the given point.
 #' @importFrom stats integrate
 #' @details

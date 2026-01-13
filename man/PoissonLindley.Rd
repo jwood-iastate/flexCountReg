@@ -49,6 +49,14 @@ otherwise, \eqn{P[X>x]}.}
 
 \item{n}{the number of random numbers to generate.}
 }
+\value{
+dplind gives the density, pplind gives the distribution 
+ function, qplind gives the quantile function, and rplind generates
+ random  deviates.
+
+ The length of the result is determined by n for rplind, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
+}
 \description{
 These functions provide density, distribution function, quantile function,
 and random number generation for the Poisson-Lindley (PL) Distribution

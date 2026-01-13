@@ -98,7 +98,7 @@
 #' Existing results and some recent developments. Journal of Statistical
 #' planning and inference, 137(11), 3537-3547.
 #' 
-#' @details dpge gives the density, ppge gives the distribution 
+#' @returns dpge gives the density, ppge gives the distribution 
 #'  function, qpge gives the quantile function, and rpge generates
 #'  random  deviates.
 #' 

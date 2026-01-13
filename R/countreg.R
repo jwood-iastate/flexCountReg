@@ -521,7 +521,7 @@
 #' This allows the inference of both the true event count and the probability of
 #' the event being reported as a function of independent variables.
 #'  
-#' @return
+#' @returns
 #' An object of class `countreg` which is a list with the following components:
 #' \itemize{
 #'  \item model: the fitted model object.

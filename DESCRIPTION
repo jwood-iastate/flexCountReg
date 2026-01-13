@@ -9,7 +9,7 @@ Authors@R: c(person("Jonathan", "Wood", role = c("aut", "cre"),
                   email = "basulto@iastate.edu", 
                   comment = c(ORCID = "0000-0002-5205-2190")))
 Maintainer: Jonathan Wood <jwood2@iastate.edu>
-Description: Description: An implementation of multiple regression models for 
+Description: An implementation of multiple regression models for 
     count data. These include various forms of the negative binomial (NB-1, 
     NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lognormal, other
     compound Poisson distributions, the Generalized Waring model, etc.

@@ -81,7 +81,7 @@
 #' distribution to solve the integral. This is sometimes more
 #' computationally efficient as well.
 #' 
-#' @details dplindGamma gives the density, pplindGamma gives the distribution 
+#' @returns dplindGamma gives the density, pplindGamma gives the distribution 
 #'  function, qplindGamma gives the quantile function, and rplindGamma generates
 #'  random  deviates.
 #' 

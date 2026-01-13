@@ -53,7 +53,7 @@
 #' The variance of the distribution is (for \eqn{\alpha>2}):
 #' \deqn{\sigma^2=\frac{\beta^2}{(\alpha-1)^2(\alpha-2)}}
 #' 
-#' @details dinvgamma gives the density, pinvgamma gives the distribution 
+#' @returns dinvgamma gives the density, pinvgamma gives the distribution 
 #'  function, qinvgamma gives the quantile function, and rinvgamma generates
 #'  random  deviates.
 #' 

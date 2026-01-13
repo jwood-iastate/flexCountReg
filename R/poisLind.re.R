@@ -83,7 +83,7 @@
 #' \left(1-\frac{2}{(\theta+2)^2}\right)\mu_{it}^2
 #' }
 #' 
-#' @return
+#' @returns
 #' An object of class `countreg` which is a list with the following components:
 #' \itemize{
 #'  \item model: the fitted model object.

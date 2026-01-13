@@ -62,7 +62,7 @@
 #' Dean, Lawless & Willmot (1989). Mixed Poisson–Inverse Gaussian Models.
 #' Hilbe (2011). Negative Binomial Regression.
 #' 
-#' @details dpinvgaus gives the density, ppinvgaus gives the distribution 
+#' @returns description dpinvgaus gives the density, ppinvgaus gives the distribution 
 #'  function, qpinvgaus gives the quantile function, and rpinvgaus generates
 #'  random  deviates.
 #' 

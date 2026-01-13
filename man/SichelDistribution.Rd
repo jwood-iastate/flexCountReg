@@ -35,6 +35,14 @@ rsichel(n, mu = 1, sigma = 1, gamma = 1)
 
 \item{n}{number of random values to generate.}
 }
+\value{
+dsichel gives the density, psichel gives the distribution 
+ function, qsichel gives the quantile function, and rsichel 
+ generates random  deviates.
+
+ The length of the result is determined by n for rsichel, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
+}
 \description{
 Density, distribution function, quantile function, and random generation
 for the Sichel distribution.
@@ -48,13 +56,6 @@ The PMF is:
 \deqn{f(y|\mu, \sigma, \gamma) = 
 \frac{(\mu/c)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma) y! 
 (\alpha\sigma)^{y+\gamma}}}
-
-dsichel gives the density, psichel gives the distribution 
- function, qsichel gives the quantile function, and rsichel 
- generates random  deviates.
-
- The length of the result is determined by n for rsichel, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
 }
 \examples{
 # Basic usage

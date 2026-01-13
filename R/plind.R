@@ -48,6 +48,13 @@
 #'
 #' The default is to use the input mean value for the distribution. However, the
 #' lambda parameter can be used as an alternative to the mean value.
+#' 
+#' @returns dplind gives the density, pplind gives the distribution 
+#'  function, qplind gives the quantile function, and rplind generates
+#'  random  deviates.
+#' 
+#'  The length of the result is determined by n for rplind, and is the 
+#'  maximum of the lengths of the numerical arguments for the other functions.
 #'
 #' @examples
 #' dplind(0, mean = 0.75, theta = 7)

@@ -45,7 +45,7 @@
 #' The variance of the distribution is:
 #' \deqn{\sigma^2=\mu+\eta\mu^2}
 #' 
-#' @details dpinvgamma gives the density, ppinvgamma gives the distribution 
+#' @returns dpinvgamma gives the density, ppinvgamma gives the distribution 
 #'  function, qpinvgamma gives the quantile function, and rcom generates random 
 #'  deviates.
 #' 

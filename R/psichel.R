@@ -30,7 +30,7 @@
 #' Poisson-shifted generalized inverse Gaussian distribution.
 #' Computational Statistics & Data Analysis, 53(2), 381-393.
 #' 
-#' @details dsichel gives the density, psichel gives the distribution 
+#' @returns dsichel gives the density, psichel gives the distribution 
 #'  function, qsichel gives the quantile function, and rsichel 
 #'  generates random  deviates.
 #' 

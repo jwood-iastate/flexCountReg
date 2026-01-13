@@ -37,7 +37,7 @@
 #' and scale, respectively, while the lower and upper bounds explicitly set the
 #' minimum and maximum values of the distribution.
 #' 
-#' @details dtri gives the density, ptri gives the distribution function, qtri 
+#' @returns dtri gives the density, ptri gives the distribution function, qtri 
 #' gives the quantile function, and rtri generates random deviates.
 #' 
 #' The length of the result is determined by n for rtri, and is the maximum of 

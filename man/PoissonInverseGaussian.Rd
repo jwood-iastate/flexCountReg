@@ -64,6 +64,21 @@ otherwise, \eqn{P[X>x]}.}
 
 \item{n}{the number of random numbers to generate.}
 }
+\value{
+description dpinvgaus gives the density, ppinvgaus gives the distribution 
+ function, qpinvgaus gives the quantile function, and rpinvgaus generates
+ random  deviates.
+
+ The length of the result is determined by n for rpinvgaus, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
+
+dpinvgaus gives the density, ppinvgaus gives the distribution 
+ function, qpinvgaus gives the quantile function, and rpinvgaus generates
+ random  deviates.
+
+ The length of the result is determined by n for rpinvgaus, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
+}
 \description{
 These functions provide the density function, distribution function,
 quantile function, and random number generation for the
@@ -113,14 +128,6 @@ f(y>0)=f(0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}
 
 Resulting variance:
 \deqn{\sigma^2=\mu+\eta\mu^2}
-
-
-dpinvgaus gives the density, ppinvgaus gives the distribution 
- function, qpinvgaus gives the quantile function, and rpinvgaus generates
- random  deviates.
-
- The length of the result is determined by n for rpinvgaus, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
 
 The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
 distribution, as noted by Cameron & Trivedi (2013). It is also known as a

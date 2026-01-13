@@ -54,7 +54,7 @@
 #' whereas the mean and standard deviation are used to compute these parameters
 #' indirectly.
 #' 
-#' @details dpoisweibull gives the density, ppoisweibull gives the distribution 
+#' @returns dpoisweibull gives the density, ppoisweibull gives the distribution 
 #'  function, qpoisweibull gives the quantile function, and rpoisweibull 
 #'  generates random  deviates.
 #' 

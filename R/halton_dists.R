@@ -53,7 +53,7 @@
 #'     x^{\frac{\mu^2}{\sigma^2} - 1} e^{-\frac{\mu}{\sigma^2} x}}
 #'
 #'
-#' @return A vector of psudo-random draws from the specified distribution, based 
+#' @returns A vector of psudo-random draws from the specified distribution, based 
 #'  on Halton draws.
 #' 
 #' @examples

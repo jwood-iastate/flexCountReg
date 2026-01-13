@@ -45,7 +45,7 @@
 #' Halton draws are used to perform simulation over the lognormal distribution
 #' to solve the integral.
 #' 
-#' @details dpLnorm gives the density, ppLnorm gives the distribution 
+#' @returns dpLnorm gives the density, ppLnorm gives the distribution 
 #'  function, qpLnorm gives the quantile function, and rpLnorm generates
 #'  random  deviates.
 #' 

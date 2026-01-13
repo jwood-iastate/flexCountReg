@@ -4,7 +4,7 @@
 #' @param C A correlation matrix.
 #' @param S A vector of standard deviations.
 #'
-#' @return A covariance matrix
+#' @returns A covariance matrix
 #' @examples
 #' C <- matrix(c(1,-0.3,0.7,-0.3,1,-0.2,0.7,-0.2,1), 3, 3)
 #' S <- c(0.5, 2, 1.25)

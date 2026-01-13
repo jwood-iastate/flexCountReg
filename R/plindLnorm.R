@@ -43,7 +43,7 @@
 #'
 #' Halton draws are used to evaluate the integral.
 #' 
-#' @details dplindLnorm gives the density, pplindLnorm gives the distribution 
+#' @returns dplindLnorm gives the density, pplindLnorm gives the distribution 
 #'  function, qplindLnorm gives the quantile function, and rplindLnorm generates
 #'  random  deviates.
 #' 

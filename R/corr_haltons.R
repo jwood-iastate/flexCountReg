@@ -28,8 +28,9 @@
 #' @param upper A numeric value specifying the upper bound for truncated normal
 #'   distribution. Default is Inf.
 #'
-#' @return A matrix with \code{N} columns and \code{ndraws} rows containing the
+#' @returns A matrix with \code{N} columns and \code{ndraws} rows containing the
 #'   simulated values for the correlated random variables.
+#'   
 #' @importFrom randtoolbox halton
 #' @importFrom truncnorm qtruncnorm
 #' @importFrom stats qlnorm pnorm

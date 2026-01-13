@@ -36,7 +36,7 @@
 #' \deqn{\mu=\frac{\theta+2}{\theta(1+\theta)}}
 #' \deqn{\sigma^2=\frac{\mu}{\theta+2}\left(\frac{6}{\theta}-4\right)-\mu^2}
 #' 
-#' @details dlindley gives the density, plindley gives the distribution 
+#' @returns dlindley gives the density, plindley gives the distribution 
 #'  function, qlindley gives the quantile function, and rlindley generates
 #'  random  deviates.
 #' 

@@ -49,7 +49,7 @@
 #' useful to allow the calculation of the rate parameter when the mean is
 #' known (e.g., in regression))
 #'
-#' @details dcom gives the density, pcom gives the distribution function, qcom 
+#' @returns dcom gives the density, pcom gives the distribution function, qcom 
 #'  gives the quantile function, and rcom generates random deviates.
 #' 
 #'  The length of the result is determined by n for rcom, and is the maximum of 

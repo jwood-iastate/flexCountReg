@@ -85,6 +85,14 @@ function.}
 
 \item{n}{The number of random samples to generate.}
 }
+\value{
+dpoisweibull gives the density, ppoisweibull gives the distribution 
+ function, qpoisweibull gives the quantile function, and rpoisweibull 
+ generates random  deviates.
+
+ The length of the result is determined by n for rpoisweibull, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
+}
 \description{
 These functions provide density, distribution function, quantile function,
 and random number generation for the Poisson-Weibull Distribution, which is
@@ -119,14 +127,6 @@ distribution.
 The shape and scale parameters directly define the Weibull distribution,
 whereas the mean and standard deviation are used to compute these parameters
 indirectly.
-
-
-dpoisweibull gives the density, ppoisweibull gives the distribution 
- function, qpoisweibull gives the quantile function, and rpoisweibull 
- generates random  deviates.
-
- The length of the result is determined by n for rpoisweibull, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
 }
 \examples{
 dpoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=0.5, ndraws=10)

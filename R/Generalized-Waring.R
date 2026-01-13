@@ -50,7 +50,7 @@
 #'   \mu \left(1-\frac{1}{\alpha+\rho+1} \right) + 
 #'   \mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}}
 #'   
-#' @details dgwar gives the density, pgwar gives the distribution function, 
+#' @returns dgwar gives the density, pgwar gives the distribution function, 
 #'  qgwar gives the quantile function, and rgwar generates random  deviates.
 #' 
 #'  The length of the result is determined by n for rgwar, and is the maximum of 

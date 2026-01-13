@@ -60,6 +60,14 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 \item{n}{number of random draws.}
 }
+\value{
+dplindLnorm gives the density, pplindLnorm gives the distribution 
+ function, qplindLnorm gives the quantile function, and rplindLnorm generates
+ random  deviates.
+
+ The length of the result is determined by n for rplindLnorm, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
+}
 \description{
 These functions provide density, distribution, quantile, and random
 generation for the Poisson-Lindley-Lognormal (PLL) Distribution.
@@ -90,14 +98,6 @@ E[y]=\mu=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
 }
 
 Halton draws are used to evaluate the integral.
-
-
-dplindLnorm gives the density, pplindLnorm gives the distribution 
- function, qplindLnorm gives the quantile function, and rplindLnorm generates
- random  deviates.
-
- The length of the result is determined by n for rplindLnorm, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
 }
 \examples{
 dplindLnorm(0, mean=0.75, theta=7, sigma=2, ndraws=10)

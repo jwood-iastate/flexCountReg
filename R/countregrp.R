@@ -39,7 +39,7 @@
 #' @param start.vals optional vector of starting values.
 #' @param verbose logical.
 #' 
-#' @return
+#' @returns
 #' An object of class `countreg` which is a list with the following components:
 #' \itemize{
 #'  \item model: the fitted model object.

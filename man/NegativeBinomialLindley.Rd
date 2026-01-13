@@ -50,6 +50,14 @@ otherwise, \eqn{P[X>x]}.}
 
 \item{n}{the number of random numbers to generate.}
 }
+\value{
+dplindGamma gives the density, pplindGamma gives the distribution 
+ function, qplindGamma gives the quantile function, and rplindGamma generates
+ random  deviates.
+
+ The length of the result is determined by n for rplindGamma, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
+}
 \description{
 These functions provide density, distribution function, quantile
 function, and random number generation for the Poisson-Lindley-Gamma
@@ -115,14 +123,6 @@ be computed at (along with accuracy, in come cases). For this reason,
 the function uses Halton draws to perform simulation over the gamma
 distribution to solve the integral. This is sometimes more
 computationally efficient as well.
-
-
-dplindGamma gives the density, pplindGamma gives the distribution 
- function, qplindGamma gives the quantile function, and rplindGamma generates
- random  deviates.
-
- The length of the result is determined by n for rplindGamma, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
 }
 \examples{
 dplindGamma(0, mean=0.75, theta=7, alpha=2)

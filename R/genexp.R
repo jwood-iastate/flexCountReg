@@ -81,6 +81,13 @@
 #' Hilbe, J. M. (2011). Negative binomial regression. Cambridge University
 #' Press.
 #' 
+#' @returns dpinvgaus gives the density, ppinvgaus gives the distribution 
+#'  function, qpinvgaus gives the quantile function, and rpinvgaus generates
+#'  random  deviates.
+#' 
+#'  The length of the result is determined by n for rpinvgaus, and is the 
+#'  maximum of the lengths of the numerical arguments for the other functions.
+#' 
 #' @examples
 #' dpinvgaus(1, mu=0.75, eta=1)
 #' ppinvgaus(c(0,1,2,3,5,7,9,10), mu=0.75, eta=3, form="Type 2")

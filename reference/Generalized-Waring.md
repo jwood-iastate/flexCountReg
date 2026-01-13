@@ -59,6 +59,15 @@ rgwar(n, mu, k, rho)
 
   integer number of random numbers to generate.
 
+## Value
+
+dgwar gives the density, pgwar gives the distribution function, qgwar
+gives the quantile function, and rgwar generates random deviates.
+
+The length of the result is determined by n for rgwar, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Details
 
 The Generalized Waring distribution is a 3-parameter count distribution
@@ -89,13 +98,6 @@ Thus, we can use: \$\$a_x=\frac{\mu(\rho-1)}{k}\$\$
 This results in a regression model where: \$\$\mu=e^{X\beta}\$\$
 \$\$\sigma^2 = \mu \left(1-\frac{1}{\alpha+\rho+1} \right) +
 \mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}\$\$
-
-dgwar gives the density, pgwar gives the distribution function, qgwar
-gives the quantile function, and rgwar generates random deviates.
-
-The length of the result is determined by n for rgwar, and is the
-maximum of the lengths of the numerical arguments for the other
-functions.
 
 ## Examples
 

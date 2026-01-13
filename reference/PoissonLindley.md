@@ -69,6 +69,15 @@ An object of class `character` of length 1.
 
   the number of random numbers to generate.
 
+## Value
+
+dplind gives the density, pplind gives the distribution function, qplind
+gives the quantile function, and rplind generates random deviates.
+
+The length of the result is determined by n for rplind, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Details
 
 The Poisson-Lindley is a 2-parameter count distribution that captures

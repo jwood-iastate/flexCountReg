@@ -113,6 +113,15 @@ otherwise, \(P[X&gt;x]\).</p></dd>
 
 </dl></div>
     <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>dtri gives the density, ptri gives the distribution function, qtri
+gives the quantile function, and rtri generates random deviates.</p>
+<p>The length of the result is determined by n for rtri, and is the maximum of
+the lengths of the numerical arguments for the other functions.</p>
+<p>The numerical arguments other than n are recycled to the length of the
+result. Only the first elements of the logical arguments are used.</p>
+    </div>
+    <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The Triangle Distribution is defined by three points: a (minimum), b
 (maximum), and c (mode), where the density is zero outside the interval [a,
@@ -125,13 +134,6 @@ b], increases linearly from a to c, and decreases linearly from c to b.</p>
 <p>The mode and standard deviation parameters define the distribution's location
 and scale, respectively, while the lower and upper bounds explicitly set the
 minimum and maximum values of the distribution.</p>
-
-<p>dtri gives the density, ptri gives the distribution function, qtri
-gives the quantile function, and rtri generates random deviates.</p>
-<p>The length of the result is determined by n for rtri, and is the maximum of
-the lengths of the numerical arguments for the other functions.</p>
-<p>The numerical arguments other than n are recycled to the length of the
-result. Only the first elements of the logical arguments are used.</p>
     </div>
 
     <div class="section level2">

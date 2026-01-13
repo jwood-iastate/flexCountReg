@@ -57,6 +57,16 @@ rinvgamma(n, shape = 2.5, scale = 1)
 
   the number of random numbers to generate.
 
+## Value
+
+dinvgamma gives the density, pinvgamma gives the distribution function,
+qinvgamma gives the quantile function, and rinvgamma generates random
+deviates.
+
+The length of the result is determined by n for rinvgamma, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Details
 
 `dinvgamma` computes the density (PDF) of the Inverse-Gamma
@@ -91,14 +101,6 @@ The mean of the distribution is (provided \\\alpha\>1\\):
 
 The variance of the distribution is (for \\\alpha\>2\\):
 \$\$\sigma^2=\frac{\beta^2}{(\alpha-1)^2(\alpha-2)}\$\$
-
-dinvgamma gives the density, pinvgamma gives the distribution function,
-qinvgamma gives the quantile function, and rinvgamma generates random
-deviates.
-
-The length of the result is determined by n for rinvgamma, and is the
-maximum of the lengths of the numerical arguments for the other
-functions.
 
 ## Examples
 

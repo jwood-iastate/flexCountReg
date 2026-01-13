@@ -84,6 +84,14 @@ returned, otherwise \(P(X &gt; x)\) is returned. Default is TRUE.</p></dd>
 
 </dl></div>
     <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>dlindley gives the density, plindley gives the distribution
+ function, qlindley gives the quantile function, and rlindley generates
+ random  deviates.</p>
+<p>The length of the result is determined by n for rlindley, and is the
+ maximum of the lengths of the numerical arguments for the other functions.</p>
+    </div>
+    <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Probability density function (PDF)
 $$f(x\mid \theta )=\frac{\theta ^{2}}{(1+\theta )}(1+x)e^{-\theta x}$$</p>
@@ -101,11 +109,6 @@ $$M_X(t)=\frac{\theta^2(\theta-t+1)}{(\theta+1)(\theta-t)^2}$$</p>
 <p>The distribution mean and variance are:
 $$\mu=\frac{\theta+2}{\theta(1+\theta)}$$
 $$\sigma^2=\frac{\mu}{\theta+2}\left(\frac{6}{\theta}-4\right)-\mu^2$$</p>
-<p>dlindley gives the density, plindley gives the distribution
- function, qlindley gives the quantile function, and rlindley generates
- random  deviates.</p>
-<p>The length of the result is determined by n for rlindley, and is the
- maximum of the lengths of the numerical arguments for the other functions.</p>
     </div>
 
     <div class="section level2">

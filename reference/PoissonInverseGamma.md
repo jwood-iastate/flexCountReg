@@ -57,6 +57,16 @@ rpinvgamma(n, mu = 1, eta = 1)
 
   the number of random numbers to generate.
 
+## Value
+
+dpinvgamma gives the density, ppinvgamma gives the distribution
+function, qpinvgamma gives the quantile function, and rcom generates
+random deviates.
+
+The length of the result is determined by n for rpinvgamma, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Details
 
 `dpinvgamma` computes the density (PDF) of the Poisson-Inverse-Gamma
@@ -83,14 +93,6 @@ integer, and \\K_i(z)\\ is the modified Bessel function of the second
 kind. This formulation uses the mean directly.
 
 The variance of the distribution is: \$\$\sigma^2=\mu+\eta\mu^2\$\$
-
-dpinvgamma gives the density, ppinvgamma gives the distribution
-function, qpinvgamma gives the quantile function, and rcom generates
-random deviates.
-
-The length of the result is determined by n for rpinvgamma, and is the
-maximum of the lengths of the numerical arguments for the other
-functions.
 
 ## Examples
 

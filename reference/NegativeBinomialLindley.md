@@ -71,6 +71,16 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 
   the number of random numbers to generate.
 
+## Value
+
+dplindGamma gives the density, pplindGamma gives the distribution
+function, qplindGamma gives the quantile function, and rplindGamma
+generates random deviates.
+
+The length of the result is determined by n for rplindGamma, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Details
 
 The Poisson-Lindley-Gamma is a count distribution that captures high
@@ -117,14 +127,6 @@ be computed at (along with accuracy, in come cases). For this reason,
 the function uses Halton draws to perform simulation over the gamma
 distribution to solve the integral. This is sometimes more
 computationally efficient as well.
-
-dplindGamma gives the density, pplindGamma gives the distribution
-function, qplindGamma gives the quantile function, and rplindGamma
-generates random deviates.
-
-The length of the result is determined by n for rplindGamma, and is the
-maximum of the lengths of the numerical arguments for the other
-functions.
 
 ## Examples
 

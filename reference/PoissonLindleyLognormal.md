@@ -86,6 +86,16 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
   number of random draws.
 
+## Value
+
+dplindLnorm gives the density, pplindLnorm gives the distribution
+function, qplindLnorm gives the quantile function, and rplindLnorm
+generates random deviates.
+
+The length of the result is determined by n for rplindLnorm, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Details
 
 The PLL is a 3-parameter count distribution that captures high mass at
@@ -103,14 +113,6 @@ Mean: \$\$ E\[y\]=\mu=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
 {\theta(\theta+1)} \$\$
 
 Halton draws are used to evaluate the integral.
-
-dplindLnorm gives the density, pplindLnorm gives the distribution
-function, qplindLnorm gives the quantile function, and rplindLnorm
-generates random deviates.
-
-The length of the result is determined by n for rplindLnorm, and is the
-maximum of the lengths of the numerical arguments for the other
-functions.
 
 ## Examples
 

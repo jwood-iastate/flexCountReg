@@ -90,6 +90,14 @@ for the Sichel distribution.</p>
 
 </dl></div>
     <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>dsichel gives the density, psichel gives the distribution
+ function, qsichel gives the quantile function, and rsichel
+ generates random  deviates.</p>
+<p>The length of the result is determined by n for rsichel, and is the
+ maximum of the lengths of the numerical arguments for the other functions.</p>
+    </div>
+    <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The Sichel distribution is a three-parameter discrete distribution that
 generalizes the Poisson-inverse Gaussian distribution. It is useful for
@@ -98,11 +106,6 @@ modeling overdispersed count data.</p>
 $$f(y|\mu, \sigma, \gamma) =
 \frac{(\mu/c)^y K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma) y!
 (\alpha\sigma)^{y+\gamma}}$$</p>
-<p>dsichel gives the density, psichel gives the distribution
- function, qsichel gives the quantile function, and rsichel
- generates random  deviates.</p>
-<p>The length of the result is determined by n for rsichel, and is the
- maximum of the lengths of the numerical arguments for the other functions.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

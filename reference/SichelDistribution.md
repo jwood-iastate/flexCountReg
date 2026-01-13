@@ -53,6 +53,16 @@ rsichel(n, mu = 1, sigma = 1, gamma = 1)
 
   number of random values to generate.
 
+## Value
+
+dsichel gives the density, psichel gives the distribution function,
+qsichel gives the quantile function, and rsichel generates random
+deviates.
+
+The length of the result is determined by n for rsichel, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Details
 
 The Sichel distribution is a three-parameter discrete distribution that
@@ -62,14 +72,6 @@ modeling overdispersed count data.
 The PMF is: \$\$f(y\|\mu, \sigma, \gamma) = \frac{(\mu/c)^y
 K\_{y+\gamma}(\alpha)}{K\_\gamma(1/\sigma) y!
 (\alpha\sigma)^{y+\gamma}}\$\$
-
-dsichel gives the density, psichel gives the distribution function,
-qsichel gives the quantile function, and rsichel generates random
-deviates.
-
-The length of the result is determined by n for rsichel, and is the
-maximum of the lengths of the numerical arguments for the other
-functions.
 
 ## References
 

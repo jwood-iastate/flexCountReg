@@ -75,6 +75,17 @@ rtri(n, mode = 0, sigma = 1, upper = NA, lower = NA)
 
   the number of random numbers to generate.
 
+## Value
+
+dtri gives the density, ptri gives the distribution function, qtri gives
+the quantile function, and rtri generates random deviates.
+
+The length of the result is determined by n for rtri, and is the maximum
+of the lengths of the numerical arguments for the other functions.
+
+The numerical arguments other than n are recycled to the length of the
+result. Only the first elements of the logical arguments are used.
+
 ## Details
 
 The Triangle Distribution is defined by three points: a (minimum), b
@@ -93,15 +104,6 @@ to b.
 The mode and standard deviation parameters define the distribution's
 location and scale, respectively, while the lower and upper bounds
 explicitly set the minimum and maximum values of the distribution.
-
-dtri gives the density, ptri gives the distribution function, qtri gives
-the quantile function, and rtri generates random deviates.
-
-The length of the result is determined by n for rtri, and is the maximum
-of the lengths of the numerical arguments for the other functions.
-
-The numerical arguments other than n are recycled to the length of the
-result. Only the first elements of the logical arguments are used.
 
 ## Examples
 

@@ -102,6 +102,15 @@ otherwise, \(P[X&gt;x]\).</p></dd>
 
 </dl></div>
     <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>dcom gives the density, pcom gives the distribution function, qcom
+ gives the quantile function, and rcom generates random deviates.</p>
+<p>The length of the result is determined by n for rcom, and is the maximum of
+ the lengths of the numerical arguments for the other functions.</p>
+<p>The numerical arguments other than n are recycled to the length of the
+ result. Only the first elements of the logical arguments are used.</p>
+    </div>
+    <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>dcom</code> computes the density (PDF) of the COM Distribution.</p>
 <p><code>pcom</code> computes the CDF of the COM Distribution.</p>
@@ -122,12 +131,6 @@ $$Var(x)=\lambda \frac{\delta}{\delta \lambda} \mu$$</p>
 computed using the mean and the decay parameter (\(\nu\)). This is
 useful to allow the calculation of the rate parameter when the mean is
 known (e.g., in regression))</p>
-<p>dcom gives the density, pcom gives the distribution function, qcom
- gives the quantile function, and rcom generates random deviates.</p>
-<p>The length of the result is determined by n for rcom, and is the maximum of
- the lengths of the numerical arguments for the other functions.</p>
-<p>The numerical arguments other than n are recycled to the length of the
- result. Only the first elements of the logical arguments are used.</p>
     </div>
 
     <div class="section level2">

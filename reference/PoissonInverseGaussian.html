@@ -133,6 +133,19 @@ otherwise, \(P[X&gt;x]\).</p></dd>
 
 </dl></div>
     <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>description dpinvgaus gives the density, ppinvgaus gives the distribution
+ function, qpinvgaus gives the quantile function, and rpinvgaus generates
+ random  deviates.</p>
+<p>The length of the result is determined by n for rpinvgaus, and is the
+ maximum of the lengths of the numerical arguments for the other functions.</p>
+<p>dpinvgaus gives the density, ppinvgaus gives the distribution
+ function, qpinvgaus gives the quantile function, and rpinvgaus generates
+ random  deviates.</p>
+<p>The length of the result is determined by n for rpinvgaus, and is the
+ maximum of the lengths of the numerical arguments for the other functions.</p>
+    </div>
+    <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The Poisson-Inverse-Gaussian distribution is a special case of the
 Sichel distribution (Cameron &amp; Trivedi, 2013). It is also known as a
@@ -165,12 +178,6 @@ f(y&gt;0)=f(0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}
 $$</p>
 <p>Resulting variance:
 $$\sigma^2=\mu+\eta\mu^2$$</p>
-
-<p>dpinvgaus gives the density, ppinvgaus gives the distribution
- function, qpinvgaus gives the quantile function, and rpinvgaus generates
- random  deviates.</p>
-<p>The length of the result is determined by n for rpinvgaus, and is the
- maximum of the lengths of the numerical arguments for the other functions.</p>
 <p>The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
 distribution, as noted by Cameron &amp; Trivedi (2013). It is also known as a
 univariate Sichel distribution (Hilbe, 2011).</p>

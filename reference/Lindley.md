@@ -47,6 +47,16 @@ rlindley(n, theta = 1)
 
   number of random values to generate.
 
+## Value
+
+dlindley gives the density, plindley gives the distribution function,
+qlindley gives the quantile function, and rlindley generates random
+deviates.
+
+The length of the result is determined by n for rlindley, and is the
+maximum of the lengths of the numerical arguments for the other
+functions.
+
 ## Details
 
 Probability density function (PDF) \$\$f(x\mid \theta )=\frac{\theta
@@ -67,14 +77,6 @@ The moment generating function (MGF) is:
 The distribution mean and variance are:
 \$\$\mu=\frac{\theta+2}{\theta(1+\theta)}\$\$
 \$\$\sigma^2=\frac{\mu}{\theta+2}\left(\frac{6}{\theta}-4\right)-\mu^2\$\$
-
-dlindley gives the density, plindley gives the distribution function,
-qlindley gives the quantile function, and rlindley generates random
-deviates.
-
-The length of the result is determined by n for rlindley, and is the
-maximum of the lengths of the numerical arguments for the other
-functions.
 
 ## Examples
 

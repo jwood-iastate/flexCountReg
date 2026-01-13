@@ -108,6 +108,14 @@ otherwise, \(P[X&gt;x]\).</p></dd>
 
 </dl></div>
     <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>dpLnorm gives the density, ppLnorm gives the distribution
+ function, qpLnorm gives the quantile function, and rpLnorm generates
+ random  deviates.</p>
+<p>The length of the result is determined by n for rpLnorm, and is the
+ maximum of the lengths of the numerical arguments for the other functions.</p>
+    </div>
+    <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>dpLnorm</code> computes the density (PDF) of the Poisson-Lognormal
 Distribution.</p>
@@ -127,11 +135,6 @@ restriction \(\sigma&gt;0\), and \(y\) is a non-negative integer.</p>
 $$E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}$$
 Halton draws are used to perform simulation over the lognormal distribution
 to solve the integral.</p>
-<p>dpLnorm gives the density, ppLnorm gives the distribution
- function, qpLnorm gives the quantile function, and rpLnorm generates
- random  deviates.</p>
-<p>The length of the result is determined by n for rpLnorm, and is the
- maximum of the lengths of the numerical arguments for the other functions.</p>
     </div>
 
     <div class="section level2">

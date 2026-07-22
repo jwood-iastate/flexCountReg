@@ -17,7 +17,7 @@
 #' @param ndraws number of Halton draws.
 #' @param log return log-density.
 #' @param log.p return log-CDF.
-#' @param lower.tail TRUE returns P[X \deqn{\leq} x].
+#' @param lower.tail TRUE returns \eqn{P[X \leq x]}.
 #' @param hdraws optional Halton draws.
 #'
 #' @details

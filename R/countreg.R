@@ -55,6 +55,8 @@
 #' Estimation (MSLE). The function can estimate the following models:
 #' \itemize{
 #'  \item Poisson (Poisson)
+#'  \item Generalized Poisson Version 1 (GP1)
+#'  \item Generalized Poisson Version 2 (GP2)
 #'  \item Negative Binomial 1 (NB1)
 #'  \item Negative Binomial 2 (NB2)
 #'  \item Negative Binomial P (NBP)
@@ -77,6 +79,8 @@
 #' For the `family` argument, the following options are available:
 #' \itemize{
 #' \item "POISSON" for Poisson distribution with a log link.
+#' \item "GP1" for Generalized Poisson Version 1 Distribution with a log link
+#' \item "GP2" for Generalized Poisson Version 2 Distribution with a log link
 #'  \item "NB1" for Negative Binomial 1 distribution with a log link.
 #'  \item "NB2" for Negative Binomial 2 distribution with a log link (i.e., the 
 #'        standard negative binomial model).
@@ -115,6 +119,8 @@
 #'  
 #'  For `dis_param_formula_1`, the models are for the parameters:
 #'  \itemize{
+#'  \item \eqn{ln(\phi+1)} for the Generlized Poisson Version 1.
+#'  \item \eqn{ln(\alpha+1)} for the Generlized Poisson Version 2.
 #'  \item \eqn{ln(\alpha)} for the Negative Binomial 1 model.
 #'  \item \eqn{ln(\alpha)} for the Negative Binomial 2 model.
 #'  \item \eqn{ln(\alpha)} for the Negative Binomial P model.
@@ -133,6 +139,7 @@
 #'  
 #'  For `dis_param_formula_2`, the models are for the parameters:
 #'  \itemize{
+#'  \item Not Applicable for the Generalized Poisson Version 1 model.
 #'  \item Not Applicable for the Negative Binomial 1 model.
 #'  \item Not Applicable for the Negative Binomial 2 model.
 #'  \item p for the Negative Binomial P model.
@@ -165,7 +172,7 @@
 #' @section Model Details: 
 #' ## Poisson Model
 #' This implements the Poisson regression model using Maximum Likelihood 
-#' Estimation, as opposed to the Iteratively Reweighted Least Squares (IRLS) 
+#' Estimation (MLE), as opposed to the Iteratively Reweighted Least Squares (IRLS) 
 #' method used in the `glm` function.
 #' 
 #' The PMF and log-likelihood functions are:
@@ -178,6 +185,60 @@
 #' 
 #' The variance is:
 #' \deqn{\text{Var}(Y) = \mu}
+#' 
+#' ## Generalized Poisson Version 1 Model
+#' This implements the Generalized Poisson Version 1 model using MLE.
+#' 
+#' The PMF is:
+#' \deqn{
+#' f(y|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
+#' {1+\phi}\right)}{(1+\phi)^y y!}
+#' }
+#'
+#' Where \eqn{\phi} is a scale parameter with the restriction that
+#' \eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
+#' integer. The mean is modeled as:
+#' \deqn{\mu = exp(X\beta)} 
+#'
+#' The variance of the GP-1 distribution is:
+#' \deqn{\sigma^2=(1+\phi)^2 \mu}
+#' 
+#' If \eqn{\phi>0}, the distribution is overdispersed. If \eqn{\phi=0}, the 
+#' distribution is equidispersed. If \eqn{\phi<0}, the distribution is 
+#' underdispersed.
+#' 
+#' Furthermore, \eqn{\phi>-1} is required for this distribution. When 
+#' \eqn{\phi<0}, there is also a maximum value of support for the integar value 
+#' \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
+#' 
+#' ## Generalized Poisson Version 2 Model
+#' This implements the Generalized Poisson Version 2 model using MLE.
+#' 
+#' The PMF is:
+#' \deqn{
+#' f(y|\mu,\alpha)=
+#' \frac{\mu(\mu+\alpha\mu y)^{y-1}
+#' \exp\left(-\frac{\mu+\alpha\mu y}{1+\alpha\mu}\right)}
+#' {(1+\alpha\mu)^y y!}
+#' }
+#'
+#' Where \eqn{\phi} is a scale parameter with the restriction that
+#' \eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
+#' integer. The mean is modeled as:
+#' \deqn{\mu = exp(X\beta)} 
+#'
+#' The variance of the GP-2 distribution is:
+#' \deqn{\sigma^2=\mu(1+\alpha\mu)^2}
+#'
+#' If \eqn{\alpha > 0}, the distribution is overdispersed. If
+#' \eqn{\alpha = 0}, the distribution is equidispersed and reduces to the
+#' ordinary Poisson distribution. If \eqn{\alpha < 0} and
+#' \eqn{1 + \alpha\mu > 0}, the distribution is underdispersed and has
+#' finite support.
+#'
+#' Under the underdispersed case, the largest possible value of \eqn{y}
+#' is bounded above by \eqn{\left\lceil -1/\alpha \right\rceil - 1},
+#' i.e., the largest integer satisfying \eqn{1 + \alpha y > 0}.
 #' 
 #' ## Negative Binomial Models**
 #' 
@@ -321,7 +382,7 @@
 #' ## Poisson-Inverse-Gamma (PIG) Model
 #' The PDF of the distribution is:
 #' \deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)
-#' ^{\frac{x+\frac{1}{eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}
+#' ^{\frac{x+\frac{1}{\eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}
 #' K_{x-\frac{1}{\eta}-2}\left(2\sqrt{\mu\left(\frac{1}{\eta}+1\right)}\right)}
 #' 
 #' Where \eqn{\eta} is a shape parameter with the restriction that \eqn{\eta>0},
@@ -577,7 +638,20 @@
 #'                       AADT10kplus,
 #'                       data = washington_roads, family = "COM", method="BHHH")
 #' summary(com_model)
-#' #}
+#' 
+#' # Estimate a CGenerlized-Poisson Version 1 model
+#' gp1_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
+#'                       AADT10kplus,
+#'                       data = washington_roads, family = "GP1", method="BHHH")
+#' summary(gp1_model)
+#' 
+#' #' # Estimate a CGenerlized-Poisson Version 2 model
+#' gp2_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
+#'                       AADT10kplus,
+#'                       data = washington_roads, family = "GP2", method="BHHH")
+#' summary(gp2_model)
+
+#' }
 #' 
 #' @references
 #' Greene, W. (2008). Functional forms for the negative binomial model for count

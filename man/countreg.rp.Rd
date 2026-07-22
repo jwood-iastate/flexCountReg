@@ -47,24 +47,24 @@ parameters and values the distribution. The distribution options include
 normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma
 ("g"). If not provided, normal is used.}
 
-\item{dis_param_formula_1}{a symbolic description of the model for the 
+\item{dis_param_formula_1}{a symbolic description of the model for the
 first parameter of the count distribution (e.g., ln(alpha) for NB2).}
 
-\item{dis_param_formula_2}{a symbolic description of the model for the 
+\item{dis_param_formula_2}{a symbolic description of the model for the
 second parameter of the count distribution (if applicable).}
 
-\item{het_mean_formula}{an optional symbolic description of the model 
+\item{het_mean_formula}{an optional symbolic description of the model
 for heterogeneity in the means of the random parameters.}
 
-\item{het_var_formula}{an optional symbolic description of the model 
+\item{het_var_formula}{an optional symbolic description of the model
 for heterogeneity in the variances of the random parameters.}
 
-\item{ndraws}{the number of Halton draws to use for estimating the random 
+\item{ndraws}{the number of Halton draws to use for estimating the random
 parameters.}
 
 \item{scrambled}{if the Halton draws should be scrambled.}
 
-\item{correlated}{if the random parameters should be correlated. 
+\item{correlated}{if the random parameters should be correlated.
 If TRUE, only normal distributions are used.}
 
 \item{panel_id}{an optional variable name (string) or vector defining the
@@ -84,12 +84,12 @@ likelihood are estimated accounting for the panel structure.}
 \item{verbose}{logical.}
 }
 \value{
-An object of class `countreg` which is a list with the following components:
+An object of class \code{countreg} which is a list with the following components:
 \itemize{
- \item model: the fitted model object.
- \item data: the data frame used to fit the model.
- \item call: the matched call.
- \item formula: the formula used to fit the model.
+\item model: the fitted model object.
+\item data: the data frame used to fit the model.
+\item call: the matched call.
+\item formula: the formula used to fit the model.
 }
 }
 \description{

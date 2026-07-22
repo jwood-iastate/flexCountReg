@@ -52,7 +52,7 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 \item{lambda}{optional lambda parameter (>0).}
 
-\item{lower.tail}{TRUE returns P[X \deqn{\leq} x].}
+\item{lower.tail}{TRUE returns \eqn{P[X \leq x]}.}
 
 \item{log.p}{return log-CDF.}
 
@@ -61,12 +61,12 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 \item{n}{number of random draws.}
 }
 \value{
-dplindLnorm gives the density, pplindLnorm gives the distribution 
- function, qplindLnorm gives the quantile function, and rplindLnorm generates
- random  deviates.
+dplindLnorm gives the density, pplindLnorm gives the distribution
+function, qplindLnorm gives the quantile function, and rplindLnorm generates
+random  deviates.
 
- The length of the result is determined by n for rplindLnorm, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rplindLnorm, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide density, distribution, quantile, and random
@@ -75,7 +75,6 @@ generation for the Poisson-Lindley-Lognormal (PLL) Distribution.
 \details{
 The PLL is a 3-parameter count distribution that captures high mass at
 small y and allows flexible heavy tails.
-
 
 \code{dplind} computes the PLL density.
 \code{pplind} computes the PLL CDF.

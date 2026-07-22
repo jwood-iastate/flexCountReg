@@ -75,8 +75,8 @@ alpha and sigma are provided).}
 
 \item{q}{Quantile or a vector of quantiles.}
 
-\item{lower.tail}{Logical; if TRUE, probabilities are P[X <= x], otherwise
-P[X > x].}
+\item{lower.tail}{Logical; if TRUE, probabilities are \eqn{P[X <= x]}, otherwise
+\eqn{P[X > x]}.}
 
 \item{log.p}{Logical; if TRUE, probabilities p are given as log(p).}
 
@@ -86,12 +86,12 @@ function.}
 \item{n}{The number of random samples to generate.}
 }
 \value{
-dpoisweibull gives the density, ppoisweibull gives the distribution 
- function, qpoisweibull gives the quantile function, and rpoisweibull 
- generates random  deviates.
+dpoisweibull gives the density, ppoisweibull gives the distribution
+function, qpoisweibull gives the quantile function, and rpoisweibull
+generates random  deviates.
 
- The length of the result is determined by n for rpoisweibull, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rpoisweibull, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide density, distribution function, quantile function,
@@ -111,7 +111,6 @@ Poisson-Weibull distribution is given by:
   e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
 where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and
 \eqn{\lambda} is the mean of the Poisson distribution.
-
 
 \code{dpoisweibull} computes the density of the Poisson-Weibull distribution.
 

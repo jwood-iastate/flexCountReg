@@ -32,9 +32,9 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 \item{theta}{single value or vector of values for the theta parameter of
 the distribution (the values have to be greater than 0).}
 
-\item{alpha}{single value or vector of values for the `alpha` parameter
+\item{alpha}{single value or vector of values for the \code{alpha} parameter
 of the gamma distribution in the special case that the mean = 1 and
-the variance = `alpha` (the values for `alpha` have to be greater
+the variance = \code{alpha} (the values for \code{alpha} have to be greater
 than 0).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
@@ -51,12 +51,12 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dplindGamma gives the density, pplindGamma gives the distribution 
- function, qplindGamma gives the quantile function, and rplindGamma generates
- random  deviates.
+dplindGamma gives the density, pplindGamma gives the distribution
+function, qplindGamma gives the quantile function, and rplindGamma generates
+random  deviates.
 
- The length of the result is determined by n for rplindGamma, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rplindGamma, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide density, distribution function, quantile
@@ -67,7 +67,6 @@ function, and random number generation for the Poisson-Lindley-Gamma
 The Poisson-Lindley-Gamma is a count distribution that captures high
 densities for small integer values and provides flexibility for heavier
 tails.
-
 
 \code{dplindGamma} computes the density (PDF) of the
 Poisson-Lindley-Gamma Distribution.

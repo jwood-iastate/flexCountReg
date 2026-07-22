@@ -19,7 +19,7 @@ of the moment generating function.}
 }
 \value{
 The estimated value of the moment generating function (MGF) for the
-  specified lognormal distribution at the given point.
+specified lognormal distribution at the given point.
 }
 \description{
 Computes the value of the moment generating function (MGF) for a lognormal

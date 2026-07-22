@@ -19,17 +19,17 @@ regCompTable(
 \item{models}{A named list of fitted flexCountReg model objects. This must
 include 2 or more models.}
 
-\item{coefs}{A logical. The default value `TRUE` indicates that the
+\item{coefs}{A logical. The default value \code{TRUE} indicates that the
 coefficients from the models should be included in the table of
 comparisons.}
 
-\item{AIC}{A logical. The default value `TRUE` indicates that AIC values for
+\item{AIC}{A logical. The default value \code{TRUE} indicates that AIC values for
 the models should be included.}
 
-\item{BIC}{A logical. The default value `TRUE` indicates that BIC values for
+\item{BIC}{A logical. The default value \code{TRUE} indicates that BIC values for
 the models should be included.}
 
-\item{RSquare}{A logical. The default value `TRUE` indicates that the
+\item{RSquare}{A logical. The default value \code{TRUE} indicates that the
 McFadden's Pseudo-R-Squared statistic (comparing against a Poisson
 regression model) should be included.}
 
@@ -41,10 +41,10 @@ or "latex" for a latex table. The default is "tibble".}
 table values to.}
 }
 \value{
-A table comparing the models supplied to the function in the format 
- specified The table includes coefficients, standard errors, statistical 
- significance, AIC, BIC, and McFadden's Pseudo-R-Squared. Table formats 
- include: "tibble", "gt", and "latex".
+A table comparing the models supplied to the function in the format
+specified The table includes coefficients, standard errors, statistical
+significance, AIC, BIC, and McFadden's Pseudo-R-Squared. Table formats
+include: "tibble", "gt", and "latex".
 }
 \description{
 This function creates tables comparing the flexCountReg package models

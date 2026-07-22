@@ -9,14 +9,14 @@
 \arguments{
 \item{object}{A flexCountReg model object.}
 
-\item{...}{Optional parameters that include `confint_level` and `digits`.}
+\item{...}{Optional parameters that include \code{confint_level} and \code{digits}.}
 }
 \value{
-Prints the model formula, method used for estimation, number of 
- iterations used, if the model converged, and the log-likelihood. Then, it 
- prints a table containing parameter estimates, standard errors, 
- t-statistics, p-values, and confidence intervals. Also quietly returns a 
- tibble with these values.
+Prints the model formula, method used for estimation, number of
+iterations used, if the model converged, and the log-likelihood. Then, it
+prints a table containing parameter estimates, standard errors,
+t-statistics, p-values, and confidence intervals. Also quietly returns a
+tibble with these values.
 }
 \description{
 Custom summary method for flexCountReg models
@@ -26,11 +26,11 @@ This summary method accounts for bootstrapped or robust standard errors (when
 used).
 }
 \note{
-Optional parameter `confint_level`: A numeric value between 0 and 1
-  indicating the confidence level for confidence intervals. Default is 0.95.
+Optional parameter \code{confint_level}: A numeric value between 0 and 1
+indicating the confidence level for confidence intervals. Default is 0.95.
 
-Optional parameter `digits`: Number of digits (decimal places) to round
-  to. Default is 3.
+Optional parameter \code{digits}: Number of digits (decimal places) to round
+to. Default is 3.
 }
 \examples{
 \donttest{

@@ -39,12 +39,12 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dinvgamma gives the density, pinvgamma gives the distribution 
- function, qinvgamma gives the quantile function, and rinvgamma generates
- random  deviates.
+dinvgamma gives the density, pinvgamma gives the distribution
+function, qinvgamma gives the quantile function, and rinvgamma generates
+random  deviates.
 
- The length of the result is determined by n for rinvgamma, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rinvgamma, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide the density function, distribution function, quantile

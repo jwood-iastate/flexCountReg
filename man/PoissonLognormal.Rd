@@ -50,12 +50,12 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dpLnorm gives the density, ppLnorm gives the distribution 
- function, qpLnorm gives the quantile function, and rpLnorm generates
- random  deviates.
+dpLnorm gives the density, ppLnorm gives the distribution
+function, qpLnorm gives the quantile function, and rpLnorm generates
+random  deviates.
 
- The length of the result is determined by n for rpLnorm, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rpLnorm, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide density, distribution function, quantile function,

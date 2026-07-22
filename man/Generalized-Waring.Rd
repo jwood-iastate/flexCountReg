@@ -39,11 +39,11 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{integer number of random numbers to generate.}
 }
 \value{
-dgwar gives the density, pgwar gives the distribution function, 
- qgwar gives the quantile function, and rgwar generates random  deviates.
+dgwar gives the density, pgwar gives the distribution function,
+qgwar gives the quantile function, and rgwar generates random  deviates.
 
- The length of the result is determined by n for rgwar, and is the maximum of 
- the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rgwar, and is the maximum of
+the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide density, distribution function, quantile function,
@@ -52,7 +52,6 @@ and random number generation for the Generalized Waring Distribution.
 \details{
 The Generalized Waring distribution is a 3-parameter count distribution that
 is used to model overdispersed count data.
-
 
 \code{dgwar} computes the density (PMF) of the Generalized Waring
 Distribution.
@@ -70,7 +69,7 @@ distribution is:
 \deqn{f(y|a_x,k,\rho) = 
    \frac{\Gamma(a_x+\rho)\Gamma(k+\rho)\left(a_x\right)_y(k)_y}
    {y!\Gamma(\rho)\Gamma(a_x+k+\rho)(a_x+k+\rho)_y}}
-Where \eqn{(\alpha)_r=\frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}}, 
+Where \eqn{(\alpha)_r=\frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}},
 and \eqn{a_x, \ k, \ \rho)>0}.
 
 The mean value is:

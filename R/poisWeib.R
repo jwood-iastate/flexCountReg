@@ -34,8 +34,8 @@
 #' @param lambda Mean value of the Poisson distribution.
 #' @param log Logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p Logical; if TRUE, probabilities p are given as log(p).
-#' @param lower.tail Logical; if TRUE, probabilities are P[X <= x], otherwise
-#'   P[X > x].
+#' @param lower.tail Logical; if TRUE, probabilities are \eqn{P[X <= x]}, otherwise
+#'   \eqn{P[X > x]}.
 #' @param ndraws the number of Halton draws to use for the integration.
 #'
 #' @details

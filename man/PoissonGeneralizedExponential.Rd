@@ -65,12 +65,12 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dpge gives the density, ppge gives the distribution 
- function, qpge gives the quantile function, and rpge generates
- random  deviates.
+dpge gives the density, ppge gives the distribution
+function, qpge gives the quantile function, and rpge generates
+random  deviates.
 
- The length of the result is determined by n for rpge, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rpge, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide density, distribution function, quantile function,
@@ -93,7 +93,7 @@ distribution is:
 \deqn{f(x|\alpha,\gamma) = 
   \frac{\alpha}{\gamma} 
   \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1} 
-  e^{-\frac{x}{\gamma}}} 
+  e^{-\frac{x}{\gamma}}}
 
 Thus, the compound Probability Mass Function(PMF) for the PGE distribution
 is:

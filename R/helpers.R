@@ -69,9 +69,11 @@ tidy.flexCountReg <- function(x, ...) {
 
 # Determine model to estimate, probability distribution to use, and parameters
 get_params <- function(family) {
-  switch(
+  switch( # pattern: list("alpha", "sigma")
     family,
     "POISSON" = list(NULL, NULL),
+    "GP1" = list("ln(phi+1)", NULL),
+    "GP2" = list("ln(alpha+1)", NULL),
     "NB1" = list("ln(alpha)", NULL),
     "NB2" = list("ln(alpha)", NULL),
     "NBP" = list("ln(alpha)", "ln(p)"),
@@ -95,6 +97,12 @@ get_probFunc <- function(family){
     family,
     "POISSON" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
       return(stats::dpois(y, predicted))
+    },
+    "GP1"=function(y, predicted, alpha, sigma, haltons, normed_haltons){
+      return(dgp1(y, mu=predicted, phi=(alpha-1)))
+    },
+    "GP2"=function(y, predicted, alpha, sigma, haltons, normed_haltons){
+      return(dgp2(y, mu=predicted, alpha=(alpha-1)))
     },
     "NB1" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
       return(stats::dnbinom(y, size = predicted/alpha, mu = predicted))

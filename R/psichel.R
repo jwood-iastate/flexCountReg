@@ -12,7 +12,7 @@
 #' @param sigma numeric; scale parameter (sigma > 0).
 #' @param gamma numeric; shape parameter (can be any real number).
 #' @param log,log.p logical; if TRUE, probabilities are given as log(p).
-#' @param lower.tail logical; if TRUE, probabilities are P[X <= x].
+#' @param lower.tail logical; if TRUE, probabilities are \eqn{P[X <= x]}.
 #'
 #' @details
 #' The Sichel distribution is a three-parameter discrete distribution that

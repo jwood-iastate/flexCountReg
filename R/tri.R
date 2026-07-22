@@ -5,8 +5,8 @@
 #' mean, standard deviation, and optional lower and upper bounds.
 #'
 #' The Triangle Distribution is defined by three points: a (minimum), b
-#' (maximum), and c (mode), where the density is zero outside the interval [a,
-#' b], increases linearly from a to c, and decreases linearly from c to b.
+#' (maximum), and c (mode), where the density is zero outside the interval \eqn{[a,
+#' b]}, increases linearly from a to c, and decreases linearly from c to b.
 #'
 #' @param x numeric value or a vector of values.
 #' @param q quantile or a vector of quantiles.

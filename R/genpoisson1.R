@@ -1,78 +1,3 @@
-#' Generalized Poisson Version 1 Distribution
-#'
-#' These functions provide the density function, distribution function,
-#' quantile function, and random number generation for the
-#' Generalized Poisson Version 1 (GP-1) Distribution
-#'
-#' @param x numeric value or a vector of values.
-#' @param q quantile or a vector of quantiles.
-#' @param p probability or a vector of probabilities.
-#' @param n the number of random numbers to generate.
-#' @param mu numeric value or vector of mean values for the distribution (the
-#' values have to be greater than 0).
-#' @param phi single value or vector of values for the scale parameter of the
-#' distribution (the values have to be greater than -1).
-#' @param log logical; if TRUE, probabilities p are given as log(p).
-#' @param log.p logical; if TRUE, probabilities p are given as log(p).
-#' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
-#' otherwise, \eqn{P[X>x]}.
-#'
-#' @details
-#' \code{dgp1} computes the density (PDF) of the Generalized Poisson
-#' Distribution.
-#'
-#' \code{pgp1} computes the CDF of the Generalized Poisson Distribution.
-#'
-#' \code{qgp1} computes the quantile function of the
-#' Generalized Poisson Distribution.
-#'
-#' \code{rgp1} generates random numbers from the Generalized Poisson
-#' Distribution.
-#'
-#' The compound Probability Mass Function (PMF) for the Generalized Poisson
-#' distribution, version 1, (GP-1) is:
-#' \deqn{
-#' f(y|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
-#' {1+\phi}\right)}{(1+\phi)^y y!}
-#' }
-#'
-#' Where \eqn{\phi} is a scale parameter with the restriction that
-#' \eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
-#' integer. This formulation uses the mean directly. 
-#'
-#' The variance of the GP-1 distribution is:
-#' \deqn{\sigma^2=(1+\phi)^2 \mu}
-#' 
-#' If \eqn{\phi>0}, the distribution is overdispersed. If \eqn{\phi=0}, the 
-#' distribution is equidispersed. If \eqn{\phi<0}, the distribution is 
-#' underdispersed.
-#' 
-#' Furthermore, \eqn{phi>-1} is required for this distribution. When 
-#' \eqn{\phi<0}, there is also a maximum value of support for the integar value 
-#' \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
-#' 
-#' @returns dgp1 gives the density, pgp1 gives the distribution 
-#'  function, qgp1 gives the quantile function, and rgp1 generates random 
-#'  deviates.
-#' 
-#' The length of the result is determined by n for rgp1, and is the 
-#'  maximum of the lengths of the numerical arguments for the other functions.
-#'  
-#' @references  Consul, PoC, and Felix Famoye. "Generalized Poisson regression model." 
-#'  Communications in Statistics-Theory and Methods 21.1 (1992): 89-109.
-#'  
-#'  Zamani, Hossein, and Noriszura Ismail. "Functional form for the generalized 
-#'  Poisson regression model." Communications in Statistics-Theory and Methods 
-#'  41.20 (2012): 3666-3675.
-#'  
-#' @examples
-#' dgp1(1, mu=0.75, phi=-0.1)
-#' pgp1(c(0,1,2,3,5,7,9,10), mu=0.75, phi=3)
-#' qgp1(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, phi=0.5)
-#' rgp1(30, mu=0.75, phi=1.5)
-#'
-#' @importFrom stats runif
-#' @name GeneralizedPoisson
 # ------------------------------------------------------------
 # Generalized Poisson helper functions
 # ------------------------------------------------------------
@@ -186,6 +111,82 @@
   exp(cum_log[length(cum_log)])
 }
 
+
+#' Generalized Poisson Version 1 Distribution
+#'
+#' These functions provide the density function, distribution function,
+#' quantile function, and random number generation for the
+#' Generalized Poisson Version 1 (GP-1) Distribution
+#'
+#' @param x numeric value or a vector of values.
+#' @param q quantile or a vector of quantiles.
+#' @param p probability or a vector of probabilities.
+#' @param n the number of random numbers to generate.
+#' @param mu numeric value or vector of mean values for the distribution (the
+#' values have to be greater than 0).
+#' @param phi single value or vector of values for the scale parameter of the
+#' distribution (the values have to be greater than -1).
+#' @param log logical; if TRUE, probabilities p are given as log(p).
+#' @param log.p logical; if TRUE, probabilities p are given as log(p).
+#' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
+#' otherwise, \eqn{P[X>x]}.
+#'
+#' @details
+#' \code{dgp1} computes the density (PDF) of the Generalized Poisson
+#' Distribution.
+#'
+#' \code{pgp1} computes the CDF of the Generalized Poisson Distribution.
+#'
+#' \code{qgp1} computes the quantile function of the
+#' Generalized Poisson Distribution.
+#'
+#' \code{rgp1} generates random numbers from the Generalized Poisson
+#' Distribution.
+#'
+#' The compound Probability Mass Function (PMF) for the Generalized Poisson
+#' distribution, version 1, (GP-1) is:
+#' \deqn{
+#' f(y|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
+#' {1+\phi}\right)}{(1+\phi)^y y!}
+#' }
+#'
+#' Where \eqn{\phi} is a scale parameter with the restriction that
+#' \eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
+#' integer. This formulation uses the mean directly. 
+#'
+#' The variance of the GP-1 distribution is:
+#' \deqn{\sigma^2=(1+\phi)^2 \mu}
+#' 
+#' If \eqn{\phi>0}, the distribution is overdispersed. If \eqn{\phi=0}, the 
+#' distribution is equidispersed. If \eqn{\phi<0}, the distribution is 
+#' underdispersed.
+#' 
+#' Furthermore, \eqn{phi>-1} is required for this distribution. When 
+#' \eqn{\phi<0}, there is also a maximum value of support for the integar value 
+#' \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
+#' 
+#' @returns dgp1 gives the density, pgp1 gives the distribution 
+#'  function, qgp1 gives the quantile function, and rgp1 generates random 
+#'  deviates.
+#' 
+#' The length of the result is determined by n for rgp1, and is the 
+#'  maximum of the lengths of the numerical arguments for the other functions.
+#'  
+#' @references  Consul, PoC, and Felix Famoye. "Generalized Poisson regression model." 
+#'  Communications in Statistics-Theory and Methods 21.1 (1992): 89-109.
+#'  
+#'  Zamani, Hossein, and Noriszura Ismail. "Functional form for the generalized 
+#'  Poisson regression model." Communications in Statistics-Theory and Methods 
+#'  41.20 (2012): 3666-3675.
+#'  
+#' @examples
+#' dgp1(1, mu=0.75, phi=-0.1)
+#' pgp1(c(0,1,2,3,5,7,9,10), mu=0.75, phi=3)
+#' qgp1(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, phi=0.5)
+#' rgp1(30, mu=0.75, phi=1.5)
+#'
+#' @importFrom stats runif
+#' @name GeneralizedPoisson
 #' @rdname GeneralizedPoisson
 #' @export
 dgp1 <- Vectorize(function(x, mu = 1, phi = 1, log = FALSE) {

@@ -2,15 +2,12 @@
 % Please edit documentation in R/genpoisson1.R
 \name{GeneralizedPoisson}
 \alias{GeneralizedPoisson}
-\alias{.gp1_validate}
 \alias{dgp1}
 \alias{pgp1}
 \alias{qgp1}
 \alias{rgp1}
 \title{Generalized Poisson Version 1 Distribution}
 \usage{
-.gp1_validate(mu, phi)
-
 dgp1(x, mu = 1, phi = 1, log = FALSE)
 
 pgp1(q, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE)
@@ -20,13 +17,13 @@ qgp1(p, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE)
 rgp1(n, mu = 1, phi = 1)
 }
 \arguments{
+\item{x}{numeric value or a vector of values.}
+
 \item{mu}{numeric value or vector of mean values for the distribution (the
 values have to be greater than 0).}
 
 \item{phi}{single value or vector of values for the scale parameter of the
 distribution (the values have to be greater than -1).}
-
-\item{x}{numeric value or a vector of values.}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 

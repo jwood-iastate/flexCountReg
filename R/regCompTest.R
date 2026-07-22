@@ -4,79 +4,101 @@
 #' Likelihood Ratio (LR) test, Akaike Information Criterion (AIC), and Bayesian
 #' Information Criterion (BIC).
 #'
+#' When only one fitted model is supplied, the function estimates a base model
+#' from the supplied data and compares the fitted model against that base
+#' model. When two fitted models are supplied, the function compares the two
+#' fitted models directly and uses the model with the larger log-likelihood as
+#' the base model for the LR test.
+#'
 #' @name regCompTest
 #' @param model A fitted regression model object.
-#' @param data An options data frame containing the variables in the model. If
-#'   not supplied, the original data used to estimate the model will be used.
+#' @param data An optional data frame containing the variables in the model.
+#'   If not supplied, the original data used to estimate the model will be
+#'   used when available.
 #' @param basemodel A character string specifying the family of base model to
-#'   compare against (options include the family from \code{\link{countreg}} or
-#'   "Poisson"). Default is "Poisson".
+#'   compare against (options include the family from
+#'   \code{\link{countreg}} or "Poisson"). Default is "Poisson".
 #' @param variables Logical. If \code{TRUE}, the base model will include the
-#'   same variables as the provided model. If \code{FALSE}, the base model will
-#'   be an intercept-only model. Default is \code{FALSE}.
+#'   same variables as the provided model. If \code{FALSE}, the base model
+#'   will be an intercept-only model. Default is \code{FALSE}.
 #' @param print Logical. If \code{TRUE}, a table of the results will be shown.
 #'   If \code{FALSE}, the table of results will not be printed to the console.
 #' @param ... Additional arguments to be passed to the base model fitting
-#'   function - options are any argument from the \code{\link{countreg}}
-#'   function.
-#' @param model2 An optional second fitted regression model object to compare.
-#'   If supplied, the function returns comparison results for both trained
-#'   models in addition to the base-model comparison.
-#' @returns A list containing the following components.
-#' \itemize{
-#' \item For the original single-model workflow: \code{LL}, \code{LLbase},
-#'   \code{LR}, \code{LRdof}, \code{AIC}, \code{AICbase}, \code{BIC},
-#'   \code{BICbase}, \code{LR_pvalue}, \code{PseudoR2}, \code{statistics},
-#'   \code{gtTable}, \code{latexTable}, and \code{htmlTable}.
-#' \item If \code{model2} is supplied: \code{model1}, \code{model2}, and a
-#'   combined \code{statistics} table plus the associated table objects.
-#' }
+#'   function. These arguments are used only when a single fitted model is
+#'   supplied and the function needs to estimate the base model.
+#' @param model2 An optional second fitted regression model object. If
+#'   supplied, the function compares \code{model} and \code{model2} directly
+#'   and does not estimate a separate base model.
+#' @returns A list containing the comparison results.
+#' 
+#' For the single-model workflow, the returned list includes \code{LL},
+#' \code{LLbase}, \code{LR}, \code{LRdof}, \code{AIC}, \code{AICbase},
+#' \code{BIC}, \code{BICbase}, \code{LR_pvalue}, \code{PseudoR2},
+#' \code{statistics}, \code{gtTable}, \code{latexTable}, and \code{htmlTable}.
+#' 
+#' For the two-model workflow, the returned list includes \code{model1},
+#' \code{model2}, \code{base_model}, \code{comparison_model},
+#' \code{base_index}, \code{comparison_index}, \code{LL_base},
+#' \code{LL_comparison}, \code{LR}, \code{LRdof}, \code{LR_pvalue},
+#' \code{statistics}, \code{gtTable}, \code{latexTable}, and \code{htmlTable}.
 #'
 #' @include metrics.R
 #' @import tibble knitr
 #' @importFrom dplyr %>%
 #' @importFrom gt gt tab_header fmt_number
 #'
-#' @details The function performs the following steps:
+#' @details The function performs the following steps for the single-model
+#' workflow:
 #' \enumerate{
 #' \item Fits the base model, either a Poisson regression or another specified
-#' model.
-#' \item Computes the log-likelihoods of the provided model(s) and the base
-#' model.
-#' \item Calculates the AIC and BIC for the model(s).
-#' \item Conducts a Likelihood Ratio test to compare the model(s) to the base
-#' model (if the provided model has more parameters than the base model).
+#'   model.
+#' \item Computes the log-likelihoods of the provided model and the base
+#'   model.
+#' \item Calculates the AIC and BIC for both models.
+#' \item Conducts a Likelihood Ratio test to compare the fitted model against
+#'   the estimated base model when the fitted model has more parameters than
+#'   the base model.
 #' \item Computes McFadden's Pseudo R^2.
 #' }
 #'
-#' The Likelihood-Ratio test is computed as \deqn{LR = -2 (LL_{base} - LL_{model})}.
+#' For the two-model workflow, the function compares the two fitted models
+#' directly. The model with the larger log-likelihood is treated as the base
+#' model for the LR test, and the other model is treated as the comparison
+#' model.
+#'
+#' The Likelihood-Ratio test is computed as \deqn{LR = -2 (LL_{base} - LL_{comparison})}.
 #' The test is chi-squared with degrees of freedom
-#' \deqn{dof=N_{model \ params}-N_{base \ params}}.
+#' \deqn{dof = |N_{base \ params} - N_{comparison \ params}|}.
 #' The AIC is calculated as \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}, and the
 #' BIC is calculated as \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}.
 #'
 #' @examples
-#'
-#' # Comparing the NBP model with the NB2 model and base Poisson model
+#' 
+#' # Example 1: Compare one fitted model against an estimated Poisson base model
 #' data("washington_roads")
-#' washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
+#' washington_roads$AADTover10k <- ifelse(washington_roads$AADT > 10000, 1, 0)
 #'
 #' nbp.base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
-#'                     ShouldWidth04 + AADTover10k,
-#'                     data=washington_roads, family = 'NBP', method = 'NM',
-#'                     max.iters=3000)
+#'                      ShouldWidth04 + AADTover10k,
+#'                      data = washington_roads, family = "NBP", method = "NM",
+#'                      max.iters = 3000)
+#'
+#' regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
+#'             variables = TRUE, print = TRUE)
+#'
+#' # Example 2: Compare two fitted models directly
 #' nb2.base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
-#'                     ShouldWidth04 + AADTover10k,
-#'                     data=washington_roads, family = 'NB2', method = 'NM',
-#'                     max.iters=3000)                    
-#'                    
-#' regCompTest(nbp.base, washington_roads, basemodel="Poisson", 
-#' model2=nb2.base, print=TRUE)
+#'                      ShouldWidth04 + AADTover10k,
+#'                      data = washington_roads, family = "NB2", method = "NM",
+#'                      max.iters = 3000)
+#'
+#' regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
+#'             print = TRUE)
 #'
 #' @export
 regCompTest <- function(
     model, data = NULL, basemodel = "Poisson",
-    variables = FALSE, print = FALSE, ..., model2 = NULL){
+    variables = FALSE, print = FALSE, ..., model2 = NULL) {
   
   safe_round <- function(x, digits = 4) {
     if (length(x) == 0L || all(is.na(x))) {
@@ -85,80 +107,83 @@ regCompTest <- function(
     round(x, digits)
   }
   
-  get_model_components <- function(trained_model) {
+  first_non_null <- function(...) {
+    vals <- list(...)
+    for (v in vals) {
+      if (!is.null(v)) {
+        return(v)
+      }
+    }
+    NULL
+  }
+  
+  get_model_components <- function(trained_model, data) {
     fit <- trained_model$model
+    if (is.null(fit)) {
+      stop("The supplied object does not contain a fitted model in `$model`.")
+    }
     
     formula <- fit$formula
     mod_df <- stats::model.frame(formula, data)
     y <- as.numeric(stats::model.response(mod_df))
     
     LL <- fit$maximum
-    
-    if (variables) {
-      if (basemodel == "Poisson") {
-        base_mod <- glm(formula, data, family = poisson(link = "log"))
-      } else {
-        base_mod <- countreg(formula, data, family = basemodel, ...)
-        base_mod <- base_mod$model
-      }
-    } else {
-      if (basemodel == "Poisson") {
-        base_mod <- glm(y ~ 1, data, family = poisson(link = "log"))
-      } else {
-        base_mod <- countreg(y ~ 1, data, family = basemodel, ...)
-        base_mod <- base_mod$model
-      }
-    }
-    
-    if (basemodel == "Poisson") {
-      LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log = TRUE))
-      n.coef.base <- length(base_mod$coefficients)
-    } else {
-      LLbase <- base_mod$maximum
-      n.coef.base <- length(base_mod$estimate)
-    }
-    
     n.coef <- length(fit$estimate)
+    nobs <- length(y)
     
+    list(
+      fit = fit,
+      y = y,
+      LL = LL,
+      n.coef = n.coef,
+      nobs = nobs,
+      AIC = myAIC(LL, n.coef),
+      BIC = myBIC(LL, n.coef, nobs)
+    )
+  }
+  
+  make_single_model_stats <- function(model_res, base_res) {
     LR <- NA_real_
     LRdof <- NA_integer_
     LR_pvalue <- NA_real_
     
-    if (n.coef > n.coef.base) {
-      LR <- -2 * (LLbase - LL)
-      LRdof <- n.coef - n.coef.base
-      
-      if (is.finite(LR) && LR > 0) {
+    if (model_res$n.coef > base_res$n.coef) {
+      LR <- -2 * (base_res$LL - model_res$LL)
+      LRdof <- model_res$n.coef - base_res$n.coef
+      if (is.finite(LR) && is.finite(LRdof) && LR > 0 && LRdof > 0) {
         LR_pvalue <- pchisq(LR, LRdof, lower.tail = FALSE)
       } else {
         LR_pvalue <- 1
       }
     }
     
-    AIC <- myAIC(LL, n.coef)
-    AICbase <- myAIC(LLbase, n.coef.base)
-    
-    BIC <- myBIC(LL, n.coef, length(y))
-    BICbase <- myBIC(LLbase, n.coef.base, length(y))
-    
-    PseudoR2 <- 1 - LL / LLbase
+    PseudoR2 <- if (is.finite(base_res$LL) && base_res$LL != 0) {
+      1 - model_res$LL / base_res$LL
+    } else {
+      NA_real_
+    }
     
     statistics <- tibble::tibble(
       Statistic = c(
-        "AIC", "BIC", "LR Test Statistic", "LR degrees of freedom",
+        "Log-likelihood", "Number of parameters", "AIC", "BIC", 
+        "LR Test Statistic", "LR degrees of freedom",
         "LR p-value", "McFadden's Pseudo R^2"
       ),
       Model = c(
-        safe_round(AIC),
-        safe_round(BIC),
+        safe_round(model_res$LL),
+        model_res$n.coef,
+        safe_round(model_res$AIC),
+        safe_round(model_res$BIC),
         safe_round(LR),
         LRdof,
         safe_round(LR_pvalue),
         safe_round(PseudoR2)
       ),
       BaseModel = c(
-        safe_round(AICbase),
-        safe_round(BICbase),
+        safe_round(base_res$LL),
+        base_res$n.coef,
+        safe_round(base_res$AIC),
+        safe_round(base_res$BIC),
         NA,
         NA,
         NA,
@@ -166,95 +191,184 @@ regCompTest <- function(
       )
     )
     
-    gtTable <- gt::gt(statistics) %>%
-      tab_header(
-        title = "Model Comparison Statistics"
-      ) %>%
+    list(
+      LR = LR,
+      LRdof = LRdof,
+      LR_pvalue = LR_pvalue,
+      PseudoR2 = PseudoR2,
+      statistics = statistics
+    )
+  }
+  
+  make_pairwise_stats <- function(res1, res2, base_index) {
+    comparison_index <- if (base_index == 1L) 2L else 1L
+    base_res <- if (base_index == 1L) res1 else res2
+    comparison_res <- if (comparison_index == 1L) res1 else res2
+    
+    LR <- -2 * (comparison_res$LL - base_res$LL)
+    LRdof <- abs(base_res$n.coef - comparison_res$n.coef)
+    LR_pvalue <- NA_real_
+    if (is.finite(LR) && is.finite(LRdof) && LR > 0 && LRdof > 0) {
+      LR_pvalue <- pchisq(LR, LRdof, lower.tail = FALSE)
+    } else if (LR == 0) {
+      LR_pvalue <- 1
+    }
+    
+    statistics <- tibble::tibble(
+      Statistic = c(
+        "Log-likelihood", "Number of parameters", "AIC", "BIC",
+        "LR Test Statistic", "LR degrees of freedom", "LR p-value"
+      ),
+      Model = c(base_res$LL, round(base_res$n.coef,0), base_res$AIC, base_res$BIC,
+                    LR, LRdof, LR_pvalue),
+      BaseModel = c(comparison_res$LL, round(comparison_res$n.coef,0),
+                          comparison_res$AIC, comparison_res$BIC,
+                          NA, NA, NA)
+    )
+    
+    list(
+      base_index = base_index,
+      comparison_index = comparison_index,
+      base_model = base_res,
+      comparison_model = comparison_res,
+      LL_base = base_res$LL,
+      LL_comparison = comparison_res$LL,
+      LR = LR,
+      LRdof = LRdof,
+      LR_pvalue = LR_pvalue,
+      statistics = statistics
+    )
+  }
+  
+  if (is.null(data)) {
+    data <- first_non_null(model$data, if (!is.null(model2)) model2$data else NULL)
+  }
+  if (is.null(data)) {
+    stop("No data were supplied and the model object does not contain `$data`.")
+  }
+  
+  if(!is.null(model2)){
+    m1LL = model$model$logLik
+    m2LL = model2$model$logLik
+    
+    if (m1LL<m2LL){
+      res1 = get_model_components(model2, data)
+      res2 = get_model_components(model, data)
+    }else{
+      res1 = get_model_components(model, data)
+      res2 = get_model_components(model2, data)
+    }
+  }else{
+    res1 <- get_model_components(model, data)
+  }
+  
+  if (is.null(model2)) {
+    if (variables) {
+      if (basemodel == "Poisson") {
+        base_mod <- glm(res1$fit$formula, data, family = poisson(link = "log"))
+      } else {
+        base_mod <- countreg(res1$fit$formula, data, family = basemodel, ...)
+        base_mod <- base_mod$model
+      }
+    } else {
+      if (basemodel == "Poisson") {
+        base_mod <- glm(res1$y ~ 1, data, family = poisson(link = "log"))
+      } else {
+        base_mod <- countreg(res1$y ~ 1, data, family = basemodel, ...)
+        base_mod <- base_mod$model
+      }
+    }
+    
+    if (basemodel == "Poisson") {
+      LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log = TRUE))
+      n.coef.base <- length(base_mod$coefficients)
+      AICbase <- myAIC(LLbase, n.coef.base)
+      BICbase <- myBIC(LLbase, n.coef.base, res1$nobs)
+    } else {
+      LLbase <- base_mod$maximum
+      n.coef.base <- length(base_mod$estimate)
+      AICbase <- myAIC(LLbase, n.coef.base)
+      BICbase <- myBIC(LLbase, n.coef.base, res1$nobs)
+    }
+    
+    base_res <- list(
+      LL = LLbase,
+      n.coef = n.coef.base,
+      AIC = AICbase,
+      BIC = BICbase
+    )
+    
+    summary_res <- make_single_model_stats(res1, base_res)
+    
+    gtTable <- gt::gt(summary_res$statistics) %>%
+      tab_header(title = "Model Comparison Statistics") %>%
       fmt_number(
         columns = c(rlang::sym("Model"), rlang::sym("BaseModel")),
         decimals = 4
       )
     
-    latexTable <- knitr::kable(
-      statistics,
-      format = "latex",
-      booktabs = TRUE,
-      caption = "Model Comparison Statistics"
-    )
-    
-    htmlTable <- knitr::kable(
-      statistics,
-      format = "html",
-      table.attr = "class='table table-striped'",
-      caption = "Model Comparison Statistics"
-    )
-    
-    list(
-      model = fit,
-      y = y,
-      LL = LL,
-      LLbase = LLbase,
-      LR = LR,
-      LRdof = LRdof,
-      AIC = AIC,
-      AICbase = AICbase,
-      BIC = BIC,
-      BICbase = BICbase,
-      LR_pvalue = LR_pvalue,
-      PseudoR2 = PseudoR2,
-      statistics = statistics,
-      gtTable = gtTable,
-      latexTable = latexTable,
-      htmlTable = htmlTable
-    )
-  }
-  
-  if (is.null(data)) { # Use object data if no new data are provided
-    data <- model$data
-  }
-  
-  res1 <- get_model_components(model)
-  
-  if (is.null(model2)) {
-    test <- res1
-  } else {
-    res2 <- get_model_components(model2)
-    
-    combined_stats <- tibble::tibble(
-      Statistic = res1$statistics$Statistic,
-      Model1 = res1$statistics$Model,
-      BaseModel1 = res1$statistics$BaseModel,
-      Model2 = res2$statistics$Model,
-      BaseModel2 = res2$statistics$BaseModel
-    )
-    
-    combined_gt <- gt::gt(combined_stats) %>%
-      tab_header(
-        title = "Model Comparison Statistics"
-      ) %>%
-      fmt_number(
-        columns = c(
-          rlang::sym("Model1"),
-          rlang::sym("BaseModel1"),
-          rlang::sym("Model2"),
-          rlang::sym("BaseModel2")
-        ),
-        decimals = 4
-      )
-    
     test <- list(
-      model1 = res1,
-      model2 = res2,
-      statistics = combined_stats,
-      gtTable = combined_gt,
+      model = res1$fit,
+      y = res1$y,
+      LL = res1$LL,
+      LLbase = LLbase,
+      LR = summary_res$LR,
+      LRdof = summary_res$LRdof,
+      AIC = res1$AIC,
+      AICbase = AICbase,
+      BIC = res1$BIC,
+      BICbase = BICbase,
+      LR_pvalue = summary_res$LR_pvalue,
+      PseudoR2 = summary_res$PseudoR2,
+      statistics = summary_res$statistics,
+      gtTable = gtTable,
       latexTable = knitr::kable(
-        combined_stats,
+        summary_res$statistics,
         format = "latex",
         booktabs = TRUE,
         caption = "Model Comparison Statistics"
       ),
       htmlTable = knitr::kable(
-        combined_stats,
+        summary_res$statistics,
+        format = "html",
+        table.attr = "class='table table-striped'",
+        caption = "Model Comparison Statistics"
+      )
+    )
+  } else {
+    base_index <- if (res1$LL >= res2$LL) 1L else 2L
+    pair_res <- make_pairwise_stats(res1, res2, base_index)
+    
+    gtTable <- gt::gt(pair_res$statistics) %>%
+      tab_header(title = "Model Comparison Statistics") %>%
+      fmt_number(
+        columns = c(
+          rlang::sym("Model"),
+          rlang::sym("BaseModel")
+        ),
+        decimals = 4
+      )
+    
+    test <- list(
+      base_model = res1$fit,
+      comparison_model = res2$fit,
+      base_index = pair_res$base_index,
+      comparison_index = pair_res$comparison_index,
+      LL_base = pair_res$LL_base,
+      LL_comparison = pair_res$LL_comparison,
+      LR = pair_res$LR,
+      LRdof = pair_res$LRdof,
+      LR_pvalue = pair_res$LR_pvalue,
+      statistics = pair_res$statistics,
+      gtTable = gtTable,
+      latexTable = knitr::kable(
+        pair_res$statistics,
+        format = "latex",
+        booktabs = TRUE,
+        caption = "Model Comparison Statistics"
+      ),
+      htmlTable = knitr::kable(
+        pair_res$statistics,
         format = "html",
         table.attr = "class='table table-striped'",
         caption = "Model Comparison Statistics"

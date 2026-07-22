@@ -17,38 +17,42 @@ regCompTest(
 \arguments{
 \item{model}{A fitted regression model object.}
 
-\item{data}{An options data frame containing the variables in the model. If
-not supplied, the original data used to estimate the model will be used.}
+\item{data}{An optional data frame containing the variables in the model.
+If not supplied, the original data used to estimate the model will be
+used when available.}
 
 \item{basemodel}{A character string specifying the family of base model to
-compare against (options include the family from \code{\link{countreg}} or
-"Poisson"). Default is "Poisson".}
+compare against (options include the family from
+\code{\link{countreg}} or "Poisson"). Default is "Poisson".}
 
 \item{variables}{Logical. If \code{TRUE}, the base model will include the
-same variables as the provided model. If \code{FALSE}, the base model will
-be an intercept-only model. Default is \code{FALSE}.}
+same variables as the provided model. If \code{FALSE}, the base model
+will be an intercept-only model. Default is \code{FALSE}.}
 
 \item{print}{Logical. If \code{TRUE}, a table of the results will be shown.
 If \code{FALSE}, the table of results will not be printed to the console.}
 
 \item{...}{Additional arguments to be passed to the base model fitting
-function - options are any argument from the \code{\link{countreg}}
-function.}
+function. These arguments are used only when a single fitted model is
+supplied and the function needs to estimate the base model.}
 
-\item{model2}{An optional second fitted regression model object to compare.
-If supplied, the function returns comparison results for both trained
-models in addition to the base-model comparison.}
+\item{model2}{An optional second fitted regression model object. If
+supplied, the function compares \code{model} and \code{model2} directly
+and does not estimate a separate base model.}
 }
 \value{
-A list containing the following components.
-\itemize{
-\item For the original single-model workflow: \code{LL}, \code{LLbase},
-\code{LR}, \code{LRdof}, \code{AIC}, \code{AICbase}, \code{BIC},
-\code{BICbase}, \code{LR_pvalue}, \code{PseudoR2}, \code{statistics},
-\code{gtTable}, \code{latexTable}, and \code{htmlTable}.
-\item If \code{model2} is supplied: \code{model1}, \code{model2}, and a
-combined \code{statistics} table plus the associated table objects.
-}
+A list containing the comparison results.
+
+For the single-model workflow, the returned list includes \code{LL},
+\code{LLbase}, \code{LR}, \code{LRdof}, \code{AIC}, \code{AICbase},
+\code{BIC}, \code{BICbase}, \code{LR_pvalue}, \code{PseudoR2},
+\code{statistics}, \code{gtTable}, \code{latexTable}, and \code{htmlTable}.
+
+For the two-model workflow, the returned list includes \code{model1},
+\code{model2}, \code{base_model}, \code{comparison_model},
+\code{base_index}, \code{comparison_index}, \code{LL_base},
+\code{LL_comparison}, \code{LR}, \code{LRdof}, \code{LR_pvalue},
+\code{statistics}, \code{gtTable}, \code{latexTable}, and \code{htmlTable}.
 }
 \description{
 This function compares fitted regression model objects using the
@@ -56,40 +60,58 @@ Likelihood Ratio (LR) test, Akaike Information Criterion (AIC), and Bayesian
 Information Criterion (BIC).
 }
 \details{
-The function performs the following steps:
+When only one fitted model is supplied, the function estimates a base model
+from the supplied data and compares the fitted model against that base
+model. When two fitted models are supplied, the function compares the two
+fitted models directly and uses the model with the larger log-likelihood as
+the base model for the LR test.
+
+The function performs the following steps for the single-model
+workflow:
 \enumerate{
 \item Fits the base model, either a Poisson regression or another specified
 model.
-\item Computes the log-likelihoods of the provided model(s) and the base
+\item Computes the log-likelihoods of the provided model and the base
 model.
-\item Calculates the AIC and BIC for the model(s).
-\item Conducts a Likelihood Ratio test to compare the model(s) to the base
-model (if the provided model has more parameters than the base model).
+\item Calculates the AIC and BIC for both models.
+\item Conducts a Likelihood Ratio test to compare the fitted model against
+the estimated base model when the fitted model has more parameters than
+the base model.
 \item Computes McFadden's Pseudo R^2.
 }
 
-The Likelihood-Ratio test is computed as \deqn{LR = -2 (LL_{base} - LL_{model})}.
+For the two-model workflow, the function compares the two fitted models
+directly. The model with the larger log-likelihood is treated as the base
+model for the LR test, and the other model is treated as the comparison
+model.
+
+The Likelihood-Ratio test is computed as \deqn{LR = -2 (LL_{base} - LL_{comparison})}.
 The test is chi-squared with degrees of freedom
-\deqn{dof=N_{model \ params}-N_{base \ params}}.
+\deqn{dof = |N_{base \ params} - N_{comparison \ params}|}.
 The AIC is calculated as \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}, and the
 BIC is calculated as \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}.
 }
 \examples{
 
-# Comparing the NBP model with the NB2 model and base Poisson model
+# Example 1: Compare one fitted model against an estimated Poisson base model
 data("washington_roads")
-washington_roads$AADTover10k <- ifelse(washington_roads$AADT>10000,1,0)
+washington_roads$AADTover10k <- ifelse(washington_roads$AADT > 10000, 1, 0)
 
 nbp.base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
-                    ShouldWidth04 + AADTover10k,
-                    data=washington_roads, family = 'NBP', method = 'NM',
-                    max.iters=3000)
+                     ShouldWidth04 + AADTover10k,
+                     data = washington_roads, family = "NBP", method = "NM",
+                     max.iters = 3000)
+
+regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
+            variables = TRUE, print = TRUE)
+
+# Example 2: Compare two fitted models directly
 nb2.base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
-                    ShouldWidth04 + AADTover10k,
-                    data=washington_roads, family = 'NB2', method = 'NM',
-                    max.iters=3000)                    
-                   
-regCompTest(nbp.base, washington_roads, basemodel="Poisson", 
-model2=nb2.base, print=TRUE)
+                     ShouldWidth04 + AADTover10k,
+                     data = washington_roads, family = "NB2", method = "NM",
+                     max.iters = 3000)
+
+regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
+            print = TRUE)
 
 }

@@ -2,15 +2,12 @@
 % Please edit documentation in R/genpoisson2.R
 \name{GeneralizedPoisson2}
 \alias{GeneralizedPoisson2}
-\alias{.gp2_validate}
 \alias{dgp2}
 \alias{pgp2}
 \alias{qgp2}
 \alias{rgp2}
 \title{Generalized Poisson Version 2 Distribution}
 \usage{
-.gp2_validate(mu, alpha)
-
 dgp2(x, mu = 1, alpha = 0, log = FALSE)
 
 pgp2(q, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE)
@@ -20,14 +17,14 @@ qgp2(p, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE)
 rgp2(n, mu = 1, alpha = 0)
 }
 \arguments{
+\item{x}{numeric value or a vector of values.}
+
 \item{mu}{numeric value or vector of mean values for the distribution (the
 values have to be greater than 0).}
 
 \item{alpha}{numeric value or vector of values for the dispersion parameter
 of the distribution. Values may be negative, zero, or positive, provided
 that \eqn{1 + \alpha \mu > 0}.}
-
-\item{x}{numeric value or a vector of values.}
 
 \item{log}{logical; if TRUE, probabilities are given as log(p).}
 

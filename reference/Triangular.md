@@ -43,12 +43,12 @@ rtri(n, mode = 0, sigma = 1, upper = NA, lower = NA)
 - upper:
 
   single value or vector for the upper limit of the distribution (must
-  be used with \`lower\`).
+  be used with `lower`).
 
 - lower:
 
   single value or vector for the lower limit of the distribution (must
-  be used with \`upper\`).
+  be used with `upper`).
 
 - log:
 
@@ -90,8 +90,8 @@ result. Only the first elements of the logical arguments are used.
 
 The Triangle Distribution is defined by three points: a (minimum), b
 (maximum), and c (mode), where the density is zero outside the interval
-\[a, b\], increases linearly from a to c, and decreases linearly from c
-to b.
+\\\[a, b\]\\, increases linearly from a to c, and decreases linearly
+from c to b.
 
 `dtri` computes the density (PDF) of the Triangle Distribution.
 
@@ -116,8 +116,8 @@ ptri(c(0, 1, 2, 3, 5, 7, 9, 10), mode = 3, upper=9, lower = 1)
 qtri(c(0.1, 0.3, 0.5, 0.9, 0.95), mode = 3, upper = 9, lower = 1)
 #> [1] 2.264911 3.203449 4.101021 6.809110 7.450807
 rtri(30, mode = 5, sigma = 3)
-#>  [1] 3.346247 7.517553 6.051029 6.340004 7.138958 6.173909 5.818189 5.710741
-#>  [9] 6.565418 6.103555 4.177710 7.140990 4.860410 3.535905 5.287116 5.806178
-#> [17] 3.279292 5.607881 4.385498 4.784582 4.841973 5.938685 4.365143 4.641275
-#> [25] 3.164350 6.724128 5.803815 5.024051 7.093128 5.451739
+#>  [1] 4.776056 6.948532 5.981228 5.182808 3.859734 3.184053 4.261645 5.794351
+#>  [9] 2.973750 6.277698 6.336528 6.718343 7.510946 2.912438 4.444215 5.531081
+#> [17] 3.550692 2.761451 5.282865 5.143355 3.346247 7.517553 6.051029 6.340004
+#> [25] 7.138958 6.173909 5.818189 5.710741 6.565418 6.103555
 ```

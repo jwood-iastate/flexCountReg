@@ -30,8 +30,8 @@ rcom(n, mu = NULL, lambda = 1, nu = 1)
 - lambda:
 
   optional. Numeric value or vector of values for the rate parameter of
-  the distribution (the values have to be greater than 0). If \`mu\` is
-  provided, \`lambda\` is ignored.
+  the distribution (the values have to be greater than 0). If `mu` is
+  provided, `lambda` is ignored.
 
 - nu:
 
@@ -116,5 +116,5 @@ pcom(c(0,1,2,3,5,7,9,10), lambda=0.75, nu=0.75)
 qcom(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, nu=0.75)
 #> [1] 0 0 1 2 2
 rcom(30, mu=0.75, nu=0.5)
-#>  [1] 1 0 0 0 0 0 1 1 2 0 0 0 0 0 0 0 0 3 0 1 1 0 3 1 0 1 1 1 0 0
+#>  [1] 0 2 1 0 0 0 0 0 1 1 2 0 0 0 0 0 0 0 0 3 0 1 1 0 3 1 0 1 1 1
 ```

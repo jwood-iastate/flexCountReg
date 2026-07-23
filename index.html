@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="favicon.ico">
 <link rel="manifest" href="site.webmanifest">
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Estimation of a Variety of Count Regression Models">
 <meta name="description" content="An implementation of multiple regression models for count data. These include various forms of the negative binomial (NB-1, NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lognormal, other compound Poisson distributions, the Generalized Waring model, etc. Information on the different forms of the negative binomial are described by Greene (2008) &lt;doi:10.1016/j.econlet.2007.10.015&gt;. For treatises on count models, see Cameron and Trivedi (2013) &lt;doi:10.1017/CBO9781139013567&gt; and Hilbe (2012) &lt;doi:10.1017/CBO9780511973420&gt;. For the implementation of under-reporting in count models, see Wood et al. (2016) &lt;doi:10.1016/j.aap.2016.06.013&gt;. For prediction methods in random parameter models, see Wood and Gayah (2025) &lt;doi:10.1016/j.aap.2025.108147&gt;. For estimating random parameters using maximum simulated likelihood, see Greene and Hill (2010) &lt;doi:10.1108/S0731-9053(2010)26&gt;; Gourieroux and Monfort (1996) &lt;doi:10.1093/0198774753.001.0001&gt;; or Hensher et al. (2015) &lt;doi:10.1017/CBO9781316136232&gt;.">
@@ -28,7 +28,7 @@
 
     <a class="navbar-brand me-2" href="index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -369,7 +369,7 @@
 <col width="12%">
 <col width="12%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">parameter</th>
 <th align="right">coeff</th>
 <th align="right">Std. Err.</th>
@@ -379,7 +379,7 @@
 <th align="right">upper CI</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">(Intercept)</td>
 <td align="right">-7.401</td>
 <td align="right">0.043</td>
@@ -388,7 +388,7 @@
 <td align="right">-7.486</td>
 <td align="right">-7.317</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">lnaadt</td>
 <td align="right">0.912</td>
 <td align="right">0.005</td>
@@ -397,7 +397,7 @@
 <td align="right">0.902</td>
 <td align="right">0.921</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">lnlength</td>
 <td align="right">0.843</td>
 <td align="right">0.037</td>
@@ -406,7 +406,7 @@
 <td align="right">0.771</td>
 <td align="right">0.915</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">speed50</td>
 <td align="right">-0.470</td>
 <td align="right">0.102</td>
@@ -415,7 +415,7 @@
 <td align="right">-0.669</td>
 <td align="right">-0.270</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">AADT10kplus</td>
 <td align="right">0.770</td>
 <td align="right">0.089</td>
@@ -424,7 +424,7 @@
 <td align="right">0.594</td>
 <td align="right">0.945</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">ln(alpha):(Intercept)</td>
 <td align="right">-1.619</td>
 <td align="right">0.291</td>
@@ -433,7 +433,7 @@
 <td align="right">-2.189</td>
 <td align="right">-1.049</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">ln(alpha):speed50</td>
 <td align="right">1.306</td>
 <td align="right">0.458</td>
@@ -449,38 +449,38 @@
 <code class="sourceCode R"><span><span class="va">teststats</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="va">gen.nb2</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">teststats</span><span class="op">$</span><span class="va">statistics</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Statistic</th>
 <th align="right">Model</th>
 <th align="right">BaseModel</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">AIC</td>
 <td align="right">2143.7522</td>
 <td align="right">3049.659</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">BIC</td>
 <td align="right">2180.9494</td>
 <td align="right">3054.973</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">LR Test Statistic</td>
 <td align="right">917.9070</td>
 <td align="right">NA</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">LR degrees of freedom</td>
 <td align="right">6.0000</td>
 <td align="right">NA</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">LR p-value</td>
 <td align="right">0.0000</td>
 <td align="right">NA</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">McFadden’s Pseudo R^2</td>
 <td align="right">0.3012</td>
 <td align="right">NA</td>
@@ -536,7 +536,7 @@
 <col width="12%">
 <col width="12%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">parameter</th>
 <th align="right">coeff</th>
 <th align="right">Std. Err.</th>
@@ -546,7 +546,7 @@
 <th align="right">upper CI</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">(Intercept)</td>
 <td align="right">-7.676</td>
 <td align="right">0.043</td>
@@ -555,7 +555,7 @@
 <td align="right">-7.759</td>
 <td align="right">-7.592</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">lnaadt</td>
 <td align="right">0.930</td>
 <td align="right">0.005</td>
@@ -564,7 +564,7 @@
 <td align="right">0.920</td>
 <td align="right">0.939</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">lnlength</td>
 <td align="right">0.853</td>
 <td align="right">0.038</td>
@@ -573,7 +573,7 @@
 <td align="right">0.779</td>
 <td align="right">0.927</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">speed50</td>
 <td align="right">-0.400</td>
 <td align="right">0.091</td>
@@ -582,7 +582,7 @@
 <td align="right">-0.579</td>
 <td align="right">-0.221</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">ShouldWidth04</td>
 <td align="right">0.261</td>
 <td align="right">0.060</td>
@@ -591,7 +591,7 @@
 <td align="right">0.143</td>
 <td align="right">0.378</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">AADT10kplus</td>
 <td align="right">5.961</td>
 <td align="right">0.092</td>
@@ -600,7 +600,7 @@
 <td align="right">5.780</td>
 <td align="right">6.142</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">I(AADT10kplus/lnaadt)</td>
 <td align="right">-50.133</td>
 <td align="right">0.938</td>
@@ -609,7 +609,7 @@
 <td align="right">-51.971</td>
 <td align="right">-48.295</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">ln(alpha):(Intercept)</td>
 <td align="right">-1.913</td>
 <td align="right">0.324</td>
@@ -618,7 +618,7 @@
 <td align="right">-2.547</td>
 <td align="right">-1.278</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">ln(alpha):lnlength</td>
 <td align="right">-0.430</td>
 <td align="right">0.244</td>
@@ -634,38 +634,38 @@
 <code class="sourceCode R"><span><span class="va">teststats</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="va">gen.nb2</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">teststats</span><span class="op">$</span><span class="va">statistics</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Statistic</th>
 <th align="right">Model</th>
 <th align="right">BaseModel</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">AIC</td>
 <td align="right">2141.8278</td>
 <td align="right">3049.659</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">BIC</td>
 <td align="right">2189.6528</td>
 <td align="right">3054.973</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">LR Test Statistic</td>
 <td align="right">923.8314</td>
 <td align="right">NA</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">LR degrees of freedom</td>
 <td align="right">8.0000</td>
 <td align="right">NA</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">LR p-value</td>
 <td align="right">0.0000</td>
 <td align="right">NA</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">McFadden’s Pseudo R^2</td>
 <td align="right">0.3031</td>
 <td align="right">NA</td>
@@ -716,7 +716,7 @@
 <col width="12%">
 <col width="12%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th align="left">parameter</th>
 <th align="right">coeff</th>
 <th align="right">Std. Err.</th>
@@ -726,7 +726,7 @@
 <th align="right">upper CI</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">(Intercept)</td>
 <td align="right">-7.764</td>
 <td align="right">0.043</td>
@@ -735,7 +735,7 @@
 <td align="right">-7.848</td>
 <td align="right">-7.680</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">lnaadt</td>
 <td align="right">0.938</td>
 <td align="right">0.005</td>
@@ -744,7 +744,7 @@
 <td align="right">0.928</td>
 <td align="right">0.948</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">lnlength</td>
 <td align="right">0.836</td>
 <td align="right">0.037</td>
@@ -753,7 +753,7 @@
 <td align="right">0.763</td>
 <td align="right">0.910</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">speed50</td>
 <td align="right">-0.384</td>
 <td align="right">0.093</td>
@@ -762,7 +762,7 @@
 <td align="right">-0.567</td>
 <td align="right">-0.202</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">ShouldWidth04</td>
 <td align="right">0.258</td>
 <td align="right">0.059</td>
@@ -771,7 +771,7 @@
 <td align="right">0.141</td>
 <td align="right">0.374</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">AADT10kplus</td>
 <td align="right">0.689</td>
 <td align="right">0.088</td>
@@ -780,7 +780,7 @@
 <td align="right">0.518</td>
 <td align="right">0.861</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">ln(alpha):(Intercept)</td>
 <td align="right">-1.496</td>
 <td align="right">0.294</td>
@@ -789,7 +789,7 @@
 <td align="right">-2.072</td>
 <td align="right">-0.920</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">ln(alpha):lnlength</td>
 <td align="right">-0.167</td>
 <td align="right">0.245</td>
@@ -798,7 +798,7 @@
 <td align="right">-0.648</td>
 <td align="right">0.314</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">ln(p)</td>
 <td align="right">0.525</td>
 <td align="right">0.173</td>
@@ -814,38 +814,38 @@
 <code class="sourceCode R"><span><span class="va">teststats</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="va">gen.nbp</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">teststats</span><span class="op">$</span><span class="va">statistics</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Statistic</th>
 <th align="right">Model</th>
 <th align="right">BaseModel</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">AIC</td>
 <td align="right">2142.3895</td>
 <td align="right">3049.659</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">BIC</td>
 <td align="right">2190.2144</td>
 <td align="right">3054.973</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">LR Test Statistic</td>
 <td align="right">923.2697</td>
 <td align="right">NA</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">LR degrees of freedom</td>
 <td align="right">8.0000</td>
 <td align="right">NA</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">LR p-value</td>
 <td align="right">0.0000</td>
 <td align="right">NA</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">McFadden’s Pseudo R^2</td>
 <td align="right">0.3029</td>
 <td align="right">NA</td>
@@ -863,83 +863,83 @@
 <code class="sourceCode R"><span><span class="fu"><a href="reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Generalized NB-2"</span><span class="op">=</span><span class="va">gen.nb2</span>, <span class="st">"Generalized NB-P"</span><span class="op">=</span><span class="va">gen.nbp</span><span class="op">)</span>, tableType<span class="op">=</span><span class="st">"tibble"</span><span class="op">)</span> <span class="op">|&gt;</span> </span>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<thead><tr class="header">
+<thead><tr>
 <th align="left">Parameter</th>
 <th align="left">Generalized NB-2</th>
 <th align="left">Generalized NB-P</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td align="left">(Intercept)</td>
 <td align="left">-7.676 (0.043)***</td>
 <td align="left">-7.764 (0.043)***</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">lnaadt</td>
 <td align="left">0.93 (0.005)***</td>
 <td align="left">0.938 (0.005)***</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">lnlength</td>
 <td align="left">0.853 (0.038)***</td>
 <td align="left">0.836 (0.037)***</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">speed50</td>
 <td align="left">-0.4 (0.091)***</td>
 <td align="left">-0.384 (0.093)***</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">ShouldWidth04</td>
 <td align="left">0.261 (0.06)***</td>
 <td align="left">0.258 (0.059)***</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">AADT10kplus</td>
 <td align="left">5.961 (0.092)***</td>
 <td align="left">0.689 (0.088)***</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">I(AADT10kplus/lnaadt)</td>
 <td align="left">-50.133 (0.938)***</td>
 <td align="left">—</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">ln(alpha):(Intercept)</td>
 <td align="left">-1.913 (0.324)***</td>
 <td align="left">-1.496 (0.294)***</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">ln(alpha):lnlength</td>
 <td align="left">-0.43 (0.244)</td>
 <td align="left">-0.167 (0.245)</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">ln(p)</td>
 <td align="left">—</td>
 <td align="left">0.525 (0.173)**</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">N Obs.</td>
 <td align="left">1501</td>
 <td align="left">1501</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">LL</td>
 <td align="left">-1061.914</td>
 <td align="left">-1062.195</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">AIC</td>
 <td align="left">2141.828</td>
 <td align="left">2142.389</td>
 </tr>
-<tr class="even">
+<tr>
 <td align="left">BIC</td>
 <td align="left">2189.653</td>
 <td align="left">2190.214</td>
 </tr>
-<tr class="odd">
+<tr>
 <td align="left">Pseudo-R-Sq.</td>
 <td align="left">0.303</td>
 <td align="left">0.303</td>
@@ -949,7 +949,14 @@
 <p>Note that the metrics for comparison are similar. While the models both have the same number of parameters, the NB-P was able to get better performance without requiring the interaction terms (which leads to strange relationships between the exposure metric and the outcome).</p>
 </div>
 </div>
-  </main><aside class="col-md-3"><div class="license">
+  </main><aside class="col-md-3"><div class="links">
+<h2 data-toc-skip>Links</h2>
+<ul class="list-unstyled">
+<li><a href="https://cloud.r-project.org/package=flexCountReg" class="external-link">View on CRAN</a></li>
+</ul>
+</div>
+
+<div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
 <li><a href="LICENSE.html">Full license</a></li>
@@ -989,7 +996,7 @@
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

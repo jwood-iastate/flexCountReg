@@ -12,6 +12,18 @@
   [`qgwar()`](https://jwood-iastate.github.io/flexCountReg/reference/Generalized-Waring.md)
   [`rgwar()`](https://jwood-iastate.github.io/flexCountReg/reference/Generalized-Waring.md)
   : Generalized Waring Distribution
+- [`.gp1_validate()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
+  [`dgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
+  [`pgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
+  [`qgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
+  [`rgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
+  : Generalized Poisson Version 1 Distribution
+- [`.gp2_validate()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
+  [`dgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
+  [`pgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
+  [`qgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
+  [`rgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
+  : Generalized Poisson Version 2 Distribution
 - [`dlindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
   [`plindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
   [`qlindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
@@ -92,6 +104,9 @@
   : Inverse Gamma Distribution
 - [`mae()`](https://jwood-iastate.github.io/flexCountReg/reference/mae.md)
   : Calculate Mean Absolute Error (MAE)
+- [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  : Marginal Effects, Elasticities, and Pseudo-Elasticities for
+  flexCountReg Models
 - [`mgf_lognormal()`](https://jwood-iastate.github.io/flexCountReg/reference/mgf_lognormal.md)
   : Moment Generating Function for a Lognormal Distribution
 - [`myAIC()`](https://jwood-iastate.github.io/flexCountReg/reference/myAIC.md)
@@ -110,6 +125,8 @@
   : Compare Regression Models with Likelihood Ratio Test, AIC, and BIC
 - [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
   : Estimate a Random Effects Negative Binomial regression model
+- [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  : Random-Effects Poisson Panel Model
 - [`rmse()`](https://jwood-iastate.github.io/flexCountReg/reference/rmse.md)
   : Calculate Root Mean Squared Error (RMSE)
 - [`summary(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)

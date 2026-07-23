@@ -72,7 +72,7 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 - lower.tail:
 
-  TRUE returns P\[X \$\$\leq\$\$ x\].
+  TRUE returns \\P\[X \leq x\]\\.
 
 - log.p:
 
@@ -125,5 +125,5 @@ pplindLnorm(0:10, mean=0.75, theta=7, sigma=2, ndraws=10)
 qplindLnorm(c(0.1,0.5,0.9), lambda=4.67, theta=7, sigma=2)
 #> [1]  0  3 61
 rplindLnorm(5, mean=0.75, theta=7, sigma=2)
-#> [1] 6 0 0 0 0
+#> [1] 2 0 1 0 0
 ```

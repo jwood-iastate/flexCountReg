@@ -43,7 +43,7 @@ rsichel(n, mu = 1, sigma = 1, gamma = 1)
 
 - lower.tail:
 
-  logical; if TRUE, probabilities are P\[X \<= x\].
+  logical; if TRUE, probabilities are \\P\[X \<= x\]\\.
 
 - p:
 

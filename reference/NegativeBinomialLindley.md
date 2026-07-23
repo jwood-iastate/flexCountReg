@@ -41,10 +41,9 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 
 - alpha:
 
-  single value or vector of values for the \`alpha\` parameter of the
+  single value or vector of values for the `alpha` parameter of the
   gamma distribution in the special case that the mean = 1 and the
-  variance = \`alpha\` (the values for \`alpha\` have to be greater than
-  0).
+  variance = `alpha` (the values for `alpha` have to be greater than 0).
 
 - log:
 
@@ -139,5 +138,5 @@ pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=3, alpha=0.5)
 qplindGamma(c(0.1,0.3,0.5,0.9,0.95), mean=1.67, theta=0.5, alpha=0.5)
 #> [1] 0 0 0 5 8
 rplindGamma(30, mean=0.5, theta=0.5, alpha=2)
-#>  [1] 2 0 0 0 0 0 0 0 0 3 0 0 1 0 3 0 1 0 0 0 0 1 0 0 0 1 0 0 0 1
+#>  [1] 0 2 2 0 0 0 0 0 0 0 0 3 0 0 1 0 3 0 1 0 0 0 0 1 0 0 0 1 0 0
 ```

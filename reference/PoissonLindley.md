@@ -18,10 +18,6 @@ qplind(p, mean = 1, theta = 1, lambda = NULL)
 rplind(n, mean = 1, theta = 1, lambda = NULL)
 ```
 
-## Format
-
-An object of class `character` of length 1.
-
 ## Arguments
 
 - x:
@@ -120,5 +116,5 @@ pplind(c(0, 1, 2, 3, 5, 7, 9, 10), mean = 0.75, theta = 7)
 qplind(c(0.1, 0.3, 0.5, 0.9, 0.95), lambda = 4.67, theta = 7)
 #> [1] 0 0 0 2 3
 rplind(30, mean = 0.75, theta = 7)
-#>  [1] 0 0 1 0 0 0 0 0 0 0 1 1 2 0 1 3 1 4 0 1 1 0 1 0 0 0 0 0 1 1
+#>  [1] 1 0 0 0 1 0 1 0 0 0 0 0 1 0 0 0 0 0 0 0 1 1 2 0 1 3 1 4 0 1
 ```

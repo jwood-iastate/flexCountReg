@@ -97,8 +97,8 @@ rpoisweibull(
 
 - lower.tail:
 
-  Logical; if TRUE, probabilities are P\[X \<= x\], otherwise P\[X \>
-  x\].
+  Logical; if TRUE, probabilities are \\P\[X \<= x\]\\, otherwise \\P\[X
+  \> x\]\\.
 
 - log.p:
 
@@ -160,5 +160,5 @@ ppoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 qpoisweibull(0.95, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 #> [1] 4
 rpoisweibull(10, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
-#>  [1] 0 1 0 2 2 3 6 0 0 1
+#>  [1] 0 1 0 3 0 1 0 0 0 0
 ```

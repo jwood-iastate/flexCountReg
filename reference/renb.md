@@ -61,7 +61,7 @@ renb(
 
 ## Value
 
-An object of class \`countreg\` which is a list with the following
+An object of class `countreg` which is a list with the following
 components:
 
 - model: the fitted model object.

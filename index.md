@@ -10,6 +10,7 @@ issues including excess zeros, overdispersion as a function of variables
 You can install the development version of flexCountReg like using:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("jwood-iastate/flexCountReg")
 ```
@@ -196,6 +197,7 @@ binomial (NB-2) regression model with the overdispersion parameter as a
 function of predictor variables:
 
 ``` r
+
 library(gt) # used to format summary tables here
 library(flexCountReg)
 library(knitr)
@@ -208,6 +210,7 @@ gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 ```
 
 ``` r
+
 kable(summary(gen.nb2), caption = "NB-2 Model Summary")
 #> Call:
 #>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
@@ -244,6 +247,7 @@ kable(summary(gen.nb2), caption = "NB-2 Model Summary")
 NB-2 Model Summary
 
 ``` r
+
 teststats <- regCompTest(gen.nb2)
 kable(teststats$statistics)
 ```
@@ -260,6 +264,7 @@ kable(teststats$statistics)
 Checking the CURE plot:
 
 ``` r
+
 cureplot(gen.nb2, indvar  ="lnaadt")
 #> Covariate: indvar_values
 #> CURE data frame was provided. Its first column, lnaadt, will be used.
@@ -270,6 +275,7 @@ cureplot(gen.nb2, indvar  ="lnaadt")
 Modifying the model to fit better:
 
 ``` r
+
 
 
 gen.nb2 <- countreg(Total_crashes ~ lnaadt  + lnlength + speed50 +
@@ -318,6 +324,7 @@ kable(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
 Modified NB-2 Model Summary
 
 ``` r
+
 teststats <- regCompTest(gen.nb2)
 kable(teststats$statistics)
 ```
@@ -332,6 +339,7 @@ kable(teststats$statistics)
 | McFadden’s Pseudo R^2 |    0.3031 |        NA |
 
 ``` r
+
 cureplot(gen.nb2, indvar  ="lnaadt")
 #> Covariate: indvar_values
 #> CURE data frame was provided. Its first column, lnaadt, will be used.
@@ -342,6 +350,7 @@ cureplot(gen.nb2, indvar  ="lnaadt")
 Estimating another model (NB-P) - without the interaction:
 
 ``` r
+
 gen.nbp <- countreg(Total_crashes ~ lnaadt  + lnlength + speed50 +
                                 ShouldWidth04 + AADT10kplus,
                                 data = washington_roads, family = "NBp",
@@ -386,6 +395,7 @@ kable(summary(gen.nbp), caption = "NB-P Model Summary")
 NB-P Model Summary
 
 ``` r
+
 teststats <- regCompTest(gen.nbp)
 kable(teststats$statistics)
 ```
@@ -404,6 +414,7 @@ case than the NB-2 without the interaction and still better than the
 modified NB-2):
 
 ``` r
+
 cureplot(gen.nbp, indvar  ="lnaadt")
 #> Covariate: indvar_values
 #> CURE data frame was provided. Its first column, lnaadt, will be used.
@@ -414,6 +425,7 @@ cureplot(gen.nbp, indvar  ="lnaadt")
 Creating a table to compare the models:
 
 ``` r
+
 regCompTable(list("Generalized NB-2"=gen.nb2, "Generalized NB-P"=gen.nbp), tableType="tibble") |> 
   kable()
 ```

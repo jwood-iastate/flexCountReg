@@ -7,8 +7,6 @@ Poisson Version 2 (GP-2) Distribution.
 ## Usage
 
 ``` r
-.gp2_validate(mu, alpha)
-
 dgp2(x, mu = 1, alpha = 0, log = FALSE)
 
 pgp2(q, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE)
@@ -20,6 +18,10 @@ rgp2(n, mu = 1, alpha = 0)
 
 ## Arguments
 
+- x:
+
+  numeric value or a vector of values.
+
 - mu:
 
   numeric value or vector of mean values for the distribution (the
@@ -30,10 +32,6 @@ rgp2(n, mu = 1, alpha = 0)
   numeric value or vector of values for the dispersion parameter of the
   distribution. Values may be negative, zero, or positive, provided that
   \\1 + \alpha \mu \> 0\\.
-
-- x:
-
-  numeric value or a vector of values.
 
 - log:
 

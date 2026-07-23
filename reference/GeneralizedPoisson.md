@@ -7,8 +7,6 @@ Poisson Version 1 (GP-1) Distribution
 ## Usage
 
 ``` r
-.gp1_validate(mu, phi)
-
 dgp1(x, mu = 1, phi = 1, log = FALSE)
 
 pgp1(q, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE)
@@ -20,6 +18,10 @@ rgp1(n, mu = 1, phi = 1)
 
 ## Arguments
 
+- x:
+
+  numeric value or a vector of values.
+
 - mu:
 
   numeric value or vector of mean values for the distribution (the
@@ -29,10 +31,6 @@ rgp1(n, mu = 1, phi = 1)
 
   single value or vector of values for the scale parameter of the
   distribution (the values have to be greater than -1).
-
-- x:
-
-  numeric value or a vector of values.
 
 - log:
 

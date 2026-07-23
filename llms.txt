@@ -467,14 +467,12 @@ strange relationships between the exposure metric and the outcome).
   [`qgwar()`](https://jwood-iastate.github.io/flexCountReg/reference/Generalized-Waring.md)
   [`rgwar()`](https://jwood-iastate.github.io/flexCountReg/reference/Generalized-Waring.md)
   : Generalized Waring Distribution
-- [`.gp1_validate()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
-  [`dgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
+- [`dgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
   [`pgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
   [`qgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
   [`rgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md)
   : Generalized Poisson Version 1 Distribution
-- [`.gp2_validate()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
-  [`dgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
+- [`dgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
   [`pgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
   [`qgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
   [`rgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)

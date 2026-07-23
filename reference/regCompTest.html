@@ -63,20 +63,21 @@ Information Criterion (BIC).</p>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>An options data frame containing the variables in the model. If
-not supplied, the original data used to estimate the model will be used.</p></dd>
+<dd><p>An optional data frame containing the variables in the model.
+If not supplied, the original data used to estimate the model will be
+used when available.</p></dd>
 
 
 <dt id="arg-basemodel">basemodel<a class="anchor" aria-label="anchor" href="#arg-basemodel"></a></dt>
 <dd><p>A character string specifying the family of base model to
-compare against (options include the family from <code><a href="countreg.html">countreg</a></code> or
-"Poisson"). Default is "Poisson".</p></dd>
+compare against (options include the family from
+<code><a href="countreg.html">countreg</a></code> or "Poisson"). Default is "Poisson".</p></dd>
 
 
 <dt id="arg-variables">variables<a class="anchor" aria-label="anchor" href="#arg-variables"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, the base model will include the
-same variables as the provided model. If <code>FALSE</code>, the base model will
-be an intercept-only model. Default is <code>FALSE</code>.</p></dd>
+same variables as the provided model. If <code>FALSE</code>, the base model
+will be an intercept-only model. Default is <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-print">print<a class="anchor" aria-label="anchor" href="#arg-print"></a></dt>
@@ -86,38 +87,53 @@ If <code>FALSE</code>, the table of results will not be printed to the console.<
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments to be passed to the base model fitting
-function - options are any argument from the <code><a href="countreg.html">countreg</a></code>
-function.</p></dd>
+function. These arguments are used only when a single fitted model is
+supplied and the function needs to estimate the base model.</p></dd>
 
 
 <dt id="arg-model-">model2<a class="anchor" aria-label="anchor" href="#arg-model-"></a></dt>
-<dd><p>An optional second fitted regression model object to compare.
-If supplied, the function returns comparison results for both trained
-models in addition to the base-model comparison.</p></dd>
+<dd><p>An optional second fitted regression model object. If
+supplied, the function compares <code>model</code> and <code>model2</code> directly
+and does not estimate a separate base model.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list containing the following components.</p><ul><li><p>For the original single-model workflow: <code>LL</code>, <code>LLbase</code>,
-<code>LR</code>, <code>LRdof</code>, <code>AIC</code>, <code>AICbase</code>, <code>BIC</code>,
-<code>BICbase</code>, <code>LR_pvalue</code>, <code>PseudoR2</code>, <code>statistics</code>,
-<code>gtTable</code>, <code>latexTable</code>, and <code>htmlTable</code>.</p></li>
-<li><p>If <code>model2</code> is supplied: <code>model1</code>, <code>model2</code>, and a
-combined <code>statistics</code> table plus the associated table objects.</p></li>
-</ul></div>
+    <p>A list containing the comparison results.</p>
+<p>For the single-model workflow, the returned list includes <code>LL</code>,
+<code>LLbase</code>, <code>LR</code>, <code>LRdof</code>, <code>AIC</code>, <code>AICbase</code>,
+<code>BIC</code>, <code>BICbase</code>, <code>LR_pvalue</code>, <code>PseudoR2</code>,
+<code>statistics</code>, <code>gtTable</code>, <code>latexTable</code>, and <code>htmlTable</code>.</p>
+<p>For the two-model workflow, the returned list includes <code>model1</code>,
+<code>model2</code>, <code>base_model</code>, <code>comparison_model</code>,
+<code>base_index</code>, <code>comparison_index</code>, <code>LL_base</code>,
+<code>LL_comparison</code>, <code>LR</code>, <code>LRdof</code>, <code>LR_pvalue</code>,
+<code>statistics</code>, <code>gtTable</code>, <code>latexTable</code>, and <code>htmlTable</code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The function performs the following steps:</p><ol><li><p>Fits the base model, either a Poisson regression or another specified
+    <p>When only one fitted model is supplied, the function estimates a base model
+from the supplied data and compares the fitted model against that base
+model. When two fitted models are supplied, the function compares the two
+fitted models directly and uses the model with the larger log-likelihood as
+the base model for the LR test.</p>
+<p>The function performs the following steps for the single-model
+workflow:</p><ol><li><p>Fits the base model, either a Poisson regression or another specified
 model.</p></li>
-<li><p>Computes the log-likelihoods of the provided model(s) and the base
+<li><p>Computes the log-likelihoods of the provided model and the base
 model.</p></li>
-<li><p>Calculates the AIC and BIC for the model(s).</p></li>
-<li><p>Conducts a Likelihood Ratio test to compare the model(s) to the base
-model (if the provided model has more parameters than the base model).</p></li>
+<li><p>Calculates the AIC and BIC for both models.</p></li>
+<li><p>Conducts a Likelihood Ratio test to compare the fitted model against
+the estimated base model when the fitted model has more parameters than
+the base model.</p></li>
 <li><p>Computes McFadden's Pseudo R^2.</p></li>
-</ol><p>The Likelihood-Ratio test is computed as $$LR = -2 (LL_{base} - LL_{model})$$.
+</ol><p>For the two-model workflow, the function compares the two fitted models
+directly. The model with the larger log-likelihood is treated as the base
+model for the LR test, and the other model is treated as the comparison
+model.</p>
+<p>The Likelihood-Ratio test is computed as $$LR = -2 (LL_{base} - LL_{comparison})$$.
 The test is chi-squared with degrees of freedom
-$$dof=N_{model \ params}-N_{base \ params}$$.
+$$dof = |N_{base \ params} - N_{comparison \ params}|$$.
 The AIC is calculated as $$AIC = -2 \cdot LL + 2 \cdot nparam$$, and the
 BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
     </div>
@@ -125,21 +141,17 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Comparing the NBP model with the NB2 model and base Poisson model</span></span></span>
+<span class="r-in"><span><span class="co"># Example 1: Compare one fitted model against an estimated Poisson base model</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"washington_roads"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">washington_roads</span><span class="op">$</span><span class="va">AADTover10k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">washington_roads</span><span class="op">$</span><span class="va">AADT</span><span class="op">&gt;</span><span class="fl">10000</span>,<span class="fl">1</span>,<span class="fl">0</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">washington_roads</span><span class="op">$</span><span class="va">AADTover10k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">washington_roads</span><span class="op">$</span><span class="va">AADT</span> <span class="op">&gt;</span> <span class="fl">10000</span>, <span class="fl">1</span>, <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">nbp.base</span> <span class="op">&lt;-</span> <span class="fu"><a href="countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span></span>
-<span class="r-in"><span>                    <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADTover10k</span>,</span></span>
-<span class="r-in"><span>                    data<span class="op">=</span><span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">'NBP'</span>, method <span class="op">=</span> <span class="st">'NM'</span>,</span></span>
-<span class="r-in"><span>                    max.iters<span class="op">=</span><span class="fl">3000</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">nb2.base</span> <span class="op">&lt;-</span> <span class="fu"><a href="countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span></span>
-<span class="r-in"><span>                    <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADTover10k</span>,</span></span>
-<span class="r-in"><span>                    data<span class="op">=</span><span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">'NB2'</span>, method <span class="op">=</span> <span class="st">'NM'</span>,</span></span>
-<span class="r-in"><span>                    max.iters<span class="op">=</span><span class="fl">3000</span><span class="op">)</span>                    </span></span>
-<span class="r-in"><span>                   </span></span>
-<span class="r-in"><span><span class="fu">regCompTest</span><span class="op">(</span><span class="va">nbp.base</span>, <span class="va">washington_roads</span>, basemodel<span class="op">=</span><span class="st">"Poisson"</span>, </span></span>
-<span class="r-in"><span>model2<span class="op">=</span><span class="va">nb2.base</span>, print<span class="op">=</span><span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span>                     <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADTover10k</span>,</span></span>
+<span class="r-in"><span>                     data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NBP"</span>, method <span class="op">=</span> <span class="st">"NM"</span>,</span></span>
+<span class="r-in"><span>                     max.iters <span class="op">=</span> <span class="fl">3000</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">regCompTest</span><span class="op">(</span><span class="va">nbp.base</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, basemodel <span class="op">=</span> <span class="st">"Poisson"</span>,</span></span>
+<span class="r-in"><span>            variables <span class="op">=</span> <span class="cn">TRUE</span>, print <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="nprbjsesge" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#nprbjsesge table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';</span>
@@ -592,61 +604,52 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr class="gt_heading"&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;td colspan="5" class="gt_heading gt_title gt_font_normal gt_bottom_border" style&gt;Model Comparison Statistics&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style&gt;Model Comparison Statistics&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr class="gt_col_headings"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Statistic"&gt;Statistic&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Model1"&gt;Model1&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="BaseModel1"&gt;BaseModel1&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Model2"&gt;Model2&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="BaseModel2"&gt;BaseModel2&lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Model"&gt;Model&lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="BaseModel"&gt;BaseModel&lt;/th&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tbody class="gt_table_body"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;Log-likelihood&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;−1,062.2664&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;−1,071.2672&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;Number of parameters&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;8.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;6.0000&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;AIC&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;2,140.5327&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;3,049.6592&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;2,141.3452&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;3,049.6592&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,140.5327&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;2,154.5345&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;BIC&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;2,183.0438&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;3,054.9731&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;2,178.5424&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;3,054.9731&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,183.0438&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;2,186.4178&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR Test Statistic&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;923.1264&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;NA&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;920.3140&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;18.0018&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR degrees of freedom&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;7.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;NA&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;6.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR p-value&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;0.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;NA&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;0.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0001&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;NA&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;0.3020&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0084&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/div&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $model</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Nelder-Mead maximization, 703 iterations</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Return code 0: successful convergence </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -1062.266 (8 free parameter(s))</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimate(s): -7.79761 0.9418564 0.8335215 -0.3860324 0.2577976 0.6863257 -1.327278 0.4993697 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$y</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $y</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    [1]  0  2  2  0  0  1  2  0  1  0  0  0  0  1  0  0  1  0  0  0  0  2  0  0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   [25]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   [49]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  1  0  1  0</span>
@@ -711,48 +714,50 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1465]  0  1  1  0  0  0  0  0  0  0  0  0  0  1  0  1  0  0  0  2  0  1  0  0</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1489]  1  0  0  0  1  0  0  0  0  1  2  1  5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$LL</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LL</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1062.266</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$LLbase</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1523.83</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LLbase</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1071.267</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$LR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 923.1264</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 18.00176</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$LRdof</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 7</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LRdof</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$AIC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $AIC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2140.533</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$AICbase</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 3049.659</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $AICbase</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2154.534</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$BIC</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $BIC</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2183.044</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$BICbase</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 3054.973</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $BICbase</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2186.418</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$LR_pvalue</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 4.864007e-195</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LR_pvalue</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.000123301</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$PseudoR2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.3028969</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $PseudoR2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.008402088</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$statistics</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 3</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Statistic                Model BaseModel</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> AIC                   <span style="text-decoration: underline;">2</span>141.        <span style="text-decoration: underline;">3</span>050.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> BIC                   <span style="text-decoration: underline;">2</span>183.        <span style="text-decoration: underline;">3</span>055.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> LR Test Statistic      923.          <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> LR degrees of freedom    7           <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR p-value               0           <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> McFadden's Pseudo R^2    0.303       <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $statistics</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Statistic                  Model BaseModel</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Log-likelihood        -<span style="color: #BB0000; text-decoration: underline;">1</span><span style="color: #BB0000;">062.</span>        -<span style="color: #BB0000; text-decoration: underline;">1</span><span style="color: #BB0000;">071.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Number of parameters      8             6 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> AIC                    <span style="text-decoration: underline;">2</span>141.         <span style="text-decoration: underline;">2</span>155.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> BIC                    <span style="text-decoration: underline;">2</span>183.         <span style="text-decoration: underline;">2</span>186.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR Test Statistic        18.0          <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> LR degrees of freedom     2            <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> LR p-value                0.000<span style="text-decoration: underline;">1</span>       <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.008<span style="text-decoration: underline;">4</span>       <span style="color: #BB0000;">NA</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$gtTable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $gtTable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="sovsoqmgyn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#sovsoqmgyn table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';</span>
@@ -1215,30 +1220,36 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tbody class="gt_table_body"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;Log-likelihood&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;−1,062.2664&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;−1,071.2672&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;Number of parameters&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;8.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;6.0000&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;AIC&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,140.5327&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;3,049.6592&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;2,154.5345&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;BIC&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,183.0438&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;3,054.9731&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;2,186.4178&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR Test Statistic&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;923.1264&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;18.0018&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR degrees of freedom&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;7.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2.0000&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR p-value&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0001&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0084&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/div&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$latexTable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $latexTable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \begin{table}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \caption{Model Comparison Statistics}</span>
@@ -1247,18 +1258,20 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \toprule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Statistic &amp; Model &amp; BaseModel\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \midrule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC &amp; 2140.5327 &amp; 3049.659\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC &amp; 2183.0438 &amp; 3054.973\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR Test Statistic &amp; 923.1264 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 7.0000 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.0000 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood &amp; -1062.2664 &amp; -1071.267\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters &amp; 8.0000 &amp; 6.000\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC &amp; 2140.5327 &amp; 2154.535\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC &amp; 2183.0438 &amp; 2186.418\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> LR Test Statistic &amp; 18.0018 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.3029 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 2.0000 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.0001 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.0084 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \bottomrule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{tabular}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{table}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model1$htmlTable</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $htmlTable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;table class='table table-striped'&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;caption&gt;Model Comparison Statistics&lt;/caption&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  &lt;thead&gt;</span>
@@ -1270,154 +1283,57 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  &lt;/thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; Log-likelihood &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; -1062.2664 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; -1071.267 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; Number of parameters &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 8.0000 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 6.000 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; AIC &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2140.5327 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 3049.659 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2154.535 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; BIC &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2183.0438 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 3054.973 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2186.418 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR Test Statistic &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 923.1264 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 18.0018 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR degrees of freedom &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 7.0000 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2.0000 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR p-value &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.0000 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.0001 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; McFadden's Pseudo R^2 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.3029 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.0084 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$model</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Nelder-Mead maximization, 890 iterations</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Return code 0: successful convergence </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -1063.673 (7 free parameter(s))</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Estimate(s): -7.150729 0.8663599 0.8358287 -0.4012173 0.230993 0.8275592 -1.32798 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$y</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    [1]  0  2  2  0  0  1  2  0  1  0  0  0  0  1  0  0  1  0  0  0  0  2  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [25]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [49]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  1  0  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [73]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  1  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   [97]  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [121]  0  0  1  0  0  0  0  0  2  0  0  0  0  0  1  0  0  2  0  0  0  0  2  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [145]  0  1  1  0  0  0  0  0  0  0  2  2  1  1  3  0  1  2  1  1  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [169]  0  1  0  1  3  4  1  3  4  2  1  1  3  0  1  2  1  0  2  0  0  1  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [193]  8  1  2  2  1  3  4  5  0  1  6  4  0  0  1  4  0  0  0  0  0  0  1  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [217]  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [241]  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [265]  0  0  0  0  1  1  0  0  0  0  0  1  0  0  0  2  0  0  0  0  1  1  2  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [289]  1  2  2  2  1  1  2  0  2  0  1  4  0  0  0  2  1  1  4 10  3  0  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [313]  0  0  1  3  0  2  2  1  0  1  2  3  0  0  1  1  2  2  0  2  3  1  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [337]  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [361]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [385]  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  1  0  2  2  0  0  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [409]  1  1  0  0  0  1  1  1  0  0  1  1  0  0  0  0  0  0  1  2  0  1  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [433]  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [457]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  1  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [481]  0  0  1  1  0  0  0  0  3  0  1  0  0  1  0  0  2  0  0  0  7  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [505]  2  1  0  1  0  0  0  1  0  0  0  0  1  3  0  0  0  0  0  1  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [529]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  1  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [553]  0  1  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  1  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [577]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [601]  0  0  0  2  0  0  1  0  0  0  0  0  0  1  1  2  0  0  0  0  0  0  0  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [625]  0  0  0  0  0  0  0  0  0  0  1  0  0  0  1  0  2  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [649]  1  1  0  0  1  3  0  3  4  2  3  1  0  1  1  0  0  0  0  1  0  1  0  2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [673]  0  1  2  1  2  4  2  2  3  2  3  2  1  0  0  0  0  0  1  1  1  5  0  2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [697]  5  3  1  3  2  5  2  2  2  1  4  0  0  0  0  0  0  0  0  0  1  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [721]  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [745]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  1  0  0  0  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [769]  0  1  0  0  0  0  0  1  0  1  0  0  0  0  1  0  1  0  0  0  2  2  1  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [793]  1  2  1  1  0  0  0  0  1  1  1  2  0  2  1  4  0  2  1  3  0  1  2  2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [817]  1  0  4  1  0  0  1  1  1  1  0  0  0  0  0  0  0  1  0  0  1  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [841]  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [865]  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [889]  0  1  0  0  0  1  0  1  0  0  0  0  2  0  1  2  1  0  1  1  1  1  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [913]  0  0  3  1  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [937]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [961]  1  0  0  0  0  1  0  1  0  0  1  0  0  0  1  0  0  0  0  2  0  0  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [985]  0  0  0  0  0  0  0  0  0  0  0  0  3  3  2  2  8  1  3  0  1  0  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1009]  0  0  1  1  0  0  3  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1033]  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1057]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  1  1  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1081]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  2  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1105]  0  0  0  0  0  0  0  0  0  0  0  1  2  0  0  0  0  1  0  2  1  4  1  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1129]  0  0  0  0  0  0  0  1  0  0  1  0  0  0  0  0  0  0  0  1  1  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1153]  0  1  1  1  7  0  4  3  0  1  1  0  0  0  3  1  1  1  1  0  0  1  3  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1177]  4  2  1  4  2  2  1  1  0  0  0  0  0  0  4  2  0  4  0  3  7  2  4  2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1201]  4  2  6  0  1  2  0  0  0  0  0  0  0  1  1  0  0  0  1  0  0  0  0  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1225]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1249]  0  0  0  0  0  1  0  0  0  0  0  0  0  1  2  0  0  0  0  2  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1273]  0  0  0  1  0  0  0  1  0  0  1  2  1  2  1  0  2  0  2  1  1  2  1  1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1297]  2  0  0  0  0  0  1  0  0  2  0  4  1  3  0  0  0  0  0  0  4  1  5  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1321]  0  1  3  2  0  1  2  0  0  0  0  0  2  1  0  0  0  0  0  1  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1345]  0  0  0  0  0  0  0  0  1  1  1  0  1  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1369]  0  0  0  0  0  0  0  0  0  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1393]  0  0  0  0  0  0  0  0  4  0  0  0  0  1  0  1  1  0  2  1  0  0  2  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1417]  0  0  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1441]  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  1  0  0  1  0  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1465]  0  1  1  0  0  0  0  0  0  0  0  0  0  1  0  1  0  0  0  2  0  1  0  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1489]  1  0  0  0  1  0  0  0  0  1  2  1  5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$LL</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1063.673</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$LLbase</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1523.83</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$LR</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 920.314</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$LRdof</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$AIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2141.345</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$AICbase</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 3049.659</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$BIC</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2178.542</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$BICbase</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 3054.973</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$LR_pvalue</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.524149e-195</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$PseudoR2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.301974</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$statistics</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 3</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Statistic                Model BaseModel</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> AIC                   <span style="text-decoration: underline;">2</span>141.        <span style="text-decoration: underline;">3</span>050.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> BIC                   <span style="text-decoration: underline;">2</span>179.        <span style="text-decoration: underline;">3</span>055.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> LR Test Statistic      920.          <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> LR degrees of freedom    6           <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR p-value               0           <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> McFadden's Pseudo R^2    0.302       <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$gtTable</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Example 2: Compare two fitted models directly</span></span></span>
+<span class="r-in"><span><span class="va">nb2.base</span> <span class="op">&lt;-</span> <span class="fu"><a href="countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span></span>
+<span class="r-in"><span>                     <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADTover10k</span>,</span></span>
+<span class="r-in"><span>                     data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>, method <span class="op">=</span> <span class="st">"NM"</span>,</span></span>
+<span class="r-in"><span>                     max.iters <span class="op">=</span> <span class="fl">3000</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">regCompTest</span><span class="op">(</span><span class="va">nbp.base</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, model2 <span class="op">=</span> <span class="va">nb2.base</span>,</span></span>
+<span class="r-in"><span>            print <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="gtrogrnzut" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#gtrogrnzut table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';</span>
@@ -1880,104 +1796,77 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tbody class="gt_table_body"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;Log-likelihood&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;−1,062.2664&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;−1,063.6726&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;Number of parameters&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;8.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;7.0000&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;AIC&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,141.3452&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;3,049.6592&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,140.5327&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;2,141.3452&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;BIC&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,178.5424&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;3,054.9731&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,183.0438&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;2,178.5424&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR Test Statistic&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;920.3140&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2.8125&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR degrees of freedom&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;6.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;1.0000&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR p-value&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.3020&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0935&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/div&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $base_model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Nelder-Mead maximization, 703 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Return code 0: successful convergence </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -1062.266 (8 free parameter(s))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimate(s): -7.79761 0.9418564 0.8335215 -0.3860324 0.2577976 0.6863257 -1.327278 0.4993697 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$latexTable</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \begin{table}</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $comparison_model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Nelder-Mead maximization, 890 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Return code 0: successful convergence </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -1063.673 (7 free parameter(s))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimate(s): -7.150729 0.8663599 0.8358287 -0.4012173 0.230993 0.8275592 -1.32798 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \caption{Model Comparison Statistics}</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \centering</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \begin{tabular}[t]{lrr}</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \toprule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Statistic &amp; Model &amp; BaseModel\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \midrule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC &amp; 2141.345 &amp; 3049.659\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC &amp; 2178.542 &amp; 3054.973\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR Test Statistic &amp; 920.314 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 6.000 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.000 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.302 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \bottomrule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \end{tabular}</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \end{table}</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $base_index</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $model2$htmlTable</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;table class='table table-striped'&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;caption&gt;Model Comparison Statistics&lt;/caption&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  &lt;thead&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:left;"&gt; Statistic &lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:right;"&gt; Model &lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:right;"&gt; BaseModel &lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  &lt;/thead&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;tbody&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; AIC &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2141.345 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 3049.659 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; BIC &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2178.542 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 3054.973 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR Test Statistic &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 920.314 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR degrees of freedom &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 6.000 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR p-value &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.000 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; McFadden's Pseudo R^2 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.302 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/tbody&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $comparison_index</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LL_base</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1062.266</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LL_comparison</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1063.673</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LR</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.812464</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LRdof</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $LR_pvalue</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0935346</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $statistics</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 5</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Statistic               Model1 BaseModel1   Model2 BaseModel2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> AIC                   <span style="text-decoration: underline;">2</span>141.         <span style="text-decoration: underline;">3</span>050. <span style="text-decoration: underline;">2</span>141.         <span style="text-decoration: underline;">3</span>050.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> BIC                   <span style="text-decoration: underline;">2</span>183.         <span style="text-decoration: underline;">3</span>055. <span style="text-decoration: underline;">2</span>179.         <span style="text-decoration: underline;">3</span>055.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> LR Test Statistic      923.           <span style="color: #BB0000;">NA</span>   920.           <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> LR degrees of freedom    7            <span style="color: #BB0000;">NA</span>     6            <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR p-value               0            <span style="color: #BB0000;">NA</span>     0            <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> McFadden's Pseudo R^2    0.303        <span style="color: #BB0000;">NA</span>     0.302        <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 7 × 3</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Statistic                  Model BaseModel</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> Log-likelihood        -<span style="color: #BB0000; text-decoration: underline;">1</span><span style="color: #BB0000;">062.</span>        -<span style="color: #BB0000; text-decoration: underline;">1</span><span style="color: #BB0000;">064.</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> Number of parameters      8             7 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> AIC                    <span style="text-decoration: underline;">2</span>141.         <span style="text-decoration: underline;">2</span>141.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> BIC                    <span style="text-decoration: underline;">2</span>183.         <span style="text-decoration: underline;">2</span>179.</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR Test Statistic         2.81         <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> LR degrees of freedom     1            <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> LR p-value                0.093<span style="text-decoration: underline;">5</span>       <span style="color: #BB0000;">NA</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $gtTable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="utdkelafqq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
@@ -2432,48 +2321,37 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr class="gt_heading"&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;td colspan="5" class="gt_heading gt_title gt_font_normal gt_bottom_border" style&gt;Model Comparison Statistics&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style&gt;Model Comparison Statistics&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr class="gt_col_headings"&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Statistic"&gt;Statistic&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Model1"&gt;Model1&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="BaseModel1"&gt;BaseModel1&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Model2"&gt;Model2&lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="BaseModel2"&gt;BaseModel2&lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Model"&gt;Model&lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>       &lt;th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="BaseModel"&gt;BaseModel&lt;/th&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tbody class="gt_table_body"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;Log-likelihood&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;−1,062.2664&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;−1,063.6726&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;Number of parameters&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;8.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;7.0000&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;AIC&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;2,140.5327&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;3,049.6592&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;2,141.3452&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;3,049.6592&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,140.5327&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;2,141.3452&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;BIC&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;2,183.0438&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;3,054.9731&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;2,178.5424&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;3,054.9731&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2,183.0438&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;2,178.5424&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR Test Statistic&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;923.1264&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;NA&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;920.3140&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;2.8125&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR degrees of freedom&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;7.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;NA&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;6.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;1.0000&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;LR p-value&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;0.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;NA&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;0.0000&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model1" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel1" class="gt_row gt_right"&gt;NA&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model2" class="gt_row gt_right"&gt;0.3020&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel2" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0935&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
@@ -2484,17 +2362,18 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \caption{Model Comparison Statistics}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \centering</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> \begin{tabular}[t]{lrrrr}</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> \begin{tabular}[t]{lrr}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \toprule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Statistic &amp; Model1 &amp; BaseModel1 &amp; Model2 &amp; BaseModel2\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Statistic &amp; Model &amp; BaseModel\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \midrule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC &amp; 2140.5327 &amp; 3049.659 &amp; 2141.345 &amp; 3049.659\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC &amp; 2183.0438 &amp; 3054.973 &amp; 2178.542 &amp; 3054.973\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR Test Statistic &amp; 923.1264 &amp; NA &amp; 920.314 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 7.0000 &amp; NA &amp; 6.000 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.0000 &amp; NA &amp; 0.000 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood &amp; -1062.2663625 &amp; -1063.673\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Number of parameters &amp; 8.0000000 &amp; 7.000\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC &amp; 2140.5327250 &amp; 2141.345\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC &amp; 2183.0438197 &amp; 2178.542\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> LR Test Statistic &amp; 2.8124642 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.3029 &amp; NA &amp; 0.302 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 1.0000000 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.0935346 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \bottomrule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{tabular}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{table}</span>
@@ -2505,53 +2384,44 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  &lt;thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:left;"&gt; Statistic &lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:right;"&gt; Model1 &lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:right;"&gt; BaseModel1 &lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:right;"&gt; Model2 &lt;/th&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:right;"&gt; BaseModel2 &lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:right;"&gt; Model &lt;/th&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;th style="text-align:right;"&gt; BaseModel &lt;/th&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  &lt;/thead&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; Log-likelihood &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; -1062.2663625 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; -1063.673 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; Number of parameters &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 8.0000000 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 7.000 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; AIC &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2140.5327 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 3049.659 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2140.5327250 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2141.345 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 3049.659 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; BIC &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2183.0438 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 3054.973 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2183.0438197 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2178.542 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 3054.973 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR Test Statistic &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 923.1264 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 920.314 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 2.8124642 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR degrees of freedom &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 7.0000 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 6.000 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 1.0000000 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; LR p-value &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.0000 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.000 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; McFadden's Pseudo R^2 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.3029 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.302 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.0935346 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/tbody&gt;</span>

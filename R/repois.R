@@ -1,8 +1,7 @@
 #' Estimate a Random Effects Poisson Panel Model
 #'
 #' Estimate a random effects Poisson panel model for clustered count data.
-#' The model uses a cluster-specific gamma random effect with mean 1 and one
-#' free heterogeneity parameter.
+#' The model is also known as a negative multinomial model.
 #'
 #' @name repois
 #' @param formula an R formula.

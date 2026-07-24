@@ -50,14 +50,13 @@ components:
 }
 \description{
 Estimate a random effects Poisson panel model for clustered count data.
-The model uses a cluster-specific gamma random effect with mean 1 and one
-free heterogeneity parameter.
+The model is also known as a negative multinomial model.
 }
 \details{
 This function estimates a random effects Poisson panel model. The likelihood
 is integrated analytically over a gamma-distributed cluster effect with mean
 1 and variance \code{alpha}. The model estimates the regression coefficients
-and one heterogeneity parameter \code{lnalpha}.
+and one heterogeneity parameter \code{ln(alpha)}.
 }
 \examples{
 \donttest{

@@ -1,3 +1,88 @@
+.mcfadden_r2 <- function(ll_full, ll_null) {
+  if (is.finite(ll_full) && is.finite(ll_null) && ll_null != 0) {
+    1 - (ll_full / ll_null)
+  } else {
+    NA_real_
+  }
+}
+
+.fit_null_ll <- function(trained_model, data) {
+  fit <- trained_model$model
+  if (is.null(fit)) {
+    return(NA_real_)
+  }
+  
+  # Use the model's own formula/data to build the response
+  formula <- fit$formula
+  mf <- stats::model.frame(formula, data)
+  y <- as.numeric(stats::model.response(mf))
+  n <- length(y)
+  
+  # Offset if present
+  off <- stats::model.offset(mf)
+  if (is.null(off)) off <- rep(0, n)
+  
+  # Case 1: Poisson GLM-style model
+  if (!is.null(fit$family)) {
+    # Intercept-only Poisson with offset:
+    # mu_i = exp(beta0 + offset_i)
+    beta0 <- log(sum(y) / sum(exp(off)))
+    mu0 <- exp(beta0 + off)
+    return(sum(stats::dpois(y, mu0, log = TRUE)))
+  }
+  
+  # Case 2: your custom countreg-style models
+  # Replace this with the null-model fitting call your package uses
+  # (e.g., countreg(y ~ 1, data = ..., family = ...))
+  if (!is.null(fit$family)) {
+    null_fit <- try(
+      countreg(
+        stats::as.formula(paste(deparse(formula[[2L]]), "~ 1")),
+        data = data,
+        family = fit$family,
+        method = fit$method
+      ),
+      silent = TRUE
+    )
+    
+    if (!inherits(null_fit, "try-error") && !is.null(null_fit$model$maximum)) {
+      return(null_fit$model$maximum)
+    }
+  }
+  
+  NA_real_
+}
+
+get_model_components <- function(trained_model, data) {
+  fit <- trained_model$model
+  if (is.null(fit)) {
+    stop("The supplied object does not contain a fitted model in `$model`.")
+  }
+  
+  formula <- fit$formula
+  mod_df <- stats::model.frame(formula, data)
+  y <- as.numeric(stats::model.response(mod_df))
+  
+  LL <- fit$maximum
+  n.coef <- length(fit$estimate)
+  nobs <- length(y)
+  
+  LL_null <- .fit_null_ll(trained_model, data)
+  PseudoR2 <- .mcfadden_r2(LL, LL_null)
+  
+  list(
+    fit = fit,
+    y = y,
+    LL = LL,
+    LL_null = LL_null,
+    PseudoR2 = PseudoR2,
+    n.coef = n.coef,
+    nobs = nobs,
+    AIC = myAIC(LL, n.coef),
+    BIC = myBIC(LL, n.coef, nobs)
+  )
+}
+
 #' Compare Regression Models with Likelihood Ratio Test, AIC, and BIC
 #'
 #' This function compares fitted regression model objects using the
@@ -21,14 +106,14 @@
 #' @param variables Logical. If \code{TRUE}, the base model will include the
 #'   same variables as the provided model. If \code{FALSE}, the base model
 #'   will be an intercept-only model. Default is \code{FALSE}.
+#' @param model2 An optional second fitted regression model object. If
+#'   supplied, the function compares \code{model} and \code{model2} directly
+#'   and does not estimate a separate base model.
 #' @param print Logical. If \code{TRUE}, a table of the results will be shown.
 #'   If \code{FALSE}, the table of results will not be printed to the console.
 #' @param ... Additional arguments to be passed to the base model fitting
 #'   function. These arguments are used only when a single fitted model is
 #'   supplied and the function needs to estimate the base model.
-#' @param model2 An optional second fitted regression model object. If
-#'   supplied, the function compares \code{model} and \code{model2} directly
-#'   and does not estimate a separate base model.
 #' @returns A list containing the comparison results.
 #' 
 #' For the single-model workflow, the returned list includes \code{LL},
@@ -117,31 +202,6 @@ regCompTest <- function(
     NULL
   }
   
-  get_model_components <- function(trained_model, data) {
-    fit <- trained_model$model
-    if (is.null(fit)) {
-      stop("The supplied object does not contain a fitted model in `$model`.")
-    }
-    
-    formula <- fit$formula
-    mod_df <- stats::model.frame(formula, data)
-    y <- as.numeric(stats::model.response(mod_df))
-    
-    LL <- fit$maximum
-    n.coef <- length(fit$estimate)
-    nobs <- length(y)
-    
-    list(
-      fit = fit,
-      y = y,
-      LL = LL,
-      n.coef = n.coef,
-      nobs = nobs,
-      AIC = myAIC(LL, n.coef),
-      BIC = myBIC(LL, n.coef, nobs)
-    )
-  }
-  
   make_single_model_stats <- function(model_res, base_res) {
     LR <- NA_real_
     LRdof <- NA_integer_
@@ -157,15 +217,9 @@ regCompTest <- function(
       }
     }
     
-    PseudoR2 <- if (is.finite(base_res$LL) && base_res$LL != 0) {
-      1 - model_res$LL / base_res$LL
-    } else {
-      NA_real_
-    }
-    
     statistics <- tibble::tibble(
       Statistic = c(
-        "Log-likelihood", "Number of parameters", "AIC", "BIC", 
+        "Log-likelihood", "Number of parameters", "AIC", "BIC",
         "LR Test Statistic", "LR degrees of freedom",
         "LR p-value", "McFadden's Pseudo R^2"
       ),
@@ -177,7 +231,7 @@ regCompTest <- function(
         safe_round(LR),
         LRdof,
         safe_round(LR_pvalue),
-        safe_round(PseudoR2)
+        safe_round(model_res$PseudoR2)
       ),
       BaseModel = c(
         safe_round(base_res$LL),
@@ -187,7 +241,7 @@ regCompTest <- function(
         NA,
         NA,
         NA,
-        NA
+        safe_round(base_res$PseudoR2)
       )
     )
     
@@ -195,7 +249,6 @@ regCompTest <- function(
       LR = LR,
       LRdof = LRdof,
       LR_pvalue = LR_pvalue,
-      PseudoR2 = PseudoR2,
       statistics = statistics
     )
   }
@@ -217,13 +270,29 @@ regCompTest <- function(
     statistics <- tibble::tibble(
       Statistic = c(
         "Log-likelihood", "Number of parameters", "AIC", "BIC",
-        "LR Test Statistic", "LR degrees of freedom", "LR p-value"
+        "LR Test Statistic", "LR degrees of freedom", "LR p-value",
+        "McFadden's Pseudo R^2"
       ),
-      Model = c(base_res$LL, round(base_res$n.coef,0), base_res$AIC, base_res$BIC,
-                    LR, LRdof, LR_pvalue),
-      BaseModel = c(comparison_res$LL, round(comparison_res$n.coef,0),
-                          comparison_res$AIC, comparison_res$BIC,
-                          NA, NA, NA)
+      Model = c(
+        safe_round(base_res$LL),
+        round(base_res$n.coef, 0),
+        safe_round(base_res$AIC),
+        safe_round(base_res$BIC),
+        safe_round(LR),
+        LRdof,
+        safe_round(LR_pvalue),
+        safe_round(base_res$PseudoR2)
+      ),
+      BaseModel = c(
+        safe_round(comparison_res$LL),
+        round(comparison_res$n.coef, 0),
+        safe_round(comparison_res$AIC),
+        safe_round(comparison_res$BIC),
+        NA,
+        NA,
+        NA,
+        safe_round(comparison_res$PseudoR2)
+      )
     )
     
     list(
@@ -302,10 +371,7 @@ regCompTest <- function(
     
     gtTable <- gt::gt(summary_res$statistics) %>%
       tab_header(title = "Model Comparison Statistics") %>%
-      fmt_number(
-        columns = c(rlang::sym("Model"), rlang::sym("BaseModel")),
-        decimals = 4
-      )
+      fmt_number(columns = c("Model", "BaseModel"), decimals = 4)
     
     test <- list(
       model = res1$fit,
@@ -319,7 +385,7 @@ regCompTest <- function(
       BIC = res1$BIC,
       BICbase = BICbase,
       LR_pvalue = summary_res$LR_pvalue,
-      PseudoR2 = summary_res$PseudoR2,
+      PseudoR2 = res1$PseudoR2,
       statistics = summary_res$statistics,
       gtTable = gtTable,
       latexTable = knitr::kable(
@@ -341,13 +407,7 @@ regCompTest <- function(
     
     gtTable <- gt::gt(pair_res$statistics) %>%
       tab_header(title = "Model Comparison Statistics") %>%
-      fmt_number(
-        columns = c(
-          rlang::sym("Model"),
-          rlang::sym("BaseModel")
-        ),
-        decimals = 4
-      )
+      fmt_number(columns = c("Model", "BaseModel"), decimals = 4)
     
     test <- list(
       base_model = res1$fit,
@@ -359,6 +419,8 @@ regCompTest <- function(
       LR = pair_res$LR,
       LRdof = pair_res$LRdof,
       LR_pvalue = pair_res$LR_pvalue,
+      PseudoR2_base = pair_res$base_model$PseudoR2,
+      PseudoR2_comparison = pair_res$comparison_model$PseudoR2,
       statistics = pair_res$statistics,
       gtTable = gtTable,
       latexTable = knitr::kable(
@@ -377,7 +439,7 @@ regCompTest <- function(
   }
   
   if (print) {
-    print(test$gtTable)
+    base::print(test$gtTable)
   }
   
   return(test)
@@ -391,3 +453,4 @@ myAIC <- function(LL, nparam) {
 myBIC <- function(LL, nparam, n) {
   return(-2 * LL + nparam * log(n))
 }
+

@@ -89,7 +89,7 @@ summary.flexCountReg <- function(object, ...) {
       se_vec <- as.numeric(model_obj$bootstrapped_se)
     }
     using_bootstrap <- TRUE
-    cat("(Using bootstrapped standard errors)\n")
+    # cat("(Using bootstrapped standard errors)\n")
     
   } else if (!is.null(model_obj$se)) {
     se_vec <- as.numeric(model_obj$se)

@@ -2,7 +2,7 @@
 % Please edit documentation in R/repois.R
 \name{repois}
 \alias{repois}
-\title{Random-Effects Poisson Panel Model}
+\title{Estimate a Random Effects Poisson Panel Model}
 \usage{
 repois(
   formula,
@@ -16,78 +16,66 @@ repois(
 )
 }
 \arguments{
-\item{formula}{An \code{R} formula.}
+\item{formula}{an R formula.}
 
-\item{group_var}{The grouping variable(s) for the random effects (for
-example, an individual ID, corridor ID, or other panel identifier).}
+\item{group_var}{the grouping variable(s) for the random effects (e.g.,
+individual ID or other panel ID variables).}
 
-\item{data}{A data frame containing all variables used in \code{formula}.}
+\item{data}{a dataframe that has all of the variables in the \code{formula}.}
 
-\item{method}{A method used for maximum-likelihood optimization. The default
-is \code{"NM"}.}
+\item{method}{a method to use for optimization in the maximum likelihood
+estimation. For options, see \code{\link[maxLik]{maxLik}}.}
 
-\item{max.iters}{The maximum number of optimizer iterations. Default is
-\code{1000}.}
+\item{max.iters}{the maximum number of iterations to allow the optimization
+method to perform.}
 
-\item{print.level}{Integer controlling optimizer verbosity. Default is
-\code{0}.}
+\item{print.level}{integer specifying the verbosity of output during
+optimization.}
 
-\item{bootstraps}{Optional integer specifying the number of bootstrap
-replications for standard errors. If \code{NULL}, no bootstrap is used.}
+\item{bootstraps}{optional integer specifying the number of bootstrap samples
+to be used for estimating standard errors. If not specified, no
+bootstrapping is performed.}
 
-\item{offset}{Optional offset term provided as a string.}
+\item{offset}{an optional offset term provided as a string.}
 }
 \value{
-An object of class \code{countreg} with components including:
-\describe{
-\item{\code{model}}{The fitted model object.}
-\item{\code{data}}{The data frame used to fit the model.}
-\item{\code{call}}{The matched call.}
-\item{\code{formula}}{The formula used to fit the model.}
+An object of class \code{countreg} which is a list with the following
+components:
+\itemize{
+\item model: the fitted model object.
+\item data: the data frame used to fit the model.
+\item call: the matched call.
+\item formula: the formula used to fit the model.
 }
 }
 \description{
-Estimate a random-effects Poisson panel model for clustered event counts.
-This function follows the gamma random-effects representation discussed by
-Guo (1996), which yields the same likelihood form used for negative
-multinomial clustered-count models.
+Estimate a random effects Poisson panel model for clustered count data.
+The model uses a cluster-specific gamma random effect with mean 1 and one
+free heterogeneity parameter.
 }
 \details{
-The function is intended for panel or clustered count data where repeated
-observations share an unobserved cluster-specific effect.
-
-This is a thin user-facing wrapper around the existing random-effects count
-regression engine used in \code{renb()}. The parameterization is presented as
-a Poisson panel model with a cluster-level random effect, following the
-derivation in Guo (1996). The fitted object is returned as class
-\code{countreg}, so it remains compatible with existing methods such as
-\code{summary()}, \code{predict()}, \code{regCompTable()}, and
-\code{regCompTest()}.
+This function estimates a random effects Poisson panel model. The likelihood
+is integrated analytically over a gamma-distributed cluster effect with mean
+1 and variance \code{alpha}. The model estimates the regression coefficients
+and one heterogeneity parameter \code{lnalpha}.
 }
 \examples{
 \donttest{
+## RE Poisson Panel Model
 data("washington_roads")
-washington_roads$AADTover10k <- ifelse(washington_roads$AADT > 10000, 1, 0)
+washington_roads$AADTover10k <-
+  ifelse(washington_roads$AADT > 10000, 1, 0)
 
 repois.mod <- repois(
   Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
   data = washington_roads,
   offset = "lnlength",
   group_var = "ID",
-  method = "NM",
+  method = "BFGS",
   max.iters = 1000
 )
 
 summary(repois.mod)
 }
 
-}
-\references{
-Guo, G. (1996). Negative multinomial regression models for clustered event
-counts. \emph{Sociological Methodology}, 26, 113--132.
-}
-\seealso{
-\code{\link{renb}}, \code{\link{predict.flexCountReg}},
-\code{\link{summary.flexCountReg}}, \code{\link{regCompTable}},
-\code{\link{regCompTest}}
 }

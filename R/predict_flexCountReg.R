@@ -333,7 +333,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...){
   # =========================================================================
   # 2. RANDOM EFFECTS MODELS (poisLindRE / RENB)
   # =========================================================================
-  else if (modtype %in% c("poisLindRE", "RENB")) {
+  else if (modtype %in% c("poisLindRE", "RENB", "REPoisson")) {
     
     beta_pred <- model$beta_pred
     

@@ -71,7 +71,7 @@ f(y|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
 }
 
 Where \eqn{\phi} is a scale parameter with the restriction that
-\eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
+\eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
 integer. This formulation uses the mean directly.
 
 The variance of the GP-1 distribution is:
@@ -81,7 +81,7 @@ If \eqn{\phi>0}, the distribution is overdispersed. If \eqn{\phi=0}, the
 distribution is equidispersed. If \eqn{\phi<0}, the distribution is
 underdispersed.
 
-Furthermore, \eqn{phi>-1} is required for this distribution. When
+Furthermore, \eqn{\phi>-1} is required for this distribution. When
 \eqn{\phi<0}, there is also a maximum value of support for the integar value
 \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
 }

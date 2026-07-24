@@ -608,7 +608,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> <td headers="Model" class="gt_row gt_right">0.0001</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>     <tr><td headers="Statistic" class="gt_row gt_left">McFadden's Pseudo R^2</td>
-#> <td headers="Model" class="gt_row gt_right">0.0084</td>
+#> <td headers="Model" class="gt_row gt_right">0.3029</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>   </tbody>
 #>   
@@ -714,7 +714,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> [1] 0.000123301
 #> 
 #> $PseudoR2
-#> [1] 0.008402088
+#> [1] 0.3028969
 #> 
 #> $statistics
 #> # A tibble: 8 × 3
@@ -727,7 +727,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> 5 LR Test Statistic        18.0          NA 
 #> 6 LR degrees of freedom     2            NA 
 #> 7 LR p-value                0.0001       NA 
-#> 8 McFadden's Pseudo R^2     0.0084       NA 
+#> 8 McFadden's Pseudo R^2     0.303        NA 
 #> 
 #> $gtTable
 #> <div id="sovsoqmgyn" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
@@ -1214,7 +1214,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> <td headers="Model" class="gt_row gt_right">0.0001</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>     <tr><td headers="Statistic" class="gt_row gt_left">McFadden's Pseudo R^2</td>
-#> <td headers="Model" class="gt_row gt_right">0.0084</td>
+#> <td headers="Model" class="gt_row gt_right">0.3029</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>   </tbody>
 #>   
@@ -1238,7 +1238,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> \addlinespace
 #> LR degrees of freedom & 2.0000 & NA\\
 #> LR p-value & 0.0001 & NA\\
-#> McFadden's Pseudo R\textasciicircum{}2 & 0.0084 & NA\\
+#> McFadden's Pseudo R\textasciicircum{}2 & 0.3029 & NA\\
 #> \bottomrule
 #> \end{tabular}
 #> \end{table}
@@ -1291,7 +1291,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> McFadden's Pseudo R^2 </td>
-#>    <td style="text-align:right;"> 0.0084 </td>
+#>    <td style="text-align:right;"> 0.3029 </td>
 #>    <td style="text-align:right;"> NA </td>
 #>   </tr>
 #> </tbody>
@@ -1789,6 +1789,9 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>     <tr><td headers="Statistic" class="gt_row gt_left">LR p-value</td>
 #> <td headers="Model" class="gt_row gt_right">0.0935</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
+#>     <tr><td headers="Statistic" class="gt_row gt_left">McFadden's Pseudo R^2</td>
+#> <td headers="Model" class="gt_row gt_right">0.3029</td>
+#> <td headers="BaseModel" class="gt_row gt_right">0.3020</td></tr>
 #>   </tbody>
 #>   
 #> </table>
@@ -1828,17 +1831,24 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> $LR_pvalue
 #> [1] 0.0935346
 #> 
+#> $PseudoR2_base
+#> [1] 0.3028969
+#> 
+#> $PseudoR2_comparison
+#> [1] 0.301974
+#> 
 #> $statistics
-#> # A tibble: 7 × 3
+#> # A tibble: 8 × 3
 #>   Statistic                  Model BaseModel
 #>   <chr>                      <dbl>     <dbl>
-#> 1 Log-likelihood        -1062.        -1064.
-#> 2 Number of parameters      8             7 
-#> 3 AIC                    2141.         2141.
-#> 4 BIC                    2183.         2179.
-#> 5 LR Test Statistic         2.81         NA 
-#> 6 LR degrees of freedom     1            NA 
-#> 7 LR p-value                0.0935       NA 
+#> 1 Log-likelihood        -1062.     -1064.   
+#> 2 Number of parameters      8          7    
+#> 3 AIC                    2141.      2141.   
+#> 4 BIC                    2183.      2179.   
+#> 5 LR Test Statistic         2.81      NA    
+#> 6 LR degrees of freedom     1         NA    
+#> 7 LR p-value                0.0935    NA    
+#> 8 McFadden's Pseudo R^2     0.303      0.302
 #> 
 #> $gtTable
 #> <div id="utdkelafqq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
@@ -2324,6 +2334,9 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>     <tr><td headers="Statistic" class="gt_row gt_left">LR p-value</td>
 #> <td headers="Model" class="gt_row gt_right">0.0935</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
+#>     <tr><td headers="Statistic" class="gt_row gt_left">McFadden's Pseudo R^2</td>
+#> <td headers="Model" class="gt_row gt_right">0.3029</td>
+#> <td headers="BaseModel" class="gt_row gt_right">0.3020</td></tr>
 #>   </tbody>
 #>   
 #> </table>
@@ -2338,14 +2351,15 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> \toprule
 #> Statistic & Model & BaseModel\\
 #> \midrule
-#> Log-likelihood & -1062.2663625 & -1063.673\\
-#> Number of parameters & 8.0000000 & 7.000\\
-#> AIC & 2140.5327250 & 2141.345\\
-#> BIC & 2183.0438197 & 2178.542\\
-#> LR Test Statistic & 2.8124642 & NA\\
+#> Log-likelihood & -1062.2664 & -1063.673\\
+#> Number of parameters & 8.0000 & 7.000\\
+#> AIC & 2140.5327 & 2141.345\\
+#> BIC & 2183.0438 & 2178.542\\
+#> LR Test Statistic & 2.8125 & NA\\
 #> \addlinespace
-#> LR degrees of freedom & 1.0000000 & NA\\
-#> LR p-value & 0.0935346 & NA\\
+#> LR degrees of freedom & 1.0000 & NA\\
+#> LR p-value & 0.0935 & NA\\
+#> McFadden's Pseudo R\textasciicircum{}2 & 0.3029 & 0.302\\
 #> \bottomrule
 #> \end{tabular}
 #> \end{table}
@@ -2363,38 +2377,43 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> <tbody>
 #>   <tr>
 #>    <td style="text-align:left;"> Log-likelihood </td>
-#>    <td style="text-align:right;"> -1062.2663625 </td>
+#>    <td style="text-align:right;"> -1062.2664 </td>
 #>    <td style="text-align:right;"> -1063.673 </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> Number of parameters </td>
-#>    <td style="text-align:right;"> 8.0000000 </td>
+#>    <td style="text-align:right;"> 8.0000 </td>
 #>    <td style="text-align:right;"> 7.000 </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> AIC </td>
-#>    <td style="text-align:right;"> 2140.5327250 </td>
+#>    <td style="text-align:right;"> 2140.5327 </td>
 #>    <td style="text-align:right;"> 2141.345 </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> BIC </td>
-#>    <td style="text-align:right;"> 2183.0438197 </td>
+#>    <td style="text-align:right;"> 2183.0438 </td>
 #>    <td style="text-align:right;"> 2178.542 </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> LR Test Statistic </td>
-#>    <td style="text-align:right;"> 2.8124642 </td>
+#>    <td style="text-align:right;"> 2.8125 </td>
 #>    <td style="text-align:right;"> NA </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> LR degrees of freedom </td>
-#>    <td style="text-align:right;"> 1.0000000 </td>
+#>    <td style="text-align:right;"> 1.0000 </td>
 #>    <td style="text-align:right;"> NA </td>
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> LR p-value </td>
-#>    <td style="text-align:right;"> 0.0935346 </td>
+#>    <td style="text-align:right;"> 0.0935 </td>
 #>    <td style="text-align:right;"> NA </td>
+#>   </tr>
+#>   <tr>
+#>    <td style="text-align:left;"> McFadden's Pseudo R^2 </td>
+#>    <td style="text-align:right;"> 0.3029 </td>
+#>    <td style="text-align:right;"> 0.302 </td>
 #>   </tr>
 #> </tbody>
 #> </table>

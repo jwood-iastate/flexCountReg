@@ -83,9 +83,9 @@ distribution, version 1, (GP-1) is: \$\$
 f(y\|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
 {1+\phi}\right)}{(1+\phi)^y y!} \$\$
 
-Where \\\phi\\ is a scale parameter with the restriction that
-\\\eta\>0\\, \\\mu\>0\\ is the mean value, and \\y\\ is a non-negative
-integer. This formulation uses the mean directly.
+Where \\\phi\\ is a scale parameter with the restriction that \\\mu\>0\\
+is the mean value, and \\y\\ is a non-negative integer. This formulation
+uses the mean directly.
 
 The variance of the GP-1 distribution is: \$\$\sigma^2=(1+\phi)^2
 \mu\$\$
@@ -94,7 +94,7 @@ If \\\phi\>0\\, the distribution is overdispersed. If \\\phi=0\\, the
 distribution is equidispersed. If \\\phi\<0\\, the distribution is
 underdispersed.
 
-Furthermore, \\phi\>-1\\ is required for this distribution. When
+Furthermore, \\\phi\>-1\\ is required for this distribution. When
 \\\phi\<0\\, there is also a maximum value of support for the integar
 value \\y\\. This is \\y_max=\left\lfloor -\frac{\mu}{\phi}
 \right\rfloor\\.

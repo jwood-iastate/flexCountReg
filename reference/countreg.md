@@ -797,7 +797,6 @@ summary(nb2)
 #> Log-likelihood:  -1064.876 
 #> 
 #> Parameter Estimates:
-#> (Using bootstrapped standard errors)
 #> # A tibble: 7 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
@@ -824,7 +823,6 @@ summary(pln)
 #> Log-likelihood:  -1075.729 
 #> 
 #> Parameter Estimates:
-#> (Using bootstrapped standard errors)
 #> # A tibble: 6 × 7
 #>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
@@ -851,7 +849,6 @@ summary(plogn_underreport)
 #> Log-likelihood:  -1065.087 
 #> 
 #> Parameter Estimates:
-#> (Using bootstrapped standard errors)
 #> # A tibble: 9 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
@@ -879,7 +876,6 @@ summary(com_model)
 #> Log-likelihood:  -1066.063 
 #> 
 #> Parameter Estimates:
-#> (Using bootstrapped standard errors)
 #> # A tibble: 6 × 7
 #>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
@@ -904,7 +900,6 @@ summary(gp1_model)
 #> Log-likelihood:  -1069.222 
 #> 
 #> Parameter Estimates:
-#> (Using bootstrapped standard errors)
 #> # A tibble: 6 × 7
 #>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
@@ -929,7 +924,6 @@ summary(gp2_model)
 #> Log-likelihood:  -1066.757 
 #> 
 #> Parameter Estimates:
-#> (Using bootstrapped standard errors)
 #> # A tibble: 6 × 7
 #>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>

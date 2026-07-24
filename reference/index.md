@@ -124,7 +124,7 @@
 - [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
   : Estimate a Random Effects Negative Binomial regression model
 - [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
-  : Random-Effects Poisson Panel Model
+  : Estimate a Random Effects Poisson Panel Model
 - [`rmse()`](https://jwood-iastate.github.io/flexCountReg/reference/rmse.md)
   : Calculate Root Mean Squared Error (RMSE)
 - [`summary(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)

@@ -61,7 +61,6 @@ summary(nb2)
 #> Log-likelihood:  -1064.876 
 #> 
 #> Parameter Estimates:
-#> (Using bootstrapped standard errors)
 #> # A tibble: 7 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>

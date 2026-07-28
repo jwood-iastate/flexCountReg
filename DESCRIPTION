@@ -86,7 +86,7 @@ Collate:
     'invgamma.R'
     'margEffTable.R'
     'metrics.R'
-    'mgf_lognormal.R'
+    'moment_lognormal.R'
     'pcom.R'
     'poisLind.re.R'
     'poisWeib.R'

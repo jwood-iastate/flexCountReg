@@ -560,8 +560,8 @@ strange relationships between the exposure metric and the outcome).
 - [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
   : Marginal Effects, Elasticities, and Pseudo-Elasticities for
   flexCountReg Models
-- [`mgf_lognormal()`](https://jwood-iastate.github.io/flexCountReg/reference/mgf_lognormal.md)
-  : Moment Generating Function for a Lognormal Distribution
+- [`moment_lognormal()`](https://jwood-iastate.github.io/flexCountReg/reference/moment_lognormal.md)
+  : Raw Moment of a Lognormal Distribution
 - [`myAIC()`](https://jwood-iastate.github.io/flexCountReg/reference/myAIC.md)
   : Calculate Akaike Information Criterion (AIC)
 - [`myBIC()`](https://jwood-iastate.github.io/flexCountReg/reference/myBIC.md)

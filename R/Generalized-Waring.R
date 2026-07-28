@@ -1,66 +1,88 @@
 #' Generalized Waring Distribution
 #'
-#' These functions provide density, distribution function, quantile function,
-#' and random number generation for the Generalized Waring Distribution.
+#' These functions provide the probability mass function, distribution
+#' function, quantile function, and random number generation for the
+#' Generalized Waring distribution.
 #'
-#' The Generalized Waring distribution is a 3-parameter count distribution that
-#' is used to model overdispersed count data.
+#' The Generalized Waring distribution is a three-parameter count distribution
+#' used to model overdispersed count data.
 #'
 #' @param y non-negative integer vector of count outcomes.
 #' @param q non-negative integer vector of quantiles.
 #' @param p numeric vector of probabilities.
 #' @param n integer number of random numbers to generate.
-#' @param mu numeric vector of means of the distribution.
-#' @param k non-negative numeric parameter of the distribution.
-#' @param rho non-negative numeric parameter of the distribution.
-#' @param log logical; if TRUE, probabilities p are given as log(p).
-#' @param log.p logical; if TRUE, probabilities p are given as log(p).
-#' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
-#'   otherwise, \eqn{P[X>x]}.
+#' @param mu positive numeric vector of distribution means.
+#' @param k positive numeric vector of shape parameters.
+#' @param rho numeric vector of shape parameters greater than 1. A finite
+#'   variance requires \eqn{\rho > 2}.
+#' @param log logical; if TRUE, log probabilities are returned.
+#' @param log.p logical; if TRUE, probabilities are returned as log
+#'   probabilities.
+#' @param lower.tail logical; if TRUE, probabilities are
+#'   \eqn{P[X \leq q]}; otherwise, \eqn{P[X > q]}.
 #'
 #' @details
-#' \code{dgwar} computes the density (PMF) of the Generalized Waring
-#' Distribution.
+#' \code{dgwar} computes the probability mass function (PMF) of the
+#' Generalized Waring distribution.
 #'
-#' \code{pgwar} computes the CDF of the Generalized Waring Distribution.
+#' \code{pgwar} computes the CDF of the Generalized Waring distribution.
 #'
-#' \code{qwaring} computes the quantile function of the Generalized Waring
-#' Distribution.
+#' \code{qgwar} computes the quantile function of the Generalized Waring
+#' distribution.
 #'
-#' \code{rwaring} generates random numbers from the Generalized Waring
-#' Distribution.
+#' \code{rgwar} generates random numbers from the Generalized Waring
+#' distribution.
 #'
-#' The Probability Mass Function (PMF) for the Generalized Waring (GW)
-#' distribution is:
-#' \deqn{f(y|a_x,k,\rho) = 
-#'    \frac{\Gamma(a_x+\rho)\Gamma(k+\rho)\left(a_x\right)_y(k)_y}
-#'    {y!\Gamma(\rho)\Gamma(a_x+k+\rho)(a_x+k+\rho)_y}}
-#' Where \eqn{(\alpha)_r=\frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}}, 
-#' and \eqn{a_x, \ k, \ \rho)>0}.
+#' The probability mass function for the Generalized Waring distribution is:
+#' \deqn{
+#' f(y \mid a_x, k, \rho) =
+#' \frac{
+#'   \Gamma(a_x + \rho)\Gamma(k + \rho)
+#'   (a_x)_y(k)_y
+#' }{
+#'   y!\Gamma(\rho)\Gamma(a_x + k + \rho)
+#'   (a_x + k + \rho)_y
+#' }
+#' }
+#' where
+#' \eqn{(\alpha)_r = \frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}},
+#' and \eqn{a_x > 0}, \eqn{k > 0}, and \eqn{\rho > 0}.
 #'
-#' The mean value is:
-#' \deqn{E[Y]=\frac{a_x K}{\rho-1}}
+#' When \eqn{\rho > 1}, the mean is:
+#' \deqn{
+#' E[Y] = \frac{a_x k}{\rho - 1}.
+#' }
 #'
-#' Thus, we can use:
-#' \deqn{a_x=\frac{\mu(\rho-1)}{k}}
-#' 
-#' This results in a regression model where:
-#' \deqn{\mu=e^{X\beta}}
-#' \deqn{\sigma^2 =
-#'   \mu \left(1-\frac{1}{\alpha+\rho+1} \right) + 
-#'   \mu^2\frac{(\alpha+\rho)^2}{\alpha\rho(\alpha+\rho+1)}}
-#'   
-#' @returns dgwar gives the density, pgwar gives the distribution function, 
-#'  qgwar gives the quantile function, and rgwar generates random  deviates.
-#' 
-#'  The length of the result is determined by n for rgwar, and is the maximum of 
-#'  the lengths of the numerical arguments for the other functions.
+#' Therefore, the distribution can be parameterized in terms of its mean using:
+#' \deqn{
+#' a_x = \frac{\mu(\rho - 1)}{k}.
+#' }
+#'
+#' For a regression model:
+#' \deqn{
+#' \mu = \exp(X\beta).
+#' }
+#'
+#' When \eqn{\rho > 2}, the variance under this mean parameterization is:
+#' \deqn{
+#' \mathrm{Var}(Y) =
+#' \frac{\mu(k+\mu)(k+\rho-1)}{k(\rho-2)}.
+#' }
+#'
+#' @returns
+#' \code{dgwar} gives the probability mass function, \code{pgwar} gives the
+#' distribution function, \code{qgwar} gives the quantile function, and
+#' \code{rgwar} generates random deviates.
+#'
+#' The length of the result is determined by \code{n} for \code{rgwar} and is
+#' the maximum of the lengths of the numerical arguments for the other
+#' functions.
 #'
 #' @examples
-#' dgwar(0, mu=1, k=2, rho=3)
-#' pgwar(c(0,1,2,3), mu=1, k=2, rho=3)
-#' qgwar(0.8, mu=1, k=2, rho=3)
-#' rgwar(10, mu=1, k=2, rho=3)
+#' dgwar(0, mu = 1, k = 2, rho = 3)
+#' pgwar(c(0, 1, 2, 3), mu = 1, k = 2, rho = 3)
+#' qgwar(0.8, mu = 1, k = 2, rho = 3)
+#' rgwar(10, mu = 1, k = 2, rho = 3)
 #'
 #' @importFrom stats runif
 #' @export
@@ -119,7 +141,7 @@ pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
       q_i   <- floor(q[i]) # Integers only for summation
       
       # Calculate parameter 'a' derived from the mean formula
-      a_i <- mu_i * k_i / (rho_i - 1)
+      a_i <- mu_i * (rho_i - 1) / k_i
       
       # Double check a_i valid just in case
       if (a_i <= 0) {

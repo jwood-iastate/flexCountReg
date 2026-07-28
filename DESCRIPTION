@@ -56,15 +56,12 @@ Encoding: UTF-8
 LazyData: true
 Config/roxygen2/markdown: TRUE
 Collate: 
-    'countreg.R'
-    'createFlexCountReg.R'
     'Generalized-Waring.R'
     'Lindley.R'
     'RcppExports.R'
     'cor2cov.R'
     'corr_haltons.R'
     'helpers.R'
-    'margEffTable.R'
     'plind.R'
     'ppoisGE.R'
     'psichel.R'
@@ -73,6 +70,8 @@ Collate:
     'ppoislogn.R'
     'pinvgamma.R'
     'pinvgaus.R'
+    'countreg.R'
+    'createFlexCountReg.R'
     'tri.R'
     'countregrp.R'
     'cureplot.R'
@@ -85,6 +84,7 @@ Collate:
     'globals.R'
     'halton_dists.R'
     'invgamma.R'
+    'margEffTable.R'
     'metrics.R'
     'mgf_lognormal.R'
     'pcom.R'

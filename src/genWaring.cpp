@@ -33,7 +33,7 @@ NumericVector genWaring_cpp(NumericVector x, NumericVector mean, NumericVector k
       continue;
     }
     
-    double a = current_mean * current_k / (current_p - 1);
+    double a = current_mean * (current_p - 1.0) / current_k;
     
     if (a <= 0) {
       result[i] = 0.0;

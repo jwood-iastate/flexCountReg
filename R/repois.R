@@ -22,7 +22,6 @@
 #' @import maxLik stats modelr tibble
 #' @importFrom purrr map map_df
 #' @importFrom dplyr group_by reframe
-#' @include repoisLL.R
 #'
 #' @details
 #' This function estimates a random effects Poisson panel model. The likelihood

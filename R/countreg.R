@@ -765,7 +765,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   
   # Generate Halton draws to use as quantile values
   haltons <- randtoolbox::halton(ndraws)
-  normed_haltons <- dnorm(haltons)
+  normed_haltons <- qnorm(haltons)
   
   # Some numbers that will be useful
   N_predictors <- ncol(X)

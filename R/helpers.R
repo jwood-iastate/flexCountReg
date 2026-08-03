@@ -115,7 +115,7 @@ get_probFunc <- function(family){
         stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))
     },
     "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
-      dpLnorm_cpp(x = y, mean = predicted, sigma = alpha, h = normed_haltons),
+      dpLnorm_cpp(x = y, mean = predicted, sigma = alpha, h = haltons),
     "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
       dpge(y, mean = predicted, shape = alpha, scale = sigma,haltons = haltons),
     "PIG1" = function(y, predicted, alpha, sigma, ...) 
@@ -130,7 +130,7 @@ get_probFunc <- function(family){
       dplindGamma(x = y, mean = predicted, theta = alpha, alpha = sigma),
     "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
       dplindLnorm(x = y, mean = predicted, theta = alpha, sigma = sigma, 
-                  hdraws = normed_haltons),
+                  hdraws = haltons),
     "PW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
       dpWeib_cpp(y, mean = predicted, alpha = alpha, sigma = sigma, h =haltons),
     "SI" = function(y, predicted, alpha, sigma, ...) 

@@ -811,20 +811,20 @@ using the Sichel generalized additive models for location, scale and shape.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  Method:  countreg </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations:  485 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations:  399 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Convergence:  successful convergence  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -1075.729 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -1066.905 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Parameter Estimates:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 6 × 7</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept) -<span style="color: #BB0000;">7.78</span>        0.038  -<span style="color: #BB0000;">205.</span>       0         -<span style="color: #BB0000;">7.85</span>      -<span style="color: #BB0000;">7.70</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt       0.907       0.004   209.       0          0.898      0.915</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> lnlength     0.827       0.033    24.9      0          0.762      0.892</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> speed50     -<span style="color: #BB0000;">0.434</span>       0.086    -<span style="color: #BB0000;">5.08</span>     0         -<span style="color: #BB0000;">0.602</span>     -<span style="color: #BB0000;">0.267</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> AADT10kplus  0.774       0.071    10.9      0          0.635      0.913</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> ln(sigma)    0.117       0.096     1.22     0.222     -<span style="color: #BB0000;">0.071</span>      0.304</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept) -<span style="color: #BB0000;">8.36</span>        0.043  -<span style="color: #BB0000;">194.</span>           0     -<span style="color: #BB0000;">8.44</span>      -<span style="color: #BB0000;">8.27</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt       0.91        0.005   182.           0      0.9        0.92 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> lnlength     0.845       0.037    22.8          0      0.772      0.917</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> speed50     -<span style="color: #BB0000;">0.464</span>       0.092    -<span style="color: #BB0000;">5.04</span>         0     -<span style="color: #BB0000;">0.644</span>     -<span style="color: #BB0000;">0.284</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> AADT10kplus  0.799       0.091     8.74         0      0.62       0.979</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> ln(sigma)    0.651       0.039    16.8          0      0.575      0.727</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Estimate an Poisson-Lognormal with underreporting (probit)</span></span></span>
 <span class="r-in"><span><span class="va">plogn_underreport</span> <span class="op">&lt;-</span> <span class="fu">countreg</span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span> </span></span>

@@ -818,20 +818,20 @@ summary(pln)
 #>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
 #> 
 #>  Method:  countreg 
-#> Iterations:  485 
+#> Iterations:  399 
 #> Convergence:  successful convergence  
-#> Log-likelihood:  -1075.729 
+#> Log-likelihood:  -1066.905 
 #> 
 #> Parameter Estimates:
 #> # A tibble: 6 × 7
 #>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept) -7.78        0.038  -205.       0         -7.85      -7.70 
-#> 2 lnaadt       0.907       0.004   209.       0          0.898      0.915
-#> 3 lnlength     0.827       0.033    24.9      0          0.762      0.892
-#> 4 speed50     -0.434       0.086    -5.08     0         -0.602     -0.267
-#> 5 AADT10kplus  0.774       0.071    10.9      0          0.635      0.913
-#> 6 ln(sigma)    0.117       0.096     1.22     0.222     -0.071      0.304
+#> 1 (Intercept) -8.36        0.043  -194.           0     -8.44      -8.27 
+#> 2 lnaadt       0.91        0.005   182.           0      0.9        0.92 
+#> 3 lnlength     0.845       0.037    22.8          0      0.772      0.917
+#> 4 speed50     -0.464       0.092    -5.04         0     -0.644     -0.284
+#> 5 AADT10kplus  0.799       0.091     8.74         0      0.62       0.979
+#> 6 ln(sigma)    0.651       0.039    16.8          0      0.575      0.727
 
 # Estimate an Poisson-Lognormal with underreporting (probit)
 plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 

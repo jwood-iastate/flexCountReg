@@ -8,8 +8,8 @@
 #' @param q quantile or a vector of quantiles.
 #' @param p probability or a vector of probabilities.
 #' @param n the number of random numbers to generate.
-#' @param mean numeric value or vector of mean values for the distribution (the
-#'   values have to be greater than 0).
+#' @param mean numeric value or vector of mean values (not the expected value)
+#'  for the distribution (the values have to be greater than 0).
 #' @param sigma single value or vector of values for the sigma parameter of the
 #'   lognormal distribution (the values have to be greater than 0).
 #' @param ndraws the number of Halton draws to use for the integration.
@@ -144,17 +144,14 @@ qpLnorm <- Vectorize(function(p, mean=1, sigma=1, ndraws=1500) {
 
 #' @rdname PoissonLognormal
 #' @export
-rpLnorm <- function(n, mean=1, sigma=1, ndraws=1500) {
+rpLnorm <- function(n, mean=1, sigma=1) {
   if(mean<=0  || sigma<=0) {
     msg <- 
       'The values of `mean` and `sigma` have to have values greater than 0.'
     warning(msg)
   }
   
-  u <- stats::runif(n)
-  y <- vapply(
-    X = u, 
-    FUN = \(p) qpLnorm(p, mean, sigma = sigma, ndraws = ndraws), 
-    FUN.VALUE = numeric(1))
-    return(y)
+  mus <- exp(stats::rnorm(n, mean=0, sd=sigma)) * mean
+  y <- rpois(n, lambda = mus)
+  return(y)
 }

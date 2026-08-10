@@ -24,7 +24,7 @@ distribution (the values have to be greater than 0).}
 
 \item{lambda}{optional. Numeric value or vector of values for the rate
 parameter of the distribution (the values have to be greater than 0).
-If `mu` is provided, `lambda` is ignored.}
+If \code{mu} is provided, \code{lambda} is ignored.}
 
 \item{nu}{optional. Numeric value or vector of values for the decay
 parameter of the distribution ((the values have to be greater than 0).}
@@ -43,14 +43,14 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dcom gives the density, pcom gives the distribution function, qcom 
- gives the quantile function, and rcom generates random deviates.
+dcom gives the density, pcom gives the distribution function, qcom
+gives the quantile function, and rcom generates random deviates.
 
- The length of the result is determined by n for rcom, and is the maximum of 
- the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rcom, and is the maximum of
+the lengths of the numerical arguments for the other functions.
 
- The numerical arguments other than n are recycled to the length of the 
- result. Only the first elements of the logical arguments are used.
+The numerical arguments other than n are recycled to the length of the
+result. Only the first elements of the logical arguments are used.
 }
 \description{
 These functions provide the density function, distribution function,

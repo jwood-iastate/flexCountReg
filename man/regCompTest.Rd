@@ -70,13 +70,13 @@ The function performs the following steps for the single-model
 workflow:
 \enumerate{
 \item Fits the base model, either a Poisson regression or another specified
-  model.
+model.
 \item Computes the log-likelihoods of the provided model and the base
-  model.
+model.
 \item Calculates the AIC and BIC for both models.
 \item Conducts a Likelihood Ratio test to compare the fitted model against
-  the estimated base model when the fitted model has more parameters than
-  the base model.
+the estimated base model when the fitted model has more parameters than
+the base model.
 \item Computes McFadden's Pseudo R^2.
 }
 

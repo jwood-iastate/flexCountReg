@@ -10,7 +10,6 @@ Elasticities
 Equidispersion
 Famoye
 Fariss
-GLMMs
 GW
 Gayah
 Generlized
@@ -48,7 +47,7 @@ ShouldWidth
 Sichel
 Stasinopoulos
 Stata
-Tricomi's
+Tricomi’s
 Trivedi
 Underdispersion
 Underreporting
@@ -67,7 +66,6 @@ countreg
 cureplots
 dcom
 dgp
-dgwar
 digamma
 dinvgamma
 dlindley
@@ -86,6 +84,7 @@ econlet
 elasticities
 equidispersed
 et
+halton
 integar
 kplus
 ln
@@ -96,9 +95,9 @@ nd
 ndraws
 pcom
 pgp
-pgwar
 pinvgamma
 plindley
+poilog
 poisLindRE
 ppLnorm
 ppge
@@ -113,7 +112,6 @@ psudo
 ptri
 qcom
 qgp
-qgwar
 qinvgamma
 qlindley
 qpLnorm
@@ -128,7 +126,6 @@ qsichel
 qtri
 rcom
 rgp
-rgwar
 rinvgamma
 rlindley
 rp

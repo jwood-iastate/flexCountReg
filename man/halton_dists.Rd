@@ -19,11 +19,11 @@ normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma
 distribution. If not provided, the function will generate Halton draws.}
 
 \item{ndraws}{The number of random draws to generate. This is only used if
-`hdraw` is not provided.}
+\code{hdraw} is not provided.}
 }
 \value{
-A vector of psudo-random draws from the specified distribution, based 
- on Halton draws.
+A vector of psudo-random draws from the specified distribution, based
+on Halton draws.
 }
 \description{
 Generate pseudo-random draws from specified distributions using Halton draws
@@ -34,7 +34,7 @@ The function can be used to generate random draws for use in random parameter
 models, generating Halton-based pseudo-random draws for specified
 distributions, etc.
 
-The distributions generated all use the `mean` (\deqn{\mu}) and `sdev`
+The distributions generated all use the \code{mean} (\deqn{\mu}) and \code{sdev}
 (\deqn{\sigma}) parameters to generate the random draws. The density
 functions for the distributions are as follows:
 The Normal distribution is:

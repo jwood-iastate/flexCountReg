@@ -65,19 +65,19 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-description dpinvgaus gives the density, ppinvgaus gives the distribution 
- function, qpinvgaus gives the quantile function, and rpinvgaus generates
- random  deviates.
+description dpinvgaus gives the density, ppinvgaus gives the distribution
+function, qpinvgaus gives the quantile function, and rpinvgaus generates
+random  deviates.
 
- The length of the result is determined by n for rpinvgaus, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rpinvgaus, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 
-dpinvgaus gives the density, ppinvgaus gives the distribution 
- function, qpinvgaus gives the quantile function, and rpinvgaus generates
- random  deviates.
+dpinvgaus gives the density, ppinvgaus gives the distribution
+function, qpinvgaus gives the quantile function, and rpinvgaus generates
+random  deviates.
 
- The length of the result is determined by n for rpinvgaus, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rpinvgaus, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide the density function, distribution function,
@@ -92,7 +92,6 @@ function, and random number generation for the Poisson-Inverse-Gaussian
 The Poisson-Inverse-Gaussian distribution is a special case of the
 Sichel distribution (Cameron & Trivedi, 2013). It is also known as a
 univariate Sichel distribution (Hilbe, 2011).
-
 
 \code{dpinvgaus} computes the PDF of the Poisson-Inverse-Gaussian dist.
 
@@ -132,7 +131,6 @@ Resulting variance:
 The Poisson-Inverse-Gaussian distribution is a special case of the Sichel
 distribution, as noted by Cameron & Trivedi (2013). It is also known as a
 univariate Sichel distribution (Hilbe, 2011).
-
 
 \code{dpinvgaus} computes the density (PDF) of the Poisson-Inverse-Gaussian
 Distribution.
@@ -176,7 +174,7 @@ with \eqn{\eta\mu}. This version (Type 2) has the PMF:
                           \left(\frac{\eta}{2} \right)^2(1+2\eta\mu)^{-j/2}
                              \end{cases}}
 
- This results in the variance of:
+This results in the variance of:
 \deqn{\sigma^2=\mu+\eta\mu^2}
 }
 \examples{

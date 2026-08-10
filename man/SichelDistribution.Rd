@@ -36,12 +36,12 @@ rsichel(n, mu = 1, sigma = 1, gamma = 1)
 \item{n}{number of random values to generate.}
 }
 \value{
-dsichel gives the density, psichel gives the distribution 
- function, qsichel gives the quantile function, and rsichel 
- generates random  deviates.
+dsichel gives the density, psichel gives the distribution
+function, qsichel gives the quantile function, and rsichel
+generates random  deviates.
 
- The length of the result is determined by n for rsichel, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rsichel, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 Density, distribution function, quantile function, and random generation

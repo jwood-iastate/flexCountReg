@@ -35,7 +35,8 @@ mod.boot <- function(data, formula, family, offset, weights,
              max.iters = max.iters, 
              start.vals = start.vals, 
              stderr = "normal", 
-             bootstraps = NULL)
+             bootstraps = NULL,
+             engine=engine)
   }, error = function(e) return(NULL)) # Handle failures in bootstrap samples
   
   return(fit)
@@ -95,28 +96,28 @@ get_params <- function(family) {
 get_probFunc <- function(family){
   switch( # get the probability function for the specified distribution
     family,
-    "POISSON" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
+    "POISSON" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) {
       return(stats::dpois(y, predicted))
     },
-    "GP1"=function(y, predicted, alpha, sigma, haltons, normed_haltons){
+    "GP1"=function(y, predicted, alpha, sigma, haltons, normed_haltons, engine){
       return(dgp1(y, mu=predicted, phi=(alpha-1)))
     },
-    "GP2"=function(y, predicted, alpha, sigma, haltons, normed_haltons){
+    "GP2"=function(y, predicted, alpha, sigma, haltons, normed_haltons, engine){
       return(dgp2(y, mu=predicted, alpha=(alpha-1)))
     },
-    "NB1" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
+    "NB1" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) {
       return(stats::dnbinom(y, size = predicted/alpha, mu = predicted))
     },
-    "NB2" = function(y, predicted, alpha, sigma, haltons, normed_haltons) {
+    "NB2" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) {
       return(stats::dnbinom(y, size = 1/alpha, mu = predicted))
     },
-    "NBP" = function(y, predicted, alpha, sigma, haltons, normed_haltons){
+    "NBP" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine){
       return(
         stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))
     },
-    "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
-      dpLnorm_cpp(x = y, mean = predicted, sigma = alpha, h = haltons),
-    "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
+    "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
+      dpLnorm(x = y, mean = predicted, sigma = alpha, h = haltons, engine=engine),
+    "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
       dpge(y, mean = predicted, shape = alpha, scale = sigma,haltons = haltons),
     "PIG1" = function(y, predicted, alpha, sigma, ...) 
       dpinvgaus(y, mu = predicted, eta = alpha),
@@ -128,10 +129,10 @@ get_probFunc <- function(family){
       dplind(y, mean = predicted, theta = alpha),
     "PLG" = function(y, predicted, alpha, sigma, ...) 
       dplindGamma(x = y, mean = predicted, theta = alpha, alpha = sigma),
-    "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
+    "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
       dplindLnorm(x = y, mean = predicted, theta = alpha, sigma = sigma, 
                   hdraws = haltons),
-    "PW" = function(y, predicted, alpha, sigma, haltons, normed_haltons) 
+    "PW" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
       dpWeib_cpp(y, mean = predicted, alpha = alpha, sigma = sigma, h =haltons),
     "SI" = function(y, predicted, alpha, sigma, ...) 
       dsichel(x = y, mu = predicted, sigma = sigma, gamma = log(alpha)),

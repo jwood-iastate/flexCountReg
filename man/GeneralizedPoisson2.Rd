@@ -41,8 +41,8 @@ otherwise, \eqn{P[X>x]}.}
 }
 \value{
 dgp2 gives the density, pgp2 gives the distribution
- function, qgp2 gives the quantile function, and rgp2 generates random
- deviates.
+function, qgp2 gives the quantile function, and rgp2 generates random
+deviates.
 
 The length of the result is determined by n for rgp2, and is the
 maximum of the lengths of the numerical arguments for the other functions.

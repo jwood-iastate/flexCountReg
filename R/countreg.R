@@ -48,6 +48,10 @@
 #' @param bootstraps Optional integer specifying the number of bootstrap samples
 #'   to be used for estimating standard errors when `stderr`= "boot". Note that
 #'   this currently does not work when an offset variable is used.
+#' @param engine the engine to use for the integration if the Poisson Lognormal 
+#'   (PLN) distribution is used. Options include "halton" which uses Halton 
+#'   draws or "poilog" which uses the poilog package. The default is "halton".
+#' 
 #' 
 #' @description
 #' The purpose of this function is to estimate count regression models using
@@ -622,7 +626,7 @@
 #' # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
 #' # up the estimation for examples - not recommended in practice)
 #' pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-#'               data = washington_roads, family = "PLN", ndraws=10)
+#'               data = washington_roads, family = "PLN", engine="poilog")
 #' summary(pln)  
 #' 
 #' # Estimate an Poisson-Lognormal with underreporting (probit)
@@ -688,7 +692,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      underreport_family = "logit",
                      ndraws = 1500, method = "NM", 
                      max.iters = 1000, start.vals = NULL, 
-                     stderr = "normal", bootstraps = NULL) {
+                     stderr = "normal", bootstraps = NULL,
+                     engine="halton") {
   
   if (verbose){
     print.level <- 2
@@ -894,7 +899,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     
     # Call the probability function using the local variable
     probs <- local_probFunc(y=y, predicted=predicted, alpha=alpha, sigma=sigma, 
-                            haltons=haltons, normed_haltons=normed_haltons)
+                            haltons=haltons, normed_haltons=normed_haltons, engine=engine)
     
     return(log(probs)*weights.df)
   }

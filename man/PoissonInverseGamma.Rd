@@ -39,12 +39,12 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dpinvgamma gives the density, ppinvgamma gives the distribution 
- function, qpinvgamma gives the quantile function, and rcom generates random 
- deviates.
+dpinvgamma gives the density, ppinvgamma gives the distribution
+function, qpinvgamma gives the quantile function, and rcom generates random
+deviates.
 
-The length of the result is determined by n for rpinvgamma, and is the 
- maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rpinvgamma, and is the
+maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide the density function, distribution function,

@@ -36,6 +36,9 @@
 #' @param weights variable name to be used as frequency weights.
 #' @param method optimization method (e.g., "BHHH", "BFGS", "NM").
 #' @param max.iters maximum number of iterations.
+#' @param engine the engine to use for the integration if the Poisson Lognormal 
+#'   (PLN) distribution is used. Options include "halton" which uses Halton 
+#'   draws or "poilog" which uses the poilog package. The default is "halton".
 #' @param start.vals optional vector of starting values.
 #' @param verbose logical.
 #' 
@@ -115,7 +118,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          correlated = FALSE, panel_id = NULL, 
                          weights=NULL, offset = NULL,
                          method = 'BHHH', max.iters = 1000,
-                         start.vals = NULL, verbose = FALSE) {
+                         start.vals = NULL, verbose = FALSE,
+                        engine="halton") {
   
   print.level <- ifelse(verbose, 2, 0)
   
@@ -444,7 +448,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                                  alpha = flat_alpha, 
                                  sigma = flat_sigma,
                                  haltons = dist_haltons, 
-                                 normed_haltons = normed_dist_haltons)
+                                 normed_haltons = normed_dist_haltons,
+                                 engine=engine)
     
     probs_mat <- matrix(probs_flat, nrow = N, ncol = D)
     probs_mat <- probs_mat^weights.df 

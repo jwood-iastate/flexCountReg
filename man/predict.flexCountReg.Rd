@@ -11,12 +11,12 @@
 
 \item{newdata}{optional dataframe for which to generate predictions.}
 
-\item{...}{optional arguments passed to the function. This includes `method`.}
+\item{...}{optional arguments passed to the function. This includes \code{method}.}
 }
 \value{
-A numeric vector of predicted expected counts for each observation 
- in the provided data. If no data is provided, the predictions for the data 
- used in estimating the model are provided.
+A numeric vector of predicted expected counts for each observation
+in the provided data. If no data is provided, the predictions for the data
+used in estimating the model are provided.
 }
 \description{
 Generates predictions for the expected count (lambda) for observations.
@@ -24,15 +24,15 @@ Generates predictions for the expected count (lambda) for observations.
 For \strong{countreg.rp} (Random Parameters) models, three methods are
 available:
 \itemize{
-  \item \strong{Simulated}: Uses Halton draws to simulate the random
-  parameters and averages the outcomes. This is a simulation-based
-  approximation.
-  \item \strong{Individual}: Estimates observation-specific coefficients
-  (conditional on observed outcomes) using Empirical Bayes. Requires the
-  outcome variable to be present in \code{data}.
-  \item \strong{Exact}: Uses the analytical Moment Generating Functions
-  (MGFs) of the random parameter distributions to calculate the exact
-  expected value. This method is faster and removes simulation error.
+\item \strong{Simulated}: Uses Halton draws to simulate the random
+parameters and averages the outcomes. This is a simulation-based
+approximation.
+\item \strong{Individual}: Estimates observation-specific coefficients
+(conditional on observed outcomes) using Empirical Bayes. Requires the
+outcome variable to be present in \code{data}.
+\item \strong{Exact}: Uses the analytical Moment Generating Functions
+(MGFs) of the random parameter distributions to calculate the exact
+expected value. This method is faster and removes simulation error.
 }
 
 For \strong{countreg}, \strong{poisLindRE}, and \strong{RENB} models, the
@@ -40,12 +40,12 @@ function calculates the expected value \eqn{\mu = \exp(X\beta)} (with
 appropriate adjustments for specific families like PLN or underreporting).
 }
 \note{
-optional parameter `newdata`: a dataframe that has all of the variables
-  in the \code{formula} and \code{rpar_formula}.
+optional parameter \code{newdata}: a dataframe that has all of the variables
+in the \code{formula} and \code{rpar_formula}.
 
-optional parameter `method`: Only valid for random parameters models
-  (`countreg.rp`). Options include \code{Simulated} (default),
-  \code{Individual}, or \code{Exact}.
+optional parameter \code{method}: Only valid for random parameters models
+(\code{countreg.rp}). Options include \code{Simulated} (default),
+\code{Individual}, or \code{Exact}.
 }
 \examples{
 \donttest{

@@ -33,10 +33,10 @@ rtri(n, mode = 0, sigma = 1, upper = NA, lower = NA)
 max differences from the mean (if the difference is the same).}
 
 \item{upper}{single value or vector for the upper limit of the distribution
-(must be used with `lower`).}
+(must be used with \code{lower}).}
 
 \item{lower}{single value or vector for the lower limit of the distribution
-(must be used with `upper`).}
+(must be used with \code{upper}).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
@@ -52,13 +52,13 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dtri gives the density, ptri gives the distribution function, qtri 
+dtri gives the density, ptri gives the distribution function, qtri
 gives the quantile function, and rtri generates random deviates.
 
-The length of the result is determined by n for rtri, and is the maximum of 
+The length of the result is determined by n for rtri, and is the maximum of
 the lengths of the numerical arguments for the other functions.
 
-The numerical arguments other than n are recycled to the length of the 
+The numerical arguments other than n are recycled to the length of the
 result. Only the first elements of the logical arguments are used.
 }
 \description{
@@ -70,7 +70,6 @@ mean, standard deviation, and optional lower and upper bounds.
 The Triangle Distribution is defined by three points: a (minimum), b
 (maximum), and c (mode), where the density is zero outside the interval \eqn{[a,
 b]}, increases linearly from a to c, and decreases linearly from c to b.
-
 
 \code{dtri} computes the density (PDF) of the Triangle Distribution.
 

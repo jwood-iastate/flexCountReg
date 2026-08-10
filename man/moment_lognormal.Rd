@@ -17,7 +17,7 @@ log-transformed variable, corresponding to \eqn{\sigma}.}
 }
 \value{
 A numeric vector containing the raw moments of the specified
-  lognormal distribution.
+lognormal distribution.
 }
 \description{
 Computes a raw moment of a lognormal distribution using its closed-form

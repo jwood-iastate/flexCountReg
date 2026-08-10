@@ -20,7 +20,8 @@ countreg(
   max.iters = 1000,
   start.vals = NULL,
   stderr = "normal",
-  bootstraps = NULL
+  bootstraps = NULL,
+  engine = "halton"
 )
 }
 \arguments{
@@ -28,8 +29,8 @@ countreg(
 
 \item{data}{a data frame containing the variables in the model.}
 
-\item{family}{the name of the distribution/model type to estimate. The 
-default "NB2" is the standard negative binomial distribution with a 
+\item{family}{the name of the distribution/model type to estimate. The
+default "NB2" is the standard negative binomial distribution with a
 log link. other options are listed below.}
 
 \item{offset}{the name of a variable, or vector of variable names, in the
@@ -40,8 +41,8 @@ equation can also be used (overrides the offset option).}
 \item{weights}{the name of a variable in the data frame that should be used
 as a frequency weight.}
 
-\item{verbose}{an optional parameter. If `TRUE`, the function will print out
-the progress of the model fitting. Default is `FALSE`.}
+\item{verbose}{an optional parameter. If \code{TRUE}, the function will print out
+the progress of the model fitting. Default is \code{FALSE}.}
 
 \item{dis_param_formula_1}{a symbolic description of the model for the
 natural log of the dispersion parameter or first parameter of the count
@@ -55,10 +56,10 @@ below.}
 for any of the count model options. The underreporting is estimated as a
 function (logit or probit) of the predictors in the model. For the model to
 be tractable, the independent variables cannot be the exact same as the
-count model. The default is `NULL`.}
+count model. The default is \code{NULL}.}
 
 \item{underreport_family}{the name of the distribution/model type to estimate
-the underreporting portion of the model when `underreport_formula` is
+the underreporting portion of the model when \code{underreport_formula} is
 specified. The default is "logit" for a binary logistic regression model.
 The other option is "probit" for a probit model.}
 
@@ -70,7 +71,7 @@ or has minimal change as the number of draws changes within a reasonable
 range).}
 
 \item{method}{Optimization method to be used for maximum likelihood
-estimation. See `maxLik` documentation for options. The default is "NM" for
+estimation. See \code{maxLik} documentation for options. The default is "NM" for
 the Nelder-Mead method.}
 
 \item{max.iters}{Maximum number of iterations for the optimization method.}
@@ -82,16 +83,20 @@ options include "boot" for bootstrapped standard errors, or "robust" for
 robust standard errors.}
 
 \item{bootstraps}{Optional integer specifying the number of bootstrap samples
-to be used for estimating standard errors when `stderr`= "boot". Note that
+to be used for estimating standard errors when \code{stderr}= "boot". Note that
 this currently does not work when an offset variable is used.}
+
+\item{engine}{the engine to use for the integration if the Poisson Lognormal
+(PLN) distribution is used. Options include "halton" which uses Halton
+draws or "poilog" which uses the poilog package. The default is "halton".}
 }
 \value{
-An object of class `countreg` which is a list with the following components:
+An object of class \code{countreg} which is a list with the following components:
 \itemize{
- \item model: the fitted model object.
- \item data: the data frame used to fit the model.
- \item call: the matched call.
- \item formula: the formula used to fit the model.
+\item model: the fitted model object.
+\item data: the data frame used to fit the model.
+\item call: the matched call.
+\item formula: the formula used to fit the model.
 }
 }
 \description{
@@ -99,127 +104,128 @@ The purpose of this function is to estimate count regression models using
 maximum likelihood estimation (MLE) or Maximum Simulated Likelihood
 Estimation (MSLE). The function can estimate the following models:
 \itemize{
- \item Poisson (Poisson)
- \item Generalized Poisson Version 1 (GP1)
- \item Generalized Poisson Version 2 (GP2)
- \item Negative Binomial 1 (NB1)
- \item Negative Binomial 2 (NB2)
- \item Negative Binomial P (NBP)
- \item Poisson-Lognormal (PLN)
- \item Poisson-Generalized-Exponential (PGE)
- \item Poisson-Inverse-Gaussian Type 1 (PIG1)
- \item Poisson-Inverse-Gaussian Type 2 (PIG2)
- \item Poisson-Inverse-Gamma (PIG)
- \item Poisson-Lindley (PL)
- \item Poisson-Lindley-Gamma (PLG), also known as the Negative 
-       Binomial-Lindley (NBL)
- \item Poisson-Lindley-Lognormal (PLL)
- \item Poisson-Weibull (PW)
- \item Sichel (SI)
- \item Generalized Waring (GW)
- \item Conway-Maxwell-Poisson (COM)
+\item Poisson (Poisson)
+\item Generalized Poisson Version 1 (GP1)
+\item Generalized Poisson Version 2 (GP2)
+\item Negative Binomial 1 (NB1)
+\item Negative Binomial 2 (NB2)
+\item Negative Binomial P (NBP)
+\item Poisson-Lognormal (PLN)
+\item Poisson-Generalized-Exponential (PGE)
+\item Poisson-Inverse-Gaussian Type 1 (PIG1)
+\item Poisson-Inverse-Gaussian Type 2 (PIG2)
+\item Poisson-Inverse-Gamma (PIG)
+\item Poisson-Lindley (PL)
+\item Poisson-Lindley-Gamma (PLG), also known as the Negative
+Binomial-Lindley (NBL)
+\item Poisson-Lindley-Lognormal (PLL)
+\item Poisson-Weibull (PW)
+\item Sichel (SI)
+\item Generalized Waring (GW)
+\item Conway-Maxwell-Poisson (COM)
 }
 }
 \details{
-For the `family` argument, the following options are available:
+For the \code{family} argument, the following options are available:
 \itemize{
 \item "POISSON" for Poisson distribution with a log link.
 \item "GP1" for Generalized Poisson Version 1 Distribution with a log link
 \item "GP2" for Generalized Poisson Version 2 Distribution with a log link
- \item "NB1" for Negative Binomial 1 distribution with a log link.
- \item "NB2" for Negative Binomial 2 distribution with a log link (i.e., the 
-       standard negative binomial model).
- \item "NBP" for Negative Binomial P distribution with a log link.
- \item "PLN" for Poisson-Lognormal distribution with a log link.
- \item "PGE" for Poisson-Generalized-Exponential distribution with a log 
-       link.
- \item "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log
- link.
- \item "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log
- link.
- \item "PIG" for Poisson-Inverse-Gamma distribution with a log link.
- \item "PL" for Poisson-Lindley distribution with a log link.
- \item "PLG" for Poisson-Lindley-Gamma distribution with a log link.
- \item "PLL" for Poisson-Lindley-Lognormal distribution with a log link.
- \item "PW" for Poisson-Weibull distribution with a log link.
- \item "SI" for Sichel distribution with a log link.
- \item "GW" for Generalized Waring distribution with a log link.
- \item "COM" for Conway-Maxwell-Poisson (COM) distribution with a log link.
- }
- 
- The `dis_param_formula_1` and `dis_param_formula_2` parameters are used to
- estimate the dispersion parameter or other parameters of the count
- distribution used. This leads to the distributions parameters being
- functions rather than constants in the model. For example, if the user wants
- to estimate the overdispersion parameter of the Negative Binomial 2
- distribution as a function of the variable `x1` and `x2`, the user would
- specify `dis_param_formula_1 = ~ x1 + x2`. In the case of the Negative
- Binomial distributions, the model is known as a Generalized Negative
- Binomial model when the overdispersion parameter is specified as a function.
- 
- The function linking the distribution parameters to the predictors is:
- \deqn{Param = \exp((Intercept) + \sum \beta X)}
- 
- The parameters for the different models are as follows:
- 
- For `dis_param_formula_1`, the models are for the parameters:
- \itemize{
- \item \eqn{ln(\phi+1)} for the Generlized Poisson Version 1.
- \item \eqn{ln(\alpha+1)} for the Generlized Poisson Version 2.
- \item \eqn{ln(\alpha)} for the Negative Binomial 1 model.
- \item \eqn{ln(\alpha)} for the Negative Binomial 2 model.
- \item \eqn{ln(\alpha)} for the Negative Binomial P model.
- \item \eqn{ln(\sigma)} for the Poisson-Lognormal model.
- \item shape parameter for the Poisson-Generalized-Exponential model.
- \item \eqn{ln(\eta)} for the Poisson-Inverse-Gaussian model.
- \item \eqn{ln(\eta)} for the Poisson-Inverse-Gamma model.
- \item \eqn{ln(\theta)} for the Poisson-Lindley model.
- \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
- \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
- \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
- \item \eqn{\gamma} for the Sichel model.
- \item \eqn{k} for the Generalized Waring model.
- \item \eqn{ln(\nu)} for the Conway-Maxwell-Poisson model.
- }
- 
- For `dis_param_formula_2`, the models are for the parameters:
- \itemize{
- \item Not Applicable for the Generalized Poisson Version 1 model.
- \item Not Applicable for the Negative Binomial 1 model.
- \item Not Applicable for the Negative Binomial 2 model.
- \item p for the Negative Binomial P model.
- \item Not Applicable for the Poisson-Lognormal model.
- \item scale parameter for the Poisson-Generalized-Exponential model.
- \item Not Applicable for the Poisson-Inverse-Gaussian model.
- \item Not Applicable for the Poisson-Inverse-Gamma model.
- \item Not Applicable for the Poisson-Lindley model.
- \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
- \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
- \item \eqn{ln(\sigma)} for the Poisson-Weibull model.
- \item \eqn{ln(\sigma)} for the Sichel model.
- \item \eqn{ln(\rho)} for the Generalized Waring model.
- \item Not Applicable for the Conway-Maxwell-Poisson model.
- }
- 
- The `ndraws` parameter is used to estimate the distribution when there is 
- not a closed-form solution. This uses Halton draws to integrate the 
- distribution being compounded with the Poisson distribution. The default is 
- 1500. The models this is applicable for include:
- \itemize{
- \item Poisson-Lognormal
- \item Poisson-Generalized-Exponential
- \item Poisson-Lindley-Gamma (more efficient than using hypergeometric 
- functions)
- \item Poisson-Lindley-Lognormal
- \item Poisson-Weibull
- }
+\item "NB1" for Negative Binomial 1 distribution with a log link.
+\item "NB2" for Negative Binomial 2 distribution with a log link (i.e., the
+standard negative binomial model).
+\item "NBP" for Negative Binomial P distribution with a log link.
+\item "PLN" for Poisson-Lognormal distribution with a log link.
+\item "PGE" for Poisson-Generalized-Exponential distribution with a log
+link.
+\item "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log
+link.
+\item "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log
+link.
+\item "PIG" for Poisson-Inverse-Gamma distribution with a log link.
+\item "PL" for Poisson-Lindley distribution with a log link.
+\item "PLG" for Poisson-Lindley-Gamma distribution with a log link.
+\item "PLL" for Poisson-Lindley-Lognormal distribution with a log link.
+\item "PW" for Poisson-Weibull distribution with a log link.
+\item "SI" for Sichel distribution with a log link.
+\item "GW" for Generalized Waring distribution with a log link.
+\item "COM" for Conway-Maxwell-Poisson (COM) distribution with a log link.
+}
+
+The \code{dis_param_formula_1} and \code{dis_param_formula_2} parameters are used to
+estimate the dispersion parameter or other parameters of the count
+distribution used. This leads to the distributions parameters being
+functions rather than constants in the model. For example, if the user wants
+to estimate the overdispersion parameter of the Negative Binomial 2
+distribution as a function of the variable \code{x1} and \code{x2}, the user would
+specify \code{dis_param_formula_1 = ~ x1 + x2}. In the case of the Negative
+Binomial distributions, the model is known as a Generalized Negative
+Binomial model when the overdispersion parameter is specified as a function.
+
+The function linking the distribution parameters to the predictors is:
+\deqn{Param = \exp((Intercept) + \sum \beta X)}
+
+The parameters for the different models are as follows:
+
+For \code{dis_param_formula_1}, the models are for the parameters:
+\itemize{
+\item \eqn{ln(\phi+1)} for the Generlized Poisson Version 1.
+\item \eqn{ln(\alpha+1)} for the Generlized Poisson Version 2.
+\item \eqn{ln(\alpha)} for the Negative Binomial 1 model.
+\item \eqn{ln(\alpha)} for the Negative Binomial 2 model.
+\item \eqn{ln(\alpha)} for the Negative Binomial P model.
+\item \eqn{ln(\sigma)} for the Poisson-Lognormal model.
+\item shape parameter for the Poisson-Generalized-Exponential model.
+\item \eqn{ln(\eta)} for the Poisson-Inverse-Gaussian model.
+\item \eqn{ln(\eta)} for the Poisson-Inverse-Gamma model.
+\item \eqn{ln(\theta)} for the Poisson-Lindley model.
+\item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
+\item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
+\item \eqn{ln(\alpha)} for the Poisson-Weibull model.
+\item \eqn{\gamma} for the Sichel model.
+\item \eqn{k} for the Generalized Waring model.
+\item \eqn{ln(\nu)} for the Conway-Maxwell-Poisson model.
+}
+
+For \code{dis_param_formula_2}, the models are for the parameters:
+\itemize{
+\item Not Applicable for the Generalized Poisson Version 1 model.
+\item Not Applicable for the Negative Binomial 1 model.
+\item Not Applicable for the Negative Binomial 2 model.
+\item p for the Negative Binomial P model.
+\item Not Applicable for the Poisson-Lognormal model.
+\item scale parameter for the Poisson-Generalized-Exponential model.
+\item Not Applicable for the Poisson-Inverse-Gaussian model.
+\item Not Applicable for the Poisson-Inverse-Gamma model.
+\item Not Applicable for the Poisson-Lindley model.
+\item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
+\item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
+\item \eqn{ln(\sigma)} for the Poisson-Weibull model.
+\item \eqn{ln(\sigma)} for the Sichel model.
+\item \eqn{ln(\rho)} for the Generalized Waring model.
+\item Not Applicable for the Conway-Maxwell-Poisson model.
+}
+
+The \code{ndraws} parameter is used to estimate the distribution when there is
+not a closed-form solution. This uses Halton draws to integrate the
+distribution being compounded with the Poisson distribution. The default is
+1500. The models this is applicable for include:
+\itemize{
+\item Poisson-Lognormal
+\item Poisson-Generalized-Exponential
+\item Poisson-Lindley-Gamma (more efficient than using hypergeometric
+functions)
+\item Poisson-Lindley-Lognormal
+\item Poisson-Weibull
+}
 }
 \section{Model Details}{
- 
-## Poisson Model
-This implements the Poisson regression model using Maximum Likelihood 
-Estimation (MLE), as opposed to the Iteratively Reweighted Least Squares (IRLS) 
-method used in the `glm` function.
+
+\subsection{Poisson Model}{
+
+This implements the Poisson regression model using Maximum Likelihood
+Estimation (MLE), as opposed to the Iteratively Reweighted Least Squares (IRLS)
+method used in the \code{glm} function.
 
 The PMF and log-likelihood functions are:
 \deqn{P(Y = y) = \frac{e^{-\mu} \mu^y}{y!}}
@@ -231,8 +237,10 @@ The mean is:
 
 The variance is:
 \deqn{\text{Var}(Y) = \mu}
+}
 
-## Generalized Poisson Version 1 Model
+\subsection{Generalized Poisson Version 1 Model}{
+
 This implements the Generalized Poisson Version 1 model using MLE.
 
 The PMF is:
@@ -244,20 +252,22 @@ f(y|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
 Where \eqn{\phi} is a scale parameter with the restriction that
 \eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
 integer. The mean is modeled as:
-\deqn{\mu = exp(X\beta)} 
+\deqn{\mu = exp(X\beta)}
 
 The variance of the GP-1 distribution is:
 \deqn{\sigma^2=(1+\phi)^2 \mu}
 
-If \eqn{\phi>0}, the distribution is overdispersed. If \eqn{\phi=0}, the 
-distribution is equidispersed. If \eqn{\phi<0}, the distribution is 
+If \eqn{\phi>0}, the distribution is overdispersed. If \eqn{\phi=0}, the
+distribution is equidispersed. If \eqn{\phi<0}, the distribution is
 underdispersed.
 
-Furthermore, \eqn{\phi>-1} is required for this distribution. When 
-\eqn{\phi<0}, there is also a maximum value of support for the integar value 
+Furthermore, \eqn{\phi>-1} is required for this distribution. When
+\eqn{\phi<0}, there is also a maximum value of support for the integar value
 \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
+}
 
-## Generalized Poisson Version 2 Model
+\subsection{Generalized Poisson Version 2 Model}{
+
 This implements the Generalized Poisson Version 2 model using MLE.
 
 The PMF is:
@@ -271,7 +281,7 @@ f(y|\mu,\alpha)=
 Where \eqn{\phi} is a scale parameter with the restriction that
 \eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
 integer. The mean is modeled as:
-\deqn{\mu = exp(X\beta)} 
+\deqn{\mu = exp(X\beta)}
 
 The variance of the GP-2 distribution is:
 \deqn{\sigma^2=\mu(1+\alpha\mu)^2}
@@ -285,13 +295,14 @@ finite support.
 Under the underdispersed case, the largest possible value of \eqn{y}
 is bounded above by \eqn{\left\lceil -1/\alpha \right\rceil - 1},
 i.e., the largest integer satisfying \eqn{1 + \alpha y > 0}.
+}
 
-## Negative Binomial Models**
+\subsection{Negative Binomial Models**}{
 
-The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
+The NB-1, NB-2, and NB-P versions of the negative binomial distribution are
 based on Greene (2008).  The details of each of these are provided below.
+\subsection{NB-1 Model}{
 
-### NB-1 Model
 The PMF and log-likelihood functions are:
 \deqn{P(Y = y) = 
     \frac{\Gamma(y + \frac{\mu}{\alpha})}{y! \, \Gamma(\frac{\mu}{\alpha})}
@@ -309,8 +320,10 @@ The mean is:
 
 The variance is:
 \deqn{\text{Var}(Y) = \mu + \alpha\mu}
+}
 
-### NB-2 Model
+\subsection{NB-2 Model}{
+
 The PMF and log-likelihood functions are:
 \deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} 
 \left( \frac{\alpha}{\alpha + \mu} \right)^\alpha 
@@ -324,8 +337,10 @@ The mean is:
 
 The variance is:
 \deqn{\text{Var}(Y) = \mu + \alpha\mu^2}
+}
 
-### NB-P Model
+\subsection{NB-P Model}{
+
 The PMF and log-likelihood functions are:
 \deqn{P(Y = y) = \frac{\Gamma(y + \frac{\mu^{2-p}}{\alpha})}{y! \, 
 \Gamma(\frac{\mu^{2-p}}{\alpha})} \left( \frac{\frac{\mu^{2-p}}{\alpha}}
@@ -343,20 +358,24 @@ The mean is:
 
 The variance is:
 \deqn{\text{Var}(Y) = \mu + \alpha\mu^P}
+}
 
-## Poisson-Lognormal (PLN) Model
-The compound Probability Mass Function(PMF) for the Poisson-Lognormal 
+}
+
+\subsection{Poisson-Lognormal (PLN) Model}{
+
+The compound Probability Mass Function(PMF) for the Poisson-Lognormal
 distribution is:
 \deqn{f(y|\lambda,\sigma)=\int_0^\infty \frac{\lambda^y x^y e^{-\lambda x}}
 {y!}\frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 
-Where \eqn{\sigma} is a parameter for the lognormal distribution with the 
+Where \eqn{\sigma} is a parameter for the lognormal distribution with the
 restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 
 The expected value of the distribution is:
 \deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
 
-When `ln.sigma.formula` is used, the parameter \eqn{\sigma} is modeled as:
+When \code{ln.sigma.formula} is used, the parameter \eqn{\sigma} is modeled as:
 \deqn{ln(\sigma)=\beta_0+\beta_1 x_1 + \cdots + \beta_n x_n}
 
 Thus, the resulting value for the parameter \eqn{\sigma} is:
@@ -370,14 +389,16 @@ terms of improvement over a Poisson model. The Likelihood-Ratio test results
 provided in the output provide a test comparing if the Poisson-Lognormal
 model provides a statistically significant improvement in model fit over the
 Poisson model.
+}
 
-## Poisson Generalized-Exponential (PGE) Model
-The Generalized Exponential distribution can be written as a function with 
+\subsection{Poisson Generalized-Exponential (PGE) Model}{
+
+The Generalized Exponential distribution can be written as a function with
 a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
 distribution has strictly positive continuous values. The PDF of the
 distribution is:
 \deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
-\right)^{\alpha-1}e^{-\frac{x}{\gamma}}} 
+\right)^{\alpha-1}e^{-\frac{x}{\gamma}}}
 
 Thus, the compound Probability Mass Function(PMF) for the PGE distribution
 is:
@@ -405,14 +426,16 @@ e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma
 e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}
 \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 
-Halton draws are used to perform simulation over the lognormal distribution 
+Halton draws are used to perform simulation over the lognormal distribution
 to solve the integral.
+}
 
-## Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models
-The Poisson-Inverse-Gaussian regression model is based on the 
-Poisson-Inverse-Gaussian Distribution. 
+\subsection{Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models}{
 
-The expected value of the distribution in the regression utilizes a log-link 
+The Poisson-Inverse-Gaussian regression model is based on the
+Poisson-Inverse-Gaussian Distribution.
+
+The expected value of the distribution in the regression utilizes a log-link
 function. Thus, the mean is:
 \deqn{\mu=e^{X\beta}}
 
@@ -422,10 +445,12 @@ The variance function for the Type 1 distribution (which is the default) is:
 While the variance for the Type 2 distribution is:
 \deqn{\sigma^2=\mu+\eta\mu^2}
 
-The parameter \eqn{\eta} is estimated as the natural logarithm transformed 
+The parameter \eqn{\eta} is estimated as the natural logarithm transformed
 value, \eqn{\ln(\eta)}, to ensure that \eqn{\eta>0}.
+}
 
-## Poisson-Inverse-Gamma (PIG) Model
+\subsection{Poisson-Inverse-Gamma (PIG) Model}{
+
 The PDF of the distribution is:
 \deqn{f(x|\eta,\mu)=\frac{2\left(\mu\left(\frac{1}{\eta}+1\right)\right)
 ^{\frac{x+\frac{1}{\eta}+2}{2}}}{x!\Gamma\left(\frac{1}{\eta}+2\right)}
@@ -438,21 +463,23 @@ formulation uses the mean directly.
 
 The variance of the distribution is:
 \deqn{\sigma^2=\mu+\eta\mu^2}
+}
 
-## Poisson-Lindley (PL) Model
-The Poisson-Lindley regression is based on a compound Poisson-Lindley 
-distribution. It handles count outcomes with high levels of zero 
-observations (or other high densities at low outcome values) that standard 
-count regression methods, including the negative binomial, may struggle to 
+\subsection{Poisson-Lindley (PL) Model}{
+
+The Poisson-Lindley regression is based on a compound Poisson-Lindley
+distribution. It handles count outcomes with high levels of zero
+observations (or other high densities at low outcome values) that standard
+count regression methods, including the negative binomial, may struggle to
 adequately capture or model.
 
-The compound Probability Mass Function(PMF) for the Poisson-Lindley (PL) 
+The compound Probability Mass Function(PMF) for the Poisson-Lindley (PL)
 distribution is:
 \deqn{f(y|\theta,\lambda)=\frac{\theta^2\lambda^y(\theta+\lambda+ 
 y+1)}{(\theta+1)(\theta+\lambda)^{y+2}}}
 
-Where \eqn{\theta} and \eqn{\lambda} are distribution parameters with the 
-restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, and \eqn{y} is a 
+Where \eqn{\theta} and \eqn{\lambda} are distribution parameters with the
+restrictions that \eqn{\theta>0} and \eqn{\lambda>0}, and \eqn{y} is a
 non-negative integer.
 
 The expected value of the distribution is:
@@ -461,7 +488,7 @@ The expected value of the distribution is:
 If a log-link function is used, the mean is:
 \deqn{\mu=e^{X\beta}=\frac{\lambda(\theta+2)}{\theta(\theta+1)}}
 
-Thus, the parameter \eqn{\lambda} in the PL distribution when applied to 
+Thus, the parameter \eqn{\lambda} in the PL distribution when applied to
 regression analysis is:
 \deqn{\lambda=\frac{\mu\theta(\theta+1)}{\theta+2}}
 
@@ -477,16 +504,18 @@ And
 The variance function is defined as:
 \deqn{\sigma^2=\mu+\left(1-\frac{2}{(\theta+2)^2}\right)\mu^2}
 
-It should be noted that the p-value for the parameter `ln(theta)` in the 
-model summary is testing if the parameter `theta` is equal to a value of 1. 
-This has no practical meaning. The Likelihood-Ratio (LR) test compares the 
-Poisson-Lindley regression with a Poisson regression with the same 
-independent variables. Thus, the PR test result indicates the statistical 
-significance for the improvement in how well the model fits the data over a 
-Poisson regression. This indicates the statistical significance of the 
-`theta` parameter.
+It should be noted that the p-value for the parameter \code{ln(theta)} in the
+model summary is testing if the parameter \code{theta} is equal to a value of 1.
+This has no practical meaning. The Likelihood-Ratio (LR) test compares the
+Poisson-Lindley regression with a Poisson regression with the same
+independent variables. Thus, the PR test result indicates the statistical
+significance for the improvement in how well the model fits the data over a
+Poisson regression. This indicates the statistical significance of the
+\code{theta} parameter.
+}
 
-## Poisson-Lindley-Gamma (PLG) Model
+\subsection{Poisson-Lindley-Gamma (PLG) Model}{
+
 The Poisson-Lindley-Gamma regression is based on a compound Poisson-Lindley-
 Gamma distribution. Details of the distribution can be seen at
 \code{\link[flexCountReg]{dplindGamma}}.
@@ -498,13 +527,15 @@ The variance function is defined as:
 \deqn{\sigma^2=\mu+\left(2\alpha+1-\frac{2(1+\alpha)}
 {(\theta+2)^2}\right)\mu^2}
 
-It should be noted that the p-value for the parameters `ln(theta)` and 
-`ln(alpha)` in the model summary are testing if the parameter `theta` and 
-`alpha` are equal to a value of 1.
+It should be noted that the p-value for the parameters \code{ln(theta)} and
+\code{ln(alpha)} in the model summary are testing if the parameter \code{theta} and
+\code{alpha} are equal to a value of 1.
+}
 
-## Poisson-Lindley-Lognormal (PLL) Model
+\subsection{Poisson-Lindley-Lognormal (PLL) Model}{
+
 The Poisson-Lindley-Lognormal regression is based on a compound Poisson-
-Lindley-Lognormal distribution. Details of the distribution can be seen at 
+Lindley-Lognormal distribution. Details of the distribution can be seen at
 \code{\link[flexCountReg]{dplindLnorm}}.
 
 The mean for the regression model is:
@@ -514,31 +545,33 @@ The variance function is defined as:
 \deqn{\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}
 {2}}}+e^{\sigma^2}-1\right)\mu^2}
 
-It should be noted that the p-value for the parameters `ln(theta)` and 
-`ln(sigma)` in the model summary are testing if the parameter `theta` and 
-`sigma` are equal to a value of 1.
+It should be noted that the p-value for the parameters \code{ln(theta)} and
+\code{ln(sigma)} in the model summary are testing if the parameter \code{theta} and
+\code{sigma} are equal to a value of 1.
+}
 
-## Poisson-Weibull (PW) Model
-The Poisson-Weibull distribution uses the Weibull distribution as a mixing 
-distribution for a Poisson process. It is useful for modeling overdispersed 
-count data. The density function (probability mass function) for the 
+\subsection{Poisson-Weibull (PW) Model}{
+
+The Poisson-Weibull distribution uses the Weibull distribution as a mixing
+distribution for a Poisson process. It is useful for modeling overdispersed
+count data. The density function (probability mass function) for the
 Poisson-Weibull distribution is given by:
 \deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} 
 \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}
 \right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
-where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and 
+where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and
 \eqn{\lambda} is the mean of the Poisson distribution.
 
 For the Poisson-Weibull Regression model, the expected values is:
 \deqn{E[Y]=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
-Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is 
+Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is
 the shape parameter, and \eqn{\sigma} is the scale parameter.
 
-To ensure that the regression model predicts the mean value, the regression 
+To ensure that the regression model predicts the mean value, the regression
 utilizes:
 \deqn{\mu=\exp{X\gamma}=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
-Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a 
-vector of coefficients. 
+Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a
+vector of coefficients.
 
 This leads to:
 \deqn{\lambda=\frac{\mu}{\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}}
@@ -546,36 +579,40 @@ This leads to:
 The variance for the Poisson-Weibull regression is:
 \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}
 {\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+}
 
-## Sichel (SI) Model
+\subsection{Sichel (SI) Model}{
+
 The compound Probability Mass Function (PMF) for the Sichel distribution uses
 the formulation from Zhou et al. (2011) and Rigby et al. (2008):
 \deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y 
 K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
 
-Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with 
-\eqn{-\infty < \gamma < \infty} and \eqn{\sigma>0}, 
-\eqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, 
-\eqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
-a mean value of \eqn{\mu}, \eqn{y} is a non-negative integer, and 
-\eqn{K_j(x)} is a modified Bessel function of the third kind with order 
+Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with
+\eqn{-\infty < \gamma < \infty} and \eqn{\sigma>0},
+\eqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}},
+\eqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}},
+a mean value of \eqn{\mu}, \eqn{y} is a non-negative integer, and
+\eqn{K_j(x)} is a modified Bessel function of the third kind with order
 \eqn{j} and argument \eqn{x}.
 
 The variance of the distribution is:
 \deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)
 \mu^2}
+}
 
-## Generalized Waring (GW) Model
-The following are the versions of the PMF, mean, and variance used for the 
-Generalized Waring model. This is adjusted from the typical formulation by 
+\subsection{Generalized Waring (GW) Model}{
+
+The following are the versions of the PMF, mean, and variance used for the
+Generalized Waring model. This is adjusted from the typical formulation by
 replacing parameter \code{k} with \eqn{\mu}
 \deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}
 {y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
 \deqn{\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}}
 \deqn{\sigma^2=\frac{\alpha k(\alpha+k+\rho-1)}{(\rho-1)^2(\rho-2)}}
 
-The distribution parameters are often considered to capture the randomness 
-(parameter \deqn{\alpha}), proneness (parameter \deqn{}k), and liability 
+The distribution parameters are often considered to capture the randomness
+(parameter \deqn{\alpha}), proneness (parameter \deqn{}k), and liability
 (parameter \deqn{\rho}) of the data.
 
 If we use:
@@ -595,13 +632,15 @@ This results in a regression model where:
 \right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
 
 Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
+}
 
-## Conway-Maxwell-Poisson (COM) Model
+\subsection{Conway-Maxwell-Poisson (COM) Model}{
+
 The following is the the PMF for the COM model.
 \deqn{f(x|\lambda, \nu)=\frac{\lambda^x}{(x!)^\nu Z(\lambda,\nu)}}
 
-Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with 
-\eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing 
+Where \eqn{\lambda} and \eqn{\nu} are distribution parameters with
+\eqn{\lambda>0} and \eqn{\nu>0}, and \eqn{Z(\lambda,\nu)} is the normalizing
 constant.
 
 The normalizing constant is given by:
@@ -612,21 +651,24 @@ The mean and variance are:
 \nu))}
 \deqn{\sigma^2=\lambda \frac{\delta}{\delta \lambda} \mu}
 
-Note that the COM distribution parameter \eqn{\lambda} is solved for using 
-\eqn{\mu} and \eqn{\nu}, so the regression model provides direct predictions 
+Note that the COM distribution parameter \eqn{\lambda} is solved for using
+\eqn{\mu} and \eqn{\nu}, so the regression model provides direct predictions
 for the mean.
+}
 
-## Underreporting
-Models for underreporting combine a binary probability model (logit or 
-probit) with a count model. This is accomplished using a model for the 
-probability of crashes being reported multiplied by the estimated mean for 
-the count model, based on the observed data. This is discussed in Wood et. 
-al. (2016), Pararai et. al., (2006), and Pararai et. al., (2010). The 
+\subsection{Underreporting}{
+
+Models for underreporting combine a binary probability model (logit or
+probit) with a count model. This is accomplished using a model for the
+probability of crashes being reported multiplied by the estimated mean for
+the count model, based on the observed data. This is discussed in Wood et.
+al. (2016), Pararai et. al., (2006), and Pararai et. al., (2010). The
 underreporting model is based on:
 \deqn{\mu_{true}=\mu_{observed}\cdot P(\text{event is reported})}
 
 This allows the inference of both the true event count and the probability of
 the event being reported as a function of independent variables.
+}
 }
 
 \examples{
@@ -647,7 +689,7 @@ summary(nb2)
 # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
 # up the estimation for examples - not recommended in practice)
 pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PLN", ndraws=10)
+              data = washington_roads, family = "PLN", engine="poilog")
 summary(pln)  
 
 # Estimate an Poisson-Lognormal with underreporting (probit)
@@ -682,23 +724,23 @@ summary(gp2_model)
 Greene, W. (2008). Functional forms for the negative binomial model for count
 data. Economics Letters, 99(3), 585-590.
 
-Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression 
-model for underreported counts. Advances and applications in Statistics, 
+Pararai, M., Famoye, F., & Lee, C. (2006). Generalized Poisson regression
+model for underreported counts. Advances and applications in Statistics,
 6(3), 305-322.
 
-Pararai, M., Famoye, F., & Lee, C. (2010). Generalized Poisson-Poisson 
-mixture model for misreported counts with an application to smoking data. 
+Pararai, M., Famoye, F., & Lee, C. (2010). Generalized Poisson-Poisson
+mixture model for misreported counts with an application to smoking data.
 Journal of Data Science, 8(4), 607-617.
 
-Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework 
-for modelling overdispersed count data, including the Poisson-shifted 
-generalized inverse Gaussian distribution. Computational Statistics & Data 
+Rigby, R. A., Stasinopoulos, D. M., & Akantziliotou, C. (2008). A framework
+for modelling overdispersed count data, including the Poisson-shifted
+generalized inverse Gaussian distribution. Computational Statistics & Data
 Analysis, 53(2), 381-393.
 
-Wood, J.S., Eric T. Donnell, & Christopher J. Fariss. "A method to account 
-for and estimate underreporting in crash frequency research." Accident 
+Wood, J.S., Eric T. Donnell, & Christopher J. Fariss. "A method to account
+for and estimate underreporting in crash frequency research." Accident
 Analysis & Prevention 95 (2016): 57-66.
 
-Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data 
+Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data
 using the Sichel generalized additive models for location, scale and shape.
 }

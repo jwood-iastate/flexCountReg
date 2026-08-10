@@ -3,14 +3,14 @@
 For countreg.rp (Random Parameters) models, three methods are
 available:
 Simulated: Uses Halton draws to simulate the random
-parameters and averages the outcomes. This is a simulation-based
-approximation.
+  parameters and averages the outcomes. This is a simulation-based
+  approximation.
 Individual: Estimates observation-specific coefficients
-(conditional on observed outcomes) using Empirical Bayes. Requires the
-outcome variable to be present in data.
+  (conditional on observed outcomes) using Empirical Bayes. Requires the
+  outcome variable to be present in data.
 Exact: Uses the analytical Moment Generating Functions
-(MGFs) of the random parameter distributions to calculate the exact
-expected value. This method is faster and removes simulation error.
+  (MGFs) of the random parameter distributions to calculate the exact
+  expected value. This method is faster and removes simulation error.
 
 
 For countreg, poisLindRE, and RENB models, the
@@ -19,14 +19,14 @@ appropriate adjustments for specific families like PLN or underreporting)."><met
 For countreg.rp (Random Parameters) models, three methods are
 available:
 Simulated: Uses Halton draws to simulate the random
-parameters and averages the outcomes. This is a simulation-based
-approximation.
+  parameters and averages the outcomes. This is a simulation-based
+  approximation.
 Individual: Estimates observation-specific coefficients
-(conditional on observed outcomes) using Empirical Bayes. Requires the
-outcome variable to be present in data.
+  (conditional on observed outcomes) using Empirical Bayes. Requires the
+  outcome variable to be present in data.
 Exact: Uses the analytical Moment Generating Functions
-(MGFs) of the random parameter distributions to calculate the exact
-expected value. This method is faster and removes simulation error.
+  (MGFs) of the random parameter distributions to calculate the exact
+  expected value. This method is faster and removes simulation error.
 
 
 For countreg, poisLindRE, and RENB models, the
@@ -67,14 +67,14 @@ appropriate adjustments for specific families like PLN or underreporting)."><met
     <p>Generates predictions for the expected count (lambda) for observations.</p>
 <p>For <strong>countreg.rp</strong> (Random Parameters) models, three methods are
 available:</p><ul><li><p><strong>Simulated</strong>: Uses Halton draws to simulate the random
-parameters and averages the outcomes. This is a simulation-based
-approximation.</p></li>
+  parameters and averages the outcomes. This is a simulation-based
+  approximation.</p></li>
 <li><p><strong>Individual</strong>: Estimates observation-specific coefficients
-(conditional on observed outcomes) using Empirical Bayes. Requires the
-outcome variable to be present in <code>data</code>.</p></li>
+  (conditional on observed outcomes) using Empirical Bayes. Requires the
+  outcome variable to be present in <code>data</code>.</p></li>
 <li><p><strong>Exact</strong>: Uses the analytical Moment Generating Functions
-(MGFs) of the random parameter distributions to calculate the exact
-expected value. This method is faster and removes simulation error.</p></li>
+  (MGFs) of the random parameter distributions to calculate the exact
+  expected value. This method is faster and removes simulation error.</p></li>
 </ul><p>For <strong>countreg</strong>, <strong>poisLindRE</strong>, and <strong>RENB</strong> models, the
 function calculates the expected value \(\mu = \exp(X\beta)\) (with
 appropriate adjustments for specific families like PLN or underreporting).</p>
@@ -99,22 +99,22 @@ appropriate adjustments for specific families like PLN or underreporting).</p>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>optional arguments passed to the function. This includes <code>method</code>.</p></dd>
+<dd><p>optional arguments passed to the function. This includes `method`.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A numeric vector of predicted expected counts for each observation
-in the provided data. If no data is provided, the predictions for the data
-used in estimating the model are provided.</p>
+ in the provided data. If no data is provided, the predictions for the data
+ used in estimating the model are provided.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
-    <p>optional parameter <code>newdata</code>: a dataframe that has all of the variables
-in the <code>formula</code> and <code>rpar_formula</code>.</p>
-<p>optional parameter <code>method</code>: Only valid for random parameters models
-(<code>countreg.rp</code>). Options include <code>Simulated</code> (default),
-<code>Individual</code>, or <code>Exact</code>.</p>
+    <p>optional parameter `newdata`: a dataframe that has all of the variables
+  in the <code>formula</code> and <code>rpar_formula</code>.</p>
+<p>optional parameter `method`: Only valid for random parameters models
+  (`countreg.rp`). Options include <code>Simulated</code> (default),
+  <code>Individual</code>, or <code>Exact</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

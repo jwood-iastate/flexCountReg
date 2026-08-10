@@ -156,10 +156,10 @@ function.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>dpoisweibull gives the density, ppoisweibull gives the distribution
-function, qpoisweibull gives the quantile function, and rpoisweibull
-generates random  deviates.</p>
+ function, qpoisweibull gives the quantile function, and rpoisweibull
+ generates random  deviates.</p>
 <p>The length of the result is determined by n for rpoisweibull, and is the
-maximum of the lengths of the numerical arguments for the other functions.</p>
+ maximum of the lengths of the numerical arguments for the other functions.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -174,6 +174,7 @@ $$P(y|\lambda,\alpha,\sigma) =
   e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx$$
 where \(f(x| \alpha, \sigma)\) is the PDF of the Weibull distribution and
 \(\lambda\) is the mean of the Poisson distribution.</p>
+
 <p><code>dpoisweibull</code> computes the density of the Poisson-Weibull distribution.</p>
 <p><code>ppoisweibull</code> computes the distribution function of the Poisson-Weibull
 distribution.</p>
@@ -195,7 +196,7 @@ indirectly.</p>
 <span class="r-in"><span><span class="fu">qpoisweibull</span><span class="op">(</span><span class="fl">0.95</span>, lambda<span class="op">=</span><span class="fl">1.5</span>, mean_value<span class="op">=</span><span class="fl">1.5</span>, sd_value<span class="op">=</span><span class="fl">2</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 4</span>
 <span class="r-in"><span><span class="fu">rpoisweibull</span><span class="op">(</span><span class="fl">10</span>, lambda<span class="op">=</span><span class="fl">1.5</span>, mean_value<span class="op">=</span><span class="fl">1.5</span>, sd_value<span class="op">=</span><span class="fl">2</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0 0 0 1 1 0 5 2 0 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 1 1 1 8 3 0 1 2 1 2</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

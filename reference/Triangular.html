@@ -79,12 +79,12 @@ max differences from the mean (if the difference is the same).</p></dd>
 
 <dt id="arg-upper">upper<a class="anchor" aria-label="anchor" href="#arg-upper"></a></dt>
 <dd><p>single value or vector for the upper limit of the distribution
-(must be used with <code>lower</code>).</p></dd>
+(must be used with `lower`).</p></dd>
 
 
 <dt id="arg-lower">lower<a class="anchor" aria-label="anchor" href="#arg-lower"></a></dt>
 <dd><p>single value or vector for the lower limit of the distribution
-(must be used with <code>upper</code>).</p></dd>
+(must be used with `upper`).</p></dd>
 
 
 <dt id="arg-log">log<a class="anchor" aria-label="anchor" href="#arg-log"></a></dt>
@@ -126,6 +126,7 @@ result. Only the first elements of the logical arguments are used.</p>
     <p>The Triangle Distribution is defined by three points: a (minimum), b
 (maximum), and c (mode), where the density is zero outside the interval \([a,
 b]\), increases linearly from a to c, and decreases linearly from c to b.</p>
+
 <p><code>dtri</code> computes the density (PDF) of the Triangle Distribution.</p>
 <p><code>ptri</code> computes the CDF of the Triangle Distribution.</p>
 <p><code>qtri</code> computes the quantile function of the Triangle Distribution.</p>
@@ -145,10 +146,10 @@ minimum and maximum values of the distribution.</p>
 <span class="r-in"><span><span class="fu">qtri</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">0.5</span>, <span class="fl">0.9</span>, <span class="fl">0.95</span><span class="op">)</span>, mode <span class="op">=</span> <span class="fl">3</span>, upper <span class="op">=</span> <span class="fl">9</span>, lower <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.264911 3.203449 4.101021 6.809110 7.450807</span>
 <span class="r-in"><span><span class="fu">rtri</span><span class="op">(</span><span class="fl">30</span>, mode <span class="op">=</span> <span class="fl">5</span>, sigma <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 4.934370 3.629355 4.439698 5.416546 5.287402 5.070712 3.898560 6.250745</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] 3.900524 6.016526 4.159832 6.854721 6.108926 5.860846 5.510417 2.782856</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [17] 5.093303 6.697108 6.880074 3.089747 4.130561 5.165116 2.665190 6.513821</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [25] 3.662203 5.414102 4.788790 3.350730 4.718496 4.083242</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 2.135072 4.378048 5.335511 6.013633 5.790681 6.866653 6.620688 3.408051</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [9] 5.433174 5.064632 4.612323 7.238303 5.601460 5.723490 4.945904 6.248527</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [17] 5.754126 4.487332 6.167929 5.380020 2.593640 4.617835 5.926080 5.770316</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [25] 6.161602 6.317251 5.748056 4.732073 3.766537 3.937007</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

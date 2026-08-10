@@ -41,9 +41,10 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 
 - alpha:
 
-  single value or vector of values for the `alpha` parameter of the
+  single value or vector of values for the \`alpha\` parameter of the
   gamma distribution in the special case that the mean = 1 and the
-  variance = `alpha` (the values for `alpha` have to be greater than 0).
+  variance = \`alpha\` (the values for \`alpha\` have to be greater than
+  0).
 
 - log:
 
@@ -110,22 +111,15 @@ x+1,2-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)} \right) +
 Where \\\theta\\ is a distribution parameter from the Poisson-Lindley
 distribution with the restrictions that \\\theta\>0\\, \\\alpha\\ is a
 parameter for the gamma distribution with the restriction \\\alpha\>0\\,
-\\mu\\ is the mean value, and \\x\\ is a non-negative integer, and
-\$\$U(a,b,z)\$\$ is the Tricomi's solution to the confluent
-hypergeometric function - also known as the confluent hypergeometric
-function of the second kind
+\\\mu\\ is the mean value, and \\x\\ is a non-negative integer, and
+\$\$U(a,b,z)\$\$ is the Tricomi’s confluent hypergeometric function to -
+also known as the confluent hypergeometric function of the second kind
 
 The expected value of the distribution is: \$\$E\[x\]=\mu\$\$
 
-The variance is: \$\$\sigma^2=\mu+\left(2\alpha+1-\frac{2(1+\alpha)}
-{(\theta+2)^2}\right)\mu^2\$\$
-
-While the distribution can be computed using the confluent
-hypergeometric function, that function has limitations in value it can
-be computed at (along with accuracy, in come cases). For this reason,
-the function uses Halton draws to perform simulation over the gamma
-distribution to solve the integral. This is sometimes more
-computationally efficient as well.
+The variance is:
+\$\$\sigma^2=\mu+\left(\left(1+\frac{1}{\alpha}\right)\left(2-\frac{2}
+{(\theta+2)^2}\right)-1\right)\mu^2\$\$
 
 ## Examples
 

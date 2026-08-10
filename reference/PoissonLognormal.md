@@ -20,7 +20,7 @@ ppLnorm(
 
 qpLnorm(p, mean = 1, sigma = 1, ndraws = 1500)
 
-rpLnorm(n, mean = 1, sigma = 1, ndraws = 1500)
+rpLnorm(n, mean = 1, sigma = 1)
 ```
 
 ## Arguments
@@ -31,8 +31,8 @@ rpLnorm(n, mean = 1, sigma = 1, ndraws = 1500)
 
 - mean:
 
-  numeric value or vector of mean values for the distribution (the
-  values have to be greater than 0).
+  numeric value or vector of mean values (not the expected value) for
+  the distribution (the values have to be greater than 0).
 
 - sigma:
 
@@ -118,6 +118,7 @@ ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
 #> [8] 0.9863234
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
 #> [1] 0 0 0 5 7
-rpLnorm(30, mean=0.75,  sigma=2, ndraws=10)
-#> Error in rpLnorm(30, mean = 0.75, sigma = 2, ndraws = 10): unused argument (ndraws = 10)
+rpLnorm(30, mean=0.75,  sigma=2)
+#>  [1]  0  2  4 65  1  1  0  3  0  0  1  4  0  1 16  0  0  0  0  1  0  3  0  1  0
+#> [26]  6 76  0  0  1
 ```

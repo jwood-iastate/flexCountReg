@@ -30,8 +30,8 @@ rcom(n, mu = NULL, lambda = 1, nu = 1)
 - lambda:
 
   optional. Numeric value or vector of values for the rate parameter of
-  the distribution (the values have to be greater than 0). If `mu` is
-  provided, `lambda` is ignored.
+  the distribution (the values have to be greater than 0). If \`mu\` is
+  provided, \`lambda\` is ignored.
 
 - nu:
 

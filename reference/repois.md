@@ -101,7 +101,7 @@ summary(repois.mod)
 #>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
 #> 
 #>  Method:  REPoisson 
-#> Iterations:  7 
+#> Iterations:  6 
 #> Convergence:  successful convergence  
 #> Log-likelihood:  -271.7189 
 #> 
@@ -109,12 +109,12 @@ summary(repois.mod)
 #> # A tibble: 7 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.82        1.26     -7.81     0        -12.3       -7.35 
-#> 2 lnaadt              1.03        0.145     7.07     0          0.741      1.31 
-#> 3 speed50            -0.919       0.292    -3.14     0.002     -1.49      -0.346
-#> 4 ShouldWidth04      -0.486       0.245    -1.98     0.048     -0.967     -0.005
-#> 5 AADTover10k        -0.87        0.476    -1.83     0.068     -1.80       0.063
-#> 6 lnalpha           -13.8         2.53     -5.46     0        -18.8       -8.85 
+#> 1 (Intercept)        -9.82        1.26     -7.80     0        -12.3       -7.35 
+#> 2 lnaadt              1.03        0.144     7.14     0          0.745      1.31 
+#> 3 speed50            -0.919       0.291    -3.16     0.002     -1.49      -0.349
+#> 4 ShouldWidth04      -0.486       0.252    -1.93     0.054     -0.981      0.009
+#> 5 AADTover10k        -0.87        0.467    -1.86     0.062     -1.78       0.045
+#> 6 lnalpha           -13.8         0.003 -5164.       0        -13.8      -13.8  
 #> 7 lnlength (Offset…   1          NA        NA       NA         NA         NA    
 # }
 ```

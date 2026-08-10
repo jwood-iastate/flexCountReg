@@ -39,7 +39,7 @@ predict(object, newdata = NULL, ...)
 
 - ...:
 
-  optional arguments passed to the function. This includes `method`.
+  optional arguments passed to the function. This includes \`method\`.
 
 ## Value
 
@@ -49,12 +49,12 @@ used in estimating the model are provided.
 
 ## Note
 
-optional parameter `newdata`: a dataframe that has all of the variables
-in the `formula` and `rpar_formula`.
+optional parameter \`newdata\`: a dataframe that has all of the
+variables in the `formula` and `rpar_formula`.
 
-optional parameter `method`: Only valid for random parameters models
-(`countreg.rp`). Options include `Simulated` (default), `Individual`, or
-`Exact`.
+optional parameter \`method\`: Only valid for random parameters models
+(\`countreg.rp\`). Options include `Simulated` (default), `Individual`,
+or `Exact`.
 
 ## References
 

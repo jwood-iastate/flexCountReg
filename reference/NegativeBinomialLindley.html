@@ -78,9 +78,9 @@ the distribution (the values have to be greater than 0).</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>single value or vector of values for the <code>alpha</code> parameter
+<dd><p>single value or vector of values for the `alpha` parameter
 of the gamma distribution in the special case that the mean = 1 and
-the variance = <code>alpha</code> (the values for <code>alpha</code> have to be greater
+the variance = `alpha` (the values for `alpha` have to be greater
 than 0).</p></dd>
 
 
@@ -112,16 +112,17 @@ otherwise, \(P[X&gt;x]\).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>dplindGamma gives the density, pplindGamma gives the distribution
-function, qplindGamma gives the quantile function, and rplindGamma generates
-random  deviates.</p>
+ function, qplindGamma gives the quantile function, and rplindGamma generates
+ random  deviates.</p>
 <p>The length of the result is determined by n for rplindGamma, and is the
-maximum of the lengths of the numerical arguments for the other functions.</p>
+ maximum of the lengths of the numerical arguments for the other functions.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The Poisson-Lindley-Gamma is a count distribution that captures high
 densities for small integer values and provides flexibility for heavier
 tails.</p>
+
 <p><code>dplindGamma</code> computes the density (PDF) of the
 Poisson-Lindley-Gamma Distribution.</p>
 <p><code>pplindGamma</code> computes the CDF of the Poisson-Lindley-Gamma
@@ -153,21 +154,15 @@ $$</p>
 <p>Where \(\theta\) is a distribution parameter from the Poisson-Lindley
 distribution with the restrictions that \(\theta&gt;0\), \(\alpha\) is
 a parameter for the gamma distribution with the restriction
-\(\alpha&gt;0\), \(mu\) is the mean value, and \(x\) is a
-non-negative integer, and $$U(a,b,z)$$ is the Tricomi's solution to
-the confluent hypergeometric function - also known as the confluent
+\(\alpha&gt;0\), \(\mu\) is the mean value, and \(x\) is a
+non-negative integer, and $$U(a,b,z)$$ is the Tricomi’s confluent
+hypergeometric function to - also known as the confluent
 hypergeometric function of the second kind</p>
 <p>The expected value of the distribution is:
 $$E[x]=\mu$$</p>
 <p>The variance is:
-$$\sigma^2=\mu+\left(2\alpha+1-\frac{2(1+\alpha)}
-{(\theta+2)^2}\right)\mu^2$$</p>
-<p>While the distribution can be computed using the confluent
-hypergeometric function, that function has limitations in value it can
-be computed at (along with accuracy, in come cases). For this reason,
-the function uses Halton draws to perform simulation over the gamma
-distribution to solve the integral. This is sometimes more
-computationally efficient as well.</p>
+$$\sigma^2=\mu+\left(\left(1+\frac{1}{\alpha}\right)\left(2-\frac{2}
+{(\theta+2)^2}\right)-1\right)\mu^2$$</p>
     </div>
 
     <div class="section level2">

@@ -33,7 +33,7 @@ halton_dists(dist, mean, sdev, hdraw = NULL, ndraws = 500)
 
 - ndraws:
 
-  The number of random draws to generate. This is only used if `hdraw`
+  The number of random draws to generate. This is only used if \`hdraw\`
   is not provided.
 
 ## Value
@@ -48,11 +48,11 @@ distribution. The function can be used to generate random draws for use
 in random parameter models, generating Halton-based pseudo-random draws
 for specified distributions, etc.
 
-The distributions generated all use the `mean` (\$\$\mu\$\$) and `sdev`
-(\$\$\sigma\$\$) parameters to generate the random draws. The density
-functions for the distributions are as follows: The Normal distribution
-is: \\f(x) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left(-\frac{(x -
-\mu)^2}{2\sigma^2}\right)\\
+The distributions generated all use the \`mean\` (\$\$\mu\$\$) and
+\`sdev\` (\$\$\sigma\$\$) parameters to generate the random draws. The
+density functions for the distributions are as follows: The Normal
+distribution is: \\f(x) = \frac{1}{\sqrt{2\pi\sigma^2}}
+\exp\left(-\frac{(x - \mu)^2}{2\sigma^2}\right)\\
 
 The Lognormal distribution is: \\f(x) = \frac{1}{x\sigma\sqrt{2\pi}}
 \exp\left(-\frac{(\log(x) - \mu)^2}{2\sigma^2}\right)\\

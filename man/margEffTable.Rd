@@ -21,41 +21,43 @@ margEffTable(
 )
 }
 \arguments{
-\item{object}{A fitted \code{flexCountReg} object.}
+\item{object}{A fitted `flexCountReg` object.}
 
 \item{data}{Optional data frame. Defaults to the data used to fit the model.}
 
 \item{vars}{Optional character vector of variable names to evaluate. If
-\code{NULL}, the function uses the non-response variables appearing in the
-model formula that are present in \code{data}.}
+`NULL`, the function uses the non-response variables appearing in the
+model formula that are present in `data`.}
 
 \item{measure}{Character scalar. One of:
 \describe{
-\item{"auto"}{Continuous variables receive AMEs; indicator variables
-receive pseudo-elasticities (or discrete changes if \code{indicator = "discrete_change"}).}
-\item{"ame"}{Compute average marginal effects for continuous variables.}
-\item{"elasticity"}{Compute elasticities for continuous variables.
-Indicator variables receive pseudo-elasticities (or discrete changes if
-\code{indicator = "discrete_change"}).}
+  \item{"auto"}{Continuous variables receive AMEs; indicator variables
+  receive pseudo-elasticities (or discrete changes if `indicator =
+  "discrete_change"`).}
+  \item{"ame"}{Compute average marginal effects for continuous variables.}
+  \item{"elasticity"}{Compute elasticities for continuous variables.
+  Indicator variables receive pseudo-elasticities (or discrete changes if
+  `indicator = "discrete_change"`).}
 }}
 
 \item{indicator}{Character scalar. For indicator variables, return
-\code{"pseudo_elasticity"} (default) or \code{"discrete_change"}.}
+`"pseudo_elasticity"` (default) or `"discrete_change"`.}
 
-\item{se}{Character scalar. Standard error method: \code{"delta"} (default) or
-\code{"bootstrap"}.}
+\item{se}{Character scalar. Standard error method: `"delta"` (default) or
+`"bootstrap"`.}
 
-\item{bootstraps}{Integer. Number of bootstrap replications when \code{se = "bootstrap"}.}
+\item{bootstraps}{Integer. Number of bootstrap replications when `se =
+"bootstrap"`.}
 
 \item{pred_method}{Optional prediction method forwarded to
-\code{predict.flexCountReg()}. For random-parameters models, this is commonly
-\code{"Exact"} or \code{"Simulated"}. If \code{NULL}, the function uses \code{"Exact"} for
+`predict.flexCountReg()`. For random-parameters models, this is commonly
+`"Exact"` or `"Simulated"`. If `NULL`, the function uses `"Exact"` for
 random-parameters models when possible.}
 
 \item{confint_level}{Numeric scalar between 0 and 1. Confidence level for
 the confidence interval. Default is 0.95.}
 
-\item{tableType}{Character scalar. One of \code{"tibble"}, \code{"gt"}, or \code{"latex"}.}
+\item{tableType}{Character scalar. One of `"tibble"`, `"gt"`, or `"latex"`.}
 
 \item{digits}{Integer. Number of digits to round in the returned table.}
 
@@ -64,27 +66,28 @@ bootstrap resampling. If supplied, bootstrap samples are drawn at the
 cluster level. If omitted, the function attempts row-level bootstrap
 resampling.}
 
-\item{...}{Additional arguments passed to \code{predict.flexCountReg()}.}
+\item{...}{Additional arguments passed to `predict.flexCountReg()`.}
 }
 \value{
-A table object of the type requested by \code{tableType}. For
-\code{"tibble"}, the returned object also carries an \code{effect_info} attribute with
-metadata about the calculation.
+A table object of the type requested by `tableType`. For
+  `"tibble"`, the returned object also carries an `effect_info` attribute with
+  metadata about the calculation.
 }
 \description{
 Compute average marginal effects (AMEs), elasticities, or pseudo-elasticities
-for fitted \code{flexCountReg} objects. Standard errors are computed using either
+for fitted `flexCountReg` objects. Standard errors are computed using either
 the delta method or a bootstrap, and the results can be returned as a tibble,
 a gt table, or a LaTeX table.
 }
 \details{
 Continuous variables are handled by numerical differentiation on the
 expected-response scale. Indicator variables are handled by discrete changes
-(or pseudo-elasticities, depending on \code{indicator}).
+(or pseudo-elasticities, depending on `indicator`).
+
 
 The function works on the expected-response scale and is intended to be
-compatible with all fitted \code{flexCountReg} model types, provided that
-\code{predict.flexCountReg()} can generate predictions for the model.
+compatible with all fitted `flexCountReg` model types, provided that
+`predict.flexCountReg()` can generate predictions for the model.
 
 For continuous regressors, the average marginal effect is computed using a
 central finite difference:
@@ -99,7 +102,7 @@ E_j = \frac{1}{n}\sum_{i=1}^n \left(\frac{x_{ij}}{\mu_i}\frac{\partial \mu_i}{\p
 }
 
 For indicator variables, the function computes a discrete change between the
-observed baseline and a switched value. If \code{indicator = "pseudo_elasticity"},
+observed baseline and a switched value. If `indicator = "pseudo_elasticity"`,
 the result is reported as a percent change relative to the baseline.
 }
 \examples{

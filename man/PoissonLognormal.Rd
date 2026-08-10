@@ -21,13 +21,13 @@ ppLnorm(
 
 qpLnorm(p, mean = 1, sigma = 1, ndraws = 1500)
 
-rpLnorm(n, mean = 1, sigma = 1, ndraws = 1500)
+rpLnorm(n, mean = 1, sigma = 1)
 }
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{mean}{numeric value or vector of mean values for the distribution (the
-values have to be greater than 0).}
+\item{mean}{numeric value or vector of mean values (not the expected value)
+for the distribution (the values have to be greater than 0).}
 
 \item{sigma}{single value or vector of values for the sigma parameter of the
 lognormal distribution (the values have to be greater than 0).}
@@ -50,12 +50,12 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dpLnorm gives the density, ppLnorm gives the distribution
-function, qpLnorm gives the quantile function, and rpLnorm generates
-random  deviates.
+dpLnorm gives the density, ppLnorm gives the distribution 
+ function, qpLnorm gives the quantile function, and rpLnorm generates
+ random  deviates.
 
-The length of the result is determined by n for rpLnorm, and is the
-maximum of the lengths of the numerical arguments for the other functions.
+ The length of the result is determined by n for rpLnorm, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide density, distribution function, quantile function,
@@ -91,6 +91,6 @@ to solve the integral.
 dpLnorm(0, mean=0.75, sigma=2, ndraws=10)
 ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
-rpLnorm(30, mean=0.75,  sigma=2, ndraws=10)
+rpLnorm(30, mean=0.75,  sigma=2)
 
 }

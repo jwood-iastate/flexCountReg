@@ -39,12 +39,12 @@ otherwise, \eqn{P[X>x]}.}
 \item{n}{the number of random numbers to generate.}
 }
 \value{
-dgp1 gives the density, pgp1 gives the distribution
-function, qgp1 gives the quantile function, and rgp1 generates random
-deviates.
+dgp1 gives the density, pgp1 gives the distribution 
+ function, qgp1 gives the quantile function, and rgp1 generates random 
+ deviates.
 
-The length of the result is determined by n for rgp1, and is the
-maximum of the lengths of the numerical arguments for the other functions.
+The length of the result is determined by n for rgp1, and is the 
+ maximum of the lengths of the numerical arguments for the other functions.
 }
 \description{
 These functions provide the density function, distribution function,
@@ -72,17 +72,17 @@ f(y|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
 
 Where \eqn{\phi} is a scale parameter with the restriction that
 \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
-integer. This formulation uses the mean directly.
+integer. This formulation uses the mean directly. 
 
 The variance of the GP-1 distribution is:
 \deqn{\sigma^2=(1+\phi)^2 \mu}
 
-If \eqn{\phi>0}, the distribution is overdispersed. If \eqn{\phi=0}, the
-distribution is equidispersed. If \eqn{\phi<0}, the distribution is
+If \eqn{\phi>0}, the distribution is overdispersed. If \eqn{\phi=0}, the 
+distribution is equidispersed. If \eqn{\phi<0}, the distribution is 
 underdispersed.
 
-Furthermore, \eqn{\phi>-1} is required for this distribution. When
-\eqn{\phi<0}, there is also a maximum value of support for the integar value
+Furthermore, \eqn{\phi>-1} is required for this distribution. When 
+\eqn{\phi<0}, there is also a maximum value of support for the integar value 
 \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
 }
 \examples{
@@ -93,10 +93,10 @@ rgp1(30, mu=0.75, phi=1.5)
 
 }
 \references{
-Consul, PoC, and Felix Famoye. "Generalized Poisson regression model."
-Communications in Statistics-Theory and Methods 21.1 (1992): 89-109.
-
-Zamani, Hossein, and Noriszura Ismail. "Functional form for the generalized
-Poisson regression model." Communications in Statistics-Theory and Methods
-41.20 (2012): 3666-3675.
+Consul, PoC, and Felix Famoye. "Generalized Poisson regression model." 
+ Communications in Statistics-Theory and Methods 21.1 (1992): 89-109.
+ 
+ Zamani, Hossein, and Noriszura Ismail. "Functional form for the generalized 
+ Poisson regression model." Communications in Statistics-Theory and Methods 
+ 41.20 (2012): 3666-3675.
 }

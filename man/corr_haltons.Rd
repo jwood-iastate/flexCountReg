@@ -53,7 +53,7 @@ distribution. Default is Inf.}
 }
 \value{
 A matrix with \code{N} columns and \code{ndraws} rows containing the
-simulated values for the correlated random variables.
+  simulated values for the correlated random variables.
 }
 \description{
 This function generates \code{N} correlated random variables using Halton or

@@ -43,12 +43,12 @@ no bootstrapping is performed.}
 \item{offset}{an optional offset term provided as a string.}
 }
 \value{
-An object of class \code{countreg} which is a list with the following components:
+An object of class `countreg` which is a list with the following components:
 \itemize{
-\item model: the fitted model object.
-\item data: the data frame used to fit the model.
-\item call: the matched call.
-\item formula: the formula used to fit the model.
+ \item model: the fitted model object.
+ \item data: the data frame used to fit the model.
+ \item call: the matched call.
+ \item formula: the formula used to fit the model.
 }
 }
 \description{

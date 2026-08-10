@@ -58,6 +58,7 @@ Generalized Waring distribution.
 The Generalized Waring distribution is a three-parameter count distribution
 used to model overdispersed count data.
 
+
 \code{dgwar} computes the probability mass function (PMF) of the
 Generalized Waring distribution.
 

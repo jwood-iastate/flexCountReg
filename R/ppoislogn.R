@@ -43,6 +43,10 @@
 #'
 #' The expected value of the distribution is:
 #' \deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
+#' 
+#' The variance for the distribution is:
+#' \deqn{V[Y]=E[Y]+\left(e^{\sigma^2/2}-1\right)E[Y]^2}
+#' 
 #' Halton draws are used to perform simulation over the lognormal distribution
 #' to solve the integral.
 #' 

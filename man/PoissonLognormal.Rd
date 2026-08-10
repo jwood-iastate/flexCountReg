@@ -26,8 +26,9 @@ rpLnorm(n, mean = 1, sigma = 1)
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{mean}{numeric value or vector of mean values (not the expected value)
-for the distribution (the values have to be greater than 0).}
+\item{mean}{numeric value or vector of mean values (not the expected value). 
+This is the mean for the Poisson portion of the distribution. Note that
+the mean values have to be greater than 0.}
 
 \item{sigma}{single value or vector of values for the sigma parameter of the
 lognormal distribution (the values have to be greater than 0).}
@@ -84,6 +85,10 @@ restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 
 The expected value of the distribution is:
 \deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
+
+The variance for the distribution is:
+\deqn{V[Y]=E[Y]+\left(e^{\sigma^2/2}-1\right)E[Y]^2}
+
 Halton draws are used to perform simulation over the lognormal distribution
 to solve the integral.
 }

@@ -157,15 +157,15 @@ margEffTable(nb2, tableType = "tibble")
 #> Method: delta 
 #> 
 #>         term variable_type           effect_metric estimate std_error t_value
-#>       lnaadt    continuous Average marginal effect    0.423     0.033  12.710
-#>     lnlength    continuous Average marginal effect    0.394     0.038  10.241
+#>       lnaadt    continuous Average marginal effect    0.423     0.034  12.551
+#>     lnlength    continuous Average marginal effect    0.394     0.039  10.203
 #>      speed50     indicator   Pseudo-elasticity (%)  -36.701     6.759  -5.430
-#>  AADT10kplus     indicator   Pseudo-elasticity (%)  124.032    29.366   4.224
+#>  AADT10kplus     indicator   Pseudo-elasticity (%)  124.032    29.632   4.186
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
-#>        0 ***    0.358    0.489  1501                    NA
+#>        0 ***    0.357    0.490  1501                    NA
 #>        0 ***    0.318    0.469  1501                    NA
-#>        0 ***  -49.950  -23.453  1501                    NA
-#>        0 ***   66.475  181.588  1501                    NA
+#>        0 ***  -49.949  -23.454  1501                    NA
+#>        0 ***   65.955  182.109  1501                    NA
 margEffTable(nb2, tableType = "gt")
 
 

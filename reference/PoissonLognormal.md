@@ -119,6 +119,5 @@ ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
 #> [1] 0 0 0 5 7
 rpLnorm(30, mean=0.75,  sigma=2, ndraws=10)
-#>  [1]  0  0  0  2  2  0 10  3  0  0  0  0  0  1  1  0  0  3  0  2  0  6  2  2  1
-#> [26]  0  1  5  6  0
+#> Error in rpLnorm(30, mean = 0.75, sigma = 2, ndraws = 10): unused argument (ndraws = 10)
 ```

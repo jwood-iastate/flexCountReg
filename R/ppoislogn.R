@@ -8,8 +8,9 @@
 #' @param q quantile or a vector of quantiles.
 #' @param p probability or a vector of probabilities.
 #' @param n the number of random numbers to generate.
-#' @param mean numeric value or vector of mean values (not the expected value)
-#'  for the distribution (the values have to be greater than 0).
+#' @param mean numeric value or vector of mean values (not the expected value). 
+#'  This is the mean for the Poisson portion of the distribution. Note that
+#'  the mean values have to be greater than 0.
 #' @param sigma single value or vector of values for the sigma parameter of the
 #'   lognormal distribution (the values have to be greater than 0).
 #' @param ndraws the number of Halton draws to use for the integration.

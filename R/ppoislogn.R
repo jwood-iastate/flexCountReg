@@ -8,8 +8,9 @@
 #' @param q quantile or a vector of quantiles.
 #' @param p probability or a vector of probabilities.
 #' @param n the number of random numbers to generate.
-#' @param mean numeric value or vector of mean values (not the expected value)
-#'  for the distribution (the values have to be greater than 0).
+#' @param mean numeric value or vector of mean values (not the expected value). 
+#'  This is the mean for the Poisson portion of the distribution. Note that
+#'  the mean values have to be greater than 0.
 #' @param sigma single value or vector of values for the sigma parameter of the
 #'   lognormal distribution (the values have to be greater than 0).
 #' @param ndraws the number of Halton draws to use for the integration.
@@ -44,6 +45,10 @@
 #'
 #' The expected value of the distribution is:
 #' \deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
+#' 
+#' The variance for the distribution is:
+#' \deqn{V[Y]=E[Y]+\left(e^{\sigma^2/2}-1\right)E[Y]^2}
+#' 
 #' Halton draws are used to perform simulation over the lognormal distribution
 #' to solve the integral if the engine is set to "halton". The poilog package is 
 #' used to solve the integral if the engine is set to "poilog".

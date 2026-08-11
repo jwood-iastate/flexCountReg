@@ -7,7 +7,15 @@ Distribution
 ## Usage
 
 ``` r
-dpLnorm(x, mean = 1, sigma = 1, ndraws = 1500, log = FALSE, hdraws = NULL)
+dpLnorm(
+  x,
+  mean = 1,
+  sigma = 1,
+  ndraws = 1500,
+  log = FALSE,
+  hdraws = NULL,
+  engine = c("halton", "poilog")
+)
 
 ppLnorm(
   q,
@@ -15,10 +23,11 @@ ppLnorm(
   sigma = 1,
   ndraws = 1500,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  engine = c("halton", "poilog")
 )
 
-qpLnorm(p, mean = 1, sigma = 1, ndraws = 1500)
+qpLnorm(p, mean = 1, sigma = 1, ndraws = 1500, engine = c("halton", "poilog"))
 
 rpLnorm(n, mean = 1, sigma = 1)
 ```
@@ -51,6 +60,11 @@ rpLnorm(n, mean = 1, sigma = 1)
 - hdraws:
 
   and optional vector of Halton draws to use for the integration.
+
+- engine:
+
+  the engine to use for the integration. Options include "halton" which
+  uses Halton draws or "poilog" which uses the poilog package.
 
 - q:
 
@@ -111,18 +125,26 @@ The variance for the distribution is:
 \$\$V\[Y\]=E\[Y\]+\left(e^{\sigma^2/2}-1\right)E\[Y\]^2\$\$
 
 Halton draws are used to perform simulation over the lognormal
-distribution to solve the integral.
+distribution to solve the integral if the engine is set to "halton". The
+poilog package is used to solve the integral if the engine is set to
+"poilog".
 
 ## Examples
 
 ``` r
 dpLnorm(0, mean=0.75, sigma=2, ndraws=10)
 #> [1] 0.5271804
+dpLnorm(0, mean=0.75, sigma=2, engine="poilog")
+#> [1] 0.4609574
 ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
-#> [1] 0.5271804 0.7245134 0.8159930 0.8646682 0.9165510 0.9516880 0.9777184
-#> [8] 0.9863234
+#> Warning: longer argument not a multiple of length of shorter
+#> Warning: longer argument not a multiple of length of shorter
+#> Warning: longer argument not a multiple of length of shorter
+#> Warning: longer argument not a multiple of length of shorter
+#> Warning: longer argument not a multiple of length of shorter
+#> [1] 5.271804 1.871668 3.165818 1.960024 1.131571 1.613484 1.042726 1.042726
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
-#> [1] 0 0 0 5 7
+#> [1] 0 0 0 0 0
 rpLnorm(30, mean=0.75,  sigma=2)
 #>  [1]  0  2  4 65  1  1  0  3  0  0  1  4  0  1 16  0  0  0  0  1  0  3  0  1  0
 #> [26]  6 76  0  0  1

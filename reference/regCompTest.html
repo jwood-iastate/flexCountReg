@@ -119,13 +119,13 @@ fitted models directly and uses the model with the larger log-likelihood as
 the base model for the LR test.</p>
 <p>The function performs the following steps for the single-model
 workflow:</p><ol><li><p>Fits the base model, either a Poisson regression or another specified
-  model.</p></li>
+model.</p></li>
 <li><p>Computes the log-likelihoods of the provided model and the base
-  model.</p></li>
+model.</p></li>
 <li><p>Calculates the AIC and BIC for both models.</p></li>
 <li><p>Conducts a Likelihood Ratio test to compare the fitted model against
-  the estimated base model when the fitted model has more parameters than
-  the base model.</p></li>
+the estimated base model when the fitted model has more parameters than
+the base model.</p></li>
 <li><p>Computes McFadden's Pseudo R^2.</p></li>
 </ol><p>For the two-model workflow, the function compares the two fitted models
 directly. The model with the larger log-likelihood is treated as the base

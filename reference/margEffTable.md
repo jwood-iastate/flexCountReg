@@ -1,7 +1,7 @@
 # Marginal Effects, Elasticities, and Pseudo-Elasticities for flexCountReg Models
 
 Compute average marginal effects (AMEs), elasticities, or
-pseudo-elasticities for fitted \`flexCountReg\` objects. Standard errors
+pseudo-elasticities for fitted `flexCountReg` objects. Standard errors
 are computed using either the delta method or a bootstrap, and the
 results can be returned as a tibble, a gt table, or a LaTeX table.
 
@@ -29,7 +29,7 @@ margEffTable(
 
 - object:
 
-  A fitted \`flexCountReg\` object.
+  A fitted `flexCountReg` object.
 
 - data:
 
@@ -37,9 +37,9 @@ margEffTable(
 
 - vars:
 
-  Optional character vector of variable names to evaluate. If \`NULL\`,
+  Optional character vector of variable names to evaluate. If `NULL`,
   the function uses the non-response variables appearing in the model
-  formula that are present in \`data\`.
+  formula that are present in `data`.
 
 - measure:
 
@@ -48,8 +48,8 @@ margEffTable(
   "auto"
 
   :   Continuous variables receive AMEs; indicator variables receive
-      pseudo-elasticities (or discrete changes if \`indicator =
-      "discrete_change"\`).
+      pseudo-elasticities (or discrete changes if
+      `indicator = "discrete_change"`).
 
   "ame"
 
@@ -58,28 +58,29 @@ margEffTable(
   "elasticity"
 
   :   Compute elasticities for continuous variables. Indicator variables
-      receive pseudo-elasticities (or discrete changes if \`indicator =
-      "discrete_change"\`).
+      receive pseudo-elasticities (or discrete changes if
+      `indicator = "discrete_change"`).
 
 - indicator:
 
   Character scalar. For indicator variables, return
-  \`"pseudo_elasticity"\` (default) or \`"discrete_change"\`.
+  `"pseudo_elasticity"` (default) or `"discrete_change"`.
 
 - se:
 
-  Character scalar. Standard error method: \`"delta"\` (default) or
-  \`"bootstrap"\`.
+  Character scalar. Standard error method: `"delta"` (default) or
+  `"bootstrap"`.
 
 - bootstraps:
 
-  Integer. Number of bootstrap replications when \`se = "bootstrap"\`.
+  Integer. Number of bootstrap replications when `se = "bootstrap"`.
 
 - pred_method:
 
-  Optional prediction method forwarded to \`predict.flexCountReg()\`.
-  For random-parameters models, this is commonly \`"Exact"\` or
-  \`"Simulated"\`. If \`NULL\`, the function uses \`"Exact"\` for
+  Optional prediction method forwarded to
+  [`predict.flexCountReg()`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md).
+  For random-parameters models, this is commonly `"Exact"` or
+  `"Simulated"`. If `NULL`, the function uses `"Exact"` for
   random-parameters models when possible.
 
 - confint_level:
@@ -89,7 +90,7 @@ margEffTable(
 
 - tableType:
 
-  Character scalar. One of \`"tibble"\`, \`"gt"\`, or \`"latex"\`.
+  Character scalar. One of `"tibble"`, `"gt"`, or `"latex"`.
 
 - digits:
 
@@ -104,23 +105,25 @@ margEffTable(
 
 - ...:
 
-  Additional arguments passed to \`predict.flexCountReg()\`.
+  Additional arguments passed to
+  [`predict.flexCountReg()`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md).
 
 ## Value
 
-A table object of the type requested by \`tableType\`. For \`"tibble"\`,
-the returned object also carries an \`effect_info\` attribute with
-metadata about the calculation.
+A table object of the type requested by `tableType`. For `"tibble"`, the
+returned object also carries an `effect_info` attribute with metadata
+about the calculation.
 
 ## Details
 
 Continuous variables are handled by numerical differentiation on the
 expected-response scale. Indicator variables are handled by discrete
-changes (or pseudo-elasticities, depending on \`indicator\`).
+changes (or pseudo-elasticities, depending on `indicator`).
 
 The function works on the expected-response scale and is intended to be
-compatible with all fitted \`flexCountReg\` model types, provided that
-\`predict.flexCountReg()\` can generate predictions for the model.
+compatible with all fitted `flexCountReg` model types, provided that
+[`predict.flexCountReg()`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md)
+can generate predictions for the model.
 
 For continuous regressors, the average marginal effect is computed using
 a central finite difference: \$\$ \text{AME}\_j =
@@ -132,9 +135,9 @@ For elasticities, the effect is computed as: \$\$ E_j =
 \mu_i}{\partial x\_{ij}}\right) \$\$
 
 For indicator variables, the function computes a discrete change between
-the observed baseline and a switched value. If \`indicator =
-"pseudo_elasticity"\`, the result is reported as a percent change
-relative to the baseline.
+the observed baseline and a switched value. If
+`indicator = "pseudo_elasticity"`, the result is reported as a percent
+change relative to the baseline.
 
 ## Examples
 

@@ -78,9 +78,9 @@ the distribution (the values have to be greater than 0).</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
-<dd><p>single value or vector of values for the `alpha` parameter
+<dd><p>single value or vector of values for the <code>alpha</code> parameter
 of the gamma distribution in the special case that the mean = 1 and
-the variance = `alpha` (the values for `alpha` have to be greater
+the variance = <code>alpha</code> (the values for <code>alpha</code> have to be greater
 than 0).</p></dd>
 
 
@@ -112,17 +112,16 @@ otherwise, \(P[X&gt;x]\).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>dplindGamma gives the density, pplindGamma gives the distribution
- function, qplindGamma gives the quantile function, and rplindGamma generates
- random  deviates.</p>
+function, qplindGamma gives the quantile function, and rplindGamma generates
+random  deviates.</p>
 <p>The length of the result is determined by n for rplindGamma, and is the
- maximum of the lengths of the numerical arguments for the other functions.</p>
+maximum of the lengths of the numerical arguments for the other functions.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The Poisson-Lindley-Gamma is a count distribution that captures high
 densities for small integer values and provides flexibility for heavier
 tails.</p>
-
 <p><code>dplindGamma</code> computes the density (PDF) of the
 Poisson-Lindley-Gamma Distribution.</p>
 <p><code>pplindGamma</code> computes the CDF of the Poisson-Lindley-Gamma

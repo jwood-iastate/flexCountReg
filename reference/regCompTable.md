@@ -26,22 +26,22 @@ regCompTable(
 
 - coefs:
 
-  A logical. The default value \`TRUE\` indicates that the coefficients
+  A logical. The default value `TRUE` indicates that the coefficients
   from the models should be included in the table of comparisons.
 
 - AIC:
 
-  A logical. The default value \`TRUE\` indicates that AIC values for
-  the models should be included.
+  A logical. The default value `TRUE` indicates that AIC values for the
+  models should be included.
 
 - BIC:
 
-  A logical. The default value \`TRUE\` indicates that BIC values for
-  the models should be included.
+  A logical. The default value `TRUE` indicates that BIC values for the
+  models should be included.
 
 - RSquare:
 
-  A logical. The default value \`TRUE\` indicates that the McFadden's
+  A logical. The default value `TRUE` indicates that the McFadden's
   Pseudo-R-Squared statistic (comparing against a Poisson regression
   model) should be included.
 

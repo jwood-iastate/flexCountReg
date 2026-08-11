@@ -41,10 +41,9 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 
 - alpha:
 
-  single value or vector of values for the \`alpha\` parameter of the
+  single value or vector of values for the `alpha` parameter of the
   gamma distribution in the special case that the mean = 1 and the
-  variance = \`alpha\` (the values for \`alpha\` have to be greater than
-  0).
+  variance = `alpha` (the values for `alpha` have to be greater than 0).
 
 - log:
 

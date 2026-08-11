@@ -52,10 +52,6 @@ and random number generation for the Poisson-Lindley (PL) Distribution</p>
     </div>
 
     <div class="section level2">
-    <h2 id="format">Format<a class="anchor" aria-label="anchor" href="#format"></a></h2>
-    <p>An object of class <code>character</code> of length 1.</p>
-    </div>
-    <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
@@ -107,17 +103,16 @@ otherwise, \(P[X&gt;x]\).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>dplind gives the density, pplind gives the distribution
- function, qplind gives the quantile function, and rplind generates
- random  deviates.</p>
+function, qplind gives the quantile function, and rplind generates
+random  deviates.</p>
 <p>The length of the result is determined by n for rplind, and is the
- maximum of the lengths of the numerical arguments for the other functions.</p>
+maximum of the lengths of the numerical arguments for the other functions.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The Poisson-Lindley is a 2-parameter count distribution that captures high
 densities for small integer values. This makes it ideal for data that are
 zero-inflated.</p>
-
 <p><code>dplind</code> computes the density (PDF) of the Poisson-Lindley Distribution.</p>
 <p><code>pplind</code> computes the CDF of the Poisson-Lindley Distribution.</p>
 <p><code>qplind</code> computes the quantile function of the Poisson-Lindley

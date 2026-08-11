@@ -24,7 +24,8 @@ countreg.rp(
   method = "BHHH",
   max.iters = 1000,
   start.vals = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  engine = "halton"
 )
 ```
 
@@ -126,9 +127,15 @@ countreg.rp(
 
   logical.
 
+- engine:
+
+  the engine to use for the integration if the Poisson Lognormal (PLN)
+  distribution is used. Options include "halton" which uses Halton draws
+  or "poilog" which uses the poilog package. The default is "halton".
+
 ## Value
 
-An object of class \`countreg\` which is a list with the following
+An object of class `countreg` which is a list with the following
 components:
 
 - model: the fitted model object.

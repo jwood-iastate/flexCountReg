@@ -43,12 +43,12 @@ rtri(n, mode = 0, sigma = 1, upper = NA, lower = NA)
 - upper:
 
   single value or vector for the upper limit of the distribution (must
-  be used with \`lower\`).
+  be used with `lower`).
 
 - lower:
 
   single value or vector for the lower limit of the distribution (must
-  be used with \`upper\`).
+  be used with `upper`).
 
 - log:
 

@@ -57,6 +57,14 @@ This function estimates a random effects Poisson panel model. The likelihood
 is integrated analytically over a gamma-distributed cluster effect with mean
 1 and variance \code{alpha}. The model estimates the regression coefficients
 and one heterogeneity parameter \code{ln(alpha)}.
+
+The PMF of this distribution is:
+\deqn{P(y_{it} \mid \mu_{it}) =
+\frac{\Gamma\left(\sum_t y_{it} + \frac{1}{\alpha}\right)}
+{\Gamma\left(\frac{1}{\alpha}\right)\prod_t y_{it}!}
+\left(\frac{1}{\alpha\sum_t \mu_{it} + 1}\right)^{\frac{1}{\alpha}}
+\prod_t \left(\frac{\alpha\mu_{it}}{\alpha\sum_t \mu_{it} + 1}
+\right)^{y_{it}}}
 }
 \examples{
 \donttest{

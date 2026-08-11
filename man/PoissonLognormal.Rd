@@ -35,7 +35,7 @@ rpLnorm(n, mean = 1, sigma = 1)
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{mean}{numeric value or vector of mean values (not the expected value). 
+\item{mean}{numeric value or vector of mean values (not the expected value).
 This is the mean for the Poisson portion of the distribution. Note that
 the mean values have to be greater than 0.}
 

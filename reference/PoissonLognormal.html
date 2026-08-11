@@ -65,8 +65,9 @@ and random number generation for the Poisson-Lognormal (PLogN) Distribution</p>
 
 
 <dt id="arg-mean">mean<a class="anchor" aria-label="anchor" href="#arg-mean"></a></dt>
-<dd><p>numeric value or vector of mean values (not the expected value)
-for the distribution (the values have to be greater than 0).</p></dd>
+<dd><p>numeric value or vector of mean values (not the expected value).
+This is the mean for the Poisson portion of the distribution. Note that
+the mean values have to be greater than 0.</p></dd>
 
 
 <dt id="arg-sigma">sigma<a class="anchor" aria-label="anchor" href="#arg-sigma"></a></dt>
@@ -132,8 +133,10 @@ $$f(y|\mu,\theta,\alpha)=
 <p>Where \(\sigma\) is a parameter for the lognormal distribution with the
 restriction \(\sigma&gt;0\), and \(y\) is a non-negative integer.</p>
 <p>The expected value of the distribution is:
-$$E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}$$
-Halton draws are used to perform simulation over the lognormal distribution
+$$E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}$$</p>
+<p>The variance for the distribution is:
+$$V[Y]=E[Y]+\left(e^{\sigma^2/2}-1\right)E[Y]^2$$</p>
+<p>Halton draws are used to perform simulation over the lognormal distribution
 to solve the integral.</p>
     </div>
 

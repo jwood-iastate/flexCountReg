@@ -31,8 +31,9 @@ rpLnorm(n, mean = 1, sigma = 1)
 
 - mean:
 
-  numeric value or vector of mean values (not the expected value) for
-  the distribution (the values have to be greater than 0).
+  numeric value or vector of mean values (not the expected value). This
+  is the mean for the Poisson portion of the distribution. Note that the
+  mean values have to be greater than 0.
 
 - sigma:
 
@@ -104,9 +105,13 @@ Where \\\sigma\\ is a parameter for the lognormal distribution with the
 restriction \\\sigma\>0\\, and \\y\\ is a non-negative integer.
 
 The expected value of the distribution is:
-\$\$E\[y\]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}\$\$ Halton draws
-are used to perform simulation over the lognormal distribution to solve
-the integral.
+\$\$E\[y\]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}\$\$
+
+The variance for the distribution is:
+\$\$V\[Y\]=E\[Y\]+\left(e^{\sigma^2/2}-1\right)E\[Y\]^2\$\$
+
+Halton draws are used to perform simulation over the lognormal
+distribution to solve the integral.
 
 ## Examples
 

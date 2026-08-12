@@ -78,6 +78,13 @@ likelihood is integrated analytically over a gamma-distributed cluster
 effect with mean 1 and variance `alpha`. The model estimates the
 regression coefficients and one heterogeneity parameter `ln(alpha)`.
 
+The PMF of this distribution is: \$\$P(y\_{it} \mid \mu\_{it}) =
+\frac{\Gamma\left(\sum_t y\_{it} + \frac{1}{\alpha}\right)}
+{\Gamma\left(\frac{1}{\alpha}\right)\prod_t y\_{it}!}
+\left(\frac{1}{\alpha\sum_t \mu\_{it} + 1}\right)^{\frac{1}{\alpha}}
+\prod_t \left(\frac{\alpha\mu\_{it}}{\alpha\sum_t \mu\_{it} + 1}
+\right)^{y\_{it}}\$\$
+
 ## Examples
 
 ``` r

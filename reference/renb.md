@@ -76,11 +76,10 @@ components:
 
 This function estimates a random effects negative binomial (RENB)
 regression model. This model is based on the NB-1 model. The PDF for the
-RENB is: \$\$f(y\_{it}\|\mu\_{it}, a, b) = \frac{\Gamma(a+b) +
-\Gamma(a + \sum\_{t = 1}^{n_i} \mu\_{it}) + \Gamma(b +
-\sum\_{t=1}^{n_i}y\_{it})} {\Gamma(a) \Gamma(b) \Gamma(a + b +
-\sum\_{t=1}^{n_i}\mu\_{it} + \sum\_{t=1}^{n_i}y\_{it})}
-\prod\_{t=1}^{n_i}
+RENB is: \$\$f(y\_{it}\|\mu\_{it}, a, b) = \frac{\Gamma(a+b) \Gamma(a +
+\sum\_{t = 1}^{n_i} \mu\_{it}) \Gamma(b + \sum\_{t=1}^{n_i}y\_{it})}
+{\Gamma(a) \Gamma(b) \Gamma(a + b + \sum\_{t=1}^{n_i}\mu\_{it} +
+\sum\_{t=1}^{n_i}y\_{it})} \prod\_{t=1}^{n_i}
 \frac{\Gamma(\mu\_{it}+y\_{it})}{\Gamma(\mu\_{it})\Gamma(y\_{it})}\$\$
 
 ## Examples

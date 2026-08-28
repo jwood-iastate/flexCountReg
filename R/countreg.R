@@ -933,7 +933,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                                             ndraws = ndraws, 
                                             method = method, 
                                             max.iters = max.iters, 
-                                            start.vals = start_vals_boot))
+                                            start.vals = start_vals_boot,
+                                            engine = engine))
     tidied <- map_df(models, broom::tidy, .id = "id")
     
     SE <- tidied %>%

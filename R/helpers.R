@@ -10,7 +10,8 @@ NULL
 mod.boot <- function(data, formula, family, offset, weights, 
                      dis_param_formula_1, dis_param_formula_2,
                      underreport_formula, underreport_family,
-                     ndraws, method, max.iters, start.vals){
+                     ndraws, method, max.iters, start.vals,
+                     engine = "halton"){
   
   # data comes in as a resample object from modelr, convert to df
   df <- as.data.frame(data)
@@ -116,7 +117,7 @@ get_probFunc <- function(family){
         stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))
     },
     "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
-      dpLnorm(x = y, mean = predicted, sigma = alpha, h = haltons, engine=engine),
+      dpLnorm(x = y, mean = predicted, sigma = alpha, hdraws = haltons, engine=engine),
     "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
       dpge(y, mean = predicted, shape = alpha, scale = sigma,haltons = haltons),
     "PIG1" = function(y, predicted, alpha, sigma, ...) 

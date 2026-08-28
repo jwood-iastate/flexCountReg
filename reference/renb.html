@@ -104,13 +104,38 @@ bootstrapping is performed.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>This function estimates a random effects negative binomial (RENB) regression
 model. This model is based on the NB-1 model. The PDF for the RENB is:
-$$f(y_{it}|\mu_{it}, a, b) =
+$$f(y_{it}|\lambda_{it}, a, b) =
   \frac{\Gamma(a+b)
-    \Gamma(a + \sum_{t = 1}^{n_i} \mu_{it})
+    \Gamma(a + \sum_{t = 1}^{n_i} \\lambda_{it})
     \Gamma(b + \sum_{t=1}^{n_i}y_{it})}
     {\Gamma(a) \Gamma(b) \Gamma(a + b +
-       \sum_{t=1}^{n_i}\mu_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
-       \frac{\Gamma(\mu_{it}+y_{it})}{\Gamma(\mu_{it})\Gamma(y_{it})}$$</p>
+       \sum_{t=1}^{n_i}\lambda_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
+       \frac{\Gamma(\lambda_{it}+y_{it})}{\Gamma(\lambda_{it})\Gamma(y_{it})}$$</p>
+<p>Where \(y_{it}\) is the count outcome for individual \(i\) at time
+\(t\), and \(\lambda_{it}\) is the latent Poisson mean parameter for
+individual \(i\) at time \(t\). The parameters \(a\) and \(b\) are
+the shape parameters for the beta distribution that is used to model the
+random effects. The RENB model allows for overdispersion in the count data
+and accounts for unobserved heterogeneity across individuals by including
+random effects in the model. This formulation follows the approach described
+in the paper by Hausman, Hall, and Griliches (1984) for modeling panel data
+with random effects.</p>
+<p>The marginal mean and marginal variance of the RENB model are given by:
+$$E[y_{it}] = \lambda_{it}\frac{b}{a-1}=\mu_it=exp(X_{it}\beta)$$</p>
+<p>$$Var[y_{it}] = \frac{a+b-1}{a-2}\mu_{it} + \frac{a+b-1}{b(a-2)} \mu_{it}^2$$</p>
+<p>Thus, the formulation of the model estimated here allows the use of the
+estimated coefficients to directly compute the marginal mean.</p>
+<p>Note that the RENB model is a panel data model, and the <code>group_var</code>
+argument must be specified to indicate the grouping variable(s) for the
+random effects. The model is estimated using maximum likelihood estimation,
+and the optimization is performed using the <code><a href="https://rdrr.io/pkg/maxLik/man/maxLik.html" class="external-link">maxLik</a></code>
+package. The user can specify the optimization method and maximum iterations.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Hausman, Jerry A., Bronwyn H. Hall, and Zvi Griliches. "Econometric models
+for count data with an application to the patents–R&amp;D relationship."
+Econometrica: Journal of the Econometric Society (1984): 909-938.</p>
     </div>
 
     <div class="section level2">
@@ -126,28 +151,11 @@ $$f(y_{it}|\mu_{it}, a, b) =
 <span class="r-in"><span>                                group_var<span class="op">=</span><span class="st">"ID"</span>,</span></span>
 <span class="r-in"><span>                                method<span class="op">=</span><span class="st">"nm"</span>,</span></span>
 <span class="r-in"><span>                                max.iters <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in exp(unlist(fit$estimate[(length(fit$estimate) - 1)])):</span> non-numeric argument to mathematical function</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">renb.mod</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Method:  RENB </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations:  746 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence:  successful convergence  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -263.7988 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Parameter Estimates:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept)        -<span style="color: #BB0000;">7.05</span>        0.127   -<span style="color: #BB0000;">55.7</span>      0         -<span style="color: #BB0000;">7.30</span>      -<span style="color: #BB0000;">6.80</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt              0.972       0.015    64.6      0          0.942      1.00 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> speed50            -<span style="color: #BB0000;">0.985</span>       0.301    -<span style="color: #BB0000;">3.27</span>     0.001     -<span style="color: #BB0000;">1.58</span>      -<span style="color: #BB0000;">0.395</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> ShouldWidth04      -<span style="color: #BB0000;">0.414</span>       0.212    -<span style="color: #BB0000;">1.96</span>     0.051     -<span style="color: #BB0000;">0.828</span>      0.001</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> AADTover10k        -<span style="color: #BB0000;">0.861</span>       0.447    -<span style="color: #BB0000;">1.92</span>     0.054     -<span style="color: #BB0000;">1.74</span>       0.015</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> ln(a)               3.01        0.115    26.2      0          2.78       3.23 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> ln(b)               0.604       0.122     4.97     0          0.366      0.843</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> lnlength (Offset …  1          <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'renb.mod' not found</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

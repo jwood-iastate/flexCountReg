@@ -28,13 +28,37 @@
 #' @details
 #' This function estimates a random effects negative binomial (RENB) regression 
 #' model. This model is based on the NB-1 model. The PDF for the RENB is:
-#' \deqn{f(y_{it}|\mu_{it}, a, b) = 
+#' \deqn{f(y_{it}|\lambda_{it}, a, b) = 
 #'   \frac{\Gamma(a+b) 
-#'     \Gamma(a + \sum_{t = 1}^{n_i} \mu_{it}) 
+#'     \Gamma(a + \sum_{t = 1}^{n_i} \\lambda_{it}) 
 #'     \Gamma(b + \sum_{t=1}^{n_i}y_{it})}
 #'     {\Gamma(a) \Gamma(b) \Gamma(a + b + 
-#'        \sum_{t=1}^{n_i}\mu_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
-#'        \frac{\Gamma(\mu_{it}+y_{it})}{\Gamma(\mu_{it})\Gamma(y_{it})}}
+#'        \sum_{t=1}^{n_i}\lambda_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
+#'        \frac{\Gamma(\lambda_{it}+y_{it})}{\Gamma(\lambda_{it})\Gamma(y_{it})}}
+#'        
+#' Where \eqn{y_{it}} is the count outcome for individual \eqn{i} at time 
+#' \eqn{t}, and \eqn{\lambda_{it}} is the latent Poisson mean parameter for 
+#' individual \eqn{i} at time \eqn{t}. The parameters \eqn{a} and \eqn{b} are 
+#' the shape parameters for the beta distribution that is used to model the 
+#' random effects. The RENB model allows for overdispersion in the count data 
+#' and accounts for unobserved heterogeneity across individuals by including 
+#' random effects in the model. This formulation follows the approach described 
+#' in the paper by Hausman, Hall, and Griliches (1984) for modeling panel data
+#' with random effects.
+#' 
+#' The marginal mean and marginal variance of the RENB model are given by:
+#' \deqn{E[y_{it}] = \lambda_{it}\frac{b}{a-1}=\mu_it=exp(X_{it}\beta)}
+#' 
+#' \deqn{Var[y_{it}] = \frac{a+b-1}{a-2}\mu_{it} + \frac{a+b-1}{b(a-2)} \mu_{it}^2}
+#' 
+#' Thus, the formulation of the model estimated here allows the use of the 
+#' estimated coefficients to directly compute the marginal mean.
+#' 
+#' Note that the RENB model is a panel data model, and the \code{group_var} 
+#' argument must be specified to indicate the grouping variable(s) for the 
+#' random effects. The model is estimated using maximum likelihood estimation, 
+#' and the optimization is performed using the \code{\link[maxLik]{maxLik}} 
+#' package. The user can specify the optimization method and maximum iterations.
 #' 
 #' @returns
 #' An object of class `countreg` which is a list with the following components:
@@ -59,6 +83,12 @@
 #'                                 max.iters = 1000)
 #' summary(renb.mod)
 #' }
+#' 
+#' @references
+#' Hausman, Jerry A., Bronwyn H. Hall, and Zvi Griliches. "Econometric models 
+#' for count data with an application to the patents–R&D relationship." 
+#' Econometrica: Journal of the Econometric Society (1984): 909-938.
+#' 
 #' @export
 renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
                  print.level=0, bootstraps=NULL, offset=NULL) {
@@ -104,7 +134,8 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
     a <- exp(unlist(beta[(pars+1)]))
     b <- exp(unlist(beta[(pars+2)]))
     
-    mu <- exp(X %*% coefs)
+    E <- exp(X %*% coefs) # note, this is the marginal mean
+    mu <- (a-1)/b * E # note: this is lambda
     
     if(!is.null(offset)){ 
       if (length(offset)==1){
@@ -219,6 +250,8 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$LL <- fit$maximum
   fit$modelType <- "RENB"
   fit$offset <- offset
+  fit$a <- exp(unlist(fit$estimate[(length(fit$estimate)-1)]))
+  fit$b <- exp(unlist(fit$estimate[length(fit$estimate)]))
   
   obj <- .createFlexCountReg(model = fit, 
                              data = data, 

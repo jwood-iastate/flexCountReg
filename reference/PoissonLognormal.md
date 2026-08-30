@@ -137,14 +137,10 @@ dpLnorm(0, mean=0.75, sigma=2, ndraws=10)
 dpLnorm(0, mean=0.75, sigma=2, engine="poilog")
 #> [1] 0.4609574
 ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
-#> Warning: longer argument not a multiple of length of shorter
-#> Warning: longer argument not a multiple of length of shorter
-#> Warning: longer argument not a multiple of length of shorter
-#> Warning: longer argument not a multiple of length of shorter
-#> Warning: longer argument not a multiple of length of shorter
-#> [1] 5.271804 1.871668 3.165818 1.960024 1.131571 1.613484 1.042726 1.042726
+#> [1] 0.5271804 0.7245134 0.8159930 0.8646682 0.9165510 0.9516880 0.9777184
+#> [8] 0.9863234
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
-#> [1] 0 0 0 0 0
+#> [1] 0 0 0 5 7
 rpLnorm(30, mean=0.75,  sigma=2)
 #>  [1]  1  0  0  2  2  4  3  1  1  2  3  0  4 11  0  0 33  2  2  0  1  0  2  6  0
 #> [26]  0  0  3  0  3

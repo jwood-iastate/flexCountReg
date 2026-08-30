@@ -175,12 +175,12 @@ summary(rp_nb2)
 #> # A tibble: 6 × 7
 #>   parameter       coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>           <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)    -8.76        0.044  -199.           0     -8.84      -8.67 
-#> 2 lnaadt          1.08        0.005   213.           0      1.07       1.09 
-#> 3 lnlength        0.756       0.035    21.7          0      0.688      0.825
-#> 4 speed50:Mean   -0.744       0.106    -7.04         0     -0.951     -0.537
-#> 5 speed50:St.Dev  0.715       0.177     4.04         0      0.368      1.06 
-#> 6 ln(alpha)      -1.32        0.293    -4.5          0     -1.89      -0.744
+#> 1 (Intercept)    -8.76        0.413   -21.2      0         -9.56      -7.94 
+#> 2 lnaadt          1.08        0.05     21.6      0          0.982      1.18 
+#> 3 lnlength        0.756       0.069    10.9      0          0.621      0.892
+#> 4 speed50:Mean   -0.744       0.169    -4.41     0         -1.07      -0.413
+#> 5 speed50:St.Dev  0.715       0.271     2.64     0.008      0.184      1.25 
+#> 6 ln(alpha)      -1.32        0.305    -4.32     0         -1.92      -0.72 
 
 # 2. Random Parameters with Panel Structure (if 'site_id' exists)
 # rp_panel <- countreg.rp(Total_crashes ~ -1 + lnaadt,
@@ -212,13 +212,13 @@ summary(rp_gen)
 #> # A tibble: 7 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -8.54      4.7 e-2  -182.       0       -8.64e+0   -8.45e+0
-#> 2 lnaadt              0.965     6   e-3   174.       0        9.54e-1    9.76e-1
-#> 3 speed50:Mean       -0.834     1.15e-1    -7.28     0       -1.06e+0   -6.1 e-1
-#> 4 speed50:St.Dev      0.83      1.52e-1     5.46     0        5.32e-1    1.13e+0
-#> 5 HetMean:AADT10kp… -18.4       7.34e+7     0        1       -1.44e+8    1.44e+8
-#> 6 ln(alpha):(Inter…  -1.21      1.92e-1    -6.29     0       -1.58e+0   -8.31e-1
-#> 7 ln(alpha):lnleng…  -0.49      1.45e-1    -3.38     0.001   -7.74e-1   -2.06e-1
+#> 1 (Intercept)        -8.54           NA       NA        NA         NA         NA
+#> 2 lnaadt              0.965          NA       NA        NA         NA         NA
+#> 3 speed50:Mean       -0.834          NA       NA        NA         NA         NA
+#> 4 speed50:St.Dev      0.83           NA       NA        NA         NA         NA
+#> 5 HetMean:AADT10kp… -18.4            NA       NA        NA         NA         NA
+#> 6 ln(alpha):(Inter…  -1.21           NA       NA        NA         NA         NA
+#> 7 ln(alpha):lnleng…  -0.49           NA       NA        NA         NA         NA
 
 # 4. Random Parameters Poisson Model with panel specification
 rp_poisson <- countreg.rp(Total_crashes ~ lnaadt,
@@ -243,10 +243,10 @@ summary(rp_poisson)
 #> # A tibble: 5 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -8.66        0.025  -342.           0     -8.71      -8.61 
-#> 2 lnaadt              0.974       0.003   342.           0      0.968      0.98 
-#> 3 speed50:Mean       -0.838       0.124    -6.74         0     -1.08      -0.594
-#> 4 speed50:St.Dev      0.869       0.151     5.76         0      0.574      1.16 
-#> 5 HetMean:AADT10k… -110.         NA        NA           NA     NA         NA    
+#> 1 (Intercept)        -8.66           NA       NA        NA         NA         NA
+#> 2 lnaadt              0.974          NA       NA        NA         NA         NA
+#> 3 speed50:Mean       -0.838          NA       NA        NA         NA         NA
+#> 4 speed50:St.Dev      0.869          NA       NA        NA         NA         NA
+#> 5 HetMean:AADT10k… -110.             NA       NA        NA         NA         NA
 # }
 ```

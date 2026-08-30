@@ -243,7 +243,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   
   mu <- exp(X %*% beta_pred)
   fit$predictions <- mu
-  fit$se <- sqrt(diag(-1/(fit$hessian)))
+  fit$se <- sqrt(diag(vcov(fit)))
   fit$formula <- formula
   fit$observed <- y
   fit$residuals <- y - fit$predictions

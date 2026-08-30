@@ -945,7 +945,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     fit$bootstrapped_se <- SE
   }
   if (stderr == "normal") {
-    fit$bootstrapped_se <- sqrt(diag(-1/(fit$hessian)))
+    covariance_matrix <- vcov(fit)
+    fit$bootstrapped_se<- sqrt(diag(covariance_matrix))
   }
   else if (stderr == "boot") {
     fit$bootstrapped_se <- SE
@@ -958,7 +959,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$se <- if (stderr == "boot" & is.numeric(bootstraps)){
     fit$bootstrapped_se 
   } else {
-    sqrt(diag(-1/(fit$hessian)))
+    sqrt(diag(vcov(fit)))
   }
     
   fit$logLik <- fit$maximum

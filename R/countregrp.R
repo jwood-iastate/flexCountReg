@@ -494,7 +494,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     rpardists
   }
   
-  fit$se <- sqrt(diag(-1/(fit$hessian)))
+  fit$se <- sqrt(diag(vcov(fit)))
   
   obj <- .createFlexCountReg(model = fit, 
                              data = data, 

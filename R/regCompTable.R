@@ -116,7 +116,7 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     if (!is.null(models[[i]]$model$bootstraps)){
       se <- models[[i]]$model$bootstrapped_se
     } else {
-      se <- sqrt(diag(-1/(models[[i]]$model$hessian)))
+      se <- sqrt(diag(stats::vcov(models[[i]]$model)))
     }
     t <- abs(coefs / se)
     coefsRounded <- round(coefs, digits)

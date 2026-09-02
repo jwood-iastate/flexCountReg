@@ -138,12 +138,12 @@ summary(poislind.mod)
 #> # A tibble: 7 × 7
 #>   parameter       coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>           <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)    -5.55        0.305    -18.2         0      -6.14      -4.95
-#> 2 lnaadt          0.175      NA         NA          NA      NA         NA   
-#> 3 lnlength        8.67       NA         NA          NA      NA         NA   
-#> 4 speed50         4.26       NA         NA          NA      NA         NA   
-#> 5 ShouldWidth04  -2.92       NA         NA          NA      NA         NA   
-#> 6 AADTover10k    11.8        NA         NA          NA      NA         NA   
-#> 7 ln(theta)     -46.6        NA         NA          NA      NA         NA   
+#> 1 (Intercept)    -5.55       NA        NA           NA     NA         NA    
+#> 2 lnaadt          0.175       0.031     5.65         0      0.114      0.235
+#> 3 lnlength        8.67        0.278    31.2          0      8.13       9.22 
+#> 4 speed50         4.26        0.163    26.1          0      3.94       4.58 
+#> 5 ShouldWidth04  -2.92        0.163   -17.9          0     -3.24      -2.60 
+#> 6 AADTover10k    11.8         0.223    53.2          0     11.4       12.3  
+#> 7 ln(theta)     -46.6         0.031 -1509.           0    -46.7      -46.6  
 # }
 ```

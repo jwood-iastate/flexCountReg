@@ -200,10 +200,15 @@ rpoisweibull <- function(n, lambda=NULL, alpha = NULL, sigma = NULL,
   if (is.null(alpha) || is.null(sigma)) 
     warning("Parameters alpha and sigma are required")
   
-  u <- stats::runif(n)
-  y <- 
-    qpoisweibull(u, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
+  # Use lambda, alpha, and sigma to generate random numbers using weibull random
+  # numbers and Poisson distribution
+  eta <- stats::rweibull(n, shape = alpha, scale = sigma)
+  y <- stats::rpois(n, lambda = lambda * eta)
   return(y)
+  # u <- stats::runif(n)
+  # y <- 
+  #   qpoisweibull(u, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
+  # return(y)
 }
 
 

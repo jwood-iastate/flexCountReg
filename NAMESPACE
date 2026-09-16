@@ -97,64 +97,80 @@ import(tibble)
 importFrom(MASS,glm.nb)
 importFrom(Rcpp,sourceCpp)
 importFrom(broom,tidy)
-importFrom(cureplots,calculate_cure_dataframe)
-importFrom(cureplots,cure_plot)
-importFrom(dplyr,"%>%")
-importFrom(dplyr,across)
-importFrom(dplyr,all_of)
-importFrom(dplyr,group_by)
-importFrom(dplyr,mutate)
-importFrom(dplyr,pull)
-importFrom(dplyr,reframe)
-importFrom(dplyr,row_number)
-importFrom(dplyr,select)
-importFrom(dplyr,summarize)
-importFrom(dplyr,sym)
-importFrom(dplyr,ungroup)
-importFrom(dplyr,where)
+importFrom(cureplots,
+  calculate_cure_dataframe,
+  cure_plot
+)
+importFrom(dplyr,
+  "%>%",
+  across,
+  all_of,
+  group_by,
+  mutate,
+  pull,
+  reframe,
+  row_number,
+  select,
+  summarize,
+  sym,
+  ungroup,
+  where
+)
 importFrom(gsl,hyperg_U)
-importFrom(gt,fmt_number)
-importFrom(gt,gt)
-importFrom(gt,tab_header)
+importFrom(gt,
+  fmt_number,
+  gt,
+  tab_header
+)
 importFrom(maxLik,maxLik)
 importFrom(methods,setClass)
 importFrom(modelr,model_matrix)
-importFrom(purrr,compact)
-importFrom(purrr,map)
-importFrom(purrr,map_df)
+importFrom(purrr,
+  compact,
+  map,
+  map_df
+)
 importFrom(randtoolbox,halton)
 importFrom(sandwich,sandwich)
-importFrom(stats,as.formula)
-importFrom(stats,coef)
-importFrom(stats,dgamma)
-importFrom(stats,dnbinom)
-importFrom(stats,dnorm)
-importFrom(stats,dpois)
-importFrom(stats,formula)
-importFrom(stats,glm)
-importFrom(stats,model.frame)
-importFrom(stats,model.matrix)
-importFrom(stats,model.response)
-importFrom(stats,pgamma)
-importFrom(stats,pnorm)
-importFrom(stats,ppois)
-importFrom(stats,predict)
-importFrom(stats,qgamma)
-importFrom(stats,qlnorm)
-importFrom(stats,qnorm)
-importFrom(stats,qpois)
-importFrom(stats,reformulate)
-importFrom(stats,rpois)
-importFrom(stats,runif)
-importFrom(stats,terms)
-importFrom(stats,uniroot)
-importFrom(stringr,str_extract)
-importFrom(stringr,str_replace_all)
-importFrom(tibble,as_tibble)
-importFrom(tibble,deframe)
-importFrom(tibble,tibble)
+importFrom(stats,
+  as.formula,
+  coef,
+  dgamma,
+  dnbinom,
+  dnorm,
+  dpois,
+  formula,
+  glm,
+  model.frame,
+  model.matrix,
+  model.response,
+  pgamma,
+  pnorm,
+  ppois,
+  predict,
+  qgamma,
+  qlnorm,
+  qnorm,
+  qpois,
+  reformulate,
+  rpois,
+  runif,
+  terms,
+  uniroot
+)
+importFrom(stringr,
+  str_extract,
+  str_replace_all
+)
+importFrom(tibble,
+  as_tibble,
+  deframe,
+  tibble
+)
 importFrom(tidyr,unite)
 importFrom(truncnorm,qtruncnorm)
-importFrom(utils,head)
-importFrom(utils,tail)
+importFrom(utils,
+  head,
+  tail
+)
 useDynLib(flexCountReg)

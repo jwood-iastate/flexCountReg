@@ -20,7 +20,8 @@ countreg(
   max.iters = 1000,
   start.vals = NULL,
   stderr = "normal",
-  bootstraps = NULL
+  bootstraps = NULL,
+  engine = "halton"
 )
 }
 \arguments{
@@ -84,6 +85,10 @@ robust standard errors.}
 \item{bootstraps}{Optional integer specifying the number of bootstrap samples
 to be used for estimating standard errors when \code{stderr}= "boot". Note that
 this currently does not work when an offset variable is used.}
+
+\item{engine}{the engine to use for the integration if the Poisson Lognormal
+(PLN) distribution is used. Options include "halton" which uses Halton
+draws or "poilog" which uses the poilog package. The default is "halton".}
 }
 \value{
 An object of class \code{countreg} which is a list with the following components:
@@ -684,7 +689,7 @@ summary(nb2)
 # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
 # up the estimation for examples - not recommended in practice)
 pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PLN", ndraws=10)
+              data = washington_roads, family = "PLN", engine="poilog")
 summary(pln)  
 
 # Estimate an Poisson-Lognormal with underreporting (probit)

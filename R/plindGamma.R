@@ -62,24 +62,18 @@
 #' Where \eqn{\theta} is a distribution parameter from the Poisson-Lindley
 #' distribution with the restrictions that \eqn{\theta>0}, \eqn{\alpha} is
 #' a parameter for the gamma distribution with the restriction
-#' \eqn{\alpha>0}, \eqn{mu} is the mean value, and \eqn{x} is a
-#' non-negative integer, and \deqn{U(a,b,z)} is the Tricomi's solution to
-#' the confluent hypergeometric function - also known as the confluent
+#' \eqn{\alpha>0}, \eqn{\mu} is the mean value, and \eqn{x} is a
+#' non-negative integer, and \deqn{U(a,b,z)} is the Tricomi’s confluent 
+#' hypergeometric function to - also known as the confluent
 #' hypergeometric function of the second kind
 #'
 #' The expected value of the distribution is:
 #' \deqn{E[x]=\mu}
 #'
 #' The variance is:
-#' \deqn{\sigma^2=\mu+\left(2\alpha+1-\frac{2(1+\alpha)}
-#' {(\theta+2)^2}\right)\mu^2}
+#' \deqn{\sigma^2=\mu+\left(\left(1+\frac{1}{\alpha}\right)\left(2-\frac{2}
+#' {(\theta+2)^2}\right)-1\right)\mu^2}
 #'
-#' While the distribution can be computed using the confluent
-#' hypergeometric function, that function has limitations in value it can
-#' be computed at (along with accuracy, in come cases). For this reason,
-#' the function uses Halton draws to perform simulation over the gamma
-#' distribution to solve the integral. This is sometimes more
-#' computationally efficient as well.
 #' 
 #' @returns dplindGamma gives the density, pplindGamma gives the distribution 
 #'  function, qplindGamma gives the quantile function, and rplindGamma generates

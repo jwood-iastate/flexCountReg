@@ -215,8 +215,37 @@ qpinvgamma <- Vectorize(function(p, mu=1, eta = 1) {
 
 #' @rdname PoissonInverseGamma
 #' @export
-rpinvgamma <- function(n, mu=1, eta = 1) {
-  u <- runif(n)
-  y <- vapply(X = u, FUN = \(p) qpinvgamma(p, mu, eta), FUN.VALUE = numeric(1))
-  return(y)
+rpinvgamma <- function(n, mu = 1, eta = 1) {
+  
+  if(length(n) != 1L || is.na(n) || n < 0 || n != floor(n)) {
+    stop("'n' must be a non-negative integer.")
+  }
+  
+  n <- as.integer(n)
+  
+  if(n == 0L) {
+    return(numeric(0))
+  }
+  
+  if(any(mu <= 0, na.rm = TRUE)) {
+    stop("'mu' must be positive.")
+  }
+  
+  if(any(eta <= 0, na.rm = TRUE)) {
+    stop("'eta' must be positive.")
+  }
+  
+  mu <- rep_len(mu, n)
+  eta <- rep_len(eta, n)
+  
+  alpha <- 1 / eta + 2
+  beta  <- mu * (1 / eta + 1)
+  
+  lambda <- rinvgamma(
+    n = n,
+    shape = alpha,
+    scale = beta
+  )
+  
+  rpois(n, lambda)
 }

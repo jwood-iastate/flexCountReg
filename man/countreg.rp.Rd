@@ -23,7 +23,8 @@ countreg.rp(
   method = "BHHH",
   max.iters = 1000,
   start.vals = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  engine = "halton"
 )
 }
 \arguments{
@@ -82,6 +83,10 @@ likelihood are estimated accounting for the panel structure.}
 \item{start.vals}{optional vector of starting values.}
 
 \item{verbose}{logical.}
+
+\item{engine}{the engine to use for the integration if the Poisson Lognormal
+(PLN) distribution is used. Options include "halton" which uses Halton
+draws or "poilog" which uses the poilog package. The default is "halton".}
 }
 \value{
 An object of class \code{countreg} which is a list with the following components:

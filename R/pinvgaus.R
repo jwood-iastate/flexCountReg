@@ -1,3 +1,58 @@
+#' Generate inverse-Gaussian random numbers
+#'
+#' Generates random variables from an inverse-Gaussian distribution using
+#' the Michael, Schucany, and Haas (1976) method.
+#'
+#' Parameterization:
+#' IG(mean = mu, shape = lambda)
+#'
+#' @param n Number of observations.
+#' @param mean Mean parameter (> 0).
+#' @param shape Shape parameter (> 0).
+#' @returns A numeric vector of length n.
+#' @keywords internal
+rinvgaus <- function(n, mean = 1, shape = 1) {
+  
+  if(length(n) != 1L || is.na(n) || n < 0) {
+    stop("`n` must be a non-negative integer.")
+  }
+  
+  n <- as.integer(n)
+  
+  if(n == 0L) {
+    return(numeric(0))
+  }
+  
+  if(any(mean <= 0, na.rm = TRUE)) {
+    stop("`mean` must be positive.")
+  }
+  
+  if(any(shape <= 0, na.rm = TRUE)) {
+    stop("`shape` must be positive.")
+  }
+  
+  mean <- rep_len(mean, n)
+  shape <- rep_len(shape, n)
+  
+  z <- rnorm(n)
+  v <- z^2
+  m <- mean
+  lambda <- shape
+  
+  x <- m +
+    (m^2 * v) / (2 * lambda) -
+    (m / (2 * lambda)) *
+    sqrt(4 * m * lambda * v + m^2 * v^2)
+  
+  u <- runif(n)
+  
+  ifelse(
+    u <= m / (m + x),
+    x,
+    m^2 / x
+  )
+}
+
 #' Poisson-Inverse-Gaussian Distribution
 #'
 #' These functions provide the density function, distribution function,
@@ -212,12 +267,50 @@ qpinvgaus <- Vectorize(function(p, mu=1, eta=1, form="Type 1") {
 
 #' @rdname PoissonInverseGaussian
 #' @export
-rpinvgaus <- function(n, mu=1, eta=1, form="Type 1") {
-  u <- runif(n)
-  y <- vapply(
-    X = u, 
-    FUN = \(p) qpinvgaus(p, mu, eta, form), 
-    FUN.VALUE = numeric(1))
-  return(y)
+rpinvgaus <- function(n, mu = 1, eta = 1, form = "Type 1") {
+  
+  if(length(n) != 1L || is.na(n) || n < 0) {
+    stop("`n` must be a non-negative integer.")
+  }
+  
+  n <- as.integer(n)
+  
+  if(any(mu <= 0, na.rm = TRUE)) {
+    stop("`mu` must be positive.")
+  }
+  
+  if(any(eta <= 0, na.rm = TRUE)) {
+    stop("`eta` must be positive.")
+  }
+  
+  form <- match.arg(form, c("Type 1", "Type 2"))
+  
+  mu <- rep_len(mu, n)
+  eta <- rep_len(eta, n)
+  
+  # Mean-one inverse-Gaussian multiplier
+  #
+  # Type 1:
+  #   W ~ IG(1, mu / eta)
+  #
+  # Type 2:
+  #   W ~ IG(1, 1 / eta)
+  shape <- if(form == "Type 1") {
+    mu / eta
+  } else {
+    1 / eta
+  }
+  
+  w <- rinvgaus(
+    n = n,
+    mean = 1,
+    shape = shape
+  )
+  
+  # Random Poisson mean
+  lambda <- mu * w
+  
+  # Poisson mixture
+  rpois(n, lambda = lambda)
 }
 

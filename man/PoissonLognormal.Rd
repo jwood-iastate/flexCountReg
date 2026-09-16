@@ -8,7 +8,15 @@
 \alias{rpLnorm}
 \title{Poisson-Lognormal Distribution}
 \usage{
-dpLnorm(x, mean = 1, sigma = 1, ndraws = 1500, log = FALSE, hdraws = NULL)
+dpLnorm(
+  x,
+  mean = 1,
+  sigma = 1,
+  ndraws = 1500,
+  log = FALSE,
+  hdraws = NULL,
+  engine = c("halton", "poilog")
+)
 
 ppLnorm(
   q,
@@ -16,18 +24,20 @@ ppLnorm(
   sigma = 1,
   ndraws = 1500,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  engine = c("halton", "poilog")
 )
 
-qpLnorm(p, mean = 1, sigma = 1, ndraws = 1500)
+qpLnorm(p, mean = 1, sigma = 1, ndraws = 1500, engine = c("halton", "poilog"))
 
-rpLnorm(n, mean = 1, sigma = 1, ndraws = 1500)
+rpLnorm(n, mean = 1, sigma = 1)
 }
 \arguments{
 \item{x}{numeric value or a vector of values.}
 
-\item{mean}{numeric value or vector of mean values for the distribution (the
-values have to be greater than 0).}
+\item{mean}{numeric value or vector of mean values (not the expected value).
+This is the mean for the Poisson portion of the distribution. Note that
+the mean values have to be greater than 0.}
 
 \item{sigma}{single value or vector of values for the sigma parameter of the
 lognormal distribution (the values have to be greater than 0).}
@@ -37,6 +47,9 @@ lognormal distribution (the values have to be greater than 0).}
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
 
 \item{hdraws}{and optional vector of Halton draws to use for the integration.}
+
+\item{engine}{the engine to use for the integration. Options include "halton"
+which uses Halton draws or "poilog" which uses the poilog package.}
 
 \item{q}{quantile or a vector of quantiles.}
 
@@ -84,13 +97,19 @@ restriction \eqn{\sigma>0}, and \eqn{y} is a non-negative integer.
 
 The expected value of the distribution is:
 \deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
+
+The variance for the distribution is:
+\deqn{V[Y]=E[Y]+\left(e^{\sigma^2/2}-1\right)E[Y]^2}
+
 Halton draws are used to perform simulation over the lognormal distribution
-to solve the integral.
+to solve the integral if the engine is set to "halton". The poilog package is
+used to solve the integral if the engine is set to "poilog".
 }
 \examples{
 dpLnorm(0, mean=0.75, sigma=2, ndraws=10)
+dpLnorm(0, mean=0.75, sigma=2, engine="poilog")
 ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
-rpLnorm(30, mean=0.75,  sigma=2, ndraws=10)
+rpLnorm(30, mean=0.75,  sigma=2)
 
 }

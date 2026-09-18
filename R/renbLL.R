@@ -4,6 +4,13 @@
 renb_ll <- function(y, mu, a, b, panels) { 
   # Random Effects Negative Binomial with Beta Distributed Random Effects (NB1)
   
+  
+  if (any(!is.finite(mu)) || any(mu <= 0) ||
+      !is.finite(a) || a <= 0 ||
+      !is.finite(b) || b <= 0) {
+    return(rep(-Inf, length(unique(panels))))
+  }
+  
   df <- tibble(y = y, mu = mu, panels = panels)
   
   # Calculate panel-level statistics

@@ -94,8 +94,8 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
                  print.level=0, bootstraps=NULL, offset=NULL) {
   
   # Data preparation
-  mod_df <- stats::model.frame(formula, data)
-  X <- as.matrix(modelr::model_matrix(data, formula))
+  mod_df <- stats::model.frame(formula, data, na.action = stats::na.fail)
+  X <- stats::model.matrix(attr(mod_df, "terms"), mod_df)
   y <- as.numeric(stats::model.response(mod_df))
   
   # Generate a panel ID for the model
@@ -118,58 +118,110 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   # Use the Negative Binomial as starting values
   p_model <- glm.nb(formula, data = data)
   start <- unlist(p_model$coefficients)
-  a <- 1
+  a <- 2
   b <- 1
   
-  full_start <- append(start, log(a))
-  x_names <- append(x_names, 'ln(a)')
+  full_start <- append(start, log(a - 1))
+  x_names <- append(x_names, "ln(a-1)")
   full_start <- append(full_start, log(b))
-  x_names <- append(x_names, 'ln(b)')
+  x_names <- append(x_names, "ln(b)")
   names(full_start) <- x_names
-  
-  # Log-likelihood function for the Random Effects Negative Binomial model
-  reg.run.RE <- function(beta, y, X, group){
-    pars <- length(beta)-2
-    coefs <- as.vector(unlist(beta[1:pars]))
-    a <- exp(unlist(beta[(pars+1)]))
-    b <- exp(unlist(beta[(pars+2)]))
-    
-    E <- exp(X %*% coefs) # note, this is the marginal mean
-    mu <- (a-1)/b * E # note: this is lambda
-    
-    if(!is.null(offset)){ 
-      if (length(offset)==1){
-        mu <- mu * exp(data[[offset]])
-      } else {
-        for (i in offset){
-          mu <- mu * exp(data[[i]])
-        }
-      }
+
+
+  # Extract offsets on the log scale from the same rows used by the model.
+  get_offset <- function(model_frame, model_data, offset_cols) {
+    formula_offset <- stats::model.offset(model_frame)
+    if (!is.null(formula_offset) && !is.null(offset_cols)) {
+      stop("Use either a formula offset or offset columns, not both.")
     }
-    
-    mu <- as.vector(mu)
-    LL <- renb_ll(y=y, mu=mu, a=a, b=b, panels=group)
-    return(as.vector(LL))
+    if (!is.null(formula_offset)) {
+      out <- as.numeric(formula_offset)
+    } else if (is.null(offset_cols)) {
+      out <- rep(0, nrow(model_frame))
+    } else {
+      if (!is.character(offset_cols) || !length(offset_cols) ||
+          anyDuplicated(offset_cols) ||
+          !all(offset_cols %in% names(model_data))) {
+        stop("offset must name distinct columns in data.")
+      }
+      columns <- as.data.frame(model_data)[, offset_cols, drop = FALSE]
+      if (!all(vapply(columns, is.numeric, logical(1)))) {
+        stop("Offset columns must be numeric and already on the log scale.")
+      }
+      out <- rowSums(columns)
+    }
+    if (length(out) != nrow(model_frame) || any(!is.finite(out))) {
+      stop("Offsets must be finite and aligned with the model rows.")
+    }
+    out
   }
-  
+  offset_vec <- get_offset(mod_df, data, offset)
+
+  # Random Effects Negative Binomial log-likelihood, one value per panel.
+  reg.run.RE <- function(beta, y, X, group, offset_vec) {
+    n_covariates <- ncol(X)
+    n_panels <- length(unique(group))
+    if (length(beta) != n_covariates + 2L ||
+        length(offset_vec) != length(y) || nrow(X) != length(y) ||
+        length(group) != length(y) || anyNA(group)) {
+      stop("RENB parameters, responses, groups and offsets must align.")
+    }
+
+    # The marginal-mean parameterization requires a > 1 and b > 0.
+    beta_cov <- beta[seq_len(n_covariates)]
+    a <- 1 + exp(beta[n_covariates + 1L])
+    b <- exp(beta[n_covariates + 2L])
+    if (!is.finite(a) || a <= 1 || !is.finite(b) || b <= 0) {
+      return(rep(-Inf, n_panels))
+    }
+
+    # lambda is the conditional NB shape used by renb_ll().
+    log_mean <- drop(X %*% beta_cov) + offset_vec
+    log_lambda <- log_mean + log(a - 1) - log(b)
+    lambda <- exp(log_lambda)
+    if (any(!is.finite(lambda)) || any(lambda <= 0)) {
+      return(rep(-Inf, n_panels))
+    }
+
+    panel_loglik <- renb_ll(y = y, mu = lambda, a = a, b = b,
+                           panels = group)
+    if (any(!is.finite(panel_loglik))) {
+      return(rep(-Inf, n_panels))
+    }
+    as.numeric(panel_loglik)
+  }
+
+  if (any(!is.finite(reg.run.RE(full_start, y, X, group, offset_vec)))) {
+    stop("RENB log-likelihood is not finite at the starting values.")
+  }
+
   # Main model fit
   fit <- maxLik::maxLik(reg.run.RE,
                         start = full_start,
                         y = y,
                         X = X,
                         group = group,
+                        offset_vec = offset_vec,
                         method = method,
                         control = list(iterlim = max.iters, 
                                        printLevel = print.level))
   
-  # Bootstrap function - Modified to fix the error
+  if (is.null(fit$estimate) || length(fit$estimate) != length(full_start) ||
+      any(!is.finite(fit$estimate))) {
+    stop("RENB optimizer did not return valid parameter estimates.")
+  }
+
+  # Bootstrap function
   plind.boot <- function(boot_data, formula, method, 
                          max.iters, print.level, offset) {
     # Prepare bootstrapped data
-    mod1_frame <- stats::model.frame(formula, boot_data)
-    X_boot <- as.matrix(modelr::model_matrix(boot_data, formula))
+    boot_data <- as.data.frame(boot_data)
+    mod1_frame <- stats::model.frame(formula, boot_data,
+                                     na.action = stats::na.fail)
+    X_boot <- stats::model.matrix(attr(mod1_frame, "terms"), mod1_frame)
     y_boot <- as.numeric(stats::model.response(mod1_frame))
     group_boot <- boot_data$panel_id
+    offset_boot <- get_offset(mod1_frame, boot_data, offset)
     
     # Fit model to bootstrapped data
     int_res <- try(maxLik::maxLik(reg.run.RE,  
@@ -177,6 +229,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
                                   y = y_boot,
                                   X = X_boot,
                                   group = group_boot,
+                                  offset_vec = offset_boot,
                                   method = method,
                                   control = list(iterlim = max.iters, 
                                                  printLevel = print.level)),
@@ -190,7 +243,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   
   # Perform bootstrapping if requested - Modified bootstrap implementation
   if (!is.null(bootstraps) && is.numeric(bootstraps)) {
-    # Generate bootstrap samples preserving panel structure
+    # Existing row bootstrap; panel resampling requires a separate change.
     bs.data <- modelr::bootstrap(data, n = bootstraps)
     
     # Run bootstrap models with correct parameter passing
@@ -238,10 +291,12 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   npars <- length(beta_est)-2
   beta_pred <- as.vector(unlist(beta_est[1:npars]))
   fit$beta_pred <- beta_pred
-  fit$a <- exp(unlist(fit$estimate[(length(fit$estimate)-1)]))
+  fit$a <- 1 + exp(
+    unlist(fit$estimate[(length(fit$estimate)-1)])
+  )
   fit$b <- exp(unlist(fit$estimate[length(fit$estimate)]))
   
-  mu <- exp(X %*% beta_pred)
+  mu <- exp(drop(X %*% beta_pred) + offset_vec)
   fit$predictions <- mu
   fit$se <- sqrt(diag(vcov(fit)))
   fit$formula <- formula
@@ -250,8 +305,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$LL <- fit$maximum
   fit$modelType <- "RENB"
   fit$offset <- offset
-  fit$a <- exp(unlist(fit$estimate[(length(fit$estimate)-1)]))
-  fit$b <- exp(unlist(fit$estimate[length(fit$estimate)]))
+  fit$offset_values <- offset_vec
   
   obj <- .createFlexCountReg(model = fit, 
                              data = data, 

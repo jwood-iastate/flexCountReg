@@ -42,6 +42,17 @@ NumericVector dplindlogn_cpp(NumericVector x, NumericVector mean, NumericVector 
   
   NumericVector result(nx);
   
+  // Add conditions to avoid segmentation errors
+  if (nh == 0) Rcpp::stop("h must not be empty");
+  for (double v : mean)
+    if (!R_finite(v) || v <= 0) Rcpp::stop("Invalid mean");
+  for (double v : theta)
+    if (!R_finite(v) || v <= 0) Rcpp::stop("Invalid theta");
+  for (double v : sigma)
+    if (!R_finite(v) || v < 0) Rcpp::stop("Invalid sigma"); // Accepts sigma = 0
+  for (double v : h)
+    if (!R_finite(v)) Rcpp::stop("Invalid normal draw");
+  
   // Pre-compute exp(h * sigma) for all unique sigma values
   NumericVector unique_sigmas;
   std::vector<NumericVector> lnormdist_cache;
@@ -68,15 +79,19 @@ NumericVector dplindlogn_cpp(NumericVector x, NumericVector mean, NumericVector 
   }
   
   // Main computation loop
-#pragma omp parallel for if(nx > 1000)
   for (int i = 0; i < nx; ++i) {
     double current_mean = (nmean == 1) ? mean[0] : mean[i];
     double current_sigma = (nsigma == 1) ? sigma[0] : sigma[i];
     double current_theta = (ntheta == 1) ? theta[0] : theta[i];
     
-    // Early exit for invalid inputs
-    if (x[i] < 0 || current_mean <= 0 || current_sigma <= 0 || current_theta <= 0) {
-      result[i] = 0.0;
+    // Count checks for invalid inputs
+    if (Rcpp::NumericVector::is_na(x[i])) {
+      result[i] = NA_REAL;
+      continue;
+    }
+    
+    if (!R_finite(x[i]) || x[i] < 0 || x[i] != std::floor(x[i])) {
+      result[i] = 0.0;  // Use R_NegInf in the log-return path.
       continue;
     }
     
@@ -93,6 +108,10 @@ NumericVector dplindlogn_cpp(NumericVector x, NumericVector mean, NumericVector 
       }
     }
     
+    // Null-pointer guard
+    if (lnormdist == nullptr)
+      Rcpp::stop("Internal lognormal cache lookup failed");
+    
     double p = 0.0;
     
     // Vectorized summation
@@ -106,6 +125,7 @@ NumericVector dplindlogn_cpp(NumericVector x, NumericVector mean, NumericVector 
   
   return result;
 }
+
 
 double poisson_pmf(const double k, const double lambda) {
   return exp(k * log(lambda) - lgamma(k + 1.0) - lambda);

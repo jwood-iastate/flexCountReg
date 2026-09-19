@@ -151,9 +151,28 @@ Econometrica: Journal of the Econometric Society (1984): 909-938.</p>
 <span class="r-in"><span>                                group_var<span class="op">=</span><span class="st">"ID"</span>,</span></span>
 <span class="r-in"><span>                                method<span class="op">=</span><span class="st">"nm"</span>,</span></span>
 <span class="r-in"><span>                                max.iters <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in exp(unlist(fit$estimate[(length(fit$estimate) - 1)])):</span> non-numeric argument to mathematical function</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">renb.mod</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'renb.mod' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Method:  RENB </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations:  736 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence:  successful convergence  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -263.7953 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Parameter Estimates:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 7</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept)        -<span style="color: #BB0000;">9.35</span>        1.22     -<span style="color: #BB0000;">7.64</span>     0        -<span style="color: #BB0000;">11.7</span>       -<span style="color: #BB0000;">6.95</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt              0.965       0.141     6.82     0          0.688      1.24 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> speed50            -<span style="color: #BB0000;">0.988</span>       0.34     -<span style="color: #BB0000;">2.91</span>     0.004     -<span style="color: #BB0000;">1.65</span>      -<span style="color: #BB0000;">0.322</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> ShouldWidth04      -<span style="color: #BB0000;">0.415</span>       0.283    -<span style="color: #BB0000;">1.47</span>     0.143     -<span style="color: #BB0000;">0.97</span>       0.14 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> AADTover10k        -<span style="color: #BB0000;">0.868</span>       0.511    -<span style="color: #BB0000;">1.70</span>     0.089     -<span style="color: #BB0000;">1.87</span>       0.133</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> ln(a-1)             2.91       <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> ln(b)               0.619       0.309     2.00     0.045      0.013      1.23 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> lnlength (Offset …  1          <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>    </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

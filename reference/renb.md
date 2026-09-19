@@ -131,8 +131,27 @@ renb.mod <- renb(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
                                 group_var="ID",
                                 method="nm",
                                 max.iters = 1000)
-#> Error in exp(unlist(fit$estimate[(length(fit$estimate) - 1)])): non-numeric argument to mathematical function
+#> Warning: NaNs produced
 summary(renb.mod)
-#> Error: object 'renb.mod' not found
+#> Call:
+#>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
+#> 
+#>  Method:  RENB 
+#> Iterations:  736 
+#> Convergence:  successful convergence  
+#> Log-likelihood:  -263.7953 
+#> 
+#> Parameter Estimates:
+#> # A tibble: 8 × 7
+#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
+#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
+#> 1 (Intercept)        -9.35        1.22     -7.64     0        -11.7       -6.95 
+#> 2 lnaadt              0.965       0.141     6.82     0          0.688      1.24 
+#> 3 speed50            -0.988       0.34     -2.91     0.004     -1.65      -0.322
+#> 4 ShouldWidth04      -0.415       0.283    -1.47     0.143     -0.97       0.14 
+#> 5 AADTover10k        -0.868       0.511    -1.70     0.089     -1.87       0.133
+#> 6 ln(a-1)             2.91       NA        NA       NA         NA         NA    
+#> 7 ln(b)               0.619       0.309     2.00     0.045      0.013      1.23 
+#> 8 lnlength (Offset …  1          NA        NA       NA         NA         NA    
 # }
 ```

@@ -4,3 +4,9 @@
 .Ruserdata
 .DS_Store
 docs
+# Coverage artifacts
+covr/
+*.gcno
+*.gcda
+*.gcov
+cobertura.xml

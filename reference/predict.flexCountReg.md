@@ -100,8 +100,6 @@ pred_exact <- predict(rp_nb2, data = washington_roads, method = "Exact")
 pl_re <- poisLind.re(Total_crashes ~ lnaadt + lnlength,
                      data = washington_roads,
                      group_var = "ID")
-#> Error in eigen(hess, symmetric = TRUE, only.values = TRUE): infinite or missing values in 'x'
 pred_pl_re <- predict(pl_re, data = washington_roads)
-#> Error: object 'pl_re' not found
 # }
 ```

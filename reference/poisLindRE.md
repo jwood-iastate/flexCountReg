@@ -124,26 +124,26 @@ poislind.mod <- poisLind.re(
   method    = "NM",
   max.iters = 1000
 )
-#> Warning: NaNs produced
 summary(poislind.mod)
 #> Call:
 #>  Animal ~ lnaadt + lnlength + speed50 + ShouldWidth04 + AADTover10k 
 #> 
 #>  Method:  poisLindRE 
-#> Iterations:  1002 
-#> Convergence:  iteration limit exceeded  
-#> Log-likelihood:  91004.96 
+#> Iterations:  712 
+#> Convergence:  successful convergence  
+#> Log-likelihood:  -263.098 
 #> 
 #> Parameter Estimates:
-#> # A tibble: 7 × 7
-#>   parameter       coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>           <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)    -5.55       NA        NA           NA     NA         NA    
-#> 2 lnaadt          0.175       0.031     5.65         0      0.114      0.235
-#> 3 lnlength        8.67        0.278    31.2          0      8.13       9.22 
-#> 4 speed50         4.26        0.163    26.1          0      3.94       4.58 
-#> 5 ShouldWidth04  -2.92        0.163   -17.9          0     -3.24      -2.60 
-#> 6 AADTover10k    11.8         0.223    53.2          0     11.4       12.3  
-#> 7 ln(theta)     -46.6         0.031 -1509.           0    -46.7      -46.6  
+#> # A tibble: 8 × 7
+#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
+#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
+#> 1 (Intercept)        -9.61        1.43     -6.71     0        -12.4       -6.8  
+#> 2 lnaadt              1.03        0.168     6.15     0          0.705      1.36 
+#> 3 lnlength            1.46        0.236     6.19     0          0.996      1.92 
+#> 4 speed50            -0.856       0.337    -2.54     0.011     -1.52      -0.195
+#> 5 ShouldWidth04      -0.434       0.292    -1.49     0.137     -1.01       0.138
+#> 6 AADTover10k        -0.758       0.526    -1.44     0.15      -1.79       0.273
+#> 7 ln(theta)           3.50        2.13      1.64     0.1       -0.671      7.68 
+#> 8 Offset (Offset va…  1          NA        NA       NA         NA         NA    
 # }
 ```

@@ -127,8 +127,8 @@ poisLind.re <- function(formula, group_var, data,
   # }
   
   # Data preparation
-  mod_df <- stats::model.frame(formula, data)
-  X <- as.matrix(modelr::model_matrix(data, formula))
+  mod_df <- stats::model.frame(formula, data, na.action = stats::na.fail)
+  X <- stats::model.matrix(attr(mod_df, "terms"), mod_df)
   y <- as.numeric(stats::model.response(mod_df))
   
   # Generate a panel ID for the model
@@ -139,7 +139,7 @@ poisLind.re <- function(formula, group_var, data,
       if (length(group_var) > 1) {
         # Combine multiple columns into a single string column
         data <- data %>%
-          unite("panel_id", all_of(group_var),
+          tidyr::unite("panel_id", all_of(group_var),
                 sep = "_", remove = FALSE)
       } else {
         data <- data %>%
@@ -161,49 +161,88 @@ poisLind.re <- function(formula, group_var, data,
   x_names <- append(x_names, "ln(theta)")
   names(full_start) <- x_names
   
-  # Log-likelihood for Random Effects Poisson-Lindley model
-  reg.run.RE <- function(beta, y, X, group) {
-    pars <- length(beta) - 1
-    coefs <- as.vector(unlist(beta[1:pars]))
-    theta <- exp(unlist(beta[length(beta)]))
-    mu <- exp(X %*% coefs)
-    if (!is.null(offset)) mu <- mu * exp(data[[offset]])
-    
-    coef1 <- theta^2 / (theta + 1)
-    
-    adj_mu <- mu * theta * (theta + 1) / (theta + 2)
-    adj_mu_y <- adj_mu^y / factorial(y)
-    adj_mu_div_p_y <- adj_mu_y + y
-    y_2 <- y + 2
-    
-    df <- data.frame(
-      y = y,
-      adj_mu_y = adj_mu_y,
-      adj_mu = adj_mu,
-      adj_mu_div_p_y = adj_mu_div_p_y,
-      y_2 = y_2,
-      group = group
-    )
-    
-    LL <- df %>%
-      group_by(across(group)) %>%
-      reframe(ll = log(
-        coef1 *
-          prod(adj_mu_y) *
-          (factorial(sum(y)) /
-             ((sum(adj_mu) + theta)^sum(y_2) *
-                (sum(adj_mu_div_p_y) + theta + 1)))
-      ))
-    
-    return(as.vector(LL$ll))
+  # Local helpers keep this replacement independent of other repair files.
+  .fcr_lse <- function(x) {
+    if (!length(x)) return(-Inf)
+    if (anyNA(x)) return(NA_real_)
+    m <- max(x)
+    if (is.infinite(m)) return(m)
+    m + log(sum(exp(x - m)))
   }
-  
+
+  .fcr_offset <- function(mf, data, offset_cols = NULL) {
+    form_off <- stats::model.offset(mf)
+    if (!is.null(form_off) && !is.null(offset_cols))
+      stop("Use either a formula offset or offset columns")
+    if (!is.null(form_off)) out <- as.numeric(form_off)
+    else if (is.null(offset_cols)) out <- rep(0, nrow(data))
+    else {
+      if (!is.character(offset_cols) || !length(offset_cols) ||
+          anyDuplicated(offset_cols) ||
+          !all(offset_cols %in% names(data)))
+        stop("offset must name distinct columns in data")
+      z <- data[, offset_cols, drop = FALSE]
+      if (!all(vapply(z, is.numeric, logical(1))))
+        stop("Offset columns must be numeric")
+      out <- rowSums(z)
+    }
+    if (length(out) != nrow(data) || any(!is.finite(out)))
+      stop("Offsets must be finite and aligned with model rows")
+    out
+  }
+
+  offset_vec <- .fcr_offset(mod_df, data, offset)
+
+  # Poisson-Lindley log likelihood, evaluated separately for each panel.
+  reg.run.RE <- function(beta, y, X, group, offset_vec) {
+    n_covariates <- ncol(X)
+    if (length(beta) != n_covariates + 1L || nrow(X) != length(y) ||
+        length(group) != length(y) || length(offset_vec) != length(y) ||
+        anyNA(group)) {
+      stop("Poisson-Lindley parameters, rows, groups and offsets must align.")
+    }
+    beta_cov <- beta[seq_len(n_covariates)]
+    theta <- exp(beta[n_covariates + 1L])
+    panels <- split(seq_along(y), group, drop = TRUE)
+    n_panels <- length(panels)
+
+    if (!is.finite(theta) || theta <= 0) {
+      return(rep(-Inf, n_panels))
+    }
+
+    # Convert the marginal mean into the conditional Poisson rate multiplier.
+    log_theta <- log(theta)
+    log_1p_theta <- log1p(theta)
+    log_lambda <- drop(X %*% beta_cov) + offset_vec +
+      log_theta + log_1p_theta - log(theta + 2)
+    if (any(!is.finite(log_lambda))) {
+      return(rep(-Inf, n_panels))
+    }
+    theta_const <- 2 * log_theta - log_1p_theta
+
+    # Integrate over the shared Lindley random effect within each panel.
+    vapply(panels, function(idx) {
+      y_panel <- y[idx]
+      log_lambda_panel <- log_lambda[idx]
+      y_sum <- sum(y_panel)
+      log_A <- .fcr_lse(log_lambda_panel)
+      log_denom <- .fcr_lse(c(log_A, log_theta))
+      log_linear <- .fcr_lse(c(log_A, log(theta + y_sum + 1)))
+      log_lik_obs <- sum(y_panel * log_lambda_panel - lgamma(y_panel + 1))
+      log_lik_gamma <- lgamma(y_sum + 1)
+
+      theta_const + log_lik_obs + log_lik_gamma +
+        log_linear - (y_sum + 2) * log_denom
+    }, numeric(1))
+  }
+
   fit <- maxLik::maxLik(
     reg.run.RE,
     start  = full_start,
     y      = y,
     X      = X,
     group  = group,
+    offset_vec = offset_vec,
     method = method,
     control = list(
       iterlim    = max.iters,
@@ -213,8 +252,9 @@ poisLind.re <- function(formula, group_var, data,
   
   # Bootstrap SEs (optional)
   plind.boot <- function(data) {
-    mod1_frame <- stats::model.frame(formula, data)
-    X_Fixed <- stats::model.matrix(formula, data)
+    data <- as.data.frame(data)
+    mod1_frame <- stats::model.frame(formula, data, na.action = stats::na.fail)
+    X_Fixed <- stats::model.matrix(attr(mod1_frame, "terms"), mod1_frame)
     y <- stats::model.response(mod1_frame)
     
     int_res <- maxLik::maxLik(
@@ -222,7 +262,8 @@ poisLind.re <- function(formula, group_var, data,
       start  = fit$estimate,
       y      = y,
       X      = X_Fixed,
-      group  = group,
+      group  = data$panel_id,
+      offset_vec = .fcr_offset(mod1_frame, data, offset),
       method = method,
       control = list(
         iterlim    = max.iters,
@@ -258,7 +299,7 @@ poisLind.re <- function(formula, group_var, data,
   fit$beta_pred <- beta_pred
   fit$theta <- exp(fit$estimate[length(fit$estimate)])
   
-  mu <- exp(X %*% beta_pred)
+  mu <- exp(drop(X %*% beta_pred) + offset_vec)
   fit$predictions <- mu
   fit$se <- sqrt(diag(vcov(fit)))
   fit$formula <- formula
@@ -266,6 +307,8 @@ poisLind.re <- function(formula, group_var, data,
   fit$residuals <- y - fit$predictions
   fit$LL <- fit$maximum
   fit$modelType <- "poisLindRE"
+  fit$offset <- offset
+  fit$offset_values <- offset_vec
   
   obj <- .createFlexCountReg(
     model = fit,

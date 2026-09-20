@@ -49,8 +49,8 @@ dpWeib_cpp <- function(x, mean, alpha, sigma, h) {
     .Call('_flexCountReg_dpWeib_cpp', PACKAGE = 'flexCountReg', x, mean, alpha, sigma, h)
 }
 
-genWaring_cpp <- function(x, mean, k, p) {
-    .Call('_flexCountReg_genWaring_cpp', PACKAGE = 'flexCountReg', x, mean, k, p)
+genWaring_cpp <- function(x, mean, k, p, log_prob = FALSE) {
+    .Call('_flexCountReg_genWaring_cpp', PACKAGE = 'flexCountReg', x, mean, k, p, log_prob)
 }
 
 dtri_cpp <- function(x, mode = 0, sigma = 1, upper = NA_real_, lower = NA_real_, log = FALSE) {

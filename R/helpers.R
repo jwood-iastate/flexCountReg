@@ -89,7 +89,7 @@ get_params <- function(family) {
     "PLL" = list("ln(theta)", "ln(sigma)"),
     "PW" = list("ln(alpha)", "ln(sigma)"),
     "SI" = list("gamma", "ln(sigma)"),
-    "GW" = list("ln(k)", "ln(rho)"),
+    "GW" = list("ln(k)", "ln(rho-1)"),
     "COM" = list("ln(nu)", NULL),
   )
 }
@@ -137,8 +137,9 @@ get_probFunc <- function(family){
       dpWeib_cpp(y, mean = predicted, alpha = alpha, sigma = sigma, h =haltons),
     "SI" = function(y, predicted, alpha, sigma, ...) 
       dsichel(x = y, mu = predicted, sigma = sigma, gamma = log(alpha)),
-    "GW" = function(y, predicted, alpha, sigma, ...) 
-      dgwar(y, mu = predicted, k = alpha, rho = sigma),
+    "GW" = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      dgwar(y, mu = predicted, k = alpha, rho = 1 + sigma,
+            log = log),
     "COM" = function(y, predicted, alpha, sigma, ...) 
       dcom(x = y, mu = predicted, nu = alpha)
   )

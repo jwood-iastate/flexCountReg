@@ -93,13 +93,10 @@
 #' @rdname Generalized-Waring
 #' @export
 dgwar <- Vectorize(function(y, mu, k, rho, log = FALSE) {
-
-  pmf <- genWaring_cpp(y, mu, k, rho)
   
-  if (log) pmf <- log(pmf)
-  return(pmf)
-})
-
+  genWaring_cpp(y, mu, k, rho, log_prob = log)
+  
+}, vectorize.args = c("y", "mu", "k", "rho"))
 
 #' @rdname Generalized-Waring
 #' @export

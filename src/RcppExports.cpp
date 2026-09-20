@@ -179,8 +179,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // genWaring_cpp
-NumericVector genWaring_cpp(NumericVector x, NumericVector mean, NumericVector k, NumericVector p);
-RcppExport SEXP _flexCountReg_genWaring_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP kSEXP, SEXP pSEXP) {
+NumericVector genWaring_cpp(NumericVector x, NumericVector mean, NumericVector k, NumericVector p, bool log_prob);
+RcppExport SEXP _flexCountReg_genWaring_cpp(SEXP xSEXP, SEXP meanSEXP, SEXP kSEXP, SEXP pSEXP, SEXP log_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -188,7 +188,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type mean(meanSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type k(kSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type p(pSEXP);
-    rcpp_result_gen = Rcpp::wrap(genWaring_cpp(x, mean, k, p));
+    Rcpp::traits::input_parameter< bool >::type log_prob(log_probSEXP);
+    rcpp_result_gen = Rcpp::wrap(genWaring_cpp(x, mean, k, p, log_prob));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -269,7 +270,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_flexCountReg_dplindlogn_cpp", (DL_FUNC) &_flexCountReg_dplindlogn_cpp, 5},
     {"_flexCountReg_dpLnorm_cpp", (DL_FUNC) &_flexCountReg_dpLnorm_cpp, 4},
     {"_flexCountReg_dpWeib_cpp", (DL_FUNC) &_flexCountReg_dpWeib_cpp, 5},
-    {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 4},
+    {"_flexCountReg_genWaring_cpp", (DL_FUNC) &_flexCountReg_genWaring_cpp, 5},
     {"_flexCountReg_dtri_cpp", (DL_FUNC) &_flexCountReg_dtri_cpp, 6},
     {"_flexCountReg_ptri_cpp", (DL_FUNC) &_flexCountReg_ptri_cpp, 7},
     {"_flexCountReg_qtri_cpp", (DL_FUNC) &_flexCountReg_qtri_cpp, 5},

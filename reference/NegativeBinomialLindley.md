@@ -7,7 +7,15 @@ function, and random number generation for the Poisson-Lindley-Gamma
 ## Usage
 
 ``` r
-dplindGamma(x, mean = 1, theta = 1, alpha = 1, log = FALSE)
+dplindGamma(
+  x,
+  mean = 1,
+  theta = 1,
+  alpha = 1,
+  log = FALSE,
+  rel.tol = 1e-08,
+  subdivisions = 200L
+)
 
 pplindGamma(
   q,
@@ -15,7 +23,9 @@ pplindGamma(
   theta = 1,
   alpha = 1,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  rel.tol = 1e-08,
+  subdivisions = 200L
 )
 
 qplindGamma(p, mean = 1, theta = 1, alpha = 1)
@@ -48,6 +58,14 @@ rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 - log:
 
   logical; if TRUE, probabilities p are given as log(p).
+
+- rel.tol:
+
+  Relative numerical integration tolerance; default 1e-8.
+
+- subdivisions:
+
+  Maximum subintervals per component-side integral.
 
 - q:
 
@@ -100,12 +118,13 @@ Distribution.
 
 The compound Probability Mass Function (PMF) for the
 Poisson-Lindley-Gamma (PLG) distribution is: \$\$
-f(x\|\mu,\theta,\alpha)= \frac{ \alpha(\theta+2)^2\Gamma(x+\alpha) }{
-\mu^2(\theta+1)^3\Gamma(\alpha) } \left(
+f(x\|\mu,\theta,\alpha)= \frac{ (\theta+2)^2\Gamma(x+1/\alpha) }{
+\alpha\mu^2(\theta+1)^3\Gamma(1/\alpha) } \left(
 \frac{\mu\theta(\theta+1)}{\theta+2} U\left(
-x+1,2-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)} \right) +
-\alpha(x+1) U\left( x+2,3-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)}
-\right) \right) \$\$
+x+1,2-1/\alpha,\frac{1/\alpha(\theta+2)}{\mu(\theta+1)} \right) +
+1/\alpha(x+1) U\left(
+x+2,3-1/\alpha,\frac{1/\alpha(\theta+2)}{\mu(\theta+1)} \right) \right)
+\$\$
 
 Where \\\theta\\ is a distribution parameter from the Poisson-Lindley
 distribution with the restrictions that \\\theta\>0\\, \\\alpha\\ is a
@@ -117,7 +136,7 @@ also known as the confluent hypergeometric function of the second kind
 The expected value of the distribution is: \$\$E\[x\]=\mu\$\$
 
 The variance is:
-\$\$\sigma^2=\mu+\left(\left(1+\frac{1}{\alpha}\right)\left(2-\frac{2}
+\$\$\sigma^2=\mu+\left(\left(1+\alpha\right)\left(2-\frac{2}
 {(\theta+2)^2}\right)-1\right)\mu^2\$\$
 
 ## Examples

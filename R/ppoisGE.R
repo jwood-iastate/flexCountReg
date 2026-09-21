@@ -123,23 +123,16 @@
   lambda <- mean * scale /
     (digamma(shape + 1) - digamma(1))
   
-  probabilities <- vapply(
-    haltons,
-    FUN = function(h) {
-      gedist <- -log1p(-h^(1 / shape)) / scale
-      lambda_i <- lambda * gedist
-      
-      stats::dpois(
-        x = x,
-        lambda = lambda_i
-      )
-    },
-    FUN.VALUE = numeric(1)
-  )
+  gedist <- -log1p(-haltons^(1 / shape)) / scale
+  lambda_i <- lambda * gedist
   
-  base::mean(probabilities)
+  base::mean(
+    stats::dpois(
+      x = x,
+      lambda = lambda_i
+    )
+  )
 }
-
 
 #' @rdname PoissonGeneralizedExponential
 #' @export

@@ -2,12 +2,15 @@
 % Please edit documentation in R/ppoisGE.R
 \name{PoissonGeneralizedExponential}
 \alias{PoissonGeneralizedExponential}
+\alias{.dpge_one}
 \alias{dpge}
 \alias{ppge}
 \alias{qpge}
 \alias{rpge}
 \title{Poisson-Generalized-Exponential Distribution}
 \usage{
+.dpge_one(x, mean, shape, scale, haltons)
+
 dpge(
   x,
   mean = 1,
@@ -47,11 +50,11 @@ than 0).}
 generalized exponential distribution (the values have to be greater than
 0).}
 
+\item{haltons}{an optional vector of Halton draws to use instead of ndraws.}
+
 \item{ndraws}{the number of Halton draws to use for the integration.}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
-
-\item{haltons}{an optional vector of Halton draws to use instead of ndraws.}
 
 \item{q}{quantile or a vector of quantiles.}
 

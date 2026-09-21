@@ -118,47 +118,121 @@
 
 #' @rdname PoissonGeneralizedExponential
 #' @export
-dpge <- Vectorize(function(
-    x, mean=1, shape=1, scale=1, ndraws=1500, log=FALSE, haltons=NULL){
+.dpge_one <- function(x, mean, shape, scale, haltons) {
   
-  if(mean<=0 || scale<=0 || shape <=0) {
-    msg <- paste(
-      'The values of `mean`, `shape`,",
-      "and `scale` have to have values greater than 0.')
-    warning(msg)
-  }
+  lambda <- mean * scale /
+    (digamma(shape + 1) - digamma(1))
   
-  # qge <- function(p, shape, scale){
-  #   q <- log((p*shape+1)^(1/shape)+1)/scale
-  #   return(q)
-  # }
-  # 
-  lambda <- mean * scale /(digamma(shape+1)-digamma(1))
-
-  # Generate Halton draws to use as quantile values
-  if (!is.null(haltons)) h <- haltons else h <- randtoolbox::halton(ndraws)
-
-  # Evaluate the density of the normal distribution at those quantiles and use
-  # the exponent to transform to lognormal values
-  gedist <- 
-    # Quantile function of generalized exponential distribution applied to
-    # halton draws
-    log(1 - h^(1 / shape)) / (-scale) 
-  mu_i <- lambda * gedist
-
-  p_pge.i <- vapply(
-    mu_i,
-    FUN = stats::dpois,
-    FUN.VALUE = numeric(1),
-    x = x
+  probabilities <- vapply(
+    haltons,
+    FUN = function(h) {
+      gedist <- -log1p(-h^(1 / shape)) / scale
+      lambda_i <- lambda * gedist
+      
+      stats::dpois(
+        x = x,
+        lambda = lambda_i
+      )
+    },
+    FUN.VALUE = numeric(1)
   )
   
+  base::mean(probabilities)
+}
 
-  p <- mean(p_pge.i)
 
-  if (log) return(log(p))
-  else return(p)
-})
+#' @rdname PoissonGeneralizedExponential
+#' @export
+dpge <- function(
+    x,
+    mean = 1,
+    shape = 1,
+    scale = 1,
+    ndraws = 1500,
+    log = FALSE,
+    haltons = NULL
+) {
+  
+  # Validate observation-specific parameters
+  if (any(!is.finite(mean) | mean <= 0)) {
+    stop("mean must be finite and greater than 0")
+  }
+  
+  if (any(!is.finite(shape) | shape <= 0)) {
+    stop("shape must be finite and greater than 0")
+  }
+  
+  if (any(!is.finite(scale) | scale <= 0)) {
+    stop("scale must be finite and greater than 0")
+  }
+  
+  if (length(log) != 1L || is.na(log)) {
+    stop("log must be a single TRUE or FALSE value")
+  }
+  
+  # Validate or generate integration draws
+  if (is.null(haltons)) {
+    
+    if (
+      length(ndraws) != 1L ||
+      !is.finite(ndraws) ||
+      ndraws < 1 ||
+      ndraws != floor(ndraws)
+    ) {
+      stop("ndraws must be a positive integer")
+    }
+    
+    haltons <- randtoolbox::halton(n = as.integer(ndraws))
+    
+  } else {
+    
+    if (
+      length(haltons) == 0L ||
+      any(!is.finite(haltons) | haltons <= 0 | haltons >= 1)
+    ) {
+      stop("haltons must be nonempty, finite, and strictly between 0 and 1")
+    }
+  }
+  
+  # Preserve ordinary R-style recycling across observations.
+  parameter_lengths <- c(
+    length(x),
+    length(mean),
+    length(shape),
+    length(scale)
+  )
+  
+  if (any(parameter_lengths == 0L)) {
+    return(numeric(0))
+  }
+  
+  n <- max(parameter_lengths)
+  
+  x_vec     <- rep_len(x, n)
+  mean_vec  <- rep_len(mean, n)
+  shape_vec <- rep_len(shape, n)
+  scale_vec <- rep_len(scale, n)
+  
+  probabilities <- vapply(
+    seq_len(n),
+    FUN = function(i) {
+      .dpge_one(
+        x = x_vec[i],
+        mean = mean_vec[i],
+        shape = shape_vec[i],
+        scale = scale_vec[i],
+        haltons = haltons
+      )
+    },
+    FUN.VALUE = numeric(1)
+  )
+  
+  if (isTRUE(log)) {
+    base::log(probabilities)
+  } else {
+    probabilities
+  }
+}
 
 #' @rdname PoissonGeneralizedExponential
 #' @export

@@ -32,7 +32,8 @@
   [`qplindGamma()`](https://jwood-iastate.github.io/flexCountReg/reference/NegativeBinomialLindley.md)
   [`rplindGamma()`](https://jwood-iastate.github.io/flexCountReg/reference/NegativeBinomialLindley.md)
   : Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
-- [`dpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
+- [`.dpge_one()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
+  [`dpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
   [`ppge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
   [`qpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
   [`rpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)

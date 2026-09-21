@@ -91,7 +91,8 @@ is: \$\$ f(y \mid a_x, k, \rho) = \frac{ \Gamma(a_x + \rho)\Gamma(k +
 \rho) (a_x)\_y(k)\_y }{ y!\Gamma(\rho)\Gamma(a_x + k + \rho) (a_x + k +
 \rho)\_y } \$\$ where \\(\alpha)\_r =
 \frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}\\, and \\a_x \> 0\\, \\k \> 0\\,
-and \\\rho \> 0\\.
+and \\\rho \> 0\\. Under the mean parameterization used by these
+functions, \\\rho \> 1\\ is required.
 
 When \\\rho \> 1\\, the mean is: \$\$ E\[Y\] = \frac{a_x k}{\rho - 1}.
 \$\$

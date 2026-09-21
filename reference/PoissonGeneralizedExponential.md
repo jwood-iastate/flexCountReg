@@ -7,6 +7,8 @@ Poisson-Generalized-Exponential (PGE) Distribution
 ## Usage
 
 ``` r
+.dpge_one(x, mean, shape, scale, haltons)
+
 dpge(
   x,
   mean = 1,
@@ -57,6 +59,10 @@ rpge(n, mean = 1, shape = 1, scale = 1, ndraws = 1500)
   generalized exponential distribution (the values have to be greater
   than 0).
 
+- haltons:
+
+  an optional vector of Halton draws to use instead of ndraws.
+
 - ndraws:
 
   the number of Halton draws to use for the integration.
@@ -64,10 +70,6 @@ rpge(n, mean = 1, shape = 1, scale = 1, ndraws = 1500)
 - log:
 
   logical; if TRUE, probabilities p are given as log(p).
-
-- haltons:
-
-  an optional vector of Halton draws to use instead of ndraws.
 
 - q:
 

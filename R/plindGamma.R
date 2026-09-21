@@ -43,18 +43,18 @@
 #' \deqn{
 #' f(x|\mu,\theta,\alpha)=
 #' \frac{
-#'   \alpha(\theta+2)^2\Gamma(x+\alpha)
+#'   \alpha(\theta+2)^2\Gamma(x+1/\alpha)
 #' }{
-#'   \mu^2(\theta+1)^3\Gamma(\alpha)
+#'   \mu^2(\theta+1)^3\Gamma(1/\alpha)
 #' }
 #' \left(
 #'   \frac{\mu\theta(\theta+1)}{\theta+2}
 #'   U\left(
-#'     x+1,2-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)}
+#'     x+1,2-1/\alpha,\frac{1/\alpha(\theta+2)}{\mu(\theta+1)}
 #'   \right)
-#'   + \alpha(x+1)
+#'   + 1/\alpha(x+1)
 #'   U\left(
-#'     x+2,3-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)}
+#'     x+2,3-1/\alpha,\frac{1/\alpha(\theta+2)}{\mu(\theta+1)}
 #'   \right)
 #' \right)
 #' }
@@ -71,7 +71,7 @@
 #' \deqn{E[x]=\mu}
 #'
 #' The variance is:
-#' \deqn{\sigma^2=\mu+\left(\left(1+\frac{1}{\alpha}\right)\left(2-\frac{2}
+#' \deqn{\sigma^2=\mu+\left(\left(1+\alpha\right)\left(2-\frac{2}
 #' {(\theta+2)^2}\right)-1\right)\mu^2}
 #'
 #' 
@@ -105,18 +105,18 @@ dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, log=FALSE){
   
   U1 <- gsl::hyperg_U(
     x + 1,
-    2 - alpha,
-    (alpha * (theta + 2)) / (mean * (theta + 1))
+    2 - 1/alpha,
+    (1/alpha * (theta + 2)) / (mean * (theta + 1))
   )
   U2 <- gsl::hyperg_U(
     x + 2,
-    3 - alpha,
-    (alpha * (theta + 2)) / (mean * (theta + 1))
+    3 - 1/alpha,
+    (1/alpha * (theta + 2)) / (mean * (theta + 1))
   )
-  co1 <- alpha * (theta+2)^2 * gamma(x+alpha) /
-    (mean^2 * (theta+1)^3 * gamma(alpha))
+  co1 <- 1/alpha * (theta+2)^2 * gamma(x+1/alpha) /
+    (mean^2 * (theta+1)^3 * gamma(1/alpha))
   co2 <- mean * theta * (theta+1) / (theta+2)
-  co3 <- alpha * (x+1)
+  co3 <- 1/alpha * (x+1)
   
   p <- co1 * (co2 * U1 + co3 * U2)
   
@@ -187,13 +187,13 @@ pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
       # Pre-compute constants
       # PMF uses Tricomi's confluent hypergeometric function U(a, b, z)
       # z = alpha * (theta + 2) / (mean * (theta + 1))
-      z_arg <- alpha_i * (theta_i + 2) / (mean_i * (theta_i + 1))
+      z_arg <- 1/alpha_i * (theta_i + 2) / (mean_i * (theta_i + 1))
       
       # Common coefficient parts (in log-space)
       # co1 = alpha * (theta+2)^2 * Gamma(x+alpha) /
       #       (mean^2 * (theta+1)^3 * Gamma(alpha))
-      log_co1_base <- log(alpha_i) + 2 * log(theta_i + 2) -
-        2 * log(mean_i) - 3 * log(theta_i + 1) - lgamma(alpha_i)
+      log_co1_base <- log(1/alpha_i) + 2 * log(theta_i + 2) -
+        2 * log(mean_i) - 3 * log(theta_i + 1) - lgamma(1/alpha_i)
       
       # co2 = mean * theta * (theta+1) / (theta+2)
       co2 <- mean_i * theta_i * (theta_i + 1) / (theta_i + 2)
@@ -204,15 +204,15 @@ pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
       
       for (y in 0:q_i) {
         # log(Gamma(y + alpha))
-        log_gamma_y_alpha <- lgamma(y + alpha_i)
+        log_gamma_y_alpha <- lgamma(y + 1/alpha_i)
         
         # U1 = U(y + 1, 2 - alpha, z)
         # U2 = U(y + 2, 3 - alpha, z)
-        log_U1 <- log_hyperg_U_safe(y + 1, 2 - alpha_i, z_arg)
-        log_U2 <- log_hyperg_U_safe(y + 2, 3 - alpha_i, z_arg)
+        log_U1 <- log_hyperg_U_safe(y + 1, 2 - 1/alpha_i, z_arg)
+        log_U2 <- log_hyperg_U_safe(y + 2, 3 - 1/alpha_i, z_arg)
         
         # co3 = alpha * (y + 1)
-        log_co3 <- log(alpha_i) + log(y + 1)
+        log_co3 <- log(1/alpha_i) + log(y + 1)
         
         # PMF = co1 * Gamma(y+alpha) * (co2 * U1 + co3_val * U2)
         # In log-space: need log(co2 * U1 + alpha*(y+1) * U2)

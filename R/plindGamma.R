@@ -1,3 +1,297 @@
+# Parameter convention:
+#   alpha = 1/r; G ~ Gamma(shape = 1/alpha, rate = 1/alpha).
+#   E(Y) = mean; Var(Y) = mean + [(1+alpha)*(2-2/(theta+2)^2)-1]*mean^2.
+#
+# Computational representation:
+#   J = 1 with probability theta/(1+theta), otherwise J = 2;
+#   X | J ~ Gamma(J, rate=1); b = (theta+2)/(theta+1); W = X/b;
+#   Y | W ~ NB(size=1/alpha, mu=mean*W).
+# We integrate each gamma component separately after t=log(X), scaling
+# the integrand at its mode. The CDF uses pnbinom(), not a sum of PMFs.
+# No gsl dependency is required by these replacements.
+#
+# Extensions: mean=0 is degenerate at zero; alpha=0 is the exact
+# Poisson--Lindley limit. Positive alpha is never silently replaced by zero.
+
+.plg_logadd <- function(a, b) {
+  if (is.na(a) || is.na(b)) return(NA_real_)
+  if (a == -Inf) return(b)
+  if (b == -Inf) return(a)
+  m <- max(a, b)
+  m + log1p(exp(min(a, b) - m))
+}
+
+.plg_log1mexp <- function(a) {
+  if (is.na(a) || a > 0) stop("Invalid log probability in complement")
+  if (a == -Inf) return(0)
+  if (a == 0) return(-Inf)
+  if (a < -log(2)) log1p(-exp(a)) else log(-expm1(a))
+}
+
+.plg_control <- function(rel.tol, subdivisions) {
+  if (length(rel.tol) != 1L || !is.finite(rel.tol) ||
+      rel.tol < 1e-12 || rel.tol > 1e-3)
+    stop("'rel.tol' must be a finite scalar between 1e-12 and 1e-3")
+  if (length(subdivisions) != 1L || !is.finite(subdivisions) ||
+      subdivisions < 50 || subdivisions > .Machine$integer.max ||
+      subdivisions != floor(subdivisions))
+    stop("'subdivisions' must be an integer of at least 50")
+}
+
+.plg_flag <- function(x, name) {
+  if (length(x) != 1L || is.na(x) || !is.logical(x))
+    stop("'", name, "' must be TRUE or FALSE")
+}
+
+.plg_inputs <- function(x, mean, theta, alpha) {
+  a <- list(x = x, mean = mean, theta = theta, alpha = alpha)
+  if (!all(vapply(a, is.numeric, logical(1))))
+    stop("Count and distribution arguments must be numeric")
+  if (any(lengths(a) == 0L)) return(NULL)
+  n <- max(lengths(a))
+  lapply(a, rep_len, length.out = n)
+}
+
+# Conditional log probability at log(mean * W). For the CDF the requested
+# tail is passed directly to the NB/Poisson routine.
+.plg_conditional <- function(v, logmu, r, kind, lower.tail) {
+  ans <- numeric(length(logmu))
+  normal <- is.finite(logmu) & logmu >= log(.Machine$double.xmin) &
+    logmu <= log(.Machine$double.xmax)
+  if (any(normal)) {
+    mu <- exp(logmu[normal])
+    if (kind == "pmf") {
+      ans[normal] <- if (is.infinite(r))
+        stats::dpois(v, lambda = mu, log = TRUE) else
+          stats::dnbinom(v, size = r, mu = mu, log = TRUE)
+    } else {
+      ans[normal] <- if (is.infinite(r))
+        stats::ppois(v, lambda = mu, lower.tail = lower.tail, log.p = TRUE) else
+          stats::pnbinom(v, size = r, mu = mu, lower.tail = lower.tail, log.p = TRUE)
+    }
+  }
+  # Values beyond ordinary floating-point means are not automatically zero.
+  # PMFs admit a log-mean formula; CDFs use the NB probability parameter when
+  # representable. An unresolved calculation raises a numerical failure.
+  other <- which(!normal)
+  for (i in other) {
+    lm <- logmu[i]
+    if (!is.finite(lm)) stop("Nonfinite conditional log mean")
+    if (kind == "pmf") {
+      if (is.infinite(r)) {
+        ans[i] <- if (lm > log(.Machine$double.xmax)) -Inf else
+          v * lm - exp(lm) - lgamma(v + 1)
+      } else {
+        lr <- log(r)
+        softplus <- function(z) if (z > 0) z + log1p(exp(-z)) else log1p(exp(z))
+        lc <- if (v == 0) 0 else -lbeta(r, v + 1) - log(r + v)
+        ans[i] <- lc - r * softplus(lm - lr) - v * softplus(lr - lm)
+      }
+    } else if (lm < log(.Machine$double.xmin)) {
+      # The survival series starts at k=v+1. Bound all successive PMF
+      # ratios by rho. If rho <= machine epsilon, its first term gives
+      # the tail to floating-point relative precision, even when mu
+      # itself underflows. Never round a tiny log survival to -Inf.
+      k <- v + 1
+      if (is.infinite(r)) {
+        logrho <- lm - log(k + 1)
+      } else {
+        lr <- log(r)
+        z <- lr - lm
+        sp <- if (z > 0) z + log1p(exp(-z)) else log1p(exp(z))
+        logrho <- max(0, .plg_logadd(log(k), lr) - log(k + 1)) - sp
+      }
+      if (logrho > log(.Machine$double.eps))
+        stop("Conditional small-mean tail requires higher precision")
+      lt <- .plg_conditional(k, lm, r, "pmf", TRUE)
+      ans[i] <- if (lower.tail) .plg_log1mexp(lt) else lt
+    } else if (!is.infinite(r)) {
+      prob <- stats::plogis(log(r) - lm)
+      if (prob <= 0 || prob >= 1)
+        stop("Conditional CDF exceeds representable NB probability range")
+      ans[i] <- stats::pnbinom(v, size = r, prob = prob,
+                               lower.tail = lower.tail, log.p = TRUE)
+    } else {
+      stop("Conditional Poisson CDF exceeds representable mean range")
+    }
+  }
+  if (anyNA(ans) || any(ans == Inf)) stop("Conditional probability evaluation failed")
+  ans
+}
+
+# Integrate one log-scaled gamma component on the entire real t axis.
+.plg_component <- function(v, mean, theta, alpha, shape, kind,
+                           lower.tail, rel.tol, subdivisions) {
+  r <- if (alpha == 0) Inf else 1 / alpha
+  if (alpha > 0 && !is.finite(r))
+    stop("1/alpha overflowed; use alpha=0 only for the exact limit")
+  b <- 1 + 1 / (theta + 1) # avoids (theta+2)/(theta+1) overflow
+  logscale <- log(mean) - log(b)
+  integration_peak <- NULL
+  lf <- function(t) {
+    out <- rep(-Inf, length(t))
+    # At +Inf the exp(-exp(t)) factor vanishes. At -Inf both gamma
+    # components vanish on the log-X integration scale.
+    active <- is.finite(t) & t <= log(.Machine$double.xmax)
+    if (any(active)) {
+      u <- t[active]
+      prior <- shape * u - exp(u) - lgamma(shape)
+      # Far beyond the density's right tail, prior=-Inf needs no NB call.
+      keep <- is.finite(prior)
+      # Since conditional probabilities are <=1, this bounds the scaled
+      # integrand below the smallest normal double. It also avoids asking
+      # the conditional routine to resolve irrelevant extreme means.
+      if (!is.null(integration_peak))
+        keep <- keep & prior >= integration_peak + log(.Machine$double.xmin)
+      val <- rep(-Inf, length(u))
+      if (any(keep)) val[keep] <- prior[keep] +
+        .plg_conditional(v, logscale + u[keep], r, kind, lower.tail)
+      out[active] <- val
+    }
+    if (anyNA(out) || any(out == Inf)) stop("Invalid log integrand")
+    out
+  }
+  
+  # Locate an interior mode without assuming it is near X=1. Nonunit means
+  # and upper-tail counts can move it substantially.
+  found <- FALSE
+  for (span in c(8, 16, 32, 64, 128, 256, 512, 1024)) {
+    grid <- seq(-span, min(span, 700), by = 2)
+    values <- lf(grid)
+    j <- which.max(values)
+    if (is.finite(values[j]) && j > 1 && j < length(grid) &&
+        values[1] < values[j] - 35 && tail(values, 1) < values[j] - 35) {
+      found <- TRUE
+      break
+    }
+  }
+  if (!found) stop("Could not bracket the integration mode")
+  opt <- stats::optimize(lf, c(grid[j-1], grid[j+1]), maximum = TRUE,
+                         tol = 1e-9)
+  mode <- opt$maximum
+  peak <- opt$objective
+  if (!is.finite(peak)) stop("Nonfinite integration scale")
+  integration_peak <- peak
+  
+  # Locate a one-log-unit drop on each side. Separate scales prevent a
+  # narrow or asymmetric integrand from being missed by infinite-interval
+  # quadrature after transformation to u >= 0.
+  side_scale <- function(direction) {
+    h <- 0.25
+    for (j in seq_len(20L)) {
+      if (lf(mode + direction*h) <= peak - 1) break
+      h <- h * 2
+    }
+    if (lf(mode + direction*h) > peak - 1) stop("Integration scale not bracketed")
+    f <- function(d) {
+      z <- lf(mode + direction*d) - peak + 1
+      if (z == -Inf) -.Machine$double.xmax else z
+    }
+    width <- stats::uniroot(f, c(0, h), tol = 1e-10)$root
+    if (!is.finite(width) || width <= 0) stop("Integration width unresolved")
+    width
+  }
+  integrate_side <- function(direction) {
+    width <- side_scale(direction)
+    g <- function(u) {
+      z <- lf(mode + direction*width*u) - peak
+      ans <- exp(z)
+      if (any(!is.finite(ans))) stop("Scaled integrand overflow")
+      ans
+    }
+    ans <- stats::integrate(g, 0, Inf, subdivisions = subdivisions,
+                            rel.tol = rel.tol, abs.tol = 0,
+                            stop.on.error = TRUE)
+    if (!identical(ans$message, "OK") || !is.finite(ans$value) || ans$value <= 0)
+      stop("Quadrature failed or returned unresolved mass")
+    if (ans$abs.error > 5*rel.tol*ans$value)
+      stop("Quadrature error estimate exceeds tolerance")
+    log(width) + log(ans$value)
+  }
+  result <- peak + .plg_logadd(integrate_side(-1), integrate_side(1))
+  if (!is.finite(result)) stop("Integrated probability is not resolved")
+  result
+}
+
+.plg_logprob <- function(v, mean, theta, alpha, kind, lower.tail,
+                         rel.tol, subdivisions) {
+  a <- .plg_component(v, mean, theta, alpha, 1, kind, lower.tail,
+                      rel.tol, subdivisions)
+  b <- .plg_component(v, mean, theta, alpha, 2, kind, lower.tail,
+                      rel.tol, subdivisions)
+  ans <- .plg_logadd(log(theta) - log1p(theta) + a,
+                     -log1p(theta) + b)
+  if (!is.finite(ans) || ans > 5*rel.tol)
+    stop("Integrated probability outside [0,1]")
+  # Only remove small positive roundoff within the integration tolerance.
+  min(ans, 0)
+}
+
+.plg_evaluate <- function(v, mean, theta, alpha, kind, lower.tail,
+                          rel.tol, subdivisions) {
+  ans <- .plg_logprob(v, mean, theta, alpha, kind, lower.tail,
+                      rel.tol, subdivisions)
+  # A probability near one is represented more accurately through its small
+  # complementary tail. Each small tail is itself integrated directly.
+  if (kind == "cdf" && ans > -log(2)) {
+    opposite <- .plg_logprob(v, mean, theta, alpha, "cdf", !lower.tail,
+                             rel.tol, subdivisions)
+    ans <- .plg_log1mexp(opposite)
+  }
+  ans
+}
+
+.plg_vector <- function(x, mean, theta, alpha, kind, lower.tail,
+                        give.log, rel.tol, subdivisions) {
+  a <- .plg_inputs(x, mean, theta, alpha)
+  if (is.null(a)) return(numeric())
+  n <- length(a$x)
+  out <- rep(NA_real_, n)
+  invalid <- noninteger <- FALSE
+  failures <- character()
+  for (i in seq_len(n)) {
+    vals <- c(a$x[i], a$mean[i], a$theta[i], a$alpha[i])
+    if (any(is.na(vals) & !is.nan(vals))) next
+    if (any(is.nan(vals))) { out[i] <- NaN; next }
+    if (!is.finite(a$mean[i]) || a$mean[i] < 0 ||
+        !is.finite(a$theta[i]) || a$theta[i] <= 0 ||
+        !is.finite(a$alpha[i]) || a$alpha[i] < 0) {
+      out[i] <- NaN; invalid <- TRUE; next
+    }
+    v <- a$x[i]
+    if (kind == "pmf") {
+      if (!is.finite(v) || v < 0) { out[i] <- -Inf; next }
+      if (v != floor(v)) { out[i] <- -Inf; noninteger <- TRUE; next }
+      if (a$mean[i] == 0) { out[i] <- if (v == 0) 0 else -Inf; next }
+    } else {
+      if (v < 0) { out[i] <- if (lower.tail) -Inf else 0; next }
+      if (v == Inf || a$mean[i] == 0) {
+        out[i] <- if (lower.tail) 0 else -Inf; next
+      }
+      v <- floor(v) # deliberately no integer coercion
+    }
+    out[i] <- tryCatch(
+      .plg_evaluate(v, a$mean[i], a$theta[i], a$alpha[i], kind, lower.tail,
+                    rel.tol, subdivisions),
+      error = function(e) {
+        failures <<- c(failures, paste0("element ", i, ": ", conditionMessage(e)))
+        NaN
+      }
+    )
+  }
+  if (invalid) warning("Invalid distribution parameter(s): NaNs produced", call. = FALSE)
+  if (noninteger) warning("Noninteger 'x': probability zero", call. = FALSE)
+  if (length(failures)) warning(
+    "PLG numerical evaluation failed; NaNs produced. ",
+    paste(utils::head(failures, 3), collapse = "; "),
+    if (length(failures) > 3) paste0("; and ", length(failures)-3, " more"),
+    call. = FALSE)
+  if (!give.log) out <- exp(out)
+  if (length(x) == n && !is.null(names(x))) names(out) <- names(x)
+  out
+}
+
+
 #' Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
 #'
 #' These functions provide density, distribution function, quantile
@@ -24,6 +318,8 @@
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
 #'   otherwise, \eqn{P[X>x]}.
+#' @param rel.tol Relative numerical integration tolerance; default 1e-8.
+#' @param subdivisions Maximum subintervals per component-side integral.
 #'
 #' @details
 #' \code{dplindGamma} computes the density (PDF) of the
@@ -43,9 +339,9 @@
 #' \deqn{
 #' f(x|\mu,\theta,\alpha)=
 #' \frac{
-#'   \alpha(\theta+2)^2\Gamma(x+1/\alpha)
+#'   (\theta+2)^2\Gamma(x+1/\alpha)
 #' }{
-#'   \mu^2(\theta+1)^3\Gamma(1/\alpha)
+#'   \alpha\mu^2(\theta+1)^3\Gamma(1/\alpha)
 #' }
 #' \left(
 #'   \frac{\mu\theta(\theta+1)}{\theta+2}
@@ -95,169 +391,25 @@
 #'
 #' @rdname NegativeBinomialLindley
 #' @export
-dplindGamma <- Vectorize(function(x, mean=1, theta = 1, alpha=1, log=FALSE){
-  
-  if(mean <= 0 || theta <= 0 || alpha <= 0)
-    warning(paste(
-      "The values of `mean`, `theta`, and `alpha` all have to have",
-      "values greater than 0."
-    ))
-  
-  U1 <- gsl::hyperg_U(
-    x + 1,
-    2 - 1/alpha,
-    (1/alpha * (theta + 2)) / (mean * (theta + 1))
-  )
-  U2 <- gsl::hyperg_U(
-    x + 2,
-    3 - 1/alpha,
-    (1/alpha * (theta + 2)) / (mean * (theta + 1))
-  )
-  co1 <- 1/alpha * (theta+2)^2 * gamma(x+1/alpha) /
-    (mean^2 * (theta+1)^3 * gamma(1/alpha))
-  co2 <- mean * theta * (theta+1) / (theta+2)
-  co3 <- 1/alpha * (x+1)
-  
-  p <- co1 * (co2 * U1 + co3 * U2)
-  
-  if (log) return(log(p))
-  else return(p)
-})
+dplindGamma <- function(x, mean = 1, theta = 1, alpha = 1, log = FALSE,
+                        rel.tol = 1e-8, subdivisions = 200L) {
+  .plg_flag(log, "log")
+  .plg_control(rel.tol, subdivisions)
+  .plg_vector(x, mean, theta, alpha, "pmf", TRUE, log,
+              rel.tol, as.integer(subdivisions))
+}
+
 
 ##' @rdname NegativeBinomialLindley
 #' @export
 pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
-                        lower.tail = TRUE, log.p = FALSE) {
-  
-  # --- Input Validation ---
-  
-  if (any(mean <= 0, na.rm = TRUE)) warning("'mean' must be positive")
-  if (any(theta <= 0, na.rm = TRUE)) warning("'theta' must be positive")
-  if (any(alpha <= 0, na.rm = TRUE)) warning("'alpha' must be positive")
-  
-  
-  # --- Vectorization Setup ---
-  
-  n <- max(length(q), length(mean), length(theta), length(alpha))
-  q <- rep_len(as.integer(floor(q)), n)
-  mean <- rep_len(mean, n)
-  theta <- rep_len(theta, n)
-  alpha <- rep_len(alpha, n)
-  
-  
-  # --- Initialize Result ---
-  
-  cdf <- rep(NA_real_, n)
-  
-  
-  # --- Handle Special Cases ---
-  
-  invalid_q <- is.na(q) | q < 0
-  cdf[invalid_q] <- 0
-  
-  
-  # --- Helper: Safe log of Tricomi U function ---
-  # gsl::hyperg_U can return 0 or Inf for extreme parameters
-  
-  log_hyperg_U_safe <- function(a, b, z) {
-    u_val <- tryCatch(
-      gsl::hyperg_U(a, b, z),
-      warning = function(w) NA_real_,
-      error = function(e) NA_real_
-    )
-    
-    if (is.na(u_val) || !is.finite(u_val) || u_val <= 0) {
-      return(-Inf)
-    }
-    return(log(u_val))
-  }
-  
-  
-  # --- Compute CDF for Valid Cases ---
-  
-  valid <- !invalid_q
-  
-  if (any(valid)) {
-    for (i in which(valid)) {
-      mean_i <- mean[i]
-      theta_i <- theta[i]
-      alpha_i <- alpha[i]
-      q_i <- q[i]
-      
-      # Pre-compute constants
-      # PMF uses Tricomi's confluent hypergeometric function U(a, b, z)
-      # z = alpha * (theta + 2) / (mean * (theta + 1))
-      z_arg <- 1/alpha_i * (theta_i + 2) / (mean_i * (theta_i + 1))
-      
-      # Common coefficient parts (in log-space)
-      # co1 = alpha * (theta+2)^2 * Gamma(x+alpha) /
-      #       (mean^2 * (theta+1)^3 * Gamma(alpha))
-      log_co1_base <- log(1/alpha_i) + 2 * log(theta_i + 2) -
-        2 * log(mean_i) - 3 * log(theta_i + 1) - lgamma(1/alpha_i)
-      
-      # co2 = mean * theta * (theta+1) / (theta+2)
-      co2 <- mean_i * theta_i * (theta_i + 1) / (theta_i + 2)
-      log_co2 <- log(co2)
-      
-      # Compute log-PMF for 0:q_i
-      log_pmf <- numeric(q_i + 1)
-      
-      for (y in 0:q_i) {
-        # log(Gamma(y + alpha))
-        log_gamma_y_alpha <- lgamma(y + 1/alpha_i)
-        
-        # U1 = U(y + 1, 2 - alpha, z)
-        # U2 = U(y + 2, 3 - alpha, z)
-        log_U1 <- log_hyperg_U_safe(y + 1, 2 - 1/alpha_i, z_arg)
-        log_U2 <- log_hyperg_U_safe(y + 2, 3 - 1/alpha_i, z_arg)
-        
-        # co3 = alpha * (y + 1)
-        log_co3 <- log(1/alpha_i) + log(y + 1)
-        
-        # PMF = co1 * Gamma(y+alpha) * (co2 * U1 + co3_val * U2)
-        # In log-space: need log(co2 * U1 + alpha*(y+1) * U2)
-        
-        # This is tricky - we need log(a + b) where a = co2 * U1,
-        # b = alpha*(y+1) * U2
-        log_term1 <- log_co2 + log_U1
-        log_term2 <- log_co3 + log_U2
-        
-        # Log-sum-exp for (term1 + term2)
-        if (!is.finite(log_term1) && !is.finite(log_term2)) {
-          log_sum_terms <- -Inf
-        } else if (!is.finite(log_term1)) {
-          log_sum_terms <- log_term2
-        } else if (!is.finite(log_term2)) {
-          log_sum_terms <- log_term1
-        } else {
-          max_term <- max(log_term1, log_term2)
-          log_sum_terms <- max_term + log(
-            exp(log_term1 - max_term) + exp(log_term2 - max_term)
-          )
-        }
-        
-        log_pmf[y + 1] <- log_co1_base + log_gamma_y_alpha + log_sum_terms
-      }
-      
-      # Log-sum-exp for CDF
-      finite_mask <- is.finite(log_pmf)
-      if (!any(finite_mask)) {
-        cdf[i] <- NA_real_
-      } else {
-        max_log <- max(log_pmf[finite_mask])
-        log_cdf <- max_log + log(sum(exp(log_pmf[finite_mask] - max_log)))
-        cdf[i] <- exp(log_cdf)
-      }
-    }
-  }
-  
-  
-  # --- Apply Tail and Log Options ---
-  
-  if (!lower.tail) cdf <- 1 - cdf
-  if (log.p) cdf <- log(cdf)
-  
-  return(cdf)
+                        lower.tail = TRUE, log.p = FALSE,
+                        rel.tol = 1e-8, subdivisions = 200L) {
+  .plg_flag(lower.tail, "lower.tail")
+  .plg_flag(log.p, "log.p")
+  .plg_control(rel.tol, subdivisions)
+  .plg_vector(q, mean, theta, alpha, "cdf", lower.tail, log.p,
+              rel.tol, as.integer(subdivisions))
 }
 
 #' @rdname NegativeBinomialLindley
@@ -301,3 +453,52 @@ rplindGamma <- function(n, mean=1, theta=1, alpha=1) {
   y <- lapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha))
   return(unlist(y))
 }
+
+# 
+# Optional local checks. This helper is not exported and does not execute
+# automatically when the file is sourced. Use the full precision tests before
+# adopting this implementation; they exercise numerical behavior, not just syntax.
+# plg_check_stable <- function() {
+#   close <- function(a, b, tol = 2e-6) {
+#     stopifnot(length(a) == length(b), all(is.finite(a)), all(is.finite(b)),
+#               max(abs(a-b)) < tol)
+#   }
+#   close(dplindGamma(c(0, 3), mean = 1, theta = 1, alpha = .5),
+#         c(.5381304934467996, .0547430609355798))
+#   stopifnot(is.finite(dplindGamma(0, mean = 1, theta = 1, alpha = .005, log = TRUE)))
+#   stopifnot(is.finite(dplindGamma(1000, mean = .1, theta = 1, alpha = .5, log = TRUE)))
+#   stopifnot(is.finite(dplindGamma(10000, mean = .1, theta = 1, alpha = .5, log = TRUE)))
+#   stopifnot(is.finite(pplindGamma(10000, mean = .1, theta = 1, alpha = .5,
+#                                   lower.tail = FALSE, log.p = TRUE)))
+#   stopifnot(identical(pplindGamma(c(-Inf, Inf)), c(0, 1)))
+#   stopifnot(is.na(pplindGamma(NA_real_)), is.nan(pplindGamma(NaN)))
+#   stopifnot(identical(pplindGamma(c(-Inf, Inf), lower.tail = FALSE), c(1, 0)))
+#   stopifnot(identical(dplindGamma(c(-1, Inf)), c(0, 0)))
+#   stopifnot(suppressWarnings(dplindGamma(.5)) == 0)
+#   stopifnot(length(dplindGamma(numeric())) == 0L)
+#   stopifnot(identical(dplindGamma(c(0, 1), mean = 0), c(1, 0)))
+#   stopifnot(identical(pplindGamma(c(-1, 0, 1), mean = 0), c(0, 1, 1)))
+#   q <- c(0, 1, 4, 10)
+#   F <- pplindGamma(q, mean = 2, theta = .5, alpha = .2)
+#   S <- pplindGamma(q, mean = 2, theta = .5, alpha = .2, lower.tail = FALSE)
+#   close(F+S, rep(1, length(q)))
+#   stopifnot(all(diff(F) >= 0))
+#   close(exp(pplindGamma(q, mean = 2, theta = .5, alpha = .2, log.p = TRUE)), F)
+#   close(pplindGamma(q+.9, mean = 2, theta = .5, alpha = .2), F)
+#   close(pplindGamma(q, mean = 2, theta = .5, alpha = .2) -
+#           pplindGamma(q-1, mean = 2, theta = .5, alpha = .2),
+#         dplindGamma(q, mean = 2, theta = .5, alpha = .2))
+#   close(dplindGamma(c(0, 1), mean = c(.2, 2), theta = c(.5, 3), alpha = c(.1, 2)),
+#         c(dplindGamma(0, .2, .5, .1), dplindGamma(1, 2, 3, 2)))
+#   close(sum(dplindGamma(0:60, mean = 1, theta = 1, alpha = .5)) +
+#           pplindGamma(60, mean = 1, theta = 1, alpha = .5, lower.tail = FALSE), 1)
+#   # Exact alpha=0 Poisson--Lindley boundary has an elementary mixed-Poisson PMF.
+#   mu <- .7; theta <- 2; b <- 1+1/(theta+1); rate <- b/mu
+#   y <- 0:8
+#   reference <- theta/(theta+1)*stats::dnbinom(y, size=1, prob=rate/(rate+1)) +
+#     1/(theta+1)*stats::dnbinom(y, size=2, prob=rate/(rate+1))
+#   close(dplindGamma(y, mu, theta, alpha=0), reference)
+#   message("PLG numerical and boundary checks passed.")
+#   invisible(TRUE)
+# }
+# 

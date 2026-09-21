@@ -8,7 +8,15 @@
 \alias{rplindGamma}
 \title{Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution}
 \usage{
-dplindGamma(x, mean = 1, theta = 1, alpha = 1, log = FALSE)
+dplindGamma(
+  x,
+  mean = 1,
+  theta = 1,
+  alpha = 1,
+  log = FALSE,
+  rel.tol = 1e-08,
+  subdivisions = 200L
+)
 
 pplindGamma(
   q,
@@ -16,7 +24,9 @@ pplindGamma(
   theta = 1,
   alpha = 1,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  rel.tol = 1e-08,
+  subdivisions = 200L
 )
 
 qplindGamma(p, mean = 1, theta = 1, alpha = 1)
@@ -38,6 +48,10 @@ the variance = \code{alpha} (the values for \code{alpha} have to be greater
 than 0).}
 
 \item{log}{logical; if TRUE, probabilities p are given as log(p).}
+
+\item{rel.tol}{Relative numerical integration tolerance; default 1e-8.}
+
+\item{subdivisions}{Maximum subintervals per component-side integral.}
 
 \item{q}{quantile or a vector of quantiles.}
 
@@ -85,9 +99,9 @@ Poisson-Lindley-Gamma (PLG) distribution is:
 \deqn{
 f(x|\mu,\theta,\alpha)=
 \frac{
-  \alpha(\theta+2)^2\Gamma(x+1/\alpha)
+  (\theta+2)^2\Gamma(x+1/\alpha)
 }{
-  \mu^2(\theta+1)^3\Gamma(1/\alpha)
+  \alpha\mu^2(\theta+1)^3\Gamma(1/\alpha)
 }
 \left(
   \frac{\mu\theta(\theta+1)}{\theta+2}

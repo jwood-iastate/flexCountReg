@@ -83,6 +83,8 @@ f(y \mid a_x, k, \rho) =
 where
 \eqn{(\alpha)_r = \frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}},
 and \eqn{a_x > 0}, \eqn{k > 0}, and \eqn{\rho > 0}.
+Under the mean parameterization used by these functions,
+\eqn{\rho > 1} is required.
 
 When \eqn{\rho > 1}, the mean is:
 \deqn{

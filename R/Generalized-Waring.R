@@ -47,6 +47,8 @@
 #' where
 #' \eqn{(\alpha)_r = \frac{\Gamma(\alpha+r)}{\Gamma(\alpha)}},
 #' and \eqn{a_x > 0}, \eqn{k > 0}, and \eqn{\rho > 0}.
+#' Under the mean parameterization used by these functions,
+#' \eqn{\rho > 1} is required.
 #'
 #' When \eqn{\rho > 1}, the mean is:
 #' \deqn{
@@ -94,6 +96,18 @@
 #' @export
 dgwar <- Vectorize(function(y, mu, k, rho, log = FALSE) {
   
+  if (any(!is.finite(mu) | mu <= 0)) {
+    stop("mu must be finite and greater than 0")
+  }
+  
+  if (any(!is.finite(k) | k <= 0)) {
+    stop("k must be finite and greater than 0")
+  }
+  
+  if (any(!is.finite(rho) | rho <= 1)) {
+    stop("rho must be finite and greater than 1")
+  }
+  
   genWaring_cpp(y, mu, k, rho, log_prob = log)
   
 }, vectorize.args = c("y", "mu", "k", "rho"))
@@ -110,17 +124,28 @@ pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
   k   <- rep_len(k, n)
   rho <- rep_len(rho, n)
   
+  
+  if (any(!is.finite(mu) | mu <= 0)) {
+    stop("mu must be finite and greater than 0")
+  }
+  
+  if (any(!is.finite(k) | k <= 0)) {
+    stop("k must be finite and greater than 0")
+  }
+  
+  if (any(!is.finite(rho) | rho <= 1)) {
+    stop("rho must be finite and greater than 1")
+  }
+  
   # --- 2. Initialize Result ---
-  # Default to NaN. If parameters are invalid, this remains NaN.
   cdf <- rep(NaN, n)
   
   # --- 3. Identify Cases ---
   
   # Valid parameters: mu > 0, k > 0, rho > 1 (rho must be >1 for the mean
   # formula used)
-  valid_params <- 
-    (mu > 0) & (k > 0) & (rho > 1) & !is.na(mu) & !is.na(k) & !is.na(rho)
-  
+  valid_params <- TRUE
+
   # Case A: Parameters are valid, but q < 0. CDF is 0.
   # (We treat NA in q as resulting in NA, so we check !is.na(q))
   is_neg_q <- valid_params & !is.na(q) & (q < 0)
@@ -194,9 +219,10 @@ pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
 #' @rdname Generalized-Waring
 #' @export
 qgwar <- Vectorize(function(p, mu, k, rho) {
-  if (any(p < 0 | p > 1)) {
-    warning("All p values must be in the interval [0, 1].")
+  if (any(!is.finite(p) | p < 0 | p > 1)) {
+    stop("p must be finite and in the interval [0, 1]")
   }
+  
   
   y <- 0
   p_value <- pgwar(y, mu, k, rho)

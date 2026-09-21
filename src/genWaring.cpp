@@ -30,12 +30,18 @@ NumericVector genWaring_cpp(NumericVector x, NumericVector mean, NumericVector k
     
     // Update conditions to account for invalid parameters
     // or likelihood
-    if (!R_finite(current_mean) || current_mean <= 0 ||
-        !R_finite(current_k) || current_k <= 0 ||
-        !R_finite(current_p) || current_p <= 1) {
-        result[i] = R_NaN;
-      continue;
+    if (!R_finite(current_mean) || current_mean <= 0) {
+      Rcpp::stop("mu must be finite and greater than 0");
     }
+    
+    if (!R_finite(current_k) || current_k <= 0) {
+      Rcpp::stop("k must be finite and greater than 0");
+    }
+    
+    if (!R_finite(current_p) || current_p <= 1) {
+      Rcpp::stop("rho must be finite and greater than 1");
+    }
+    
     if (Rcpp::NumericVector::is_na(x[i])) {
       result[i] = NA_REAL;
       continue;

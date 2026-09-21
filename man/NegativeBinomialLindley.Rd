@@ -85,18 +85,18 @@ Poisson-Lindley-Gamma (PLG) distribution is:
 \deqn{
 f(x|\mu,\theta,\alpha)=
 \frac{
-  \alpha(\theta+2)^2\Gamma(x+\alpha)
+  \alpha(\theta+2)^2\Gamma(x+1/\alpha)
 }{
-  \mu^2(\theta+1)^3\Gamma(\alpha)
+  \mu^2(\theta+1)^3\Gamma(1/\alpha)
 }
 \left(
   \frac{\mu\theta(\theta+1)}{\theta+2}
   U\left(
-    x+1,2-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)}
+    x+1,2-1/\alpha,\frac{1/\alpha(\theta+2)}{\mu(\theta+1)}
   \right)
-  + \alpha(x+1)
+  + 1/\alpha(x+1)
   U\left(
-    x+2,3-\alpha,\frac{\alpha(\theta+2)}{\mu(\theta+1)}
+    x+2,3-1/\alpha,\frac{1/\alpha(\theta+2)}{\mu(\theta+1)}
   \right)
 \right)
 }
@@ -113,7 +113,7 @@ The expected value of the distribution is:
 \deqn{E[x]=\mu}
 
 The variance is:
-\deqn{\sigma^2=\mu+\left(\left(1+\frac{1}{\alpha}\right)\left(2-\frac{2}
+\deqn{\sigma^2=\mu+\left(\left(1+\alpha\right)\left(2-\frac{2}
 {(\theta+2)^2}\right)-1\right)\mu^2}
 }
 \examples{

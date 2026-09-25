@@ -15,7 +15,8 @@ dplindGamma(
   alpha = 1,
   log = FALSE,
   rel.tol = 1e-08,
-  subdivisions = 200L
+  subdivisions = 200L,
+  method = c("auto", "quadrature")
 )
 
 pplindGamma(
@@ -34,70 +35,77 @@ qplindGamma(p, mean = 1, theta = 1, alpha = 1)
 rplindGamma(n, mean = 1, theta = 1, alpha = 1)
 }
 \arguments{
-\item{x}{numeric value or a vector of values.}
+\item{x}{Numeric vector of counts. Negative, infinite, or noninteger counts
+have probability zero; noninteger counts produce a warning.}
 
-\item{mean}{numeric value or vector of mean values for the distribution
-(the values have to be greater than 0).}
+\item{mean}{Marginal mean \eqn{\mu}, finite and nonnegative. May be a vector
+for the density, CDF, and quantile functions; must be scalar for random
+generation. A zero mean gives a point mass at zero.}
 
-\item{theta}{single value or vector of values for the theta parameter of
-the distribution (the values have to be greater than 0).}
+\item{theta}{Lindley parameter, finite and strictly positive. May be a
+vector except for random generation.}
 
-\item{alpha}{single value or vector of values for the \code{alpha} parameter
-of the gamma distribution in the special case that the mean = 1 and
-the variance = \code{alpha} (the values for \code{alpha} have to be greater
-than 0).}
+\item{alpha}{Gamma dispersion, finite and nonnegative. For positive
+\code{alpha}, the mean-one gamma factor has shape and rate
+\eqn{1/\alpha}, and variance \eqn{\alpha}. Zero selects the exact
+Poisson-Lindley limit. May be a vector except for random generation.}
 
-\item{log}{logical; if TRUE, probabilities p are given as log(p).}
+\item{log}{Logical; return log probabilities from \code{dplindGamma}.}
 
-\item{rel.tol}{Relative numerical integration tolerance; default 1e-8.}
+\item{rel.tol}{Relative tolerance, a scalar between \code{1e-12} and
+\code{1e-3}; default \code{1e-8}. Controls adaptive quadrature and, for
+the PMF, screening of GSL error estimates and log-formula roundoff.
+It is a numerical target, not a certified bound on the final error.}
 
-\item{subdivisions}{Maximum subintervals per component-side integral.}
+\item{subdivisions}{Maximum number of subintervals for each side of each
+component integral; an integer of at least 50, default 200.}
 
-\item{q}{quantile or a vector of quantiles.}
+\item{method}{PMF evaluation method. \code{"auto"} (default) attempts GSL
+outside the guarded regions and uses quadrature if any check fails.
+\code{"quadrature"} always uses adaptive quadrature and is useful for
+validation. There is deliberately no option to force an unchecked GSL
+value. This argument applies only to \code{dplindGamma}.}
 
-\item{lower.tail}{logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
-otherwise, \eqn{P[X>x]}.}
+\item{q}{Numeric vector of quantiles. Finite values are rounded down.}
 
-\item{log.p}{logical; if TRUE, probabilities p are given as log(p).}
+\item{lower.tail}{Logical; if \code{TRUE}, return \eqn{P(Y\le q)};
+otherwise return \eqn{P(Y>q)}.}
 
-\item{p}{probability or a vector of probabilities.}
+\item{log.p}{Logical; return log probabilities from \code{pplindGamma}.}
 
-\item{n}{the number of random numbers to generate.}
+\item{p}{Numeric vector of probabilities in \eqn{[0,1]}.}
+
+\item{n}{Number of observations to generate: a nonnegative integer scalar.}
 }
 \value{
-dplindGamma gives the density, pplindGamma gives the distribution
-function, qplindGamma gives the quantile function, and rplindGamma generates
-random  deviates.
-
-The length of the result is determined by n for rplindGamma, and is the
-maximum of the lengths of the numerical arguments for the other functions.
+\code{dplindGamma} returns probability masses or log masses;
+\code{pplindGamma} returns cumulative or survival probabilities, possibly
+on the log scale; \code{qplindGamma} returns quantiles; and
+\code{rplindGamma} returns \code{n} random counts.
 }
 \description{
-These functions provide density, distribution function, quantile
-function, and random number generation for the Poisson-Lindley-Gamma
-(PLG) Distribution
+Probability mass, cumulative distribution, quantiles, and random generation
+for the mean-parameterized Poisson-Lindley-Gamma (PLG), also called the
+negative binomial-Lindley (NB-L), distribution. The PMF uses a guarded GSL
+Tricomi-U evaluation with adaptive quadrature as a fallback.
 }
 \details{
-The Poisson-Lindley-Gamma is a count distribution that captures high
-densities for small integer values and provides flexibility for heavier
-tails.
+\strong{Parameterization and probability mass.}
+Let \eqn{L} have Lindley density
+\deqn{f_L(l)=\frac{\theta^2}{1+\theta}(1+l)e^{-\theta l},\quad l>0,}
+and let \eqn{W=L/E(L)}, where
+\eqn{E(L)=(\theta+2)/[\theta(\theta+1)]}. Conditional on \eqn{W},
+\eqn{Y} is negative binomial with size \eqn{1/\alpha} and mean
+\eqn{\mu W}. Equivalently, \eqn{Y\mid W,G} is Poisson with mean
+\eqn{\mu WG}, with independent
+\eqn{G\sim\mathrm{Gamma}(1/\alpha,1/\alpha)}, using the shape-rate
+parameterization.
+Thus \code{mean} is the marginal mean, not the unnormalized Lindley scale.
 
-\code{dplindGamma} computes the density (PDF) of the
-Poisson-Lindley-Gamma Distribution.
-
-\code{pplindGamma} computes the CDF of the Poisson-Lindley-Gamma
-Distribution.
-
-\code{qplindGamma} computes the quantile function of the
-Poisson-Lindley-Gamma Distribution.
-
-\code{rplindGamma} generates random numbers from the
-Poisson-Lindley-Gamma Distribution.
-
-The compound Probability Mass Function (PMF) for the
-Poisson-Lindley-Gamma (PLG) distribution is:
+The compound probability mass function (PMF) for the
+Poisson-Lindley-Gamma distribution is
 \deqn{
-f(x|\mu,\theta,\alpha)=
+f(x\mid\mu,\theta,\alpha)=
 \frac{
   (\theta+2)^2\Gamma(x+1/\alpha)
 }{
@@ -106,34 +114,153 @@ f(x|\mu,\theta,\alpha)=
 \left(
   \frac{\mu\theta(\theta+1)}{\theta+2}
   U\left(
-    x+1,2-1/\alpha,\frac{1/\alpha(\theta+2)}{\mu(\theta+1)}
+    x+1,2-1/\alpha,\frac{\theta+2}{\alpha\mu(\theta+1)}
   \right)
-  + 1/\alpha(x+1)
+  +\frac{x+1}{\alpha}
   U\left(
-    x+2,3-1/\alpha,\frac{1/\alpha(\theta+2)}{\mu(\theta+1)}
+    x+2,3-1/\alpha,\frac{\theta+2}{\alpha\mu(\theta+1)}
   \right)
-\right)
+\right).
 }
+This expression applies for \eqn{\mu>0}, \eqn{\theta>0},
+\eqn{\alpha>0}, and nonnegative integer \eqn{x}. Here \eqn{U} is
+Tricomi's confluent hypergeometric function of the second kind, with
+positive-integrand representation
+\deqn{U(a,b,z)=\frac{1}{\Gamma(a)}\int_0^\infty
+  e^{-zt}t^{a-1}(1+t)^{b-a-1}\,dt,\quad a>0,\ z>0.}
+This integral exists for every real \eqn{b}; integer or nonpositive
+\eqn{b} is not, by itself, a mathematical singularity of \eqn{U}.
+The expected value of the distribution is
+\deqn{E[x]=\mu.}
+The variance is
+\deqn{\sigma^2=\mu+\left((1+\alpha)
+\left(2-\frac{2}{(\theta+2)^2}\right)-1\right)\mu^2.}
 
-Where \eqn{\theta} is a distribution parameter from the Poisson-Lindley
-distribution with the restrictions that \eqn{\theta>0}, \eqn{\alpha} is
-a parameter for the gamma distribution with the restriction
-\eqn{\alpha>0}, \eqn{\mu} is the mean value, and \eqn{x} is a
-non-negative integer, and \deqn{U(a,b,z)} is the Tricomi’s confluent
-hypergeometric function to - also known as the confluent
-hypergeometric function of the second kind
+\strong{GSL instability and automatic fallback.}
+In the PMF above, both Tricomi terms have third argument
+\deqn{z=\frac{\theta+2}{\alpha\mu(\theta+1)}.}
+The ROOT discussion cited below reports GSL series-convergence failures
+for \eqn{U(a,b,z)} when \eqn{a>8} and \eqn{z} is close to zero; an example
+is \eqn{U(9.50606,0.5,0.000160903)}. The final correction in that thread
+says \eqn{a>8}, superseding the earlier statement \eqn{a<10}. These are
+historical implementation failures, not singularities of the function.
+The discussion also concerns Kummer's first-kind function at negative
+arguments; those examples are not the basis of this PMF's guard, since
+its Tricomi argument \eqn{z} is positive.
 
-The expected value of the distribution is:
-\deqn{E[x]=\mu}
+Additional checks against positive-integrand quadrature with GSL 2.7.1
+found underestimated error for large negative second arguments, e.g.
+\code{x = 0, mean = 1000, theta = 1, alpha = 0.001}
+(\eqn{1/\alpha=1000}, \eqn{z=1.5}), where the relative PMF discrepancy was
+about \eqn{4\times10^{-8}} despite successful GSL status. The guard
+\eqn{0<\alpha<0.01} conservatively excludes this large-negative-b regime;
+it too is an implementation policy, not a mathematical boundary.
 
-The variance is:
-\deqn{\sigma^2=\mu+\left(\left(1+\alpha\right)\left(2-\frac{2}
-{(\theta+2)^2}\right)-1\right)\mu^2}
+In \code{method = "auto"}, both U calls are bypassed whenever either
+first argument exceeds 8 and \eqn{z<1}. Here the first arguments are
+\eqn{x+1} and \eqn{x+2}, so this guard applies to \eqn{x\ge7}.
+The cutoff \code{1} is a conservative implementation choice around
+the reported small-positive-argument failures, not a published universal
+boundary. Tests with GSL 2.7.1 also found inaccurate, successful-status
+results outside \eqn{z<0.01} (including \eqn{z} near 0.12), motivating
+the wider \eqn{z<1} guard. Behavior depends on the linked GSL version
+and on all three arguments. For numerical and computational safeguards,
+quadrature is also used directly when \eqn{0<\alpha<0.01}, either first
+argument exceeds \eqn{10^4}, or \eqn{z} cannot be represented as a positive
+normal double.
+
+Otherwise, the two U terms are evaluated together with
+\code{gsl::hyperg_U(..., give = TRUE, strict = TRUE)}. The complete PMF
+is recomputed by quadrature if GSL throws an error or warning; returns
+\code{NULL}, missing/malformed fields, \code{NA}, \code{NaN}, or infinite
+values; reports nonzero status; returns a nonpositive or subnormal U
+value; or supplies an invalid error estimate. Each estimated relative
+U error must be at most \code{rel.tol / 4}. A conservative estimate of
+roundoff in the log formula must also be at most \code{rel.tol / 4}.
+Invalid component probabilities or a final probability outside
+\eqn{(0,1]} trigger the same fallback. GSL errors are not exposed as
+warnings when quadrature subsequently succeeds. An unavailable GSL
+namespace also causes fallback when this file is sourced independently.
+
+Gamma ratios, powers, and the sum of the two positive terms are evaluated
+on the log scale. A zero U result is treated as possible underflow, never
+as proof of a zero probability. Neither success status nor an error
+estimate proves accuracy for every argument. Use \code{method =
+"quadrature"} for independent checks in the parameter range of an
+application, especially after changing the linked GSL version.
+
+\strong{Adaptive quadrature and cumulative probabilities.}
+Write \eqn{X=\theta L}. With probability \eqn{\theta/(1+\theta)},
+\eqn{X\sim\mathrm{Gamma}(1,1)}; otherwise,
+\eqn{X\sim\mathrm{Gamma}(2,1)}. With
+\eqn{c=(\theta+2)/(\theta+1)}, \eqn{W=X/c}. Quadrature integrates
+the conditional NB PMF separately against these two positive gamma
+densities. Each integral uses \eqn{t=\log X}, is scaled at its mode,
+and is integrated on both sides of the mode with separate width scales.
+Component probabilities are combined using log-sum-exp. The fallback
+does not use a difference of hypergeometric functions, truncate the
+count support, or substitute an arbitrary positive probability floor.
+
+\code{pplindGamma} always uses quadrature of the conditional NB CDF or
+survival function. Upper tails are integrated directly; probabilities
+near one are obtained from the opposite small tail. At \code{alpha = 0},
+the conditional routines are Poisson and GSL is bypassed. Small positive
+\code{alpha} is never silently replaced by zero. If quadrature itself
+fails, the affected result is \code{NaN} with a warning; extreme inputs
+need not be resolvable in double precision. On the ordinary probability
+scale, sufficiently small probabilities can still underflow to zero;
+use \code{log = TRUE} or \code{log.p = TRUE} for such tails.
+
+\code{qplindGamma} uses sequential inversion of \code{pplindGamma} with
+its default integration controls, returning the smallest nonnegative
+integer with CDF at least \code{p}. The endpoints are zero for
+\code{p = 0} and infinity for \code{p = 1} when \code{mean > 0}; for
+\code{mean = 0}, every valid quantile is zero. \code{rplindGamma} retains
+inverse-CDF generation using uniform draws and this quantile function.
+Quantiles and simulation therefore do not benefit from the GSL PMF path
+and can be slow for large means or probabilities near one.
+
+Numeric arguments of \code{dplindGamma} and \code{pplindGamma} are
+recycled to their maximum length; any zero-length numeric argument
+produces \code{numeric(0)}. Their logical flags and numerical controls
+must be scalar. Missing values propagate. Invalid distribution parameters
+produce \code{NaN} with a warning. The quantile function uses
+\code{Vectorize} recycling and simplification; random generation requires
+scalar parameters. Names on \code{x} or \code{q} are retained when their
+length equals the output length.
 }
 \examples{
-dplindGamma(0, mean=0.75, theta=7, alpha=2)
-pplindGamma(c(0,1,2,3,5,7,9,10), mean=0.75, theta=3, alpha=0.5)
-qplindGamma(c(0.1,0.3,0.5,0.9,0.95), mean=1.67, theta=0.5, alpha=0.5)
-rplindGamma(30, mean=0.5, theta=0.5, alpha=2)
+dplindGamma(0:5, mean = 0.75, theta = 7, alpha = 2)
 
+# Compare the hybrid evaluator with the quadrature reference.
+x <- 0:10
+fast <- dplindGamma(x, mean = 2, theta = 1, alpha = 0.5)
+reference <- dplindGamma(x, mean = 2, theta = 1, alpha = 0.5,
+                        method = "quadrature")
+max(abs(fast - reference))
+
+# x >= 7 and z = (theta+2)/(alpha*mean*(theta+1)) < 1:
+# the small-z guard sends this PMF directly to quadrature.
+dplindGamma(8, mean = 1e4, theta = 1, alpha = 2/3, log = TRUE)
+
+# Log probabilities remain useful when ordinary probabilities underflow.
+dplindGamma(10000, mean = 0.1, theta = 1, alpha = 0.5, log = TRUE)
+pplindGamma(10, mean = 0.75, theta = 3, alpha = 0.5,
+            lower.tail = FALSE, log.p = TRUE)
+dplindGamma(0:3, mean = 0.75, theta = 2, alpha = 0)
+qplindGamma(c(0, 0.5, 0.9, 1), mean = 1.67, theta = 0.5, alpha = 0.5)
+rplindGamma(5, mean = 0.5, theta = 0.5, alpha = 2)
+
+}
+\references{
+ROOT Forum, \emph{Problem in Hypergeometric functions with GSL}, including
+the April 19, 2010 correction and October 3, 2014 follow-up:
+\url{https://root-forum.cern.ch/t/problem-in-hypergeometric-functions-with-gsl/9507}.
+
+GNU Scientific Library Reference Manual, Hypergeometric Functions:
+\url{https://www.gnu.org/software/gsl/doc/html/specfunc.html}.
+}
+\seealso{
+\code{\link[gsl:Hyperg]{hyperg_U}}, \code{\link[stats]{integrate}},
+\code{\link[stats]{dnbinom}}
 }

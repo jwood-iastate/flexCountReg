@@ -124,12 +124,13 @@ poislind.mod <- poisLind.re(
   method    = "NM",
   max.iters = 1000
 )
+#> Warning: NaNs produced
 summary(poislind.mod)
 #> Call:
 #>  Animal ~ lnaadt + lnlength + speed50 + ShouldWidth04 + AADTover10k 
 #> 
 #>  Method:  poisLindRE 
-#> Iterations:  712 
+#> Iterations:  726 
 #> Convergence:  successful convergence  
 #> Log-likelihood:  -263.098 
 #> 
@@ -137,13 +138,13 @@ summary(poislind.mod)
 #> # A tibble: 8 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.61        1.43     -6.71     0        -12.4       -6.8  
-#> 2 lnaadt              1.03        0.168     6.15     0          0.705      1.36 
-#> 3 lnlength            1.46        0.236     6.19     0          0.996      1.92 
-#> 4 speed50            -0.856       0.337    -2.54     0.011     -1.52      -0.195
-#> 5 ShouldWidth04      -0.434       0.292    -1.49     0.137     -1.01       0.138
-#> 6 AADTover10k        -0.758       0.526    -1.44     0.15      -1.79       0.273
-#> 7 ln(theta)           3.50        2.13      1.64     0.1       -0.671      7.68 
+#> 1 (Intercept)        -9.61        1.38     -6.99     0        -12.3       -6.91 
+#> 2 lnaadt              1.03        0.163     6.35     0          0.715      1.35 
+#> 3 lnlength            1.46        0.235     6.21     0          0.998      1.92 
+#> 4 speed50            -0.856       0.261    -3.28     0.001     -1.37      -0.344
+#> 5 ShouldWidth04      -0.434       0.261    -1.66     0.096     -0.945      0.077
+#> 6 AADTover10k        -0.758       0.412    -1.84     0.066     -1.56       0.05 
+#> 7 ln(theta)           3.51       NA        NA       NA         NA         NA    
 #> 8 Offset (Offset va…  1          NA        NA       NA         NA         NA    
 # }
 ```

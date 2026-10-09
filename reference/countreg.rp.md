@@ -167,7 +167,7 @@ summary(rp_nb2)
 #>  Total_crashes ~ lnaadt + lnlength 
 #> 
 #>  Method:  countreg.rp 
-#> Iterations:  28 
+#> Iterations:  29 
 #> Convergence:  successive function values within relative tolerance limit (reltol) 
 #> Log-likelihood:  -1082.98 
 #> 
@@ -178,8 +178,8 @@ summary(rp_nb2)
 #> 1 (Intercept)    -8.76        0.413   -21.2      0         -9.56      -7.94 
 #> 2 lnaadt          1.08        0.05     21.6      0          0.982      1.18 
 #> 3 lnlength        0.756       0.069    10.9      0          0.621      0.892
-#> 4 speed50:Mean   -0.744       0.169    -4.41     0         -1.07      -0.413
-#> 5 speed50:St.Dev  0.715       0.271     2.64     0.008      0.184      1.25 
+#> 4 speed50:Mean   -0.745       0.169    -4.41     0         -1.08      -0.414
+#> 5 speed50:St.Dev  0.717       0.27      2.65     0.008      0.187      1.25 
 #> 6 ln(alpha)      -1.32        0.305    -4.32     0         -1.92      -0.72 
 
 # 2. Random Parameters with Panel Structure (if 'site_id' exists)
@@ -204,7 +204,7 @@ summary(rp_gen)
 #>  Total_crashes ~ lnaadt 
 #> 
 #>  Method:  countreg.rp 
-#> Iterations:  11 
+#> Iterations:  12 
 #> Convergence:  successive function values within relative tolerance limit (reltol) 
 #> Log-likelihood:  -1140.142 
 #> 
@@ -218,7 +218,7 @@ summary(rp_gen)
 #> 4 speed50:St.Dev      0.83           NA       NA        NA         NA         NA
 #> 5 HetMean:AADT10kp… -18.4            NA       NA        NA         NA         NA
 #> 6 ln(alpha):(Inter…  -1.21           NA       NA        NA         NA         NA
-#> 7 ln(alpha):lnleng…  -0.49           NA       NA        NA         NA         NA
+#> 7 ln(alpha):lnleng…  -0.491          NA       NA        NA         NA         NA
 
 # 4. Random Parameters Poisson Model with panel specification
 rp_poisson <- countreg.rp(Total_crashes ~ lnaadt,
@@ -235,7 +235,7 @@ summary(rp_poisson)
 #>  Total_crashes ~ lnaadt 
 #> 
 #>  Method:  countreg.rp 
-#> Iterations:  14 
+#> Iterations:  15 
 #> Convergence:  successive function values within relative tolerance limit (reltol) 
 #> Log-likelihood:  -1161.137 
 #> 

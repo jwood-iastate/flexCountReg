@@ -131,13 +131,12 @@ renb.mod <- renb(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
                                 group_var="ID",
                                 method="nm",
                                 max.iters = 1000)
-#> Warning: NaNs produced
 summary(renb.mod)
 #> Call:
 #>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
 #> 
 #>  Method:  RENB 
-#> Iterations:  736 
+#> Iterations:  788 
 #> Convergence:  successful convergence  
 #> Log-likelihood:  -263.7953 
 #> 
@@ -145,13 +144,13 @@ summary(renb.mod)
 #> # A tibble: 8 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.35        1.22     -7.64     0        -11.7       -6.95 
-#> 2 lnaadt              0.965       0.141     6.82     0          0.688      1.24 
-#> 3 speed50            -0.988       0.34     -2.91     0.004     -1.65      -0.322
-#> 4 ShouldWidth04      -0.415       0.283    -1.47     0.143     -0.97       0.14 
-#> 5 AADTover10k        -0.868       0.511    -1.70     0.089     -1.87       0.133
-#> 6 ln(a-1)             2.91       NA        NA       NA         NA         NA    
-#> 7 ln(b)               0.619       0.309     2.00     0.045      0.013      1.23 
+#> 1 (Intercept)        -9.35        1.22     -7.70     0        -11.7       -6.97 
+#> 2 lnaadt              0.966       0.144     6.73     0          0.685      1.25 
+#> 3 speed50            -0.987       0.342    -2.89     0.004     -1.66      -0.317
+#> 4 ShouldWidth04      -0.415       0.274    -1.51     0.13      -0.953      0.122
+#> 5 AADTover10k        -0.867       0.544    -1.60     0.111     -1.93       0.199
+#> 6 ln(a-1)             2.91        0.368     7.91     0          2.19       3.63 
+#> 7 ln(b)               0.621       0.235     2.64     0.008      0.16       1.08 
 #> 8 lnlength (Offset …  1          NA        NA       NA         NA         NA    
 # }
 ```

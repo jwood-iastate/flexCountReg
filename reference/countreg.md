@@ -848,12 +848,14 @@ plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
               data = washington_roads, family = "NB2",
               underreport_formula = ~ speed50 + AADT10kplus, 
               underreport_family = "probit")
+#> Warning: NaNs produced
+#> Warning: NaNs produced
 summary(plogn_underreport)
 #> Call:
 #>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
 #> 
 #>  Method:  countreg 
-#> Iterations:  494 
+#> Iterations:  500 
 #> Convergence:  successful convergence  
 #> Log-likelihood:  -1065.087 
 #> 
@@ -861,15 +863,15 @@ summary(plogn_underreport)
 #> # A tibble: 9 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -6.69        1.84    -3.63      0        -10.3       -3.08 
-#> 2 lnaadt              0.901       0.056   16.0       0          0.791      1.01 
-#> 3 lnlength            0.832       0.07    12.0       0          0.695      0.968
-#> 4 speed50            -0.924       1.15    -0.8       0.424     -3.19       1.34 
-#> 5 AADT10kplus         2.22        1.64     1.35      0.176     -0.996      5.44 
-#> 6 ln(alpha)          -1.50        0.343   -4.39      0         -2.18      -0.832
-#> 7 Underreporting:(I… -0.085       2.46    -0.035     0.972     -4.91       4.74 
-#> 8 Underreporting:sp… -0.774       0.945   -0.818     0.413     -2.63       1.08 
-#> 9 Underreporting:AA…  1.25        1.61     0.771     0.441     -1.92       4.41 
+#> 1 (Intercept)        -6.69        1.52    -4.41      0         -9.66      -3.72 
+#> 2 lnaadt              0.901       0.056   16.2       0          0.792      1.01 
+#> 3 lnlength            0.832       0.069   12.0       0          0.696      0.968
+#> 4 speed50            -0.924       0.802   -1.15      0.249     -2.50       0.648
+#> 5 AADT10kplus         2.22       NA       NA        NA         NA         NA    
+#> 6 ln(alpha)          -1.50        0.346   -4.35      0         -2.18      -0.827
+#> 7 Underreporting:(I… -0.084       1.97    -0.043     0.966     -3.94       3.78 
+#> 8 Underreporting:sp… -0.774      NA       NA        NA         NA         NA    
+#> 9 Underreporting:AA…  1.24       NA       NA        NA         NA         NA    
 
 # Estimate a Conway-Maxwell-Poisson model
 com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 

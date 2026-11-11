@@ -50,7 +50,8 @@ components:
 }
 \description{
 Estimate a random effects Poisson panel model for clustered count data.
-The model is also known as a negative multinomial model.
+The model is also known as a negative multinomial model. A more flexible
+version of this model can be estimated using the \code{negmultinom()} function.
 }
 \details{
 This function estimates a random effects Poisson panel model. The likelihood

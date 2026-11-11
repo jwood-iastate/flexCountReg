@@ -1,7 +1,8 @@
 #' Estimate a Random Effects Poisson Panel Model
 #'
 #' Estimate a random effects Poisson panel model for clustered count data.
-#' The model is also known as a negative multinomial model.
+#' The model is also known as a negative multinomial model. A more flexible 
+#' version of this model can be estimated using the `negmultinom()` function.
 #'
 #' @name repois
 #' @param formula an R formula.
@@ -109,6 +110,7 @@ repois <- function(formula,
   fit$modelType <- "REPoisson"
   fit$offset <- offset
   fit$call <- call
+  fit$beta_pred <- fit$estimate[(length(fit$estimate) - 1)]
   
   obj <- .createFlexCountReg(
     model = fit,

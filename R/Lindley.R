@@ -57,7 +57,7 @@
 #' set.seed(123154)
 #' rlindley(5, theta = 1.5)
 #' rlindley(5, theta = 0.5)
-#'
+#' 
 #' @rdname Lindley
 #' @export
 dlindley <- function(x, theta = 1, log = FALSE) {

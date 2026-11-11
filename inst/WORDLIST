@@ -12,6 +12,7 @@ Elasticities
 Equidispersion
 Famoye
 Fariss
+GSL
 GW
 Gayah
 Generlized
@@ -25,6 +26,7 @@ Hilbe
 Hossein
 IG
 IRLS
+Kummer's
 Kundu
 Lindley
 MGF
@@ -43,6 +45,7 @@ PLL
 PLN
 PLogN
 PMF
+PMF's
 Pararai
 PoC
 RENB
@@ -52,7 +55,8 @@ ShouldWidth
 Sichel
 Stasinopoulos
 Stata
-Tricomi’s
+Tricomi
+Tricomi's
 Trivedi
 Underdispersion
 Underreporting
@@ -81,7 +85,6 @@ dpge
 dpinvgamma
 dpinvgaus
 dplind
-dplindGamma
 dplindLnorm
 dpoisweibull
 dsichel
@@ -92,6 +95,7 @@ equidispersed
 et
 halton
 integar
+integrand
 kplus
 ln
 lnaadt
@@ -99,6 +103,8 @@ lnlength
 modelling
 nd
 ndraws
+noninteger
+nonpositive
 pcom
 pgp
 pinvgamma
@@ -110,7 +116,6 @@ ppge
 ppinvgamma
 ppinvgaus
 pplind
-pplindGamma
 pplindLnorm
 ppoisweibull
 psichel
@@ -125,7 +130,6 @@ qpge
 qpinvgamma
 qpinvgaus
 qplind
-qplindGamma
 qplindLnorm
 qpoisweibull
 qsichel
@@ -134,13 +138,13 @@ rcom
 rgp
 rinvgamma
 rlindley
+roundoff
 rp
 rpLnorm
 rpge
 rpinvgamma
 rpinvgaus
 rplind
-rplindGamma
 rplindLnorm
 rpoisweibull
 rsichel

@@ -33,6 +33,7 @@ export(moment_lognormal)
 export(msg1)
 export(myAIC)
 export(myBIC)
+export(negmultinom)
 export(pcom)
 export(pgp1)
 export(pgp2)
@@ -123,7 +124,10 @@ importFrom(gt,
   gt,
   tab_header
 )
-importFrom(maxLik,maxLik)
+importFrom(maxLik,
+  maxControl,
+  maxLik
+)
 importFrom(methods,setClass)
 importFrom(modelr,model_matrix)
 importFrom(purrr,
@@ -136,17 +140,22 @@ importFrom(sandwich,sandwich)
 importFrom(stats,
   as.formula,
   coef,
+  complete.cases,
+  delete.response,
   dgamma,
   dnbinom,
   dnorm,
   dpois,
   formula,
   glm,
+  glm.fit,
   model.frame,
   model.matrix,
+  model.offset,
   model.response,
   pgamma,
   pnorm,
+  poisson,
   ppois,
   predict,
   qgamma,
@@ -157,7 +166,8 @@ importFrom(stats,
   rpois,
   runif,
   terms,
-  uniroot
+  uniroot,
+  vcov
 )
 importFrom(stringr,
   str_extract,

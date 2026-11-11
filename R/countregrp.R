@@ -106,6 +106,7 @@
 #' @importFrom dplyr mutate pull select all_of
 #' @importFrom tibble as_tibble
 #' @importFrom tidyr unite
+#' 
 #' @include helpers.R tri.R  createFlexCountReg.R
 #' @export
 countreg.rp <- function(formula, rpar_formula, data, family = "NB2",

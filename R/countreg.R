@@ -683,6 +683,7 @@
 #' 
 #' 
 #' @importFrom Rcpp sourceCpp
+#' 
 #' @useDynLib flexCountReg
 #' @export
 countreg <- function(formula, data, family = "NB2", offset = NULL, 

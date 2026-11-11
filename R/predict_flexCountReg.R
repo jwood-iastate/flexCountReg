@@ -331,7 +331,14 @@ predict.flexCountReg <- function(object, newdata = NULL, ...){
   }
   
   # =========================================================================
-  # 2. RANDOM EFFECTS MODELS (poisLindRE / RENB)
+  # 2a. NEGATIVE MULTINOMIAL FAMILY (negmultinom)
+  # =========================================================================
+  else if (modtype == "NegMultinom") {
+    return(.nm_predict(model, data, method = method))
+  }
+  
+  # =========================================================================
+  # 2b. RANDOM EFFECTS MODELS (poisLindRE / RENB)
   # =========================================================================
   else if (modtype %in% c("poisLindRE", "RENB", "REPoisson")) {
     

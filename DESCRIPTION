@@ -97,6 +97,7 @@ Collate:
     'renb.R'
     'repois.R'
     'summary_flexCountReg.R'
+    'negmultinom.R'
 Suggests:
     spelling, 
     lamW,

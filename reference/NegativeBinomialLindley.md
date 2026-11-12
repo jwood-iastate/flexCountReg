@@ -263,7 +263,7 @@ fast <- dplindGamma(x, mean = 2, theta = 1, alpha = 0.5)
 reference <- dplindGamma(x, mean = 2, theta = 1, alpha = 0.5,
                         method = "quadrature")
 max(abs(fast - reference))
-#> [1] 7.549517e-15
+#> [1] 6.27276e-15
 
 # x >= 7 and z = (theta+2)/(alpha*mean*(theta+1)) < 1:
 # the small-z guard sends this PMF directly to quadrature.

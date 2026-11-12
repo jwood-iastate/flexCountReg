@@ -780,12 +780,12 @@ nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 #> iter   3 value 1082.460820
 #> iter   4 value 1081.386386
 #> iter   5 value 1080.983879
-#> iter   6 value 1079.708978
-#> iter   7 value 1070.603400
-#> iter   8 value 1068.239212
-#> iter   9 value 1065.881518
-#> iter  10 value 1065.612937
-#> iter  11 value 1065.068995
+#> iter   6 value 1079.708981
+#> iter   7 value 1070.603402
+#> iter   8 value 1068.239213
+#> iter   9 value 1065.881516
+#> iter  10 value 1065.612936
+#> iter  11 value 1065.068994
 #> iter  12 value 1064.893660
 #> iter  13 value 1064.876776
 #> iter  14 value 1064.876161
@@ -807,13 +807,13 @@ summary(nb2)
 #> # A tibble: 7 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -7.40        0.466   -15.9      0         -8.31      -6.49 
+#> 1 (Intercept)        -7.40        0.465   -15.9      0         -8.31      -6.49 
 #> 2 lnaadt              0.912       0.056    16.3      0          0.802      1.02 
-#> 3 lnlength            0.843       0.07     12.0      0          0.705      0.98 
-#> 4 speed50            -0.47        0.115    -4.08     0         -0.696     -0.244
-#> 5 AADT10kplus         0.77        0.13      5.92     0          0.515      1.02 
-#> 6 ln(alpha):(Interc… -1.62        0.374    -4.33     0         -2.35      -0.887
-#> 7 ln(alpha):speed50   1.31        0.595     2.19     0.028      0.14       2.47 
+#> 3 lnlength            0.843       0.07     12.0      0          0.706      0.98 
+#> 4 speed50            -0.47        0.115    -4.08     0         -0.695     -0.244
+#> 5 AADT10kplus         0.77        0.13      5.93     0          0.515      1.02 
+#> 6 ln(alpha):(Interc… -1.62        0.38     -4.26     0         -2.36      -0.875
+#> 7 ln(alpha):speed50   1.31        0.599     2.18     0.029      0.132      2.48 
 
 
 # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
@@ -837,9 +837,9 @@ summary(pln)
 #>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
 #> 1 (Intercept) -7.51       NA        NA           NA     NA         NA    
 #> 2 lnaadt       0.91       NA        NA           NA     NA         NA    
-#> 3 lnlength     0.847       0.11      7.70         0      0.632      1.06 
-#> 4 speed50     -0.459       0.106    -4.35         0     -0.666     -0.252
-#> 5 AADT10kplus  0.809       0.133     6.10         0      0.549      1.07 
+#> 3 lnlength     0.847       0.112     7.58         0      0.628      1.07 
+#> 4 speed50     -0.459       0.106    -4.34         0     -0.666     -0.252
+#> 5 AADT10kplus  0.809       0.133     6.07         0      0.548      1.07 
 #> 6 ln(sigma)   -0.734      NA        NA           NA     NA         NA    
 
 # Estimate an Poisson-Lognormal with underreporting (probit)
@@ -863,13 +863,13 @@ summary(plogn_underreport)
 #> # A tibble: 9 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -6.69        1.52    -4.41      0         -9.66      -3.72 
-#> 2 lnaadt              0.901       0.056   16.2       0          0.792      1.01 
-#> 3 lnlength            0.832       0.069   12.0       0          0.696      0.968
-#> 4 speed50            -0.924       0.802   -1.15      0.249     -2.50       0.648
-#> 5 AADT10kplus         2.22       NA       NA        NA         NA         NA    
-#> 6 ln(alpha)          -1.50        0.346   -4.35      0         -2.18      -0.827
-#> 7 Underreporting:(I… -0.084       1.97    -0.043     0.966     -3.94       3.78 
+#> 1 (Intercept)        -6.69        3.54    -1.89      0.058    -13.6        0.24 
+#> 2 lnaadt              0.901       0.055   16.3       0          0.793      1.01 
+#> 3 lnlength            0.832       0.07    12.0       0          0.696      0.968
+#> 4 speed50            -0.924       1.57    -0.587     0.557     -4.01       2.16 
+#> 5 AADT10kplus         2.22        1.44     1.54      0.123     -0.599      5.04 
+#> 6 ln(alpha)          -1.50        0.345   -4.36      0         -2.18      -0.828
+#> 7 Underreporting:(I… -0.084       4.69    -0.018     0.986     -9.28       9.12 
 #> 8 Underreporting:sp… -0.774      NA       NA        NA         NA         NA    
 #> 9 Underreporting:AA…  1.24       NA       NA        NA         NA         NA    
 
@@ -883,19 +883,19 @@ summary(com_model)
 #> 
 #>  Method:  countreg 
 #> Iterations:  6 
-#> Convergence:  successive function values within tolerance limit (tol) 
+#> Convergence:  successive function values within relative tolerance limit (reltol) 
 #> Log-likelihood:  -1066.063 
 #> 
 #> Parameter Estimates:
 #> # A tibble: 6 × 7
 #>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept) -7.42        0.468   -15.9          0     -8.34      -6.50 
-#> 2 lnaadt       0.912       0.056    16.2          0      0.801      1.02 
+#> 1 (Intercept) -7.42        0.467   -15.9          0     -8.34      -6.50 
+#> 2 lnaadt       0.912       0.056    16.2          0      0.802      1.02 
 #> 3 lnlength     0.84        0.067    12.6          0      0.709      0.971
 #> 4 speed50     -0.445       0.103    -4.32         0     -0.647     -0.243
 #> 5 AADT10kplus  0.788       0.126     6.26         0      0.541      1.03 
-#> 6 ln(nu)      -0.62        0.172    -3.62         0     -0.956     -0.284
+#> 6 ln(nu)      -0.62        0.171    -3.61         0     -0.955     -0.284
 
 # Estimate a CGenerlized-Poisson Version 1 model
 gp1_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 

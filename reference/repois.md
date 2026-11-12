@@ -1,7 +1,10 @@
 # Estimate a Random Effects Poisson Panel Model
 
 Estimate a random effects Poisson panel model for clustered count data.
-The model is also known as a negative multinomial model.
+The model is also known as a negative multinomial model. A more flexible
+version of this model can be estimated using the
+[`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+function.
 
 ## Usage
 
@@ -108,7 +111,7 @@ summary(repois.mod)
 #>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
 #> 
 #>  Method:  REPoisson 
-#> Iterations:  6 
+#> Iterations:  7 
 #> Convergence:  successful convergence  
 #> Log-likelihood:  -271.7189 
 #> 
@@ -116,12 +119,12 @@ summary(repois.mod)
 #> # A tibble: 7 × 7
 #>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
 #>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.82        1.26     -7.80     0        -12.3       -7.35 
-#> 2 lnaadt              1.03        0.144     7.14     0          0.745      1.31 
-#> 3 speed50            -0.919       0.291    -3.16     0.002     -1.49      -0.349
-#> 4 ShouldWidth04      -0.486       0.252    -1.93     0.054     -0.981      0.009
-#> 5 AADTover10k        -0.87        0.467    -1.86     0.062     -1.78       0.045
-#> 6 lnalpha           -13.8         0.003 -5164.       0        -13.8      -13.8  
+#> 1 (Intercept)        -9.82        1.36     -7.24     0        -12.5       -7.16 
+#> 2 lnaadt              1.03        0.156     6.58     0          0.721      1.33 
+#> 3 speed50            -0.919       0.291    -3.16     0.002     -1.49      -0.348
+#> 4 ShouldWidth04      -0.486       0.248    -1.96     0.05      -0.971     -0.001
+#> 5 AADTover10k        -0.87        0.466    -1.86     0.062     -1.78       0.044
+#> 6 lnalpha           -13.8         3.45     -4.00     0        -20.6       -7.05 
 #> 7 lnlength (Offset…   1          NA        NA       NA         NA         NA    
 # }
 ```

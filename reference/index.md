@@ -112,6 +112,8 @@
   : Calculate Akaike Information Criterion (AIC)
 - [`myBIC()`](https://jwood-iastate.github.io/flexCountReg/reference/myBIC.md)
   : Calculate Bayesian Information Criterion (BIC)
+- [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+  : Negative Multinomial Family Panel Regression (NM1, NM2, NM-P)
 - [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
   : Function for estimating a Random Effects Poisson-Lindley regression
   model

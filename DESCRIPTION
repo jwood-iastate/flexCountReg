@@ -78,7 +78,6 @@ Collate:
     'data.R'
     'flexCountReg-Package.R'
     'flexCountRegClass.R'
-    'genexp.R'
     'genpoisson1.R'
     'genpoisson2.R'
     'globals.R'

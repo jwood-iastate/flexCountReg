@@ -88,7 +88,7 @@ Distribution.
 
 The compound Probability Mass Function (PMF) for the Poisson-Lognormal
 distribution is:
-\deqn{f(y|\mu,\theta,\alpha)=
+\deqn{f(y|\mu,\alpha)=
   \int_0^\infty \frac{\mu^y x^y e^{-\mu x}}{y!} 
   \frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 
@@ -99,7 +99,7 @@ The expected value of the distribution is:
 \deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
 
 The variance for the distribution is:
-\deqn{V[Y]=E[Y]+\left(e^{\sigma^2/2}-1\right)E[Y]^2}
+\deqn{V[Y]=E[Y]+\left(e^{\sigma^2}-1\right)E[Y]^2}
 
 Halton draws are used to perform simulation over the lognormal distribution
 to solve the integral if the engine is set to "halton". The poilog package is

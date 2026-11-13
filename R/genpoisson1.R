@@ -150,8 +150,8 @@
 #' {1+\phi}\right)}{(1+\phi)^y y!}
 #' }
 #'
-#' Where \eqn{\phi} is a scale parameter with the restriction that
-#' \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
+#' Where \eqn{\phi} is a scale parameter with the restrictions that
+#' \eqn{\mu>0} is the mean value, \deqn{\phi>-1}, and \eqn{y} is a non-negative
 #' integer. This formulation uses the mean directly. 
 #'
 #' The variance of the GP-1 distribution is:

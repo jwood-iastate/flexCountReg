@@ -36,7 +36,7 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 \arguments{
 \item{x}{numeric value or vector of values.}
 
-\item{mean}{mean (>0).}
+\item{mean}{mean.}
 
 \item{theta}{Poisson-Lindley theta parameter (>0).}
 

@@ -136,8 +136,8 @@
 #'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
 #'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
 #'  \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
-#'  \item \eqn{\gamma} for the Sichel model.
-#'  \item \eqn{k} for the Generalized Waring model.
+#'  \item \eqn{ln(\gamma)} for the Sichel model.
+#'  \item \eqn{ln(k)} for the Generalized Waring model.
 #'  \item \eqn{ln(\nu)} for the Conway-Maxwell-Poisson model.
 #'  }
 #'  
@@ -146,7 +146,7 @@
 #'  \item Not Applicable for the Generalized Poisson Version 1 model.
 #'  \item Not Applicable for the Negative Binomial 1 model.
 #'  \item Not Applicable for the Negative Binomial 2 model.
-#'  \item p for the Negative Binomial P model.
+#'  \item \eqn{ln(p)} for the Negative Binomial P model.
 #'  \item Not Applicable for the Poisson-Lognormal model.
 #'  \item scale parameter for the Poisson-Generalized-Exponential model.
 #'  \item Not Applicable for the Poisson-Inverse-Gaussian model.
@@ -156,7 +156,7 @@
 #'  \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
 #'  \item \eqn{ln(\sigma)} for the Poisson-Weibull model.
 #'  \item \eqn{ln(\sigma)} for the Sichel model.
-#'  \item \eqn{ln(\rho)} for the Generalized Waring model.
+#'  \item \eqn{ln(\rho)-1} for the Generalized Waring model.
 #'  \item Not Applicable for the Conway-Maxwell-Poisson model.
 #'  }
 #'  
@@ -214,6 +214,8 @@
 #' Furthermore, \eqn{\phi>-1} is required for this distribution. When 
 #' \eqn{\phi<0}, there is also a maximum value of support for the integar value 
 #' \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
+#' To account for the range of possible values, this is modeled as 
+#' \deqn{ln(\phi+1)}.
 #' 
 #' ## Generalized Poisson Version 2 Model
 #' This implements the Generalized Poisson Version 2 model using MLE.
@@ -243,8 +245,10 @@
 #' Under the underdispersed case, the largest possible value of \eqn{y}
 #' is bounded above by \eqn{\left\lceil -1/\alpha \right\rceil - 1},
 #' i.e., the largest integer satisfying \eqn{1 + \alpha y > 0}.
+#' To account for the range of possible values, this is modeled as 
+#' \deqn{ln(\alpha+1)}.
 #' 
-#' ## Negative Binomial Models**
+#' ## Negative Binomial Models
 #' 
 #' The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
 #' based on Greene (2008).  The details of each of these are provided below.
@@ -300,7 +304,7 @@
 #' \deqn{\mu = exp(X\beta)}
 #' 
 #' The variance is:
-#' \deqn{\text{Var}(Y) = \mu + \alpha\mu^P}
+#' \deqn{\text{Var}(Y) = \mu + \alpha\mu^p}
 #' 
 #' ## Poisson-Lognormal (PLN) Model
 #' The compound Probability Mass Function(PMF) for the Poisson-Lognormal 
@@ -314,12 +318,6 @@
 #' The expected value of the distribution is:
 #' \deqn{E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}}
 #' 
-#' When `ln.sigma.formula` is used, the parameter \eqn{\sigma} is modeled as:
-#' \deqn{ln(\sigma)=\beta_0+\beta_1 x_1 + \cdots + \beta_n x_n}
-#' 
-#' Thus, the resulting value for the parameter \eqn{\sigma} is:
-#' \deqn{\sigma=e^{\beta_0+\beta_1 x_1 + \cdots + \beta_n x_n}}
-#' 
 #' The t-statistics and p-values for the coefficients related to ln(sigma) are,
 #' by default, testing if the coefficients are different from a value of 0. This
 #' has little practical meaning given that they are coefficients for ln(sigma).
@@ -331,7 +329,7 @@
 #' 
 #' ## Poisson Generalized-Exponential (PGE) Model
 #' The Generalized Exponential distribution can be written as a function with 
-#' a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
+#' a shape parameter \eqn{\alpha>0} and rate parameter \eqn{\gamma>0}. The
 #' distribution has strictly positive continuous values. The PDF of the
 #' distribution is:
 #' \deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
@@ -439,7 +437,7 @@
 #' model summary is testing if the parameter `theta` is equal to a value of 1. 
 #' This has no practical meaning. The Likelihood-Ratio (LR) test compares the 
 #' Poisson-Lindley regression with a Poisson regression with the same 
-#' independent variables. Thus, the PR test result indicates the statistical 
+#' independent variables. Thus, the LR test result indicates the statistical 
 #' significance for the improvement in how well the model fits the data over a 
 #' Poisson regression. This indicates the statistical significance of the 
 #' `theta` parameter.
@@ -484,18 +482,18 @@
 #' \deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} 
 #' \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}
 #' \right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
-#' where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and 
-#' \eqn{\lambda} is the mean of the Poisson distribution.
+#' where d\eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and 
+#' \deqn{\lambda} is the mean of the Poisson distribution.
 #' 
 #' For the Poisson-Weibull Regression model, the expected values is:
 #' \deqn{E[Y]=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
-#' Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is 
-#' the shape parameter, and \eqn{\sigma} is the scale parameter.
+#' Where \deqn{\lambda} is the mean of the Poisson distribution, \deqn{\alpha} is 
+#' the shape parameter, and \deqn{\sigma} is the scale parameter.
 #' 
 #' To ensure that the regression model predicts the mean value, the regression 
 #' utilizes:
 #' \deqn{\mu=\exp{X\gamma}=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
-#' Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a 
+#' Where \deqn{X} is a matrix of independent variables and \deqn{\gamma} is a 
 #' vector of coefficients. 
 #' 
 #' This leads to:
@@ -511,13 +509,13 @@
 #' \deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y 
 #' K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
 #' 
-#' Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with 
-#' \eqn{-\infty < \gamma < \infty} and \eqn{\sigma>0}, 
-#' \eqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, 
-#' \eqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
-#' a mean value of \eqn{\mu}, \eqn{y} is a non-negative integer, and 
-#' \eqn{K_j(x)} is a modified Bessel function of the third kind with order 
-#' \eqn{j} and argument \eqn{x}.
+#' Where \deqn{\sigma} and \deqn{\gamma} are distribution parameters with 
+#' \deqn{\sigma>0}, 
+#' \deqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, 
+#' \deqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
+#' a mean value of \deqn{\mu}, \deqn{y} is a non-negative integer, and 
+#' \deqn{K_j(x)} is a modified Bessel function of the third kind with order 
+#' \deqn{j} and argument \deqn{x}.
 #'
 #' The variance of the distribution is:
 #' \deqn{\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)
@@ -530,14 +528,13 @@
 #' \deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}
 #' {y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
 #' \deqn{\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}}
-#' \deqn{\sigma^2=\frac{\alpha k(\alpha+k+\rho-1)}{(\rho-1)^2(\rho-2)}}
 #' 
 #' The distribution parameters are often considered to capture the randomness 
-#' (parameter \deqn{\alpha}), proneness (parameter \deqn{}k), and liability 
+#' (parameter \deqn{\alpha}), proneness (parameter \deqn{k}k=), and liability 
 #' (parameter \deqn{\rho}) of the data.
 #'
 #' If we use:
-#' \deqn{\alpha=\frac{\mu k}{\rho-1}}
+#' \deqn{\alpha=\frac{\mu (\rho-1)}{k}}
 #' 
 #' The PMF becomes:
 #' 
@@ -548,11 +545,10 @@
 #' 
 #' This results in a regression model where:
 #' \deqn{\mu=e^{X\beta}}
-#' \deqn{\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}
-#' {(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}
-#' \right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2}
 #'
-#' Note that when \deqn{p=1} or \deqn{p=2}, the distribution is undefined.
+#' Note that when \deqn{\rho=1} or \deqn{\rho=2}, the distribution is undefined, 
+#' \deqn{\rho>1} is required for the mean, and \deqn{\rho\leq 2} results 
+#' in infinate variance.
 #' 
 #' ## Conway-Maxwell-Poisson (COM) Model
 #' The following is the the PMF for the COM model.
@@ -581,7 +577,7 @@
 #' the count model, based on the observed data. This is discussed in Wood et. 
 #' al. (2016), Pararai et. al., (2006), and Pararai et. al., (2010). The 
 #' underreporting model is based on:
-#' \deqn{\mu_{true}=\mu_{observed}\cdot P(\text{event is reported})}
+#' \deqn{\mu_{observed}=\mu_{true}\cdot P(\text{event is reported})}
 #' 
 #' This allows the inference of both the true event count and the probability of
 #' the event being reported as a function of independent variables.
@@ -623,13 +619,12 @@
 #' summary(nb2)
 #' 
 #' 
-#' # Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
-#' # up the estimation for examples - not recommended in practice)
+#' # Estimate a Poisson-Lognormal model 
 #' pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 #'               data = washington_roads, family = "PLN", engine="poilog")
 #' summary(pln)  
 #' 
-#' # Estimate an Poisson-Lognormal with underreporting (probit)
+#' # Estimate a Negative Binomial with underreporting (probit)
 #' plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
 #'                AADT10kplus,
 #'               data = washington_roads, family = "NB2",
@@ -680,6 +675,7 @@
 #' 
 #' Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash data 
 #' using the Sichel generalized additive models for location, scale and shape. 
+#' Accident Analysis & Prevention, 45.
 #' 
 #' 
 #' @importFrom Rcpp sourceCpp

@@ -61,7 +61,7 @@ model. This model is based on the NB-1 model. The PDF for the RENB is:
     \Gamma(b + \sum_{t=1}^{n_i}y_{it})}
     {\Gamma(a) \Gamma(b) \Gamma(a + b + 
        \sum_{t=1}^{n_i}\lambda_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
-       \frac{\Gamma(\lambda_{it}+y_{it})}{\Gamma(\lambda_{it})\Gamma(y_{it})}}
+       \frac{\Gamma(\lambda_{it}+y_{it})}{\Gamma(\lambda_{it})\Gamma(y_{it}+1)}}
 
 Where \eqn{y_{it}} is the count outcome for individual \eqn{i} at time
 \eqn{t}, and \eqn{\lambda_{it}} is the latent Poisson mean parameter for

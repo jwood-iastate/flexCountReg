@@ -10,7 +10,7 @@
 #' @param q quantile or vector of quantiles.
 #' @param p probability or vector of probabilities.
 #' @param n number of random draws.
-#' @param mean mean (>0).
+#' @param mean mean.
 #' @param theta Poisson-Lindley theta parameter (>0).
 #' @param sigma lognormal sigma parameter (>0).
 #' @param lambda optional lambda parameter (>0).

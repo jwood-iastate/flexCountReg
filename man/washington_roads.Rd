@@ -6,7 +6,7 @@
 \title{Washington Road Crashes}
 \format{
 Data frame compiled from roadway, traffic, and police-reported crash data
-that has 1,501 rows and 13 columns:
+that has 1,501 rows (507 unique road segments) and 13 columns:
 \describe{
 \item{ID}{Anonymized road ID. Factor.}
 \item{Year}{Year. Integer.}
@@ -17,7 +17,7 @@ that has 1,501 rows and 13 columns:
 \item{lnlength}{Natural logarithm of length in miles. Double.}
 \item{speed50}{Indicator of whether the speed limit is 50 mph or greater.
 Binary.}
-\item{ShouldWidth04}{Indicator of whether the shoulder is 4 feet or wider.
+\item{ShouldWidth04}{Indicator of whether the shoulder is 4 feet or less.
 Binary.}
 \item{Fatal_crashes}{Total number of non-intersection fatal crashes for the
 road segment}

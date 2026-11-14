@@ -111,8 +111,8 @@ Distribution.
 Distribution.
 
 The compound Probability Mass Function (PMF) for the Poisson-Lognormal
-distribution is: \$\$f(y\|\mu,\theta,\alpha)= \int_0^\infty \frac{\mu^y
-x^y e^{-\mu x}}{y!} \frac{exp\left(-\frac{ln^2(x)}{2\sigma^2}
+distribution is: \$\$f(y\|\mu,\alpha)= \int_0^\infty \frac{\mu^y x^y
+e^{-\mu x}}{y!} \frac{exp\left(-\frac{ln^2(x)}{2\sigma^2}
 \right)}{x\sigma\sqrt{2\pi}}dx\$\$
 
 Where \\\sigma\\ is a parameter for the lognormal distribution with the
@@ -122,7 +122,7 @@ The expected value of the distribution is:
 \$\$E\[y\]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}\$\$
 
 The variance for the distribution is:
-\$\$V\[Y\]=E\[Y\]+\left(e^{\sigma^2/2}-1\right)E\[Y\]^2\$\$
+\$\$V\[Y\]=E\[Y\]+\left(e^{\sigma^2}-1\right)E\[Y\]^2\$\$
 
 Halton draws are used to perform simulation over the lognormal
 distribution to solve the integral if the engine is set to "halton". The
@@ -142,6 +142,6 @@ ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
 #> [1] 0 0 0 5 7
 rpLnorm(30, mean=0.75,  sigma=2)
-#>  [1]  8  1  2  7  0  1  0  0  1  0  4  1  0  0  0  0  1 10  1  0  2  0  2  6  0
-#> [26]  3  2  0  0  0
+#>  [1]  0  2  3  0  0  0 46  2  1  1  0  2  0  0  0  0  0  0  2  0  2  1  4  3  0
+#> [26]  0  0 85  0  2
 ```

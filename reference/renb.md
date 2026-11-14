@@ -81,7 +81,7 @@ RENB is: \$\$f(y\_{it}\|\lambda\_{it}, a, b) = \frac{\Gamma(a+b)
 \sum\_{t=1}^{n_i}y\_{it})} {\Gamma(a) \Gamma(b) \Gamma(a + b +
 \sum\_{t=1}^{n_i}\lambda\_{it} + \sum\_{t=1}^{n_i}y\_{it})}
 \prod\_{t=1}^{n_i}
-\frac{\Gamma(\lambda\_{it}+y\_{it})}{\Gamma(\lambda\_{it})\Gamma(y\_{it})}\$\$
+\frac{\Gamma(\lambda\_{it}+y\_{it})}{\Gamma(\lambda\_{it})\Gamma(y\_{it}+1)}\$\$
 
 Where \\y\_{it}\\ is the count outcome for individual \\i\\ at time
 \\t\\, and \\\lambda\_{it}\\ is the latent Poisson mean parameter for

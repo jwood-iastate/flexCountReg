@@ -160,5 +160,5 @@ ppoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 qpoisweibull(0.95, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 #> [1] 4
 rpoisweibull(10, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
-#>  [1]  1  0 15  0  3  0  6  0  0  0
+#>  [1] 5 5 7 0 0 1 3 1 3 6
 ```

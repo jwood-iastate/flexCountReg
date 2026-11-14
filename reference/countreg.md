@@ -267,9 +267,9 @@ For `dis_param_formula_1`, the models are for the parameters:
 
 - \\ln(\alpha)\\ for the Poisson-Weibull model.
 
-- \\\gamma\\ for the Sichel model.
+- \\ln(\gamma)\\ for the Sichel model.
 
-- \\k\\ for the Generalized Waring model.
+- \\ln(k)\\ for the Generalized Waring model.
 
 - \\ln(\nu)\\ for the Conway-Maxwell-Poisson model.
 
@@ -281,7 +281,7 @@ For `dis_param_formula_2`, the models are for the parameters:
 
 - Not Applicable for the Negative Binomial 2 model.
 
-- p for the Negative Binomial P model.
+- \\ln(p)\\ for the Negative Binomial P model.
 
 - Not Applicable for the Poisson-Lognormal model.
 
@@ -301,7 +301,7 @@ For `dis_param_formula_2`, the models are for the parameters:
 
 - \\ln(\sigma)\\ for the Sichel model.
 
-- \\ln(\rho)\\ for the Generalized Waring model.
+- \\ln(\rho)-1\\ for the Generalized Waring model.
 
 - Not Applicable for the Conway-Maxwell-Poisson model.
 
@@ -358,7 +358,8 @@ underdispersed.
 Furthermore, \\\phi\>-1\\ is required for this distribution. When
 \\\phi\<0\\, there is also a maximum value of support for the integar
 value \\y\\. This is \\y_max=\left\lfloor -\frac{\mu}{\phi}
-\right\rfloor\\.
+\right\rfloor\\. To account for the range of possible values, this is
+modeled as \$\$ln(\phi+1)\$\$.
 
 ### Generalized Poisson Version 2 Model
 
@@ -382,9 +383,10 @@ distribution is underdispersed and has finite support.
 
 Under the underdispersed case, the largest possible value of \\y\\ is
 bounded above by \\\left\lceil -1/\alpha \right\rceil - 1\\, i.e., the
-largest integer satisfying \\1 + \alpha y \> 0\\.
+largest integer satisfying \\1 + \alpha y \> 0\\. To account for the
+range of possible values, this is modeled as \$\$ln(\alpha+1)\$\$.
 
-### Negative Binomial Models\*\*
+### Negative Binomial Models
 
 The NB-1, NB-2, and NB-P versions of the negative binomial distribution
 are based on Greene (2008). The details of each of these are provided
@@ -439,7 +441,7 @@ The PMF and log-likelihood functions are: \$\$P(Y = y) =
 
 The mean is: \$\$\mu = exp(X\beta)\$\$
 
-The variance is: \$\$\text{Var}(Y) = \mu + \alpha\mu^P\$\$
+The variance is: \$\$\text{Var}(Y) = \mu + \alpha\mu^p\$\$
 
 ### Poisson-Lognormal (PLN) Model
 
@@ -454,12 +456,6 @@ restriction \\\sigma\>0\\, and \\y\\ is a non-negative integer.
 The expected value of the distribution is:
 \$\$E\[y\]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}\$\$
 
-When `ln.sigma.formula` is used, the parameter \\\sigma\\ is modeled as:
-\$\$ln(\sigma)=\beta_0+\beta_1 x_1 + \cdots + \beta_n x_n\$\$
-
-Thus, the resulting value for the parameter \\\sigma\\ is:
-\$\$\sigma=e^{\beta_0+\beta_1 x_1 + \cdots + \beta_n x_n}\$\$
-
 The t-statistics and p-values for the coefficients related to ln(sigma)
 are, by default, testing if the coefficients are different from a value
 of 0. This has little practical meaning given that they are coefficients
@@ -472,7 +468,7 @@ significant improvement in model fit over the Poisson model.
 ### Poisson Generalized-Exponential (PGE) Model
 
 The Generalized Exponential distribution can be written as a function
-with a shape parameter \\\alpha\>0\\ and scale parameter \\\gamma\>0\\.
+with a shape parameter \\\alpha\>0\\ and rate parameter \\\gamma\>0\\.
 The distribution has strictly positive continuous values. The PDF of the
 distribution is:
 \$\$f(x\|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
@@ -582,7 +578,7 @@ It should be noted that the p-value for the parameter `ln(theta)` in the
 model summary is testing if the parameter `theta` is equal to a value
 of 1. This has no practical meaning. The Likelihood-Ratio (LR) test
 compares the Poisson-Lindley regression with a Poisson regression with
-the same independent variables. Thus, the PR test result indicates the
+the same independent variables. Thus, the LR test result indicates the
 statistical significance for the improvement in how well the model fits
 the data over a Poisson regression. This indicates the statistical
 significance of the `theta` parameter.
@@ -631,19 +627,19 @@ function) for the Poisson-Weibull distribution is given by:
 \lambda^y x^y }{y!}
 \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}
 \right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx\$\$ where
-\\f(x\| \alpha, \sigma)\\ is the PDF of the Weibull distribution and
-\\\lambda\\ is the mean of the Poisson distribution.
+d\\f(x\| \alpha, \sigma)\\ is the PDF of the Weibull distribution and
+\$\$\lambda\$\$ is the mean of the Poisson distribution.
 
 For the Poisson-Weibull Regression model, the expected values is:
 \$\$E\[Y\]=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)\$\$ Where
-\\\lambda\\ is the mean of the Poisson distribution, \\\alpha\\ is the
-shape parameter, and \\\sigma\\ is the scale parameter.
+\$\$\lambda\$\$ is the mean of the Poisson distribution, \$\$\alpha\$\$
+is the shape parameter, and \$\$\sigma\$\$ is the scale parameter.
 
 To ensure that the regression model predicts the mean value, the
 regression utilizes:
 \$\$\mu=\exp{X\gamma}=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)\$\$
-Where \\X\\ is a matrix of independent variables and \\\gamma\\ is a
-vector of coefficients.
+Where \$\$X\$\$ is a matrix of independent variables and \$\$\gamma\$\$
+is a vector of coefficients.
 
 This leads to:
 \$\$\lambda=\frac{\mu}{\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}\$\$
@@ -659,12 +655,13 @@ uses the formulation from Zhou et al. (2011) and Rigby et al. (2008):
 \$\$f(y\|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y
 K\_{y+\gamma}(\alpha)}{K\_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}\$\$
 
-Where \\\sigma\\ and \\\gamma\\ are distribution parameters with
-\\-\infty \< \gamma \< \infty\\ and \\\sigma\>0\\,
-\\c=\frac{K\_{\gamma+1}(1/\sigma)}{K\_\gamma(1/\sigma)}\\,
-\\\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}\\, a mean value of \\\mu\\,
-\\y\\ is a non-negative integer, and \\K_j(x)\\ is a modified Bessel
-function of the third kind with order \\j\\ and argument \\x\\.
+Where \$\$\sigma\$\$ and \$\$\gamma\$\$ are distribution parameters with
+\$\$\sigma\>0\$\$,
+\$\$c=\frac{K\_{\gamma+1}(1/\sigma)}{K\_\gamma(1/\sigma)}\$\$,
+\$\$\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}\$\$, a mean value of
+\$\$\mu\$\$, \$\$y\$\$ is a non-negative integer, and \$\$K_j(x)\$\$ is
+a modified Bessel function of the third kind with order \$\$j\$\$ and
+argument \$\$x\$\$.
 
 The variance of the distribution is:
 \$\$\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)
@@ -677,14 +674,13 @@ the Generalized Waring model. This is adjusted from the typical
 formulation by replacing parameter `k` with \\\mu\\
 \$\$PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}
 {y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}\$\$
-\$\$\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}\$\$ \$\$\sigma^2=\frac{\alpha
-k(\alpha+k+\rho-1)}{(\rho-1)^2(\rho-2)}\$\$
+\$\$\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}\$\$
 
 The distribution parameters are often considered to capture the
-randomness (parameter \$\$\alpha\$\$), proneness (parameter \$\$\$\$k),
-and liability (parameter \$\$\rho\$\$) of the data.
+randomness (parameter \$\$\alpha\$\$), proneness (parameter
+\$\$k\$\$k=), and liability (parameter \$\$\rho\$\$) of the data.
 
-If we use: \$\$\alpha=\frac{\mu k}{\rho-1}\$\$
+If we use: \$\$\alpha=\frac{\mu (\rho-1)}{k}\$\$
 
 The PMF becomes:
 
@@ -694,12 +690,10 @@ The PMF becomes:
 \Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}\$\$
 
 This results in a regression model where: \$\$\mu=e^{X\beta}\$\$
-\$\$\sigma^2=\frac{\mu k^2\left(\frac{\mu k}{\rho-1}+k+\rho-1\right)}
-{(\rho-1)^3(\rho-2)}=\left(\frac{k^3+\rho k^2- k^2}{(\rho-1)^3(\rho-2)}
-\right)\mu+\left(\frac{k^3}{(\rho-1)^4(\rho-2)}\right)\mu^2\$\$
 
-Note that when \$\$p=1\$\$ or \$\$p=2\$\$, the distribution is
-undefined.
+Note that when \$\$\rho=1\$\$ or \$\$\rho=2\$\$, the distribution is
+undefined, \$\$\rho\>1\$\$ is required for the mean, and \$\$\rho\leq
+2\$\$ results in infinate variance.
 
 ### Conway-Maxwell-Poisson (COM) Model
 
@@ -729,7 +723,7 @@ probability of crashes being reported multiplied by the estimated mean
 for the count model, based on the observed data. This is discussed in
 Wood et. al. (2016), Pararai et. al., (2006), and Pararai et. al.,
 (2010). The underreporting model is based on:
-\$\$\mu\_{true}=\mu\_{observed}\cdot P(\text{event is reported})\$\$
+\$\$\mu\_{observed}=\mu\_{true}\cdot P(\text{event is reported})\$\$
 
 This allows the inference of both the true event count and the
 probability of the event being reported as a function of independent
@@ -759,7 +753,7 @@ Accident Analysis & Prevention 95 (2016): 57-66.
 
 Zou, Y., Lord, D., & Zhang, Y. (2012). Analyzing highly dispersed crash
 data using the Sichel generalized additive models for location, scale
-and shape.
+and shape. Accident Analysis & Prevention, 45.
 
 ## Examples
 
@@ -816,8 +810,7 @@ summary(nb2)
 #> 7 ln(alpha):speed50   1.31        0.599     2.18     0.029      0.132      2.48 
 
 
-# Estimate a Poisson-Lognormal model (a low number of draws is used to speed 
-# up the estimation for examples - not recommended in practice)
+# Estimate a Poisson-Lognormal model 
 pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
               data = washington_roads, family = "PLN", engine="poilog")
 #> Warning: NaNs produced
@@ -842,7 +835,7 @@ summary(pln)
 #> 5 AADT10kplus  0.809       0.133     6.07         0      0.548      1.07 
 #> 6 ln(sigma)   -0.734      NA        NA           NA     NA         NA    
 
-# Estimate an Poisson-Lognormal with underreporting (probit)
+# Estimate a Negative Binomial with underreporting (probit)
 plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
                AADT10kplus,
               data = washington_roads, family = "NB2",

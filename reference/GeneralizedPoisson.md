@@ -83,9 +83,9 @@ distribution, version 1, (GP-1) is: \$\$
 f(y\|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
 {1+\phi}\right)}{(1+\phi)^y y!} \$\$
 
-Where \\\phi\\ is a scale parameter with the restriction that \\\mu\>0\\
-is the mean value, and \\y\\ is a non-negative integer. This formulation
-uses the mean directly.
+Where \\\phi\\ is a scale parameter with the restrictions that
+\\\mu\>0\\ is the mean value, \$\$\phi\>-1\$\$, and \\y\\ is a
+non-negative integer. This formulation uses the mean directly.
 
 The variance of the GP-1 distribution is: \$\$\sigma^2=(1+\phi)^2
 \mu\$\$

@@ -13,7 +13,7 @@ washington_roads
 ## Format
 
 Data frame compiled from roadway, traffic, and police-reported crash
-data that has 1,501 rows and 13 columns:
+data that has 1,501 rows (507 unique road segments) and 13 columns:
 
 - ID:
 
@@ -49,7 +49,7 @@ data that has 1,501 rows and 13 columns:
 
 - ShouldWidth04:
 
-  Indicator of whether the shoulder is 4 feet or wider. Binary.
+  Indicator of whether the shoulder is 4 feet or less. Binary.
 
 - Fatal_crashes:
 

@@ -141,7 +141,7 @@ Distribution.</p>
 Distribution.</p>
 <p>The compound Probability Mass Function (PMF) for the Poisson-Lognormal
 distribution is:
-$$f(y|\mu,\theta,\alpha)=
+$$f(y|\mu,\alpha)=
   \int_0^\infty \frac{\mu^y x^y e^{-\mu x}}{y!}
   \frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx$$</p>
 <p>Where \(\sigma\) is a parameter for the lognormal distribution with the
@@ -149,7 +149,7 @@ restriction \(\sigma&gt;0\), and \(y\) is a non-negative integer.</p>
 <p>The expected value of the distribution is:
 $$E[y]=e^{X\beta+\sigma^2/2} = \mu e^{\sigma^2/2}$$</p>
 <p>The variance for the distribution is:
-$$V[Y]=E[Y]+\left(e^{\sigma^2/2}-1\right)E[Y]^2$$</p>
+$$V[Y]=E[Y]+\left(e^{\sigma^2}-1\right)E[Y]^2$$</p>
 <p>Halton draws are used to perform simulation over the lognormal distribution
 to solve the integral if the engine is set to "halton". The poilog package is
 used to solve the integral if the engine is set to "poilog".</p>
@@ -167,8 +167,8 @@ used to solve the integral if the engine is set to "poilog".</p>
 <span class="r-in"><span><span class="fu">qpLnorm</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.3</span>,<span class="fl">0.5</span>,<span class="fl">0.9</span>,<span class="fl">0.95</span><span class="op">)</span>, mean<span class="op">=</span><span class="fl">0.75</span>, sigma<span class="op">=</span><span class="fl">2</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0 0 0 5 7</span>
 <span class="r-in"><span><span class="fu">rpLnorm</span><span class="op">(</span><span class="fl">30</span>, mean<span class="op">=</span><span class="fl">0.75</span>,  sigma<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1]  8  1  2  7  0  1  0  0  1  0  4  1  0  0  0  0  1 10  1  0  2  0  2  6  0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [26]  3  2  0  0  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1]  0  2  3  0  0  0 46  2  1  1  0  2  0  0  0  0  0  0  2  0  2  1  4  3  0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [26]  0  0 85  0  2</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

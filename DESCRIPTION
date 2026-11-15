@@ -32,6 +32,7 @@ Imports:
     gsl,
     gt,
     knitr,
+    lamW,
     MASS,
     maxLik,
     methods,
@@ -55,51 +56,8 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Config/roxygen2/markdown: TRUE
-Collate: 
-    'Generalized-Waring.R'
-    'Lindley.R'
-    'RcppExports.R'
-    'cor2cov.R'
-    'corr_haltons.R'
-    'helpers.R'
-    'plind.R'
-    'ppoisGE.R'
-    'psichel.R'
-    'plindGamma.R'
-    'plindLnorm.R'
-    'ppoislogn.R'
-    'pinvgamma.R'
-    'pinvgaus.R'
-    'countreg.R'
-    'createFlexCountReg.R'
-    'tri.R'
-    'countregrp.R'
-    'cureplot.R'
-    'data.R'
-    'flexCountReg-Package.R'
-    'flexCountRegClass.R'
-    'genpoisson1.R'
-    'genpoisson2.R'
-    'globals.R'
-    'halton_dists.R'
-    'invgamma.R'
-    'margEffTable.R'
-    'metrics.R'
-    'moment_lognormal.R'
-    'pcom.R'
-    'poisLind.re.R'
-    'poisWeib.R'
-    'predict_flexCountReg.R'
-    'regCompTest.R'
-    'regCompTable.R'
-    'renbLL.R'
-    'renb.R'
-    'repois.R'
-    'summary_flexCountReg.R'
-    'negmultinom.R'
 Suggests:
     spelling, 
-    lamW,
     testthat (>= 3.0.0), 
     poilog
 Config/testthat/edition: 3

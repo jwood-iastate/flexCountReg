@@ -84,8 +84,7 @@ pplindLnorm <- function(q, mean=1, theta=1, lambda=NULL,
                         lower.tail=TRUE, log.p=FALSE) {
   
   if(!is.null(lambda)) {
-    mean <- lambda * (theta + 2) /
-      (theta * (theta + 1)) * exp(sigma^2 / 2)
+    mean <- lambda * (theta + 2) / (theta * (theta + 1))
   }
   
   # FIX: Set normal=FALSE.
@@ -120,75 +119,38 @@ pplindLnorm <- function(q, mean=1, theta=1, lambda=NULL,
 
 #' @rdname PoissonLindleyLognormal
 #' @export
-qplindLnorm <- Vectorize(function(p, mean=1, theta=1,
-                                  sigma=1, ndraws=1500,
-                                  lambda=NULL) {
-  
-  if(is.null(lambda)) {
-    if(mean <= 0 || theta <= 0 || sigma <= 0) {
-      warning(paste(
-        "The values of `mean`, `theta`, and `sigma` must",
-        "all be greater than 0."
-      ))
-    }
-  } else {
-    if(lambda <= 0 || theta <= 0 || sigma <= 0) {
-      warning(paste(
-        "The values of `lambda`, `theta`, and `sigma` must",
-        "all be greater than 0."
-      ))
-    } else {
-      mean <- lambda * (theta + 2) /
-        (theta * (theta + 1)) * exp(sigma^2 / 2)
-    }
+qplindLnorm <- function(p, mean = 1, theta = 1, sigma = 1, ndraws = 1500,
+                        lambda = NULL) {
+  if (!is.null(lambda)) {
+    mean <- lambda * (theta + 2) / (theta * (theta + 1))
   }
-  
-  y <- 0
-  p_value <- pplindLnorm(y, mean, theta,
-                         sigma = sigma,
-                         ndraws = ndraws)
-  
-  while(p_value < p) {
-    y <- y + 1
-    p_value <- pplindLnorm(
-      y, mean, theta, sigma = sigma,
-      ndraws = ndraws
-    )
+  if (any(mean <= 0 | theta <= 0 | sigma <= 0, na.rm = TRUE)) {
+    warning(paste("The values of `mean` (or `lambda`), `theta`, and",
+                  "`sigma` must all be greater than 0."))
   }
-  
-  return(y)
-})
+  h <- randtoolbox::halton(ndraws)
+  .fcr_qcount(p, function(y, mean, theta, sigma) {
+    cumsum(dplindLnorm(y, mean, theta, sigma, hdraws = h))
+  }, mean, theta, sigma)
+}
 
 #' @rdname PoissonLindleyLognormal
 #' @export
-rplindLnorm <- function(n, mean=1, theta=1, sigma=1,
-                        ndraws=1500, lambda=NULL) {
-  
-  if(is.null(lambda)) {
-    if(mean <= 0 || theta <= 0 || sigma <= 0) {
-      warning(paste(
-        "The values of `mean`, `theta`, and `sigma` must",
-        "all be greater than 0."
-      ))
-    }
+rplindLnorm <- function(n, mean = 1, theta = 1, sigma = 1,
+                        ndraws = 1500, lambda = NULL) {
+  n <- .fcr_rn(n)
+  theta <- rep_len(theta, n); sigma <- rep_len(sigma, n)
+  if (is.null(lambda)) {
+    mean <- rep_len(mean, n)
+    lambda <- mean * theta * (theta + 1) / (theta + 2)
   } else {
-    if(lambda <= 0 || theta <= 0 || sigma <= 0) {
-      warning(paste(
-        "The values of `lambda`, `theta`, and `sigma` must",
-        "all be greater than 0."
-      ))
-    } else {
-      mean <- lambda * (theta + 2) /
-        (theta * (theta + 1)) * exp(sigma^2 / 2)
-    }
+    lambda <- rep_len(lambda, n)
   }
-  
-  u <- runif(n)
-  y <- vapply(
-    X = u, 
-    FUN = \(p) qplindLnorm(p, mean, theta, sigma = sigma, ndraws = ndraws), 
-    FUN.VALUE = numeric(1)
-  )
-  
-  return(y)
+  bad <- !(is.finite(lambda) & lambda > 0 & is.finite(theta) & theta > 0 &
+             is.finite(sigma) & sigma > 0)
+  .fcr_warn_na(bad, "`mean` (or `lambda`), `theta` and `sigma` must be > 0.")
+  out <- rep(NA_real_, n); ok <- !bad; k <- sum(ok)
+  out[ok] <- stats::rpois(k, lambda[ok] * .fcr_rlindley_mix(k, theta[ok]) *
+                            exp(stats::rnorm(k, 0, sigma[ok])))
+  out
 }

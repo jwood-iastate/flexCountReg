@@ -623,34 +623,30 @@ qplindGamma <- Vectorize(function(p, mean=1, theta=1, alpha=1) {
   if (mean == 0 || p == 0) return(0)
   if (p == 1) return(Inf)
   
-  y <- 0
-  p_value <- pplindGamma(y, mean, theta, alpha = alpha)
-  while (is.finite(p_value) && p_value < p) {
-    if (y + 1 == y) {
-      warning("Quantile exceeds consecutive integer precision: NaN produced",
-              call. = FALSE)
-      return(NaN)
-    }
-    y <- y + 1
-    p_value <- pplindGamma(y, mean, theta, alpha = alpha)
-  }
-  if (is.finite(p_value)) y else NaN
+  .fcr_qsearch(p, function(y) pplindGamma(y, mean, theta, alpha = alpha))
 })
 
 #' @rdname NegativeBinomialLindley
 #' @export
-rplindGamma <- function(n, mean=1, theta=1, alpha=1) {
-  if (!is.numeric(n) || length(n) != 1L || !is.finite(n) ||
-      n < 0 || n != floor(n))
-    stop("'n' must be a nonnegative integer scalar")
-  parameters <- list(mean, theta, alpha)
-  if (!all(vapply(parameters, function(x)
-    is.numeric(x) && length(x) == 1L && is.finite(x), logical(1))) ||
-    mean < 0 || theta <= 0 || alpha < 0)
-    stop("'mean' and 'alpha' must be finite nonnegative scalars; ",
-         "'theta' must be a finite positive scalar")
-  if (n == 0) return(numeric())
-  u <- stats::runif(n)
-  y <- lapply(u, function(p) qplindGamma(p, mean, theta, alpha=alpha))
-  return(unlist(y))
+rplindGamma <- function(n, mean = 1, theta = 1, alpha = 1) {
+  n <- .fcr_rn(n)
+  mean <- rep_len(mean, n); theta <- rep_len(theta, n)
+  alpha <- rep_len(alpha, n)
+  bad <- !(is.finite(mean) & mean >= 0 & is.finite(theta) & theta > 0 &
+             is.finite(alpha) & alpha >= 0)
+  .fcr_warn_na(bad, paste("`mean` and `alpha` must be non-negative and",
+                          "`theta` positive."))
+  out <- rep(NA_real_, n); ok <- !bad; k <- sum(ok)
+  if (k == 0) return(out)
+  # W = X / b, X ~ Gamma(J, 1), J = 1 w.p. theta/(1+theta) else 2;
+  # Y | W ~ NB(size = 1/alpha, mu = mean * W), Poisson when alpha = 0.
+  th <- theta[ok]
+  J <- 1 + (stats::runif(k) > th / (1 + th))
+  W <- stats::rgamma(k, shape = J, rate = 1) / ((th + 2) / (th + 1))
+  mu <- mean[ok] * W
+  a <- alpha[ok]
+  G <- ifelse(a > 0, stats::rgamma(k, shape = 1 / pmax(a, 1e-300),
+                                   rate = 1 / pmax(a, 1e-300)), 1)
+  out[ok] <- stats::rpois(k, mu * G)
+  out
 }

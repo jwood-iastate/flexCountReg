@@ -154,31 +154,25 @@ ppoisweibull <- Vectorize(function(
 
 #' @rdname PoissonWeibull
 #' @export
-qpoisweibull <- Vectorize(function(p, lambda=NULL, alpha = NULL, sigma = NULL, 
-                                   mean_value = NULL, sd_value = NULL, 
-                                   ndraws=1500) {
+qpoisweibull <- function(p, lambda = NULL, alpha = NULL, sigma = NULL,
+                         mean_value = NULL, sd_value = NULL, ndraws = 1500) {
   if (!is.null(mean_value) && !is.null(sd_value)) {
     params <- calculate_params(mean_value = mean_value, sd_value = sd_value)
     alpha <- params[1]
     sigma <- params[2]
   }
   if (is.null(alpha) || is.null(sigma)) 
-    warning("Parameters alpha and sigma are required")
+    stop("Parameters alpha and sigma are required")
   if (is.null(lambda) && !is.null(mean_value)){
     lambda <- mean_value/(sigma*gamma(1+1/alpha))
-  } else if (is.null(lambda) && is.null(mean_value)) {
-    warning("Parameter lambda or mean_value is required")
+  } else if (is.null(lambda)) {
+    stop("Parameter lambda or mean_value is required")
   }
-  y <- 0
-  p_value <- 
-    ppoisweibull(y, lambda=lambda, alpha = alpha, sigma = sigma, ndraws=ndraws)
-  while (p_value < p){
-    y <- y + 1
-    p_value <- ppoisweibull(
-      y, lambda = lambda, alpha = alpha, sigma = sigma, ndraws = ndraws)
-  }
-  return(y)
-})
+  .fcr_qcount(p, function(y, lambda, alpha, sigma) {
+    cumsum(dpoisweibull(y, lambda = lambda, alpha = alpha, sigma = sigma,
+                        ndraws = ndraws))
+  }, lambda, alpha, sigma)
+}
 
 #' @rdname PoissonWeibull
 #' @export

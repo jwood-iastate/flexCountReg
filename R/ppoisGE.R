@@ -117,7 +117,6 @@
 #' @name PoissonGeneralizedExponential
 
 #' @rdname PoissonGeneralizedExponential
-#' @export
 .dpge_one <- function(x, mean, shape, scale, haltons) {
   
   lambda <- mean * scale /
@@ -335,35 +334,32 @@ ppge <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
 }
 #' @rdname PoissonGeneralizedExponential
 #' @export
-qpge <- Vectorize(function(p, mean=1, shape=1, scale=1, ndraws=1500) {
-  if(mean<=0 || scale<=0 || shape <=0){
-    msg <- paste('The values of `mean`, `shape`, and `scale` have to", 
-                 "have values greater than 0.')
-    warning(msg)
+qpge <- function(p, mean = 1, shape = 1, scale = 1, ndraws = 1500) {
+  if (any(mean <= 0 | scale <= 0 | shape <= 0, na.rm = TRUE)) {
+    warning("The values of `mean`, `shape`, and `scale` have to have ",
+            "values greater than 0.")
   }
-
-  y <- 0
-  p_value <- ppge(y, mean, shape, scale, ndraws=ndraws)
-  while(p_value < p){
-    y <- y + 1
-    p_value <- ppge(y, mean, shape, scale, ndraws=ndraws)
-  }
-  return(y)
-})
+  h <- randtoolbox::halton(ndraws)
+  .fcr_qcount(p, function(y, mean, shape, scale) {
+    cumsum(dpge(y, mean = mean, shape = shape, scale = scale, haltons = h))
+  }, mean, shape, scale)
+}
 
 
 #' @rdname PoissonGeneralizedExponential
 #' @export
-rpge <- function(n, mean=1, shape=1, scale=1, ndraws=1500) {
-  if(mean <= 0 || scale <= 0 || shape <= 0){
-    msg <- paste('The values of `mean`, `shape`, and `scale` have", 
-                 "to have values greater than 0.')
-    warning(msg)
-  }
-
-  u <- runif(n)
-  y <- vapply(X = u, 
-              FUN = \(p) qpge(p, mean, shape, scale, ndraws), 
-              FUN.VALUE = numeric(1))
-  return(y)
+rpge <- function(n, mean = 1, shape = 1, scale = 1, ndraws = 1500) {
+  n <- .fcr_rn(n)
+  mean <- rep_len(mean, n); shape <- rep_len(shape, n)
+  scale <- rep_len(scale, n)
+  bad <- !(is.finite(mean) & mean > 0 & is.finite(shape) & shape > 0 &
+             is.finite(scale) & scale > 0)
+  .fcr_warn_na(bad, "`mean`, `shape` and `scale` must be greater than 0.")
+  out <- rep(NA_real_, n); ok <- !bad; k <- sum(ok)
+  # Generalized-exponential mixing variable by inverse CDF, scaled so that
+  # E[Y] = mean (as in dpge()).
+  g <- -log1p(-stats::runif(k)^(1 / shape[ok])) / scale[ok]
+  lambda <- mean[ok] * scale[ok] / (digamma(shape[ok] + 1) - digamma(1))
+  out[ok] <- stats::rpois(k, lambda * g)
+  out
 }

@@ -368,18 +368,16 @@ qgp2 <- function(p, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE) {
 #' @rdname GeneralizedPoisson2
 #' @export
 rgp2 <- function(n, mu = 1, alpha = 0) {
-  if (length(n) != 1L || is.na(n) || !is.finite(n) || n < 0) {
-    warning("`n` must be a single non-negative integer.", call. = FALSE)
-    return(rep(NA_integer_, 1L))
-  }
-  
-  n <- as.integer(n)
-  
-  if (length(mu) != 1L || length(alpha) != 1L) {
-    warning("`mu` and `alpha` must be scalar values for `rgp2()`.", call. = FALSE)
-    return(rep(NA_integer_, n))
-  }
-  
+  n <- .fcr_rn(n)
+  mu <- rep_len(mu, n); alpha <- rep_len(alpha, n)
+  ok <- vapply(seq_len(n), function(i) {
+    isTRUE(suppressWarnings(.gp2_validate(mu[i], alpha[i])))
+  }, logical(1))
+  .fcr_warn_na(!ok, "invalid `mu` or `alpha`.")
+  .fcr_r_grouped(n, list(mu = mu, alpha = alpha), ok, .rgp2_one)
+}
+
+.rgp2_one <- function(n, mu, alpha) {
   ok <- .gp2_validate(mu, alpha)
   if (!ok) {
     return(rep(NA_integer_, n))

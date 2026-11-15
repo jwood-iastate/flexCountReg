@@ -284,7 +284,14 @@ qgp1 <- Vectorize(function(p, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE)
 #' @rdname GeneralizedPoisson
 #' @export
 rgp1 <- function(n, mu = 1, phi = 1) {
-  .gp1_validate(mu, phi)
+  n <- .fcr_rn(n)
+  mu <- rep_len(mu, n); phi <- rep_len(phi, n)
+  ok <- is.finite(mu) & mu > 0 & is.finite(phi) & phi > -1
+  .fcr_warn_na(!ok, "`mu` must be > 0 and `phi` > -1.")
+  .fcr_r_grouped(n, list(mu = mu, phi = phi), ok, .rgp1_one)
+}
+
+.rgp1_one <- function(n, mu = 1, phi = 1) {
   
   if (phi == 0) {
     return(rpois(n, lambda = mu))

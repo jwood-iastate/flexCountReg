@@ -76,138 +76,84 @@
 #' @useDynLib flexCountReg
 #' @rdname PoissonLognormal
 #' @export
-dpLnorm <- Vectorize(
-  FUN = function(
-    x,
-    mean = 1,
-    sigma = 1,
-    ndraws = 1500,
-    log = FALSE,
-    hdraws = NULL,
-    engine = c("halton", "poilog")) {
-    
-    engine <- match.arg(engine)
-    
-    if (any(mean <= 0)) {
-      stop("The values of `mean` must be greater than 0.")
-    }
-    
-    if (any(sigma <= 0)) {
-      stop("The values of `sigma` must be greater than 0.")
-    }
-    
-    if (engine == "halton") {
-      if (!is.null(hdraws)) {
-        h <- stats::qnorm(hdraws)
-      } else {
-        h <- randtoolbox::halton(
-          n = ndraws,
-          dim = 1,
-          normal = TRUE
-        )
-      }
-      
-      p <- dpLnorm_cpp(
-        x = x,
-        mean = mean,
-        sigma = sigma,
-        h = as.numeric(h)
-      )
-    } else {
-      p <- poilog::dpoilog(
-        x,
-        log(mean),
-        sigma
-      )
-    }
-    
-    if (log) {
-      log(p)
-    } else {
-      p
-    }
-  },
+dpLnorm <- function(x, mean = 1, sigma = 1, ndraws = 1500, log = FALSE,
+                    hdraws = NULL, engine = c("halton", "poilog")) {
+  engine <- match.arg(engine)
   
-  # Only these arguments vary by observation.
-  # Integration draws and control arguments must remain common.
-  vectorize.args = c("x", "mean", "sigma"),
+  if (any(mean <= 0, na.rm = TRUE)) {
+    stop("The values of `mean` must be greater than 0.")
+  }
+  if (any(sigma <= 0, na.rm = TRUE)) {
+    stop("The values of `sigma` must be greater than 0.")
+  }
   
-  SIMPLIFY = TRUE,
-  USE.NAMES = FALSE
-)
+  r <- .fcr_recycle(x, mean, sigma)
+  if (length(r[[1]]) == 0L) return(numeric(0))
+  
+  if (engine == "halton") {
+    h <- if (!is.null(hdraws)) {
+      stats::qnorm(hdraws)
+    } else {
+      randtoolbox::halton(n = ndraws, dim = 1, normal = TRUE)
+    }
+    # The C++ kernel is vectorized over x, mean and sigma
+    p <- dpLnorm_cpp(x = as.numeric(r[[1]]), mean = r[[2]], sigma = r[[3]],
+                     h = as.numeric(h))
+  } else {
+    rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
+    p <- mapply(function(xi, mi, si) poilog::dpoilog(xi, base::log(mi), si),
+                r[[1]], r[[2]], r[[3]], USE.NAMES = FALSE)
+  }
+  
+  if (log) base::log(p) else p
+}
 #' @rdname PoissonLognormal
 #' @export
-ppLnorm <- Vectorize(function(q, mean = 1, sigma = 1, ndraws = 1500,
+ppLnorm <- function(q, mean = 1, sigma = 1, ndraws = 1500,
                     lower.tail = TRUE, log.p = FALSE,
                     engine = c("halton", "poilog")) {
   engine <- match.arg(engine)
-  
-  if (any(mean <= 0) || any(sigma <= 0)) {
+  if (any(mean <= 0, na.rm = TRUE) || any(sigma <= 0, na.rm = TRUE)) {
     warning("The values of `mean` and `sigma` must be greater than 0.")
   }
-  
-  n <- max(length(q), length(mean), length(sigma))
-  q <- rep_len(q, n)
-  mean <- rep_len(mean, n)
-  sigma <- rep_len(sigma, n)
-  
-  cdf <- numeric(n)
-  
-  for (i in seq_len(n)) {
-    if (is.na(q[i]) || q[i] < 0) {
-      cdf[i] <- 0
-      next
-    }
-    
-    y_seq <- 0:floor(q[i])
-    
-    if (engine == "halton") {
-      h <- randtoolbox::halton(ndraws, normal = FALSE)
-      probs <- dpLnorm(y_seq, mean[i], sigma[i], ndraws = ndraws,
-                       hdraws = h, engine = engine)
-    } else {
-      probs <- dpLnorm(y_seq, mean[i], sigma[i], engine = engine)
-    }
-    
-    cdf[i] <- sum(probs)
+  r <- .fcr_recycle(q, mean, sigma)
+  q <- r[[1]]; mean <- r[[2]]; sigma <- r[[3]]
+  # One set of Halton draws for every element
+  h <- if (engine == "halton") randtoolbox::halton(ndraws) else NULL
+  cdf <- rep(NA_real_, length(q))
+  cdf[!is.na(q) & q < 0] <- 0
+  for (i in which(!is.na(q) & q >= 0 & mean > 0 & sigma > 0)) {
+    cdf[i] <- sum(dpLnorm(0:floor(q[i]), mean[i], sigma[i], hdraws = h,
+                          engine = engine))
   }
-  
   if (!lower.tail) cdf <- 1 - cdf
-  if (log.p) log(cdf) else cdf
-})
+  if (log.p) base::log(cdf) else cdf
+}
 
 #' @rdname PoissonLognormal
 #' @export
-qpLnorm <- Vectorize(function(p, mean = 1, sigma = 1, ndraws = 1500,
-                              engine = c("halton", "poilog")) {
+qpLnorm <- function(p, mean = 1, sigma = 1, ndraws = 1500,
+                    engine = c("halton", "poilog")) {
   engine <- match.arg(engine)
-  
-  if (mean <= 0 || sigma <= 0) {
+  if (any(mean <= 0, na.rm = TRUE) || any(sigma <= 0, na.rm = TRUE)) {
     warning("The values of `mean` and `sigma` must be greater than 0.")
   }
-  
-  y <- 0
-  p_value <- ppLnorm(y, mean, sigma = sigma, ndraws = ndraws, engine = engine)
-  
-  while (p_value < p) {
-    y <- y + 1
-    p_value <- ppLnorm(y, mean, sigma = sigma, ndraws = ndraws, engine = engine)
-  }
-  
-  y
-})
+  h <- if (engine == "halton") randtoolbox::halton(ndraws) else NULL
+  .fcr_qcount(p, function(y, mean, sigma) {
+    cumsum(dpLnorm(y, mean, sigma, hdraws = h, engine = engine))
+  }, mean, sigma)
+}
 
 
 #' @rdname PoissonLognormal
 #' @export
-rpLnorm <- function(n, mean=1, sigma=1) {
-  if(mean<=0  || sigma<=0) {
-    msg <- 
-      'The values of `mean` and `sigma` have to have values greater than 0.'
-    warning(msg)
-  }
-  
-  mus <- exp(stats::rnorm(n, mean=0, sd=sigma)) * mean
-  y <- rpois(n, lambda = mus)
-  return(y)
+rpLnorm <- function(n, mean = 1, sigma = 1) {
+  n <- .fcr_rn(n)
+  mean <- rep_len(mean, n); sigma <- rep_len(sigma, n)
+  bad <- !(is.finite(mean) & mean > 0 & is.finite(sigma) & sigma > 0)
+  .fcr_warn_na(bad, "`mean` and `sigma` must be greater than 0.")
+  out <- rep(NA_real_, n); ok <- !bad
+  out[ok] <- stats::rpois(sum(ok),
+                          mean[ok] * exp(stats::rnorm(sum(ok), 0, sigma[ok])))
+  out
 }

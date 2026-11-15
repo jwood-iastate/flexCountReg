@@ -67,42 +67,40 @@
 #' @useDynLib flexCountReg
 #' @export
 #' @name PoissonLindley
+NULL
 
-
-
-msg1 <- ("The value of `x` must be a non-negative whole number")
+# Internal messages (not exported)
+msg1 <- "The value of `x` must be a non-negative whole number"
 msg2 <- 
-  ('The values of `mean` and `theta` both have to have values greater than 0.')
+  "The values of `mean` and `theta` both have to have values greater than 0."
 
 #' @rdname PoissonLindley
 #' @export
-dplind <- Vectorize(function(
-    x, mean = 1, theta = 1, lambda = NULL, log = FALSE){
+dplind <- function(x, mean = 1, theta = 1, lambda = NULL, log = FALSE) {
+  if (!is.null(lambda)) {
+    # lambda is the Poisson scale: mean = lambda (theta + 2) / (theta (theta + 1))
+    r <- .fcr_recycle(x, lambda, theta)
+    lambda <- r[[2]]
+  } else {
+    r <- .fcr_recycle(x, mean, theta)
+    lambda <- r[[2]] * r[[3]] * (r[[3]] + 1) / (r[[3]] + 2)
+  }
+  x <- r[[1]]; theta <- r[[3]]
   
-  # Test to make sure the value of x is an integer
-  tst <- !(is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2]) > 0))
-  if(tst | x < 0) warning(msg1)
-  if(is.null(lambda)){
-    if(mean <= 0 | theta <= 0){
-      warning(msg2)
-    }
-    else{
-      lambda <- mean * theta * (theta + 1) / (theta + 2)
-      p <- (theta^2 * lambda^x * (theta + lambda + x + 1))/
-        ((theta + 1) * (theta + lambda)^(x + 2))
-    }
-  }
-  else{
-    if(lambda <= 0 | theta <= 0){
-      warning(msg2)
-    }
-    else{
-      p <- dplind_cpp(x, mean, theta)
-    }
-  }
-  if (log) return(log(p))
-  else return(p)
-})
+  is_count <- .fcr_is_count(x)
+  if (any(!is_count & !is.na(x))) warning(msg1)
+  bad <- !is.na(lambda) & !is.na(theta) & (lambda <= 0 | theta <= 0)
+  if (any(bad)) warning(msg2)
+  
+  xx <- ifelse(is_count, round(x), 0)
+  lp <- suppressWarnings(2 * base::log(theta) + xx * base::log(lambda) +
+    base::log(theta + lambda + xx + 1) - base::log(theta + 1) -
+    (xx + 2) * base::log(theta + lambda))
+  lp[!is_count] <- -Inf
+  lp[bad] <- NaN
+  lp[is.na(x) | is.na(lambda) | is.na(theta)] <- NA
+  if (log) lp else exp(lp)
+}
 
 #' @rdname PoissonLindley
 #' @export
@@ -204,51 +202,35 @@ pplind <- function(q, mean = 1, theta = 1, lambda = NULL,
 
 #' @rdname PoissonLindley
 #' @export
-qplind <- Vectorize(function(p, mean=1, theta=1, lambda=NULL) {
-  if (is.null(lambda)){
-    if(mean<=0 || theta<=0){
-      stop(msg2)
-    }
+qplind <- function(p, mean = 1, theta = 1, lambda = NULL) {
+  if (!is.null(lambda)) {
+    mean <- lambda * (theta + 2) / (theta * (theta + 1))
   }
-  else{
-    if (lambda<=0 | theta <= 0) {
-      warning(msg2)
-    }
-    else{
-      mean <- lambda * (theta + 2) / (theta * (theta + 1))
-    }
+  if (any(mean <= 0, na.rm = TRUE) || any(theta <= 0, na.rm = TRUE)) {
+    warning(msg2)
   }
-
-  y <- 0
-  p_value <- pplind(q=y, mean=mean, theta=theta)
-  while(p_value < p){
-    y <- y + 1
-    p_value <- pplind(q=y, mean=mean, theta=theta)
-  }
-  return(y)
-})
+  .fcr_qcount(p, function(y, mean, theta) {
+    cumsum(dplind(y, mean = mean, theta = theta))
+  }, mean, theta)
+}
 
 
 #' @rdname PoissonLindley
 #' @export
-rplind <- function(n, mean=1, theta=1, lambda=NULL) {
-  
-  if(is.null(lambda)){
-    if(mean <= 0 | theta <= 0){
-      warning(msg2)
-    }
+rplind <- function(n, mean = 1, theta = 1, lambda = NULL) {
+  n <- .fcr_rn(n)
+  theta <- rep_len(theta, n)
+  if (is.null(lambda)) {
+    mean <- rep_len(mean, n)
+    lambda <- mean * theta * (theta + 1) / (theta + 2)
+  } else {
+    lambda <- rep_len(lambda, n)
   }
-  else{
-    if(lambda <= 0 | theta <= 0){
-      warning(msg2)
-    }
-    else{
-      mean <- lambda * (theta + 2) / (theta * (theta + 1))
-    }
-  }
-
-  u <- runif(n)
-  y <- vapply(X = u, FUN = \(p) qplind(p, mean, theta), FUN.VALUE = numeric(1))
-  return(y)
+  bad <- !(is.finite(lambda) & lambda > 0 & is.finite(theta) & theta > 0)
+  .fcr_warn_na(bad, msg2)
+  out <- rep(NA_real_, n); ok <- !bad
+  out[ok] <- stats::rpois(sum(ok),
+                          lambda[ok] * .fcr_rlindley_mix(sum(ok), theta[ok]))
+  out
 }
 

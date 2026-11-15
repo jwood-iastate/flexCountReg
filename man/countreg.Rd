@@ -21,7 +21,8 @@ countreg(
   start.vals = NULL,
   stderr = "normal",
   bootstraps = NULL,
-  engine = "halton"
+  engine = "halton",
+  keep_data = TRUE
 )
 }
 \arguments{
@@ -93,6 +94,10 @@ to 200 when \code{stderr = "boot"} and \code{bootstraps} is not given.}
 \item{engine}{the engine to use for the integration if the Poisson Lognormal
 (PLN) distribution is used. Options include "halton" which uses Halton
 draws or "poilog" which uses the poilog package. The default is "halton".}
+
+\item{keep_data}{logical; if \code{FALSE}, the training data are not stored
+in the fitted object (saving memory). \code{predict()} then needs
+\code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

@@ -52,6 +52,9 @@
 #' @param bootstraps Optional integer specifying the number of bootstrap samples
 #'   to be used for estimating standard errors when `stderr`= "boot". Defaults
 #'   to 200 when `stderr = "boot"` and `bootstraps` is not given.
+#' @param keep_data logical; if \code{FALSE}, the training data are not stored
+#'   in the fitted object (saving memory). \code{predict()} then needs
+#'   \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.
 #' @param engine the engine to use for the integration if the Poisson Lognormal 
 #'   (PLN) distribution is used. Options include "halton" which uses Halton 
 #'   draws or "poilog" which uses the poilog package. The default is "halton".
@@ -738,7 +741,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      ndraws = 1500, method = "NM", 
                      max.iters = 1000, start.vals = NULL, 
                      stderr = "normal", bootstraps = NULL,
-                     engine = "halton") {
+                     engine = "halton", keep_data = TRUE) {
   
   print.level <- if (verbose) 2 else 0
   
@@ -930,7 +933,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                       underreport_family = underreport_family,
                       ndraws = ndraws, method = method,
                       max.iters = max.iters, start.vals = fit$estimate,
-                      stderr = "normal", engine = engine)
+                      stderr = "normal", engine = engine,
+                      keep_data = FALSE)
         m$model$estimate
       })
     V <- stats::cov(draws, use = "pairwise.complete.obs")
@@ -958,7 +962,6 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$model <- family
   fit$family <- family
   fit$method <- method
-  fit$data <- data
   fit$formula <- formula
   fit$dis_param_formula_1 <- dis_param_formula_1
   fit$dis_param_formula_2 <- dis_param_formula_2
@@ -974,11 +977,13 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$params <- params
   fit$blueprint <- prep$blueprint
   fit$y <- y
+  fit$weights <- weights.df
   fit$nobs <- length(y)
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   
-  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), 
+  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(),
+                             keep_data = keep_data,
                              formula = formula)
   return(obj)
 }

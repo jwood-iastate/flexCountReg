@@ -22,6 +22,9 @@ This function calculates the Bayesian Information Criterion (BIC) for a given
 model.
 }
 \details{
+For a fitted flexCountReg model, use \code{BIC(model)} instead,
+which also uses the number of panels for panel models.
+
 The BIC is calculated using the formula:
 \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}
 Where \eqn{LL} is the log-likelihood of the model, \eqn{nparam} is the number

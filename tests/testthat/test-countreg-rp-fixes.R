@@ -89,7 +89,7 @@ test_that("invalid specifications fail early", {
                            data = d, rpardists = c(Intercept = "n", x = "n")),
                "intercept is in both")
   expect_error(countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
-                           data = d, panel_id = "nope"), "not a column")
+                           data = d, group_var = "nope"), "not a column")
   expect_error(countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
                            data = d, family = "Poisson",
                            dis_param_formula_1 = ~ speed50),
@@ -135,12 +135,12 @@ test_that("formula offsets, missing values and weights are handled", {
   # Doubling every weight doubles the log-likelihood at the same estimates
   d$w2 <- 2
   w <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
-                   data = d, weights = "w2", panel_id = "ID", ndraws = 30,
+                   data = d, weights = "w2", group_var = "ID", ndraws = 30,
                    method = "BFGS",
                    start.vals = b$model$estimate[names(b$model$estimate)],
                    max.iters = 0)
   u <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
-                   data = d, panel_id = "ID", ndraws = 30, method = "BFGS",
+                   data = d, group_var = "ID", ndraws = 30, method = "BFGS",
                    start.vals = b$model$estimate, max.iters = 0)
   expect_equal(w$model$maximum, 2 * u$model$maximum)
 })

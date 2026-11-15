@@ -22,9 +22,9 @@ test_that("cor2cov", {
   C1 <- c(1,-0.3,0.7,-0.3,1,-0.2,0.7,-0.2,1)
   S <- c(0.5, 2, 1.25, 3)
   S1 <- matrix(c(0.5, 2, 1.25))
-  expect_warning(cor2cov(C1,S))
-  expect_warning(cor2cov(C,S1))
-  expect_warning(cor2cov(C,S))
+  expect_error(cor2cov(C1,S))
+  expect_error(cor2cov(C,S1))
+  expect_error(cor2cov(C,S))
 })
 
 test_that("Correlated Halton Draws",{

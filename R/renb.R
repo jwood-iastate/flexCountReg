@@ -15,8 +15,17 @@
 #'   effects.
 #' @param max.iters the maximum number of iterations to allow the optimization
 #'   method to perform.
-#' @param print.level Integer specifying the verbosity of output during
+#' @param verbose logical; if \code{TRUE}, print the progress of the
 #'   optimization.
+#' @param stderr the type of standard errors: \code{"normal"} (Hessian-based,
+#'   the default), \code{"robust"} (sandwich; clustered by panel because the
+#'   likelihood has one contribution per panel), or \code{"boot"} (bootstrap
+#'   that resamples whole panels). Giving \code{bootstraps} without
+#'   \code{stderr} also requests bootstrapped standard errors.
+#' @param keep_data logical; if \code{FALSE}, the training data are not stored
+#'   in the fitted object (saving memory). \code{predict()} then needs
+#'   \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.
+#' @param print.level deprecated; use \code{verbose}.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples
 #'   to be used for estimating standard errors. Whole panels (groups) are
 #'   resampled, so the standard errors account for the correlation within
@@ -95,7 +104,10 @@
 #' 
 #' @export
 renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
-                 print.level=0, bootstraps=NULL, offset=NULL) {
+                 verbose = FALSE, stderr = "normal", bootstraps = NULL,
+                 offset = NULL, keep_data = TRUE, print.level = NULL) {
+  print.level <- .fcr_print_level("renb", verbose, print.level)
+  stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   
   method <- .fcr_check_method(method)
   if (missing(group_var) || is.null(group_var)) {
@@ -180,7 +192,9 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   }
 
   fit$fcr_method <- method
-  fit <- .fcr_finish_re(fit, prep, x_names, bootstraps, refit = function(sub) {
+  fit$method <- method
+  fit <- .fcr_finish_re(fit, prep, x_names, stderr, bootstraps,
+                        refit = function(sub) {
     m <- maxLik::maxLik(reg.run.RE, start = fit$estimate, y = sub$y,
                         X = sub$X, group = sub$group,
                         offset_vec = sub$offset, method = method,
@@ -209,7 +223,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$offset_values <- offset_vec
   
   obj <- .createFlexCountReg(model = fit, 
-                             data = data, 
+                             data = data, keep_data = keep_data, 
                              call = match.call(), 
                              formula = formula)
   return(obj)

@@ -30,8 +30,10 @@ the models should be included.}
 the models should be included.}
 
 \item{RSquare}{A logical. The default value \code{TRUE} indicates that the
-McFadden's Pseudo-R-Squared statistic (comparing against a Poisson
-regression model) should be included.}
+McFadden's Pseudo-R-Squared statistic should be included. It compares
+against an intercept-only model of the same family for \code{countreg()}
+models, and an intercept-only Poisson model otherwise (see
+\code{\link{regCompTest}}).}
 
 \item{tableType}{The type of table format to return. Options include "tibble"
 for returning the table as a tibble, "gt" for a \link[gt]{gt} table object,

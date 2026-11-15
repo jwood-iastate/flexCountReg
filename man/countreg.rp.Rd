@@ -2,6 +2,7 @@
 % Please edit documentation in R/countregrp.R
 \name{countreg.rp}
 \alias{countreg.rp}
+\alias{countreg_rp}
 \title{Random Parameters Count Regression Models}
 \usage{
 countreg.rp(
@@ -17,14 +18,18 @@ countreg.rp(
   ndraws = 500,
   scrambled = FALSE,
   correlated = FALSE,
-  panel_id = NULL,
+  group_var = NULL,
   weights = NULL,
   offset = NULL,
   method = "BHHH",
   max.iters = 1000,
   start.vals = NULL,
   verbose = FALSE,
-  engine = "halton"
+  stderr = "normal",
+  bootstraps = NULL,
+  engine = "halton",
+  keep_data = TRUE,
+  panel_id = NULL
 )
 }
 \arguments{
@@ -79,10 +84,10 @@ parameters.}
 \item{correlated}{if the random parameters should be correlated.
 If TRUE, only normal distributions are used.}
 
-\item{panel_id}{an optional variable name (string) or vector defining the
-panel structure (repeated measures). If provided, each panel shares one
-draw of the random parameters, and the likelihood and standard errors
-account for the panel structure.}
+\item{group_var}{an optional variable name (string), or a vector with one
+value per row, defining the panel structure (repeated measures). If
+provided, each panel shares one draw of the random parameters, and the
+likelihood and standard errors account for the panel structure.}
 
 \item{weights}{the name of a variable, or a numeric vector, of frequency
 weights. With \code{panel_id}, weights apply to whole panels (the panel
@@ -101,9 +106,22 @@ Named values are matched to the parameters by name.}
 
 \item{verbose}{logical.}
 
+\item{stderr}{the type of standard errors: \code{"normal"} (Hessian-based,
+the default), \code{"robust"} (sandwich; clustered by panel when
+\code{group_var} is given), or \code{"boot"} (bootstrap that resamples
+whole panels and refits the model).}
+
+\item{bootstraps}{the number of bootstrap samples when
+\code{stderr = "boot"} (default 200).}
+
 \item{engine}{the engine to use for the integration if the Poisson Lognormal
 (PLN) distribution is used. Options include "halton" which uses Halton
 draws or "poilog" which uses the poilog package. The default is "halton".}
+
+\item{keep_data}{logical; if \code{FALSE}, the training data are not stored
+in the fitted object. \code{predict()} then needs \code{newdata}.}
+
+\item{panel_id}{deprecated; use \code{group_var}.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:
@@ -118,6 +136,9 @@ An object of class \code{flexCountReg} which is a list with the following compon
 Random Parameters Count Regression Models
 }
 \details{
+\code{countreg_rp()} is the same function as \code{countreg.rp()}, under a
+name that tools do not mistake for an S3 method.
+
 \strong{Random parameter distributions.} Each random parameter is
 \eqn{\beta = \mu + \sigma \upsilon}, where the \code{:Mean} and
 \code{:St.Dev} estimates are \eqn{\mu} and \eqn{\sigma}:
@@ -164,7 +185,7 @@ summary(rp_nb2)
 # rp_panel <- countreg.rp(Total_crashes ~ -1 + lnaadt,
 #                        rpar_formula = ~ speed50,
 #                        data = washington_roads,
-#                        panel_id = "site_id",
+#                        group_var = "site_id",
 #                        family = "NB2",
 #                        ndraws = 100)
 
@@ -182,13 +203,12 @@ summary(rp_gen)
 # 4. Random Parameters Poisson Model with panel specification
 rp_poisson <- countreg.rp(Total_crashes ~ lnaadt,
                       rpar_formula = ~ -1 + speed50,
-                      dis_param_formula_1 = ~ lnlength, 
                       het_mean_formula = ~ AADT10kplus,
                       data = washington_roads,
                       family = "POISSON",
                       rpardists = c(speed50 = "n"),
                       ndraws = 100,
-                      panel_id = "ID")
+                      group_var = "ID")
 summary(rp_poisson)
 }
 

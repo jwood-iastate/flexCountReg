@@ -354,44 +354,54 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   # =========================================================================
   else {
     
-    coefs <- model$estimate
-    family <- model$family
-    params <- get_params(family)
-    
-    bp <- .fcr_blueprint(object, aux_formulas = list(
-      dis1 = model$dis_param_formula_1, dis2 = model$dis_param_formula_2,
-      underreport = model$underreport_formula))
-    fd <- forge_new_data(bp, data)
-    
-    # Coefficients matched by name
-    beta_pred <- .fcr_coefs(coefs, colnames(fd$X))
-    link <- as.vector(fd$X %*% beta_pred) + fd$offset
-    if (type == "link") return(link)
-    
-    # Reporting probability
-    p_report <- rep(1, nrow(data))
-    X_und <- fd$aux$underreport
-    if (!is.null(X_und)) {
-      und_pars <- .fcr_coefs(coefs, paste0("Underreporting:", colnames(X_und)))
-      und_lin <- as.vector(X_und %*% und_pars)
-      und_family <- model$underreport_family
-      if (identical(und_family, "probit") && is.null(model$underreport_sign)) {
-        # Fits from flexCountReg <= 0.1.2 used P(reported) = 1 - pnorm(z'g)
-        p_report <- stats::pnorm(und_lin, lower.tail = FALSE)
-      } else {
-        p_report <- .report_prob(und_lin, und_family)
-      }
-    }
-    if (type == "prob_reported") return(p_report)
-    
-    # True mean, with the mean correction for PLN and PLL
-    vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, nrow(data))
-    vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, nrow(data))
-    mu_true <- exp(link) * .fcr_mean_adjust(family, vec_1, vec_2)
-    if (type == "true") return(mu_true)
-    
-    return(mu_true * p_report)
+    parts <- .fcr_countreg_parts(object, data)
+    switch(type,
+           link = parts$link,
+           prob_reported = parts$p_report,
+           true = parts$mu_true,
+           response = parts$mu_true * parts$p_report)
   }
+}
+
+# Components of a countreg() prediction for the rows of `data`: the linear
+# predictor (with offset), the reporting probability, the distribution
+# parameters on the scale used by get_probFunc(), the mean parameter
+# exp(link), and the true mean (with the PLN/PLL mean factor).
+.fcr_countreg_parts <- function(object, data) {
+  model <- object$model
+  coefs <- model$estimate
+  family <- model$family
+  params <- get_params(family)
+  
+  bp <- .fcr_blueprint(object, aux_formulas = list(
+    dis1 = model$dis_param_formula_1, dis2 = model$dis_param_formula_2,
+    underreport = model$underreport_formula))
+  fd <- forge_new_data(bp, data)
+  n <- nrow(as.data.frame(data))
+  
+  beta_pred <- .fcr_coefs(coefs, colnames(fd$X))
+  link <- as.vector(fd$X %*% beta_pred) + fd$offset
+  
+  p_report <- rep(1, n)
+  X_und <- fd$aux$underreport
+  if (!is.null(X_und)) {
+    und_pars <- .fcr_coefs(coefs, paste0("Underreporting:", colnames(X_und)))
+    und_lin <- as.vector(X_und %*% und_pars)
+    und_family <- model$underreport_family
+    if (identical(und_family, "probit") && is.null(model$underreport_sign)) {
+      # Fits from flexCountReg <= 0.1.2 used P(reported) = 1 - pnorm(z'g)
+      p_report <- stats::pnorm(und_lin, lower.tail = FALSE)
+    } else {
+      p_report <- .report_prob(und_lin, und_family)
+    }
+  }
+  
+  vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, n)
+  vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, n)
+  mu_link <- exp(link)
+  list(link = link, mu_link = mu_link, p_report = p_report,
+       alpha = vec_1, sigma = vec_2, family = family,
+       mu_true = mu_link * .fcr_mean_adjust(family, vec_1, vec_2))
 }
 
 # ---- Internal helpers for predict() ------------------------------------------

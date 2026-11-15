@@ -113,10 +113,10 @@
 #'
 #' @importFrom stats runif
 #' @importFrom randtoolbox halton
-#' @export
 #' @name PoissonGeneralizedExponential
+NULL
 
-#' @rdname PoissonGeneralizedExponential
+# Internal: PGE probability for one observation (not exported)
 .dpge_one <- function(x, mean, shape, scale, haltons) {
   
   lambda <- mean * scale /

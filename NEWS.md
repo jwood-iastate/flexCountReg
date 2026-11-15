@@ -2,6 +2,30 @@
 
 ## Breaking changes and changed results
 
+* `summary()` now returns a `summary.flexCountReg` object with a print method
+  (coefficients with z statistics, the standard-error type, log-likelihood,
+  AIC, BIC, N and panels, convergence, and a likelihood-ratio test against
+  Poisson for `countreg()` models). Use `summary(m)$coefficients` for the
+  coefficient matrix, or `tibble::as_tibble(summary(m))` for the tibble that
+  `summary()` returned before. The offset is shown as a note, not as a
+  coefficient row.
+* Fitted objects have class `c(<estimator>, "flexCountReg")`, with
+  `<estimator>` one of `countreg`, `countreg_rp`, `renb`, `poislind_re`,
+  `repois` and `negmultinom`. The unused S4 class definition is removed. The
+  training data are stored once (`obj$data`); `obj$model$data` is gone.
+* `regCompTest()` with two models now treats the model with fewer parameters
+  as the restricted model (before: the one with the higher log-likelihood),
+  errors when the models were fit to different numbers of observations, and
+  warns when the restricted model has the higher log-likelihood. Its base and
+  null models use the same rows, offset and weights as the fitted model, and
+  McFadden's R^2 uses an intercept-only model of the same family for
+  `countreg()` models. `regCompTable()` uses the same definitions.
+* `cor2cov()` stops (instead of warning and returning `NULL`) on invalid
+  input, and checks that `C` is a symmetric correlation matrix.
+* `margEffTable()` includes by default the variables of the underreporting,
+  random-parameter and heterogeneity formulas (and the dispersion formulas of
+  PLN and PLL models), which also change the expected value.
+
 * Probit underreporting now uses P(reported) = pnorm(z'g), the same sign
   convention as logit (a positive coefficient means more likely to be
   reported). Previously probit used 1 - pnorm(z'g), so probit coefficients had
@@ -150,6 +174,31 @@
 ## Deprecations
 
 * `predict(object, data = ...)` is deprecated; use `newdata`.
+* `print.level` in `renb()`, `poisLind.re()` and `repois()` is deprecated; use
+  `verbose`. `panel_id` in `countreg.rp()` is deprecated; use `group_var`.
+  The old names still work, with a once-per-session warning.
+
+## Methods and API consistency
+
+* New methods for all models: `coef()`, `vcov()`, `logLik()`, `nobs()`,
+  `fitted()`, `residuals()` (response and, for `countreg()`, Pearson),
+  `confint()`, `formula()`, `terms()` and `print()`. `AIC()`, `BIC()` and
+  `update()` now work. For panel models, `logLik()` reports the number of
+  panels as its `nobs`, so `BIC()` uses the number of independent units.
+* `simulate()` draws responses from fitted `countreg()` models (all
+  families, including underreporting).
+* Every estimator stores one covariance matrix (`vcov()`), and `renb()`,
+  `poisLind.re()`, `repois()` and `countreg.rp()` gain `stderr = c("normal",
+  "robust", "boot")`. Robust standard errors of panel models are clustered by
+  panel; bootstraps resample whole panels. `countreg.rp()` gains
+  `bootstraps`.
+* All estimators gain `keep_data`; `keep_data = FALSE` does not store the
+  training data.
+* `countreg_rp()` and `poislind_re()` are snake_case names for
+  `countreg.rp()` and `poisLind.re()`.
+* `repois()` predictions work (its linear-predictor coefficients were
+  truncated to one value), and its likelihood returns one value per cluster.
+* For fitted models, `AIC()` and `BIC()` replace `myAIC()` and `myBIC()`.
 
 # flexCountReg 0.1.1
 

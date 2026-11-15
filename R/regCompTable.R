@@ -15,8 +15,10 @@
 #' @param BIC A logical. The default value `TRUE` indicates that BIC values for
 #'   the models should be included.
 #' @param RSquare A logical. The default value `TRUE` indicates that the
-#'   McFadden's Pseudo-R-Squared statistic (comparing against a Poisson
-#'   regression model) should be included.
+#'   McFadden's Pseudo-R-Squared statistic should be included. It compares
+#'   against an intercept-only model of the same family for \code{countreg()}
+#'   models, and an intercept-only Poisson model otherwise (see
+#'   \code{\link{regCompTest}}).
 #' @param tableType The type of table format to return. Options include "tibble"
 #'   for returning the table as a tibble, "gt" for a \link[gt]{gt} table object,
 #'   or "latex" for a latex table. The default is "tibble".
@@ -97,27 +99,19 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
   summaryTibble <- tibble(`Parameter` = vars) # Initial tibble
   
   for (i in seq_along(modNames)){ 
-    formula <- as.formula(models[[i]]$formula) # not including random parameters
-    data <- models[[i]]$data
-    mod_df <- model.frame(formula, data)
-    y <- as.numeric(model.response(mod_df))
-    # The log-likelihood of the original model
-    LL <- as.numeric(models[[i]]$model$maximum) 
-    base_mod <- glm(y ~ 1, data, family = poisson(link = "log"))
-    LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
-    n.coef <- length(models[[i]]$model$estimate)
-    aic <- round(myAIC(LL, n.coef), digits)
-    bic <- round(myBIC(LL, n.coef, length(y)), digits)
-    rsq <- round(1 - LL / LLbase, digits)
-    Nobs <- length(y)
+    m_i <- models[[i]]
+    # Log-likelihood, AIC and BIC from the model's methods; McFadden's R^2
+    # against the same null model as regCompTest()
+    LL <- as.numeric(stats::logLik(m_i))
+    LLbase <- .fit_null_ll(m_i, .fcr_fit_pieces(m_i))
+    aic <- round(stats::AIC(m_i), digits)
+    bic <- round(stats::BIC(m_i), digits)
+    rsq <- round(.mcfadden_r2(LL, LLbase), digits)
+    Nobs <- stats::nobs(m_i)
     
-    coefNames <- names(models[[i]]$model$estimate)
-    coefs <- models[[i]]$model$estimate
-    if (!is.null(models[[i]]$model$bootstraps)){
-      se <- models[[i]]$model$bootstrapped_se
-    } else {
-      se <- sqrt(diag(stats::vcov(models[[i]]$model)))
-    }
+    coefs <- stats::coef(m_i)
+    coefNames <- names(coefs)
+    se <- sqrt(pmax(diag(stats::vcov(m_i)), 0))
     t <- abs(coefs / se)
     coefsRounded <- round(coefs, digits)
     seRounded <- round(se, digits)

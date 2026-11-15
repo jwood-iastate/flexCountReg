@@ -40,7 +40,7 @@ test_that("countreg.rp: Heterogeneity, Dist Formulas, and Panel Data", {
                 dis_param_formula_1 = ~ lnlength,
                 het_mean_formula = ~ AADT10kplus,
                 data = small_data,
-                panel_id = "site_id",
+                group_var = "site_id",
                 family = "NB2",
                 rpardists = c(speed50 = "n"),
                 ndraws = 15,       # Reduced

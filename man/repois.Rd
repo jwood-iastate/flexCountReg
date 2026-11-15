@@ -10,9 +10,12 @@ repois(
   data,
   method = "NM",
   max.iters = 1000,
-  print.level = 0,
+  verbose = FALSE,
+  stderr = "normal",
   bootstraps = NULL,
-  offset = NULL
+  offset = NULL,
+  keep_data = TRUE,
+  print.level = NULL
 )
 }
 \arguments{
@@ -29,14 +32,25 @@ estimation. For options, see \code{\link[maxLik]{maxLik}}.}
 \item{max.iters}{the maximum number of iterations to allow the optimization
 method to perform.}
 
-\item{print.level}{integer specifying the verbosity of output during
+\item{verbose}{logical; if \code{TRUE}, print the progress of the
 optimization.}
+
+\item{stderr}{the type of standard errors: \code{"normal"} (Hessian-based,
+the default), \code{"robust"} (sandwich, clustered by group), or
+\code{"boot"} (bootstrap that resamples whole groups). Giving
+\code{bootstraps} without \code{stderr} also requests bootstrapped
+standard errors.}
 
 \item{bootstraps}{optional integer specifying the number of bootstrap samples
 to be used for estimating standard errors. If not specified, no
 bootstrapping is performed.}
 
 \item{offset}{an optional offset term provided as a string.}
+
+\item{keep_data}{logical; if \code{FALSE}, the training data are not stored
+in the fitted object.}
+
+\item{print.level}{deprecated; use \code{verbose}.}
 }
 \value{
 An object of class \code{countreg} which is a list with the following

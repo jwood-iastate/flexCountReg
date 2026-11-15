@@ -1,6 +1,7 @@
 #' Random Parameters Count Regression Models
 #'
 #' @name countreg.rp
+#' @aliases countreg_rp
 #' @param formula an R formula. This formula should specify the outcome and the
 #'   independent variables that have fixed parameters.
 #' @param rpar_formula a symbolic description of the model related specifically
@@ -40,10 +41,19 @@
 #' @param scrambled if the Halton draws should be scrambled.
 #' @param correlated if the random parameters should be correlated. 
 #'        If TRUE, only normal distributions are used.
-#' @param panel_id an optional variable name (string) or vector defining the
-#'   panel structure (repeated measures). If provided, each panel shares one
-#'   draw of the random parameters, and the likelihood and standard errors
-#'   account for the panel structure.
+#' @param group_var an optional variable name (string), or a vector with one
+#'   value per row, defining the panel structure (repeated measures). If
+#'   provided, each panel shares one draw of the random parameters, and the
+#'   likelihood and standard errors account for the panel structure.
+#' @param panel_id deprecated; use \code{group_var}.
+#' @param stderr the type of standard errors: \code{"normal"} (Hessian-based,
+#'   the default), \code{"robust"} (sandwich; clustered by panel when
+#'   \code{group_var} is given), or \code{"boot"} (bootstrap that resamples
+#'   whole panels and refits the model).
+#' @param bootstraps the number of bootstrap samples when
+#'   \code{stderr = "boot"} (default 200).
+#' @param keep_data logical; if \code{FALSE}, the training data are not stored
+#'   in the fitted object. \code{predict()} then needs \code{newdata}.
 #' @param offset the name of a variable, or vector of variable names, to be
 #'   used as an offset (summed when several are given). An offset can instead
 #'   be given with \code{offset()} in \code{formula}; use only one of the two.
@@ -60,6 +70,9 @@
 #' @param verbose logical.
 #' 
 #' @details
+#' \code{countreg_rp()} is the same function as \code{countreg.rp()}, under a
+#' name that tools do not mistake for an S3 method.
+#'
 #' \strong{Random parameter distributions.} Each random parameter is
 #' \eqn{\beta = \mu + \sigma \upsilon}, where the \code{:Mean} and
 #' \code{:St.Dev} estimates are \eqn{\mu} and \eqn{\sigma}:
@@ -120,7 +133,7 @@
 #' # rp_panel <- countreg.rp(Total_crashes ~ -1 + lnaadt,
 #' #                        rpar_formula = ~ speed50,
 #' #                        data = washington_roads,
-#' #                        panel_id = "site_id",
+#' #                        group_var = "site_id",
 #' #                        family = "NB2",
 #' #                        ndraws = 100)
 #' 
@@ -138,13 +151,12 @@
 #' # 4. Random Parameters Poisson Model with panel specification
 #' rp_poisson <- countreg.rp(Total_crashes ~ lnaadt,
 #'                       rpar_formula = ~ -1 + speed50,
-#'                       dis_param_formula_1 = ~ lnlength, 
 #'                       het_mean_formula = ~ AADT10kplus,
 #'                       data = washington_roads,
 #'                       family = "POISSON",
 #'                       rpardists = c(speed50 = "n"),
 #'                       ndraws = 100,
-#'                       panel_id = "ID")
+#'                       group_var = "ID")
 #' summary(rp_poisson)
 #' }
 #' 
@@ -165,13 +177,21 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          het_mean_formula = NULL, 
                          het_var_formula = NULL,
                          ndraws = 500, scrambled = FALSE,
-                         correlated = FALSE, panel_id = NULL, 
-                         weights=NULL, offset = NULL,
+                         correlated = FALSE, group_var = NULL,
+                         weights = NULL, offset = NULL,
                          method = 'BHHH', max.iters = 1000,
                          start.vals = NULL, verbose = FALSE,
-                        engine="halton") {
+                         stderr = "normal", bootstraps = NULL,
+                         engine = "halton", keep_data = TRUE,
+                         panel_id = NULL) {
   
   print.level <- if (verbose) 2 else 0
+  if (!is.null(panel_id)) {
+    .fcr_deprecated_arg("countreg.rp", "panel_id", "group_var")
+    if (is.null(group_var)) group_var <- panel_id
+  }
+  panel_id <- group_var
+  stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   
   # --- 1. Family, method and argument checks ---
   family <- toupper(gsub("[^[:alnum:]]", "", family))
@@ -196,7 +216,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   if (!is.null(panel_id)) {
     if (is.character(panel_id) && length(panel_id) == 1L) {
       if (!panel_id %in% names(data)) {
-        stop("`panel_id` \"", panel_id, "\" is not a column of `data`.",
+        stop("`group_var` \"", panel_id, "\" is not a column of `data`.",
              call. = FALSE)
       }
       group_var <- panel_id
@@ -204,7 +224,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
       data$.fcr_panel_id <- panel_id
       group_var <- ".fcr_panel_id"
     } else {
-      stop("`panel_id` must be a column name in `data` or a vector with ",
+      stop("`group_var` must be a column name in `data` or a vector with ",
            "one value per row of `data`.", call. = FALSE)
     }
   }
@@ -438,10 +458,12 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$dis_param_formula_2 <- dis_param_formula_2
   fit$family <- family
   fit$modelType <- "countreg.rp"
+  fit$method <- method
   fit$ndraws <- ndraws
   fit$scrambled <- scrambled
   fit$correlated <- correlated
   fit$panel_id <- panel_id 
+  fit$group_var <- panel_id
   fit$offset <- prep$blueprint$offset_label
   fit$engine <- engine
   fit$rpardists <- rpardists
@@ -457,15 +479,62 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   
-  V <- .fcr_hessian_vcov(fit)
+  if (stderr == "boot") {
+    if (is.null(bootstraps)) {
+      bootstraps <- 200L
+      message("`bootstraps` not given; using 200 bootstrap samples.")
+    }
+    # Resample whole panels (rows when there is no panel id) and refit
+    # from the full-sample estimates
+    boot_data <- data[prep$rows_used, , drop = FALSE]
+    rows_by_panel <- split(seq_len(N_obs), panel_group)
+    boot_w <- if (is.numeric(weights)) prep$weights else weights
+    draws <- .fcr_bootstrap(
+      n = length(rows_by_panel), B = as.integer(bootstraps),
+      coef_names = x_names, refit = function(idx) {
+        sel <- rows_by_panel[idx]
+        r <- unlist(sel, use.names = FALSE)
+        bd <- boot_data[r, , drop = FALSE]
+        bd$.fcr_boot_panel <- rep(seq_along(sel), lengths(sel))
+        m <- countreg.rp(formula = formula, rpar_formula = rpar_formula,
+                         data = bd, family = family,
+                         rpardists = rpardists,
+                         dis_param_formula_1 = dis_param_formula_1,
+                         dis_param_formula_2 = dis_param_formula_2,
+                         het_mean_formula = het_mean_formula,
+                         het_var_formula = het_var_formula,
+                         ndraws = ndraws, scrambled = scrambled,
+                         correlated = correlated,
+                         group_var = ".fcr_boot_panel",
+                         weights = if (is.numeric(boot_w)) boot_w[r] else
+                           boot_w,
+                         offset = offset, method = method,
+                         max.iters = max.iters, start.vals = fit$estimate,
+                         engine = engine, keep_data = FALSE)
+        m$model$estimate
+      })
+    V <- stats::cov(draws, use = "pairwise.complete.obs")
+    fit$n_boot_ok <- sum(stats::complete.cases(draws))
+    fit$bootstraps <- as.integer(bootstraps)
+    vcov_type <- "bootstrap"
+  } else if (stderr == "robust") {
+    # One log-likelihood contribution per panel: cluster-robust sandwich
+    V <- sandwich::sandwich(fit)
+    vcov_type <- "robust"
+  } else {
+    V <- .fcr_hessian_vcov(fit)
+    vcov_type <- "hessian"
+  }
   dimnames(V) <- list(x_names, x_names)
   fit$vcov <- V
-  fit$vcov_type <- "hessian"
+  fit$vcov_type <- vcov_type
+  fit$stderr <- stderr
   fit$se <- sqrt(pmax(diag(V), 0))
   names(fit$se) <- x_names
+  fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
   
   obj <- .createFlexCountReg(model = fit, 
-                             data = data, 
+                             data = data, keep_data = keep_data,
                              call = match.call(), 
                              formula = formula)
   return(obj)
@@ -507,3 +576,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   }
   rpardists[rpar]
 }
+
+#' @rdname countreg.rp
+#' @usage NULL
+#' @export
+countreg_rp <- countreg.rp

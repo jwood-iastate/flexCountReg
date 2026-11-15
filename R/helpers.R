@@ -387,9 +387,13 @@ rp_mgf <- function(dist, t, mu, sigma) {
 }
 
 # Common post-fit bookkeeping for the random-effects estimators.
-.fcr_finish_re <- function(fit, prep, x_names, bootstraps, refit) {
+.fcr_finish_re <- function(fit, prep, x_names, stderr, bootstraps, refit) {
   names(fit$estimate) <- x_names
-  if (!is.null(bootstraps)) {
+  if (stderr == "boot") {
+    if (is.null(bootstraps)) {
+      bootstraps <- 200L
+      message("`bootstraps` not given; using 200 bootstrap samples.")
+    }
     if (!is.numeric(bootstraps) || length(bootstraps) != 1L ||
         bootstraps < 2) {
       stop("`bootstraps` must be a single number of at least 2.",
@@ -401,15 +405,20 @@ rp_mgf <- function(dist, t, mu, sigma) {
     fit$successful_bootstraps <- bs$n_ok
     fit$vcov_type <- "bootstrap"
     fit$bootstraps <- as.integer(bootstraps)
+  } else if (stderr == "robust") {
+    # One log-likelihood contribution per panel, so this is cluster-robust
+    V <- sandwich::sandwich(fit)
+    fit$vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)
     fit$vcov_type <- "hessian"
   }
+  fit$stderr <- stderr
   dimnames(V) <- list(x_names, x_names)
   fit$vcov <- V
   fit$se <- sqrt(pmax(diag(V), 0))
   names(fit$se) <- x_names
-  fit$bootstrapped_se <- if (!is.null(bootstraps)) fit$se else NULL
+  fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
   fit$blueprint <- prep$blueprint
   fit$nobs <- length(prep$y)
   fit$n_groups <- nlevels(prep$group)
@@ -417,4 +426,69 @@ rp_mgf <- function(dist, t, mu, sigma) {
   fit$n_dropped <- prep$n_dropped
   fit$converged <- .fcr_converged(fit, fit$fcr_method)
   fit
+}
+
+# Variance of a countreg() family at mean parameter `mu` (exp of the linear
+# predictor plus offset, before the PLN/PLL mean factor), with the
+# distribution parameters `alpha` and `sigma` on the scale passed to
+# get_probFunc(). Returns NULL for families without a closed form.
+.fcr_family_variance <- function(family, mu, alpha = NULL, sigma = NULL) {
+  switch(family,
+    POISSON = mu,
+    NB1 = mu * (1 + alpha),
+    NB2 = mu + alpha * mu^2,
+    NBP = mu + alpha * mu^sigma,
+    GP1 = alpha^2 * mu,                       # phi = alpha - 1
+    GP2 = mu * (1 + (alpha - 1) * mu)^2,      # alpha_GP2 = alpha - 1
+    PLN = { m <- mu * exp(alpha^2 / 2); m + (exp(alpha^2) - 1) * m^2 },
+    PIG1 = mu * (1 + alpha),
+    PIG2 = mu + alpha * mu^2,
+    PIG = mu + alpha * mu^2,
+    PL = mu + mu^2 * (1 - 2 / (alpha + 2)^2),
+    PLG = mu + ((1 + sigma) * (2 - 2 / (alpha + 2)^2) - 1) * mu^2,
+    PLL = { m <- mu * exp(sigma^2 / 2)
+            m + ((2 - 2 / (alpha + 2)^2) * exp(sigma^2) - 1) * m^2 },
+    PGE = mu + mu^2 * (trigamma(1) - trigamma(alpha + 1)) /
+      (digamma(alpha + 1) - digamma(1))^2,
+    PW = mu + (gamma(1 + 2 / alpha) / gamma(1 + 1 / alpha)^2 - 1) * mu^2,
+    SI = { gam <- log(alpha)                   # gamma = log(alpha)
+           cc <- besselK(1 / sigma, gam + 1) / besselK(1 / sigma, gam)
+           mu + mu^2 * (2 * sigma * (gam + 1) / cc + 1 / cc^2 - 1) },
+    COM = { r <- .fcr_recycle(mu, alpha)
+            vapply(seq_along(r[[1]]), function(i) {
+              yy <- 0:max(100, ceiling(20 * r[[1]][i] + 50))
+              p <- dcom(yy, mu = r[[1]][i], nu = r[[2]][i])
+              p <- p / sum(p)
+              sum(yy^2 * p) - sum(yy * p)^2
+            }, numeric(1)) },
+    GW = { k <- alpha; rho <- 1 + sigma; a <- mu * (rho - 1) / k
+           ifelse(rho > 2, a * k * (a + rho - 1) * (k + rho - 1) /
+                    ((rho - 1)^2 * (rho - 2)), Inf) },
+    NULL)
+}
+
+# Once-per-session deprecation warning for a renamed argument.
+.fcr_deprecated_arg <- function(fun, old, new) {
+  rlang::warn(
+    paste0("The `", old, "` argument of ", fun, "() is deprecated; use `",
+           new, "` instead."),
+    class = "lifecycle_warning_deprecated",
+    .frequency = "once", .frequency_id = paste0("fcr_", fun, "_", old))
+}
+
+# Resolve print.level/verbose to a maxLik printLevel.
+.fcr_print_level <- function(fun, verbose, print.level) {
+  if (!is.null(print.level)) {
+    .fcr_deprecated_arg(fun, "print.level", "verbose")
+    return(as.integer(print.level))
+  }
+  if (isTRUE(verbose)) 2L else 0L
+}
+
+# Validate stderr; `bootstraps` given without `stderr` means bootstrap, as in
+# earlier versions.
+.fcr_resolve_stderr <- function(stderr, stderr_missing, bootstraps) {
+  if (stderr_missing && !is.null(bootstraps)) return("boot")
+  stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
+  stderr
 }

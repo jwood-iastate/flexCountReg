@@ -7,7 +7,10 @@
 #' @param nparam Numeric value representing the number of parameters in the
 #'   model.
 #' @returns Numeric value representing the AIC.
-#' @details The AIC is calculated using the formula:
+#' @details For a fitted flexCountReg model, use \code{AIC(model)} instead,
+#'   which takes the log-likelihood and number of parameters from the model.
+#'
+#' The AIC is calculated using the formula:
 #' \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}
 #' Where \eqn{LL} is the log-likelihood of the model and \eqn{nparam} is the
 #' number of parameters.
@@ -31,7 +34,10 @@ myAIC <- function(LL, nparam){
 #'   model.
 #' @param n Numeric value representing the number of observations.
 #' @return Numeric value representing the BIC.
-#' @details The BIC is calculated using the formula:
+#' @details For a fitted flexCountReg model, use \code{BIC(model)} instead,
+#'   which also uses the number of panels for panel models.
+#'
+#' The BIC is calculated using the formula:
 #' \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}
 #' Where \eqn{LL} is the log-likelihood of the model, \eqn{nparam} is the number
 #' of parameters, and \eqn{n} is the number of observations.

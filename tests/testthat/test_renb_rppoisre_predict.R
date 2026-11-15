@@ -65,7 +65,8 @@ test_that("poisLind.re handles bootstrapping and offsets", {
   
   # Check summary method works on this object
   summ <- summary(mod)
-  expect_true("x1" %in% summ$parameter)
+  expect_true("x1" %in% rownames(summ$coefficients))
+  expect_true("x1" %in% tibble::as_tibble(summ)$parameter)
 })
 
 test_that("poisLind.re handles composite grouping variables", {

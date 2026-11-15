@@ -97,7 +97,7 @@ test_that("Individual (Empirical Bayes) predictions follow Wood and Gayah", {
   d <- make_data()
   rp <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                     data = d, family = "NB2", rpardists = c(speed50 = "n"),
-                    ndraws = 100, offset = "lnlength", panel_id = "ID",
+                    ndraws = 100, offset = "lnlength", group_var = "ID",
                     method = "BFGS")
   ps <- predict(rp, newdata = d, method = "Simulated")
   eb <- predict(rp, newdata = d, method = "Individual")

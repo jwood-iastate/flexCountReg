@@ -65,7 +65,6 @@
 #' @importFrom stats runif
 #' @importFrom Rcpp sourceCpp
 #' @useDynLib flexCountReg
-#' @export
 #' @name PoissonLindley
 NULL
 

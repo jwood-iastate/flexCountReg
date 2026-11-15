@@ -3,6 +3,7 @@
 \name{poisLindRE}
 \alias{poisLindRE}
 \alias{poisLind.re}
+\alias{poislind_re}
 \title{Function for estimating a Random Effects Poisson-Lindley regression model}
 \usage{
 poisLind.re(
@@ -11,9 +12,12 @@ poisLind.re(
   data,
   method = "NM",
   max.iters = 1000,
-  print.level = 0,
+  verbose = FALSE,
+  stderr = "normal",
   bootstraps = NULL,
-  offset = NULL
+  offset = NULL,
+  keep_data = TRUE,
+  print.level = NULL
 )
 }
 \arguments{
@@ -34,8 +38,14 @@ for the random effects.}
 \item{max.iters}{the maximum number of iterations to allow the
 optimization method to perform.}
 
-\item{print.level}{Integer specifying the verbosity of output during
+\item{verbose}{logical; if \code{TRUE}, print the progress of the
 optimization.}
+
+\item{stderr}{the type of standard errors: \code{"normal"} (Hessian-based,
+the default), \code{"robust"} (sandwich; clustered by panel because the
+likelihood has one contribution per panel), or \code{"boot"} (bootstrap
+that resamples whole panels). Giving \code{bootstraps} without
+\code{stderr} also requests bootstrapped standard errors.}
 
 \item{bootstraps}{Optional integer specifying the number of bootstrap
 samples to be used for estimating standard errors. Whole panels
@@ -46,6 +56,12 @@ performed.}
 \item{offset}{an optional character vector of offset column names (summed
 when several are given; on the log scale). An offset can instead be given
 with \code{offset()} in \code{formula}; use only one of the two.}
+
+\item{keep_data}{logical; if \code{FALSE}, the training data are not stored
+in the fitted object (saving memory). \code{predict()} then needs
+\code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
+
+\item{print.level}{deprecated; use \code{verbose}.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:
@@ -60,6 +76,9 @@ An object of class \code{flexCountReg} which is a list with the following compon
 Function for estimating a Random Effects Poisson-Lindley regression model
 }
 \details{
+\code{poislind_re()} is the same function as \code{poisLind.re()}, under a
+name that tools do not mistake for an S3 method.
+
 The function \code{poisLindRE} is similar to the \code{poisLind}
 function, but it includes an additional argument \code{group_var} that
 specifies the grouping variable for the random effects. The function

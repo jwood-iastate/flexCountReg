@@ -67,7 +67,7 @@ test_that("bootstrapped SEs are stored by parameter name", {
   h <- sqrt(diag(solve(-m$model$hessian)))
   # Each bootstrap SE is close to its own Hessian SE (not another term's)
   expect_true(all(abs(m$model$se / h - 1) < 0.5))
-  s <- utils::capture.output(tab <- summary(m))
+  tab <- tibble::as_tibble(summary(m))
   expect_equal(tab$`Std. Err.`, unname(round(m$model$se, 3)))
 })
 

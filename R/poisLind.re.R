@@ -3,10 +3,13 @@
 #' @name poisLindRE
 #' @param formula an R formula.
 #' @param group_var the grouping variable(s) indicating random effects
-#'   (e.g., individual ID).
+#'   (e.g., individual ID). Required. Several columns are combined into one
+#'   panel identifier.
 #' @param data a dataframe that has all of the variables in the
 #'   \code{formula}.
-#' @param offset an optional offset term provided as a string.
+#' @param offset an optional character vector of offset column names (summed
+#'   when several are given; on the log scale). An offset can instead be given
+#'   with \code{offset()} in \code{formula}; use only one of the two.
 #' @param method a method to use for optimization in the maximum likelihood
 #'   estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that
 #'   "BHHH" is not available for this function due to the implementation
@@ -16,8 +19,10 @@
 #' @param print.level Integer specifying the verbosity of output during
 #'   optimization.
 #' @param bootstraps Optional integer specifying the number of bootstrap
-#'   samples to be used for estimating standard errors. If not specified,
-#'   no bootstrapping is performed.
+#'   samples to be used for estimating standard errors. Whole panels
+#'   (groups) are resampled, so the standard errors account for the
+#'   correlation within panels. If not specified, no bootstrapping is
+#'   performed.
 #'
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom maxLik maxLik
@@ -84,7 +89,7 @@
 #' }
 #' 
 #' @returns
-#' An object of class `countreg` which is a list with the following components:
+#' An object of class `flexCountReg` which is a list with the following components:
 #' \itemize{
 #'  \item model: the fitted model object.
 #'  \item data: the data frame used to fit the model.
@@ -117,51 +122,38 @@ poisLind.re <- function(formula, group_var, data,
                         print.level = 0, bootstraps = NULL,
                         offset = NULL) {
   
-  # if (method == "BHHH" | method == "bhhh") {
-  #   msg <- paste(
-  #     "The `BHHH` method is not available for poisLindRE.",
-  #     "Switching to `NM` method."
-  #   )
-  #   print(msg)
-  #   method <- "NM"
-  # }
-  
-  # Data preparation
-  mod_df <- stats::model.frame(formula, data, na.action = stats::na.fail)
-  X <- stats::model.matrix(attr(mod_df, "terms"), mod_df)
-  y <- as.numeric(stats::model.response(mod_df))
-  
-  # Generate a panel ID for the model
-  if (!("panel_id" %in% names(data))) {
-    if (is.null(group_var)) {
-      warning("The `group_var` must be defined for this model.")
-    } else {
-      if (length(group_var) > 1) {
-        # Combine multiple columns into a single string column
-        data <- data %>%
-          tidyr::unite("panel_id", all_of(group_var),
-                sep = "_", remove = FALSE)
-      } else {
-        data <- data %>%
-          mutate(panel_id = as.character(.data[[group_var]]))
-      }
-    }
+  method <- .fcr_check_method(method)
+  if (missing(group_var) || is.null(group_var)) {
+    stop("`group_var` must name the column(s) that identify the panels.",
+         call. = FALSE)
   }
   
-  group <- data$panel_id
-  x_names <- colnames(X)
+  # Data preparation: one complete-case frame; panels from `group_var`
+  prep <- prepare_model_data(formula, data, offset = offset,
+                             group_var = group_var)
+  if (prep$n_dropped > 0) {
+    message(prep$n_dropped, " row(s) with missing values were removed.")
+  }
+  X <- prep$X
+  y <- as.numeric(prep$y)
+  group <- prep$group
+  offset_vec <- prep$offset
+  x_names <- c(colnames(X), "ln(theta)")
   
-  # Negative Binomial as starting values
-  p_model <- glm.nb(formula, data = data)
-  start <- unlist(p_model$coefficients)
-  t <- 116761 / exp(-9.04 * p_model$theta)
-  theta <- ifelse(t < 100, t, 1)  # Approximate initial theta
-  
-  full_start <- append(start, log(theta))
-  x_names <- append(x_names, "ln(theta)")
+  # Starting values: Poisson GLM with the same rows and offset, and a moment
+  # estimate of theta. For the mean-parameterized Poisson-Lindley,
+  # Var(Y) = mu + phi mu^2 with phi = 1 - 2 / (theta + 2)^2 in (1/2, 1).
+  p_model <- stats::glm.fit(X, y, offset = offset_vec,
+                            family = stats::poisson())
+  start <- p_model$coefficients
+  start[is.na(start)] <- 0
+  mu0 <- p_model$fitted.values
+  phi <- sum((y - mu0)^2 - y) / sum(mu0^2)
+  phi <- min(max(phi, 0.51), 0.99)
+  theta <- sqrt(2 / (1 - phi)) - 2
+  full_start <- c(start, log(theta))
   names(full_start) <- x_names
   
-  # Local helpers keep this replacement independent of other repair files.
   .fcr_lse <- function(x) {
     if (!length(x)) return(-Inf)
     if (anyNA(x)) return(NA_real_)
@@ -169,29 +161,6 @@ poisLind.re <- function(formula, group_var, data,
     if (is.infinite(m)) return(m)
     m + log(sum(exp(x - m)))
   }
-
-  .fcr_offset <- function(mf, data, offset_cols = NULL) {
-    form_off <- stats::model.offset(mf)
-    if (!is.null(form_off) && !is.null(offset_cols))
-      stop("Use either a formula offset or offset columns")
-    if (!is.null(form_off)) out <- as.numeric(form_off)
-    else if (is.null(offset_cols)) out <- rep(0, nrow(data))
-    else {
-      if (!is.character(offset_cols) || !length(offset_cols) ||
-          anyDuplicated(offset_cols) ||
-          !all(offset_cols %in% names(data)))
-        stop("offset must name distinct columns in data")
-      z <- data[, offset_cols, drop = FALSE]
-      if (!all(vapply(z, is.numeric, logical(1))))
-        stop("Offset columns must be numeric")
-      out <- rowSums(z)
-    }
-    if (length(out) != nrow(data) || any(!is.finite(out)))
-      stop("Offsets must be finite and aligned with model rows")
-    out
-  }
-
-  offset_vec <- .fcr_offset(mod_df, data, offset)
 
   # Poisson-Lindley log likelihood, evaluated separately for each panel.
   reg.run.RE <- function(beta, y, X, group, offset_vec) {
@@ -250,48 +219,14 @@ poisLind.re <- function(formula, group_var, data,
     )
   )
   
-  # Bootstrap SEs (optional)
-  plind.boot <- function(data) {
-    data <- as.data.frame(data)
-    mod1_frame <- stats::model.frame(formula, data, na.action = stats::na.fail)
-    X_Fixed <- stats::model.matrix(attr(mod1_frame, "terms"), mod1_frame)
-    y <- stats::model.response(mod1_frame)
-    
-    int_res <- maxLik::maxLik(
-      reg.run.RE,
-      start  = fit$estimate,
-      y      = y,
-      X      = X_Fixed,
-      group  = data$panel_id,
-      offset_vec = .fcr_offset(mod1_frame, data, offset),
-      method = method,
-      control = list(
-        iterlim    = max.iters,
-        printLevel = print.level
-      )
-    )
-    
-    return(int_res)
-  }
-  
-  if (!is.null(bootstraps) && is.numeric(bootstraps)) {
-    bs.data <- modelr::bootstrap(data, n = bootstraps)
-    
-    mod1_frame <- stats::model.frame(formula, data)
-    X_Fixed <- stats::model.matrix(formula, data)
-    y <- stats::model.response(mod1_frame)
-    
-    models <- map(bs.data$strap, ~ plind.boot(data = .x))
-    tidied <- map_df(models, broom::tidy, .id = "id")
-    
-    SE <- tidied %>%
-      group_by(term) %>%
-      reframe(sd = sd(estimate))
-    
-    fit$bootstrapped_se <- SE
-  }
-  
-  fit$bootstraps <- if (!is.null(bootstraps)) bootstraps else NULL
+  fit$fcr_method <- method
+  fit <- .fcr_finish_re(fit, prep, x_names, bootstraps, refit = function(sub) {
+    m <- maxLik::maxLik(reg.run.RE, start = fit$estimate, y = sub$y,
+                        X = sub$X, group = sub$group,
+                        offset_vec = sub$offset, method = method,
+                        control = list(iterlim = max.iters, printLevel = 0))
+    stats::setNames(m$estimate, x_names)
+  })
   
   beta_est <- fit$estimate
   npars <- length(beta_est) - 1
@@ -301,13 +236,12 @@ poisLind.re <- function(formula, group_var, data,
   
   mu <- exp(drop(X %*% beta_pred) + offset_vec)
   fit$predictions <- mu
-  fit$se <- sqrt(diag(vcov(fit)))
   fit$formula <- formula
   fit$observed <- y
   fit$residuals <- y - fit$predictions
   fit$LL <- fit$maximum
   fit$modelType <- "poisLindRE"
-  fit$offset <- offset
+  fit$offset <- prep$blueprint$offset_label
   fit$offset_values <- offset_vec
   
   obj <- .createFlexCountReg(

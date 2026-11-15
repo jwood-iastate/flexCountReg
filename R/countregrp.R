@@ -92,7 +92,7 @@
 #' Prevention}, 220, 108147.
 #'
 #' @returns
-#' An object of class `countreg` which is a list with the following components:
+#' An object of class `flexCountReg` which is a list with the following components:
 #' \itemize{
 #'  \item model: the fitted model object.
 #'  \item data: the data frame used to fit the model.

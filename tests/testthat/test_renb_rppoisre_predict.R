@@ -179,7 +179,7 @@ test_that(
     # Estimate a quick Random Parameter model
     # Suppress warnings for cleaner test output
     rp_mod <- suppressWarnings(
-      countreg.rp(y ~ x1, 
+      countreg.rp(y ~ x1 - 1, 
                   rpar_formula = ~ 1, 
                   data = test_data,
                   family = "NB2",

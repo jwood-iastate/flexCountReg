@@ -82,7 +82,7 @@ distribution is equidispersed. If \eqn{\phi<0}, the distribution is
 underdispersed.
 
 Furthermore, \eqn{\phi>-1} is required for this distribution. When
-\eqn{\phi<0}, there is also a maximum value of support for the integar value
+\eqn{\phi<0}, there is also a maximum value of support for the integer value
 \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
 }
 \examples{

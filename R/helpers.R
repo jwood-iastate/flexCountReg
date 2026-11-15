@@ -363,3 +363,58 @@ rp_mgf <- function(dist, t, mu, sigma) {
     },
     stop("Unknown random-parameter distribution: ", dist, call. = FALSE))
 }
+
+# Rows of a prepare_model_data() result for a resample of clusters. `idx`
+# indexes the cluster levels; clusters drawn more than once become separate
+# clusters.
+.fcr_cluster_subset <- function(prep, idx) {
+  rows <- split(seq_along(prep$y), prep$group)[idx]
+  r <- unlist(rows, use.names = FALSE)
+  list(y = prep$y[r], X = prep$X[r, , drop = FALSE], offset = prep$offset[r],
+       weights = prep$weights[r],
+       group = factor(rep(seq_along(rows), lengths(rows))))
+}
+
+# Cluster bootstrap: resample whole clusters, refit with
+# refit(subset) -> named estimates, and return the covariance of the draws.
+.fcr_cluster_bootstrap <- function(prep, B, coef_names, refit) {
+  draws <- .fcr_bootstrap(nlevels(prep$group), B, coef_names, function(idx) {
+    refit(.fcr_cluster_subset(prep, idx))
+  })
+  V <- stats::cov(draws, use = "pairwise.complete.obs")
+  dimnames(V) <- list(coef_names, coef_names)
+  list(vcov = V, n_ok = sum(stats::complete.cases(draws)))
+}
+
+# Common post-fit bookkeeping for the random-effects estimators.
+.fcr_finish_re <- function(fit, prep, x_names, bootstraps, refit) {
+  names(fit$estimate) <- x_names
+  if (!is.null(bootstraps)) {
+    if (!is.numeric(bootstraps) || length(bootstraps) != 1L ||
+        bootstraps < 2) {
+      stop("`bootstraps` must be a single number of at least 2.",
+           call. = FALSE)
+    }
+    bs <- .fcr_cluster_bootstrap(prep, as.integer(bootstraps), x_names, refit)
+    V <- bs$vcov
+    fit$n_boot_ok <- bs$n_ok
+    fit$successful_bootstraps <- bs$n_ok
+    fit$vcov_type <- "bootstrap"
+    fit$bootstraps <- as.integer(bootstraps)
+  } else {
+    V <- .fcr_hessian_vcov(fit)
+    fit$vcov_type <- "hessian"
+  }
+  dimnames(V) <- list(x_names, x_names)
+  fit$vcov <- V
+  fit$se <- sqrt(pmax(diag(V), 0))
+  names(fit$se) <- x_names
+  fit$bootstrapped_se <- if (!is.null(bootstraps)) fit$se else NULL
+  fit$blueprint <- prep$blueprint
+  fit$nobs <- length(prep$y)
+  fit$n_groups <- nlevels(prep$group)
+  fit$rows_used <- prep$rows_used
+  fit$n_dropped <- prep$n_dropped
+  fit$converged <- .fcr_converged(fit, fit$fcr_method)
+  fit
+}

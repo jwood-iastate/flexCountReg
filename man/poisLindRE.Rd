@@ -20,7 +20,8 @@ poisLind.re(
 \item{formula}{an R formula.}
 
 \item{group_var}{the grouping variable(s) indicating random effects
-(e.g., individual ID).}
+(e.g., individual ID). Required. Several columns are combined into one
+panel identifier.}
 
 \item{data}{a dataframe that has all of the variables in the
 \code{formula}.}
@@ -37,13 +38,17 @@ optimization method to perform.}
 optimization.}
 
 \item{bootstraps}{Optional integer specifying the number of bootstrap
-samples to be used for estimating standard errors. If not specified,
-no bootstrapping is performed.}
+samples to be used for estimating standard errors. Whole panels
+(groups) are resampled, so the standard errors account for the
+correlation within panels. If not specified, no bootstrapping is
+performed.}
 
-\item{offset}{an optional offset term provided as a string.}
+\item{offset}{an optional character vector of offset column names (summed
+when several are given; on the log scale). An offset can instead be given
+with \code{offset()} in \code{formula}; use only one of the two.}
 }
 \value{
-An object of class \code{countreg} which is a list with the following components:
+An object of class \code{flexCountReg} which is a list with the following components:
 \itemize{
 \item model: the fitted model object.
 \item data: the data frame used to fit the model.

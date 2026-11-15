@@ -86,7 +86,7 @@ f(y>0)=f(0)\frac{\mu^y}{y!}(1+2\eta)^{-y/2}
 The variance is:
 \deqn{\sigma^2=\mu+\eta\mu}
 
-Type 2 modifies \eqn{\eta} → \eqn{\eta\mu}:
+Type 2 modifies \eqn{\eta} -> \eqn{\eta\mu}:
 \deqn{
 f(0)=\exp\left(\frac{1}{\eta}(1-\sqrt{1+2\eta\mu})\right)
 }
@@ -109,6 +109,6 @@ rpinvgaus(30, mu=0.75, eta=1.5)
 }
 \references{
 Cameron & Trivedi (2013). Regression Analysis of Count Data.
-Dean, Lawless & Willmot (1989). Mixed Poisson–Inverse Gaussian Models.
+Dean, Lawless & Willmot (1989). Mixed Poisson-Inverse Gaussian Models.
 Hilbe (2011). Negative Binomial Regression.
 }

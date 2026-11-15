@@ -558,29 +558,4 @@ repois <- function(formula,
 }
 
 
-.coef.repois <- function(object, ...) {
-  object$coefficients
-}
-
-
-.vcov.repois <- function(object, ...) {
-  object$vcov
-}
-
-
-.logLik.repois <- function(object, ...) {
-  structure(
-    object$logLik_value,
-    class = "logLik",
-    nobs = object$nobs,
-    df = length(object$coefficients)
-  )
-}
-
-
-.fitted.repois <- function(object, ...) {
-  object$fitted.values
-}
-
-
 `%||%` <- function(a, b) if (!is.null(a)) a else b

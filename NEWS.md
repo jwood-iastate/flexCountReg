@@ -19,6 +19,42 @@
   (usually closer to the optimum).
 * `predict()` errors when an offset column used in fitting is missing from
   `newdata`, instead of silently setting the offset to 0.
+* `countreg.rp()`: heterogeneity in means now follows Wood and Gayah (2025,
+  Eq. 2). Each random parameter has its own coefficient for each variable in
+  `het_mean_formula` (named `HetMean:<parameter>:<variable>`), and the effect
+  is additive (on the log scale for lognormal parameters; multiplicative for
+  gamma parameters, whose mean must stay positive). Previously a single
+  coefficient vector multiplied every random parameter's mean. Estimates from
+  models with `het_mean_formula` change; saved fits still predict with their
+  original specification.
+* `countreg.rp()`: uniform random parameters now span mu +/- St.Dev (draws
+  `2u - 1`), matching the paper and the Exact prediction. Previously the draws
+  spanned mu +/- St.Dev/2, so estimated uniform St.Dev values are now half as
+  large. `predict()` converts saved uniform fits automatically (with a
+  one-time message).
+* `countreg.rp()`: `rpardists` is matched to the random parameters by name
+  (not position) and validated. An intercept in both `formula` and
+  `rpar_formula` (an unidentified model) is an error; the intercept implied by
+  `rpar_formula` is not a random parameter unless the fixed formula has no
+  intercept. An invalid `panel_id`, `family` or `method` is an error.
+* `countreg.rp()`: `weights` now weight the panel log-likelihood (frequency
+  weights for whole panels) instead of each row's probability.
+* `countreg.rp()`: the mixing distribution of PLN, PGE, PLL and PW families
+  uses its own Halton dimension; it previously reused the first random
+  parameter's draws, which made the two perfectly correlated.
+* `predict(method = "Exact")` returns `Inf` (with a warning) where the
+  expected value does not exist: lognormal random parameters with a positive
+  x, and gamma random parameters beyond the domain of their moment generating
+  function. The lognormal formula is documented as a Laplace approximation.
+* `renb()` and `poisLind.re()` require `group_var`, and the panels always come
+  from it (a `panel_id` column in `data` is no longer used instead).
+  Bootstrapped standard errors resample whole panels instead of rows.
+* `pplindLnorm()`, `qplindLnorm()` and `rplindLnorm()` convert `lambda` to
+  `mean` consistently with `dplindLnorm()` (the extra `exp(sigma^2 / 2)`
+  factor is removed).
+* `dpLnorm()`, `dpinvgaus()`, `dpinvgamma()`, `dplind()` and `dgwar()` are
+  vectorized directly instead of through `Vectorize()`. Off-support `x` gives
+  0 with a warning, and invalid parameters give `NaN` with a warning.
 
 ## Bug fixes
 
@@ -50,6 +86,53 @@
   factor, as it already did for PLN.
 * `countreg.rp()` now stores its offset, so `predict()` uses it. Simulated
   predictions now include heterogeneity in means and variances.
+
+## Bug fixes (distributions and panel models)
+
+* `dpinvgaus()` and `dpinvgamma()` are computed on the log scale, so they no
+  longer return `Inf` or `NaN` at large counts (e.g. y > 85 with mu = 2,
+  eta = 0.5).
+* r-functions (`rpLnorm()`, `rplind()`, `rplindLnorm()`, `rplindGamma()`,
+  `rpge()`, `rcom()`, `rgp1()`, `rgp2()`) accept vector parameters, as needed
+  for simulation from fitted models. Mixture families draw the mixing
+  variable per observation.
+* q-functions no longer loop forever at p = 1 (they return `Inf`), return
+  `NaN` for p outside [0, 1], and no longer recompute the CDF at every step.
+* `dplind(lambda = )` uses `lambda` (it previously ignored it).
+* The RENB likelihood computes log-gamma differences without cancellation for
+  large means. Previously the likelihood was overstated far from the optimum,
+  and optimizers such as BFGS could converge to meaningless estimates.
+* `poisLind.re()` starts from a moment estimate of theta instead of an
+  undocumented formula.
+* `renb()` and `poisLind.re()` use the same data preparation as `countreg()`:
+  missing values are removed consistently, formula offsets work (giving both a
+  formula offset and `offset` is an error), and starting values use the
+  offset.
+* `countreg.rp()` uses the shared data preparation (formula offsets, missing
+  values, numeric weights), starts gamma random parameters from a positive
+  mean, averages panel likelihoods over draws on the log scale, and reports
+  convergence.
+* `predict(method = "Exact")` for `countreg.rp()` includes heterogeneity in
+  means and variances.
+
+## Documentation
+
+* Corrected the Generalized Poisson parameter restrictions, the parameter
+  table in `?countreg` (PGE, Sichel), the Poisson-Lindley-Lognormal mean and
+  parameter descriptions, the RENB density, the Sichel reference (Zou, Lord
+  and Zhang, 2012) and several typos. `?countreg` no longer claims that an LR
+  test is printed; see `regCompTest()`.
+* `?countreg.rp` documents each random-parameter distribution's scale, the
+  heterogeneity specification and the lognormal caveat.
+* `?washington_roads` describes the panel structure; the `Rollover` label in
+  the data is corrected. The README function list is corrected and completed.
+
+## Other changes
+
+* `lamW` moves from Suggests to Imports (used by `qlindley()` and lognormal
+  predictions). The `poilog` engine is checked with `rlang::check_installed()`.
+* `msg1` and `.dpge_one` are no longer exported. The hand-maintained
+  `Collate` field is removed.
 
 ## New features
 

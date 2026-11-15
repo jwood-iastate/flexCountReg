@@ -47,9 +47,13 @@ grouped by continuous and count distributions.
   - `qtri` for the quantile function
   - `rtri` for random number generation
 
+- Lindley Distribution
+
+  - `dlindley`, `plindley`, `qlindley`, `rlindley`
+
 - Lognormal Distribution
 
-  - `mgf_lognormal` for estimating the moment generating function
+  - `moment_lognormal` for the moments of the lognormal distribution
 
 *Count Distributions*
 
@@ -81,6 +85,13 @@ grouped by continuous and count distributions.
   - `qpinvgamma` for the quantile function
   - `rpinvgamma` for random number generation
 
+- Generalized Poisson Distribution (Types 1 and 2)
+
+  - `dgp1`, `dgp2` for the density function
+  - `pgp1`, `pgp2` for the cumulative density function
+  - `qgp1`, `qgp2` for the quantile function
+  - `rgp1`, `rgp2` for random number generation
+
 - Poisson-Lindley Distribution
 
   - `dplind` for the density function
@@ -106,7 +117,7 @@ grouped by continuous and count distributions.
 
   - `dpLnorm` for the density function
   - `ppLnorm` for the cumulative density function
-  - `qtpLnorm` for the quantile function
+  - `qpLnorm` for the quantile function
   - `rpLnorm` for random number generation
 
 - Poisson-Weibull Distribution
@@ -135,12 +146,18 @@ grouped by continuous and count distributions.
 - `countreg` is a general function for estimating the non-panel,
   non-random parameters count regression models
 - `countreg.rp` estimates the random parameters count models.
-- `poislind.re` estimates the random effects Poisson-Lindley model
+- `poisLind.re` estimates the random effects Poisson-Lindley model
 - `renb` estimates the random effects negative binomial regression
   model.
+- `negmultinom` estimates negative multinomial (random effects) panel
+  models (NM1, NM2 and NM-P).
+- `repois` estimates the random effects Poisson model with a gamma random
+  effect.
 
 **Model Evaluation, Comparison, and Convenience Functions**
 
+- `margEffTable` computes marginal effects (or elasticities) with delta-method or bootstrap standard errors.
+- `halton_dists`, `corr_haltons` and `cor2cov` generate (correlated) Halton draws and convert correlation matrices to covariance matrices.
 - `cureplot` generates a CURE plot for the specified model, based on the
   [cureplots package](https://gbasulto.github.io/cureplots/).
 - `mae` computes the Mean Absolute Error (MAE).

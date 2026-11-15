@@ -3,9 +3,12 @@
 #' @name renb
 #' @param formula an R formula.
 #' @param group_var the grouping variable(s) for the random effects (e.g.,
-#'   individual ID or other panel ID variables).
+#'   individual ID or other panel ID variables). Required. Several columns
+#'   are combined into one panel identifier.
 #' @param data a dataframe that has all of the variables in the \code{formula}.
-#' @param offset an optional offset term provided as a string.
+#' @param offset an optional character vector of offset column names (summed
+#'   when several are given; on the log scale). An offset can instead be given
+#'   with \code{offset()} in \code{formula}; use only one of the two.
 #' @param method a method to use for optimization in the maximum likelihood
 #'   estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that "BHHH"
 #'   is not available for this function due to the implementation for the random
@@ -15,8 +18,9 @@
 #' @param print.level Integer specifying the verbosity of output during
 #'   optimization.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples
-#'   to be used for estimating standard errors. If not specified, no
-#'   bootstrapping is performed.
+#'   to be used for estimating standard errors. Whole panels (groups) are
+#'   resampled, so the standard errors account for the correlation within
+#'   panels. If not specified, no bootstrapping is performed.
 #'        
 #' @import maxLik  stats modelr tibble
 #' @importFrom MASS glm.nb
@@ -30,7 +34,7 @@
 #' model. This model is based on the NB-1 model. The PDF for the RENB is:
 #' \deqn{f(y_{it}|\lambda_{it}, a, b) = 
 #'   \frac{\Gamma(a+b) 
-#'     \Gamma(a + \sum_{t = 1}^{n_i} \\lambda_{it}) 
+#'     \Gamma(a + \sum_{t = 1}^{n_i} \lambda_{it}) 
 #'     \Gamma(b + \sum_{t=1}^{n_i}y_{it})}
 #'     {\Gamma(a) \Gamma(b) \Gamma(a + b + 
 #'        \sum_{t=1}^{n_i}\lambda_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
@@ -61,7 +65,7 @@
 #' package. The user can specify the optimization method and maximum iterations.
 #' 
 #' @returns
-#' An object of class `countreg` which is a list with the following components:
+#' An object of class `flexCountReg` which is a list with the following components:
 #' \itemize{
 #'  \item model: the fitted model object.
 #'  \item data: the data frame used to fit the model.
@@ -86,76 +90,40 @@
 #' 
 #' @references
 #' Hausman, Jerry A., Bronwyn H. Hall, and Zvi Griliches. "Econometric models 
-#' for count data with an application to the patents–R&D relationship." 
+#' for count data with an application to the patents-R&D relationship." 
 #' Econometrica: Journal of the Econometric Society (1984): 909-938.
 #' 
 #' @export
 renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
                  print.level=0, bootstraps=NULL, offset=NULL) {
   
-  # Data preparation
-  mod_df <- stats::model.frame(formula, data, na.action = stats::na.fail)
-  X <- stats::model.matrix(attr(mod_df, "terms"), mod_df)
-  y <- as.numeric(stats::model.response(mod_df))
-  
-  # Generate a panel ID for the model
-  if (!("panel_id" %in% names(data))) {
-    if (is.null(group_var)) {
-      warning("The `group_var` must be defined for this model.")
-    } else {
-      if (length(group_var) > 1) {
-        data <- data %>% 
-          unite("panel_id", all_of(group_var), sep = "_", remove = FALSE)
-      } else {
-        data <- data %>% mutate(panel_id = as.character(data[[group_var]]))
-      }
-    }
+  method <- .fcr_check_method(method)
+  if (missing(group_var) || is.null(group_var)) {
+    stop("`group_var` must name the column(s) that identify the panels.",
+         call. = FALSE)
   }
   
-  group <- data$panel_id
-  x_names <- colnames(X)
+  # Data preparation: one complete-case frame; panels from `group_var`
+  prep <- prepare_model_data(formula, data, offset = offset,
+                             group_var = group_var)
+  if (prep$n_dropped > 0) {
+    message(prep$n_dropped, " row(s) with missing values were removed.")
+  }
+  X <- prep$X
+  y <- as.numeric(prep$y)
+  group <- prep$group
+  offset_vec <- prep$offset
+  x_names <- c(colnames(X), "ln(a-1)", "ln(b)")
   
-  # Use the Negative Binomial as starting values
-  p_model <- glm.nb(formula, data = data)
-  start <- unlist(p_model$coefficients)
+  # Starting values: Poisson GLM with the same rows and offset
+  p_model <- stats::glm.fit(X, y, offset = offset_vec,
+                            family = stats::poisson())
+  start <- p_model$coefficients
+  start[is.na(start)] <- 0
   a <- 2
   b <- 1
-  
-  full_start <- append(start, log(a - 1))
-  x_names <- append(x_names, "ln(a-1)")
-  full_start <- append(full_start, log(b))
-  x_names <- append(x_names, "ln(b)")
+  full_start <- c(start, log(a - 1), log(b))
   names(full_start) <- x_names
-
-
-  # Extract offsets on the log scale from the same rows used by the model.
-  get_offset <- function(model_frame, model_data, offset_cols) {
-    formula_offset <- stats::model.offset(model_frame)
-    if (!is.null(formula_offset) && !is.null(offset_cols)) {
-      stop("Use either a formula offset or offset columns, not both.")
-    }
-    if (!is.null(formula_offset)) {
-      out <- as.numeric(formula_offset)
-    } else if (is.null(offset_cols)) {
-      out <- rep(0, nrow(model_frame))
-    } else {
-      if (!is.character(offset_cols) || !length(offset_cols) ||
-          anyDuplicated(offset_cols) ||
-          !all(offset_cols %in% names(model_data))) {
-        stop("offset must name distinct columns in data.")
-      }
-      columns <- as.data.frame(model_data)[, offset_cols, drop = FALSE]
-      if (!all(vapply(columns, is.numeric, logical(1)))) {
-        stop("Offset columns must be numeric and already on the log scale.")
-      }
-      out <- rowSums(columns)
-    }
-    if (length(out) != nrow(model_frame) || any(!is.finite(out))) {
-      stop("Offsets must be finite and aligned with the model rows.")
-    }
-    out
-  }
-  offset_vec <- get_offset(mod_df, data, offset)
 
   # Random Effects Negative Binomial log-likelihood, one value per panel.
   reg.run.RE <- function(beta, y, X, group, offset_vec) {
@@ -211,80 +179,14 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
     stop("RENB optimizer did not return valid parameter estimates.")
   }
 
-  # Bootstrap function
-  plind.boot <- function(boot_data, formula, method, 
-                         max.iters, print.level, offset) {
-    # Prepare bootstrapped data
-    boot_data <- as.data.frame(boot_data)
-    mod1_frame <- stats::model.frame(formula, boot_data,
-                                     na.action = stats::na.fail)
-    X_boot <- stats::model.matrix(attr(mod1_frame, "terms"), mod1_frame)
-    y_boot <- as.numeric(stats::model.response(mod1_frame))
-    group_boot <- boot_data$panel_id
-    offset_boot <- get_offset(mod1_frame, boot_data, offset)
-    
-    # Fit model to bootstrapped data
-    int_res <- try(maxLik::maxLik(reg.run.RE,  
-                                  start = fit$estimate,
-                                  y = y_boot,
-                                  X = X_boot,
-                                  group = group_boot,
-                                  offset_vec = offset_boot,
-                                  method = method,
-                                  control = list(iterlim = max.iters, 
-                                                 printLevel = print.level)),
-                   silent = TRUE)
-    
-    # Return NULL if the bootstrap fit failed
-    if(inherits(int_res, "try-error")) return(NULL)
-    
-    return(int_res)
-  }
-  
-  # Perform bootstrapping if requested - Modified bootstrap implementation
-  if (!is.null(bootstraps) && is.numeric(bootstraps)) {
-    # Existing row bootstrap; panel resampling requires a separate change.
-    bs.data <- modelr::bootstrap(data, n = bootstraps)
-    
-    # Run bootstrap models with correct parameter passing
-    models <- map(bs.data$strap, ~plind.boot(
-      boot_data = .,
-      formula = formula,
-      method = method,
-      max.iters = max.iters,
-      print.level = print.level,
-      offset = offset
-    ))
-    
-    # Remove failed bootstrap iterations
-    models <- models[!vapply(models, is.null, logical(1))]
-    
-    # Calculate bootstrap standard errors
-    if(length(models) > 0) {
-      tidied <- map_df(models, ~{
-        if(!is.null(.)) {
-          data.frame(
-            term = names(.x$estimate),
-            estimate = as.numeric(.x$estimate)
-          )
-        }
-      }, .id = "id")
-      
-      SE <- tidied %>%
-        group_by(term) %>%
-        reframe(sd = sd(estimate))
-      
-      fit$bootstrapped_se <- SE
-      fit$successful_bootstraps <- length(models)
-    } else {
-      msg <- paste(
-        "All bootstrap iterations failed.", 
-        "No bootstrap standard errors computed.")
-      warning(msg)
-      fit$bootstrapped_se <- NULL
-      fit$successful_bootstraps <- 0
-    }
-  }
+  fit$fcr_method <- method
+  fit <- .fcr_finish_re(fit, prep, x_names, bootstraps, refit = function(sub) {
+    m <- maxLik::maxLik(reg.run.RE, start = fit$estimate, y = sub$y,
+                        X = sub$X, group = sub$group,
+                        offset_vec = sub$offset, method = method,
+                        control = list(iterlim = max.iters, printLevel = 0))
+    stats::setNames(m$estimate, x_names)
+  })
   
   # Process results
   beta_est <- fit$estimate
@@ -298,13 +200,12 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   
   mu <- exp(drop(X %*% beta_pred) + offset_vec)
   fit$predictions <- mu
-  fit$se <- sqrt(diag(vcov(fit)))
   fit$formula <- formula
   fit$observed <- y
   fit$residuals <- y - fit$predictions
   fit$LL <- fit$maximum
   fit$modelType <- "RENB"
-  fit$offset <- offset
+  fit$offset <- prep$blueprint$offset_label
   fit$offset_values <- offset_vec
   
   obj <- .createFlexCountReg(model = fit, 

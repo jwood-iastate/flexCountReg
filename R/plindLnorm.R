@@ -10,10 +10,12 @@
 #' @param q quantile or vector of quantiles.
 #' @param p probability or vector of probabilities.
 #' @param n number of random draws.
-#' @param mean mean (>0).
+#' @param mean the Poisson-Lindley mean before the lognormal factor (>0); the
+#'   mean of the distribution is \code{mean * exp(sigma^2 / 2)}.
 #' @param theta Poisson-Lindley theta parameter (>0).
 #' @param sigma lognormal sigma parameter (>0).
-#' @param lambda optional lambda parameter (>0).
+#' @param lambda optional Poisson scale parameter (>0), an alternative to
+#'   \code{mean}: \code{mean = lambda * (theta + 2) / (theta * (theta + 1))}.
 #' @param ndraws number of Halton draws.
 #' @param log return log-density.
 #' @param log.p return log-CDF.
@@ -21,10 +23,10 @@
 #' @param hdraws optional Halton draws.
 #'
 #' @details
-#' \code{dplind} computes the PLL density.
-#' \code{pplind} computes the PLL CDF.
-#' \code{qplind} computes quantiles.
-#' \code{rplind} generates random draws.
+#' \code{dplindLnorm} computes the PLL density.
+#' \code{pplindLnorm} computes the PLL CDF.
+#' \code{qplindLnorm} computes quantiles.
+#' \code{rplindLnorm} generates random draws.
 #'
 #' The PMF is:
 #' \deqn{
@@ -35,9 +37,10 @@
 #'        {x\sigma\sqrt{2\pi}}dx
 #' }
 #'
-#' Mean:
+#' Where \eqn{\mu} is the \code{mean} argument (the Poisson-Lindley mean). The
+#' mean of the distribution is:
 #' \deqn{
-#' E[y]=\mu=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
+#' E[y]=\mu e^{\sigma^2/2}=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
 #'             {\theta(\theta+1)}
 #' }
 #'

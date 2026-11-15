@@ -17,9 +17,13 @@
   ok
 }
 
-.gp2_ymax <- function(alpha) {
+.gp2_ymax <- function(alpha, mu = NULL) {
   if (alpha < 0) {
-    ceiling(-1 / alpha) - 1L
+    # The support grows without bound as alpha -> 0-; truncate where the
+    # remaining probability is negligible (see .gp_cap()).
+    ym <- ceiling(-1 / alpha) - 1L
+    if (!is.null(mu)) ym <- min(ym, .gp_cap(mu))
+    ym
   } else {
     Inf
   }
@@ -52,16 +56,8 @@
 
 .gp2_log_norm_const <- function(mu, alpha) {
   if (alpha >= 0) return(0)
-  
-  ymax <- .gp2_ymax(alpha)
-  y_seq <- 0:ymax
-  logp <- vapply(y_seq, function(yy) .gp2_logpmf_raw(yy, mu, alpha), numeric(1))
-  
-  finite <- is.finite(logp)
-  if (!any(finite)) return(0)
-  
-  m <- max(logp[finite])
-  m + log(sum(exp(logp[finite] - m)))
+  # GP2(mu, alpha) is GP1(mu, phi = alpha * mu)
+  .gp1_lnorm_vec(mu, alpha * mu)
 }
 
 .gp2_logpmf <- function(y, mu, alpha) {
@@ -86,7 +82,7 @@
   }
   
   if (alpha < 0) {
-    ymax <- .gp2_ymax(alpha)
+    ymax <- .gp2_ymax(alpha, mu)
     if (q >= ymax) return(1)
   }
   
@@ -207,36 +203,16 @@
 #' @rdname GeneralizedPoisson2
 #' @export
 dgp2 <- function(x, mu = 1, alpha = 0, log = FALSE) {
-  n <- max(length(x), length(mu), length(alpha), length(log))
-  x <- rep_len(x, n)
-  mu <- rep_len(mu, n)
-  alpha <- rep_len(alpha, n)
-  log <- rep_len(log, n)
-  
+  r <- .fcr_recycle(x, mu, alpha)
+  x <- r[[1]]; mu <- r[[2]]; alpha <- r[[3]]
   ok <- .gp2_validate(mu, alpha)
-  out <- rep(NA_real_, n)
-  
-  valid_idx <- which(ok)
-  if (length(valid_idx) > 0) {
-    for (i in valid_idx) {
-      xi <- x[i]
-      
-      if (is.na(xi) || is.na(log[i])) {
-        out[i] <- NA_real_
-        next
-      }
-      
-      if (xi < 0 || abs(xi - round(xi)) > .Machine$double.eps^0.5) {
-        out[i] <- if (isTRUE(log[i])) -Inf else 0
-        next
-      }
-      
-      lp <- .gp2_logpmf(xi, mu[i], alpha[i])
-      out[i] <- if (isTRUE(log[i])) lp else exp(lp)
-    }
-  }
-  
-  out
+  is_count <- .fcr_is_count(x)
+  lp <- rep(-Inf, length(x))
+  # GP2(mu, alpha) is GP1(mu, phi = alpha * mu)
+  idx <- is_count & ok
+  lp[idx] <- .gp1_logpmf_vec(round(x[idx]), mu[idx], alpha[idx] * mu[idx])
+  lp[!ok | is.na(x)] <- NA
+  if (isTRUE(log[1])) lp else exp(lp)
 }
 
 #' @rdname GeneralizedPoisson2
@@ -308,7 +284,7 @@ qgp2 <- function(p, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE) {
       
       if (pi == 1) {
         if (alpha[i] < 0) {
-          out[i] <- .gp2_ymax(alpha[i])
+          out[i] <- .gp2_ymax(alpha[i], mu[i])
         } else {
           out[i] <- Inf
         }
@@ -321,7 +297,7 @@ qgp2 <- function(p, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE) {
       }
       
       if (alpha[i] < 0) {
-        ymax <- .gp2_ymax(alpha[i])
+        ymax <- .gp2_ymax(alpha[i], mu[i])
         y_seq <- 0:ymax
         
         logp_vec <- vapply(
@@ -388,7 +364,7 @@ rgp2 <- function(n, mu = 1, alpha = 0) {
   }
   
   if (alpha < 0) {
-    ymax <- .gp2_ymax(alpha)
+    ymax <- .gp2_ymax(alpha, mu)
     y_seq <- 0:ymax
     
     logp <- vapply(y_seq, function(yy) .gp2_logpmf_raw(yy, mu, alpha), numeric(1))

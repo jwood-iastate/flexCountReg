@@ -83,3 +83,15 @@ test_that("internal objects are not exported", {
   expect_false("msg1" %in% ex)
   expect_false(".dpge_one" %in% ex)
 })
+
+test_that("GP1 and GP2 near phi = 0 from below are fast and Poisson-like", {
+  t <- system.time(p <- dgp1(0:20, mu = 0.5, phi = -1e-7))[["elapsed"]]
+  expect_lt(t, 1)
+  expect_equal(p, dpois(0:20, 0.5), tolerance = 1e-6)
+  expect_equal(sum(dgp2(0:200, mu = 3, alpha = -1e-8)), 1, tolerance = 1e-8)
+  for (ph in c(-0.3, -0.1, 0, 0.4)) {
+    expect_equal(sum(dgp1(0:300, mu = 3, phi = ph)), 1, tolerance = 1e-8)
+  }
+  # GP2(mu, alpha) is GP1(mu, phi = alpha * mu)
+  expect_equal(dgp2(0:15, mu = 3, alpha = -0.1), dgp1(0:15, mu = 3, phi = -0.3))
+})

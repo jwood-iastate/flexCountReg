@@ -11,12 +11,57 @@
   }
 }
 
+# Upper limit of the support used for underdispersed (phi < 0) GP models.
+# The exact support ends at floor(-mu / phi), which grows without bound as
+# phi -> 0-. The distribution is then underdispersed (variance below mu), so
+# the probability beyond mu + 40 sqrt(mu) + 40 is negligible (far below
+# double precision) and the support is truncated there.
+.gp_cap <- function(mu) ceiling(mu + 40 * sqrt(mu) + 40)
+
 .gp1_ymax <- function(mu, phi) {
   if (phi < 0) {
-    floor(-mu / phi)
+    min(floor(-mu / phi), .gp_cap(mu))
   } else {
     Inf
   }
+}
+
+# Vectorized unnormalized GP1 log-PMF (GP2 is GP1 with phi = alpha * mu).
+.gp1_lraw_vec <- function(y, mu, phi) {
+  a <- mu + phi * y
+  lp <- suppressWarnings(log(mu) + (y - 1) * log(a) - a / (1 + phi) -
+                           y * log1p(phi) - lgamma(y + 1))
+  pois <- !is.na(phi) & phi == 0
+  lp[pois] <- stats::dpois(y[pois], mu[pois], log = TRUE)
+  bad <- !pois & (is.na(a) | a <= 0)
+  lp[bad] <- -Inf
+  lp[!is.na(mu) & !is.na(phi) & (mu <= 0 | phi <= -1)] <- -Inf
+  lp[is.na(y) | is.na(mu) | is.na(phi)] <- NA
+  lp
+}
+
+# Vectorized log normalizing constant (0 unless phi < 0).
+.gp1_lnorm_vec <- function(mu, phi) {
+  out <- numeric(length(mu))
+  for (i in which(!is.na(phi) & phi < 0 & phi > -1 & !is.na(mu) & mu > 0)) {
+    K <- min(floor(-mu[i] / phi[i]), .gp_cap(mu[i]))
+    lp <- .gp1_lraw_vec(0:K, rep(mu[i], K + 1), rep(phi[i], K + 1))
+    m <- max(lp)
+    out[i] <- m + log(sum(exp(lp - m)))
+  }
+  out
+}
+
+# Vectorized GP1 log-PMF for counts y (support beyond the truncation is -Inf).
+.gp1_logpmf_vec <- function(y, mu, phi) {
+  lp <- .gp1_lraw_vec(y, mu, phi)
+  neg <- !is.na(phi) & phi < 0
+  if (any(neg)) {
+    cap <- ifelse(neg, pmin(floor(-mu / phi), .gp_cap(mu)), Inf)
+    lp[neg & y > cap] <- -Inf
+    lp[neg] <- lp[neg] - .gp1_lnorm_vec(mu[neg], phi[neg])
+  }
+  lp
 }
 
 .gp1_logpmf_raw <- function(y, mu, phi) {
@@ -51,13 +96,7 @@
 
 .gp1_log_norm_const <- function(mu, phi) {
   if (phi >= 0) return(0)
-  
-  ymax <- .gp1_ymax(mu, phi)
-  y_seq <- 0:ymax
-  logp <- vapply(y_seq, function(yy) .gp1_logpmf_raw(yy, mu, phi), numeric(1))
-  
-  m <- max(logp)
-  m + log(sum(exp(logp - m)))
+  .gp1_lnorm_vec(mu, phi)
 }
 
 .gp1_logpmf <- function(y, mu, phi) {
@@ -189,20 +228,17 @@
 #' @name GeneralizedPoisson
 #' @rdname GeneralizedPoisson
 #' @export
-dgp1 <- Vectorize(function(x, mu = 1, phi = 1, log = FALSE) {
+dgp1 <- function(x, mu = 1, phi = 1, log = FALSE) {
   .gp1_validate(mu, phi)
-  
-  if (is.na(x) || is.na(mu) || is.na(phi)) {
-    return(NA_real_)
-  }
-  
-  if (x < 0 || abs(x - round(x)) > .Machine$double.eps^0.5) {
-    return(if (log) -Inf else 0)
-  }
-  
-  lp <- .gp1_logpmf(x, mu, phi)
+  r <- .fcr_recycle(x, mu, phi)
+  x <- r[[1]]; mu <- r[[2]]; phi <- r[[3]]
+  is_count <- .fcr_is_count(x)
+  lp <- rep(-Inf, length(x))
+  lp[is_count] <- .gp1_logpmf_vec(round(x[is_count]), mu[is_count],
+                                  phi[is_count])
+  lp[is.na(x) | is.na(mu) | is.na(phi)] <- NA
   if (log) lp else exp(lp)
-})
+}
 
 #' @rdname GeneralizedPoisson
 #' @export

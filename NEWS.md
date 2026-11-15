@@ -139,6 +139,12 @@
 * q-functions no longer loop forever at p = 1 (they return `Inf`), return
   `NaN` for p outside [0, 1], and no longer recompute the CDF at every step.
 * `dplind(lambda = )` uses `lambda` (it previously ignored it).
+* `dgp1()` and `dgp2()` are vectorized, and for underdispersed values the
+  normalizing constant is summed only where the probability is not
+  negligible. Near phi = 0 (or alpha = 0) from below the old code summed up
+  to millions of terms per observation, so GP1/GP2 fits could run for hours
+  (for example the GP1 example in `?countreg`, which now takes under a
+  second).
 * The RENB likelihood computes log-gamma differences without cancellation for
   large means. Previously the likelihood was overstated far from the optimum,
   and optimizers such as BFGS could converge to meaningless estimates.

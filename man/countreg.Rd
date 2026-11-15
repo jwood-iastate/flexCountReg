@@ -182,7 +182,7 @@ For \code{dis_param_formula_1}, the models are for the parameters:
 \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
 \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
 \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
-\item \eqn{ln(\gamma)} for the Sichel model.
+\item \eqn{\gamma} for the Sichel model.
 \item \eqn{ln(k)} for the Generalized Waring model.
 \item \eqn{ln(\nu)} for the Conway-Maxwell-Poisson model.
 }
@@ -202,7 +202,7 @@ For \code{dis_param_formula_2}, the models are for the parameters:
 \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
 \item \eqn{ln(\sigma)} for the Poisson-Weibull model.
 \item \eqn{ln(\sigma)} for the Sichel model.
-\item \eqn{ln(\rho)-1} for the Generalized Waring model.
+\item \eqn{ln(\rho-1)} for the Generalized Waring model.
 \item Not Applicable for the Conway-Maxwell-Poisson model.
 }
 
@@ -392,7 +392,7 @@ Poisson model.
 \subsection{Poisson Generalized-Exponential (PGE) Model}{
 
 The Generalized Exponential distribution can be written as a function with
-a shape parameter \eqn{\alpha>0} and rate parameter \eqn{\gamma>0}. The
+a shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
 distribution has strictly positive continuous values. The PDF of the
 distribution is:
 \deqn{f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
@@ -601,33 +601,76 @@ The variance of the distribution is:
 
 \subsection{Generalized Waring (GW) Model}{
 
-The following are the versions of the PMF, mean, and variance used for the
-Generalized Waring model. This is adjusted from the typical formulation by
-replacing parameter \code{k} with \eqn{\mu}
-\deqn{PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}
-{y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}}
-\deqn{\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}}
+The following are the PMF, mean, and variance used for the Generalized
+Waring model. The regression formulation replaces parameter \eqn{\alpha}
+with the mean \eqn{\mu}, while retaining parameters \eqn{k} and \eqn{\rho}.
 
-The distribution parameters are often considered to capture the randomness
-(parameter \deqn{\alpha}), proneness (parameter \deqn{k}k=), and liability
-(parameter \deqn{\rho}) of the data.
+In the original parameterization, the PMF is:
+\deqn{
+P(Y=y)=
+\frac{
+\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)
+}{
+y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)
+\Gamma(\alpha+k+\rho+y)
+},
+}
+where \eqn{y=0,1,2,\ldots} and \eqn{\alpha,k,\rho>0}.
 
-If we use:
-\deqn{\alpha=\frac{\mu (\rho-1)}{k}}
+The mean and variance are:
+\deqn{
+E(Y)=\frac{\alpha k}{\rho-1}, \qquad \rho>1,
+}
+\deqn{
+\operatorname{Var}(Y)=
+\frac{\alpha k(\alpha+\rho-1)(k+\rho-1)}
+{(\rho-1)^2(\rho-2)}, \qquad \rho>2.
+}
 
-The PMF becomes:
+In accident applications, the variance can be decomposed into components
+attributed to randomness, proneness, and liability. These are variance
+components, rather than individual interpretations of \eqn{\alpha},
+\eqn{k}, and \eqn{\rho}.
 
-\deqn{PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)
-\Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!
-\Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)
-\Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}}
+To parameterize the model in terms of its mean, set:
+\deqn{
+\mu=e^{X\beta}, \qquad
+\alpha=\frac{\mu(\rho-1)}{k}.
+}
 
-This results in a regression model where:
-\deqn{\mu=e^{X\beta}}
+Substituting into the PMF gives:
+\deqn{
+P(Y=y \mid X)=
+\frac{
+\Gamma\left(\frac{\mu(\rho-1)}{k}+y\right)
+\Gamma(k+y)\Gamma(\rho+k)
+\Gamma\left(\frac{\mu(\rho-1)}{k}+\rho\right)
+}{
+y!\Gamma\left(\frac{\mu(\rho-1)}{k}\right)
+\Gamma(k)\Gamma(\rho)
+\Gamma\left(\frac{\mu(\rho-1)}{k}+k+\rho+y\right)
+}.
+}
 
-Note that when \deqn{\rho=1} or \deqn{\rho=2}, the distribution is undefined,
-\deqn{\rho>1} is required for the mean, and \deqn{\rho\leq 2} results
-in infinate variance.
+This results in a regression model with:
+\deqn{
+E(Y \mid X)=\mu=e^{X\beta},
+}
+\deqn{
+\operatorname{Var}(Y \mid X)=
+\frac{\mu(k+\mu)(k+\rho-1)}{k(\rho-2)}
+=
+\frac{k+\rho-1}{\rho-2}\mu+
+\frac{k+\rho-1}{k(\rho-2)}\mu^2,
+\qquad \rho>2.
+}
+
+The original distribution is valid for all \eqn{\alpha,k,\rho>0},
+including \eqn{\rho=1} and \eqn{\rho=2}. Its mean is infinite when
+\eqn{0<\rho\leq1}. When \eqn{1<\rho\leq2}, the mean is finite but
+the variance is infinite. A finite variance requires \eqn{\rho>2}.
+The mean-based regression parameterization requires \eqn{\mu>0},
+\eqn{k>0}, and \eqn{\rho>1}.
 }
 
 \subsection{Conway-Maxwell-Poisson (COM) Model}{

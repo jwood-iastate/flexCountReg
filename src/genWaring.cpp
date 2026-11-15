@@ -51,11 +51,19 @@ NumericVector genWaring_cpp(NumericVector x, NumericVector mean, NumericVector k
       continue;
     }
     
-    double a = current_mean * (current_p - 1.0) / current_k;
+    // Compute alpha on the log scale to avoid intermediate overflow/underflow.
+    const double log_a =
+      std::log(current_mean) +
+      std::log(current_p - 1.0) -
+      std::log(current_k);
     
-    if (a <= 0) {
-      result[i] = 0.0;
-      continue;
+    const double a = std::exp(log_a);
+    
+    if (!R_finite(a) || a <= 0.0) {
+      Rcpp::stop(
+        "Derived alpha is not finite and positive due to numerical "
+        "overflow or underflow"
+      );
     }
     
     double ay = a + x[i];

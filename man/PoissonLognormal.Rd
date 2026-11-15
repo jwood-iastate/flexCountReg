@@ -88,7 +88,7 @@ Distribution.
 
 The compound Probability Mass Function (PMF) for the Poisson-Lognormal
 distribution is:
-\deqn{f(y|\mu,\alpha)=
+\deqn{f(y|\mu,\sigma)=
   \int_0^\infty \frac{\mu^y x^y e^{-\mu x}}{y!} 
   \frac{exp\left(-\frac{ln^2(x)}{2\sigma^2} \right)}{x\sigma\sqrt{2\pi}}dx}
 

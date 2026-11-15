@@ -283,7 +283,7 @@ $$Param = \exp((Intercept) + \sum \beta X)$$</p>
 <li><p>\(ln(\theta)\) for the Poisson-Lindley-Gamma model.</p></li>
 <li><p>\(ln(\theta)\) for the Poisson-Lindley-Lognormal model.</p></li>
 <li><p>\(ln(\alpha)\) for the Poisson-Weibull model.</p></li>
-<li><p>\(ln(\gamma)\) for the Sichel model.</p></li>
+<li><p>\(\gamma\) for the Sichel model.</p></li>
 <li><p>\(ln(k)\) for the Generalized Waring model.</p></li>
 <li><p>\(ln(\nu)\) for the Conway-Maxwell-Poisson model.</p></li>
 </ul><p>For <code>dis_param_formula_2</code>, the models are for the parameters:</p><ul><li><p>Not Applicable for the Generalized Poisson Version 1 model.</p></li>
@@ -299,7 +299,7 @@ $$Param = \exp((Intercept) + \sum \beta X)$$</p>
 <li><p>\(ln(\sigma)\) for the Poisson-Lindley-Lognormal model.</p></li>
 <li><p>\(ln(\sigma)\) for the Poisson-Weibull model.</p></li>
 <li><p>\(ln(\sigma)\) for the Sichel model.</p></li>
-<li><p>\(ln(\rho)-1\) for the Generalized Waring model.</p></li>
+<li><p>\(ln(\rho-1)\) for the Generalized Waring model.</p></li>
 <li><p>Not Applicable for the Conway-Maxwell-Poisson model.</p></li>
 </ul><p>The <code>ndraws</code> parameter is used to estimate the distribution when there is
 not a closed-form solution. This uses Halton draws to integrate the
@@ -482,7 +482,7 @@ Poisson model.</p>
 
 
 <p>The Generalized Exponential distribution can be written as a function with
-a shape parameter \(\alpha&gt;0\) and rate parameter \(\gamma&gt;0\). The
+a shape parameter \(\alpha&gt;0\) and scale parameter \(\gamma&gt;0\). The
 distribution has strictly positive continuous values. The PDF of the
 distribution is:
 $$f(x|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
@@ -673,27 +673,69 @@ $$\sigma^2=\mu+\left(\frac{2\sigma(\gamma+1)}{c}+\frac{1}{c^2}-1\right)
 <h3 id="generalized-waring-gw-model">Generalized Waring (GW) Model<a class="anchor" aria-label="anchor" href="#generalized-waring-gw-model"></a></h3>
 
 
-<p>The following are the versions of the PMF, mean, and variance used for the
-Generalized Waring model. This is adjusted from the typical formulation by
-replacing parameter <code>k</code> with \(\mu\)
-$$PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}
-{y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}$$
-$$\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}$$</p>
-<p>The distribution parameters are often considered to capture the randomness
-(parameter $$\alpha$$), proneness (parameter $$k$$k=), and liability
-(parameter $$\rho$$) of the data.</p>
-<p>If we use:
-$$\alpha=\frac{\mu (\rho-1)}{k}$$</p>
-<p>The PMF becomes:</p>
-<p>$$PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)
-\Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!
-\Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)
-\Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}$$</p>
-<p>This results in a regression model where:
-$$\mu=e^{X\beta}$$</p>
-<p>Note that when $$\rho=1$$ or $$\rho=2$$, the distribution is undefined,
-$$\rho&gt;1$$ is required for the mean, and $$\rho\leq 2$$ results
-in infinate variance.</p>
+<p>The following are the PMF, mean, and variance used for the Generalized
+Waring model. The regression formulation replaces parameter \(\alpha\)
+with the mean \(\mu\), while retaining parameters \(k\) and \(\rho\).</p>
+<p>In the original parameterization, the PMF is:
+$$
+P(Y=y)=
+\frac{
+\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)
+}{
+y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)
+\Gamma(\alpha+k+\rho+y)
+},
+$$
+where \(y=0,1,2,\ldots\) and \(\alpha,k,\rho&gt;0\).</p>
+<p>The mean and variance are:
+$$
+E(Y)=\frac{\alpha k}{\rho-1}, \qquad \rho&gt;1,
+$$
+$$
+\operatorname{Var}(Y)=
+\frac{\alpha k(\alpha+\rho-1)(k+\rho-1)}
+{(\rho-1)^2(\rho-2)}, \qquad \rho&gt;2.
+$$</p>
+<p>In accident applications, the variance can be decomposed into components
+attributed to randomness, proneness, and liability. These are variance
+components, rather than individual interpretations of \(\alpha\),
+\(k\), and \(\rho\).</p>
+<p>To parameterize the model in terms of its mean, set:
+$$
+\mu=e^{X\beta}, \qquad
+\alpha=\frac{\mu(\rho-1)}{k}.
+$$</p>
+<p>Substituting into the PMF gives:
+$$
+P(Y=y \mid X)=
+\frac{
+\Gamma\left(\frac{\mu(\rho-1)}{k}+y\right)
+\Gamma(k+y)\Gamma(\rho+k)
+\Gamma\left(\frac{\mu(\rho-1)}{k}+\rho\right)
+}{
+y!\Gamma\left(\frac{\mu(\rho-1)}{k}\right)
+\Gamma(k)\Gamma(\rho)
+\Gamma\left(\frac{\mu(\rho-1)}{k}+k+\rho+y\right)
+}.
+$$</p>
+<p>This results in a regression model with:
+$$
+E(Y \mid X)=\mu=e^{X\beta},
+$$
+$$
+\operatorname{Var}(Y \mid X)=
+\frac{\mu(k+\mu)(k+\rho-1)}{k(\rho-2)}
+=
+\frac{k+\rho-1}{\rho-2}\mu+
+\frac{k+\rho-1}{k(\rho-2)}\mu^2,
+\qquad \rho&gt;2.
+$$</p>
+<p>The original distribution is valid for all \(\alpha,k,\rho&gt;0\),
+including \(\rho=1\) and \(\rho=2\). Its mean is infinite when
+\(0&lt;\rho\leq1\). When \(1&lt;\rho\leq2\), the mean is finite but
+the variance is infinite. A finite variance requires \(\rho&gt;2\).
+The mean-based regression parameterization requires \(\mu&gt;0\),
+\(k&gt;0\), and \(\rho&gt;1\).</p>
 </div>
 
 <div class="section">

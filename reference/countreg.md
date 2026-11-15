@@ -267,7 +267,7 @@ For `dis_param_formula_1`, the models are for the parameters:
 
 - \\ln(\alpha)\\ for the Poisson-Weibull model.
 
-- \\ln(\gamma)\\ for the Sichel model.
+- \\\gamma\\ for the Sichel model.
 
 - \\ln(k)\\ for the Generalized Waring model.
 
@@ -301,7 +301,7 @@ For `dis_param_formula_2`, the models are for the parameters:
 
 - \\ln(\sigma)\\ for the Sichel model.
 
-- \\ln(\rho)-1\\ for the Generalized Waring model.
+- \\ln(\rho-1)\\ for the Generalized Waring model.
 
 - Not Applicable for the Conway-Maxwell-Poisson model.
 
@@ -468,7 +468,7 @@ significant improvement in model fit over the Poisson model.
 ### Poisson Generalized-Exponential (PGE) Model
 
 The Generalized Exponential distribution can be written as a function
-with a shape parameter \\\alpha\>0\\ and rate parameter \\\gamma\>0\\.
+with a shape parameter \\\alpha\>0\\ and scale parameter \\\gamma\>0\\.
 The distribution has strictly positive continuous values. The PDF of the
 distribution is:
 \$\$f(x\|\alpha,\gamma)=\frac{\alpha}{\gamma}\left(1-e^{-\frac{x}{\gamma}}
@@ -669,31 +669,44 @@ The variance of the distribution is:
 
 ### Generalized Waring (GW) Model
 
-The following are the versions of the PMF, mean, and variance used for
-the Generalized Waring model. This is adjusted from the typical
-formulation by replacing parameter `k` with \\\mu\\
-\$\$PMF=\frac{\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho)}
-{y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho)\Gamma(\alpha+k+\rho+y)}\$\$
-\$\$\mu=e^{X\beta}=\frac{\alpha k}{\rho-1}\$\$
+The following are the PMF, mean, and variance used for the Generalized
+Waring model. The regression formulation replaces parameter \\\alpha\\
+with the mean \\\mu\\, while retaining parameters \\k\\ and \\\rho\\.
 
-The distribution parameters are often considered to capture the
-randomness (parameter \$\$\alpha\$\$), proneness (parameter
-\$\$k\$\$k=), and liability (parameter \$\$\rho\$\$) of the data.
+In the original parameterization, the PMF is: \$\$ P(Y=y)= \frac{
+\Gamma(\alpha+y)\Gamma(k+y)\Gamma(\rho+k)\Gamma(\alpha+\rho) }{
+y!\Gamma(\alpha)\Gamma(k)\Gamma(\rho) \Gamma(\alpha+k+\rho+y) }, \$\$
+where \\y=0,1,2,\ldots\\ and \\\alpha,k,\rho\>0\\.
 
-If we use: \$\$\alpha=\frac{\mu (\rho-1)}{k}\$\$
+The mean and variance are: \$\$ E(Y)=\frac{\alpha k}{\rho-1}, \qquad
+\rho\>1, \$\$ \$\$ \operatorname{Var}(Y)= \frac{\alpha
+k(\alpha+\rho-1)(k+\rho-1)} {(\rho-1)^2(\rho-2)}, \qquad \rho\>2. \$\$
 
-The PMF becomes:
+In accident applications, the variance can be decomposed into components
+attributed to randomness, proneness, and liability. These are variance
+components, rather than individual interpretations of \\\alpha\\, \\k\\,
+and \\\rho\\.
 
-\$\$PMF=\frac{\Gamma\left(\frac{\mu k}{\rho-1}+y\right)\Gamma(k+y)
-\Gamma(\rho+k)\Gamma\left(\frac{\mu k}{\rho-1}+\rho\right)}{y!
-\Gamma\left(\frac{\mu k}{\rho-1}\right)\Gamma(k)\Gamma(\rho)
-\Gamma\left(\frac{\mu k}{\rho-1}+k+\rho+y\right)}\$\$
+To parameterize the model in terms of its mean, set: \$\$
+\mu=e^{X\beta}, \qquad \alpha=\frac{\mu(\rho-1)}{k}. \$\$
 
-This results in a regression model where: \$\$\mu=e^{X\beta}\$\$
+Substituting into the PMF gives: \$\$ P(Y=y \mid X)= \frac{
+\Gamma\left(\frac{\mu(\rho-1)}{k}+y\right) \Gamma(k+y)\Gamma(\rho+k)
+\Gamma\left(\frac{\mu(\rho-1)}{k}+\rho\right) }{
+y!\Gamma\left(\frac{\mu(\rho-1)}{k}\right) \Gamma(k)\Gamma(\rho)
+\Gamma\left(\frac{\mu(\rho-1)}{k}+k+\rho+y\right) }. \$\$
 
-Note that when \$\$\rho=1\$\$ or \$\$\rho=2\$\$, the distribution is
-undefined, \$\$\rho\>1\$\$ is required for the mean, and \$\$\rho\leq
-2\$\$ results in infinate variance.
+This results in a regression model with: \$\$ E(Y \mid
+X)=\mu=e^{X\beta}, \$\$ \$\$ \operatorname{Var}(Y \mid X)=
+\frac{\mu(k+\mu)(k+\rho-1)}{k(\rho-2)} = \frac{k+\rho-1}{\rho-2}\mu+
+\frac{k+\rho-1}{k(\rho-2)}\mu^2, \qquad \rho\>2. \$\$
+
+The original distribution is valid for all \\\alpha,k,\rho\>0\\,
+including \\\rho=1\\ and \\\rho=2\\. Its mean is infinite when
+\\0\<\rho\leq1\\. When \\1\<\rho\leq2\\, the mean is finite but the
+variance is infinite. A finite variance requires \\\rho\>2\\. The
+mean-based regression parameterization requires \\\mu\>0\\, \\k\>0\\,
+and \\\rho\>1\\.
 
 ### Conway-Maxwell-Poisson (COM) Model
 

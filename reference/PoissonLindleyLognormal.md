@@ -40,7 +40,7 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 - mean:
 
-  mean.
+  mean (\>0).
 
 - theta:
 

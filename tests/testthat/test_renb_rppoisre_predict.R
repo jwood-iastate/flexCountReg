@@ -155,7 +155,7 @@ test_that("predict function works for poisLindRE models", {
     poisLind.re(y ~ x1, group_var = "id", data = test_data, max.iters = 20)
   )
   
-  preds <- predict(mod, data = test_data)
+  preds <- predict(mod, newdata = test_data)
   
   expect_equal(length(preds), nrow(test_data))
   expect_true(all(preds > 0))
@@ -167,7 +167,7 @@ test_that("predict function works for renb models", {
     renb(y ~ x1, group_var = "id", data = test_data, max.iters = 20)
   )
   
-  preds <- predict(mod, data = test_data)
+  preds <- predict(mod, newdata = test_data)
   
   expect_equal(length(preds), nrow(test_data))
   expect_true(all(preds > 0))

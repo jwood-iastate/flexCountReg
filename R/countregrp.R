@@ -489,6 +489,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$scrambled <- scrambled
   fit$correlated <- correlated
   fit$panel_id <- panel_id 
+  fit$offset <- offset
+  fit$engine <- engine
   fit$rpardists <- if(is.null(rpardists) || correlated) {
     structure(rep("n", length(rpar)), names=rpar) 
   } else {

@@ -35,11 +35,13 @@ log link. other options are listed below.}
 
 \item{offset}{the name of a variable, or vector of variable names, in the
 data frame that should be used as an offset (i.e., included but forced to
-have a coefficient of 1). The normal method of setting an offset in the
-equation can also be used (overrides the offset option).}
+have a coefficient of 1). When several names are given, the offsets are
+summed. Alternatively, an offset can be given in the formula with
+\code{offset()}. Use only one of the two approaches: supplying both is an
+error.}
 
-\item{weights}{the name of a variable in the data frame that should be used
-as a frequency weight.}
+\item{weights}{the name of a variable in the data frame, or a numeric vector
+with one value per row of \code{data}, to be used as frequency weights.}
 
 \item{verbose}{an optional parameter. If \code{TRUE}, the function will print out
 the progress of the model fitting. Default is \code{FALSE}.}
@@ -71,20 +73,22 @@ or has minimal change as the number of draws changes within a reasonable
 range).}
 
 \item{method}{Optimization method to be used for maximum likelihood
-estimation. See \code{maxLik} documentation for options. The default is "NM" for
-the Nelder-Mead method.}
+estimation. One of "NM" (Nelder-Mead, the default), "BFGS", "BFGSR", "CG",
+"NR", "BHHH", or "SANN". See \code{maxLik} documentation for details.}
 
 \item{max.iters}{Maximum number of iterations for the optimization method.}
 
-\item{start.vals}{Optional vector of starting values for the optimization.}
+\item{start.vals}{Optional vector of starting values for the optimization.
+It must have one value per parameter. If the vector is named, the values
+are matched to the parameters by name.}
 
-\item{stderr}{Type of standard errors to use. The default is "normal". Other
-options include "boot" for bootstrapped standard errors, or "robust" for
-robust standard errors.}
+\item{stderr}{Type of standard errors to use. The default is "normal"
+(based on the Hessian). Other options include "boot" for bootstrapped
+standard errors, or "robust" for robust (sandwich) standard errors.}
 
 \item{bootstraps}{Optional integer specifying the number of bootstrap samples
-to be used for estimating standard errors when \code{stderr}= "boot". Note that
-this currently does not work when an offset variable is used.}
+to be used for estimating standard errors when \code{stderr}= "boot". Defaults
+to 200 when \code{stderr = "boot"} and \code{bootstraps} is not given.}
 
 \item{engine}{the engine to use for the integration if the Poisson Lognormal
 (PLN) distribution is used. Options include "halton" which uses Halton

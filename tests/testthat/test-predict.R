@@ -5,7 +5,7 @@ test_that("NB-2 model runs and returns predictions", {
                   data = washington_roads, family = "NB2",
                   dis_param_formula_1 = ~ speed50, method='BFGS')
   
-  pred <- predict(nb2, data=washington_roads)
+  pred <- predict(nb2, newdata = washington_roads)
   
   expect_true(length(pred) > 0)  # Ensure predictions are returned
 })
@@ -17,7 +17,7 @@ test_that("NB-2 model runs and returns predictions", {
                   data = washington_roads, family = "NB2",
                   dis_param_formula_1 = ~ speed50, method='BFGS')
   
-  pred <- predict(nb2, data=washington_roads)
+  pred <- predict(nb2, newdata = washington_roads)
   
   expect_true(length(pred) > 0)  # Ensure predictions are returned
 })
@@ -28,7 +28,7 @@ test_that("Poisson-Lognormal model runs and returns predictions", {
   pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
                   data = washington_roads, family = "PLN", ndraws=10)
   
-  pred <- predict(pln, data=washington_roads)
+  pred <- predict(pln, newdata = washington_roads)
   
   expect_true(length(pred) > 0)  # Ensure predictions are returned
 })
@@ -48,7 +48,7 @@ test_that(
       family = "NB2",
       underreport_formula = ~ speed50 + AADT10kplus)
     
-    pred <- predict(nb2_underreport, data=washington_roads)
+    pred <- predict(nb2_underreport, newdata = washington_roads)
     
     expect_true(length(pred) > 0)  # Ensure predictions are returned
   })
@@ -66,7 +66,7 @@ test_that(paste("Poisson-Lognormal with underreporting (probit) model",
               underreport_formula = ~ speed50 + AADT10kplus, 
               underreport_family = "probit")
             
-            pred <- predict(plogn_underreport, data=washington_roads)
+            pred <- predict(plogn_underreport, newdata = washington_roads)
             
             expect_true(length(pred) > 0)  # Ensure predictions are returned
           })

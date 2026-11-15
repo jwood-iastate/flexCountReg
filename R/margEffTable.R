@@ -270,8 +270,8 @@ print.flexEffectTable <- function(x, ...) {
   
   special_vars <- character(0)
   if (!is.null(object$model)) {
-    if (!is.null(object$model$offset)) {
-      special_vars <- c(special_vars, object$model$offset)
+    if (!is.null(object$model[["offset"]])) {
+      special_vars <- c(special_vars, object$model[["offset"]])
     }
     if (!is.null(object$model$panel_id)) {
       special_vars <- c(special_vars, object$model$panel_id)

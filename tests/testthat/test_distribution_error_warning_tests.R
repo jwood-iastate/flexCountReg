@@ -56,7 +56,7 @@ test_that("Countreg Bootstrapping",{
   mod <- countreg(
     Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
     data = washington_roads, family = "PIG", verbose = TRUE,
-    method='SN',
+    method='NM',
     stderr = "boot",
     bootstraps = 3)
   

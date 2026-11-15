@@ -58,6 +58,21 @@ summary.flexCountReg <- function(object, ...) {
   if(!is.null(model_obj$maximum)) 
     cat("Log-likelihood: ", model_obj$maximum, "\n")
   
+  if (!is.null(model_obj$vcov_type)) {
+    se_label <- switch(model_obj$vcov_type,
+                       hessian = "Hessian-based",
+                       robust = "robust (sandwich)",
+                       bootstrap = paste0("bootstrapped (",
+                                          model_obj$n_boot_ok, " of ",
+                                          model_obj$bootstraps,
+                                          " replicates)"),
+                       model_obj$vcov_type)
+    cat("Standard errors: ", se_label, "\n")
+  }
+  if (!is.null(model_obj$n_dropped) && model_obj$n_dropped > 0) {
+    cat("Rows removed due to missing values: ", model_obj$n_dropped, "\n")
+  }
+  
   cat("\nParameter Estimates:\n")
   
   # Prepare Coefficients
@@ -65,34 +80,25 @@ summary.flexCountReg <- function(object, ...) {
   coeffs <- as.numeric(model_obj$estimate)
   se_vec <- rep(NA_real_, length(coeffs))
   
-  # Extract Standard Errors Logic
-  using_bootstrap <- FALSE
-  
-  if (!is.null(model_obj$bootstrapped_se)) {
-    # Check if it's a data frame (common output from broom logic in tests) or
-    # vector
-    if (is.data.frame(model_obj$bootstrapped_se)) {
-      # Try to match by name if 'term' and 'sd' columns exist
-      if(all(c("term", "sd") %in% names(model_obj$bootstrapped_se))){
-        match_idx <- match(params, model_obj$bootstrapped_se$term)
-        # FIX: Explicitly convert to numeric to prevent type issues (e.g., list
-        # columns or attributes)
-        se_vec <- as.numeric(model_obj$bootstrapped_se$sd[match_idx])
-      } else {
-        # Fallback: if lengths match, assume specific column order (2nd col)
-        if(nrow(model_obj$bootstrapped_se) == length(coeffs)){
-          se_vec <- as.numeric(model_obj$bootstrapped_se[[2]])
-        }
-      }
-    } else {
-      # It is a vector
-      se_vec <- as.numeric(model_obj$bootstrapped_se)
+  # Extract standard errors, always matched to the parameters by name
+  if (!is.null(model_obj$vcov) && is.matrix(model_obj$vcov)) {
+    se_all <- sqrt(pmax(diag(model_obj$vcov), 0))
+    names(se_all) <- rownames(model_obj$vcov)
+  } else if (is.data.frame(model_obj$bootstrapped_se) &&
+             all(c("term", "sd") %in% names(model_obj$bootstrapped_se))) {
+    se_all <- stats::setNames(as.numeric(model_obj$bootstrapped_se$sd),
+                              model_obj$bootstrapped_se$term)
+  } else if (!is.null(model_obj$bootstrapped_se)) {
+    se_all <- model_obj$bootstrapped_se
+  } else {
+    se_all <- model_obj$se
+  }
+  if (!is.null(se_all)) {
+    if (!is.null(names(se_all)) && all(params %in% names(se_all))) {
+      se_vec <- as.numeric(se_all[params])
+    } else if (length(se_all) == length(coeffs)) {
+      se_vec <- as.numeric(se_all)
     }
-    using_bootstrap <- TRUE
-    # cat("(Using bootstrapped standard errors)\n")
-    
-  } else if (!is.null(model_obj$se)) {
-    se_vec <- as.numeric(model_obj$se)
   }
   
   # Final length check: if SE vector doesn't match coeffs, force all to NA to
@@ -135,12 +141,12 @@ summary.flexCountReg <- function(object, ...) {
     dplyr::mutate(across(where(is.numeric), \(x) round(x, digits = digits)))
   
   # Add Offset row if present
-  if (!is.null(model_obj$offset)){
+  if (!is.null(model_obj[["offset"]]) && length(model_obj[["offset"]]) > 0){
     # Handle multiple offsets case
-    offset_name <- if (length(model_obj$offset) > 1) {
+    offset_name <- if (length(model_obj[["offset"]]) > 1) {
       "Offset" 
       } else { 
-        model_obj$offset
+        model_obj[["offset"]]
       }
     
     mod.sum <- tibble::add_row(

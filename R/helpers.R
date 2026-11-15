@@ -5,42 +5,108 @@
 #' @importFrom randtoolbox halton
 NULL
 
-# create function to clean data and run countreg for bootstrapping
-# create function to clean data and run countreg for bootstrapping
-mod.boot <- function(data, formula, family, offset, weights, 
-                     dis_param_formula_1, dis_param_formula_2,
-                     underreport_formula, underreport_family,
-                     ndraws, method, max.iters, start.vals,
-                     engine = "halton"){
-  
-  # data comes in as a resample object from modelr, convert to df
-  df <- as.data.frame(data)
-  
-  # Recursively call countreg with the bootstrap sample
-  # We set stderr = "none" to prevent infinite recursion
-  # We use the provided start.vals (from the original fit) to speed up
-  # convergence
-  fit <- tryCatch({
-    countreg(formula = formula, 
-             data = df, 
-             family = family, 
-             offset = offset, 
-             weights = weights, 
-             verbose = FALSE, 
-             dis_param_formula_1 = dis_param_formula_1, 
-             dis_param_formula_2 = dis_param_formula_2, 
-             underreport_formula = underreport_formula,
-             underreport_family = underreport_family,
-             ndraws = ndraws, 
-             method = method, 
-             max.iters = max.iters, 
-             start.vals = start.vals, 
-             stderr = "normal", 
-             bootstraps = NULL,
-             engine=engine)
-  }, error = function(e) return(NULL)) # Handle failures in bootstrap samples
-  
-  return(fit)
+# ---- Internal helpers for estimators ----------------------------------------
+
+# Families supported by countreg() (names used by get_params/get_probFunc)
+.fcr_families <- c("POISSON", "GP1", "GP2", "NB1", "NB2", "NBP", "PLN", "PGE",
+                   "PIG1", "PIG2", "PIG", "PL", "PLG", "PLL", "PW", "SI", "GW",
+                   "COM")
+
+# Validate and normalize the optimizer name. An unknown method is an error.
+.fcr_check_method <- function(method) {
+  valid <- c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH")
+  m <- toupper(gsub("[^[:alnum:]]", "", method))
+  if (length(m) != 1L || !m %in% valid) {
+    stop("`method` must be one of: ", toString(paste0('"', valid, '"')), ".",
+         call. = FALSE)
+  }
+  m
+}
+
+# Validate user starting values: right length, matched by name when named.
+.fcr_check_start <- function(start.vals, x_names) {
+  start.vals <- unlist(start.vals)
+  if (!is.numeric(start.vals)) {
+    stop("`start.vals` must be numeric.", call. = FALSE)
+  }
+  if (length(start.vals) != length(x_names)) {
+    stop("`start.vals` has ", length(start.vals), " value(s), but the model ",
+         "has ", length(x_names), " parameter(s): ", toString(x_names), ".",
+         call. = FALSE)
+  }
+  nm <- names(start.vals)
+  if (!is.null(nm) && all(nzchar(nm))) {
+    if (!setequal(nm, x_names)) {
+      stop("Names of `start.vals` do not match the model parameters. ",
+           "Expected: ", toString(x_names), ".", call. = FALSE)
+    }
+    start.vals <- start.vals[x_names]
+  }
+  names(start.vals) <- x_names
+  start.vals
+}
+
+# Probability of an event being reported, given the underreporting linear
+# predictor. Both links use the same sign convention: a positive coefficient
+# means the event is more likely to be reported.
+.report_prob <- function(lin, family = c("logit", "probit")) {
+  switch(match.arg(family),
+         logit = stats::plogis(lin),
+         probit = stats::pnorm(lin))
+}
+
+# Did maxLik converge? Return codes differ by optimizer.
+.fcr_converged <- function(fit, method) {
+  code <- fit$code
+  if (is.null(code)) return(NA)
+  if (method %in% c("NR", "BHHH", "BFGSR")) {
+    code %in% c(1L, 2L, 8L)
+  } else {
+    code == 0L
+  }
+}
+
+# Covariance from the Hessian, with a generalized-inverse fallback.
+.fcr_hessian_vcov <- function(fit) {
+  H <- fit$hessian
+  V <- tryCatch(solve(-H), error = function(e) NULL)
+  if (is.null(V)) {
+    warning("The Hessian is singular; standard errors use a generalized ",
+            "inverse and may be unreliable. The model may not be identified.",
+            call. = FALSE)
+    V <- MASS::ginv(-H)
+  }
+  V
+}
+
+# Nonparametric bootstrap of a set of estimates.
+#   n          number of rows (or clusters) to resample
+#   B          number of replicates
+#   coef_names names of the estimates, in order
+#   refit      function(idx) returning a named numeric vector of estimates
+# Returns a B x length(coef_names) matrix; failed replicates are NA rows.
+.fcr_bootstrap <- function(n, B, coef_names, refit) {
+  draws <- matrix(NA_real_, nrow = B, ncol = length(coef_names),
+                  dimnames = list(NULL, coef_names))
+  for (b in seq_len(B)) {
+    idx <- sample.int(n, n, replace = TRUE)
+    est <- tryCatch(suppressWarnings(suppressMessages(refit(idx))),
+                    error = function(e) NULL)
+    if (!is.null(est) && all(coef_names %in% names(est))) {
+      draws[b, ] <- est[coef_names]
+    }
+  }
+  n_ok <- sum(stats::complete.cases(draws))
+  if (n_ok < 2) {
+    stop("Fewer than 2 bootstrap replicates succeeded; bootstrapped ",
+         "standard errors cannot be computed.", call. = FALSE)
+  }
+  if (n_ok < 0.9 * B) {
+    warning(B - n_ok, " of ", B, " bootstrap replicates failed; the ",
+            "bootstrapped standard errors use the ", n_ok, " that succeeded.",
+            call. = FALSE)
+  }
+  draws
 }
 
 #' Tidy a flexCountReg object
@@ -90,7 +156,7 @@ get_params <- function(family) {
     "PW" = list("ln(alpha)", "ln(sigma)"),
     "SI" = list("gamma", "ln(sigma)"),
     "GW" = list("ln(k)", "ln(rho-1)"),
-    "COM" = list("ln(nu)", NULL),
+    "COM" = list("ln(nu)", NULL)
   )
 }
 

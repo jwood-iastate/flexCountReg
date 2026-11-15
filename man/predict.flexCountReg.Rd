@@ -22,7 +22,7 @@ columns. The outcome is not required. If omitted, predictions are made for
 the data used to fit the model.}
 
 \item{...}{optional arguments passed to the function. This includes \code{method}.
-Passing the data as \code{data =} is deprecated; use \code{newdata}.}
+Passing the data as \verb{data =} is deprecated; use \code{newdata}.}
 
 \item{type}{the type of prediction. \code{"response"} (default) is the
 expected observed count. For models with underreporting this is
@@ -46,24 +46,29 @@ Generates predictions for the expected count (lambda) for observations.
 For \strong{countreg.rp} (Random Parameters) models, three methods are
 available:
 \itemize{
-  \item \strong{Simulated}: Uses Halton draws to simulate the random
-  parameters and averages the outcomes. This is a simulation-based
-  approximation.
-  \item \strong{Individual} (alias \code{EB}): Empirical Bayes
-  observation-specific predictions (Wood and Gayah, 2025, Eqs. 5-7). Each
-  simulation draw is weighted by the likelihood of the unit's observed
-  outcomes (all of a panel's rows when \code{panel_id} was used), giving
-  conditional coefficients \eqn{E[\beta_i | y_i]}. By default these are
-  used in the mean function, as in the paper; pass
-  \code{eb_type = "mean"} to instead return the conditional mean
-  \eqn{E[\mu_{it} | y_i]}. The conditional coefficients and their
-  conditional standard deviations are returned as the attributes
-  \code{"eb_coefficients"} and \code{"eb_sd"}. Requires the outcome (and
-  the \code{panel_id} column, if used) in \code{newdata}, so it is meant
-  for data with observed outcomes.
-  \item \strong{Exact}: Uses the analytical Moment Generating Functions
-  (MGFs) of the random parameter distributions to calculate the exact
-  expected value. This method is faster and removes simulation error.
+\item \strong{Simulated}: Uses Halton draws to simulate the random
+parameters and averages the outcomes. This is a simulation-based
+approximation.
+\item \strong{Individual} (alias \code{EB}): Empirical Bayes
+observation-specific predictions (Wood and Gayah, 2025, Eqs. 5-7). Each
+simulation draw is weighted by the likelihood of the unit's observed
+outcomes (all of a panel's rows when \code{panel_id} was used), giving
+conditional coefficients \eqn{E[\beta_i | y_i]}. By default these are
+used in the mean function, as in the paper; pass
+\code{eb_type = "mean"} to instead return the conditional mean
+\eqn{E[\mu_{it} | y_i]}. The conditional coefficients and their
+conditional standard deviations are returned as the attributes
+\code{"eb_coefficients"} and \code{"eb_sd"}. Requires the outcome (and
+the \code{panel_id} column, if used) in \code{newdata}, so it is meant
+for data with observed outcomes.
+\item \strong{Exact}: Uses the moment generating functions (MGFs) of
+the random parameter distributions (Wood and Gayah, 2025, Appendix A),
+including heterogeneity in means and variances. This is exact for normal,
+uniform, triangular and gamma parameters and has no simulation error. For
+lognormal parameters it uses a Laplace (saddlepoint) approximation, which
+is accurate for \eqn{x < 0}; for \eqn{x > 0} (and for gamma parameters
+with \eqn{x\sigma^2/\mu \ge 1}) the expected value is infinite and
+\code{Inf} is returned with a warning.
 }
 
 For \strong{countreg}, \strong{poisLindRE}, and \strong{RENB} models, the
@@ -80,11 +85,11 @@ if an offset column is missing from \code{newdata}.
 }
 \note{
 optional parameter \code{method}: Only valid for random parameters models
-  (\code{countreg.rp}). Options include \code{Simulated} (default),
-  \code{Individual} (or \code{EB}), or \code{Exact}.
+(\code{countreg.rp}). Options include \code{Simulated} (default),
+\code{Individual} (or \code{EB}), or \code{Exact}.
 
 optional parameter \code{eb_type}: for \code{method = "Individual"},
-  either \code{"coefficients"} (default) or \code{"mean"}.
+either \code{"coefficients"} (default) or \code{"mean"}.
 }
 \examples{
 \donttest{

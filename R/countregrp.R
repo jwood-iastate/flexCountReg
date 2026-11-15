@@ -15,33 +15,82 @@
 #' @param rpardists an optional named vector whose names are the random
 #'   parameters and values the distribution. The distribution options include
 #'   normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma
-#'   ("g"). If not provided, normal is used.
+#'   ("g"). Values are matched to the random parameters by name; every random
+#'   parameter must be named. A single unnamed value applies to all random
+#'   parameters. If not provided, normal is used. See Details for how each
+#'   distribution's \code{St.Dev} parameter is defined.
 #' @param dis_param_formula_1 a symbolic description of the model for the 
 #'        first parameter of the count distribution (e.g., ln(alpha) for NB2).
 #' @param dis_param_formula_2 a symbolic description of the model for the 
 #'        second parameter of the count distribution (if applicable).
-#' @param het_mean_formula an optional symbolic description of the model 
-#'        for heterogeneity in the means of the random parameters.
-#' @param het_var_formula an optional symbolic description of the model 
-#'        for heterogeneity in the variances of the random parameters.
+#' @param het_mean_formula an optional one-sided formula for heterogeneity in
+#'   the means of the random parameters. Each random parameter gets its own
+#'   coefficient for each variable (named \code{HetMean:<parameter>:<variable>}),
+#'   and the effect is additive: \eqn{\beta_{ik} = \mu_k + z_i'\delta_k}
+#'   (Wood and Gayah, 2025, Eq. 2). For lognormal parameters the shift is on the
+#'   log scale, and for gamma parameters it is multiplicative,
+#'   \eqn{\mu_k \exp(z_i'\delta_k)}, so the mean stays positive. The
+#'   intercept is dropped.
+#' @param het_var_formula an optional one-sided formula for heterogeneity in
+#'   the scales of the random parameters:
+#'   \eqn{\sigma_{ik} = \sigma_k \exp(s_i'\phi)}, with \eqn{\phi} shared by
+#'   all random parameters. The intercept is dropped.
 #' @param ndraws the number of Halton draws to use for estimating the random 
 #'        parameters.
 #' @param scrambled if the Halton draws should be scrambled.
 #' @param correlated if the random parameters should be correlated. 
 #'        If TRUE, only normal distributions are used.
 #' @param panel_id an optional variable name (string) or vector defining the
-#'   panel structure (repeated measures). If provided, the standard errors and
-#'   likelihood are estimated accounting for the panel structure.
-#' @param offset variable name to be used as an offset.
-#' @param weights variable name to be used as frequency weights.
+#'   panel structure (repeated measures). If provided, each panel shares one
+#'   draw of the random parameters, and the likelihood and standard errors
+#'   account for the panel structure.
+#' @param offset the name of a variable, or vector of variable names, to be
+#'   used as an offset (summed when several are given). An offset can instead
+#'   be given with \code{offset()} in \code{formula}; use only one of the two.
+#' @param weights the name of a variable, or a numeric vector, of frequency
+#'   weights. With \code{panel_id}, weights apply to whole panels (the panel
+#'   log-likelihood is weighted), so they should be constant within a panel.
 #' @param method optimization method (e.g., "BHHH", "BFGS", "NM").
 #' @param max.iters maximum number of iterations.
 #' @param engine the engine to use for the integration if the Poisson Lognormal 
 #'   (PLN) distribution is used. Options include "halton" which uses Halton 
 #'   draws or "poilog" which uses the poilog package. The default is "halton".
-#' @param start.vals optional vector of starting values.
+#' @param start.vals optional vector of starting values, one per parameter.
+#'   Named values are matched to the parameters by name.
 #' @param verbose logical.
 #' 
+#' @details
+#' \strong{Random parameter distributions.} Each random parameter is
+#' \eqn{\beta = \mu + \sigma \upsilon}, where the \code{:Mean} and
+#' \code{:St.Dev} estimates are \eqn{\mu} and \eqn{\sigma}:
+#' \itemize{
+#'   \item normal ("n"): \eqn{\upsilon \sim N(0, 1)}, so \eqn{\sigma} is the
+#'   standard deviation.
+#'   \item uniform ("u") and triangular ("t"): \eqn{\upsilon} is uniform or
+#'   symmetric triangular on \eqn{[-1, 1]}, so \eqn{\beta} lies in
+#'   \eqn{[\mu - \sigma, \mu + \sigma]}. Here \eqn{\sigma} is a half-width;
+#'   the standard deviation is \eqn{\sigma/\sqrt{3}} (uniform) or
+#'   \eqn{\sigma/\sqrt{6}} (triangular). Models fitted before version 0.1.3
+#'   used \eqn{[\mu - \sigma/2, \mu + \sigma/2]} for the uniform; their
+#'   \eqn{\sigma} is converted automatically in \code{predict()}.
+#'   \item lognormal ("ln"): \eqn{\beta = \exp(\mu + \sigma \upsilon)},
+#'   always positive. The expected value of \eqn{\exp(x\beta)} is infinite
+#'   for \eqn{x > 0}, so marginal (Exact or Simulated) predictions do not exist
+#'   for observations with a positive value of a lognormal random parameter's
+#'   variable. Use the variable's negative (so \eqn{x \le 0}), a gamma random
+#'   parameter, or \code{method = "Individual"} predictions instead.
+#'   \item gamma ("g"): mean \eqn{\mu > 0} and standard deviation
+#'   \eqn{\sigma}, so the coefficient is always positive.
+#' }
+#'
+#' The mixing distribution of the PLN, PGE, PLL and PW families uses its own
+#' Halton dimension, independent of the random parameters' draws.
+#'
+#' @references
+#' Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and interpretation for
+#' random parameter generalized linear models. \emph{Accident Analysis and
+#' Prevention}, 220, 108147.
+#'
 #' @returns
 #' An object of class `countreg` which is a list with the following components:
 #' \itemize{
@@ -122,300 +171,212 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          start.vals = NULL, verbose = FALSE,
                         engine="halton") {
   
-  print.level <- ifelse(verbose, 2, 0)
+  print.level <- if (verbose) 2 else 0
   
-  # --- 1. Family and Parameter Setup ---
+  # --- 1. Family, method and argument checks ---
   family <- toupper(gsub("[^[:alnum:]]", "", family))
-  params <- get_params(family) # From helpers.R
-  # NOTE: probFunc is now retrieved inside the likelihood function to prevent
-  # scoping issues.
-  
-  # --- 2. Data Preparation ---
-  mod1_frame <- stats::model.frame(formula, data)
-  y_name <- all.vars(formula)[1]
-  y <- stats::model.response(mod1_frame)
-  
-  data <- as_tibble(data, .name_repair="minimal")
-  
-  # Panel ID Generation
-  if (is.null(panel_id)) {
-    nn <- nrow(data)
-    data$panel_id_internal <- factor(1:nn)
-  } else {
-    cond1 <- (length(panel_id) == 1) && (is.character(panel_id)) && 
-      (panel_id %in% names(data))
-    if (cond1) {
-      data$panel_id_internal <- factor(data[[panel_id]])
-    } else if (length(panel_id) == nrow(data)) {
-      data$panel_id_internal <- factor(panel_id)
-    } else {
-      msg <- paste0("panel_id must be a column name in 'data' or a vector of ", 
-                    "the same length as the data.")
-      warning(msg)
-    }
+  if (!family %in% .fcr_families) {
+    stop("Unknown `family` \"", family, "\". Must be one of: ",
+         toString(.fcr_families), ".", call. = FALSE)
+  }
+  params <- get_params(family)
+  method <- .fcr_check_method(method)
+  if (is.null(params[[1]]) && !is.null(dis_param_formula_1)) {
+    stop("`dis_param_formula_1` was given, but family \"", family,
+         "\" has no distribution parameter to model.", call. = FALSE)
+  }
+  if (is.null(params[[2]]) && !is.null(dis_param_formula_2)) {
+    stop("`dis_param_formula_2` was given, but family \"", family,
+         "\" has no second distribution parameter to model.", call. = FALSE)
   }
   
-  panel_group <- data$panel_id_internal 
-  
-  # Weights
-  if (is.null(weights)){
-    weights.df <- rep(1, length(y))
-  }else{
-    weights.df <- data %>% pull(weights)
-  }
-  
-  # Offset
-  if (!is.null(offset)){
-    
-    X_offset <- data %>% select(all_of(offset))
-    
-    if (ncol(X_offset) > 1){
-      X_offset <- rowSums(X_offset) 
-    } else {
-      X_offset <- X_offset[[1]]
+  # Panel id: a column name, or a vector with one value per row
+  data <- as.data.frame(data)
+  group_var <- NULL
+  if (!is.null(panel_id)) {
+    if (is.character(panel_id) && length(panel_id) == 1L) {
+      if (!panel_id %in% names(data)) {
+        stop("`panel_id` \"", panel_id, "\" is not a column of `data`.",
+             call. = FALSE)
       }
-  } else {
-    
-    X_offset <- rep(0, nrow(data))
-  }
-  
-  # Handle Correlated Flag
-  if(correlated && !is.null(rpardists) && any(rpardists != "n")){
-    msg <- paste0("When correlated=TRUE, only normal distribution is used. ", 
-                  "Resetting rpardists to 'n'.")
-    warning(msg)
-    rpardists <- NULL 
-  }
-  
-  # --- 3. Matrix Generation ---
-  
-  # Fixed Matrix
-  X_Fixed <- as.matrix(modelr::model_matrix(data, formula))
-  
-  # Random Matrix
-  X_rand <- as.matrix(modelr::model_matrix(data, rpar_formula))
-  
-  # FIX: Auto-remove Intercept if present but not in rpardists
-  # This prevents mismatch errors when formula is ~var but rpardists =
-  # c(var="n")
-  if("(Intercept)" %in% colnames(X_rand) && !is.null(rpardists)){
-    # Check if user explicitly named "Intercept" or "(Intercept)" in rpardists
-    if(!any(grepl("intercept", names(rpardists), ignore.case = TRUE))){
-      # If not, remove the intercept column
-      X_rand <- X_rand[ , colnames(X_rand) != "(Intercept)", drop = FALSE]
+      group_var <- panel_id
+    } else if (length(panel_id) == nrow(data)) {
+      data$.fcr_panel_id <- panel_id
+      group_var <- ".fcr_panel_id"
+    } else {
+      stop("`panel_id` must be a column name in `data` or a vector with ",
+           "one value per row of `data`.", call. = FALSE)
     }
   }
   
-  # Distribution Parameter Matrices
-  if (is.null(params[[1]])) {
-    N_dis_1 <- 0; X_dis_1 <- NULL
-  } else if (!is.null(dis_param_formula_1)) {
-    X_dis_1 <- as.matrix(modelr::model_matrix(data, dis_param_formula_1))
-    N_dis_1 <- ncol(X_dis_1)
-  } else {
-    X_dis_1 <- NULL; N_dis_1 <- 1 
+  if (correlated && !is.null(rpardists) && any(rpardists != "n")) {
+    warning("When correlated = TRUE, only normal distributions are used. ",
+            "Resetting rpardists to 'n'.", call. = FALSE)
+    rpardists <- NULL
   }
   
-  if (is.null(params[[2]])) {
-    N_dis_2 <- 0; X_dis_2 <- NULL
-  } else if (!is.null(dis_param_formula_2)) {
-    X_dis_2 <- as.matrix(modelr::model_matrix(data, dis_param_formula_2))
-    N_dis_2 <- ncol(X_dis_2)
-  } else {
-    X_dis_2 <- NULL; N_dis_2 <- 1 
+  # --- 2. Data: one complete-case model frame for everything ---
+  prep <- prepare_model_data(formula, data,
+                             aux_formulas = list(
+                               rpar = rpar_formula,
+                               dis1 = dis_param_formula_1,
+                               dis2 = dis_param_formula_2,
+                               het_mean = het_mean_formula,
+                               het_var = het_var_formula),
+                             offset = offset, weights = weights,
+                             group_var = group_var)
+  if (prep$n_dropped > 0) {
+    message(prep$n_dropped, " row(s) with missing values were removed.")
+  }
+  y <- prep$y
+  N_obs <- length(y)
+  X_Fixed <- prep$X
+  X_offset <- prep$offset
+  X_dis_1 <- prep$aux$dis1
+  X_dis_2 <- prep$aux$dis2
+  X_het_mean <- prep$aux$het_mean
+  X_het_var <- prep$aux$het_var
+  panel_group <- if (is.null(prep$group)) factor(seq_len(N_obs)) else
+    prep$group
+  
+  # Panel-level frequency weights: the panel log-likelihood is weighted
+  w_obs <- prep$weights
+  w_panel <- tapply(w_obs, panel_group, `[`, 1)
+  w_panel <- as.numeric(w_panel[levels(panel_group)])
+  if (!is.null(weights) &&
+      any(tapply(w_obs, panel_group, function(v) diff(range(v))) > 0)) {
+    warning("`weights` vary within panels; the first weight of each panel ",
+            "is used for the panel.", call. = FALSE)
   }
   
-  # Heterogeneity Matrices
-  if (!is.null(het_mean_formula)) {
-    X_het_mean <- model.matrix(het_mean_formula, data)
-    if ("(Intercept)" %in% colnames(X_het_mean)) {
-      X_het_mean <- X_het_mean[, -which(colnames(X_het_mean) == "(Intercept)"), 
-                               drop = FALSE]
+  # --- 3. Random parameters ---
+  X_rand <- prep$aux$rpar
+  rand_has_int <- "(Intercept)" %in% colnames(X_rand)
+  if (rand_has_int) {
+    named_int <- !is.null(names(rpardists)) &&
+      any(grepl("intercept", names(rpardists), ignore.case = TRUE))
+    if ("(Intercept)" %in% colnames(X_Fixed)) {
+      if (named_int) {
+        stop("The intercept is in both `formula` and `rpar_formula`. For a ",
+             "random intercept, remove it from `formula` (add `- 1`).",
+             call. = FALSE)
+      }
+      # The intercept implied by rpar_formula is not a random parameter
+      X_rand <- X_rand[, colnames(X_rand) != "(Intercept)", drop = FALSE]
     }
-    N_het_mean <- ncol(X_het_mean)
-  } else {
-    X_het_mean <- NULL; N_het_mean <- 0
   }
-  
-  if (!is.null(het_var_formula)) {
-    X_het_var <- model.matrix(het_var_formula, data)
-    if ("(Intercept)" %in% colnames(X_het_var)) {
-      X_het_var <- X_het_var[, -which(colnames(X_het_var) == "(Intercept)"), 
-                             drop = FALSE]
-    }
-    N_het_var <- ncol(X_het_var)
-  } else {
-    X_het_var <- NULL; N_het_var <- 0
-  }
-  
-  cond <- 
-    "\\(Intercept\\)" %in% colnames(X_Fixed) && 
-    "\\(Intercept\\)" %in% colnames(X_rand) 
-  if (cond){
-    warning("Do not include Intercept in both fixed and random formulas.")
-  }
-  
   rpar <- colnames(X_rand)
-  N_fixed <- ncol(X_Fixed)
   N_rand <- length(rpar)
+  if (N_rand == 0) {
+    stop("`rpar_formula` has no random parameters.", call. = FALSE)
+  }
+  rpardists <- .fcr_match_rpardists(rpardists, rpar, correlated)
   
-  # Draws
-  hdraws <- 
-    as.matrix(randtoolbox::halton(ndraws, length(rpar), mixed = scrambled))
+  N_fixed <- ncol(X_Fixed)
   
-  # Haltons for the Distribution
-  dist_haltons <- randtoolbox::halton(ndraws, 1) 
+  # Distribution parameter counts
+  N_dis_1 <- if (is.null(params[[1]])) 0 else if (is.null(X_dis_1)) 1 else
+    ncol(X_dis_1)
+  N_dis_2 <- if (is.null(params[[2]])) 0 else if (is.null(X_dis_2)) 1 else
+    ncol(X_dis_2)
+  N_het_mean <- if (is.null(X_het_mean)) 0 else ncol(X_het_mean) * N_rand
+  N_het_var <- if (is.null(X_het_var)) 0 else ncol(X_het_var)
+  
+  # Halton draws: one dimension per random parameter, plus a separate one
+  # for the mixing distribution of PLN, PGE, PLL and PW families
+  all_draws <- as.matrix(randtoolbox::halton(ndraws, N_rand + 1,
+                                             mixed = scrambled))
+  hdraws <- all_draws[, seq_len(N_rand), drop = FALSE]
+  dist_haltons <- all_draws[, N_rand + 1]
   normed_dist_haltons <- stats::qnorm(dist_haltons)
   
-  # --- 4. Starting Values ---
-  if(!is.null(start.vals)){
-    start <- unname(start.vals)
-    x_names <- names(start.vals)
+  # --- 4. Parameter names and starting values ---
+  x_names <- c(colnames(X_Fixed), paste0(rpar, ":Mean"))
+  if (correlated) {
+    chol_names <- character(0)
+    for (i in seq_along(rpar)) for (j in 1:i) {
+      chol_names <- c(chol_names, paste0("Chol:", rpar[i], "_", rpar[j]))
+    }
+    x_names <- c(x_names, chol_names)
   } else {
-    # 1. Fixed & Random Means (via GLM Poisson)
-    all_vars <- c(colnames(X_Fixed), colnames(X_rand))
-    all_vars <- all_vars[!grepl("ntercept", all_vars)] 
-    init_form <- reformulate(all_vars, response = y_name)
-    
-    glm_mod <- tryCatch(glm(init_form, data = data, family = poisson), 
-                        error = function(e) NULL)
-    
-    if(is.null(glm_mod)) {
-      start <- rep(0, N_fixed + N_rand)
+    x_names <- c(x_names, paste0(rpar, ":St.Dev"))
+  }
+  if (N_het_mean > 0) {
+    x_names <- c(x_names, paste0("HetMean:", rep(rpar, each = ncol(X_het_mean)),
+                                 ":", colnames(X_het_mean)))
+  }
+  if (N_het_var > 0) {
+    x_names <- c(x_names, paste0("HetVar:", colnames(X_het_var)))
+  }
+  if (N_dis_1 > 0) {
+    x_names <- c(x_names, if (is.null(X_dis_1)) params[[1]] else
+      paste0(params[[1]], ":", colnames(X_dis_1)))
+  }
+  if (N_dis_2 > 0) {
+    x_names <- c(x_names, if (is.null(X_dis_2)) params[[2]] else
+      paste0(params[[2]], ":", colnames(X_dis_2)))
+  }
+  
+  if (!is.null(start.vals)) {
+    start <- .fcr_check_start(start.vals, x_names)
+  } else {
+    # Fixed and random means from a Poisson GLM on the same rows, offset
+    # and weights
+    X_glm <- cbind(X_Fixed, X_rand)
+    glm_mod <- tryCatch(
+      stats::glm.fit(X_glm, y, weights = w_obs, offset = X_offset,
+                     family = stats::poisson()),
+      error = function(e) NULL)
+    b <- if (is.null(glm_mod)) rep(0, ncol(X_glm)) else glm_mod$coefficients
+    b[is.na(b)] <- 0
+    s_fixed <- b[seq_len(N_fixed)]
+    s_rand <- b[N_fixed + seq_len(N_rand)]
+    # Gamma random parameters need a positive mean
+    is_g <- rpardists == "g"
+    s_rand[is_g] <- pmax(abs(s_rand[is_g]), 0.1)
+    if (correlated) {
+      s_var <- unlist(lapply(seq_along(rpar), function(i) {
+        c(rep(0, i - 1), 0.1)
+      }))
     } else {
-      glm_coef <- coef(glm_mod)
-      s_fixed <- glm_coef[match(colnames(X_Fixed), names(glm_coef))]
-      s_fixed[is.na(s_fixed)] <- 0
-      
-      s_rand <- glm_coef[match(colnames(X_rand), names(glm_coef))]
-      s_rand[is.na(s_rand)] <- 0
-      
-      start <- c(s_fixed, s_rand)
+      s_var <- ifelse(is_g, pmax(0.5 * s_rand, 0.05), 0.1)
     }
-    x_names <- c(colnames(X_Fixed), paste0(rpar, ":Mean"))
-    
-    # 2. Random Variances
-    if (correlated){
-      chol_starts <- numeric(0)
-      chol_names <- numeric(0)
-      for (i in seq_along(rpar)){
-        for (j in 1:i){
-          val <- if(i==j) 0.1 else 0
-          chol_starts <- c(chol_starts, val)
-          chol_names <- c(chol_names, paste0('Chol:', rpar[i], '_', rpar[j]))
-        }
-      }
-      start <- c(start, chol_starts)
-      x_names <- c(x_names, chol_names)
-    } else {
-      start <- c(start, rep(0.1, N_rand))
-      x_names <- c(x_names, paste0(rpar, ':St.Dev'))
-    }
-    
-    # 3. Heterogeneity
-    if(N_het_mean > 0) {
-      start <- c(start, rep(0, N_het_mean))
-      x_names <- c(x_names, paste0("HetMean:", colnames(X_het_mean)))
-    }
-    if(N_het_var > 0) {
-      start <- c(start, rep(0, N_het_var))
-      x_names <- c(x_names, paste0("HetVar:", colnames(X_het_var)))
-    }
-    
-    # 4. Distribution Parameters
-    if(N_dis_1 > 0) {
-      if(is.null(X_dis_1)) {
-        start <- c(start, -2) 
-        x_names <- c(x_names, params[[1]])
-      } else {
-        start <- c(start, rep(0, N_dis_1)) 
-        x_names <- c(x_names, paste0(params[[1]], ":", colnames(X_dis_1)))
-      }
-    }
-    
-    if(N_dis_2 > 0) {
-      if(is.null(X_dis_2)) {
-        start <- c(start, -2) 
-        x_names <- c(x_names, params[[2]])
-      } else {
-        start <- c(start, rep(0, N_dis_2)) 
-        x_names <- c(x_names, paste0(params[[2]], ":", colnames(X_dis_2)))
-      }
-    }
-    
+    start <- c(s_fixed, s_rand, s_var, rep(0, N_het_mean + N_het_var),
+               rep(-2, N_dis_1 > 0 && is.null(X_dis_1)),
+               rep(0, if (!is.null(X_dis_1)) N_dis_1 else 0),
+               rep(-2, N_dis_2 > 0 && is.null(X_dis_2)),
+               rep(0, if (!is.null(X_dis_2)) N_dis_2 else 0))
     names(start) <- x_names
   }
   
-  # --- 5. Likelihood Function ---
+  # --- 5. Likelihood ---
+  local_probFunc <- get_probFunc(family)
+  n_var_params <- if (correlated) N_rand * (N_rand + 1) / 2 else N_rand
   
   ll_countreg_rp <- function(p) {
-    # DEFINE probFunc INSIDE THE LIKELIHOOD TO FIX SCOPING
-    local_probFunc <- get_probFunc(family)
-    
-    if(is.null(local_probFunc)) {
-      warning(paste0("Probability function not found for family: ", family))
+    idx <- 0
+    take <- function(k) {
+      if (k == 0) return(NULL)
+      out <- p[idx + seq_len(k)]
+      idx <<- idx + k
+      out
     }
-    
-    current_idx <- 0
-    
-    fixed_coefs <- p[(current_idx + 1):(current_idx + N_fixed)]
-    current_idx <- current_idx + N_fixed
-    
-    rand_means <- p[(current_idx + 1):(current_idx + N_rand)]
-    current_idx <- current_idx + N_rand
-    
-    n_var_params <- if(correlated) N_rand * (N_rand + 1) / 2 else N_rand
-    rand_vars <- p[(current_idx + 1):(current_idx + n_var_params)]
-    current_idx <- current_idx + n_var_params
-    
-    het_mean_coefs <- NULL
-    if (N_het_mean > 0) {
-      het_mean_coefs <- p[(current_idx + 1):(current_idx + N_het_mean)]
-      current_idx <- current_idx + N_het_mean
+    fixed_coefs <- take(N_fixed)
+    rand_means <- take(N_rand)
+    rand_vars <- take(n_var_params)
+    het_mean_coefs <- take(N_het_mean)
+    if (!is.null(het_mean_coefs)) {
+      het_mean_coefs <- matrix(het_mean_coefs, ncol = N_rand)
     }
+    het_var_coefs <- take(N_het_var)
+    p_dis_1 <- take(N_dis_1)
+    p_dis_2 <- take(N_dis_2)
     
-    het_var_coefs <- NULL
-    if (N_het_var > 0) {
-      het_var_coefs <- p[(current_idx + 1):(current_idx + N_het_var)]
-      current_idx <- current_idx + N_het_var
-    }
+    vec_1 <- if (N_dis_1 == 0) NULL else if (is.null(X_dis_1))
+      rep(exp(p_dis_1), N_obs) else exp(as.vector(X_dis_1 %*% p_dis_1))
+    vec_2 <- if (N_dis_2 == 0) NULL else if (is.null(X_dis_2))
+      rep(exp(p_dis_2), N_obs) else exp(as.vector(X_dis_2 %*% p_dis_2))
     
-    p_dis_1 <- NULL
-    if (N_dis_1 > 0) {
-      p_dis_1 <- p[(current_idx + 1):(current_idx + N_dis_1)]
-      current_idx <- current_idx + N_dis_1
-    }
-    
-    p_dis_2 <- NULL
-    if (N_dis_2 > 0) {
-      p_dis_2 <- p[(current_idx + 1):(current_idx + N_dis_2)]
-      current_idx <- current_idx + N_dis_2
-    }
-    
-    # Construct Distribution Vectors
-    if (N_dis_1 > 0) {
-      if (is.null(X_dis_1)) {
-        val_1 <- exp(p_dis_1) 
-        vec_1 <- rep(val_1, nrow(data))
-      } else {
-        vec_1 <- exp(as.vector(X_dis_1 %*% p_dis_1))
-      }
-    } else {
-      vec_1 <- NULL
-    }
-    
-    if (N_dis_2 > 0) {
-      if (is.null(X_dis_2)) {
-        val_2 <- exp(p_dis_2)
-        vec_2 <- rep(val_2, nrow(data))
-      } else {
-        vec_2 <- exp(as.vector(X_dis_2 %*% p_dis_2))
-      }
-    } else {
-      vec_2 <- NULL
-    }
-    
-    # Calculate Mu (Obs x Draws)
     mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
     
     draws_info <- generate_random_draws(hdraws = hdraws, 
@@ -429,41 +390,27 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                                         het_var_coefs = het_var_coefs, 
                                         X_het_var = X_het_var,
                                         correlated = correlated)
-    
-    rpar_mult <- exp(draws_info$xb_rand_mat)
-    mu_mat <- sweep(rpar_mult, 1, mu_fixed, "*") 
-    
-    # Calculate Probabilities
-    N <- nrow(mu_mat)
+    mu_mat <- exp(draws_info$xb_rand_mat) * mu_fixed
     D <- ncol(mu_mat)
     
-    flat_mu <- as.vector(mu_mat) 
-    flat_y <- rep(y, times = D)
+    probs_flat <- tryCatch(
+      local_probFunc(y = rep(y, times = D), 
+                     predicted = as.vector(mu_mat), 
+                     alpha = if (!is.null(vec_1)) rep(vec_1, times = D),
+                     sigma = if (!is.null(vec_2)) rep(vec_2, times = D),
+                     haltons = dist_haltons, 
+                     normed_haltons = normed_dist_haltons,
+                     engine = engine),
+      error = function(e) rep(NA_real_, N_obs * D))
     
-    flat_alpha <- if(!is.null(vec_1)) rep(vec_1, times = D) else NULL
-    flat_sigma <- if(!is.null(vec_2)) rep(vec_2, times = D) else NULL
+    # Panel log-likelihood per draw, averaged over draws on the log scale
+    log_probs <- matrix(log(probs_flat), nrow = N_obs, ncol = D)
+    sum_log <- rowsum(log_probs, group = panel_group, reorder = TRUE)
+    m <- apply(sum_log, 1, max)
+    ll_panel <- m + log(rowMeans(exp(sum_log - m)))
+    ll_panel[!is.finite(m)] <- m[!is.finite(m)]
     
-    # Use the local_probFunc variable
-    probs_flat <- local_probFunc(y = flat_y, 
-                                 predicted = flat_mu, 
-                                 alpha = flat_alpha, 
-                                 sigma = flat_sigma,
-                                 haltons = dist_haltons, 
-                                 normed_haltons = normed_dist_haltons,
-                                 engine=engine)
-    
-    probs_mat <- matrix(probs_flat, nrow = N, ncol = D)
-    probs_mat <- probs_mat^weights.df 
-    
-    # Panel Aggregation
-    log_probs_mat <- log(probs_mat)
-    sum_log_probs <- rowsum(log_probs_mat, group = panel_group, reorder = FALSE)
-    lik_panel_draws <- exp(sum_log_probs)
-    lik_panel <- rowMeans(lik_panel_draws)
-    
-    ll_total <- log(lik_panel)
-    
-    return(ll_total)
+    ll_panel * w_panel
   }
   
   # --- 6. Optimization ---
@@ -472,13 +419,19 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     start = start,
     method = method,
     control = list(iterlim = max.iters, printLevel = print.level))
+  names(fit$estimate) <- x_names
+  fit$converged <- .fcr_converged(fit, method)
+  if (!isTRUE(fit$converged)) {
+    warning("The optimizer did not report convergence (",
+            trimws(fit$message), "). Consider a different `method` or more ",
+            "`max.iters`.", call. = FALSE)
+  }
   
   # --- 7. Result Packaging ---
-  fit$x_names <- names(start)
-  names(fit$estimate) <- names(start)
-  
+  fit$x_names <- x_names
   fit$formula <- formula
   fit$rpar_formula <- rpar_formula
+  fit$rpar <- rpar
   fit$het_mean_formula <- het_mean_formula
   fit$het_var_formula <- het_var_formula
   fit$dis_param_formula_1 <- dis_param_formula_1
@@ -489,19 +442,68 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$scrambled <- scrambled
   fit$correlated <- correlated
   fit$panel_id <- panel_id 
-  fit$offset <- offset
+  fit$offset <- prep$blueprint$offset_label
   fit$engine <- engine
-  fit$rpardists <- if(is.null(rpardists) || correlated) {
-    structure(rep("n", length(rpar)), names=rpar) 
-  } else {
-    rpardists
-  }
+  fit$rpardists <- rpardists
+  # Draw conventions (flexCountReg >= 0.1.3): uniform draws on
+  # [mu - sigma, mu + sigma], additive heterogeneity in means with one
+  # coefficient per random parameter, separate Halton dimension for the
+  # mixing distribution. Fits without this field used the older conventions.
+  fit$draw_version <- 2L
+  fit$blueprint <- prep$blueprint
+  fit$y <- y
+  fit$nobs <- N_obs
+  fit$n_groups <- nlevels(panel_group)
+  fit$rows_used <- prep$rows_used
+  fit$n_dropped <- prep$n_dropped
   
-  fit$se <- sqrt(diag(vcov(fit)))
+  V <- .fcr_hessian_vcov(fit)
+  dimnames(V) <- list(x_names, x_names)
+  fit$vcov <- V
+  fit$vcov_type <- "hessian"
+  fit$se <- sqrt(pmax(diag(V), 0))
+  names(fit$se) <- x_names
   
   obj <- .createFlexCountReg(model = fit, 
                              data = data, 
                              call = match.call(), 
                              formula = formula)
   return(obj)
+}
+
+# Validate random-parameter distributions and order them like `rpar`.
+.fcr_match_rpardists <- function(rpardists, rpar, correlated) {
+  valid <- c("n", "ln", "t", "u", "g")
+  if (is.null(rpardists) || correlated) {
+    return(stats::setNames(rep("n", length(rpar)), rpar))
+  }
+  rpardists <- unlist(rpardists)
+  nm <- names(rpardists)
+  if (is.null(nm)) {
+    if (length(rpardists) == 1L) {
+      return(stats::setNames(rep(rpardists, length(rpar)), rpar))
+    }
+    if (length(rpardists) != length(rpar)) {
+      stop("`rpardists` must be a named vector with one entry per random ",
+           "parameter: ", toString(rpar), ".", call. = FALSE)
+    }
+    nm <- rpar
+  }
+  nm[grepl("^\\(?intercept\\)?$", nm, ignore.case = TRUE)] <- "(Intercept)"
+  names(rpardists) <- nm
+  miss <- setdiff(rpar, nm)
+  extra <- setdiff(nm, rpar)
+  if (length(miss) || length(extra)) {
+    stop("Names of `rpardists` must match the random parameters (",
+         toString(rpar), ").",
+         if (length(miss)) paste0(" Missing: ", toString(miss), "."),
+         if (length(extra)) paste0(" Unknown: ", toString(extra), "."),
+         call. = FALSE)
+  }
+  bad <- setdiff(unique(rpardists), valid)
+  if (length(bad)) {
+    stop("Unknown random-parameter distribution(s): ", toString(bad),
+         ". Use one of ", toString(valid), ".", call. = FALSE)
+  }
+  rpardists[rpar]
 }

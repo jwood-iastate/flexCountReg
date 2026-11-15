@@ -54,9 +54,14 @@
 #'   \code{"eb_coefficients"} and \code{"eb_sd"}. Requires the outcome (and
 #'   the \code{panel_id} column, if used) in \code{newdata}, so it is meant
 #'   for data with observed outcomes.
-#'   \item \strong{Exact}: Uses the analytical Moment Generating Functions
-#'   (MGFs) of the random parameter distributions to calculate the exact
-#'   expected value. This method is faster and removes simulation error.
+#'   \item \strong{Exact}: Uses the moment generating functions (MGFs) of
+#'   the random parameter distributions (Wood and Gayah, 2025, Appendix A),
+#'   including heterogeneity in means and variances. This is exact for normal,
+#'   uniform, triangular and gamma parameters and has no simulation error. For
+#'   lognormal parameters it uses a Laplace (saddlepoint) approximation, which
+#'   is accurate for \eqn{x < 0}; for \eqn{x > 0} (and for gamma parameters
+#'   with \eqn{x\sigma^2/\mu \ge 1}) the expected value is infinite and
+#'   \code{Inf} is returned with a warning.
 #' }
 #' 
 #' For \strong{countreg}, \strong{poisLindRE}, and \strong{RENB} models, the
@@ -184,27 +189,30 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     params <- get_params(family)
     coefs <- model$estimate
     
+    # Conventions of the fit: fits made before flexCountReg 0.1.3 have no
+    # draw_version and used uniform draws on [mu - sigma/2, mu + sigma/2] and
+    # multiplicative heterogeneity in means shared by all random parameters.
+    legacy <- is.null(model$draw_version)
+    het_form <- if (legacy) "legacy" else "additive"
+    
     # --- Matrices, built with the training terms and factor levels ---
     bp <- .fcr_blueprint(object, aux_formulas = list(
+      rpar = model$rpar_formula,
       dis1 = model$dis_param_formula_1, dis2 = model$dis_param_formula_2,
       het_mean = model$het_mean_formula, het_var = model$het_var_formula))
     fd <- forge_new_data(bp, data)
     X_Fixed <- fd$X
     X_offset <- fd$offset
     
-    # Random-parameter matrix; same intercept rule as in estimation
-    train <- as.data.frame(object$data)
-    rpar_tt <- stats::delete.response(stats::terms(model$rpar_formula))
-    rpar_xlev <- stats::.getXlevels(
-      rpar_tt, stats::model.frame(rpar_tt, train, na.action = stats::na.omit))
-    X_rand <- .fcr_rhs_matrix(model$rpar_formula, data, xlev = rpar_xlev)
-    if("(Intercept)" %in% colnames(X_rand) && !is.null(rpardists)){
-      if(!any(grepl("intercept", names(rpardists), ignore.case=TRUE))){
-        X_rand <- X_rand[ , colnames(X_rand) != "(Intercept)", drop=FALSE]
-      }
+    # Random parameters, as named in the fitted coefficients
+    rpar <- if (!is.null(model$rpar)) model$rpar else
+      sub(":Mean$", "", grep(":Mean$", names(coefs), value = TRUE))
+    X_rand <- fd$aux$rpar[, rpar, drop = FALSE]
+    N_rand <- length(rpar)
+    if (is.null(rpardists)) rpardists <- stats::setNames(rep("n", N_rand), rpar)
+    if (!is.null(names(rpardists)) && all(rpar %in% names(rpardists))) {
+      rpardists <- rpardists[rpar]
     }
-    rpar <- colnames(X_rand)
-    N_rand <- ncol(X_rand)
     
     # --- Coefficients, matched by name ---
     fixed_coefs <- .fcr_coefs(coefs, colnames(X_Fixed))
@@ -213,12 +221,28 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
       rand_var_params <- coefs[grepl("^Chol:", names(coefs))]
     } else {
       rand_var_params <- .fcr_coefs(coefs, paste0(rpar, ":St.Dev"))
+      if (legacy && any(rpardists == "u")) {
+        rlang::inform(paste(
+          "This model was fit with flexCountReg < 0.1.3, whose uniform",
+          "random parameters span mu +/- St.Dev/2. Its uniform St.Dev values",
+          "are halved to the current convention (mu +/- St.Dev); refit the",
+          "model to update the estimates."),
+          .frequency = "once", .frequency_id = "fcr_legacy_uniform")
+        rand_var_params[rpardists == "u"] <- rand_var_params[rpardists == "u"] / 2
+      }
     }
     
     X_het_mean <- fd$aux$het_mean
     X_het_var <- fd$aux$het_var
-    het_mean_coefs <- if (!is.null(X_het_mean)) {
-      .fcr_coefs(coefs, paste0("HetMean:", colnames(X_het_mean)))
+    het_mean_coefs <- NULL
+    if (!is.null(X_het_mean)) {
+      het_mean_coefs <- if (legacy) {
+        .fcr_coefs(coefs, paste0("HetMean:", colnames(X_het_mean)))
+      } else {
+        matrix(.fcr_coefs(coefs, paste0(
+          "HetMean:", rep(rpar, each = ncol(X_het_mean)), ":",
+          colnames(X_het_mean))), ncol = N_rand)
+      }
     }
     het_var_coefs <- if (!is.null(X_het_var)) {
       .fcr_coefs(coefs, paste0("HetVar:", colnames(X_het_var)))
@@ -229,112 +253,76 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, nrow(data))
     mean_adj <- .fcr_mean_adjust(family, vec_1, vec_2)
     
-    # --- Prediction Method Implementation ---
+    mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
     
-    if (method == 'Exact') {
-      # Base prediction
-      pred_exact <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
-      
-      # Correlated Normal
+    # --- Exact: moment generating functions (Wood and Gayah, 2025) ---
+    if (method == "Exact") {
+      loc <- .fcr_rp_locations(random_coefs_means, rpardists, nrow(data),
+                               het_mean_coefs, X_het_mean, het_var_coefs,
+                               X_het_var, het_form)
       if (correlated) {
         L <- matrix(0, N_rand, N_rand)
         L[lower.tri(L, diag = TRUE)] <- rand_var_params
-        var_rand <- rowSums((X_rand %*% L)^2)
-        mu_rand <- as.vector(X_rand %*% random_coefs_means)
-        pred_exact <- pred_exact * exp(mu_rand + 0.5 * var_rand)
-        
+        W <- X_rand * loc$var_multiplier
+        rp_factor <- exp(rowSums(X_rand * loc$mu_mat) +
+                           0.5 * rowSums((W %*% L)^2))
       } else {
-        # Independent
-        for (i in 1:N_rand) {
-          dist_type <- rpardists[i]
-          x_col <- X_rand[, i]
-          mu <- random_coefs_means[i]
-          sigma <- rand_var_params[i]
-          
-          correction <- rep(1, nrow(data))
-          
-          if (dist_type == "n") { # Normal
-            correction <- exp(x_col * mu + 0.5 * (x_col^2) * (sigma^2))
-          } else if (dist_type == "ln") { # Lognormal
-            arg_w <- -exp(mu) * x_col * sigma^2
-            valid_idx <- arg_w >= -1/exp(1)
-            if (any(valid_idx)) {
-              x_val <- x_col[valid_idx]
-              w_val <- lamW::lambertW0(arg_w[valid_idx])
-              num <- x_val * exp(mu - w_val) - (w_val^2)/(2 * sigma^2)
-              den <- sigma * sqrt(abs(x_val * exp(mu - w_val) - (1/sigma^2)))
-              correction[valid_idx] <- exp(num) / den
-            }
-            if(any(!valid_idx)) correction[!valid_idx] <- NA
-          } else if (dist_type == "t") { # Triangular
-            nz <- abs(x_col) > 1e-8
-            if (any(nz)) {
-              x_nz <- x_col[nz]
-              term <- exp(x_nz * (mu - sigma))
-              correction[nz] <- 
-                (exp(2 * sigma * x_nz) - 2 * exp(sigma * x_nz) + 1) * term / 
-                (sigma^2 * x_nz^2)
-            }
-          } else if (dist_type == "u") { # Uniform
-            nz <- abs(x_col) > 1e-8
-            if (any(nz)) {
-              x_nz <- x_col[nz]
-              correction[nz] <- 
-                (exp(x_nz * (mu + sigma)) - exp(x_nz * (mu - sigma))) / 
-                (2 * sigma * x_nz)
-            }
-          } else if (dist_type == "g") { # Gamma
-            term_base <- 1 - (sigma^2 * x_col) / mu
-            if(any(term_base <= 0)) 
-              warning("Gamma exact prediction undefined for some observations.")
-            correction <- 
-              ifelse(term_base > 0, term_base^(-(mu^2)/(sigma^2)), NA)
-          }
-          pred_exact <- pred_exact * correction
+        rp_factor <- rep(1, nrow(data))
+        for (k in seq_len(N_rand)) {
+          rp_factor <- rp_factor *
+            rp_mgf(rpardists[[k]], X_rand[, k], loc$mu_mat[, k],
+                   abs(rand_var_params[k]) * loc$var_multiplier)
         }
       }
-      
-      # PLN/PLL mean correction
-      pred_exact <- pred_exact * mean_adj
-      
-      return(pred_exact)
-      
-    } else {
-      # Simulated or Individual (Empirical Bayes)
-      hdraws <- 
-        as.matrix(randtoolbox::halton(ndraws, N_rand, mixed = scrambled))
-      
-      draw_args <- list(
-        hdraws = hdraws, 
-        random_coefs_means = random_coefs_means, 
-        rand_var_params = rand_var_params, 
-        rpardists = rpardists, 
-        rpar = rpar, 
-        het_mean_coefs = het_mean_coefs, 
-        X_het_mean = X_het_mean,
-        het_var_coefs = het_var_coefs, 
-        X_het_var = X_het_var,
-        correlated = correlated)
-      
-      draws_info <- do.call(generate_random_draws,
-                            c(draw_args, list(X_rand = X_rand)))
-      
-      rpar_mat <- exp(draws_info$xb_rand_mat)
-      mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
-      # Conditional means (N x draws), as in the likelihood
-      mu_mat <- sweep(rpar_mat, 1, mu_fixed, "*")
-      
-      if (method == 'Simulated') {
-        return(as.vector(rowMeans(mu_mat)) * mean_adj)
+      n_inf <- sum(is.infinite(rp_factor))
+      if (n_inf > 0) {
+        warning(n_inf, " prediction(s) are infinite: the expected value does ",
+                "not exist for a lognormal random parameter with a positive ",
+                "x, or a gamma random parameter with x * sigma^2 / mu >= 1. ",
+                "See ?countreg.rp.", call. = FALSE)
       }
-      
-      return(.fcr_rp_eb_predict(
-        model = model, data = data, family = family, mu_mat = mu_mat,
-        mu_fixed = mu_fixed, X_rand = X_rand, draw_args = draw_args,
-        vec_1 = vec_1, vec_2 = vec_2, mean_adj = mean_adj,
-        eb_type = if (is.null(additional_args$eb_type)) "coefficients"
-                  else additional_args$eb_type))
+      return(as.vector(mu_fixed * rp_factor * mean_adj))
     }
+    
+    # --- Simulated or Individual (Empirical Bayes) ---
+    hdraws <- 
+      as.matrix(randtoolbox::halton(ndraws, N_rand, mixed = scrambled))
+    
+    draw_args <- list(
+      hdraws = hdraws, 
+      random_coefs_means = random_coefs_means, 
+      rand_var_params = rand_var_params, 
+      rpardists = rpardists, 
+      rpar = rpar, 
+      het_mean_coefs = het_mean_coefs, 
+      X_het_mean = X_het_mean,
+      het_var_coefs = het_var_coefs, 
+      X_het_var = X_het_var,
+      correlated = correlated,
+      het_form = het_form)
+    
+    draws_info <- do.call(generate_random_draws,
+                          c(draw_args, list(X_rand = X_rand)))
+    # Conditional means (N x draws), as in the likelihood
+    mu_mat <- exp(draws_info$xb_rand_mat) * mu_fixed
+    
+    if (method == 'Simulated') {
+      return(as.vector(rowMeans(mu_mat)) * mean_adj)
+    }
+    
+    dist_haltons <- if (legacy) {
+      randtoolbox::halton(model$ndraws, 1)
+    } else {
+      as.matrix(randtoolbox::halton(model$ndraws, N_rand + 1,
+                                    mixed = scrambled))[, N_rand + 1]
+    }
+    return(.fcr_rp_eb_predict(
+      model = model, data = data, family = family, mu_mat = mu_mat,
+      mu_fixed = mu_fixed, X_rand = X_rand, draw_args = draw_args,
+      vec_1 = vec_1, vec_2 = vec_2, mean_adj = mean_adj,
+      dist_haltons = dist_haltons,
+      eb_type = if (is.null(additional_args$eb_type)) "coefficients"
+                else additional_args$eb_type))
   }
   
   # =========================================================================
@@ -480,7 +468,8 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
 # standard deviations are attached as attributes "eb_coefficients" and
 # "eb_sd" (one row per observation, one column per random parameter).
 .fcr_rp_eb_predict <- function(model, data, family, mu_mat, mu_fixed, X_rand,
-                               draw_args, vec_1, vec_2, mean_adj, eb_type) {
+                               draw_args, vec_1, vec_2, mean_adj, eb_type,
+                               dist_haltons) {
   eb_type <- match.arg(eb_type, c("coefficients", "mean"))
   
   y_name <- all.vars(model$formula)[1]
@@ -508,7 +497,6 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   
   # Likelihood of each observation at each draw, as in estimation
   prob_fun <- get_probFunc(family)
-  dist_haltons <- randtoolbox::halton(model$ndraws, 1)
   mu_ok <- mu_mat[ok, , drop = FALSE]
   probs <- prob_fun(y = rep(y[ok], times = D),
                     predicted = as.vector(mu_ok),

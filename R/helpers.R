@@ -213,96 +213,153 @@ get_probFunc <- function(family){
 
 # --- Internal Likelihood Functions ---
 
-generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params, 
+# Random-parameter draws for each observation and draw.
+#
+#   hdraws             ndraws x K matrix of uniform (Halton) draws
+#   random_coefs_means length-K means (log-scale location for "ln")
+#   rand_var_params    length-K scales, or the Cholesky elements if correlated
+#   rpardists          length-K distribution codes ("n", "ln", "t", "u", "g")
+#   X_rand             N x K design matrix of the random parameters
+#   het_mean_coefs     heterogeneity in means. For het_form = "additive" a
+#                      (n_het x K) matrix: beta_ik = mu_k + z_i' delta_k
+#                      ("n", "t", "u"; on the log scale for "ln"), and
+#                      beta_ik = mu_k * exp(z_i' delta_k) for "g". For
+#                      het_form = "legacy" (fits before flexCountReg 0.1.3) a
+#                      vector shared by all parameters: mu_ik = mu_k exp(z_i'd).
+#   het_var_coefs      heterogeneity in scales: sigma_ik = sigma_k exp(s_i' phi)
+#
+# Scales: normal and lognormal use the standard deviation; triangular and
+# uniform use the half-width, so beta lies in [mu - sigma, mu + sigma]
+# (Wood and Gayah, 2025, Appendix A); gamma uses mean mu and SD sigma.
+#
+# Returns list(xb_rand_mat = N x ndraws matrix of sum_k x_ik beta_ikr).
+generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params,
                                   rpardists, rpar, X_rand,
                                   het_mean_coefs = NULL, X_het_mean = NULL,
                                   het_var_coefs = NULL, X_het_var = NULL,
-                                  correlated = FALSE) {
-  
+                                  correlated = FALSE,
+                                  het_form = c("additive", "legacy")) {
+  het_form <- match.arg(het_form)
   n_obs <- nrow(X_rand)
   n_draws <- nrow(hdraws)
   n_params <- length(rpar)
+  if (is.null(rpardists)) rpardists <- rep("n", n_params)
   
-  # 1. Calculate Heterogeneity Multipliers
-  mean_multiplier <- rep(1, n_obs)
-  var_multiplier <- rep(1, n_obs)
+  loc <- .fcr_rp_locations(random_coefs_means, rpardists, n_obs,
+                           het_mean_coefs, X_het_mean, het_var_coefs,
+                           X_het_var, het_form)
+  mu_mat <- loc$mu_mat
+  var_multiplier <- loc$var_multiplier
   
-  if (!is.null(X_het_mean) && !is.null(het_mean_coefs)) {
-    mean_multiplier <- exp(as.vector(X_het_mean %*% het_mean_coefs))
+  if (correlated) {
+    # --- Correlated (normal only) ---
+    L <- matrix(0, n_params, n_params)
+    L[lower.tri(L, diag = TRUE)] <- rand_var_params
+    corr_draws <- stats::qnorm(hdraws[, seq_len(n_params), drop = FALSE]) %*%
+      t(L)
+    xb_deterministic <- rowSums(X_rand * mu_mat)
+    xb_stochastic <- (X_rand * var_multiplier) %*% t(corr_draws)
+    return(list(xb_rand_mat = xb_stochastic + xb_deterministic))
   }
+  
+  # --- Uncorrelated ---
+  xb_rand_mat <- matrix(0, nrow = n_obs, ncol = n_draws)
+  for (k in seq_len(n_params)) {
+    mu_i <- mu_mat[, k]
+    sd_i <- abs(rand_var_params[k]) * var_multiplier
+    u <- hdraws[, k]
+    dist_type <- rpardists[k]
+    
+    if (dist_type == "g") {
+      shape_vec <- (mu_i^2) / (sd_i^2)
+      rate_vec <- mu_i / (sd_i^2)
+      param_draws <- matrix(0, nrow = n_obs, ncol = n_draws)
+      for (d in seq_len(n_draws)) {
+        param_draws[, d] <- suppressWarnings(
+          stats::qgamma(u[d], shape = shape_vec, rate = rate_vec))
+      }
+    } else {
+      std_draws <- switch(dist_type,
+                          "n" = stats::qnorm(u),
+                          "ln" = stats::qnorm(u),
+                          "t" = qtri(u, 0, 1),
+                          "u" = 2 * u - 1,
+                          stop("Unknown random-parameter distribution: ",
+                               dist_type, call. = FALSE))
+      param_draws <- outer(mu_i, rep(1, n_draws)) + outer(sd_i, std_draws)
+      if (dist_type == "ln") param_draws <- exp(param_draws)
+    }
+    xb_rand_mat <- xb_rand_mat + X_rand[, k] * param_draws
+  }
+  list(xb_rand_mat = xb_rand_mat)
+}
+
+# Per-observation locations (N x K matrix; log scale for "ln") and scale
+# multipliers (length N) of the random parameters. See generate_random_draws().
+.fcr_rp_locations <- function(random_coefs_means, rpardists, n_obs,
+                              het_mean_coefs = NULL, X_het_mean = NULL,
+                              het_var_coefs = NULL, X_het_var = NULL,
+                              het_form = c("additive", "legacy")) {
+  het_form <- match.arg(het_form)
+  n_params <- length(random_coefs_means)
+  if (is.null(rpardists)) rpardists <- rep("n", n_params)
+  mu_mat <- matrix(random_coefs_means, nrow = n_obs, ncol = n_params,
+                   byrow = TRUE)
+  log_mult <- matrix(0, n_obs, n_params)
+  if (!is.null(X_het_mean) && !is.null(het_mean_coefs)) {
+    if (het_form == "legacy") {
+      log_mult[] <- as.vector(X_het_mean %*% het_mean_coefs)
+    } else {
+      shift <- X_het_mean %*% matrix(het_mean_coefs, ncol = n_params)
+      add <- rpardists != "g"
+      mu_mat[, add] <- mu_mat[, add] + shift[, add]
+      log_mult[, !add] <- shift[, !add]
+    }
+  }
+  var_multiplier <- rep(1, n_obs)
   if (!is.null(X_het_var) && !is.null(het_var_coefs)) {
     var_multiplier <- exp(as.vector(X_het_var %*% het_var_coefs))
   }
-  
-  # 2. Calculate Random Effects
-  if (correlated) {
-    # --- Correlated (Normal Only) ---
-    L <- matrix(0, n_params, n_params)
-    L[lower.tri(L, diag = TRUE)] <- rand_var_params
-    
-    z_draws <- stats::qnorm(hdraws) 
-    corr_draws <- z_draws %*% t(L) 
-    
-    mu_matrix <- 
-      matrix(random_coefs_means, nrow = n_obs, ncol = n_params, byrow = TRUE)
-    xb_deterministic <- rowSums(X_rand * mu_matrix * mean_multiplier)
-    
-    W_variance <- X_rand * var_multiplier
-    xb_stochastic <- W_variance %*% t(corr_draws)
-    
-    xb_rand_mat <- xb_stochastic + xb_deterministic
-    return(list(xb_rand_mat = xb_rand_mat))
-    
-  } else {
-    # --- Uncorrelated (Supports Distributions) ---
-    xb_rand_mat <- matrix(0, nrow = n_obs, ncol = n_draws)
-    
-    for (k in 1:n_params) {
-      mu_base <- random_coefs_means[k]
-      sd_base <- abs(rand_var_params[k])
-      
-      mu_i <- mu_base * mean_multiplier
-      sd_i <- sd_base * var_multiplier
-      
-      dist_type <- if (is.null(rpardists)) "n" else rpardists[k]
-      
-      if (dist_type == "g") {
-        # Gamma: Recalculate shape/rate per observation
-        shape_vec <- (mu_i^2) / (sd_i^2)
-        rate_vec <- mu_i / (sd_i^2)
-        h_col <- hdraws[, k]
-        
-        param_draws <- matrix(0, nrow = n_obs, ncol = n_draws)
-        for (d in 1:n_draws) {
-          param_draws[, d] <- 
-            stats::qgamma(h_col[d], shape = shape_vec, rate = rate_vec)
-        }
-        xb_rand_mat <- xb_rand_mat + (X_rand[, k] * param_draws)
-        
-      } else {
-        # Location-Scale Families
-        if (dist_type == "ln") {
-          z_scores <- stats::qnorm(hdraws[, k])
-          # exp(mu_i + sd_i * Z)
-          exponent_mat <- outer(mu_i, rep(1, n_draws)) + outer(sd_i, z_scores)
-          param_draws <- exp(exponent_mat)
-          xb_rand_mat <- xb_rand_mat + (X_rand[, k] * param_draws)
-        } else {
-          # Normal, Triangle, Uniform
-          std_draws <- switch(dist_type,
-                              "n" = stats::qnorm(hdraws[, k]),
-                              "t" = qtri(hdraws[, k], 0, 1),
-                              "u" = hdraws[, k] - 0.5,
-                              stats::qnorm(hdraws[, k]))
-          
-          term1 <- X_rand[, k] * mu_i 
-          term2_scale <- X_rand[, k] * sd_i 
-          
-          stochastic_part <- outer(term2_scale, std_draws)
-          xb_rand_mat <- xb_rand_mat + stochastic_part + term1 
-        }
+  list(mu_mat = mu_mat * exp(log_mult), var_multiplier = var_multiplier)
+}
+
+# E[exp(t * beta)] for one random parameter (the moment generating function),
+# with per-observation t, mu and sigma, using the conventions of
+# generate_random_draws(). Wood and Gayah (2025), Appendix A.
+#   n: exp(t mu + t^2 sigma^2 / 2)
+#   u: exp(t mu) sinh(t sigma) / (t sigma)        (beta on [mu - s, mu + s])
+#   t: exp(t (mu - s)) (exp(t s) - 1)^2 / (t s)^2 (symmetric triangular)
+#   g: (1 - t sigma^2 / mu)^(-mu^2 / sigma^2), Inf when t sigma^2 / mu >= 1
+#   ln: Laplace (saddlepoint) approximation for t < 0; Inf for t > 0, where
+#       the lognormal MGF does not exist.
+rp_mgf <- function(dist, t, mu, sigma) {
+  n <- length(t)
+  mu <- rep_len(mu, n)
+  sigma <- rep_len(abs(sigma), n)
+  ts <- t * sigma
+  small <- abs(ts) < 1e-8
+  switch(dist,
+    n = exp(t * mu + 0.5 * t^2 * sigma^2),
+    u = ifelse(small, exp(t * mu), exp(t * mu) * sinh(ts) / ts),
+    t = ifelse(small, exp(t * mu),
+               exp(t * (mu - sigma)) * (exp(ts) - 1)^2 / ts^2),
+    g = {
+      b <- 1 - t * sigma^2 / mu
+      out <- ifelse(b > 0, b^(-(mu^2) / sigma^2), Inf)
+      out[mu <= 0] <- NaN
+      out
+    },
+    ln = {
+      out <- rep(Inf, n)
+      out[t == 0] <- 1
+      neg <- !is.na(t) & t < 0
+      if (any(neg)) {
+        a <- -exp(mu[neg]) * t[neg] * sigma[neg]^2
+        w <- lamW::lambertW0(a)
+        out[neg] <- exp(-(w^2 + 2 * w) / (2 * sigma[neg]^2)) / sqrt(1 + w)
       }
-    }
-    return(list(xb_rand_mat = xb_rand_mat))
-  }
+      out[is.na(t)] <- NA
+      out
+    },
+    stop("Unknown random-parameter distribution: ", dist, call. = FALSE))
 }

@@ -8,6 +8,8 @@
 #'   \code{underreport_formula} and heterogeneity formulas) and any offset
 #'   columns. The outcome is not required. If omitted, predictions are made for
 #'   the data used to fit the model.
+#' @param new_data the same as \code{newdata}, under the name used by
+#'   tidymodels. Give one or the other.
 #' @param ... optional arguments passed to the function. This includes `method`.
 #'   Passing the data as `data =` is deprecated; use `newdata`.
 #' @param type the type of prediction. \code{"response"} (default) is the
@@ -78,7 +80,7 @@
 #'  in the provided data. If no data is provided, the predictions for the data 
 #'  used in estimating the model are provided.
 #'
-#' @import randtoolbox stats modelr rlang 
+#' @importFrom randtoolbox halton
 #' @importFrom utils head tail
 #' @include corr_haltons.R halton_dists.R  helpers.R
 #' 
@@ -126,16 +128,16 @@
 #' @export
 predict.flexCountReg <- function(object, newdata = NULL, ...,
                                  type = c("response", "true",
-                                          "prob_reported", "link")){
+                                          "prob_reported", "link"),
+                                 new_data = NULL){
   
   type <- match.arg(type)
   
   # Extract optional parameters from '...'
   additional_args  <- list(...)
   
-  if (!is.null(additional_args$new_data) && is.null(newdata)) {
-    newdata <- additional_args$new_data
-  }
+  # `new_data` is the tidymodels name for `newdata`
+  if (!is.null(new_data) && is.null(newdata)) newdata <- new_data
   if (!is.null(newdata)) {
     data <- as.data.frame(newdata)
   } else if (!is.null(additional_args$data)) {

@@ -144,8 +144,8 @@ get_model_components <- function(trained_model, data) {
 #' \code{statistics}, \code{gtTable}, \code{latexTable}, and \code{htmlTable}.
 #'
 #' @include metrics.R
-#' @import tibble knitr
-#' @importFrom dplyr %>%
+#' @importFrom knitr kable
+#' @importFrom tibble tibble
 #' @importFrom gt gt tab_header fmt_number
 #'
 #' @details The function performs the following steps for the single-model
@@ -374,8 +374,8 @@ regCompTest <- function(
     
     summary_res <- make_single_model_stats(res1, base_res)
     
-    gtTable <- gt::gt(summary_res$statistics) %>%
-      tab_header(title = "Model Comparison Statistics") %>%
+    gtTable <- gt::gt(summary_res$statistics) |>
+      tab_header(title = "Model Comparison Statistics") |>
       fmt_number(columns = c("Model", "BaseModel"), decimals = 4)
     
     test <- list(
@@ -419,8 +419,8 @@ regCompTest <- function(
     pair_res$base_index <- if (restricted_is_first) 1L else 2L
     pair_res$comparison_index <- 3L - pair_res$base_index
     
-    gtTable <- gt::gt(pair_res$statistics) %>%
-      tab_header(title = "Model Comparison Statistics") %>%
+    gtTable <- gt::gt(pair_res$statistics) |>
+      tab_header(title = "Model Comparison Statistics") |>
       fmt_number(columns = c("Model", "BaseModel"), decimals = 4)
     
     test <- list(

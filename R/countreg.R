@@ -643,15 +643,10 @@
 #'  \item formula: the formula used to fit the model.
 #' }
 #' 
-#' @import modelr randtoolbox  
+#' @importFrom randtoolbox halton
 #' @importFrom stats model.frame model.matrix model.response
-#' @importFrom purrr map map_df compact
-#' @importFrom broom tidy
-#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize 
-#' @importFrom dplyr ungroup reframe pull
 #' @importFrom tibble deframe
 #' @importFrom maxLik maxLik
-#' @importFrom stringr str_replace_all str_extract
 #' @importFrom sandwich sandwich
 #' @include pinvgaus.R pinvgamma.R ppoislogn.R plindLnorm.R plindGamma.R 
 #' @include psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
@@ -671,10 +666,12 @@
 #' summary(nb2)
 #' 
 #' 
-#' # Estimate a Poisson-Lognormal model 
-#' pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-#'               data = washington_roads, family = "PLN", engine="poilog")
-#' summary(pln)  
+#' # Estimate a Poisson-Lognormal model (integration with the poilog package)
+#' if (requireNamespace("poilog", quietly = TRUE)) {
+#'   pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'                   data = washington_roads, family = "PLN", engine="poilog")
+#'   summary(pln)
+#' }
 #' 
 #' # Estimate a Negative Binomial with underreporting (probit)
 #' plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
@@ -754,6 +751,10 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   }
   params <- get_params(family)
   
+  engine <- match.arg(engine, c("halton", "poilog"))
+  if (engine == "poilog" && family == "PLN") {
+    rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
+  }
   method <- .fcr_check_method(method)
   underreport_family <- match.arg(tolower(underreport_family),
                                   c("logit", "probit"))
@@ -952,7 +953,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$vcov <- V
   fit$vcov_type <- vcov_type
   fit$stderr <- stderr
-  fit$se <- sqrt(pmax(diag(V), 0))
+  fit$se <- .fcr_se(V)
   names(fit$se) <- x_names
   fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
   

@@ -736,10 +736,12 @@ nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 summary(nb2)
 
 
-# Estimate a Poisson-Lognormal model 
-pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PLN", engine="poilog")
-summary(pln)  
+# Estimate a Poisson-Lognormal model (integration with the poilog package)
+if (requireNamespace("poilog", quietly = TRUE)) {
+  pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+                  data = washington_roads, family = "PLN", engine="poilog")
+  summary(pln)
+}
 
 # Estimate a Negative Binomial with underreporting (probit)
 plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 

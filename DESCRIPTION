@@ -1,7 +1,7 @@
 Package: flexCountReg
 Type: Package
 Title: Estimation of a Variety of Count Regression Models
-Version: 0.1.2
+Version: 0.1.2.9000
 Authors@R: c(person("Jonathan", "Wood", role = c("aut", "cre"),
                   email = "jwood2@iastate.edu", 
                   comment = c(ORCID = "0000-0003-0131-6384")),
@@ -27,36 +27,32 @@ Description: An implementation of multiple regression models for
     <doi:10.1093/0198774753.001.0001>; or Hensher et al. (2015)
     <doi:10.1017/CBO9781316136232>.
 Imports: 
-    broom,
     cureplots,
+    generics,
     gsl,
     gt,
     knitr,
-    lamW,
     MASS,
     maxLik,
-    modelr,
-    purrr,
     randtoolbox,
     Rcpp (>= 1.0.12),
     rlang,
     sandwich,
     stats,
-    dplyr,
-    stringr,
     tibble,
-    tidyr,
     truncnorm,
     utils
 Depends: R (>= 4.1.0)
 LinkingTo: Rcpp
-SystemRequirements: GNU make
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Config/roxygen2/markdown: TRUE
 Suggests:
     spelling, 
+    lamW,
+    dials,
+    parsnip,
     testthat (>= 3.0.0), 
     poilog
 Config/testthat/edition: 3

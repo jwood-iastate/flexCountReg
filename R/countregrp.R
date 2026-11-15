@@ -164,9 +164,7 @@
 #' @importFrom randtoolbox halton
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom stats terms reformulate coef
-#' @importFrom dplyr mutate pull select all_of
 #' @importFrom tibble as_tibble
-#' @importFrom tidyr unite
 #' 
 #' @include helpers.R tri.R  createFlexCountReg.R
 #' @export
@@ -200,6 +198,10 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
          toString(.fcr_families), ".", call. = FALSE)
   }
   params <- get_params(family)
+  engine <- match.arg(engine, c("halton", "poilog"))
+  if (engine == "poilog" && family == "PLN") {
+    rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
+  }
   method <- .fcr_check_method(method)
   if (is.null(params[[1]]) && !is.null(dis_param_formula_1)) {
     stop("`dis_param_formula_1` was given, but family \"", family,
@@ -529,7 +531,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$vcov <- V
   fit$vcov_type <- vcov_type
   fit$stderr <- stderr
-  fit$se <- sqrt(pmax(diag(V), 0))
+  fit$se <- .fcr_se(V)
   names(fit$se) <- x_names
   fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
   

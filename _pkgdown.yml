@@ -2,3 +2,72 @@ url: https://jwood-iastate.github.io/flexCountReg/
 template:
   bootstrap: 5
 
+reference:
+- title: Count regression models
+  desc: Estimate count models with flexible distributions, underreporting,
+    random parameters and random effects.
+  contents:
+  - countreg
+  - countreg.rp
+  - renb
+  - poisLindRE
+  - repois
+  - negmultinom
+
+- title: Working with fitted models
+  contents:
+  - summary.flexCountReg
+  - flexCountReg-methods
+  - flexCountReg-tidiers
+  - predict.flexCountReg
+
+- title: Prediction, effects and diagnostics
+  contents:
+  - margEffTable
+  - cureplot
+
+- title: Model comparison and fit metrics
+  contents:
+  - regCompTest
+  - regCompTable
+  - mae
+  - rmse
+  - myAIC
+  - myBIC
+
+- title: tidymodels
+  desc: A parsnip model specification with the flexCountReg engine.
+  contents:
+  - count_reg
+  - count_family
+
+- title: Count distributions
+  contents:
+  - COMDistribution
+  - Generalized-Waring
+  - GeneralizedPoisson
+  - GeneralizedPoisson2
+  - NegativeBinomialLindley
+  - PoissonGeneralizedExponential
+  - PoissonInverseGamma
+  - PoissonInverseGaussian
+  - PoissonLindley
+  - PoissonLindleyLognormal
+  - PoissonLognormal
+  - PoissonWeibull
+  - SichelDistribution
+
+- title: Continuous distributions and simulation tools
+  contents:
+  - dlindley
+  - invgamma
+  - rinvgaus
+  - Triangular
+  - moment_lognormal
+  - halton_dists
+  - corr_haltons
+  - cor2cov
+
+- title: Data
+  contents:
+  - washington_roads

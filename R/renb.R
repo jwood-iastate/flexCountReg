@@ -31,11 +31,8 @@
 #'   resampled, so the standard errors account for the correlation within
 #'   panels. If not specified, no bootstrapping is performed.
 #'        
-#' @import maxLik  stats modelr tibble
+#' @importFrom maxLik maxLik
 #' @importFrom MASS glm.nb
-#' @importFrom purrr map map_df
-#' @importFrom broom tidy
-#' @importFrom dplyr group_by %>% across select mutate all_of reframe
 #' @include renbLL.R
 #' 
 #' @details

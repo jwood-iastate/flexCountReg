@@ -5,14 +5,16 @@ test_that("log dqwar and others", {
   expect_equal(
     plindley(0.5, 1.5, log=TRUE, lower.tail=FALSE), -0.487635736)
   expect_equal(plindley(0.5, 1.5, log=TRUE), -0.952116164)
+  skip_if_not_installed("lamW")
   expect_equal(qlindley(-1, theta = 1.5, log.p = TRUE), 0.4720311)
 })
 
 test_that("various distributions warnings", {
+  expect_warning(rlindley(1.5,1))
+  skip_if_not_installed("lamW")
   expect_warning(qlindley(c(0.1,-0.1,0.2), theta=1))
   expect_warning(qlindley(c(1.1,-0.1,0.2), theta=1))
   expect_warning(qlindley(c(0.1,0.3,0.2), theta=-1))
-  expect_warning(rlindley(1.5,1))
 })
 
 

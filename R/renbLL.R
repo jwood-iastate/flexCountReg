@@ -1,6 +1,3 @@
-#' @importFrom dplyr group_by reframe %>%
-#' @importFrom tibble tibble
-#'
 renb_ll <- function(y, mu, a, b, panels) { 
   # Random Effects Negative Binomial with Beta Distributed Random Effects (NB1)
   
@@ -11,18 +8,11 @@ renb_ll <- function(y, mu, a, b, panels) {
     return(rep(-Inf, length(unique(panels))))
   }
   
-  df <- tibble(y = y, mu = mu, panels = panels)
-  
-  # Calculate panel-level statistics
-  df_model <- df %>%
-    group_by(panels) %>%
-    reframe(
-      sum_mu = sum(mu),
-      sum_y = sum(y),
-      # Using lgamma instead of gamma for numerical stability
-      # Note: y+1 in gamma(y+1) accounts for factorial
-      log_prod_element = sum(.fcr_lgamma_diff(mu, y) - lgamma(y + 1))
-    )
+  # Panel-level sums (one row per panel, in sorted panel order)
+  sums <- rowsum(cbind(mu, y, .fcr_lgamma_diff(mu, y) - lgamma(y + 1)),
+                 group = panels, reorder = TRUE)
+  df_model <- list(sum_mu = sums[, 1], sum_y = sums[, 2],
+                   log_prod_element = sums[, 3])
   
   # Calculate log-likelihood using lgamma for numerical stability
   # lgamma(a + sum_mu) - lgamma(a + b + sum_mu + sum_y), computed without

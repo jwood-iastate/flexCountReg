@@ -28,9 +28,7 @@
 #'   to be used for estimating standard errors. If not specified, no
 #'   bootstrapping is performed.
 #'
-#' @import maxLik stats modelr tibble
-#' @importFrom purrr map map_df
-#' @importFrom dplyr group_by reframe
+#' @importFrom maxLik maxLik
 #'
 #' @details
 #' This function estimates a random effects Poisson panel model. The likelihood
@@ -135,7 +133,7 @@ repois <- function(formula,
     V <- sandwich::sandwich(fit$maxLik_object)
     dimnames(V) <- list(names(fit$estimate), names(fit$estimate))
     fit$vcov <- V
-    fit$se <- sqrt(pmax(diag(V), 0))
+    fit$se <- .fcr_se(V)
   }
   fit$vcov_type <- switch(stderr, normal = "hessian", robust = "robust",
                           boot = "bootstrap")
@@ -424,7 +422,7 @@ repois <- function(formula,
     }
     
     if (all(is.finite(vcov_mat))) {
-      se <- sqrt(pmax(diag(vcov_mat), 0))
+      se <- .fcr_se(vcov_mat)
       z <- par / se
       pval <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
     }
@@ -461,7 +459,7 @@ repois <- function(formula,
   )
   
   if (isTRUE(compute_vcov) && all(is.finite(vcov_mat))) {
-    out$se <- sqrt(pmax(diag(vcov_mat), 0))
+    out$se <- .fcr_se(vcov_mat)
   }
   
   if (!is.null(bootstraps) && length(bootstraps) == 1L && bootstraps > 1L) {

@@ -1,5 +1,21 @@
 # flexCountReg 0.1.3 (development)
 
+## tidymodels and broom
+
+* `tidy()`, `glance()` and `augment()` methods, using the generics package
+  (re-exported, so `library(flexCountReg)` provides them). `tidy()` returns
+  the standard broom columns plus a `component` column (mean, distribution,
+  underreporting, random-parameter and heterogeneity parameters), with
+  `conf.int` and `exponentiate` (incidence rate ratios for the mean model).
+  `tidy()` now works for every estimator. broom is no longer a dependency.
+* New `count_reg()` parsnip model with a `"flexCountReg"` engine, registered
+  when parsnip is loaded (parsnip is suggested, not required). The count
+  `family` is a main argument and can be tuned with `count_family()` (a
+  dials parameter). Case weights are passed as frequency weights.
+* `predict()` accepts `new_data` (the tidymodels name) as well as `newdata`.
+* Standard errors are `NA` (instead of 0) when the estimated variance is
+  negative, which happens for weakly identified parameters.
+
 ## Breaking changes and changed results
 
 * `summary()` now returns a `summary.flexCountReg` object with a print method
@@ -153,8 +169,21 @@
 
 ## Other changes
 
-* `lamW` moves from Suggests to Imports (used by `qlindley()` and lognormal
-  predictions). The `poilog` engine is checked with `rlang::check_installed()`.
+* Dependencies: broom, dplyr, modelr, purrr, stringr and tidyr are no longer
+  used; generics is added. Whole-namespace imports are replaced by
+  `importFrom()`. lamW stays in Suggests (its uses in `qlindley()` and
+  lognormal random-parameter predictions are checked with
+  `rlang::check_installed()`); dials and parsnip are added to Suggests.
+* `rlindley()` draws from the gamma mixture form directly (no longer needs
+  lamW) and no longer warns for every whole-number `n`.
+* `src/Makevars` and `src/Makevars.win` are removed (no OpenMP or BLAS is
+  used), so `SystemRequirements: GNU make` is dropped.
+* Added an R CMD check GitHub Actions workflow (including a job with only
+  the hard dependencies installed) and a grouped pkgdown reference index.
+  Removed the commented-out `tests/testthat/test-all.R` and a duplicated
+  test.
+
+* The `poilog` engine is checked with `rlang::check_installed()`.
 * `msg1` and `.dpge_one` are no longer exported. The hand-maintained
   `Collate` field is removed.
 

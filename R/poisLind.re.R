@@ -36,11 +36,7 @@
 #'
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom maxLik maxLik
-#' @importFrom modelr model_matrix
 #' @importFrom MASS glm.nb
-#' @importFrom purrr map map_df
-#' @importFrom broom tidy
-#' @importFrom dplyr group_by %>% across select mutate all_of reframe
 #' @importFrom tibble deframe
 #' @include plind.R
 #'

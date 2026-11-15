@@ -75,8 +75,10 @@ dlindley(x, theta = 1.5)
 dlindley(x, theta=0.5, log=TRUE)
 plindley(q, theta = 1.5)
 plindley(q, theta = 0.5, lower.tail = FALSE)
-qlindley(p, theta = 1.5)
-qlindley(p, theta = 0.5)
+if (requireNamespace("lamW", quietly = TRUE)) {
+  qlindley(p, theta = 1.5)
+  qlindley(p, theta = 0.5)
+}
 
 set.seed(123154)
 rlindley(5, theta = 1.5)

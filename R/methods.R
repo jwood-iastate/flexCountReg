@@ -106,7 +106,7 @@ terms.flexCountReg <- function(x, ...) {
 #' @export
 confint.flexCountReg <- function(object, parm, level = 0.95, ...) {
   cf <- stats::coef(object)
-  se <- sqrt(pmax(diag(stats::vcov(object)), 0))
+  se <- .fcr_se(stats::vcov(object))
   z <- stats::qnorm((1 + level) / 2)
   ci <- cbind(cf - z * se, cf + z * se)
   pct <- paste(format(100 * c((1 - level) / 2, (1 + level) / 2),

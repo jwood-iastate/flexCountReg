@@ -297,7 +297,7 @@ negmultinom <- function(formula,
                              family = family, method = method,
                              max.iters = max.iters, B = bootstraps)
   }
-  se <- sqrt(pmax(diag(vc), 0))
+  se <- .fcr_se(vc)
   names(se) <- prep$par_names
 
   # ---- Fitted quantities ---------------------------------------------------

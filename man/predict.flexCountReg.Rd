@@ -8,7 +8,8 @@
   object,
   newdata = NULL,
   ...,
-  type = c("response", "true", "prob_reported", "link")
+  type = c("response", "true", "prob_reported", "link"),
+  new_data = NULL
 )
 }
 \arguments{
@@ -34,6 +35,9 @@ being reported \eqn{p}, and \code{"link"} is the linear predictor
 \code{"true"} equals \code{"response"} and \code{"prob_reported"} is 1.
 Types other than \code{"response"} are available for \code{countreg}
 models only.}
+
+\item{new_data}{the same as \code{newdata}, under the name used by
+tidymodels. Give one or the other.}
 }
 \value{
 A numeric vector of predicted expected counts for each observation

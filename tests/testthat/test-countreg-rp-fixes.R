@@ -13,7 +13,8 @@ test_that("rp_mgf matches simulation from generate_random_draws", {
   h <- matrix(runif(2e5), ncol = 1)
   for (dist in c("n", "u", "t", "g", "ln")) {
     for (x in c(-2, 0.7, 2.5)) {
-      if (dist == "ln" && x > 0) next
+      if (dist == "ln" && (x > 0 || !requireNamespace("lamW", quietly = TRUE)))
+        next
       # gamma at x = 2.5 has infinite Monte Carlo variance (2 x s^2 / mu > 1)
       if (dist == "g" && x > 2) next
       mu <- if (dist == "g") 0.6 else 0.3

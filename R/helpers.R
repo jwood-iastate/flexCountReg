@@ -2,6 +2,7 @@
 
 #' @importFrom stats model.frame model.matrix model.response
 #' @importFrom stats dnbinom dpois qnorm qgamma dnorm
+#' @importFrom stats na.omit optimize pchisq rgamma rnorm sd
 #' @importFrom randtoolbox halton
 NULL
 
@@ -108,32 +109,6 @@ NULL
   }
   draws
 }
-
-#' Tidy a flexCountReg object
-#'
-#' @param x An object of class flexCountReg
-#' @param ... Additional arguments
-#' @returns A tibble object with columns: term, estimate
-#' @importFrom tibble tibble
-#' @export
-tidy.flexCountReg <- function(x, ...) {
-  # Attempt to locate coefficients based on standard countreg structure
-  # Check if coefficients are at the top level or inside a 'model' slot
-  if (!is.null(x$coefficients)) {
-    ests <- x$coefficients
-  } else if (!is.null(x$model) && !is.null(x$model$coefficients)) {
-    ests <- x$model$coefficients
-  } else {
-    stop("Could not find coefficients in flexCountReg object for tidying.")
-  }
-  
-  # Return the tibble structure required by broom
-  tibble::tibble(
-    term = names(ests),
-    estimate = as.numeric(ests)
-  )
-}
-
 
 # Determine model to estimate, probability distribution to use, and parameters
 get_params <- function(family) {
@@ -355,6 +330,8 @@ rp_mgf <- function(dist, t, mu, sigma) {
       neg <- !is.na(t) & t < 0
       if (any(neg)) {
         a <- -exp(mu[neg]) * t[neg] * sigma[neg]^2
+        rlang::check_installed(
+          "lamW", reason = "for lognormal random-parameter predictions.")
         w <- lamW::lambertW0(a)
         out[neg] <- exp(-(w^2 + 2 * w) / (2 * sigma[neg]^2)) / sqrt(1 + w)
       }
@@ -416,7 +393,7 @@ rp_mgf <- function(dist, t, mu, sigma) {
   fit$stderr <- stderr
   dimnames(V) <- list(x_names, x_names)
   fit$vcov <- V
-  fit$se <- sqrt(pmax(diag(V), 0))
+  fit$se <- .fcr_se(V)
   names(fit$se) <- x_names
   fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
   fit$blueprint <- prep$blueprint
@@ -491,4 +468,12 @@ rp_mgf <- function(dist, t, mu, sigma) {
   if (stderr_missing && !is.null(bootstraps)) return("boot")
   stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
   stderr
+}
+
+# Standard errors from a covariance matrix: NA (not 0) where the variance is
+# negative or not finite, which happens for weakly identified parameters.
+.fcr_se <- function(V) {
+  v <- diag(V)
+  v[!is.finite(v) | v < 0] <- NA_real_
+  sqrt(v)
 }

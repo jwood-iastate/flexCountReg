@@ -26,8 +26,8 @@
 #'   table values to.
 #'
 #' @include regCompTest.R
-#' @import tibble knitr  
-#' @importFrom dplyr %>% mutate sym
+#' @importFrom knitr kable
+#' @importFrom tibble tibble
 #' @importFrom stats as.formula model.frame model.response dpois glm
 #' @importFrom gt gt tab_header fmt_number
 #' 
@@ -111,7 +111,7 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     
     coefs <- stats::coef(m_i)
     coefNames <- names(coefs)
-    se <- sqrt(pmax(diag(stats::vcov(m_i)), 0))
+    se <- .fcr_se(stats::vcov(m_i))
     t <- abs(coefs / se)
     coefsRounded <- round(coefs, digits)
     seRounded <- round(se, digits)
@@ -150,8 +150,7 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
         tablecoefs <- append(tablecoefs, "---")
       }
     }
-    summaryTibble <- summaryTibble %>%
-      mutate(!!sym(modNames[i]) := tablecoefs)
+    summaryTibble[[modNames[i]]] <- tablecoefs
   }
   
   # Adding a row with the notation
@@ -167,11 +166,11 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     return(summaryTibble)
   } 
   else if (tableType == "gt"){
-    gtTable <- gt(summaryTibble) %>%
+    gtTable <- gt(summaryTibble) |>
       tab_header(
         title = "Model Comparisons",
         subtitle = "Mean (Standard Error)"
-      ) %>%
+      ) |>
       gt::tab_source_note(
         source_note = "p-value codes: *=(p<=0.05), **=(p<=0.01), ***=(p<=0.001)"
       )

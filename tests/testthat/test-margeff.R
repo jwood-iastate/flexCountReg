@@ -161,3 +161,13 @@ test_that("delta-method SEs fall back to the Hessian or the stored SEs", {
   me <- expect_warnings(margEffTable(m_x), "dimensions do not match")
   expect_true(all(is.na(me$std_error)))
 })
+
+test_that("margEffTable needs data and at least one covariate", {
+  m <- countreg(Total_crashes ~ lnaadt, washington_roads, method = "BFGS",
+                keep_data = FALSE)
+  expect_error(margEffTable(m), "No data supplied")
+  expect_equal(margEffTable(m, data = washington_roads)$term, "lnaadt")
+  m0 <- countreg(Total_crashes ~ 1, washington_roads, offset = "lnlength",
+                 method = "BFGS")
+  expect_error(margEffTable(m0), "No eligible variables")
+})

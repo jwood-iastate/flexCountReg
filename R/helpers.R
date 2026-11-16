@@ -358,8 +358,7 @@ rp_mgf <- function(dist, t, mu, sigma) {
 
 # Standard errors from a covariance matrix: NA (not 0) where the variance is
 # negative or not finite, which happens for weakly identified parameters.
-# Standard errors from a covariance matrix; NA when a variance is negative or
-# not finite. With k given, a V that is not a k x k matrix gives k NAs.
+# With k given, a V that is not a k x k matrix gives k NAs.
 .fcr_se <- function(V, k = NULL) {
   if (!is.null(k) && !(is.matrix(V) && all(dim(V) == k))) {
     return(rep(NA_real_, k))

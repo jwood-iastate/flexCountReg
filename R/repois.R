@@ -183,26 +183,6 @@ repois <- function(formula,
 }
 
 
-.repois_map_method <- function(method) {
-  if (is.null(method) || length(method) != 1L) {
-    stop("`method` must be a single string.")
-  }
-  
-  method <- toupper(method)
-  
-  switch(
-    method,
-    "NM" = "NM",
-    "NELDER-MEAD" = "NM",
-    "BFGS" = "BFGS",
-    "NR" = "NR",
-    "BHHH" = "BHHH",
-    "CG" = "CG",
-    "SANN" = "SANN",
-    stop("Unsupported optimization method: ", method)
-  )
-}
-
 .repois_start_values <- function(y, X, offset_vec) {
   fit0 <- try(
     stats::glm.fit(
@@ -283,7 +263,7 @@ repois <- function(formula,
     stop("Package `maxLik` is required for `repois()`.")
   }
   
-  method_opt <- .repois_map_method(method)
+  method_opt <- .fcr_check_method(method)
   start <- .repois_start_values(y, X, offset_vec)
   
   control <- maxLik::maxControl(

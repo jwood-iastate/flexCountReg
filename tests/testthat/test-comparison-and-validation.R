@@ -59,8 +59,15 @@ test_that("negmultinom() validates its inputs", {
   dn$Total_crashes[1] <- -1
   expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", dn), "nonnegative")
   dn$Total_crashes[1] <- 0.5
-  expect_warning(negmultinom(Total_crashes ~ lnaadt, "ID", dn,
-                             max.iters = 100), "not integer")
+  # The starting Poisson fit also warns about the non-integer count
+  ws <- character()
+  withCallingHandlers(
+    negmultinom(Total_crashes ~ lnaadt, "ID", dn, max.iters = 100),
+    warning = function(w) {
+      ws <<- c(ws, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    })
+  expect_true(any(grepl("not integer", ws)))
   expect_error(predict(m, newdata = d, method = "Exact"), "Standard")
 })
 
@@ -85,4 +92,13 @@ test_that("renb(), poisLind.re() and repois() validate their inputs", {
   dn$Total_crashes[1] <- -1
   expect_error(repois(Total_crashes ~ lnaadt, group_var = "ID", data = dn),
                "nonnegative")
+  # Every optimizer accepted by the check reaches the same maximum
+  ll <- vapply(c("BFGS", "NR", "NM"), function(meth) {
+    repois(Total_crashes ~ lnaadt, group_var = "ID", data = d,
+           method = meth)$model$maximum
+  }, numeric(1))
+  expect_lt(diff(range(ll)), 1e-3)
+  expect_s3_class(suppressWarnings(
+    repois(Total_crashes ~ lnaadt, group_var = "ID", data = d,
+           method = "BFGSR", max.iters = 20)), "repois")
 })

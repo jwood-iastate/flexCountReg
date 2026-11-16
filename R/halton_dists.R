@@ -75,18 +75,20 @@
 #' @export
 halton_dists <- function(dist, mean, sdev, hdraw=NULL, ndraws=500) {
   if (is.null(hdraw)) { # If Halton draws are not provided, generate them
-    hdraw <- randtoolbox::halton(ndraws, 2)
+    hdraw <- randtoolbox::halton(ndraws)
   }
   switch(dist,
          "ln" = stats::qlnorm(hdraw, mean, abs(sdev)),
          "t" = qtri(hdraw, mean, abs(sdev)),
-         "u" = mean + (hdraw - 0.5) * abs(sdev),
+         # sdev is the half-width: draws on [mean - sdev, mean + sdev]
+         "u" = mean + (2 * hdraw - 1) * abs(sdev),
          "g" = stats::qgamma(hdraw, 
                              shape = mean^2 / sdev^2, 
                              rate = mean / sdev^2),
          # default case for normal distribution
          "n" = stats::qnorm(hdraw, mean, abs(sdev)), 
-         warning("Invalid distribution type")
+         stop("Invalid distribution type \"", dist, "\". Use one of ",
+              "\"n\", \"ln\", \"t\", \"u\" or \"g\".", call. = FALSE)
   )
 }
 

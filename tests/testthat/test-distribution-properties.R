@@ -324,3 +324,26 @@ test_that("inverse gamma and inverse Gaussian helpers", {
   expect_equal(mean(w), 2, tolerance = 0.02)
   expect_equal(var(w), 2^3 / 3, tolerance = 0.05)
 })
+
+test_that("COM functions recycle parameters and match element-wise results", {
+  y <- c(0, 1, 3, 2)
+  mu <- c(1, 2, 3, 4)
+  nu <- c(0.5, 1, 1.5, 0.8)
+  expect_equal(dcom(y, mu = mu, nu = nu),
+               vapply(1:4, function(i) dcom(y[i], mu = mu[i], nu = nu[i]), 0))
+  expect_equal(pcom(y, mu = mu, nu = 0.7),
+               vapply(1:4, function(i) pcom(y[i], mu = mu[i], nu = 0.7), 0))
+  expect_equal(pcom(y, lambda = mu, nu = nu),
+               vapply(1:4, function(i) pcom(y[i], lambda = mu[i], nu = nu[i]),
+                      0))
+  expect_equal(qcom(c(0.2, 0.8), mu = c(1, 4), nu = 0.7),
+               c(qcom(0.2, mu = 1, nu = 0.7), qcom(0.8, mu = 4, nu = 0.7)))
+  expect_error(dcom(0:3, mu = c(1, 2), nu = 1), "same length as `x`")
+  expect_error(pcom(0:3, lambda = c(1, 2), nu = 1), "same length as `q`")
+  expect_error(qcom(c(0.1, 0.5, 0.9), mu = 1, nu = c(1, 2)),
+               "same length as `p`")
+  expect_error(dcom(1.5, mu = 1), "whole number")
+  expect_error(dcom(1, mu = -1), "greater than 0")
+  expect_warning(pcom(1.5, mu = 1), "whole number")
+  expect_warning(qcom(0, mu = 1), "greater than 0 and less than 1")
+})

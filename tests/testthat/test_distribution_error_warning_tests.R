@@ -31,14 +31,14 @@ test_that("cor2cov", {
 
 test_that("Correlated Halton Draws",{
   
-  expect_warning(corr_haltons(
+  expect_error(corr_haltons(
     c(3, 2, 0.9), 
     c(0.25,1.5,0.8), 
     correlations = matrix(c( 1,    -0.3, 0.5, 
                             -0.3,   1,  -0.2, 
                              0.5,  -0.2, 1), 3, 3),
     ndraws=5000, scrambled=TRUE,
-    dist="lognormal"))
+    dist="lognormal"), "Unsupported")
   
   expect_error(corr_haltons(corr_haltons(
     c(3, 2, 0.9), 

@@ -43,7 +43,7 @@ Imports:
     tibble,
     truncnorm,
     utils
-Depends: R (>= 4.1.0)
+Depends: R (>= 4.5.0)
 LinkingTo: Rcpp
 License: MIT + file LICENSE
 Encoding: UTF-8

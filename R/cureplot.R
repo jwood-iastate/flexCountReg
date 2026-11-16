@@ -6,14 +6,17 @@
 #'
 #' @name cureplot
 #' @param model A model object estimated using this R package.
-#' @param data Optional dataframe. If not provided, the data used to fit the
-#'    model will be used.
+#' @param data Optional dataframe. If not provided, the rows used to fit the
+#'    model are used. Rows with missing values in the outcome, the
+#'    predictors or \code{indvar} are left out.
 #' @param indvar Optional independent variable name (character string). This is
 #'   the continuous independent variable to plot the cumulative residuals
 #'   against. If not provided, the plot will be against the predicted values.
-#' @param method Optional parameter to pass to the predict function. This is
-#'   only used for random parameters models (e.g., "Simulated" or "Individual").
-#'   For further details, see \code{\link{predict.flexCountReg}}.
+#' @param method Optional prediction method passed to \code{predict()} for
+#'   random-parameter models (e.g. "Simulated", "Exact" or "Individual") and
+#'   negative multinomial models ("Standard" or "EB"). The default
+#'   (\code{NULL}) uses the estimator's default. For further details, see
+#'   \code{\link{predict.flexCountReg}}.
 #' @param n_resamples Number of resamples for potential resampling in the CURE
 #'   plot confidence bands. Default is 0 (no bands).
 #' @param ... Additional arguments passed to \code{\link[cureplots]{cure_plot}}.
@@ -43,55 +46,52 @@
 #' }
 #' 
 cureplot <- function(model, data = NULL, indvar = NULL, 
-                     method = "Simulated", n_resamples = 0, ...) {
+                     method = NULL, n_resamples = 0, ...) {
   
-  # 1. Handle Data
-  if (is.null(data)) {
-    data <- model$data
+  # 1. Data: the rows used in estimation by default
+  data <- if (is.null(data)) .fcr_training_rows(model) else
+    as.data.frame(data)
+  if (!is.null(indvar) && !indvar %in% names(data)) {
+    stop("Variable \"", indvar, "\" not found in the data.", call. = FALSE)
+  }
+  
+  # 2. Outcome and predictions, one value per row of `data` (NA for rows
+  # with missing values), so they stay aligned. `method` is passed only for
+  # random-parameter and negative multinomial models.
+  y <- .fcr_response(model, data)
+  if (is.null(y)) {
+    stop("The data do not contain the model's outcome.", call. = FALSE)
+  }
+  predictions <- if (is.null(method)) {
+    stats::predict(model, newdata = data)
   } else {
-    data <- as.data.frame(data)
-  }
-  
-  # 2. Extract Response Variable (y)
-  # We use the formula from the model object to ensure we get the correct
-  # response even if transformations were used in the formula, though strict
-  # matching is safer.
-  mf <- stats::model.frame(model$formula, data = data)
-  y <- stats::model.response(mf)
-  
-  # 3. Generate Predictions
-  # This relies on predict.flexCountReg handling the class/method logic
-  predictions <- stats::predict(model, newdata = data, method = method)
-  
-  if(length(predictions) != length(y)){
-    msg <- paste0("Length of predictions does not match length of observed", 
-                  "data. Check for missing values.")
-    warning(msg)
-  }
-  
-  # 4. Calculate Raw Residuals
-  resids <- y - predictions
-  
-  # 5. Determine Independent Variable (X-axis)
-  if (!is.null(indvar)) {
-    if (!indvar %in% names(data)) {
-      warning(paste("Variable", indvar, "not found in the provided data."))
+    if (!inherits(model, c("countreg_rp", "negmultinom"))) {
+      stop("`method` applies only to countreg.rp() and negmultinom() ",
+           "models.", call. = FALSE)
     }
+    stats::predict(model, newdata = data, method = method)
+  }
+  predictions <- as.numeric(predictions)
+  if (length(predictions) != length(y)) {
+    stop("Predictions and outcomes have different lengths.", call. = FALSE)
+  }
+  
+  # 3. Plotting variable and one common mask of complete rows
+  if (!is.null(indvar)) {
     indvar_values <- data[[indvar]]
     x_name <- indvar
   } else {
     indvar_values <- predictions
     x_name <- "Predicted Values"
   }
+  ok <- !is.na(y) & !is.na(predictions) & !is.na(indvar_values)
+  resids <- y[ok] - predictions[ok]
+  indvar_values <- indvar_values[ok]
   
-  # 6. Create CURE Dataframe
-  # Using cureplots package structure
-  cure.df <- cureplots::calculate_cure_dataframe(covariate = indvar_values, 
-                                                 residuals = resids)
-  
-  # Rename the first column to the variable name so the plot label is correct
+  # 4. CURE data frame and plot (cureplots names the covariate column after
+  # the argument expression, so plain variables are passed)
+  cure.df <- cureplots::calculate_cure_dataframe(
+    covariate = indvar_values, residuals = resids)
   names(cure.df)[1] <- x_name
-  
-  # 7. Generate Plot
   cureplots::cure_plot(cure.df, n_resamples = n_resamples, ...)
 }

@@ -570,3 +570,25 @@ test_that("F18: every count p-function follows the same contract", {
                log(sum(dpinvgaus(81:3000, mu = 2, eta = 0.5))),
                tolerance = 1e-8)
 })
+
+test_that("F19: CURE and augment(data = ) keep rows aligned", {
+  d <- washington_roads
+  d$lnaadt[3] <- NA
+  m <- suppressMessages(countreg(Total_crashes ~ lnaadt, d, method = "BFGS"))
+  # augment() with reordered data predicts in that order
+  o <- sample(nrow(d))
+  a <- augment(m, data = d[o, ])
+  keep <- !is.na(d$lnaadt[o])
+  expect_equal(nrow(a), sum(keep))
+  expect_equal(a$.fitted, as.vector(predict(m, newdata = d[o, ][keep, ])))
+  expect_equal(a$.resid, d$Total_crashes[o][keep] - a$.fitted)
+  ap <- augment(m, data = d[o, ], type.residuals = "pearson")
+  expect_equal(ap$.resid[order(o[keep])],
+               as.numeric(residuals(m, type = "pearson")))
+  # CURE uses one mask for outcome, predictions and covariate
+  skip_if_not_installed("cureplots")
+  d$speed50[10] <- NA
+  expect_s3_class(cureplot(m, data = d, indvar = "speed50"), "ggplot")
+  expect_error(cureplot(m, indvar = "nope"), "not found")
+  expect_error(cureplot(m, method = "Exact"), "applies only")
+})

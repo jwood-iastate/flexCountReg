@@ -164,12 +164,13 @@ residuals.flexCountReg <- function(object,
 # The observed count follows the model's family with mean parameter
 # exp(X beta + offset) * p, where p is the reporting probability (p = 1
 # without underreporting), as in the likelihood of countreg().
-.fcr_fitted_variance <- function(object) {
+.fcr_fitted_variance <- function(object, data = NULL) {
   if (!inherits(object, "countreg")) {
     stop("Pearson residuals are available for countreg() models.",
          call. = FALSE)
   }
-  parts <- .fcr_countreg_parts(object, .fcr_training_rows(object))
+  parts <- .fcr_countreg_parts(object,
+                               data %||% .fcr_training_rows(object))
   v <- .fcr_family_variance(parts$family, parts$mu_link * parts$p_report,
                             parts$alpha, parts$sigma)
   if (is.null(v)) {

@@ -14,7 +14,8 @@
   dials parameter). Case weights are passed as frequency weights.
 * `predict()` accepts `new_data` (the tidymodels name) as well as `newdata`.
 * Standard errors are `NA` (instead of 0) when the estimated variance is
-  negative, which happens for weakly identified parameters.
+  negative, which happens for weakly identified parameters. `regCompTable()`
+  shows such standard errors as `NA` without significance stars.
 
 ## Breaking changes and changed results
 
@@ -33,9 +34,12 @@
   as the restricted model (before: the one with the higher log-likelihood),
   errors when the models were fit to different numbers of observations, and
   warns when the restricted model has the higher log-likelihood. Its base and
-  null models use the same rows, offset and weights as the fitted model, and
-  McFadden's R^2 uses an intercept-only model of the same family for
-  `countreg()` models. `regCompTable()` uses the same definitions.
+  null models use the same rows, offset and weights as the fitted model.
+  McFadden's R^2 is computed against an intercept-only Poisson model for
+  every model by default (so it is comparable across distributions); a
+  different baseline family, with or without the mean covariates, can be
+  chosen with `basemodel` and `variables` in both `regCompTest()` and
+  `regCompTable()`.
 * `cor2cov()` stops (instead of warning and returning `NULL`) on invalid
   input, and checks that `C` is a symmetric correlation matrix.
 * `margEffTable()` includes by default the variables of the underreporting,

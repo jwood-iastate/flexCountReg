@@ -60,29 +60,33 @@
   list(LL = fit$model$maximum, n.coef = length(fit$model$estimate))
 }
 
-# Log-likelihood of the null model used for McFadden's pseudo R^2: an
-# intercept-only model of the same family for countreg() models, and an
-# intercept-only Poisson model otherwise.
-.fit_null_ll <- function(trained_model, pc) {
-  if (inherits(trained_model, "countreg") &&
-      !identical(trained_model$model$family, "POISSON")) {
-    out <- tryCatch(.fcr_countreg_base(pc, trained_model$formula,
-                                       trained_model$model$family,
-                                       intercept_only = TRUE)$LL,
-                    error = function(e) NA_real_)
-    if (is.finite(out)) return(out)
+# Log-likelihood of the baseline model for McFadden's pseudo R^2, fit on the
+# same rows, offset and weights as the model. By default this is an
+# intercept-only Poisson model for every model, so the pseudo R^2 is
+# comparable across count distributions. `basemodel` can name another
+# countreg() family, and `variables = TRUE` includes the model's mean
+# covariates in the baseline.
+.fit_null_ll <- function(trained_model, pc, basemodel = "Poisson",
+                         variables = FALSE, ...) {
+  if (identical(toupper(basemodel), "POISSON")) {
+    return(tryCatch(.fcr_poisson_ll(pc, if (variables) pc$X else NULL)$LL,
+                    error = function(e) NA_real_))
   }
-  tryCatch(.fcr_poisson_ll(pc)$LL, error = function(e) NA_real_)
+  tryCatch(.fcr_countreg_base(pc, trained_model$formula, basemodel,
+                              intercept_only = !variables, ...)$LL,
+           error = function(e) NA_real_)
 }
 
-get_model_components <- function(trained_model, data) {
+get_model_components <- function(trained_model, data, basemodel = "Poisson",
+                                 variables = FALSE, ...) {
   if (!inherits(trained_model, "flexCountReg")) {
     stop("The supplied object is not a flexCountReg model.", call. = FALSE)
   }
   pc <- .fcr_fit_pieces(trained_model, data)
   LL <- as.numeric(stats::logLik(trained_model))
   n.coef <- length(stats::coef(trained_model))
-  LL_null <- .fit_null_ll(trained_model, pc)
+  LL_null <- .fit_null_ll(trained_model, pc, basemodel = basemodel,
+                         variables = variables, ...)
   list(
     fit = trained_model$model,
     object = trained_model,
@@ -118,7 +122,9 @@ get_model_components <- function(trained_model, data) {
 #'   used when available.
 #' @param basemodel A character string specifying the family of base model to
 #'   compare against (options include the family from
-#'   \code{\link{countreg}} or "Poisson"). Default is "Poisson".
+#'   \code{\link{countreg}} or "Poisson"). Default is "Poisson". It is
+#'   used for the LR test of a single model and, in both workflows, as the
+#'   baseline of McFadden's Pseudo R^2.
 #' @param variables Logical. If \code{TRUE}, the base model will include the
 #'   same variables as the provided model. If \code{FALSE}, the base model
 #'   will be an intercept-only model. Default is \code{FALSE}.
@@ -160,9 +166,9 @@ get_model_components <- function(trained_model, data) {
 #'   the estimated base model when the fitted model has more parameters than
 #'   the base model.
 #' \item Computes McFadden's Pseudo R^2, \eqn{1 - LL/LL_0}, where
-#'   \eqn{LL_0} is the log-likelihood of an intercept-only model of the same
-#'   family for \code{countreg()} models (an intercept-only Poisson model for
-#'   the other estimators).
+#'   \eqn{LL_0} is the log-likelihood of the base model (by default an
+#'   intercept-only Poisson model, the base count model, so that the pseudo
+#'   R^2 is comparable across models and distributions).
 #' }
 #'
 #' For the two-model workflow, the model with fewer parameters is the
@@ -334,8 +340,8 @@ regCompTest <- function(
   }
   
   if (!is.null(model2)) {
-    res_a <- get_model_components(model, data)
-    res_b <- get_model_components(model2, data)
+    res_a <- get_model_components(model, data, basemodel, variables, ...)
+    res_b <- get_model_components(model2, data, basemodel, variables, ...)
     if (res_a$nobs != res_b$nobs) {
       stop("The two models were fit to different numbers of observations (",
            res_a$nobs, " and ", res_b$nobs, "); an LR test is not valid.",
@@ -348,7 +354,7 @@ regCompTest <- function(
       res1 <- res_b; res2 <- res_a; restricted_is_first <- FALSE
     }
   } else {
-    res1 <- get_model_components(model, data)
+    res1 <- get_model_components(model, data, basemodel, variables, ...)
   }
   
   if (is.null(model2)) {

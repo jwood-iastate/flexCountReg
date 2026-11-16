@@ -43,8 +43,7 @@ models <- list(
   Poisson = fit("Poisson"),
   NB1 = fit("NB1"),
   NB2 = fit("NB2"),
-  PIG2 = fit("PIG2"),
-  PL = fit("PL"),
+  PIG1 = fit("PIG1"),
   GP1 = fit("GP1")
 )
 ```
@@ -78,8 +77,14 @@ regCompTest(models$Poisson, model2 = models$NB2)$statistics
 and `regCompTable()` builds a coefficient table across models:
 
 ```{r table}
-regCompTable(models[c("Poisson", "NB2", "PIG2")])
+regCompTable(models[c("Poisson", "NB1", "NB2")])
 ```
+
+McFadden's pseudo R-squared compares each model with the same baseline, an
+intercept-only Poisson model (the base count model), so the values are
+comparable across distributions. A different baseline can be chosen with the
+`basemodel` and `variables` arguments of `regCompTable()` and
+`regCompTest()`.
 
 ## Does the model reproduce the counts?
 

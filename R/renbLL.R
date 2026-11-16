@@ -44,15 +44,23 @@ renb_ll <- function(y, mu, a, b, panels) {
 
 # lgamma(x + d) - lgamma(x) - d * log(x): tends to 0 as x -> Inf (the
 # Poisson limit of negative binomial panel terms with x = 1 / alpha), where
-# the direct expression loses all significant digits.
+# the direct expression loses all significant digits. For whole d (counts)
+# it is the finite sum of log1p(k / x), k = 0, ..., d - 1, which is accurate
+# for every x; otherwise a Stirling series is used for large x.
 .fcr_lgamma_diff_rel <- function(x, d) {
   n <- max(length(x), length(d))
   x <- rep_len(x, n); d <- rep_len(d, n)
   out <- lgamma(x + d) - lgamma(x) - d * log(x)
-  big <- is.finite(x) & x > 1e4 * (1 + d^2)
+  int <- is.finite(x) & x > 0 & is.finite(d) & d >= 0 & d == round(d) &
+    d <= 1e5
+  if (any(int)) {
+    out[int] <- vapply(which(int), function(i) {
+      if (d[i] == 0) 0 else sum(log1p((0:(d[i] - 1)) / x[i]))
+    }, numeric(1))
+  }
+  big <- !int & is.finite(x) & x > 1e4 * (1 + d^2)
   if (any(big)) {
     xb <- x[big]; db <- d[big]
-    # Stirling series of log Gamma(x + d) - log Gamma(x) - d log x
     out[big] <- db * (db - 1) / (2 * xb) -
       db * (db - 1) * (2 * db - 1) / (12 * xb^2) +
       db^2 * (db - 1)^2 / (12 * xb^3)
@@ -60,12 +68,20 @@ renb_ll <- function(y, mu, a, b, panels) {
   out
 }
 
-# digamma(x + d) - digamma(x), accurate for large x
+# digamma(x + d) - digamma(x): the finite sum of 1 / (x + k) for whole d,
+# otherwise a series for large x
 .fcr_digamma_diff <- function(x, d) {
   n <- max(length(x), length(d))
   x <- rep_len(x, n); d <- rep_len(d, n)
   out <- digamma(x + d) - digamma(x)
-  big <- is.finite(x) & x > 1e4 * (1 + d^2)
+  int <- is.finite(x) & x > 0 & is.finite(d) & d >= 0 & d == round(d) &
+    d <= 1e5
+  if (any(int)) {
+    out[int] <- vapply(which(int), function(i) {
+      if (d[i] == 0) 0 else sum(1 / (x[i] + 0:(d[i] - 1)))
+    }, numeric(1))
+  }
+  big <- !int & is.finite(x) & x > 1e4 * (1 + d^2)
   if (any(big)) {
     xb <- x[big]; db <- d[big]
     out[big] <- db / xb - db * (db - 1) / (2 * xb^2) +
@@ -73,4 +89,3 @@ renb_ll <- function(y, mu, a, b, panels) {
   }
   out
 }
-

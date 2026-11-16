@@ -693,6 +693,8 @@ test_that("F22: inner mixing draws are separate, scrambled draws reproducible", 
 test_that("F23: panel NB likelihoods reach the Poisson limit without cancellation", {
   # lgamma(x + d) - lgamma(x) - d log x = d (d - 1) / (2 x) + ... for large x
   expect_equal(.fcr_lgamma_diff_rel(1e12, 7), 21 / 1e12, tolerance = 1e-6)
+  expect_equal(.fcr_lgamma_diff_rel(1e12, 7.5),
+               7.5 * 6.5 / 2e12, tolerance = 1e-6)
   expect_equal(.fcr_lgamma_diff_rel(10, 7),
                lgamma(17) - lgamma(10) - 7 * log(10))
   expect_equal(.fcr_digamma_diff(1e8, 7), sum(1 / (1e8 + 0:6)),
@@ -717,7 +719,7 @@ test_that("F23: panel NB likelihoods reach the Poisson limit without cancellatio
   g <- colSums(.nm_grad(c(0.5, 0.3, -12), prep, "NM2"))
   num <- maxLik::numericGradient(function(p) sum(.nm_loglik(p, prep, "NM2")),
                                  c(0.5, 0.3, -12))
-  expect_equal(g, as.vector(num), tolerance = 1e-4)
+  expect_equal(unname(g), as.vector(num), tolerance = 1e-4)
 })
 
 test_that("F26: diagnostics have bounded cost and explicit contracts", {

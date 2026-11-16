@@ -64,50 +64,14 @@
   lp
 }
 
-.gp1_logpmf_raw <- function(y, mu, phi) {
-  if (is.na(y) || is.na(mu) || is.na(phi)) return(NA_real_)
-  
-  if (y < 0 || abs(y - round(y)) > .Machine$double.eps^0.5) {
-    return(-Inf)
-  }
-  
-  if (mu <= 0 || phi <= -1) return(-Inf)
-  
-  if (phi == 0) {
-    return(dpois(y, lambda = mu, log = TRUE))
-  }
-  
-  if (phi < 0) {
-    ymax <- .gp1_ymax(mu, phi)
-    if (y > ymax) return(-Inf)
-  }
-  
-  a <- mu + phi * y
-  den <- 1 + phi
-  
-  if (a <= 0 || den <= 0) return(-Inf)
-  
-  log(mu) +
-    (y - 1) * log(a) -
-    a / den -
-    y * log1p(phi) -
-    lgamma(y + 1)
-}
-
 .gp1_log_norm_const <- function(mu, phi) {
   if (phi >= 0) return(0)
   .gp1_lnorm_vec(mu, phi)
 }
 
-.gp1_logpmf <- function(y, mu, phi) {
-  lp <- .gp1_logpmf_raw(y, mu, phi)
-  if (is.infinite(lp) && lp < 0) return(lp)
-  
-  if (phi < 0) {
-    lp - .gp1_log_norm_const(mu, phi)
-  } else {
-    lp
-  }
+# Unnormalized log-PMF over the counts y for scalar mu and phi.
+.gp1_lraw <- function(y, mu, phi) {
+  .gp1_lraw_vec(y, rep_len(mu, length(y)), rep_len(phi, length(y)))
 }
 
 .gp1_cdf_scalar <- function(q, mu, phi) {
@@ -125,11 +89,11 @@
     if (q >= ymax) return(1)
     
     y_seq <- 0:q
-    logp <- vapply(y_seq, function(yy) .gp1_logpmf_raw(yy, mu, phi), numeric(1))
+    logp <- .gp1_lraw(y_seq, mu, phi)
     logp <- logp - .gp1_log_norm_const(mu, phi)
   } else {
     y_seq <- 0:q
-    logp <- vapply(y_seq, function(yy) .gp1_logpmf_raw(yy, mu, phi), numeric(1))
+    logp <- .gp1_lraw(y_seq, mu, phi)
   }
   
   cum_log <- numeric(length(logp))
@@ -236,6 +200,8 @@ dgp1 <- function(x, mu = 1, phi = 1, log = FALSE) {
   lp <- rep(-Inf, length(x))
   lp[is_count] <- .gp1_logpmf_vec(round(x[is_count]), mu[is_count],
                                   phi[is_count])
+  lp[!is.na(mu) & !is.na(phi) & (mu <= 0 | phi <= -1 | !is.finite(mu) |
+                                    !is.finite(phi))] <- NaN
   lp[is.na(x) | is.na(mu) | is.na(phi)] <- NA
   if (log) lp else exp(lp)
 }
@@ -251,6 +217,11 @@ pgp1 <- function(q, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE) {
   phi <- rep_len(phi, n)
   
   out <- vapply(seq_len(n), function(i) {
+    if (!is.na(mu[i]) && !is.na(phi[i]) &&
+        (!is.finite(mu[i]) || mu[i] <= 0 || !is.finite(phi[i]) ||
+         phi[i] <= -1)) {
+      return(NaN)
+    }
     .gp1_cdf_scalar(q[i], mu[i], phi[i])
   }, numeric(1))
   
@@ -266,6 +237,7 @@ qgp1 <- Vectorize(function(p, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE)
   .gp1_validate(mu, phi)
   
   if (is.na(p) || is.na(mu) || is.na(phi)) return(NA_real_)
+  if (!is.finite(mu) || mu <= 0 || !is.finite(phi) || phi <= -1) return(NaN)
   
   if (log.p) p <- exp(p)
   if (!lower.tail) p <- 1 - p
@@ -281,7 +253,7 @@ qgp1 <- Vectorize(function(p, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE)
     ymax <- .gp1_ymax(mu, phi)
     y_seq <- 0:ymax
     
-    logp <- vapply(y_seq, function(yy) .gp1_logpmf_raw(yy, mu, phi), numeric(1))
+    logp <- .gp1_lraw(y_seq, mu, phi)
     logp <- logp - .gp1_log_norm_const(mu, phi)
     
     cdf <- numeric(length(logp))
@@ -337,7 +309,7 @@ rgp1 <- function(n, mu = 1, phi = 1) {
     ymax <- .gp1_ymax(mu, phi)
     y_seq <- 0:ymax
     
-    logp <- vapply(y_seq, function(yy) .gp1_logpmf_raw(yy, mu, phi), numeric(1))
+    logp <- .gp1_lraw(y_seq, mu, phi)
     logp <- logp - .gp1_log_norm_const(mu, phi)
     prob <- exp(logp)
     

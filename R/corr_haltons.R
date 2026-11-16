@@ -108,6 +108,11 @@ corr_haltons <- function(
          "(`cholesky`) or standard deviations and a correlation matrix ",
          "(`stdev` and `correlations`).", call. = FALSE)
   }
+  cholesky <- as.matrix(cholesky)
+  if (!identical(dim(cholesky), c(N, N))) {
+    stop("`cholesky` must be a ", N, " x ", N, " matrix (one row and column ",
+         "per element of `means`).", call. = FALSE)
+  }
   sdevs <- sqrt(diag(t(cholesky) %*% cholesky))
 
   # Apply the Cholesky factor to introduce the correlation: each column is

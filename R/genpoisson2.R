@@ -29,46 +29,16 @@
   }
 }
 
-.gp2_logpmf_raw <- function(y, mu, alpha) {
-  if (is.na(y) || is.na(mu) || is.na(alpha)) return(NA_real_)
-  
-  if (y < 0 || abs(y - round(y)) > .Machine$double.eps^0.5) {
-    return(-Inf)
-  }
-  
-  if (mu <= 0 || !is.finite(alpha)) return(-Inf)
-  
-  if (alpha == 0) {
-    return(dpois(y, lambda = mu, log = TRUE))
-  }
-  
-  a <- mu + alpha * mu * y
-  den <- 1 + alpha * mu
-  
-  if (a <= 0 || den <= 0) return(-Inf)
-  
-  log(mu) +
-    (y - 1) * log(a) -
-    a / den -
-    y * log1p(alpha * mu) -
-    lgamma(y + 1)
+# Unnormalized log-PMF over the counts y for scalar mu and alpha. GP2(mu,
+# alpha) is GP1(mu, phi = alpha * mu).
+.gp2_lraw <- function(y, mu, alpha) {
+  n <- length(y)
+  .gp1_lraw_vec(y, rep_len(mu, n), rep_len(alpha * mu, n))
 }
 
 .gp2_log_norm_const <- function(mu, alpha) {
   if (alpha >= 0) return(0)
-  # GP2(mu, alpha) is GP1(mu, phi = alpha * mu)
   .gp1_lnorm_vec(mu, alpha * mu)
-}
-
-.gp2_logpmf <- function(y, mu, alpha) {
-  lp <- .gp2_logpmf_raw(y, mu, alpha)
-  if (is.na(lp) || (is.infinite(lp) && lp < 0)) return(lp)
-  
-  if (alpha < 0) {
-    lp - .gp2_log_norm_const(mu, alpha)
-  } else {
-    lp
-  }
 }
 
 .gp2_cdf_scalar <- function(q, mu, alpha) {
@@ -87,7 +57,7 @@
   }
   
   y_seq <- 0:q
-  logp <- vapply(y_seq, function(yy) .gp2_logpmf_raw(yy, mu, alpha), numeric(1))
+  logp <- .gp2_lraw(y_seq, mu, alpha)
   
   if (alpha < 0) {
     logp <- logp - .gp2_log_norm_const(mu, alpha)
@@ -273,7 +243,7 @@ qgp2 <- function(p, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE) {
       if (!isTRUE(lower.tail[i])) pi <- 1 - pi
       
       if (!is.finite(pi) || pi < 0 || pi > 1) {
-        out[i] <- NA_real_
+        out[i] <- NaN
         next
       }
       
@@ -300,11 +270,7 @@ qgp2 <- function(p, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE) {
         ymax <- .gp2_ymax(alpha[i], mu[i])
         y_seq <- 0:ymax
         
-        logp_vec <- vapply(
-          y_seq,
-          function(yy) .gp2_logpmf_raw(yy, mu[i], alpha[i]),
-          numeric(1)
-        )
+        logp_vec <- .gp2_lraw(y_seq, mu[i], alpha[i])
         logp_vec <- logp_vec - .gp2_log_norm_const(mu[i], alpha[i])
         
         p_y <- exp(logp_vec)
@@ -367,7 +333,7 @@ rgp2 <- function(n, mu = 1, alpha = 0) {
     ymax <- .gp2_ymax(alpha, mu)
     y_seq <- 0:ymax
     
-    logp <- vapply(y_seq, function(yy) .gp2_logpmf_raw(yy, mu, alpha), numeric(1))
+    logp <- .gp2_lraw(y_seq, mu, alpha)
     logp <- logp - .gp2_log_norm_const(mu, alpha)
     prob <- exp(logp)
     

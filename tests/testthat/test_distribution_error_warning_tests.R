@@ -40,12 +40,11 @@ test_that("Correlated Halton Draws",{
     ndraws=5000, scrambled=TRUE,
     dist="lognormal"), "Unsupported")
   
-  expect_error(corr_haltons(corr_haltons(
+  expect_error(corr_haltons(
     c(3, 2, 0.9), 
-    c(0.25,1.5,0.8),,
+    c(0.25,1.5,0.8),
     hdraws = matrix(c(0.1,0.3,0.9, 0.5,0.6,0.2), ncol = 3), 
-    correlations = matrix(c(1, -0.3, 0.5, -0.3, 1, -0.2, 0.5, -0.2, 1), 3, 3),
-    dist="normal")))
+    dist="normal"), "must be a 3 x 3 matrix")
   
 })
 
@@ -57,8 +56,8 @@ test_that("Countreg Bootstrapping",{
 
   mod <- countreg(
     Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
-    data = washington_roads, family = "PIG", verbose = TRUE,
-    method='NM',
+    data = washington_roads, family = "PIG",
+    method='BFGS',
     stderr = "boot",
     bootstraps = 3)
   
@@ -67,18 +66,20 @@ test_that("Countreg Bootstrapping",{
   expect_error(countreg(
     Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
     data = washington_roads, family = "Lindley"))
-  mod.rp <- countreg.rp(Total_crashes ~ lnlength + speed50,
+  # A short Nelder-Mead run stops at the iteration limit
+  mod.rp <- suppressWarnings(countreg.rp(Total_crashes ~ lnlength + speed50,
                         rpar_formula = ~ -1 + lnaadt,
                         data = washington_roads,
                         family = "NB2",
                         rpardists = c( lnaadt = "g"),
                         ndraws = 10,
                         method = "NM",
-                        verbose=TRUE, max.iters = 100)
+                        max.iters = 100))
   
-  predict(mod.rp, method = 'Exact')
-  
-  expect_s3_class(mod, "flexCountReg")
+  pr <- predict(mod.rp, method = 'Exact')
+  expect_length(pr, nrow(washington_roads))
+  expect_true(all(is.finite(pr) & pr > 0))
+  expect_s3_class(mod.rp, "flexCountReg")
   
 })
 

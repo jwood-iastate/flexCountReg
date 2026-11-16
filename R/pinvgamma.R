@@ -108,7 +108,9 @@ ppinvgamma <- function(q, mu = 1, eta = 1, lower.tail = TRUE,
   q <- floor(r[[1]]); mu <- r[[2]]; eta <- r[[3]]
   cdf <- rep(NA_real_, length(q))
   cdf[!is.na(q) & q < 0] <- 0
-  for (i in which(!is.na(q) & q >= 0)) {
+  bad_par <- !(is.finite(mu) & mu > 0 & is.finite(eta) & eta > 0)
+  cdf[bad_par & !is.na(q) & q >= 0] <- NaN
+  for (i in which(!is.na(q) & q >= 0 & !bad_par)) {
     lp <- suppressWarnings(.ldpinvgamma(0:q[i], mu[i], eta[i]))
     m <- max(lp)
     cdf[i] <- if (is.finite(m)) min(1, exp(m + log(sum(exp(lp - m))))) else NA

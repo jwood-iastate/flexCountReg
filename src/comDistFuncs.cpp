@@ -225,7 +225,10 @@ NumericVector pcom_vec_cpp(IntegerVector q_vec, NumericVector lambda_values, Num
     double lambda = lambda_values[i];
     double nu = nu_vec[i];
     
-    cumulative_probs[i] = pcom_cpp(q, lambda, nu);
+    double pr = pcom_cpp(q, lambda, nu);
+    if (!lower_tail) pr = 1.0 - pr;
+    if (log_p) pr = std::log(pr);
+    cumulative_probs[i] = pr;
   }
   
   return cumulative_probs;

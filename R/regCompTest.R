@@ -222,16 +222,6 @@ regCompTest <- function(
     round(x, digits)
   }
   
-  first_non_null <- function(...) {
-    vals <- list(...)
-    for (v in vals) {
-      if (!is.null(v)) {
-        return(v)
-      }
-    }
-    NULL
-  }
-  
   make_single_model_stats <- function(model_res, base_res) {
     LR <- NA_real_
     LRdof <- NA_integer_

@@ -82,8 +82,11 @@ dsichel <- function(x, mu = 1, sigma = 1, gamma = 1, log = FALSE) {
   
   
   # Valid: non-NA, non-negative integers
+  bad_par <- !is.na(mu) & !is.na(sigma) & (mu <= 0 | sigma <= 0)
+  log_p[bad_par] <- NaN
+  log_p[is.na(x) | is.na(mu) | is.na(sigma) | is.na(gamma)] <- NA_real_
   valid <- !is.na(x) & !is.na(mu) & !is.na(sigma) & !is.na(gamma) &
-    is.finite(x) & x >= 0 & x == floor(x)
+    is.finite(x) & x >= 0 & x == floor(x) & !bad_par
   
   if (!any(valid)) {
     if (log) return(log_p) else return(exp(log_p))
@@ -254,11 +257,14 @@ psichel <- function(q, mu = 1, sigma = 1, gamma = 1,
   cdf <- rep(NA_real_, n)
   
   # --- Handle Special Cases ---
-  invalid_q <- is.na(q) | q < 0
+  invalid_q <- !is.na(q) & q < 0
   cdf[invalid_q] <- 0
+  bad_par <- !is.na(mu) & !is.na(sigma) & (mu <= 0 | sigma <= 0)
+  cdf[bad_par] <- NaN
   
   # --- Compute CDF for Valid Cases ---
-  valid <- !invalid_q
+  valid <- !is.na(q) & !invalid_q & !bad_par & !is.na(mu) & !is.na(sigma) &
+    !is.na(gamma)
   
   if (any(valid)) {
     for (i in which(valid)) {
@@ -355,15 +361,17 @@ qsichel <- function(p, mu = 1, sigma = 1, gamma = 1,
   
   # Compute quantiles
   q <- mapply(function(pi, mui, sigmai, gammai) {
-    if (is.na(pi)) return(NA_integer_)
-    if (pi == 0) return(0L)
+    if (is.na(pi)) return(NA_real_)
+    if (pi < 0 || pi > 1) return(NaN)
+    if (is.na(mui) || is.na(sigmai) || mui <= 0 || sigmai <= 0) return(NaN)
+    if (pi == 0) return(0)
     if (pi == 1) return(Inf)
     
     y <- 0L
     cum_p <- dsichel(0, mu = mui, sigma = sigmai, gamma = gammai)
     
     # Safety check: if parameters are invalid, dsichel might return NA
-    if (is.na(cum_p)) return(NA_integer_)
+    if (is.na(cum_p)) return(NA_real_)
     
     max_iter <- 10000 
     
@@ -384,22 +392,19 @@ qsichel <- function(p, mu = 1, sigma = 1, gamma = 1,
     
   }, p, mu, sigma, gamma, SIMPLIFY = TRUE)
   
-  return(as.integer(q))
+  as.numeric(q)
 }
 
 #' @rdname SichelDistribution
 #' @export
 rsichel <- function(n, mu = 1, sigma = 1, gamma = 1) {
   
-  if (length(n) != 1 || n < 0 || n != floor(n)) 
-    warning("'n' must be a non-negative integer")
+  if (length(n) > 1) n <- length(n)
+  if (n < 0 || n != floor(n)) stop("'n' must be a non-negative integer")
   
   if (n == 0) return(integer(0))
   
-  # Input validation
-  if (any(mu <= 0)) warning("'mu' must be positive")
-  if (any(sigma <= 0)) warning("'sigma' must be positive")
-  
+  # Parameter checks (and their warnings) are done by qsichel()
   # Generate uniform random numbers and use inverse CDF
   u <- runif(n)
   

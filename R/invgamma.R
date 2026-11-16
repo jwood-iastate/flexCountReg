@@ -94,9 +94,10 @@ dinvgamma <- function(x, shape = 2.5, scale = 1, log = FALSE) {
   log_p <- 
     shape * log(scale) - lgamma(shape) - (shape + 1) * log(x) - scale / x
   
-  # Handle invalid x (must be positive)
-  invalid <- is.na(x) | x <= 0
-  log_p[invalid] <- -Inf
+  # Handle invalid x (must be positive), invalid parameters and NAs
+  log_p[!is.na(x) & x <= 0] <- -Inf
+  log_p[.invgamma_bad(shape, scale)] <- NaN
+  log_p[is.na(x) | is.na(shape) | is.na(scale)] <- NA_real_
   
   # --- Return ---
   if (log) {
@@ -129,11 +130,15 @@ pinvgamma <- function(q, shape = 2.5, scale = 1,
   # Or equivalently: 
   # P(X <= q) = pgamma(1/q, shape, rate = scale, lower.tail = FALSE)
   
-  cdf <- pgamma(1/q, shape = shape, rate = scale, lower.tail = FALSE)
+  bad <- .invgamma_bad(shape, scale)
+  cdf <- rep(NaN, n)
+  cdf[!bad] <- pgamma(1/q[!bad], shape = shape[!bad], rate = scale[!bad],
+                      lower.tail = FALSE)
   
   # Handle boundaries
-  cdf[q <= 0] <- 0
-  cdf[!is.finite(q) & q > 0] <- 1
+  cdf[!bad & !is.na(q) & q <= 0] <- 0
+  cdf[!bad & !is.na(q) & is.infinite(q) & q > 0] <- 1
+  cdf[is.na(q) | is.na(shape) | is.na(scale)] <- NA_real_
   
   # --- Apply Tail and Log Options ---
   if (!lower.tail) cdf <- 1 - cdf
@@ -167,12 +172,14 @@ qinvgamma <- function(p, shape = 2.5, scale = 1,
   # Q_InvGamma(p) = 1 / Q_Gamma(1-p)
   # where Q_Gamma uses the same shape and rate = scale
   
-  q_gamma <- qgamma(1 - p, shape = shape, rate = scale)
-  q_val <- 1 / q_gamma
+  ok <- !.invgamma_bad(shape, scale) & !is.na(p) & p >= 0 & p <= 1
+  q_val <- rep(NaN, n)
+  q_val[ok] <- 1 / qgamma(1 - p[ok], shape = shape[ok], rate = scale[ok])
   
   # Handle boundaries
-  q_val[p == 0] <- 0
-  q_val[p == 1] <- Inf
+  q_val[ok & p == 0] <- 0
+  q_val[ok & p == 1] <- Inf
+  q_val[is.na(p) | is.na(shape) | is.na(scale)] <- NA_real_
   
   return(q_val)
 }
@@ -181,21 +188,20 @@ qinvgamma <- function(p, shape = 2.5, scale = 1,
 #' @rdname invgamma
 #' @export
 rinvgamma <- function(n, shape = 2.5, scale = 1) {
-  
-  if (length(n) != 1 || n < 0 || n != floor(n)) {
-    warning("'n' must be a non-negative integer")
-  }
+  n <- .fcr_rn(n)
   if (n == 0) return(numeric(0))
   
-  # Input validation
-  if (any(shape <= 0)) warning("'shape' must be positive")
-  if (any(scale <= 0)) warning("'scale' must be positive")
-  
-  # Recycle parameters
   shape <- rep_len(shape, n)
   scale <- rep_len(scale, n)
-  
-  # Generate: 
+  bad <- .invgamma_bad(shape, scale) | is.na(shape) | is.na(scale)
+  .fcr_warn_na(bad, "'shape' and 'scale' must be positive.")
   # If Y ~ Gamma(shape, rate = scale), then 1/Y ~ InvGamma(shape, scale)
-  1 / rgamma(n, shape = shape, rate = scale)
+  out <- rep(NA_real_, n)
+  out[!bad] <- 1 / rgamma(sum(!bad), shape = shape[!bad], rate = scale[!bad])
+  out
+}
+
+# Rows with invalid inverse-gamma parameters (NA parameters are not flagged).
+.invgamma_bad <- function(shape, scale) {
+  (!is.na(shape) & shape <= 0) | (!is.na(scale) & scale <= 0)
 }

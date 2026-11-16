@@ -85,59 +85,9 @@ dcom <- function(x, mu = NULL, lambda = 1, nu = 1, log = FALSE){
   if (any(lambda <= 0) | any(nu <= 0) | any(mu <=0))
     stop("The values of `mu`, lambda`, and `nu` must all be greater than 0.")
   
-  if (N_obs > 1){
-    if(!is.null(mu)){
-      if (length(mu)==1){
-        if (length(nu)==1){
-          lambda <- find_lambda_cpp(mu, nu)
-          lambda <- rep(lambda, N_obs)
-          nu <- rep(nu, N_obs)
-        } else if(length(nu)==N_obs){
-          mu <- rep(mu, N_obs)
-          lambda <- find_lambda_vec_cpp(mu, nu)
-        } else {
-          msg <- paste("`nu` must be a single value or a vector",
-                       "with the same length as `x`")
-          warning(msg)
-        }
-      } else if (length(mu) == N_obs){
-        if (length(nu)==1){
-          nu <- rep(nu, N_obs)
-        } else if (length(nu)!=N_obs){
-          msg <- paste("`nu` must be a single value or",
-                       "a vector with the same length as `x`")
-          warning(msg)
-        }
-        lambda <- find_lambda_vec_cpp(mu, nu)
-      } else {
-        msg <- 
-          "`mu` must be a single value or a vector with the same length as `x`."
-        warning(msg)
-      }
-    } else {
-      if (length(lambda)==1){
-        lambda <- rep(lambda, N_obs)
-      } else {
-        if (length(lambda)!=N_obs) {
-          msg <- paste("`lambda` must be a single value or a vector",
-                       "with the same length as `x`")
-          warning(msg)
-        }
-      }
-    }
-    if(length(nu)==1 & N_obs>1){
-      nu <- rep(nu, N_obs)
-    } else {
-      if (length(nu) != N_obs) {
-        msg <- paste("`nu` must be a single value or a",
-                     "vector with the same length as `x`")
-        warning(msg)
-      }
-    }
-  } else{ # if x is a single value and mu is provided
-    if (!is.null(mu) & length(mu) == 1 & length(nu) == 1)
-      lambda <- find_lambda_cpp(mu, nu)
-  }
+  pars <- .com_params(N_obs, mu, lambda, nu, "x")
+  lambda <- pars$lambda
+  nu <- pars$nu
   
   probabilities <- dcom_vec_cpp(x, lambda, nu, log)
   
@@ -162,59 +112,9 @@ pcom <- function(q, mu = NULL, lambda = 1, nu = 1, lower.tail = TRUE,
   
   # ensure that the vectors of parameter values is the same length as
   # the length of q
-  if (N_obs > 1){
-    if(!is.null(mu)){
-      if (length(mu)==1){
-        if (length(nu)==1){
-          lambda <- find_lambda_cpp(mu, nu)
-          lambda <- rep(lambda, N_obs)
-          nu <- rep(nu, N_obs)
-        } else if(length(nu)==N_obs){
-          mu <- rep(mu, N_obs)
-          lambda <- find_lambda_vec_cpp(mu, nu)
-        } else{
-          msg <- paste("`nu` must be a single value or a vector",
-                       "with the same length as `q`")
-          warning(msg)
-        }
-      } else if (length(mu)==N_obs){
-        if (length(nu)==1){
-          nu <- rep(nu, N_obs)
-        } else if (length(nu)!=N_obs){
-          msg <- paste("`nu` must be a single value or a",
-                       "vector with the same length as `q`")
-          warning(msg)
-        }
-        lambda <- find_lambda_vec_cpp(mu, nu)
-      } else {
-        msg <- paste("`mu` must be a single value or a vector",
-                     "with the same length as `q`.")
-        warning(msg)
-      }
-    } else {
-      if (length(lambda) == 1){
-        lambda <- rep(lambda, N_obs)
-      } else {
-        if (length(lambda) != N_obs) {
-          msg <- paste("`lambda` must be a single value or a",
-                       "vector with the same length as `q`")
-          warning(msg)
-        }
-      }
-    }
-    if(length(nu)==1 & N_obs>1){
-      nu <- rep(nu, N_obs)
-    } else {
-      if (length(nu) != N_obs) {
-        msg <- paste("`nu` must be a single value or a",
-                     "vector with the same length as `q`")
-        warning(msg)
-      }
-    }
-  } else{ # if q is a single value and mu is provided
-    if (!is.null(mu) & length(mu) == 1 & length(nu) == 1)
-      lambda <- find_lambda_cpp(mu, nu)
-  }
+  pars <- .com_params(N_obs, mu, lambda, nu, "q")
+  lambda <- pars$lambda
+  nu <- pars$nu
   
   p <- pcom_vec_cpp(q, lambda, nu, lower.tail, log.p)
   
@@ -237,59 +137,9 @@ qcom <- function(p, mu = NULL, lambda = 1, nu = 1) {
   
   # ensure that the vectors of parameter values is the same length as
   # the length of p
-  if (N_obs > 1){
-    if(!is.null(mu)){
-      if (length(mu)==1){
-        if (length(nu)==1){
-          lambda <- find_lambda_cpp(mu, nu)
-          lambda <- rep(lambda, N_obs)
-          nu <- rep(nu, N_obs)
-        } else if(length(nu)==N_obs){
-          mu <- rep(mu, N_obs)
-          lambda <- find_lambda_vec_cpp(mu, nu)
-        } else{
-          msg <- paste("`nu` must be a single value or a vector",
-                       "with the same length as `p`")
-          warning(msg)
-        }
-      } else if (length(mu)==N_obs){
-        if (length(nu)==1){
-          nu <- rep(nu, N_obs)
-        } else if (length(nu)!=N_obs){
-          msg <- paste("`nu` must be a single value or a",
-                       "vector with the same length as `p`")
-          warning(msg)
-        }
-        lambda <- find_lambda_vec_cpp(mu, nu)
-      } else {
-        msg <- paste("`mu` must be a single value or a vector",
-                     "with the same length as `p`.")
-        warning(msg)
-      }
-    } else {
-      if (length(lambda) == 1) {
-        lambda <- rep(lambda, N_obs)
-      } else {
-        if (length(lambda) != N_obs) {
-          msg <- paste("`lambda` must be a single value or a vector",
-                       "with the same length as `p`")
-          warning(msg)
-        }
-      }
-    }
-    if(length(nu) == 1 & N_obs > 1){
-      nu <- rep(nu, N_obs)
-    } else {
-      if (length(nu)!=N_obs) {
-        msg <- "`nu` must be a single value or a vector with the same length"
-        warning(msg)
-      }
-    }
-  } else{
-    # if p is a single value and mu is provided
-    if (!is.null(mu) & length(mu) == 1 & length(nu) == 1)
-      lambda <- find_lambda_cpp(mu, nu)
-  }
+  pars <- .com_params(N_obs, mu, lambda, nu, "p")
+  lambda <- pars$lambda
+  nu <- pars$nu
   
   quantiles <- qcom_vec_cpp(p, lambda, nu)
   
@@ -316,4 +166,29 @@ rcom <- function(n, mu = NULL, lambda = 1, nu = 1) {
   .fcr_warn_na(bad, "`lambda` and `nu` must be greater than 0.")
   .fcr_r_grouped(n, list(lambda = lambda, nu = nu), !bad,
                  function(k, lambda, nu) rcom_cpp(k, lambda, nu))
+}
+
+# Recycle the COM parameters to length n (base-R style: length 1 or n), and
+# find the rate lambda from the mean mu when mu is given. lambda is solved
+# once per distinct (mu, nu) pair.
+.com_params <- function(n, mu, lambda, nu, arg) {
+  check <- function(v, nm) {
+    if (!length(v) %in% c(1L, n)) {
+      stop("`", nm, "` must be a single value or a vector with the same ",
+           "length as `", arg, "`.", call. = FALSE)
+    }
+  }
+  check(nu, "nu")
+  nu <- rep_len(nu, n)
+  if (!is.null(mu)) {
+    check(mu, "mu")
+    mu <- rep_len(mu, n)
+    key <- paste(mu, nu)
+    first <- !duplicated(key)
+    lambda <- find_lambda_vec_cpp(mu[first], nu[first])[match(key, key[first])]
+  } else {
+    check(lambda, "lambda")
+    lambda <- rep_len(lambda, n)
+  }
+  list(lambda = lambda, nu = nu)
 }

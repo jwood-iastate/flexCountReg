@@ -95,52 +95,82 @@ repois <- function(formula,
   }
   if (stderr != "boot") bootstraps <- NULL
   
-  prep <- .repois_prepare_inputs(
-    formula = formula,
-    group_var = group_var,
-    data = data,
-    offset = offset
-  )
+  method <- .fcr_check_method(method)
+  if (missing(group_var) || is.null(group_var)) {
+    stop("`group_var` must name the column(s) that identify the groups.",
+         call. = FALSE)
+  }
   
-  # Keep local copies to avoid R CMD check notes about X/y.
+  # Shared data preparation: one complete-case frame (formula, offsets and
+  # groups), training blueprint and the rows used
+  prep <- prepare_model_data(formula, data, offset = offset,
+                             group_var = group_var)
+  if (prep$n_dropped > 0) {
+    message(prep$n_dropped, " row(s) with missing values were removed.")
+  }
+  y <- as.numeric(prep$y)
+  if (any(y < 0)) stop("The response variable must be nonnegative.",
+                       call. = FALSE)
   X <- prep$X
-  y <- prep$y
+  cluster_list <- split(seq_along(y), prep$group, drop = TRUE)
+  x_names <- c(colnames(X), "lnalpha")
   
   fit <- .repois_fit_engine(
     y = y,
     X = X,
-    offset_vec = prep$offset_vec,
-    cluster_list = prep$cluster_list,
+    offset_vec = prep$offset,
+    cluster_list = cluster_list,
     method = method,
     max.iters = max.iters,
     print.level = print.level,
-    bootstraps = bootstraps
+    bootstraps = NULL
   )
+  names(fit$estimate) <- x_names
   
-  # Keep the same object fields your summary/predict methods already use.
   fit$formula <- formula
   fit$observed <- y
+  fit$y <- y
   fit$predictions <- fit$fitted.values
   fit$residuals <- y - fit$predictions
   fit$LL <- fit$maximum
   fit$modelType <- "REPoisson"
-  fit$offset <- offset
+  fit$offset <- prep$blueprint$offset_label
   fit$call <- call
   fit$beta_pred <- unname(fit$estimate[seq_len(ncol(X))])
   fit$stderr <- stderr
+  fit$blueprint <- prep$blueprint
+  fit$rows_used <- prep$rows_used
+  fit$n_dropped <- prep$n_dropped
+  fit$nobs <- length(y)
+  fit$n_groups <- length(cluster_list)
+  
   if (stderr == "robust") {
     # One log-likelihood contribution per cluster: cluster-robust sandwich
     V <- sandwich::sandwich(fit$maxLik_object)
-    dimnames(V) <- list(names(fit$estimate), names(fit$estimate))
-    fit$vcov <- V
-    fit$se <- .fcr_se(V)
+  } else if (stderr == "boot") {
+    # Resample whole groups and refit from the full-sample estimates
+    bs <- .fcr_cluster_bootstrap(prep, as.integer(bootstraps), x_names,
+                                 refit = function(sub) {
+      f <- .repois_fit_engine(
+        y = as.numeric(sub$y), X = sub$X, offset_vec = sub$offset,
+        cluster_list = split(seq_along(sub$y), sub$group, drop = TRUE),
+        method = method, max.iters = max.iters, print.level = 0,
+        bootstraps = NULL, compute_vcov = FALSE)
+      stats::setNames(f$par, x_names)
+    })
+    V <- bs$vcov
+    fit$n_boot_ok <- bs$n_ok
+    fit$successful_bootstraps <- bs$n_ok
+    fit$bootstraps <- as.integer(bootstraps)
+  } else {
+    V <- fit$vcov
   }
+  dimnames(V) <- list(x_names, x_names)
+  fit$vcov <- V
+  fit$se <- .fcr_se(V)
+  fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
   fit$vcov_type <- switch(stderr, normal = "hessian", robust = "robust",
                           boot = "bootstrap")
-  if (stderr == "boot") {
-    fit$n_boot_ok <- fit$successful_bootstraps
-    fit$bootstraps <- bootstraps
-  }
   
   obj <- .createFlexCountReg(
     model = fit,
@@ -152,123 +182,6 @@ repois <- function(formula,
   obj
 }
 
-.repois_prepare_inputs <- function(formula, group_var, data, offset) {
-  if (!inherits(data, "data.frame")) {
-    stop("`data` must be a data frame.")
-  }
-  if (missing(group_var) || length(group_var) < 1L) {
-    stop("`group_var` must be supplied.")
-  }
-  if (is.null(names(data))) {
-    stop("`data` must have named columns.")
-  }
-  
-  group_var <- as.character(group_var)
-  missing_group <- setdiff(group_var, names(data))
-  if (length(missing_group) > 0L) {
-    stop("Grouping variable(s) not found in `data`: ",
-         paste(missing_group, collapse = ", "))
-  }
-  
-  data_work <- data
-  
-  # Keep only rows with complete grouping information before model.frame().
-  group_ok <- stats::complete.cases(data_work[, group_var, drop = FALSE])
-  data_work <- data_work[group_ok, , drop = FALSE]
-  
-  # Reset row names so model.frame() row indices are easy to recover.
-  rownames(data_work) <- seq_len(nrow(data_work))
-  
-  formula_aug <- formula
-  if (!is.null(offset)) {
-    if (!is.character(offset) || length(offset) != 1L) {
-      stop("`offset` must be a single character string naming a variable.")
-    }
-    if (!offset %in% names(data_work)) {
-      stop("Offset variable not found in `data`: ", offset)
-    }
-    if (grepl("offset\\s*\\(", paste(deparse(formula), collapse = " "))) {
-      stop("Specify offset either in `formula` or via `offset`, not both.")
-    }
-    
-    data_work$.__repois_offset__ <- data_work[[offset]]
-    formula_aug <- stats::as.formula(
-      paste(
-        paste(deparse(formula), collapse = " "),
-        "+ offset(.__repois_offset__)"
-      )
-    )
-  }
-  
-  mf <- stats::model.frame(formula_aug, data = data_work, na.action = na.omit)
-  y <- stats::model.response(mf)
-  
-  if (!is.numeric(y)) {
-    stop("The response variable must be numeric.")
-  }
-  if (any(y < 0, na.rm = TRUE)) {
-    stop("The response variable must be nonnegative.")
-  }
-  if (any(abs(y - round(y)) > 1e-8, na.rm = TRUE)) {
-    warning("The response variable is not integer-valued; Poisson counts are typically integers.")
-  }
-  
-  X <- stats::model.matrix(stats::terms(mf), mf)
-  
-  offset_vec <- stats::model.offset(mf)
-  if (is.null(offset_vec)) {
-    offset_vec <- rep(0, length(y))
-  }
-  
-  row_idx <- as.integer(rownames(mf))
-  data_used <- data_work[row_idx, , drop = FALSE]
-  
-  group_vals <- lapply(group_var, function(v) data_used[[v]])
-  if (length(group_vals) == 1L) {
-    group_fac <- as.factor(group_vals[[1L]])
-  } else {
-    group_fac <- interaction(group_vals, drop = TRUE, sep = ":")
-  }
-  
-  cluster_list <- split(seq_len(length(y)), group_fac, drop = TRUE)
-  cluster_list <- cluster_list[lengths(cluster_list) > 0L]
-  
-  if (length(cluster_list) < 1L) {
-    stop("No non-empty groups remain after removing missing values.")
-  }
-  
-  list(
-    y = y,
-    X = X,
-    offset_vec = offset_vec,
-    cluster_list = cluster_list,
-    data_used = data_used,
-    model_frame = mf,
-    terms = stats::terms(mf),
-    xlevels = .getXlevels(stats::terms(mf), mf),
-    contrasts = attr(X, "contrasts")
-  )
-}
-
-.repois_map_method <- function(method) {
-  if (is.null(method) || length(method) != 1L) {
-    stop("`method` must be a single string.")
-  }
-  
-  method <- toupper(method)
-  
-  switch(
-    method,
-    "NM" = "NM",
-    "NELDER-MEAD" = "NM",
-    "BFGS" = "BFGS",
-    "NR" = "NR",
-    "BHHH" = "BHHH",
-    "CG" = "CG",
-    "SANN" = "SANN",
-    stop("Unsupported optimization method: ", method)
-  )
-}
 
 .repois_start_values <- function(y, X, offset_vec) {
   fit0 <- try(
@@ -350,7 +263,7 @@ repois <- function(formula,
     stop("Package `maxLik` is required for `repois()`.")
   }
   
-  method_opt <- .repois_map_method(method)
+  method_opt <- .fcr_check_method(method)
   start <- .repois_start_values(y, X, offset_vec)
   
   control <- maxLik::maxControl(
@@ -398,21 +311,6 @@ repois <- function(formula,
   names(se) <- names(z) <- names(pval) <- names(par)
   
   if (isTRUE(compute_vcov)) {
-    if (!is.null(bootstraps) && length(bootstraps) == 1L && bootstraps > 1L) {
-      boot_vcov <- .repois_bootstrap_vcov(
-        y = y,
-        X = X,
-        offset_vec = offset_vec,
-        cluster_list = cluster_list,
-        method = method,
-        max.iters = max.iters,
-        print.level = print.level,
-        B = bootstraps
-      )
-      if (!is.null(boot_vcov)) {
-        vcov_mat <- boot_vcov
-      }
-    }
     
     if (all(is.na(vcov_mat))) {
       vc_try <- try(stats::vcov(fit_ml), silent = TRUE)
@@ -462,120 +360,11 @@ repois <- function(formula,
     out$se <- .fcr_se(vcov_mat)
   }
   
-  if (!is.null(bootstraps) && length(bootstraps) == 1L && bootstraps > 1L) {
-    out$bootstrapped_se <- .repois_bootstrap_se(
-      y = y,
-      X = X,
-      offset_vec = offset_vec,
-      cluster_list = cluster_list,
-      method = method,
-      max.iters = max.iters,
-      print.level = print.level,
-      B = bootstraps,
-      start = par
-    )
-    out$successful_bootstraps <- attr(out$bootstrapped_se, "successful_bootstraps")
-  } else {
-    out$bootstrapped_se <- NULL
-    out$successful_bootstraps <- 0L
-  }
   
   out
 }
 
-.repois_bootstrap_vcov <- function(y,
-                                   X,
-                                   offset_vec,
-                                   cluster_list,
-                                   method,
-                                   max.iters,
-                                   print.level,
-                                   B) {
-  boot_se <- .repois_bootstrap_se(
-    y = y,
-    X = X,
-    offset_vec = offset_vec,
-    cluster_list = cluster_list,
-    method = method,
-    max.iters = max.iters,
-    print.level = print.level,
-    B = B,
-    start = NULL
-  )
-  
-  if (is.null(boot_se) || nrow(boot_se) < 2L) {
-    return(NULL)
-  }
-  
-  stats::cov(boot_se[, -1L, drop = FALSE])
-}
 
-.repois_bootstrap_se <- function(y,
-                                 X,
-                                 offset_vec,
-                                 cluster_list,
-                                 method,
-                                 max.iters,
-                                 print.level,
-                                 B,
-                                 start = NULL) {
-  par_len <- ncol(X) + 1L
-  estimates <- matrix(NA_real_, nrow = B, ncol = par_len)
-  
-  cluster_ids <- seq_along(cluster_list)
-  ok <- 0L
-  
-  if (is.null(start)) {
-    start <- .repois_start_values(y, X, offset_vec)
-  }
-  
-  for (b in seq_len(B)) {
-    sampled_clusters <- sample(cluster_ids, size = length(cluster_ids), replace = TRUE)
-    sampled_rows_list <- cluster_list[sampled_clusters]
-    
-    boot_idx <- unlist(sampled_rows_list, use.names = FALSE)
-    boot_y <- y[boot_idx]
-    boot_X <- X[boot_idx, , drop = FALSE]
-    boot_offset <- offset_vec[boot_idx]
-    
-    boot_group <- rep(seq_along(sampled_rows_list), times = lengths(sampled_rows_list))
-    boot_cluster_list <- split(seq_len(length(boot_idx)), boot_group)
-    
-    boot_fit <- try(
-      .repois_fit_engine(
-        y = boot_y,
-        X = boot_X,
-        offset_vec = boot_offset,
-        cluster_list = boot_cluster_list,
-        method = method,
-        max.iters = max.iters,
-        print.level = print.level,
-        bootstraps = NULL,
-        compute_vcov = FALSE
-      ),
-      silent = TRUE
-    )
-    
-    if (!inherits(boot_fit, "try-error") && is.finite(boot_fit$logLik_value)) {
-      ok <- ok + 1L
-      estimates[ok, ] <- boot_fit$par
-    }
-  }
-  
-  if (ok < 2L) {
-    warning("Too few successful bootstrap replications; falling back to Hessian-based standard errors.")
-    return(NULL)
-  }
-  
-  estimates <- estimates[seq_len(ok), , drop = FALSE]
-  se_df <- data.frame(
-    term = c(colnames(X), "ln(alpha)"),
-    sd = apply(estimates, 2L, stats::sd)
-  )
-  
-  attr(se_df, "successful_bootstraps") <- ok
-  se_df
-}
 
 
 `%||%` <- function(a, b) if (!is.null(a)) a else b

@@ -346,6 +346,11 @@ rp_mgf <- function(dist, t, mu, sigma) {
 # Validate stderr; `bootstraps` given without `stderr` means bootstrap, as in
 # earlier versions.
 .fcr_resolve_stderr <- function(stderr, stderr_missing, bootstraps) {
+  if (!is.null(bootstraps) &&
+      (!is.numeric(bootstraps) || length(bootstraps) != 1L ||
+       is.na(bootstraps) || bootstraps < 2)) {
+    stop("`bootstraps` must be a single number of at least 2.", call. = FALSE)
+  }
   if (stderr_missing && !is.null(bootstraps)) return("boot")
   stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
   stderr
@@ -353,7 +358,11 @@ rp_mgf <- function(dist, t, mu, sigma) {
 
 # Standard errors from a covariance matrix: NA (not 0) where the variance is
 # negative or not finite, which happens for weakly identified parameters.
-.fcr_se <- function(V) {
+# With k given, a V that is not a k x k matrix gives k NAs.
+.fcr_se <- function(V, k = NULL) {
+  if (!is.null(k) && !(is.matrix(V) && all(dim(V) == k))) {
+    return(rep(NA_real_, k))
+  }
   v <- diag(V)
   v[!is.finite(v) | v < 0] <- NA_real_
   sqrt(v)

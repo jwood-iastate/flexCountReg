@@ -51,6 +51,7 @@ LazyData: true
 Config/roxygen2/markdown: TRUE
 Suggests:
     spelling, 
+    callr,
     lamW,
     dials,
     parsnip,

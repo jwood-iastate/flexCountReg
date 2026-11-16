@@ -2,7 +2,10 @@
 
 # TRUE where x is a non-negative whole number.
 .fcr_is_count <- function(x) {
-  !is.na(x) & x >= 0 & abs(x - round(x)) <= sqrt(.Machine$double.eps)
+  ok <- is.finite(x)
+  out <- rep(FALSE, length(x))
+  out[ok] <- x[ok] >= 0 & abs(x[ok] - round(x[ok])) <= sqrt(.Machine$double.eps)
+  out
 }
 
 # Recycle a set of arguments to a common length (base-R style). Returns a list.
@@ -61,6 +64,7 @@
   K <- 32
   repeat {
     cdf <- cdf_at(0:K)
+    if (all(is.nan(cdf))) return(NaN)      # invalid parameters
     hit <- which(cdf >= p - 1e-12)
     if (length(hit)) return(hit[1] - 1)
     if (K >= max_y || all(is.na(cdf))) return(NA_real_)

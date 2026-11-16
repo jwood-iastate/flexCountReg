@@ -1,5 +1,6 @@
 # Error 01: validation, count support and cache safety in dplindlogn_cpp().
-# Add this file; keep existing tests. Requires callr in DESCRIPTION/Suggests.
+# Regression tests for the Poisson-Lindley-lognormal density (uses callr,
+# which is in Suggests, for a crash test in a child process).
 
 reg01_draws <- c(0.05, 0.2, 0.4, 0.6, 0.8, 0.95)
 reg01_density <- function(x, mean = 2, theta = 3, sigma = 0.4, ...) {
@@ -93,6 +94,7 @@ test_that("error 01: vectors over the old OpenMP threshold remain correct", {
 })
 
 test_that("error 01: the former missing-sigma crash raises a recoverable R error", {
+  skip_if_not_installed("callr")
   # Load the CURRENT compiled DLL in a child, including during load_all/covr.
   # Loading an independently installed package here could test stale code.
   dll <- getLoadedDLLs()[["flexCountReg"]]

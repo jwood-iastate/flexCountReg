@@ -82,55 +82,56 @@ corr_haltons <- function(
     ndraws=500, scrambled=FALSE, dist="normal", lower=-Inf, upper=Inf) {
   N <- length(means)
   
-  if(!(dist %in% c("normal", "truncated_normal"))){
-    msg <- paste0("Unsupported distribution type (", dist, 
-                  "). Valid options include 'normal' and 'truncated_normal'.")
-    warning(msg)
+  if (!(dist %in% c("normal", "truncated_normal"))) {
+    stop("Unsupported distribution type (", dist, "). Valid options include ",
+         "'normal' and 'truncated_normal'.", call. = FALSE)
   }
 
   if (!is.null(hdraws)) {
+    hdraws <- as.matrix(hdraws)
     if (ncol(hdraws) != length(means)) {
-      msg <- paste0(
-        "The number of columns in `hdraws` (", ncol(hdraws), 
-        ") must be the same as the length of `means` (", length(means), ").")
-      warning(msg)
+      stop("The number of columns in `hdraws` (", ncol(hdraws),
+           ") must be the same as the length of `means` (", length(means),
+           ").", call. = FALSE)
     }
     halton_seq <- hdraws
   } else {
-    # Generate Halton or scrambled Halton sequence
-    halton_seq <- halton(ndraws, dim=N, normal=TRUE, mixed=scrambled)
+    # Generate Halton or scrambled Halton sequence (standard normal)
+    halton_seq <- as.matrix(halton(ndraws, dim = N, normal = TRUE,
+                                   mixed = scrambled))
   }
 
-  if (!is.null(correlations) && !is.null(stdev)){
-    cov <- cor2cov(correlations, stdev)
-    cholesky <- chol(cov)
-  } else if (is.null(cholesky)){
-    msg <- paste0("You must provide either a Cholesky decomposition matrix ",
-                  "(`cholesky`) or standard deviations and a correlation ", 
-                  "matrix (`stdev` and `correlations`).")
-    warning(msg)
-  } else {
-    cov <- t(cholesky) %*% cholesky
-    sdevs <- sqrt(diag(cov))
+  if (!is.null(correlations) && !is.null(stdev)) {
+    cholesky <- chol(cor2cov(correlations, stdev))
+  } else if (is.null(cholesky)) {
+    stop("You must provide either a Cholesky decomposition matrix ",
+         "(`cholesky`) or standard deviations and a correlation matrix ",
+         "(`stdev` and `correlations`).", call. = FALSE)
   }
+  cholesky <- as.matrix(cholesky)
+  if (!identical(dim(cholesky), c(N, N))) {
+    stop("`cholesky` must be a ", N, " x ", N, " matrix (one row and column ",
+         "per element of `means`).", call. = FALSE)
+  }
+  sdevs <- sqrt(diag(t(cholesky) %*% cholesky))
 
-  # Apply Cholesky decomposition to introduce correlation
+  # Apply the Cholesky factor to introduce the correlation: each column is
+  # normal with mean 0 and standard deviation sdevs[j]
   correlated_seq <- halton_seq %*% cholesky
 
-  obs_sdevs <- apply(correlated_seq, 2, sd)
-
-  # Apply distribution transformation
   if (dist == "normal") {
-    for (i in 1:N) {
-      correlated_seq[, i] <- correlated_seq[, i] + means[i]
-    }
+    result <- sweep(correlated_seq, 2, means, "+")
+  } else {
+    # Truncated normal: map each column through its own normal CDF and the
+    # truncated-normal quantile function with that column's mean and SD
+    lower <- rep_len(lower, N)
+    upper <- rep_len(upper, N)
     result <- correlated_seq
-  } else { # Truncated Normal
-    percentiles <- pnorm(correlated_seq, sd=obs_sdevs)
-    result <- apply(
-      X = percentiles, 
-      MARGIN = 2, 
-      FUN = \(x) qtruncnorm(x, a = lower, b = upper, mean = means, sd = sdevs))
+    for (j in seq_len(N)) {
+      u <- stats::pnorm(correlated_seq[, j], sd = sdevs[j])
+      result[, j] <- qtruncnorm(u, a = lower[j], b = upper[j],
+                                mean = means[j], sd = sdevs[j])
+    }
   }
 
   return(result)

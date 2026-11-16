@@ -194,7 +194,9 @@ ppinvgaus <- function(q, mu=1, eta=1, form="Type 1",
   cdf <- rep(NA_real_, n)
   invalid_q <- is.na(q) | q < 0
   cdf[invalid_q] <- 0
-  valid <- !invalid_q
+  bad_par <- !(is.finite(mu) & mu > 0 & is.finite(eta) & eta > 0)
+  cdf[bad_par & !invalid_q] <- NaN
+  valid <- !invalid_q & !bad_par
   
   if(any(valid)) {
     for(i in which(valid)) {

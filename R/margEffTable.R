@@ -130,7 +130,6 @@ margEffTable <- function(object,
   if (is.null(vars)) {
     vars <- candidate_vars
   } else {
-    vars <- intersect(vars, names(data))
     missing_vars <- setdiff(vars, names(data))
     if (length(missing_vars) > 0L) {
       stop("The following variables are not in `data`: ", paste(missing_vars, collapse = ", "))
@@ -377,48 +376,19 @@ print.flexEffectTable <- function(x, ...) {
 
 .margEff_vcov <- function(object) {
   model <- object$model
-  
-  if (!is.null(model$vcov) && is.matrix(model$vcov)) {
-    return(model$vcov)
-  }
-  
-  if (!is.null(model$vcov_matrix) && is.matrix(model$vcov_matrix)) {
-    return(model$vcov_matrix)
-  }
-  
-  if (!is.null(model$hessian) && is.matrix(model$hessian)) {
+  # The covariance matrix chosen at fit time (Hessian, robust or bootstrap)
+  if (is.matrix(model$vcov)) return(model$vcov)
+  if (is.matrix(model$hessian)) {
     vc <- tryCatch(solve(-model$hessian), error = function(e) NULL)
-    if (!is.null(vc)) {
-      return(vc)
-    }
+    if (!is.null(vc)) return(vc)
   }
-  
-  if (!is.null(model$bootstrapped_se)) {
-    se <- model$bootstrapped_se
-    if (is.data.frame(se) && all(c("term", "sd") %in% names(se))) {
-      sd_vec <- as.numeric(se$sd)
-      vc <- diag(sd_vec^2)
-      dimnames(vc) <- list(se$term, se$term)
-      return(vc)
-    }
-    if (is.numeric(se)) {
-      vc <- diag(as.numeric(se)^2)
-      if (!is.null(names(se))) {
-        dimnames(vc) <- list(names(se), names(se))
-      }
-      return(vc)
-    }
-  }
-  
-  if (!is.null(model$se) && is.numeric(model$se)) {
-    vc <- diag(as.numeric(model$se)^2)
-    if (!is.null(names(model$se))) {
-      dimnames(vc) <- list(names(model$se), names(model$se))
-    }
-    warning("Using a diagonal covariance approximation because the full covariance matrix was not available.")
+  if (is.numeric(model$se)) {
+    vc <- diag(as.numeric(model$se)^2, nrow = length(model$se))
+    dimnames(vc) <- list(names(model$se), names(model$se))
+    warning("Using a diagonal covariance approximation because the full ",
+            "covariance matrix was not available.", call. = FALSE)
     return(vc)
   }
-  
   NULL
 }
 
@@ -724,5 +694,7 @@ print.flexEffectTable <- function(x, ...) {
   }
   
   fit_call$data <- boot_data
-  eval(fit_call, envir = parent.frame())
+  # Evaluate where the model was specified, so other objects the call refers
+  # to (weights vectors, formulas) are found
+  eval(fit_call, envir = environment(object$formula))
 }

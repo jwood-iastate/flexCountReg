@@ -268,7 +268,10 @@ ppge <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
   
   # --- Compute CDF for Valid Cases ---
   
-  valid <- !invalid_q
+  bad_par <- !(is.finite(mean) & mean > 0 & is.finite(shape) & shape > 0 &
+                is.finite(scale) & scale > 0)
+  cdf[bad_par & !invalid_q] <- NaN
+  valid <- !invalid_q & !bad_par
   
   if (any(valid)) {
     # Group by unique parameter combinations

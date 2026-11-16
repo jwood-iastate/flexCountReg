@@ -133,6 +133,7 @@ qplindLnorm <- function(p, mean = 1, theta = 1, sigma = 1, ndraws = 1500,
   }
   h <- randtoolbox::halton(ndraws)
   .fcr_qcount(p, function(y, mean, theta, sigma) {
+    if (!(mean > 0 && theta > 0 && sigma > 0)) return(rep(NaN, length(y)))
     cumsum(dplindLnorm(y, mean, theta, sigma, hdraws = h))
   }, mean, theta, sigma)
 }

@@ -64,6 +64,7 @@
   K <- 32
   repeat {
     cdf <- cdf_at(0:K)
+    if (all(is.nan(cdf))) return(NaN)      # invalid parameters
     hit <- which(cdf >= p - 1e-12)
     if (length(hit)) return(hit[1] - 1)
     if (K >= max_y || all(is.na(cdf))) return(NA_real_)

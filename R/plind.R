@@ -130,9 +130,12 @@ pplind <- function(q, mean = 1, theta = 1, lambda = NULL,
   # q < 0 -> CDF = 0
   invalid_q <- is.na(q) | q < 0
   cdf[invalid_q] <- 0
+  # Invalid parameters give NaN (after the warning above)
+  bad_par <- !(is.finite(mean) & mean > 0 & is.finite(theta) & theta > 0)
+  cdf[bad_par] <- NaN
   
   # --- Compute CDF for Valid Cases ---
-  valid <- !invalid_q
+  valid <- !invalid_q & !bad_par
   
   if (any(valid)) {
     # Get unique parameter combinations
@@ -209,6 +212,7 @@ qplind <- function(p, mean = 1, theta = 1, lambda = NULL) {
     warning(msg2)
   }
   .fcr_qcount(p, function(y, mean, theta) {
+    if (!(mean > 0 && theta > 0)) return(rep(NaN, length(y)))
     cumsum(dplind(y, mean = mean, theta = theta))
   }, mean, theta)
 }

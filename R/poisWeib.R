@@ -113,8 +113,10 @@ dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL,
   # Ideally, dpWeib_cpp should accept vectors. If strictly scalar C++, 
   # we must use mapply here, but passing 'h' prevents regenerating it.
   
-  # If dpWeib_cpp is vectorized in C++:
-  p <- dpWeib_cpp(x, lambda, alpha, sigma, h)
+  # The C++ kernel is parameterized by the mean of Y,
+  # E[Y] = lambda * sigma * Gamma(1 + 1/alpha)
+  mean_y <- lambda * sigma * gamma(1 + 1 / alpha)
+  p <- dpWeib_cpp(x, mean_y, alpha, sigma, h)
   
   if (log) return(log(p))
   else return(p)
@@ -224,8 +226,6 @@ calculate_params <- function(mean_value = NULL, sd_value = NULL) {
                sd_value = sd_value)
     alpha <- res$minimum
     sigma <- mean_value / gamma(1 + 1/alpha)
-    c(alpha, sigma)
-  } else if (!is.null(alpha) && !is.null(sigma)) {
     c(alpha, sigma)
   } else {
     msg <- paste(

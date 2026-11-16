@@ -165,6 +165,48 @@
 * `predict(method = "Exact")` for `countreg.rp()` includes heterogeneity in
   means and variances.
 
+## Bug fixes found by the extended test suite
+
+* `pcom()` ignored `lower.tail` and `log.p`. Recycling of `mu`, `lambda` and
+  `nu` in `dcom()`, `pcom()` and `qcom()` follows the base-R rule (length 1
+  or the length of the first argument; other lengths are an error).
+* `dpoisweibull()` and friends used `lambda` inconsistently between the PMF
+  and the mean; parameters given only partly now warn instead of failing.
+* The d/p/q functions of the Poisson-Lindley, Poisson-Lindley-Lognormal,
+  Poisson-inverse-Gaussian, Poisson-inverse-gamma, Poisson-generalized-
+  exponential, Sichel, GP1 and inverse-gamma distributions return `NaN`
+  (with one warning) for invalid parameters
+  instead of failing, returning 0, or emitting extra warnings. Missing inputs
+  give `NA`.
+* `qsichel()` returns `Inf` at p = 1 (it returned `NA` with a coercion
+  warning) and `NaN` for p outside [0, 1] (it searched 10,000 counts).
+  `qgp1()` no longer fails for invalid parameters. `rsichel()` and
+  `rinvgamma()` accept a vector `n` (its length is used, as in base R).
+* `halton_dists()` draws one dimension by default, uses the stated
+  half-width for uniform draws (`mean +/- sdev`), and errors for an unknown
+  distribution. `corr_haltons()` gives each column its own mean, standard
+  deviation and bounds for truncated normal draws, and errors for an
+  unsupported distribution, `hdraws` with the wrong number of columns, or a
+  Cholesky factor of the wrong size.
+* `margEffTable()` errors for misspelled variables (they were dropped
+  silently) and refits bootstrap replicates in the environment of the
+  model formula.
+* `confint()`, `summary()` and `tidy()` work (with `NA` standard errors) when
+  a model has no covariance matrix.
+* `bootstraps` is checked up front (a single number of at least 2) instead of
+  failing after the model is fit.
+* `repois()` uses the shared data preparation and panel bootstrap: the
+  bootstrap covariance matrix is computed from the coefficient draws, the
+  rows used are recorded, and a prediction blueprint is stored, so
+  `predict()` and `augment()` work with `keep_data = FALSE`.
+* Data preparation rejects infinite counts, expands `.` in formulas, and
+  keeps the contrasts of factors in auxiliary formulas for prediction.
+* `regCompTable()` fits the baseline model only when the pseudo-R^2 is
+  requested. `tidy()` classifies parameters from the model's bookkeeping
+  (covariates named like distribution parameters are no longer
+  misclassified), and `augment()` computes residuals from the transformed
+  response (e.g. `log(y + 1) ~ x`).
+
 ## Documentation
 
 * Corrected the Generalized Poisson parameter restrictions, the parameter

@@ -41,7 +41,8 @@ mean of the distribution is \code{mean * exp(sigma^2 / 2)}.}
 
 \item{theta}{Poisson-Lindley theta parameter (>0).}
 
-\item{sigma}{lognormal sigma parameter (>0).}
+\item{sigma}{lognormal sigma parameter (>= 0; 0 gives the
+Poisson-Lindley distribution).}
 
 \item{ndraws}{number of Halton draws.}
 

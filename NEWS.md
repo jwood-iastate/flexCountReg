@@ -165,6 +165,16 @@
 * `predict(method = "Exact")` for `countreg.rp()` includes heterogeneity in
   means and variances.
 
+## Corrections from the development review
+
+* PGE and PW: with the mean parameterization, the scale of the mixing
+  distribution cancels out of the likelihood, so it was not identified (the
+  PMF is identical for every scale). These families now estimate only the
+  shape parameter (one fewer parameter, so AIC and BIC change), and
+  `dis_param_formula_2` is an error for them. Predictions from fits made with
+  earlier versions are unchanged. The `dpge()`/`dpoisweibull()` families of
+  functions keep their scale arguments.
+
 ## Bug fixes found by the extended test suite
 
 * `pcom()` ignored `lower.tail` and `log.p`. Both tails are now summed

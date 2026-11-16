@@ -203,14 +203,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
   }
   method <- .fcr_check_method(method)
-  if (is.null(params[[1]]) && !is.null(dis_param_formula_1)) {
-    stop("`dis_param_formula_1` was given, but family \"", family,
-         "\" has no distribution parameter to model.", call. = FALSE)
-  }
-  if (is.null(params[[2]]) && !is.null(dis_param_formula_2)) {
-    stop("`dis_param_formula_2` was given, but family \"", family,
-         "\" has no second distribution parameter to model.", call. = FALSE)
-  }
+  .fcr_check_dis_formulas(family, params, dis_param_formula_1,
+                          dis_param_formula_2)
   
   # Panel id: a column name, or a vector with one value per row
   data <- as.data.frame(data)

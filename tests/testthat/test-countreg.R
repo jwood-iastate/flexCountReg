@@ -63,7 +63,7 @@ test_that("Poisson Generalized-Exponential", {
                                      ndraws=5,
                                      method="NM", 
                                      offset = "lnlength",
-                                     dis_param_formula_2 = ~ -1+ AADT10kplus,
+                                     dis_param_formula_1 = ~ AADT10kplus,
                                      max.iters = 200))  # Added iteration limit
   
   expect_s3_class(model, "flexCountReg")

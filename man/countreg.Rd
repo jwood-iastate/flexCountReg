@@ -223,13 +223,13 @@ For \code{dis_param_formula_2}, the models are for the parameters:
 \item Not Applicable for the Negative Binomial 2 model.
 \item \eqn{ln(p)} for the Negative Binomial P model.
 \item Not Applicable for the Poisson-Lognormal model.
-\item \eqn{ln(scale)} for the Poisson-Generalized-Exponential model.
+\item Not Applicable for the Poisson-Generalized-Exponential model.
 \item Not Applicable for the Poisson-Inverse-Gaussian model.
 \item Not Applicable for the Poisson-Inverse-Gamma model.
 \item Not Applicable for the Poisson-Lindley model.
 \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
 \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
-\item \eqn{ln(\sigma)} for the Poisson-Weibull model.
+\item Not Applicable for the Poisson-Weibull model.
 \item \eqn{ln(\sigma)} for the Sichel model.
 \item \eqn{ln(\rho-1)} for the Generalized Waring model.
 \item Not Applicable for the Conway-Maxwell-Poisson model.
@@ -452,8 +452,12 @@ e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma
 e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}
 \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 
-Halton draws are used to perform simulation over the lognormal distribution
-to solve the integral.
+Halton draws are used to integrate over the generalized-exponential
+distribution.
+
+Substituting \eqn{x = \gamma u} shows that the scale \eqn{\gamma} cancels
+out of this PMF, so it cannot be estimated: it is fixed at 1 and only the
+shape \eqn{\alpha} is estimated (\code{dis_param_formula_2} does not apply).
 }
 
 \subsection{Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models}{
@@ -605,6 +609,10 @@ This leads to:
 The variance for the Poisson-Weibull regression is:
 \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}
 {\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+
+The scale \eqn{\sigma} cancels out of the PMF after this substitution, so
+it cannot be estimated: it is fixed at 1 and only the shape \eqn{\alpha} is
+estimated (\code{dis_param_formula_2} does not apply).
 }
 
 \subsection{Sichel (SI) Model}{

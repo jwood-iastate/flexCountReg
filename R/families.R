@@ -86,17 +86,20 @@
     rand = function(n, mu, alpha, sigma) rpLnorm(n, mean = mu, sigma = alpha),
     mean_adj = function(alpha, sigma) exp(alpha^2 / 2)),
 
+  # PGE and PW: with the mean parameterization the scale of the mixing
+  # distribution cancels out of the PMF, so only the shape is estimated and
+  # the scale is fixed at 1.
   PGE = .fcr_family(
-    params = list("ln(shape)", "ln(scale)"),
+    params = list("ln(shape)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine) dpge(y, mean = predicted, shape = alpha,
-                                 scale = sigma, haltons = haltons),
+                                 scale = 1, haltons = haltons),
     variance = function(mu, alpha, sigma) {
       mu + mu^2 * (trigamma(1) - trigamma(alpha + 1)) /
         (digamma(alpha + 1) - digamma(1))^2
     },
     rand = function(n, mu, alpha, sigma)
-      rpge(n, mean = mu, shape = alpha, scale = sigma)),
+      rpge(n, mean = mu, shape = alpha, scale = 1)),
 
   PIG1 = .fcr_family(
     params = list("ln(eta)", NULL),
@@ -151,15 +154,15 @@
     mean_adj = function(alpha, sigma) exp(sigma^2 / 2)),
 
   PW = .fcr_family(
-    params = list("ln(alpha)", "ln(sigma)"),
+    params = list("ln(alpha)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine) dpWeib_cpp(y, mean = predicted, alpha = alpha,
-                                       sigma = sigma, h = haltons),
+                                       sigma = 1, h = haltons),
     variance = function(mu, alpha, sigma)
       mu + (gamma(1 + 2 / alpha) / gamma(1 + 1 / alpha)^2 - 1) * mu^2,
     rand = function(n, mu, alpha, sigma)
-      rpoisweibull(n, lambda = mu / (sigma * gamma(1 + 1 / alpha)),
-                   alpha = alpha, sigma = sigma)),
+      rpoisweibull(n, lambda = mu / gamma(1 + 1 / alpha),
+                   alpha = alpha, sigma = 1)),
 
   SI = .fcr_family(
     params = list("gamma", "ln(sigma)"),
@@ -218,6 +221,26 @@
 }
 
 # Parameter labels: list(<parameter 1>, <parameter 2>)
+# Errors for distribution-parameter formulas a family cannot use.
+.fcr_check_dis_formulas <- function(family, params, f1, f2) {
+  if (is.null(params[[1]]) && !is.null(f1)) {
+    stop("`dis_param_formula_1` was given, but family \"", family,
+         "\" has no distribution parameter to model.", call. = FALSE)
+  }
+  if (is.null(params[[2]]) && !is.null(f2)) {
+    why <- if (family %in% c("PGE", "PW")) {
+      paste0(" With the mean parameterization the scale of its mixing ",
+             "distribution cancels out of the likelihood, so it is not ",
+             "estimated (it was estimated, without effect, in ",
+             "flexCountReg <= 0.1.2).")
+    } else ""
+    stop("`dis_param_formula_2` was given, but family \"", family,
+         "\" has no second distribution parameter to model.", why,
+         call. = FALSE)
+  }
+  invisible(NULL)
+}
+
 get_params <- function(family) {
   .fcr_family_registry[[family]]$params
 }

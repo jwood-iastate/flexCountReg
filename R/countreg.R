@@ -171,13 +171,13 @@
 #'  \item Not Applicable for the Negative Binomial 2 model.
 #'  \item \eqn{ln(p)} for the Negative Binomial P model.
 #'  \item Not Applicable for the Poisson-Lognormal model.
-#'  \item \eqn{ln(scale)} for the Poisson-Generalized-Exponential model.
+#'  \item Not Applicable for the Poisson-Generalized-Exponential model.
 #'  \item Not Applicable for the Poisson-Inverse-Gaussian model.
 #'  \item Not Applicable for the Poisson-Inverse-Gamma model.
 #'  \item Not Applicable for the Poisson-Lindley model.
 #'  \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
 #'  \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
-#'  \item \eqn{ln(\sigma)} for the Poisson-Weibull model.
+#'  \item Not Applicable for the Poisson-Weibull model.
 #'  \item \eqn{ln(\sigma)} for the Sichel model.
 #'  \item \eqn{ln(\rho-1)} for the Generalized Waring model.
 #'  \item Not Applicable for the Conway-Maxwell-Poisson model.
@@ -383,8 +383,12 @@
 #' e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}
 #' \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 #' 
-#' Halton draws are used to perform simulation over the lognormal distribution 
-#' to solve the integral.
+#' Halton draws are used to integrate over the generalized-exponential
+#' distribution.
+#' 
+#' Substituting \eqn{x = \gamma u} shows that the scale \eqn{\gamma} cancels
+#' out of this PMF, so it cannot be estimated: it is fixed at 1 and only the
+#' shape \eqn{\alpha} is estimated (`dis_param_formula_2` does not apply).
 #' 
 #' ## Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models
 #' The Poisson-Inverse-Gaussian regression model is based on the 
@@ -524,6 +528,10 @@
 #' The variance for the Poisson-Weibull regression is:
 #' \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}
 #' {\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+#' 
+#' The scale \eqn{\sigma} cancels out of the PMF after this substitution, so
+#' it cannot be estimated: it is fixed at 1 and only the shape \eqn{\alpha} is
+#' estimated (`dis_param_formula_2` does not apply).
 #' 
 #' ## Sichel (SI) Model
 #' The compound Probability Mass Function (PMF) for the Sichel distribution uses
@@ -793,14 +801,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     bootstraps <- as.integer(bootstraps)
   }
   
-  if (is.null(params[[1]]) && !is.null(dis_param_formula_1)) {
-    stop("`dis_param_formula_1` was given, but family \"", family,
-         "\" has no distribution parameter to model.", call. = FALSE)
-  }
-  if (is.null(params[[2]]) && !is.null(dis_param_formula_2)) {
-    stop("`dis_param_formula_2` was given, but family \"", family,
-         "\" has no second distribution parameter to model.", call. = FALSE)
-  }
+  .fcr_check_dis_formulas(family, params, dis_param_formula_1,
+                          dis_param_formula_2)
   
   # ---- Data: one complete-case model frame for everything --------------------
   prep <- prepare_model_data(formula, data,

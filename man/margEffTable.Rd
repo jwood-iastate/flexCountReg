@@ -26,8 +26,11 @@ margEffTable(
 \item{data}{Optional data frame. Defaults to the data used to fit the model.}
 
 \item{vars}{Optional character vector of variable names to evaluate. If
-\code{NULL}, the function uses the non-response variables appearing in the
-model formula that are present in \code{data}.}
+\code{NULL}, the function uses the non-response variables of the model formula
+and of the formulas that also change the expected value: the
+underreporting, random-parameter and heterogeneity formulas, and the
+distribution-parameter formulas of the PLN and PLL families. Offsets and
+panel identifiers are excluded.}
 
 \item{measure}{Character scalar. One of:
 \describe{

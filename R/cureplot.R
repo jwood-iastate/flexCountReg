@@ -61,7 +61,7 @@ cureplot <- function(model, data = NULL, indvar = NULL,
   
   # 3. Generate Predictions
   # This relies on predict.flexCountReg handling the class/method logic
-  predictions <- stats::predict(model, data = data, method = method)
+  predictions <- stats::predict(model, newdata = data, method = method)
   
   if(length(predictions) != length(y)){
     msg <- paste0("Length of predictions does not match length of observed", 

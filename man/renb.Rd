@@ -10,16 +10,20 @@ renb(
   data,
   method = "NM",
   max.iters = 1000,
-  print.level = 0,
+  verbose = FALSE,
+  stderr = "normal",
   bootstraps = NULL,
-  offset = NULL
+  offset = NULL,
+  keep_data = TRUE,
+  print.level = NULL
 )
 }
 \arguments{
 \item{formula}{an R formula.}
 
 \item{group_var}{the grouping variable(s) for the random effects (e.g.,
-individual ID or other panel ID variables).}
+individual ID or other panel ID variables). Required. Several columns
+are combined into one panel identifier.}
 
 \item{data}{a dataframe that has all of the variables in the \code{formula}.}
 
@@ -31,17 +35,32 @@ effects.}
 \item{max.iters}{the maximum number of iterations to allow the optimization
 method to perform.}
 
-\item{print.level}{Integer specifying the verbosity of output during
+\item{verbose}{logical; if \code{TRUE}, print the progress of the
 optimization.}
 
-\item{bootstraps}{Optional integer specifying the number of bootstrap samples
-to be used for estimating standard errors. If not specified, no
-bootstrapping is performed.}
+\item{stderr}{the type of standard errors: \code{"normal"} (Hessian-based,
+the default), \code{"robust"} (sandwich; clustered by panel because the
+likelihood has one contribution per panel), or \code{"boot"} (bootstrap
+that resamples whole panels). Giving \code{bootstraps} without
+\code{stderr} also requests bootstrapped standard errors.}
 
-\item{offset}{an optional offset term provided as a string.}
+\item{bootstraps}{Optional integer specifying the number of bootstrap samples
+to be used for estimating standard errors. Whole panels (groups) are
+resampled, so the standard errors account for the correlation within
+panels. If not specified, no bootstrapping is performed.}
+
+\item{offset}{an optional character vector of offset column names (summed
+when several are given; on the log scale). An offset can instead be given
+with \code{offset()} in \code{formula}; use only one of the two.}
+
+\item{keep_data}{logical; if \code{FALSE}, the training data are not stored
+in the fitted object (saving memory). \code{predict()} then needs
+\code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
+
+\item{print.level}{deprecated; use \code{verbose}.}
 }
 \value{
-An object of class \code{countreg} which is a list with the following components:
+An object of class \code{flexCountReg} which is a list with the following components:
 \itemize{
 \item model: the fitted model object.
 \item data: the data frame used to fit the model.
@@ -57,7 +76,7 @@ This function estimates a random effects negative binomial (RENB) regression
 model. This model is based on the NB-1 model. The PDF for the RENB is:
 \deqn{f(y_{it}|\lambda_{it}, a, b) = 
   \frac{\Gamma(a+b) 
-    \Gamma(a + \sum_{t = 1}^{n_i} \\lambda_{it}) 
+    \Gamma(a + \sum_{t = 1}^{n_i} \lambda_{it}) 
     \Gamma(b + \sum_{t=1}^{n_i}y_{it})}
     {\Gamma(a) \Gamma(b) \Gamma(a + b + 
        \sum_{t=1}^{n_i}\lambda_{it} + \sum_{t=1}^{n_i}y_{it})} \prod_{t=1}^{n_i}
@@ -105,6 +124,6 @@ summary(renb.mod)
 }
 \references{
 Hausman, Jerry A., Bronwyn H. Hall, and Zvi Griliches. "Econometric models
-for count data with an application to the patents–R&D relationship."
+for count data with an application to the patents-R&D relationship."
 Econometrica: Journal of the Econometric Society (1984): 909-938.
 }

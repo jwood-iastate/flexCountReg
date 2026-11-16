@@ -99,7 +99,7 @@ rinvgaus <- function(n, mean = 1, shape = 1) {
 #' The variance is:
 #' \deqn{\sigma^2=\mu+\eta\mu}
 #'
-#' Type 2 modifies \eqn{\eta} → \eqn{\eta\mu}:
+#' Type 2 modifies \eqn{\eta} -> \eqn{\eta\mu}:
 #' \deqn{
 #' f(0)=\exp\left(\frac{1}{\eta}(1-\sqrt{1+2\eta\mu})\right)
 #' }
@@ -115,7 +115,7 @@ rinvgaus <- function(n, mean = 1, shape = 1) {
 #'
 #' @references
 #' Cameron & Trivedi (2013). Regression Analysis of Count Data.
-#' Dean, Lawless & Willmot (1989). Mixed Poisson–Inverse Gaussian Models.
+#' Dean, Lawless & Willmot (1989). Mixed Poisson-Inverse Gaussian Models.
 #' Hilbe (2011). Negative Binomial Regression.
 #' 
 #' @returns description dpinvgaus gives the density, ppinvgaus gives the distribution 
@@ -137,46 +137,44 @@ rinvgaus <- function(n, mean = 1, shape = 1) {
 
 #' @rdname PoissonInverseGaussian
 #' @export
-dpinvgaus <- Vectorize(function(x, mu=1, eta=1, form="Type 1", log=FALSE) {
+dpinvgaus <- function(x, mu = 1, eta = 1, form = "Type 1", log = FALSE) {
+  form <- match.arg(form, c("Type 1", "Type 2"))
+  r <- .fcr_recycle(x, mu, eta)
+  x <- r[[1]]; mu <- r[[2]]; eta <- r[[3]]
   
-  # integer check
-  tst <- ifelse(
-    is.na(nchar(strsplit(as.character(x), "\\.")[[1]][2]) > 0),
-    FALSE, TRUE
-  )
-  
-  if(tst || x < 0) warning(paste(
-    "The value of `x` must be a non-negative",
-    "whole number."
-  ))
-  
-  if(eta <= 0) warning(paste(
-    "The value of `eta` must be greater",
-    "than 0."
-  ))
-  
-  if(form == "Type 2") {
-    eta <- eta * mu
+  is_count <- .fcr_is_count(x)
+  if (any(!is_count & !is.na(x))) {
+    warning("The value of `x` must be a non-negative whole number.")
+  }
+  bad_par <- !is.na(mu) & !is.na(eta) & (mu <= 0 | eta <= 0)
+  if (any(bad_par)) {
+    warning("The values of `mu` and `eta` must be greater than 0.")
   }
   
-  p0 <- exp(mu / eta * (1 - sqrt(1 + 2 * eta)))
-  
-  if(x > 0) {
-    j <- if(x > 1) seq(0, x - 1, 1) else 0
-    e2 <- sum(
-      gamma(x + j) /
-        (gamma(x - j) * gamma(j + 1)) *
-        (eta / (2 * mu))^j *
-        (1 + 2 * eta)^(-j / 2)
-    )
-    p <- p0 * mu^x / gamma(x + 1) * (1 + 2 * eta)^(-x / 2) * e2
-  } else {
-    p <- p0
+  lp <- suppressWarnings(
+    .ldpinvgaus(ifelse(is_count, round(x), 0), mu, eta, form))
+  lp[!is_count] <- -Inf
+  lp[bad_par] <- NaN
+  lp[is.na(x) | is.na(mu) | is.na(eta)] <- NA
+  if (log) lp else exp(lp)
+}
+
+# Log PMF of the Poisson-inverse-Gaussian, computed with lgamma() and
+# log-sum-exp so it stays finite for large counts.
+.ldpinvgaus <- function(x, mu, eta, form = "Type 1") {
+  if (form == "Type 2") eta <- eta * mu
+  l1 <- log1p(2 * eta)
+  out <- mu / eta * (1 - sqrt(1 + 2 * eta))          # log P(0)
+  for (i in which(is.finite(x) & x > 0 & mu > 0 & eta > 0)) {
+    j <- 0:(x[i] - 1)
+    terms <- lgamma(x[i] + j) - lgamma(x[i] - j) - lgamma(j + 1) +
+      j * log(eta[i] / (2 * mu[i])) - j / 2 * l1[i]
+    m <- max(terms)
+    out[i] <- out[i] + x[i] * log(mu[i]) - lgamma(x[i] + 1) -
+      x[i] / 2 * l1[i] + m + log(sum(exp(terms - m)))
   }
-  
-  if(log) return(log(p))
-  return(p)
-})
+  out
+}
 
 #' @rdname PoissonInverseGaussian
 #' @export
@@ -255,15 +253,12 @@ ppinvgaus <- function(q, mu=1, eta=1, form="Type 1",
 
 #' @rdname PoissonInverseGaussian
 #' @export
-qpinvgaus <- Vectorize(function(p, mu=1, eta=1, form="Type 1") {
-  y <- 0
-  p_value <- ppinvgaus(y, mu, eta, form)
-  while(p_value < p) {
-    y <- y + 1
-    p_value <- ppinvgaus(y, mu, eta, form)
-  }
-  return(y)
-})
+qpinvgaus <- function(p, mu = 1, eta = 1, form = "Type 1") {
+  form <- match.arg(form, c("Type 1", "Type 2"))
+  .fcr_qcount(p, function(y, mu, eta) {
+    cumsum(dpinvgaus(y, mu = mu, eta = eta, form = form))
+  }, mu, eta)
+}
 
 #' @rdname PoissonInverseGaussian
 #' @export

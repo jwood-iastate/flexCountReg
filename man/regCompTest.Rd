@@ -61,10 +61,10 @@ Information Criterion (BIC).
 }
 \details{
 When only one fitted model is supplied, the function estimates a base model
-from the supplied data and compares the fitted model against that base
-model. When two fitted models are supplied, the function compares the two
-fitted models directly and uses the model with the larger log-likelihood as
-the base model for the LR test.
+on the same rows, offset and weights and compares the fitted model against
+it. When two fitted models are supplied, the function compares them
+directly; the model with fewer parameters is the restricted (base) model of
+the LR test.
 
 The function performs the following steps for the single-model
 workflow:
@@ -77,19 +77,27 @@ model.
 \item Conducts a Likelihood Ratio test to compare the fitted model against
 the estimated base model when the fitted model has more parameters than
 the base model.
-\item Computes McFadden's Pseudo R^2.
+\item Computes McFadden's Pseudo R^2, \eqn{1 - LL/LL_0}, where
+\eqn{LL_0} is the log-likelihood of an intercept-only model of the same
+family for \code{countreg()} models (an intercept-only Poisson model for
+the other estimators).
 }
 
-For the two-model workflow, the function compares the two fitted models
-directly. The model with the larger log-likelihood is treated as the base
-model for the LR test, and the other model is treated as the comparison
-model.
+For the two-model workflow, the model with fewer parameters is the
+restricted (base) model and the other is the comparison (full) model. The
+models must be fit to the same observations (an error is raised otherwise)
+and should be nested; a warning is given when the restricted model has the
+higher log-likelihood (a sign that the models are not nested or that one
+did not converge), and no LR test is reported when they have the same
+number of parameters. The LR test assumes the restricted model is in the
+interior of the parameter space; when it is on the boundary (for example
+Poisson within NB2), the p-value is conservative.
 
-The Likelihood-Ratio test is computed as \deqn{LR = -2 (LL_{base} - LL_{comparison})}.
-The test is chi-squared with degrees of freedom
-\deqn{dof = |N_{base \ params} - N_{comparison \ params}|}.
-The AIC is calculated as \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}, and the
-BIC is calculated as \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}.
+The Likelihood-Ratio test is computed as
+\deqn{LR = 2 (LL_{comparison} - LL_{base})}
+and is chi-squared with degrees of freedom equal to the difference in the
+number of parameters. AIC and BIC are those of \code{AIC()} and
+\code{BIC()}; for panel models, BIC uses the number of panels.
 }
 \examples{
 

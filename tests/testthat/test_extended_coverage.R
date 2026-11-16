@@ -17,8 +17,8 @@ test_that("countreg.rp: Basic execution with BHHH and Predictions", {
   expect_s3_class(model, "flexCountReg")
   
   # Test Predict methods for countreg.rp
-  pred_sim <- predict(model, data = small_data, method = "Simulated")
-  pred_ind <- predict(model, data = small_data, method = "Individual")
+  pred_sim <- predict(model, newdata = small_data, method = "Simulated")
+  pred_ind <- predict(model, newdata = small_data, method = "Individual")
   
   expect_equal(length(pred_sim), nrow(small_data))
   expect_equal(length(pred_ind), nrow(small_data))
@@ -40,7 +40,7 @@ test_that("countreg.rp: Heterogeneity, Dist Formulas, and Panel Data", {
                 dis_param_formula_1 = ~ lnlength,
                 het_mean_formula = ~ AADT10kplus,
                 data = small_data,
-                panel_id = "site_id",
+                group_var = "site_id",
                 family = "NB2",
                 rpardists = c(speed50 = "n"),
                 ndraws = 15,       # Reduced

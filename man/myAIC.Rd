@@ -20,6 +20,9 @@ This function calculates the Akaike Information Criterion (AIC) for a given
 model.
 }
 \details{
+For a fitted flexCountReg model, use \code{AIC(model)} instead,
+which takes the log-likelihood and number of parameters from the model.
+
 The AIC is calculated using the formula:
 \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}
 Where \eqn{LL} is the log-likelihood of the model and \eqn{nparam} is the

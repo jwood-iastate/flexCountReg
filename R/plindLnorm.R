@@ -10,10 +10,12 @@
 #' @param q quantile or vector of quantiles.
 #' @param p probability or vector of probabilities.
 #' @param n number of random draws.
-#' @param mean mean (>0).
+#' @param mean the Poisson-Lindley mean before the lognormal factor (>0); the
+#'   mean of the distribution is \code{mean * exp(sigma^2 / 2)}.
 #' @param theta Poisson-Lindley theta parameter (>0).
 #' @param sigma lognormal sigma parameter (>0).
-#' @param lambda optional lambda parameter (>0).
+#' @param lambda optional Poisson scale parameter (>0), an alternative to
+#'   \code{mean}: \code{mean = lambda * (theta + 2) / (theta * (theta + 1))}.
 #' @param ndraws number of Halton draws.
 #' @param log return log-density.
 #' @param log.p return log-CDF.
@@ -21,10 +23,10 @@
 #' @param hdraws optional Halton draws.
 #'
 #' @details
-#' \code{dplind} computes the PLL density.
-#' \code{pplind} computes the PLL CDF.
-#' \code{qplind} computes quantiles.
-#' \code{rplind} generates random draws.
+#' \code{dplindLnorm} computes the PLL density.
+#' \code{pplindLnorm} computes the PLL CDF.
+#' \code{qplindLnorm} computes quantiles.
+#' \code{rplindLnorm} generates random draws.
 #'
 #' The PMF is:
 #' \deqn{
@@ -35,9 +37,10 @@
 #'        {x\sigma\sqrt{2\pi}}dx
 #' }
 #'
-#' Mean:
+#' Where \eqn{\mu} is the \code{mean} argument (the Poisson-Lindley mean). The
+#' mean of the distribution is:
 #' \deqn{
-#' E[y]=\mu=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
+#' E[y]=\mu e^{\sigma^2/2}=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
 #'             {\theta(\theta+1)}
 #' }
 #'
@@ -84,8 +87,7 @@ pplindLnorm <- function(q, mean=1, theta=1, lambda=NULL,
                         lower.tail=TRUE, log.p=FALSE) {
   
   if(!is.null(lambda)) {
-    mean <- lambda * (theta + 2) /
-      (theta * (theta + 1)) * exp(sigma^2 / 2)
+    mean <- lambda * (theta + 2) / (theta * (theta + 1))
   }
   
   # FIX: Set normal=FALSE.
@@ -120,75 +122,38 @@ pplindLnorm <- function(q, mean=1, theta=1, lambda=NULL,
 
 #' @rdname PoissonLindleyLognormal
 #' @export
-qplindLnorm <- Vectorize(function(p, mean=1, theta=1,
-                                  sigma=1, ndraws=1500,
-                                  lambda=NULL) {
-  
-  if(is.null(lambda)) {
-    if(mean <= 0 || theta <= 0 || sigma <= 0) {
-      warning(paste(
-        "The values of `mean`, `theta`, and `sigma` must",
-        "all be greater than 0."
-      ))
-    }
-  } else {
-    if(lambda <= 0 || theta <= 0 || sigma <= 0) {
-      warning(paste(
-        "The values of `lambda`, `theta`, and `sigma` must",
-        "all be greater than 0."
-      ))
-    } else {
-      mean <- lambda * (theta + 2) /
-        (theta * (theta + 1)) * exp(sigma^2 / 2)
-    }
+qplindLnorm <- function(p, mean = 1, theta = 1, sigma = 1, ndraws = 1500,
+                        lambda = NULL) {
+  if (!is.null(lambda)) {
+    mean <- lambda * (theta + 2) / (theta * (theta + 1))
   }
-  
-  y <- 0
-  p_value <- pplindLnorm(y, mean, theta,
-                         sigma = sigma,
-                         ndraws = ndraws)
-  
-  while(p_value < p) {
-    y <- y + 1
-    p_value <- pplindLnorm(
-      y, mean, theta, sigma = sigma,
-      ndraws = ndraws
-    )
+  if (any(mean <= 0 | theta <= 0 | sigma <= 0, na.rm = TRUE)) {
+    warning(paste("The values of `mean` (or `lambda`), `theta`, and",
+                  "`sigma` must all be greater than 0."))
   }
-  
-  return(y)
-})
+  h <- randtoolbox::halton(ndraws)
+  .fcr_qcount(p, function(y, mean, theta, sigma) {
+    cumsum(dplindLnorm(y, mean, theta, sigma, hdraws = h))
+  }, mean, theta, sigma)
+}
 
 #' @rdname PoissonLindleyLognormal
 #' @export
-rplindLnorm <- function(n, mean=1, theta=1, sigma=1,
-                        ndraws=1500, lambda=NULL) {
-  
-  if(is.null(lambda)) {
-    if(mean <= 0 || theta <= 0 || sigma <= 0) {
-      warning(paste(
-        "The values of `mean`, `theta`, and `sigma` must",
-        "all be greater than 0."
-      ))
-    }
+rplindLnorm <- function(n, mean = 1, theta = 1, sigma = 1,
+                        ndraws = 1500, lambda = NULL) {
+  n <- .fcr_rn(n)
+  theta <- rep_len(theta, n); sigma <- rep_len(sigma, n)
+  if (is.null(lambda)) {
+    mean <- rep_len(mean, n)
+    lambda <- mean * theta * (theta + 1) / (theta + 2)
   } else {
-    if(lambda <= 0 || theta <= 0 || sigma <= 0) {
-      warning(paste(
-        "The values of `lambda`, `theta`, and `sigma` must",
-        "all be greater than 0."
-      ))
-    } else {
-      mean <- lambda * (theta + 2) /
-        (theta * (theta + 1)) * exp(sigma^2 / 2)
-    }
+    lambda <- rep_len(lambda, n)
   }
-  
-  u <- runif(n)
-  y <- vapply(
-    X = u, 
-    FUN = \(p) qplindLnorm(p, mean, theta, sigma = sigma, ndraws = ndraws), 
-    FUN.VALUE = numeric(1)
-  )
-  
-  return(y)
+  bad <- !(is.finite(lambda) & lambda > 0 & is.finite(theta) & theta > 0 &
+             is.finite(sigma) & sigma > 0)
+  .fcr_warn_na(bad, "`mean` (or `lambda`), `theta` and `sigma` must be > 0.")
+  out <- rep(NA_real_, n); ok <- !bad; k <- sum(ok)
+  out[ok] <- stats::rpois(k, lambda[ok] * .fcr_rlindley_mix(k, theta[ok]) *
+                            exp(stats::rnorm(k, 0, sigma[ok])))
+  out
 }

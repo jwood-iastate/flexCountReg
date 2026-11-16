@@ -5,14 +5,16 @@ test_that("log dqwar and others", {
   expect_equal(
     plindley(0.5, 1.5, log=TRUE, lower.tail=FALSE), -0.487635736)
   expect_equal(plindley(0.5, 1.5, log=TRUE), -0.952116164)
+  skip_if_not_installed("lamW")
   expect_equal(qlindley(-1, theta = 1.5, log.p = TRUE), 0.4720311)
 })
 
 test_that("various distributions warnings", {
+  expect_warning(rlindley(1.5,1))
+  skip_if_not_installed("lamW")
   expect_warning(qlindley(c(0.1,-0.1,0.2), theta=1))
   expect_warning(qlindley(c(1.1,-0.1,0.2), theta=1))
   expect_warning(qlindley(c(0.1,0.3,0.2), theta=-1))
-  expect_warning(rlindley(1.5,1))
 })
 
 
@@ -22,9 +24,9 @@ test_that("cor2cov", {
   C1 <- c(1,-0.3,0.7,-0.3,1,-0.2,0.7,-0.2,1)
   S <- c(0.5, 2, 1.25, 3)
   S1 <- matrix(c(0.5, 2, 1.25))
-  expect_warning(cor2cov(C1,S))
-  expect_warning(cor2cov(C,S1))
-  expect_warning(cor2cov(C,S))
+  expect_error(cor2cov(C1,S))
+  expect_error(cor2cov(C,S1))
+  expect_error(cor2cov(C,S))
 })
 
 test_that("Correlated Halton Draws",{
@@ -56,7 +58,7 @@ test_that("Countreg Bootstrapping",{
   mod <- countreg(
     Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
     data = washington_roads, family = "PIG", verbose = TRUE,
-    method='SN',
+    method='NM',
     stderr = "boot",
     bootstraps = 3)
   

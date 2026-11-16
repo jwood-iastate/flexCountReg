@@ -6,80 +6,96 @@
   }
 }
 
-.fit_null_ll <- function(trained_model, data) {
-  fit <- trained_model$model
-  if (is.null(fit)) {
-    return(NA_real_)
-  }
-  
-  # Use the model's own formula/data to build the response
-  formula <- fit$formula
-  mf <- stats::model.frame(formula, data)
-  y <- as.numeric(stats::model.response(mf))
-  n <- length(y)
-  
-  # Offset if present
-  off <- stats::model.offset(mf)
-  if (is.null(off)) off <- rep(0, n)
-  
-  # Case 1: Poisson GLM-style model
-  if (!is.null(fit$family)) {
-    # Intercept-only Poisson with offset:
-    # mu_i = exp(beta0 + offset_i)
-    beta0 <- log(sum(y) / sum(exp(off)))
-    mu0 <- exp(beta0 + off)
-    return(sum(stats::dpois(y, mu0, log = TRUE)))
-  }
-  
-  # Case 2: your custom countreg-style models
-  # Replace this with the null-model fitting call your package uses
-  # (e.g., countreg(y ~ 1, data = ..., family = ...))
-  if (!is.null(fit$family)) {
-    null_fit <- try(
-      countreg(
-        stats::as.formula(paste(deparse(formula[[2L]]), "~ 1")),
-        data = data,
-        family = fit$family,
-        method = fit$method
-      ),
-      silent = TRUE
-    )
-    
-    if (!inherits(null_fit, "try-error") && !is.null(null_fit$model$maximum)) {
-      return(null_fit$model$maximum)
+# Training rows of a fitted model, rebuilt with its blueprint: outcome,
+# design matrix, offset and weights for the rows used in estimation.
+.fcr_fit_pieces <- function(object, data = NULL) {
+  m <- object$model
+  if (is.null(data)) {
+    d <- .fcr_training_rows(object)
+  } else {
+    d <- as.data.frame(data)
+    if (!is.null(object$data) && nrow(d) == nrow(as.data.frame(object$data)) &&
+        !is.null(m[["rows_used"]])) {
+      d <- d[m[["rows_used"]], , drop = FALSE]
     }
   }
-  
-  NA_real_
+  bp <- m[["blueprint"]] %||% .fcr_blueprint(object)
+  fd <- forge_new_data(bp, d)
+  y <- as.numeric(stats::model.response(stats::model.frame(
+    object$formula, d, na.action = stats::na.pass)))
+  ok <- stats::complete.cases(fd$X) & !is.na(fd$offset) & !is.na(y)
+  w <- m[["weights"]]
+  if (length(w) != length(y)) w <- rep(1, length(y))
+  list(y = y[ok], X = fd$X[ok, , drop = FALSE], offset = fd$offset[ok],
+       weights = w[ok], data = d[ok, , drop = FALSE],
+       offset_cols = bp$offset_cols)
+}
+
+# Poisson GLM log-likelihood on given pieces (intercept-only if X is NULL).
+.fcr_poisson_ll <- function(pc, X = NULL) {
+  if (is.null(X)) X <- matrix(1, length(pc$y), 1)
+  f <- stats::glm.fit(X, pc$y, weights = pc$weights, offset = pc$offset,
+                      family = stats::poisson())
+  list(LL = sum(pc$weights * stats::dpois(pc$y, f$fitted.values, log = TRUE)),
+       n.coef = ncol(X))
+}
+
+# countreg() fit of `family` on the pieces: intercept-only or with the
+# model's mean variables. Offsets are passed as one summed column.
+.fcr_countreg_base <- function(pc, formula, family, intercept_only, ...) {
+  d <- pc$data
+  d$.fcr_y <- pc$y
+  d$.fcr_off <- pc$offset
+  rhs <- if (intercept_only) "1" else
+    paste(attr(stats::delete.response(stats::terms(formula)), "term.labels"),
+          collapse = " + ")
+  if (!nzchar(rhs)) rhs <- "1"
+  f <- stats::as.formula(paste(".fcr_y ~", rhs))
+  args <- list(...)
+  if (is.null(args$method)) args$method <- "BFGS"
+  fit <- suppressWarnings(do.call(countreg, c(list(
+    formula = f, data = d, family = family,
+    offset = if (any(pc$offset != 0)) ".fcr_off" else NULL,
+    weights = pc$weights, keep_data = FALSE), args)))
+  list(LL = fit$model$maximum, n.coef = length(fit$model$estimate))
+}
+
+# Log-likelihood of the null model used for McFadden's pseudo R^2: an
+# intercept-only model of the same family for countreg() models, and an
+# intercept-only Poisson model otherwise.
+.fit_null_ll <- function(trained_model, pc) {
+  if (inherits(trained_model, "countreg") &&
+      !identical(trained_model$model$family, "POISSON")) {
+    out <- tryCatch(.fcr_countreg_base(pc, trained_model$formula,
+                                       trained_model$model$family,
+                                       intercept_only = TRUE)$LL,
+                    error = function(e) NA_real_)
+    if (is.finite(out)) return(out)
+  }
+  tryCatch(.fcr_poisson_ll(pc)$LL, error = function(e) NA_real_)
 }
 
 get_model_components <- function(trained_model, data) {
-  fit <- trained_model$model
-  if (is.null(fit)) {
-    stop("The supplied object does not contain a fitted model in `$model`.")
+  if (!inherits(trained_model, "flexCountReg")) {
+    stop("The supplied object is not a flexCountReg model.", call. = FALSE)
   }
-  
-  formula <- fit$formula
-  mod_df <- stats::model.frame(formula, data)
-  y <- as.numeric(stats::model.response(mod_df))
-  
-  LL <- fit$maximum
-  n.coef <- length(fit$estimate)
-  nobs <- length(y)
-  
-  LL_null <- .fit_null_ll(trained_model, data)
-  PseudoR2 <- .mcfadden_r2(LL, LL_null)
-  
+  pc <- .fcr_fit_pieces(trained_model, data)
+  LL <- as.numeric(stats::logLik(trained_model))
+  n.coef <- length(stats::coef(trained_model))
+  LL_null <- .fit_null_ll(trained_model, pc)
   list(
-    fit = fit,
-    y = y,
+    fit = trained_model$model,
+    object = trained_model,
+    pieces = pc,
+    y = pc$y,
     LL = LL,
     LL_null = LL_null,
-    PseudoR2 = PseudoR2,
+    PseudoR2 = .mcfadden_r2(LL, LL_null),
     n.coef = n.coef,
-    nobs = nobs,
-    AIC = myAIC(LL, n.coef),
-    BIC = myBIC(LL, n.coef, nobs)
+    nobs = stats::nobs(trained_model),
+    n_bic = attr(stats::logLik(trained_model), "nobs"),
+    AIC = stats::AIC(trained_model),
+    BIC = stats::BIC(trained_model)
   )
 }
 
@@ -90,10 +106,10 @@ get_model_components <- function(trained_model, data) {
 #' Information Criterion (BIC).
 #'
 #' When only one fitted model is supplied, the function estimates a base model
-#' from the supplied data and compares the fitted model against that base
-#' model. When two fitted models are supplied, the function compares the two
-#' fitted models directly and uses the model with the larger log-likelihood as
-#' the base model for the LR test.
+#' on the same rows, offset and weights and compares the fitted model against
+#' it. When two fitted models are supplied, the function compares them
+#' directly; the model with fewer parameters is the restricted (base) model of
+#' the LR test.
 #'
 #' @name regCompTest
 #' @param model A fitted regression model object.
@@ -128,8 +144,8 @@ get_model_components <- function(trained_model, data) {
 #' \code{statistics}, \code{gtTable}, \code{latexTable}, and \code{htmlTable}.
 #'
 #' @include metrics.R
-#' @import tibble knitr
-#' @importFrom dplyr %>%
+#' @importFrom knitr kable
+#' @importFrom tibble tibble
 #' @importFrom gt gt tab_header fmt_number
 #'
 #' @details The function performs the following steps for the single-model
@@ -143,19 +159,27 @@ get_model_components <- function(trained_model, data) {
 #' \item Conducts a Likelihood Ratio test to compare the fitted model against
 #'   the estimated base model when the fitted model has more parameters than
 #'   the base model.
-#' \item Computes McFadden's Pseudo R^2.
+#' \item Computes McFadden's Pseudo R^2, \eqn{1 - LL/LL_0}, where
+#'   \eqn{LL_0} is the log-likelihood of an intercept-only model of the same
+#'   family for \code{countreg()} models (an intercept-only Poisson model for
+#'   the other estimators).
 #' }
 #'
-#' For the two-model workflow, the function compares the two fitted models
-#' directly. The model with the larger log-likelihood is treated as the base
-#' model for the LR test, and the other model is treated as the comparison
-#' model.
+#' For the two-model workflow, the model with fewer parameters is the
+#' restricted (base) model and the other is the comparison (full) model. The
+#' models must be fit to the same observations (an error is raised otherwise)
+#' and should be nested; a warning is given when the restricted model has the
+#' higher log-likelihood (a sign that the models are not nested or that one
+#' did not converge), and no LR test is reported when they have the same
+#' number of parameters. The LR test assumes the restricted model is in the
+#' interior of the parameter space; when it is on the boundary (for example
+#' Poisson within NB2), the p-value is conservative.
 #'
-#' The Likelihood-Ratio test is computed as \deqn{LR = -2 (LL_{base} - LL_{comparison})}.
-#' The test is chi-squared with degrees of freedom
-#' \deqn{dof = |N_{base \ params} - N_{comparison \ params}|}.
-#' The AIC is calculated as \deqn{AIC = -2 \cdot LL + 2 \cdot nparam}, and the
-#' BIC is calculated as \deqn{BIC = -2 \cdot LL + nparam \cdot \log(n)}.
+#' The Likelihood-Ratio test is computed as
+#' \deqn{LR = 2 (LL_{comparison} - LL_{base})}
+#' and is chi-squared with degrees of freedom equal to the difference in the
+#' number of parameters. AIC and BIC are those of \code{AIC()} and
+#' \code{BIC()}; for panel models, BIC uses the number of panels.
 #'
 #' @examples
 #' 
@@ -258,13 +282,13 @@ regCompTest <- function(
     base_res <- if (base_index == 1L) res1 else res2
     comparison_res <- if (comparison_index == 1L) res1 else res2
     
-    LR <- -2 * (comparison_res$LL - base_res$LL)
-    LRdof <- abs(base_res$n.coef - comparison_res$n.coef)
-    LR_pvalue <- NA_real_
-    if (is.finite(LR) && is.finite(LRdof) && LR > 0 && LRdof > 0) {
-      LR_pvalue <- pchisq(LR, LRdof, lower.tail = FALSE)
-    } else if (LR == 0) {
-      LR_pvalue <- 1
+    # comparison = full model, base = restricted model
+    LRdof <- comparison_res$n.coef - base_res$n.coef
+    LR <- if (LRdof > 0) 2 * (comparison_res$LL - base_res$LL) else NA_real_
+    LR_pvalue <- if (is.finite(LR)) {
+      stats::pchisq(max(LR, 0), LRdof, lower.tail = FALSE)
+    } else {
+      NA_real_
     }
     
     statistics <- tibble::tibble(
@@ -274,24 +298,24 @@ regCompTest <- function(
         "McFadden's Pseudo R^2"
       ),
       Model = c(
-        safe_round(base_res$LL),
-        round(base_res$n.coef, 0),
-        safe_round(base_res$AIC),
-        safe_round(base_res$BIC),
-        safe_round(LR),
-        LRdof,
-        safe_round(LR_pvalue),
-        safe_round(base_res$PseudoR2)
-      ),
-      BaseModel = c(
         safe_round(comparison_res$LL),
         round(comparison_res$n.coef, 0),
         safe_round(comparison_res$AIC),
         safe_round(comparison_res$BIC),
-        NA,
-        NA,
-        NA,
+        safe_round(LR),
+        LRdof,
+        safe_round(LR_pvalue),
         safe_round(comparison_res$PseudoR2)
+      ),
+      BaseModel = c(
+        safe_round(base_res$LL),
+        round(base_res$n.coef, 0),
+        safe_round(base_res$AIC),
+        safe_round(base_res$BIC),
+        NA,
+        NA,
+        NA,
+        safe_round(base_res$PseudoR2)
       )
     )
     
@@ -309,56 +333,37 @@ regCompTest <- function(
     )
   }
   
-  if (is.null(data)) {
-    data <- first_non_null(model$data, if (!is.null(model2)) model2$data else NULL)
-  }
-  if (is.null(data)) {
-    stop("No data were supplied and the model object does not contain `$data`.")
-  }
-  
-  if(!is.null(model2)){
-    m1LL = model$model$logLik
-    m2LL = model2$model$logLik
-    
-    if (m1LL<m2LL){
-      res1 = get_model_components(model2, data)
-      res2 = get_model_components(model, data)
-    }else{
-      res1 = get_model_components(model, data)
-      res2 = get_model_components(model2, data)
+  if (!is.null(model2)) {
+    res_a <- get_model_components(model, data)
+    res_b <- get_model_components(model2, data)
+    if (res_a$nobs != res_b$nobs) {
+      stop("The two models were fit to different numbers of observations (",
+           res_a$nobs, " and ", res_b$nobs, "); an LR test is not valid.",
+           call. = FALSE)
     }
-  }else{
+    # The restricted (base) model is the one with fewer parameters
+    if (res_a$n.coef <= res_b$n.coef) {
+      res1 <- res_a; res2 <- res_b; restricted_is_first <- TRUE
+    } else {
+      res1 <- res_b; res2 <- res_a; restricted_is_first <- FALSE
+    }
+  } else {
     res1 <- get_model_components(model, data)
   }
   
   if (is.null(model2)) {
-    if (variables) {
-      if (basemodel == "Poisson") {
-        base_mod <- glm(res1$fit$formula, data, family = poisson(link = "log"))
-      } else {
-        base_mod <- countreg(res1$fit$formula, data, family = basemodel, ...)
-        base_mod <- base_mod$model
-      }
+    # Base model on the same rows, offset and weights as the fitted model
+    pc <- res1$pieces
+    if (identical(toupper(basemodel), "POISSON")) {
+      base_fit <- .fcr_poisson_ll(pc, if (variables) pc$X else NULL)
     } else {
-      if (basemodel == "Poisson") {
-        base_mod <- glm(res1$y ~ 1, data, family = poisson(link = "log"))
-      } else {
-        base_mod <- countreg(res1$y ~ 1, data, family = basemodel, ...)
-        base_mod <- base_mod$model
-      }
+      base_fit <- .fcr_countreg_base(pc, model$formula, basemodel,
+                                     intercept_only = !variables, ...)
     }
-    
-    if (basemodel == "Poisson") {
-      LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log = TRUE))
-      n.coef.base <- length(base_mod$coefficients)
-      AICbase <- myAIC(LLbase, n.coef.base)
-      BICbase <- myBIC(LLbase, n.coef.base, res1$nobs)
-    } else {
-      LLbase <- base_mod$maximum
-      n.coef.base <- length(base_mod$estimate)
-      AICbase <- myAIC(LLbase, n.coef.base)
-      BICbase <- myBIC(LLbase, n.coef.base, res1$nobs)
-    }
+    LLbase <- base_fit$LL
+    n.coef.base <- base_fit$n.coef
+    AICbase <- -2 * LLbase + 2 * n.coef.base
+    BICbase <- -2 * LLbase + log(res1$n_bic) * n.coef.base
     
     base_res <- list(
       LL = LLbase,
@@ -369,8 +374,8 @@ regCompTest <- function(
     
     summary_res <- make_single_model_stats(res1, base_res)
     
-    gtTable <- gt::gt(summary_res$statistics) %>%
-      tab_header(title = "Model Comparison Statistics") %>%
+    gtTable <- gt::gt(summary_res$statistics) |>
+      tab_header(title = "Model Comparison Statistics") |>
       fmt_number(columns = c("Model", "BaseModel"), decimals = 4)
     
     test <- list(
@@ -402,11 +407,20 @@ regCompTest <- function(
       )
     )
   } else {
-    base_index <- if (res1$LL >= res2$LL) 1L else 2L
-    pair_res <- make_pairwise_stats(res1, res2, base_index)
+    if (res1$n.coef == res2$n.coef) {
+      warning("The models have the same number of parameters, so they are ",
+              "not nested; the LR test is not reported.", call. = FALSE)
+    } else if (res1$LL > res2$LL + 1e-8) {
+      warning("The restricted model (fewer parameters) has the higher ",
+              "log-likelihood. The models may not be nested, or one of them ",
+              "did not converge.", call. = FALSE)
+    }
+    pair_res <- make_pairwise_stats(res2, res1, base_index = 2L)
+    pair_res$base_index <- if (restricted_is_first) 1L else 2L
+    pair_res$comparison_index <- 3L - pair_res$base_index
     
-    gtTable <- gt::gt(pair_res$statistics) %>%
-      tab_header(title = "Model Comparison Statistics") %>%
+    gtTable <- gt::gt(pair_res$statistics) |>
+      tab_header(title = "Model Comparison Statistics") |>
       fmt_number(columns = c("Model", "BaseModel"), decimals = 4)
     
     test <- list(
@@ -444,13 +458,3 @@ regCompTest <- function(
   
   return(test)
 }
-
-# Utility functions for AIC and BIC
-myAIC <- function(LL, nparam) {
-  return(-2 * LL + 2 * nparam)
-}
-
-myBIC <- function(LL, nparam, n) {
-  return(-2 * LL + nparam * log(n))
-}
-

@@ -14,15 +14,21 @@
 #'   estimation. For options, see \code{\link[maxLik]{maxLik}}.
 #' @param max.iters the maximum number of iterations to allow the optimization
 #'   method to perform.
-#' @param print.level integer specifying the verbosity of output during
+#' @param verbose logical; if \code{TRUE}, print the progress of the
 #'   optimization.
+#' @param stderr the type of standard errors: \code{"normal"} (Hessian-based,
+#'   the default), \code{"robust"} (sandwich, clustered by group), or
+#'   \code{"boot"} (bootstrap that resamples whole groups). Giving
+#'   \code{bootstraps} without \code{stderr} also requests bootstrapped
+#'   standard errors.
+#' @param keep_data logical; if \code{FALSE}, the training data are not stored
+#'   in the fitted object.
+#' @param print.level deprecated; use \code{verbose}.
 #' @param bootstraps optional integer specifying the number of bootstrap samples
 #'   to be used for estimating standard errors. If not specified, no
 #'   bootstrapping is performed.
 #'
-#' @import maxLik stats modelr tibble
-#' @importFrom purrr map map_df
-#' @importFrom dplyr group_by reframe
+#' @importFrom maxLik maxLik
 #'
 #' @details
 #' This function estimates a random effects Poisson panel model. The likelihood
@@ -73,11 +79,21 @@ repois <- function(formula,
                    data,
                    method = "NM",
                    max.iters = 1000,
-                   print.level = 0,
+                   verbose = FALSE,
+                   stderr = "normal",
                    bootstraps = NULL,
-                   offset = NULL) {
+                   offset = NULL,
+                   keep_data = TRUE,
+                   print.level = NULL) {
   
   call <- match.call()
+  print.level <- .fcr_print_level("repois", verbose, print.level)
+  stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
+  if (stderr == "boot" && is.null(bootstraps)) {
+    bootstraps <- 200L
+    message("`bootstraps` not given; using 200 bootstrap samples.")
+  }
+  if (stderr != "boot") bootstraps <- NULL
   
   prep <- .repois_prepare_inputs(
     formula = formula,
@@ -110,11 +126,25 @@ repois <- function(formula,
   fit$modelType <- "REPoisson"
   fit$offset <- offset
   fit$call <- call
-  fit$beta_pred <- fit$estimate[(length(fit$estimate) - 1)]
+  fit$beta_pred <- unname(fit$estimate[seq_len(ncol(X))])
+  fit$stderr <- stderr
+  if (stderr == "robust") {
+    # One log-likelihood contribution per cluster: cluster-robust sandwich
+    V <- sandwich::sandwich(fit$maxLik_object)
+    dimnames(V) <- list(names(fit$estimate), names(fit$estimate))
+    fit$vcov <- V
+    fit$se <- .fcr_se(V)
+  }
+  fit$vcov_type <- switch(stderr, normal = "hessian", robust = "robust",
+                          boot = "bootstrap")
+  if (stderr == "boot") {
+    fit$n_boot_ok <- fit$successful_bootstraps
+    fit$bootstraps <- bootstraps
+  }
   
   obj <- .createFlexCountReg(
     model = fit,
-    data = data,
+    data = data, keep_data = keep_data,
     call = call,
     formula = formula
   )
@@ -277,44 +307,34 @@ repois <- function(formula,
 }
 
 .repois_loglik <- function(par, y, X, offset_vec, cluster_list) {
+  # One log-likelihood value per cluster (maxLik sums them); per-cluster
+  # values also give cluster-robust sandwich standard errors.
+  n_cl <- length(cluster_list)
   p <- ncol(X)
   beta <- par[seq_len(p)]
   lnalpha <- par[p + 1L]
   alpha <- exp(lnalpha)
   
   if (!is.finite(alpha) || alpha <= 0) {
-    return(-Inf)
+    return(rep(-Inf, n_cl))
   }
   
   eta <- drop(X %*% beta) + offset_vec
   if (any(!is.finite(eta)) || any(eta > 700)) {
-    return(-Inf)
+    return(rep(-Inf, n_cl))
   }
   
-  ll <- 0
-  for (idx in cluster_list) {
+  ll <- vapply(cluster_list, function(idx) {
     y_i <- y[idx]
     eta_i <- eta[idx]
-    mu_i <- exp(eta_i)
-    
     ysum <- sum(y_i)
-    s <- sum(mu_i)
-    
-    ll_i <- lgamma(ysum + 1 / alpha) -
-      lgamma(1 / alpha) +
-      ysum * log(alpha) -
-      (ysum + 1 / alpha) * log1p(alpha * s) +
-      sum(y_i * eta_i) -
+    s <- sum(exp(eta_i))
+    lgamma(ysum + 1 / alpha) - lgamma(1 / alpha) + ysum * log(alpha) -
+      (ysum + 1 / alpha) * log1p(alpha * s) + sum(y_i * eta_i) -
       sum(lgamma(y_i + 1))
-    
-    if (!is.finite(ll_i)) {
-      return(-Inf)
-    }
-    
-    ll <- ll + ll_i
-  }
-  
-  ll
+  }, numeric(1))
+  if (any(!is.finite(ll))) return(rep(-Inf, n_cl))
+  unname(ll)
 }
 
 .repois_fit_engine <- function(y,
@@ -402,7 +422,7 @@ repois <- function(formula,
     }
     
     if (all(is.finite(vcov_mat))) {
-      se <- sqrt(pmax(diag(vcov_mat), 0))
+      se <- .fcr_se(vcov_mat)
       z <- par / se
       pval <- 2 * stats::pnorm(abs(z), lower.tail = FALSE)
     }
@@ -439,7 +459,7 @@ repois <- function(formula,
   )
   
   if (isTRUE(compute_vcov) && all(is.finite(vcov_mat))) {
-    out$se <- sqrt(pmax(diag(vcov_mat), 0))
+    out$se <- .fcr_se(vcov_mat)
   }
   
   if (!is.null(bootstraps) && length(bootstraps) == 1L && bootstraps > 1L) {
@@ -555,31 +575,6 @@ repois <- function(formula,
   
   attr(se_df, "successful_bootstraps") <- ok
   se_df
-}
-
-
-.coef.repois <- function(object, ...) {
-  object$coefficients
-}
-
-
-.vcov.repois <- function(object, ...) {
-  object$vcov
-}
-
-
-.logLik.repois <- function(object, ...) {
-  structure(
-    object$logLik_value,
-    class = "logLik",
-    nobs = object$nobs,
-    df = length(object$coefficients)
-  )
-}
-
-
-.fitted.repois <- function(object, ...) {
-  object$fitted.values
 }
 
 

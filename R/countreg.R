@@ -10,10 +10,12 @@
 #'        log link. other options are listed below. 
 #' @param offset the name of a variable, or vector of variable names, in the
 #'   data frame that should be used as an offset (i.e., included but forced to
-#'   have a coefficient of 1). The normal method of setting an offset in the
-#'   equation can also be used (overrides the offset option).
-#' @param weights the name of a variable in the data frame that should be used
-#'   as a frequency weight.
+#'   have a coefficient of 1). When several names are given, the offsets are
+#'   summed. Alternatively, an offset can be given in the formula with
+#'   `offset()`. Use only one of the two approaches: supplying both is an
+#'   error.
+#' @param weights the name of a variable in the data frame, or a numeric vector
+#'   with one value per row of `data`, to be used as frequency weights.
 #' @param verbose an optional parameter. If `TRUE`, the function will print out
 #'   the progress of the model fitting. Default is `FALSE`.
 #' @param dis_param_formula_1 a symbolic description of the model for the
@@ -38,16 +40,34 @@
 #'   or has minimal change as the number of draws changes within a reasonable
 #'   range).
 #' @param method Optimization method to be used for maximum likelihood
-#'   estimation. See `maxLik` documentation for options. The default is "NM" for
-#'   the Nelder-Mead method.
+#'   estimation. One of "NM" (Nelder-Mead, the default), "BFGS", "BFGSR", "CG",
+#'   "NR", "BHHH", or "SANN". See `maxLik` documentation for details.
 #' @param max.iters Maximum number of iterations for the optimization method.
 #' @param start.vals Optional vector of starting values for the optimization.
-#' @param stderr Type of standard errors to use. The default is "normal". Other
-#'   options include "boot" for bootstrapped standard errors, or "robust" for
-#'   robust standard errors.
+#'   It must have one value per parameter. If the vector is named, the values
+#'   are matched to the parameters by name.
+#' @param stderr Type of standard errors to use. The default is "normal"
+#'   (based on the Hessian). Other options include "boot" for bootstrapped
+#'   standard errors, or "robust" for robust (sandwich) standard errors.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples
-#'   to be used for estimating standard errors when `stderr`= "boot". Note that
-#'   this currently does not work when an offset variable is used.
+#'   to be used for estimating standard errors when `stderr`= "boot". Defaults
+#'   to 200 when `stderr = "boot"` and `bootstraps` is not given.
+#' @param keep_data logical; if \code{FALSE}, the training data are not stored
+#'   in the fitted object (saving memory). \code{predict()} then needs
+#'   \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.
+#' @param zero_formula an optional one-sided formula for a zero model
+#'   (\code{~ 1} for a constant), turning the model into a zero-inflated or
+#'   hurdle model (see \code{zero_type}) for any \code{family}. The zero model
+#'   is a logit model. Its coefficients are named \code{Zero:<variable>}.
+#'   Cannot be combined with \code{underreport_formula}.
+#' @param zero_type \code{"inflated"} (default) or \code{"hurdle"}. In a
+#'   zero-inflated model, a structural zero occurs with probability
+#'   \eqn{\pi = logit^{-1}(z\gamma)} and otherwise the count follows the
+#'   family: \eqn{P(0) = \pi + (1 - \pi) f(0)} and
+#'   \eqn{P(y) = (1 - \pi) f(y)} for \eqn{y > 0}. In a hurdle model,
+#'   \eqn{q = logit^{-1}(z\gamma)} is the probability of a positive count and
+#'   positive counts follow the zero-truncated family:
+#'   \eqn{P(0) = 1 - q} and \eqn{P(y) = q f(y) / (1 - f(0))}.
 #' @param engine the engine to use for the integration if the Poisson Lognormal 
 #'   (PLN) distribution is used. Options include "halton" which uses Halton 
 #'   draws or "poilog" which uses the poilog package. The default is "halton".
@@ -123,20 +143,22 @@
 #'  
 #'  For `dis_param_formula_1`, the models are for the parameters:
 #'  \itemize{
-#'  \item \eqn{ln(\phi+1)} for the Generlized Poisson Version 1.
-#'  \item \eqn{ln(\alpha+1)} for the Generlized Poisson Version 2.
+#'  \item \eqn{ln(\phi+1)} for the Generalized Poisson Version 1.
+#'  \item \eqn{ln(\alpha+1)} for the Generalized Poisson Version 2.
 #'  \item \eqn{ln(\alpha)} for the Negative Binomial 1 model.
 #'  \item \eqn{ln(\alpha)} for the Negative Binomial 2 model.
 #'  \item \eqn{ln(\alpha)} for the Negative Binomial P model.
 #'  \item \eqn{ln(\sigma)} for the Poisson-Lognormal model.
-#'  \item shape parameter for the Poisson-Generalized-Exponential model.
+#'  \item \eqn{ln(shape)} for the Poisson-Generalized-Exponential model.
 #'  \item \eqn{ln(\eta)} for the Poisson-Inverse-Gaussian model.
 #'  \item \eqn{ln(\eta)} for the Poisson-Inverse-Gamma model.
 #'  \item \eqn{ln(\theta)} for the Poisson-Lindley model.
 #'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
 #'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
 #'  \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
-#'  \item \eqn{\gamma} for the Sichel model.
+#'  \item \eqn{\gamma} for the Sichel model. This parameter can be negative,
+#'  so it is modeled directly (identity link), \eqn{\gamma = W\delta}, rather
+#'  than through \eqn{\exp()}.
 #'  \item \eqn{ln(k)} for the Generalized Waring model.
 #'  \item \eqn{ln(\nu)} for the Conway-Maxwell-Poisson model.
 #'  }
@@ -144,11 +166,12 @@
 #'  For `dis_param_formula_2`, the models are for the parameters:
 #'  \itemize{
 #'  \item Not Applicable for the Generalized Poisson Version 1 model.
+#'  \item Not Applicable for the Generalized Poisson Version 2 model.
 #'  \item Not Applicable for the Negative Binomial 1 model.
 #'  \item Not Applicable for the Negative Binomial 2 model.
 #'  \item \eqn{ln(p)} for the Negative Binomial P model.
 #'  \item Not Applicable for the Poisson-Lognormal model.
-#'  \item scale parameter for the Poisson-Generalized-Exponential model.
+#'  \item \eqn{ln(scale)} for the Poisson-Generalized-Exponential model.
 #'  \item Not Applicable for the Poisson-Inverse-Gaussian model.
 #'  \item Not Applicable for the Poisson-Inverse-Gamma model.
 #'  \item Not Applicable for the Poisson-Lindley model.
@@ -199,8 +222,8 @@
 #' {1+\phi}\right)}{(1+\phi)^y y!}
 #' }
 #'
-#' Where \eqn{\phi} is a scale parameter with the restriction that
-#' \eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
+#' Where \eqn{\phi} is a dispersion parameter with the restriction that
+#' \eqn{\phi>-1}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
 #' integer. The mean is modeled as:
 #' \deqn{\mu = exp(X\beta)} 
 #'
@@ -212,7 +235,7 @@
 #' underdispersed.
 #' 
 #' Furthermore, \eqn{\phi>-1} is required for this distribution. When 
-#' \eqn{\phi<0}, there is also a maximum value of support for the integar value 
+#' \eqn{\phi<0}, there is also a maximum value of support for the integer value 
 #' \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
 #' To account for the range of possible values, this is modeled as 
 #' \deqn{ln(\phi+1)}.
@@ -228,9 +251,9 @@
 #' {(1+\alpha\mu)^y y!}
 #' }
 #'
-#' Where \eqn{\phi} is a scale parameter with the restriction that
-#' \eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
-#' integer. The mean is modeled as:
+#' Where \eqn{\alpha} is a dispersion parameter with the restriction that
+#' \eqn{1+\alpha\mu>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a
+#' non-negative integer. The mean is modeled as:
 #' \deqn{\mu = exp(X\beta)} 
 #'
 #' The variance of the GP-2 distribution is:
@@ -322,10 +345,9 @@
 #' by default, testing if the coefficients are different from a value of 0. This
 #' has little practical meaning given that they are coefficients for ln(sigma).
 #' They are not testing if the coefficients have statistical significance in
-#' terms of improvement over a Poisson model. The Likelihood-Ratio test results
-#' provided in the output provide a test comparing if the Poisson-Lognormal
-#' model provides a statistically significant improvement in model fit over the
-#' Poisson model.
+#' terms of improvement over a Poisson model. To test whether the
+#' Poisson-Lognormal model fits significantly better than the Poisson model,
+#' use a likelihood-ratio test with \code{\link{regCompTest}}.
 #' 
 #' ## Poisson Generalized-Exponential (PGE) Model
 #' The Generalized Exponential distribution can be written as a function with 
@@ -482,18 +504,18 @@
 #' \deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} 
 #' \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}
 #' \right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
-#' where d\eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and 
-#' \deqn{\lambda} is the mean of the Poisson distribution.
+#' where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and 
+#' \eqn{\lambda} is the mean of the Poisson distribution.
 #' 
 #' For the Poisson-Weibull Regression model, the expected values is:
 #' \deqn{E[Y]=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
-#' Where \deqn{\lambda} is the mean of the Poisson distribution, \deqn{\alpha} is 
-#' the shape parameter, and \deqn{\sigma} is the scale parameter.
+#' Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is 
+#' the shape parameter, and \eqn{\sigma} is the scale parameter.
 #' 
 #' To ensure that the regression model predicts the mean value, the regression 
 #' utilizes:
 #' \deqn{\mu=\exp{X\gamma}=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
-#' Where \deqn{X} is a matrix of independent variables and \deqn{\gamma} is a 
+#' Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a 
 #' vector of coefficients. 
 #' 
 #' This leads to:
@@ -505,15 +527,15 @@
 #' 
 #' ## Sichel (SI) Model
 #' The compound Probability Mass Function (PMF) for the Sichel distribution uses
-#' the formulation from Zhou et al. (2011) and Rigby et al. (2008):
+#' the formulation from Zou, Lord and Zhang (2012) and Rigby et al. (2008):
 #' \deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y 
 #' K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
 #' 
-#' Where \deqn{\sigma} and \deqn{\gamma} are distribution parameters with 
-#' \deqn{\sigma>0}, 
+#' Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with 
+#' \eqn{\sigma>0}, 
 #' \deqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}}, 
 #' \deqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}}, 
-#' a mean value of \deqn{\mu}, \deqn{y} is a non-negative integer, and 
+#' a mean value of \eqn{\mu}, \eqn{y} is a non-negative integer, and 
 #' \deqn{K_j(x)} is a modified Bessel function of the third kind with order 
 #' \deqn{j} and argument \deqn{x}.
 #'
@@ -626,7 +648,7 @@
 #' the event being reported as a function of independent variables.
 #'  
 #' @returns
-#' An object of class `countreg` which is a list with the following components:
+#' An object of class `flexCountReg` which is a list with the following components:
 #' \itemize{
 #'  \item model: the fitted model object.
 #'  \item data: the data frame used to fit the model.
@@ -634,15 +656,10 @@
 #'  \item formula: the formula used to fit the model.
 #' }
 #' 
-#' @import modelr randtoolbox  
+#' @importFrom randtoolbox halton
 #' @importFrom stats model.frame model.matrix model.response
-#' @importFrom purrr map map_df compact
-#' @importFrom broom tidy
-#' @importFrom dplyr mutate %>% row_number group_by across all_of summarize 
-#' @importFrom dplyr ungroup reframe pull
 #' @importFrom tibble deframe
 #' @importFrom maxLik maxLik
-#' @importFrom stringr str_replace_all str_extract
 #' @importFrom sandwich sandwich
 #' @include pinvgaus.R pinvgamma.R ppoislogn.R plindLnorm.R plindGamma.R 
 #' @include psichel.R Generalized-Waring.R ppoisGE.R psichel.R plind.R helpers.R
@@ -662,10 +679,12 @@
 #' summary(nb2)
 #' 
 #' 
-#' # Estimate a Poisson-Lognormal model 
-#' pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-#'               data = washington_roads, family = "PLN", engine="poilog")
-#' summary(pln)  
+#' # Estimate a Poisson-Lognormal model (integration with the poilog package)
+#' if (requireNamespace("poilog", quietly = TRUE)) {
+#'   pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+#'                   data = washington_roads, family = "PLN", engine="poilog")
+#'   summary(pln)
+#' }
 #' 
 #' # Estimate a Negative Binomial with underreporting (probit)
 #' plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
@@ -681,18 +700,17 @@
 #'                       data = washington_roads, family = "COM", method="BHHH")
 #' summary(com_model)
 #' 
-#' # Estimate a CGenerlized-Poisson Version 1 model
+#' # Estimate a Generalized-Poisson Version 1 model
 #' gp1_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
 #'                       AADT10kplus,
 #'                       data = washington_roads, family = "GP1", method="BHHH")
 #' summary(gp1_model)
 #' 
-#' #' # Estimate a CGenerlized-Poisson Version 2 model
+#' # Estimate a Generalized-Poisson Version 2 model
 #' gp2_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
 #'                       AADT10kplus,
 #'                       data = washington_roads, family = "GP2", method="BHHH")
 #' summary(gp2_model)
-
 #' }
 #' 
 #' @references
@@ -733,294 +751,313 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      ndraws = 1500, method = "NM", 
                      max.iters = 1000, start.vals = NULL, 
                      stderr = "normal", bootstraps = NULL,
-                     engine="halton") {
+                     engine = "halton", keep_data = TRUE,
+                     zero_formula = NULL,
+                     zero_type = c("inflated", "hurdle")) {
   
-  if (verbose){
-    print.level <- 2
-  }else{
-    print.level <- 0
+  print.level <- if (verbose) 2 else 0
+  
+  # ---- Validate options ------------------------------------------------------
+  # Remove non-alphanumeric characters from the family name, upper case
+  family <- toupper(gsub("[^[:alnum:]]", "", family))
+  if (!family %in% .fcr_families) {
+    stop("Unknown `family` \"", family, "\". Must be one of: ",
+         toString(.fcr_families), ".", call. = FALSE)
   }
-  
-  # Get the parameters and probability function
-  # remove non-alphanumeric characters from the family name and ensure 
-  # all upper case
-  family <- toupper(str_replace_all(family, "[^[:alnum:]]", "")) 
   params <- get_params(family)
   
-  # clean the method name
-  method <- toupper(str_replace_all(method, "[^abcfghmnrsABCFGHMNRS]", "")) 
-  if (!(method %in% c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH"))){
-    msg <- 
-      paste('Method must be one of: "SANN", "NM", "BFGS", "BFGSR", "CG",', 
-            '"NR", or "BHHH". Switching to "NM.')
-    warning(msg)
-    method <- "NM"
+  engine <- match.arg(engine, c("halton", "poilog"))
+  if (engine == "poilog" && family == "PLN") {
+    rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
+  }
+  method <- .fcr_check_method(method)
+  underreport_family <- match.arg(tolower(underreport_family),
+                                  c("logit", "probit"))
+  stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
+  zero_type <- match.arg(zero_type)
+  if (!is.null(zero_formula) && !is.null(underreport_formula)) {
+    stop("`zero_formula` and `underreport_formula` cannot be combined: both ",
+         "act on the zeros, so they are not separately identified.",
+         call. = FALSE)
+  }
+  if (stderr == "boot") {
+    if (is.null(bootstraps)) {
+      bootstraps <- 200L
+      message("`bootstraps` not given; using 200 bootstrap samples.")
+    }
+    if (!is.numeric(bootstraps) || length(bootstraps) != 1L ||
+        bootstraps < 2) {
+      stop("`bootstraps` must be a single number of at least 2.",
+           call. = FALSE)
+    }
+    bootstraps <- as.integer(bootstraps)
   }
   
+  if (is.null(params[[1]]) && !is.null(dis_param_formula_1)) {
+    stop("`dis_param_formula_1` was given, but family \"", family,
+         "\" has no distribution parameter to model.", call. = FALSE)
+  }
+  if (is.null(params[[2]]) && !is.null(dis_param_formula_2)) {
+    stop("`dis_param_formula_2` was given, but family \"", family,
+         "\" has no second distribution parameter to model.", call. = FALSE)
+  }
   
+  # ---- Data: one complete-case model frame for everything --------------------
+  prep <- prepare_model_data(formula, data,
+                             aux_formulas = list(
+                               dis1 = dis_param_formula_1,
+                               dis2 = dis_param_formula_2,
+                               underreport = underreport_formula,
+                               zero = zero_formula),
+                             offset = offset, weights = weights)
+  if (prep$n_dropped > 0) {
+    message(prep$n_dropped, " row(s) with missing values were removed.")
+  }
   
-  # Prepare model matrices
-  mod1_frame <- model.frame(formula, data)
-  X <- as.matrix(modelr::model_matrix(data, formula))
+  X <- prep$X
+  y <- prep$y
+  X_offset <- prep$offset
+  weights.df <- prep$weights
+  mod_alpha_frame <- prep$aux$dis1
+  mod_sigma_frame <- prep$aux$dis2
+  X_underreport <- prep$aux$underreport
+  X_zero <- prep$aux$zero
+  
+  # ---- Parameter bookkeeping -------------------------------------------------
+  N_predictors <- ncol(X)
   x_names <- colnames(X)
   
-  # If underreporting model, create a data matrix for the underreporting model
-  if (!is.null(underreport_formula)){
-    X_underreport <- as.matrix(modelr::model_matrix(data, underreport_formula))
+  if (is.null(params[[1]])) {
+    N_alpha <- 0
+  } else if (is.null(mod_alpha_frame)) {
+    N_alpha <- 1
+    x_names <- c(x_names, params[[1]])
+  } else {
+    N_alpha <- ncol(mod_alpha_frame)
+    x_names <- c(x_names, paste0(params[[1]], ":", colnames(mod_alpha_frame)))
+  }
+  
+  if (is.null(params[[2]])) {
+    N_sigma <- 0
+  } else if (is.null(mod_sigma_frame)) {
+    N_sigma <- 1
+    x_names <- c(x_names, params[[2]])
+  } else {
+    N_sigma <- ncol(mod_sigma_frame)
+    x_names <- c(x_names, paste0(params[[2]], ":", colnames(mod_sigma_frame)))
+  }
+  
+  if (!is.null(X_underreport)) {
     N_underreport <- ncol(X_underreport)
-    underreport_names <- paste0("Underreporting:", colnames(X_underreport))
-  }
-  else{
+    x_names <- c(x_names, paste0("Underreporting:", colnames(X_underreport)))
+  } else {
     N_underreport <- 0
-    underreport_names <- NULL
   }
-  
-  # If an offset is specified, create a vector for the offset
-  if (!is.null(offset)){
-    X_offset <- as.matrix(data[, offset, drop = FALSE])
-  }
-  
-  # If offset() is used in the formula, use that as the offset
-  if(any(grepl("offset", deparse(formula)))) { 
-    offset_variable <- str_extract(deparse(formula), "(?<=offset\\().*?(?=\\))")
-    X_offset <- as.matrix(data[, offset, drop = FALSE])
-  }
-  
-  if (!is.null(dis_param_formula_1)) {
-    mod_alpha_frame <- as.matrix(modelr::model_matrix(data, 
-                                                      dis_param_formula_1))
-    x_names <- c(x_names, paste0(params[1], ":",colnames(mod_alpha_frame)))
+  if (!is.null(X_zero)) {
+    N_zero <- ncol(X_zero)
+    x_names <- c(x_names, paste0("Zero:", colnames(X_zero)))
   } else {
-    x_names <- append(x_names, params[1])
+    N_zero <- 0
   }
-  
-  if (!is.null(dis_param_formula_2)) {
-    mod_sigma_frame <- as.matrix(modelr::model_matrix(data, 
-                                                      dis_param_formula_2))
-    x_names <- c(x_names, paste0(params[2], ":",colnames(mod_sigma_frame)))
-  } else {
-    x_names <- append(x_names, params[2])
-  }
-  
-  if(!is.null(underreport_formula)){
-    x_names <- c(x_names, underreport_names)
-  }
-  
-  y <- stats::model.response(mod1_frame)
+  N_par <- length(x_names)
+  idx_under <- N_predictors + N_alpha + N_sigma + seq_len(N_underreport)
+  idx_zero <- N_predictors + N_alpha + N_sigma + N_underreport +
+    seq_len(N_zero)
   
   # Generate Halton draws to use as quantile values
   haltons <- randtoolbox::halton(ndraws)
   normed_haltons <- qnorm(haltons)
   
-  # Some numbers that will be useful
-  N_predictors <- ncol(X)
-  # N_obs <- length(y)
-  # No. of params for the distribution
-  N_params <- length(Filter(Negate(is.null), params)) 
-  
-  if (is.null(params[[1]])) {
-    N_alpha <- 0
-  } else if (is.null(dis_param_formula_1)) {
-    N_alpha <- 1
-  } else {
-    N_alpha <- ncol(mod_alpha_frame)
-  }
-  
-  if (N_params==2){
-    if(is.null(dis_param_formula_2)){
-      if (is.null(params[2])){
-        N_sigma <- 0
-      }else{
-        N_sigma <- 1
-      }
-    }
-    else{
-      N_sigma <- ncol(mod_sigma_frame)
-    }
-  }else{
-    N_sigma <- 0
-  }
-  
-  # Initialize starting values if not provided
-  start <- if (is.null(start.vals)) {
-    
-    # Use glm (Poisson) as starting values for betas
-    p_model <- glm(formula, data = data, family = poisson(link = "log"))
+  # ---- Starting values -------------------------------------------------------
+  if (is.null(start.vals)) {
+    # Poisson GLM with the same rows, offset and weights for the betas
+    p_model <- stats::glm.fit(X, y, weights = weights.df, offset = X_offset,
+                              family = stats::poisson(link = "log"))
     start <- p_model$coefficients
-    
-    if (family=="GW" | family=="SI"){
-      start <- c(start, rep(0.1, N_alpha + N_sigma + N_underreport))
-    }else{
-      start <- c(start, rep(0, N_alpha + N_sigma + N_underreport))
+    start[is.na(start)] <- 0
+    extra <- N_alpha + N_sigma + N_underreport
+    start <- c(start, rep_len(.fcr_get_family(family)$start, extra))
+    if (N_zero > 0) {
+      # Zero model: intercept at a structural-zero share of about 0.2
+      # (inflated) or at the observed share of positive counts (hurdle)
+      z0 <- rep(0, N_zero)
+      int <- which(colnames(X_zero) == "(Intercept)")
+      if (length(int)) {
+        z0[int] <- if (zero_type == "hurdle") {
+          stats::qlogis(min(max(mean(y > 0), 0.01), 0.99))
+        } else {
+          -1.5
+        }
+      }
+      start <- c(start, z0)
     }
-    
-  } 
-  else {
-    start <- start.vals
+    names(start) <- x_names
+  } else {
+    start <- .fcr_check_start(start.vals, x_names)
   }
   
-  x_names <- x_names  %>% 
-    compact() #%>%  # Remove NULL values
+  # ---- Log-likelihood ------------------------------------------------------
+  local_probFunc <- get_probFunc(family)
   
-  # Shouldn't need to do this, but this ensures it runs without having errors 
-  # from names
-  names(start) <- x_names[seq_along(start)] 
-  
-  # Handling Weights
-  if (is.null(weights)){
-    weights.df <- rep(1, length(y))
-  }else{
-    weights.df <- data %>% pull(weights)
-  }
-  
-  # Define the main function for computing log-likelihood
   logLikFunc <- function(p) {
-    # Ensure local_probFunc is available in this scope
-    local_probFunc <- get_probFunc(family)
+    coefs <- as.vector(p)
+    fixed_coefs <- coefs[seq_len(N_predictors)]
     
-    # Critical Check: If get_probFunc returned NULL (e.g. invalid family 
-    # matching), we cannot proceed. This prevents the obscure "could not find 
-    # function 'local_probFunc'" or "attempt to apply non-function" error 
-    # later.
-    if(is.null(local_probFunc)) {
-      stop(paste0("Probability function not found for family: ", family, 
-                     ". Please check family name and helpers.R definition."))
-    }
-    
-    coefs <- as.array(p)
-    fixed_coefs <- as.vector(head(coefs, N_predictors))
-    
-    # Initialize alpha and sigma
     alpha <- NULL
     sigma <- NULL
     
     if (N_alpha > 0) {
-      if (!is.null(dis_param_formula_1)){
-        alpha_coefs <- as.vector(coefs[(N_predictors + 1):
-                                         (N_predictors + N_alpha)])
-        alpha <- exp(mod_alpha_frame %*% alpha_coefs)
+      idx <- N_predictors + seq_len(N_alpha)
+      alpha <- if (!is.null(mod_alpha_frame)) {
+        exp(as.vector(mod_alpha_frame %*% coefs[idx]))
       } else {
-        alpha <- exp(coefs[(N_predictors + 1)])
+        exp(coefs[idx])
       }
     }
     
     if (N_sigma > 0) {
-      if (!is.null(dis_param_formula_2)){
-        sigma_coefs <- as.vector(coefs[(N_predictors + N_alpha + 1):
-                                         (N_predictors + N_alpha + N_sigma)])
-        sigma <- exp(mod_sigma_frame %*% sigma_coefs)
+      idx <- N_predictors + N_alpha + seq_len(N_sigma)
+      sigma <- if (!is.null(mod_sigma_frame)) {
+        exp(as.vector(mod_sigma_frame %*% coefs[idx]))
       } else {
-        sigma <- exp(coefs[(N_predictors + N_alpha + 1)])
+        exp(coefs[idx])
       }
     }
     
-    if (N_underreport>0){
-      beta_underreport <- coefs[(length(coefs)-N_underreport+1):(length(coefs))]
-      lin_underreport <- X_underreport %*% beta_underreport
-      
-      if (underreport_family == "logit"){
-        underreport_prob <- 1/(1+exp(-lin_underreport))
-      }else{
-        underreport_prob <- pnorm(lin_underreport, lower.tail = FALSE)
-        
-      }
-    }else{underreport_prob <- 1} # If no underreporting model, set prob to 1
-    
-    if (!is.null(offset)){
-      if (length(offset) > 1){
-        X_offset_i <- rowSums(X_offset)
-        predicted <- exp(X %*% fixed_coefs + X_offset_i) * underreport_prob
-      } else {
-        predicted <- exp(X %*% fixed_coefs + X_offset)*underreport_prob
-      }
+    if (N_underreport > 0) {
+      underreport_prob <- .report_prob(
+        as.vector(X_underreport %*% coefs[idx_under]), underreport_family)
     } else {
-      predicted <- exp(X %*% fixed_coefs)*underreport_prob
+      underreport_prob <- 1
     }
     
-    # Call the probability function using the local variable
-    probs <- local_probFunc(y=y, predicted=predicted, alpha=alpha, sigma=sigma, 
-                            haltons=haltons, normed_haltons=normed_haltons, engine=engine)
+    predicted <- exp(as.vector(X %*% fixed_coefs) + X_offset) *
+      underreport_prob
     
-    return(log(probs)*weights.df)
+    # Parameter values outside a distribution's support make the C++ code
+    # stop(); return NA instead so the optimizer can step back.
+    probs <- tryCatch(
+      local_probFunc(y = y, predicted = predicted, alpha = alpha,
+                     sigma = sigma, haltons = haltons,
+                     normed_haltons = normed_haltons, engine = engine),
+      error = function(e) rep(NA_real_, length(y)))
+    
+    if (N_zero > 0) {
+      f0 <- tryCatch(
+        local_probFunc(y = rep(0, length(y)), predicted = predicted,
+                       alpha = alpha, sigma = sigma, haltons = haltons,
+                       normed_haltons = normed_haltons, engine = engine),
+        error = function(e) rep(NA_real_, length(y)))
+      zp <- stats::plogis(as.vector(X_zero %*% coefs[idx_zero]))
+      probs <- .fcr_zero_adjust(y, as.vector(probs), as.vector(f0), zp,
+                                zero_type)
+    }
+    
+    ll <- log(as.vector(probs))
+    ll[weights.df == 0] <- 0
+    ll * weights.df
   }
-  # Run the maximum likelihood estimation
-  fit <- maxLik::maxLik(logLikFunc, 
+  
+  # Analytic gradient for the closed-form Poisson, NB1 and NB2 families
+  # (without underreporting or a zero model); numeric otherwise.
+  gradFunc <- NULL
+  if (family %in% c("POISSON", "NB1", "NB2") && N_underreport == 0 &&
+      N_zero == 0) {
+    W_alpha <- if (N_alpha == 0) NULL else if (is.null(mod_alpha_frame))
+      matrix(1, length(y), 1) else mod_alpha_frame
+    gradFunc <- function(p) {
+      .fcr_analytic_grad(family, as.vector(p), y, X, X_offset, W_alpha,
+                         weights.df)
+    }
+  }
+  
+  # ---- Estimation ------------------------------------------------------------
+  fit <- maxLik::maxLik(logLikFunc, grad = gradFunc,
                         start = start,
                         method = method, 
                         control = list(iterlim = max.iters, 
                                        printLevel = print.level))
+  names(fit$estimate) <- x_names
   
-  # Optionally, compute bootstrapped standard errors
-  
-  if (stderr=="boot" & is.numeric(bootstraps)) {
-    bs.data <- modelr::bootstrap(data, n = bootstraps)
-    # Reuse current estimates as starting values for bootstrap
-    start_vals_boot <- fit$estimate
-    
-    models <- map(bs.data$strap, ~ mod.boot(data = ., 
-                                            formula = formula, 
-                                            family = family, 
-                                            offset = offset, 
-                                            weights = weights, 
-                                            dis_param_formula_1 = 
-                                              dis_param_formula_1, 
-                                            dis_param_formula_2 = 
-                                              dis_param_formula_2, 
-                                            underreport_formula = 
-                                              underreport_formula, 
-                                            underreport_family = 
-                                              underreport_family, 
-                                            ndraws = ndraws, 
-                                            method = method, 
-                                            max.iters = max.iters, 
-                                            start.vals = start_vals_boot,
-                                            engine = engine))
-    tidied <- map_df(models, broom::tidy, .id = "id")
-    
-    SE <- tidied %>%
-      group_by(term) %>%
-      reframe(sd = sd(estimate, na.rm=TRUE)) %>%
-      tibble::deframe() # Converts to named vector
-    
-    fit$bootstrapped_se <- SE
-  }
-  if (stderr == "normal") {
-    covariance_matrix <- vcov(fit)
-    fit$bootstrapped_se<- sqrt(diag(covariance_matrix))
-  }
-  else if (stderr == "boot") {
-    fit$bootstrapped_se <- SE
-  }
-  else if (stderr == "robust"){
-    fit$bootstrapped_se <- sqrt(diag(sandwich::sandwich(fit)))
+  fit$converged <- .fcr_converged(fit, method)
+  if (!isTRUE(fit$converged)) {
+    warning("The optimizer did not report convergence (", trimws(fit$message),
+            "). Consider a different `method` or more `max.iters`.",
+            call. = FALSE)
   }
   
-  fit$coefficients <- fit$estimate
-  fit$se <- if (stderr == "boot" & is.numeric(bootstraps)){
-    fit$bootstrapped_se 
+  # ---- Standard errors: one covariance matrix per fit ------------------------
+  if (stderr == "boot") {
+    boot_data <- data[prep$rows_used, , drop = FALSE]
+    boot_w <- if (is.numeric(weights)) prep$weights else weights
+    draws <- .fcr_bootstrap(
+      n = nrow(boot_data), B = bootstraps, coef_names = x_names,
+      refit = function(idx) {
+        w_i <- if (is.numeric(boot_w)) boot_w[idx] else boot_w
+        m <- countreg(formula = formula, data = boot_data[idx, , drop = FALSE],
+                      family = family, offset = offset, weights = w_i,
+                      verbose = FALSE,
+                      dis_param_formula_1 = dis_param_formula_1,
+                      dis_param_formula_2 = dis_param_formula_2,
+                      underreport_formula = underreport_formula,
+                      underreport_family = underreport_family,
+                      zero_formula = zero_formula, zero_type = zero_type,
+                      ndraws = ndraws, method = method,
+                      max.iters = max.iters, start.vals = fit$estimate,
+                      stderr = "normal", engine = engine,
+                      keep_data = FALSE)
+        m$model$estimate
+      })
+    V <- stats::cov(draws, use = "pairwise.complete.obs")
+    fit$n_boot_ok <- sum(stats::complete.cases(draws))
+    vcov_type <- "bootstrap"
+  } else if (stderr == "robust") {
+    V <- sandwich::sandwich(fit)
+    vcov_type <- "robust"
   } else {
-    sqrt(diag(vcov(fit)))
+    V <- .fcr_hessian_vcov(fit)
+    vcov_type <- "hessian"
   }
-    
+  dimnames(V) <- list(x_names, x_names)
+  
+  fit$vcov <- V
+  fit$vcov_type <- vcov_type
+  fit$stderr <- stderr
+  fit$se <- .fcr_se(V)
+  names(fit$se) <- x_names
+  fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
+  
+  # ---- Store results -------------------------------------------------------
+  fit$coefficients <- fit$estimate
   fit$logLik <- fit$maximum
-  fit$converged <-  fit$convergence
   fit$model <- family
   fit$family <- family
   fit$method <- method
-  fit$data <- data
   fit$formula <- formula
   fit$dis_param_formula_1 <- dis_param_formula_1
   fit$dis_param_formula_2 <- dis_param_formula_2
   fit$ndraws <- ndraws
-  fit$bootstraps <- if (!is.null(bootstraps)) bootstraps else NULL
-  fit$offset <- offset
-  fit.stderr <- stderr
+  fit$engine <- engine
+  fit$bootstraps <- bootstraps
+  fit$offset <- prep$blueprint$offset_label
   fit$modelType <- "countreg"
   fit$underreport_formula <- underreport_formula
+  fit$zero_formula <- zero_formula
+  fit$zero_type <- if (!is.null(zero_formula)) zero_type
   fit$underreport_family <- underreport_family
+  # Sign convention for probit underreporting: 1 = P(reported) = pnorm(z'g)
+  # (flexCountReg >= 0.1.3). Fits without this field used 1 - pnorm(z'g).
+  fit$underreport_sign <- 1L
   fit$params <- params
+  fit$blueprint <- prep$blueprint
+  fit$y <- y
+  fit$weights <- weights.df
+  fit$nobs <- length(y)
+  fit$rows_used <- prep$rows_used
+  fit$n_dropped <- prep$n_dropped
   
-  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(), 
+  obj <- .createFlexCountReg(model = fit, data = data, call = match.call(),
+                             keep_data = keep_data,
                              formula = formula)
   return(obj)
 }

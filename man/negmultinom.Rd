@@ -17,7 +17,8 @@ negmultinom(
   start.vals = NULL,
   stderr = "normal",
   bootstraps = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  keep_data = TRUE
 )
 }
 \arguments{
@@ -68,6 +69,10 @@ bootstrap; requires \code{bootstraps}).}
 \code{stderr = "boot"}.}
 
 \item{verbose}{logical. If \code{TRUE}, optimizer progress is printed.}
+
+\item{keep_data}{logical; if \code{FALSE}, the training data are not stored
+in the fitted object (saving memory). \code{predict()} then needs
+\code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
 }
 \value{
 An object of class \code{flexCountReg}, a list with components:

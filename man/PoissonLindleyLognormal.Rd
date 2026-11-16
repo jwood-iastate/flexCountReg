@@ -36,7 +36,8 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 \arguments{
 \item{x}{numeric value or vector of values.}
 
-\item{mean}{mean (>0).}
+\item{mean}{the Poisson-Lindley mean before the lognormal factor (>0); the
+mean of the distribution is \code{mean * exp(sigma^2 / 2)}.}
 
 \item{theta}{Poisson-Lindley theta parameter (>0).}
 
@@ -50,7 +51,8 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 \item{q}{quantile or vector of quantiles.}
 
-\item{lambda}{optional lambda parameter (>0).}
+\item{lambda}{optional Poisson scale parameter (>0), an alternative to
+\code{mean}: \code{mean = lambda * (theta + 2) / (theta * (theta + 1))}.}
 
 \item{lower.tail}{TRUE returns \eqn{P[X \leq x]}.}
 
@@ -76,10 +78,10 @@ generation for the Poisson-Lindley-Lognormal (PLL) Distribution.
 The PLL is a 3-parameter count distribution that captures high mass at
 small y and allows flexible heavy tails.
 
-\code{dplind} computes the PLL density.
-\code{pplind} computes the PLL CDF.
-\code{qplind} computes quantiles.
-\code{rplind} generates random draws.
+\code{dplindLnorm} computes the PLL density.
+\code{pplindLnorm} computes the PLL CDF.
+\code{qplindLnorm} computes quantiles.
+\code{rplindLnorm} generates random draws.
 
 The PMF is:
 \deqn{
@@ -90,9 +92,10 @@ f(y|\mu,\theta,\sigma)=\int_0^\infty
        {x\sigma\sqrt{2\pi}}dx
 }
 
-Mean:
+Where \eqn{\mu} is the \code{mean} argument (the Poisson-Lindley mean). The
+mean of the distribution is:
 \deqn{
-E[y]=\mu=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
+E[y]=\mu e^{\sigma^2/2}=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
             {\theta(\theta+1)}
 }
 

@@ -2,15 +2,12 @@
 % Please edit documentation in R/plind.R
 \name{PoissonLindley}
 \alias{PoissonLindley}
-\alias{msg1}
 \alias{dplind}
 \alias{pplind}
 \alias{qplind}
 \alias{rplind}
 \title{Poisson-Lindley Distribution}
 \usage{
-msg1
-
 dplind(x, mean = 1, theta = 1, lambda = NULL, log = FALSE)
 
 pplind(q, mean = 1, theta = 1, lambda = NULL, lower.tail = TRUE, log.p = FALSE)

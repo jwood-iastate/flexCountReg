@@ -154,11 +154,11 @@ parameters indirectly.
 
 ``` r
 dpoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=0.5, ndraws=10)
-#> [1] 0.04381581
+#> [1] 0.09862894
 ppoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
-#> [1] 0.9693094
+#> [1] 0.9198189
 qpoisweibull(0.95, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
-#> [1] 4
+#> [1] 5
 rpoisweibull(10, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 #>  [1] 8 2 1 0 3 1 1 2 9 1
 ```

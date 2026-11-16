@@ -55,9 +55,9 @@ test_that("every family's density sums to 1 with the stated mean and variance", 
   h <- randtoolbox::halton(5000)
   pars <- list(POISSON = c(NA, NA), GP1 = c(1.3, NA), GP2 = c(1.2, NA),
                NB1 = c(0.5, NA), NB2 = c(0.5, NA), NBP = c(0.5, 1.5),
-               PLN = c(0.5, NA), PGE = c(2, 1), PIG1 = c(0.5, NA),
+               PLN = c(0.5, NA), PGE = c(2, NA), PIG1 = c(0.5, NA),
                PIG2 = c(0.5, NA), PIG = c(0.3, NA), PL = c(1.5, NA),
-               PLG = c(1.5, 0.4), PLL = c(1.5, 0.5), PW = c(2, 1),
+               PLG = c(1.5, 0.4), PLL = c(1.5, 0.5), PW = c(2, NA),
                SI = c(exp(0.5), 1), GW = c(2, 3), COM = c(0.7, NA))
   expect_setequal(names(pars), .fcr_families)
   y <- 0:2000

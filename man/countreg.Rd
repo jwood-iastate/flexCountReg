@@ -57,11 +57,17 @@ distribution used. Further details are provided below.}
 parameter of the count distribution used. Further details are provided
 below.}
 
-\item{underreport_formula}{an optional formula to estimate the underreporting
-for any of the count model options. The underreporting is estimated as a
-function (logit or probit) of the predictors in the model. For the model to
-be tractable, the independent variables cannot be the exact same as the
-count model. The default is \code{NULL}.}
+\item{underreport_formula}{an optional formula for the probability that a
+true count is reported (binomial thinning of the true counts), as a logit
+or probit function of its predictors. Available for the Poisson, NB1,
+NB2, NBP, PLN, PGE, PIG1, PIG2, PIG, PL, PLG, PLL, PW and SI families,
+whose reported counts follow the same family (for NB1 and PIG1 with
+dispersion \eqn{p\alpha}, and for NBP with \eqn{\alpha p^{2-P}}). It
+is identified only by variables that affect reporting but not the true
+counts (and, weakly, by the shape of the link function): an
+intercept-only formula is an error, and a warning is given when the
+reporting and count coefficients are nearly collinear. Cannot be combined
+with \code{zero_formula}. The default is \code{NULL}.}
 
 \item{underreport_family}{the name of the distribution/model type to estimate
 the underreporting portion of the model when \code{underreport_formula} is
@@ -223,13 +229,13 @@ For \code{dis_param_formula_2}, the models are for the parameters:
 \item Not Applicable for the Negative Binomial 2 model.
 \item \eqn{ln(p)} for the Negative Binomial P model.
 \item Not Applicable for the Poisson-Lognormal model.
-\item \eqn{ln(scale)} for the Poisson-Generalized-Exponential model.
+\item Not Applicable for the Poisson-Generalized-Exponential model.
 \item Not Applicable for the Poisson-Inverse-Gaussian model.
 \item Not Applicable for the Poisson-Inverse-Gamma model.
 \item Not Applicable for the Poisson-Lindley model.
 \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
 \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
-\item \eqn{ln(\sigma)} for the Poisson-Weibull model.
+\item Not Applicable for the Poisson-Weibull model.
 \item \eqn{ln(\sigma)} for the Sichel model.
 \item \eqn{ln(\rho-1)} for the Generalized Waring model.
 \item Not Applicable for the Conway-Maxwell-Poisson model.
@@ -295,6 +301,14 @@ Furthermore, \eqn{\phi>-1} is required for this distribution. When
 \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
 To account for the range of possible values, this is modeled as
 \deqn{ln(\phi+1)}.
+
+Underdispersion: when the dispersion parameter is negative, the PMF is
+truncated at this point and renormalized, so its mean and variance differ
+from the formulas above and \eqn{\mu} is a location parameter rather than
+the mean (e.g. GP1 with \eqn{\mu = 0.75} and \eqn{\phi = -0.5} has mean
+0.803; if \eqn{-\mu/\phi < 1} all probability is at 0). Predictions,
+Pearson residuals, simulations and marginal effects use the exact moments
+of the renormalized PMF.
 }
 
 \subsection{Generalized Poisson Version 2 Model}{
@@ -328,6 +342,14 @@ is bounded above by \eqn{\left\lceil -1/\alpha \right\rceil - 1},
 i.e., the largest integer satisfying \eqn{1 + \alpha y > 0}.
 To account for the range of possible values, this is modeled as
 \deqn{ln(\alpha+1)}.
+
+Underdispersion: when the dispersion parameter is negative, the PMF is
+truncated at this point and renormalized, so its mean and variance differ
+from the formulas above and \eqn{\mu} is a location parameter rather than
+the mean (e.g. GP1 with \eqn{\mu = 0.75} and \eqn{\phi = -0.5} has mean
+0.803; if \eqn{-\mu/\phi < 1} all probability is at 0). Predictions,
+Pearson residuals, simulations and marginal effects use the exact moments
+of the renormalized PMF.
 }
 
 \subsection{Negative Binomial Models}{
@@ -358,12 +380,12 @@ The variance is:
 \subsection{NB-2 Model}{
 
 The PMF and log-likelihood functions are:
-\deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} 
-\left( \frac{\alpha}{\alpha + \mu} \right)^\alpha 
-\left( \frac{\mu}{\alpha + \mu} \right)^y}
-\deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - 
-\ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + 
-\mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
+\deqn{P(Y = y) = \frac{\Gamma(y + 1/\alpha)}{y! \, \Gamma(1/\alpha)} 
+\left( \frac{1}{1 + \alpha\mu} \right)^{1/\alpha} 
+\left( \frac{\alpha\mu}{1 + \alpha\mu} \right)^y}
+\deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + 1/\alpha) - 
+\ln \Gamma(1/\alpha) - \ln y_i! - \frac{1}{\alpha} \ln(1 + \alpha\mu_i)
++ y_i \ln \left( \frac{\alpha\mu_i}{1 + \alpha\mu_i} \right) \right]}
 
 The mean is:
 \deqn{\mu = exp(X\beta)}
@@ -452,8 +474,12 @@ e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right)^y x^y e^{-\left(\frac{\gamma
 e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}
 \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 
-Halton draws are used to perform simulation over the lognormal distribution
-to solve the integral.
+Halton draws are used to integrate over the generalized-exponential
+distribution.
+
+Substituting \eqn{x = \gamma u} shows that the scale \eqn{\gamma} cancels
+out of this PMF, so it cannot be estimated: it is fixed at 1 and only the
+shape \eqn{\alpha} is estimated (\code{dis_param_formula_2} does not apply).
 }
 
 \subsection{Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models}{
@@ -518,26 +544,17 @@ Thus, the parameter \eqn{\lambda} in the PL distribution when applied to
 regression analysis is:
 \deqn{\lambda=\frac{\mu\theta(\theta+1)}{\theta+2}}
 
-Using the replacement and simplifying results in:
-\deqn{f(y \mid \theta, \mu) = \\ \frac{\theta^2 (\mu \theta (\theta+1))^y 
-(\theta^2 (1+\mu) + \theta (2+\mu) + (\theta+2) (y+1))}{(\theta+1) 
-(\theta+2)^{y+1} (\theta^2 (1+\mu) + \theta (2+\mu))^{y+2}}}
-And
-\deqn{LL=2 \log(\theta) + y (\log(\mu) + \log(\theta) + \log(\theta+1)) + 
-\log(\theta^2 (1+\mu) + \theta (2+\mu) + (\theta+2) (y+1)) - \log(\theta+1) 
-- (y+1) \log(\theta+2) - (y+2) \log(\theta^2 (1+\mu) + \theta (2+\mu))}
+The PMF above is evaluated at this \eqn{\lambda}.
 
 The variance function is defined as:
 \deqn{\sigma^2=\mu+\left(1-\frac{2}{(\theta+2)^2}\right)\mu^2}
 
 It should be noted that the p-value for the parameter \code{ln(theta)} in the
 model summary is testing if the parameter \code{theta} is equal to a value of 1.
-This has no practical meaning. The Likelihood-Ratio (LR) test compares the
-Poisson-Lindley regression with a Poisson regression with the same
-independent variables. Thus, the LR test result indicates the statistical
-significance for the improvement in how well the model fits the data over a
-Poisson regression. This indicates the statistical significance of the
-\code{theta} parameter.
+This has no practical meaning. The PL model does not reduce to the Poisson
+model for any \eqn{\theta} (its variance is at least
+\eqn{\mu + \mu^2/2}), so a likelihood-ratio test against Poisson is not
+valid; compare the models with AIC and BIC.
 }
 
 \subsection{Poisson-Lindley-Gamma (PLG) Model}{
@@ -564,12 +581,13 @@ The Poisson-Lindley-Lognormal regression is based on a compound Poisson-
 Lindley-Lognormal distribution. Details of the distribution can be seen at
 \code{\link[flexCountReg]{dplindLnorm}}.
 
-The mean for the regression model is:
-\deqn{\mu=e^{X\beta}}
+The Poisson-Lindley mean parameter is \eqn{\mu=e^{X\beta}}, and the mean
+of the regression model (used by \code{predict()}) is:
+\deqn{E[Y]=m=e^{X\beta+\sigma^2/2}}
 
-The variance function is defined as:
-\deqn{\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}
-{2}}}+e^{\sigma^2}-1\right)\mu^2}
+The variance function is:
+\deqn{Var(Y)=m+\left(\left(2-\frac{2}{(\theta+2)^2}\right)
+e^{\sigma^2}-1\right)m^2}
 
 It should be noted that the p-value for the parameters \code{ln(theta)} and
 \code{ln(sigma)} in the model summary are testing if the parameter \code{theta} and
@@ -605,6 +623,10 @@ This leads to:
 The variance for the Poisson-Weibull regression is:
 \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}
 {\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+
+The scale \eqn{\sigma} cancels out of the PMF after this substitution, so
+it cannot be estimated: it is fixed at 1 and only the shape \eqn{\alpha} is
+estimated (\code{dis_param_formula_2} does not apply).
 }
 
 \subsection{Sichel (SI) Model}{

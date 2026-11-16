@@ -241,6 +241,13 @@ log_besselK_safe <- function(x, nu) {
 #' @export
 psichel <- function(q, mu = 1, sigma = 1, gamma = 1,
                     lower.tail = TRUE, log.p = FALSE) {
+  .fcr_p_contract(.psichel_core, q, list(mu = mu, sigma = sigma, gamma = gamma),
+                  lower.tail, log.p,
+                  logdens = function(x, ...) dsichel(x, ..., log = TRUE))
+}
+
+.psichel_core <- function(q, mu = 1, sigma = 1, gamma = 1,
+                    lower.tail = TRUE, log.p = FALSE) {
   
   # --- Input Validation ---
   if (any(sigma <= 0, na.rm = TRUE)) warning("'sigma' must be positive")

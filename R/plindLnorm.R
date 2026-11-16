@@ -13,7 +13,8 @@
 #' @param mean the Poisson-Lindley mean before the lognormal factor (>0); the
 #'   mean of the distribution is \code{mean * exp(sigma^2 / 2)}.
 #' @param theta Poisson-Lindley theta parameter (>0).
-#' @param sigma lognormal sigma parameter (>0).
+#' @param sigma lognormal sigma parameter (>= 0; 0 gives the
+#'   Poisson-Lindley distribution).
 #' @param lambda optional Poisson scale parameter (>0), an alternative to
 #'   \code{mean}: \code{mean = lambda * (theta + 2) / (theta * (theta + 1))}.
 #' @param ndraws number of Halton draws.
@@ -31,14 +32,15 @@
 #' The PMF is:
 #' \deqn{
 #' f(y|\mu,\theta,\sigma)=\int_0^\infty
-#'   \frac{\theta^2\mu^y x^y(\theta+\mu x+y+1)}
-#'        {(\theta+1)(\theta+\mu x)^{y+2}}
+#'   \frac{\theta^2(\lambda x)^y(\theta+\lambda x+y+1)}
+#'        {(\theta+1)(\theta+\lambda x)^{y+2}}
 #'   \frac{\exp\left(-\frac{\ln^2(x)}{2\sigma^2}\right)}
 #'        {x\sigma\sqrt{2\pi}}dx
 #' }
 #'
-#' Where \eqn{\mu} is the \code{mean} argument (the Poisson-Lindley mean). The
-#' mean of the distribution is:
+#' Where \eqn{\mu} is the \code{mean} argument (the Poisson-Lindley mean) and
+#' \eqn{\lambda=\mu\theta(\theta+1)/(\theta+2)} is the corresponding
+#' Poisson-Lindley scale. The mean of the distribution is:
 #' \deqn{
 #' E[y]=\mu e^{\sigma^2/2}=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
 #'             {\theta(\theta+1)}
@@ -85,6 +87,13 @@ dplindLnorm <- function(x, mean=1, theta=1, sigma=1,
 pplindLnorm <- function(q, mean=1, theta=1, lambda=NULL,
                         sigma=1, ndraws=1500,
                         lower.tail=TRUE, log.p=FALSE) {
+  .fcr_p_contract(.pplindLnorm_core, q, list(mean = mean, theta = theta, lambda = lambda, sigma = sigma),
+                  lower.tail, log.p, ndraws = ndraws)
+}
+
+.pplindLnorm_core <- function(q, mean=1, theta=1, lambda=NULL,
+                        sigma=1, ndraws=1500,
+                        lower.tail=TRUE, log.p=FALSE) {
   
   if(!is.null(lambda)) {
     mean <- lambda * (theta + 2) / (theta * (theta + 1))
@@ -127,13 +136,17 @@ qplindLnorm <- function(p, mean = 1, theta = 1, sigma = 1, ndraws = 1500,
   if (!is.null(lambda)) {
     mean <- lambda * (theta + 2) / (theta * (theta + 1))
   }
-  if (any(mean <= 0 | theta <= 0 | sigma <= 0, na.rm = TRUE)) {
-    warning(paste("The values of `mean` (or `lambda`), `theta`, and",
-                  "`sigma` must all be greater than 0."))
+  if (any(mean <= 0 | theta <= 0 | sigma < 0, na.rm = TRUE)) {
+    warning(paste("The values of `mean` (or `lambda`) and `theta` must be",
+                  "greater than 0, and `sigma` must be non-negative."))
   }
   h <- randtoolbox::halton(ndraws)
   .fcr_qcount(p, function(y, mean, theta, sigma) {
-    if (!(mean > 0 && theta > 0 && sigma > 0)) return(rep(NaN, length(y)))
+    if (is.na(mean) || is.na(theta) || is.na(sigma)) {
+      return(rep(NA_real_, length(y)))
+    }
+    # sigma = 0 is the Poisson-Lindley limit
+    if (!(mean > 0 && theta > 0 && sigma >= 0)) return(rep(NaN, length(y)))
     cumsum(dplindLnorm(y, mean, theta, sigma, hdraws = h))
   }, mean, theta, sigma)
 }
@@ -151,8 +164,9 @@ rplindLnorm <- function(n, mean = 1, theta = 1, sigma = 1,
     lambda <- rep_len(lambda, n)
   }
   bad <- !(is.finite(lambda) & lambda > 0 & is.finite(theta) & theta > 0 &
-             is.finite(sigma) & sigma > 0)
-  .fcr_warn_na(bad, "`mean` (or `lambda`), `theta` and `sigma` must be > 0.")
+             is.finite(sigma) & sigma >= 0)
+  .fcr_warn_na(bad, paste("`mean` (or `lambda`) and `theta` must be > 0 and",
+                          "`sigma` >= 0."))
   out <- rep(NA_real_, n); ok <- !bad; k <- sum(ok)
   out[ok] <- stats::rpois(k, lambda[ok] * .fcr_rlindley_mix(k, theta[ok]) *
                             exp(stats::rnorm(k, 0, sigma[ok])))

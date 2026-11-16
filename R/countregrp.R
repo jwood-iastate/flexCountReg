@@ -38,7 +38,16 @@
 #'   all random parameters. The intercept is dropped.
 #' @param ndraws the number of Halton draws to use for estimating the random 
 #'        parameters.
-#' @param scrambled if the Halton draws should be scrambled.
+#' @param scrambled if the Halton draws should be scrambled. Scrambled
+#'   draws are generated from a random seed that is stored in the fit, so
+#'   predictions reuse the same draws (and \code{set.seed()} before fitting
+#'   makes the fit reproducible).
+#' @param mix_draws the number of Halton draws for integrating over the
+#'   mixing distribution of the PLN, PGE, PLL and PW families (inside each
+#'   random-parameter draw). The default is \code{min(ndraws, 200)}. The
+#'   cost of these families grows with \code{ndraws * mix_draws}, so
+#'   increasing \code{ndraws} no longer also increases the inner
+#'   integration.
 #' @param correlated if the random parameters should be correlated. 
 #'        If TRUE, only normal distributions are used.
 #' @param group_var an optional variable name (string), or a vector with one
@@ -83,7 +92,7 @@
 #'   symmetric triangular on \eqn{[-1, 1]}, so \eqn{\beta} lies in
 #'   \eqn{[\mu - \sigma, \mu + \sigma]}. Here \eqn{\sigma} is a half-width;
 #'   the standard deviation is \eqn{\sigma/\sqrt{3}} (uniform) or
-#'   \eqn{\sigma/\sqrt{6}} (triangular). Models fitted before version 0.1.3
+#'   \eqn{\sigma/\sqrt{6}} (triangular). Models fitted with version 0.1.1 or earlier
 #'   used \eqn{[\mu - \sigma/2, \mu + \sigma/2]} for the uniform; their
 #'   \eqn{\sigma} is converted automatically in \code{predict()}.
 #'   \item lognormal ("ln"): \eqn{\beta = \exp(\mu + \sigma \upsilon)},
@@ -181,7 +190,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          start.vals = NULL, verbose = FALSE,
                          stderr = "normal", bootstraps = NULL,
                          engine = "halton", keep_data = TRUE,
-                         panel_id = NULL) {
+                         panel_id = NULL, mix_draws = NULL) {
   
   print.level <- if (verbose) 2 else 0
   if (!is.null(panel_id)) {
@@ -203,14 +212,9 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
   }
   method <- .fcr_check_method(method)
-  if (is.null(params[[1]]) && !is.null(dis_param_formula_1)) {
-    stop("`dis_param_formula_1` was given, but family \"", family,
-         "\" has no distribution parameter to model.", call. = FALSE)
-  }
-  if (is.null(params[[2]]) && !is.null(dis_param_formula_2)) {
-    stop("`dis_param_formula_2` was given, but family \"", family,
-         "\" has no second distribution parameter to model.", call. = FALSE)
-  }
+  .fcr_check_controls(max.iters, ndraws)
+  .fcr_check_dis_formulas(family, params, dis_param_formula_1,
+                          dis_param_formula_2)
   
   # Panel id: a column name, or a vector with one value per row
   data <- as.data.frame(data)
@@ -247,6 +251,14 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                                het_var = het_var_formula),
                              offset = offset, weights = weights,
                              group_var = group_var)
+  # Keep the formulas with `.` expanded, for prediction, methods and refits
+  # (a refit must not expand `.` against the bootstrap panel column)
+  formula <- prep$formula
+  rpar_formula <- prep$aux_formulas$rpar
+  dis_param_formula_1 <- prep$aux_formulas$dis1
+  dis_param_formula_2 <- prep$aux_formulas$dis2
+  het_mean_formula <- prep$aux_formulas$het_mean
+  het_var_formula <- prep$aux_formulas$het_var
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }
@@ -267,8 +279,9 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   w_panel <- as.numeric(w_panel[levels(panel_group)])
   if (!is.null(weights) &&
       any(tapply(w_obs, panel_group, function(v) diff(range(v))) > 0)) {
-    warning("`weights` vary within panels; the first weight of each panel ",
-            "is used for the panel.", call. = FALSE)
+    stop("`weights` vary within panels. Weights are frequency weights of ",
+         "the panels (the independent units), so they must be constant ",
+         "within each panel.", call. = FALSE)
   }
   
   # --- 3. Random parameters ---
@@ -293,6 +306,19 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     stop("`rpar_formula` has no random parameters.", call. = FALSE)
   }
   rpardists <- .fcr_match_rpardists(rpardists, rpar, correlated)
+  # A variable in both formulas: with a free-location random parameter
+  # (normal, uniform, triangular) only the sum of the fixed coefficient and
+  # the random parameter's mean is identified. Lognormal and gamma random
+  # parameters have a fixed support, so a fixed shift is identified.
+  both <- intersect(rpar, colnames(X_Fixed))
+  free_loc <- both[rpardists[both] %in% c("n", "u", "t")]
+  if (length(free_loc)) {
+    stop("Variable(s) ", toString(free_loc), " are in both `formula` and ",
+         "`rpar_formula` with a normal, uniform or triangular random ",
+         "parameter. Only the sum of the fixed coefficient and the random ",
+         "parameter's mean is identified; remove them from `formula` (the ",
+         "random parameter's mean is the average effect).", call. = FALSE)
+  }
   
   N_fixed <- ncol(X_Fixed)
   
@@ -306,20 +332,19 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   
   # Halton draws: one dimension per random parameter, plus a separate one
   # for the mixing distribution of PLN, PGE, PLL and PW families
-  all_draws <- as.matrix(randtoolbox::halton(ndraws, N_rand + 1,
-                                             mixed = scrambled))
-  hdraws <- all_draws[, seq_len(N_rand), drop = FALSE]
-  dist_haltons <- all_draws[, N_rand + 1]
+  if (is.null(mix_draws)) mix_draws <- min(ndraws, 200)
+  .fcr_check_controls(ndraws = mix_draws)
+  draw_seed <- if (scrambled) sample.int(.Machine$integer.max, 1L)
+  hdraws <- .fcr_halton(ndraws, N_rand + 1, scrambled,
+                        draw_seed)[, seq_len(N_rand), drop = FALSE]
+  dist_haltons <- .fcr_halton(mix_draws, N_rand + 1, scrambled,
+                              draw_seed)[, N_rand + 1]
   normed_dist_haltons <- stats::qnorm(dist_haltons)
   
   # --- 4. Parameter names and starting values ---
   x_names <- c(colnames(X_Fixed), paste0(rpar, ":Mean"))
   if (correlated) {
-    chol_names <- character(0)
-    for (i in seq_along(rpar)) for (j in 1:i) {
-      chol_names <- c(chol_names, paste0("Chol:", rpar[i], "_", rpar[j]))
-    }
-    x_names <- c(x_names, chol_names)
+    x_names <- c(x_names, .fcr_chol_names(rpar))
   } else {
     x_names <- c(x_names, paste0(rpar, ":St.Dev"))
   }
@@ -357,14 +382,17 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     is_g <- rpardists == "g"
     s_rand[is_g] <- pmax(abs(s_rand[is_g]), 0.1)
     if (correlated) {
-      s_var <- unlist(lapply(seq_along(rpar), function(i) {
-        c(rep(0, i - 1), 0.1)
-      }))
+      # Lower-triangular Cholesky factor 0.1 * I, packed
+      s_var <- .fcr_chol_pack(diag(0.1, N_rand))
     } else {
       s_var <- ifelse(is_g, pmax(0.5 * s_rand, 0.05), 0.1)
     }
+    # Scalar distribution parameters start near the Poisson limit (small
+    # overdispersion); GP1/GP2 start exactly at it (dispersion 0), because a
+    # strongly underdispersed start gives zero probability to larger counts
+    dis_start <- if (family %in% c("GP1", "GP2")) 0 else -2
     start <- c(s_fixed, s_rand, s_var, rep(0, N_het_mean + N_het_var),
-               rep(-2, N_dis_1 > 0 && is.null(X_dis_1)),
+               rep(dis_start, N_dis_1 > 0 && is.null(X_dis_1)),
                rep(0, if (!is.null(X_dis_1)) N_dis_1 else 0),
                rep(-2, N_dis_2 > 0 && is.null(X_dis_2)),
                rep(0, if (!is.null(X_dis_2)) N_dis_2 else 0))
@@ -422,15 +450,17 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                      sigma = if (!is.null(vec_2)) rep(vec_2, times = D),
                      haltons = dist_haltons, 
                      normed_haltons = normed_dist_haltons,
-                     engine = engine),
+                     engine = engine, log = TRUE),
       error = function(e) rep(NA_real_, N_obs * D))
     
     # Panel log-likelihood per draw, averaged over draws on the log scale
-    log_probs <- matrix(log(probs_flat), nrow = N_obs, ncol = D)
+    log_probs <- matrix(probs_flat, nrow = N_obs, ncol = D)
     sum_log <- rowsum(log_probs, group = panel_group, reorder = TRUE)
     m <- apply(sum_log, 1, max)
     ll_panel <- m + log(rowMeans(exp(sum_log - m)))
     ll_panel[!is.finite(m)] <- m[!is.finite(m)]
+    # Panels with zero weight contribute exactly 0 (also when -Inf)
+    ll_panel[w_panel == 0] <- 0
     
     ll_panel * w_panel
   }
@@ -462,6 +492,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$modelType <- "countreg.rp"
   fit$method <- method
   fit$ndraws <- ndraws
+  fit$mix_draws <- mix_draws
+  fit$draw_seed <- draw_seed
   fit$scrambled <- scrambled
   fit$correlated <- correlated
   fit$panel_id <- panel_id 
@@ -469,7 +501,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$offset <- prep$blueprint$offset_label
   fit$engine <- engine
   fit$rpardists <- rpardists
-  # Draw conventions (flexCountReg >= 0.1.3): uniform draws on
+  # Draw conventions (flexCountReg >= 0.1.2): uniform draws on
   # [mu - sigma, mu + sigma], additive heterogeneity in means with one
   # coefficient per random parameter, separate Halton dimension for the
   # mixing distribution. Fits without this field used the older conventions.
@@ -478,6 +510,9 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$y <- y
   fit$nobs <- N_obs
   fit$n_groups <- nlevels(panel_group)
+  # Independent units for BIC: the panels, counted with their frequency
+  # weights
+  fit$n_bic <- sum(w_panel)
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   
@@ -506,6 +541,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          het_mean_formula = het_mean_formula,
                          het_var_formula = het_var_formula,
                          ndraws = ndraws, scrambled = scrambled,
+                         mix_draws = mix_draws,
                          correlated = correlated,
                          group_var = ".fcr_boot_panel",
                          weights = if (is.numeric(boot_w)) boot_w[r] else
@@ -513,15 +549,17 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          offset = offset, method = method,
                          max.iters = max.iters, start.vals = fit$estimate,
                          engine = engine, keep_data = FALSE)
-        m$model$estimate
+        .fcr_refit_result(m$model$estimate, m$model$converged)
       })
-    V <- stats::cov(draws, use = "pairwise.complete.obs")
+    V <- .fcr_boot_cov(draws)
+    fit$boot_failures <- attr(draws, "failures")
     fit$n_boot_ok <- sum(stats::complete.cases(draws))
     fit$bootstraps <- as.integer(bootstraps)
     vcov_type <- "bootstrap"
   } else if (stderr == "robust") {
-    # One log-likelihood contribution per panel: cluster-robust sandwich
-    V <- sandwich::sandwich(fit)
+    # One log-likelihood contribution per panel: cluster-robust sandwich,
+    # with frequency weights per panel
+    V <- .fcr_robust_vcov(fit, w_panel)
     vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)

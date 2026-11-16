@@ -41,11 +41,14 @@ test_that("the bootstrap helper drops failed replicates", {
   expect_warning(dr <- .fcr_bootstrap(10, 10, c("a", "b"), refit),
                  "5 of 10 bootstrap replicates failed")
   expect_equal(sum(stats::complete.cases(dr)), 5)
-  expect_error(.fcr_bootstrap(10, 5, c("a", "b"), function(idx) stop("x")),
-               "Fewer than 2 bootstrap replicates")
+  # No usable replicate: a warning, and NA standard errors
+  expect_warning(dr <- .fcr_bootstrap(10, 5, c("a", "b"),
+                                      function(idx) stop("x")),
+                 "Fewer than 2 bootstrap replicates succeeded \\(error: 5\\)")
+  expect_true(all(is.na(.fcr_boot_cov(dr))))
   # Replicates missing an estimate count as failures
-  expect_error(.fcr_bootstrap(10, 5, c("a", "b"), function(idx) c(a = 1)),
-               "Fewer than 2")
+  expect_warning(.fcr_bootstrap(10, 5, c("a", "b"), function(idx) c(a = 1)),
+                 "non-finite estimates: 5")
 })
 
 test_that("verbose = TRUE prints the optimizer trace", {

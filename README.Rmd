@@ -214,14 +214,15 @@ predict(gen.nbp, newdata = nd)
 round(predict(gen.nbp, newdata = nd, type = "prob", max_count = 4), 3)
 ```
 
-Zero-inflated and hurdle versions of any distribution are fitted with `zero_formula`. For example, animal-related crashes are zero on most segment-years, and a zero-inflated Poisson model with the zero probability depending on the speed limit improves on the Poisson model:
+Zero-inflated and hurdle versions of any distribution are fitted with `zero_formula`. For example, animal-related crashes are zero on most segment-years, and a zero-inflated Poisson model with the zero probability depending on the speed limit can be compared with the Poisson model by AIC and BIC (not by a likelihood-ratio test: no zero inflation puts the zero model's intercept at minus infinity, so the restriction is not regular):
 
 ```{r zip}
 mean(washington_roads$Animal == 0)
 zip <- countreg(Animal ~ lnaadt + lnlength, data = washington_roads,
                 family = "Poisson", zero_formula = ~ speed50, method = "NR")
 tidy(zip)
-regCompTest(update(zip, zero_formula = NULL), model2 = zip)$statistics
+rbind(Poisson = glance(update(zip, zero_formula = NULL)),
+      ZIP = glance(zip))[, c("logLik", "AIC", "BIC")]
 ```
 
 With tidymodels (requires the parsnip package):
@@ -240,4 +241,5 @@ The vignettes cover the main workflows:
 
 - `vignette("choosing-a-count-distribution", package = "flexCountReg")`
 - `vignette("random-parameters-and-panels", package = "flexCountReg")`
+- `vignette("inference-prediction-and-comparison", package = "flexCountReg")`
 

@@ -14,12 +14,17 @@
 #' robust (sandwich), or bootstrapped. The z statistics and p-values use the
 #' normal distribution.
 #'
-#' For \code{countreg()} models of families that nest the Poisson model, a
-#' likelihood-ratio test against a Poisson model with the same mean
-#' specification, rows, offset and weights is reported. For one-parameter
-#' mixtures where the Poisson model lies on the boundary of the parameter
-#' space (NB1, NB2, PLN, PIG1, PIG2, PIG, PL), the p-value is halved (a
-#' 50:50 mixture of chi-square distributions with 0 and 1 degrees of freedom).
+#' For \code{countreg()} models of families that nest the Poisson model with
+#' a regular restriction, a likelihood-ratio test against a Poisson model
+#' with the same mean specification, rows, offset and weights is reported.
+#' For NB1, NB2, PLN, PIG1, PIG2 and PIG with a scalar dispersion parameter
+#' the Poisson model is on the boundary of the parameter space, and the
+#' p-value uses a 50:50 mixture of chi-square distributions with 0 and 1
+#' degrees of freedom; for GP1, GP2 and COM the restriction is interior. No
+#' test is reported for PL, PLG and PLL (which do not reduce to Poisson), for
+#' NBP, SI, PW, PGE and GW (nonregular restrictions), for boundary families
+#' with a dispersion formula, or for models with zero or underreporting
+#' components.
 #'
 #' @returns An object of class \code{summary.flexCountReg}, a list with
 #'   \code{coefficients} (a matrix with the estimate, standard error, z value,
@@ -156,22 +161,18 @@ as_tibble.summary.flexCountReg <- function(x, ...) {
 }
 
 # Likelihood-ratio test of a countreg() model against a Poisson model with
-# the same mean specification, rows, offset and weights. NULL when it does
-# not apply (Poisson family, underreporting, or no training data).
+# the same mean specification, rows, offset and weights. NULL when Poisson is
+# not nested in the model with a regular restriction (see .fcr_nesting()),
+# or when the training data are not available.
 .fcr_lr_vs_poisson <- function(object) {
   m <- object$model
-  if (!inherits(object, "countreg") || identical(m$family, "POISSON") ||
-      !is.null(m$underreport_formula) || !is.null(m$zero_formula) ||
-      is.null(object$data)) {
-    return(NULL)
-  }
-  fam <- m$family
-  nests <- c("NB1", "NB2", "NBP", "PLN", "PIG1", "PIG2", "PIG", "PL", "GP1",
-             "GP2", "COM", "PLG", "PLL", "SI", "GW", "PW", "PGE")
-  if (!fam %in% nests) return(NULL)
+  if (!inherits(object, "countreg") || is.null(object$data)) return(NULL)
+  full <- .fcr_model_spec(object)
+  bp <- m$blueprint %||% .fcr_blueprint(object)
+  nest <- .fcr_nesting(.fcr_base_spec("POISSON", bp$x_names), full)
+  if (!nest$nested) return(NULL)
   d <- .fcr_training_rows(object)
-  fd <- tryCatch(forge_new_data(m$blueprint %||% .fcr_blueprint(object), d),
-                 error = function(e) NULL)
+  fd <- tryCatch(forge_new_data(bp, d), error = function(e) NULL)
   if (is.null(fd)) return(NULL)
   y <- as.numeric(m[["y"]])
   w <- m[["weights"]]
@@ -180,14 +181,8 @@ as_tibble.summary.flexCountReg <- function(x, ...) {
                                 family = stats::poisson()),
                  error = function(e) NULL)
   if (is.null(pf)) return(NULL)
-  mu0 <- pf$fitted.values
-  ll0 <- sum(w * stats::dpois(y, mu0, log = TRUE))
-  df <- length(stats::coef(object)) - ncol(fd$X)
-  stat <- max(0, 2 * (m$maximum - ll0))
-  p <- stats::pchisq(stat, df = df, lower.tail = FALSE)
-  boundary <- fam %in% c("NB1", "NB2", "PLN", "PIG1", "PIG2", "PIG", "PL") &&
-    df == 1
-  if (boundary) p <- p / 2
-  list(statistic = stat, df = df, p.value = p, logLik_poisson = ll0,
-       boundary = boundary)
+  ll0 <- sum(w * stats::dpois(y, pf$fitted.values, log = TRUE))
+  test <- .fcr_lr_pvalue(m$maximum, ll0, nest)
+  list(statistic = test$LR, df = nest$df, p.value = test$p,
+       logLik_poisson = ll0, boundary = nest$type == "boundary")
 }

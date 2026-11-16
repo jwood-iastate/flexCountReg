@@ -24,6 +24,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// com_moments_vec_cpp
+NumericMatrix com_moments_vec_cpp(NumericVector lambda, NumericVector nu);
+RcppExport SEXP _flexCountReg_com_moments_vec_cpp(SEXP lambdaSEXP, SEXP nuSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type nu(nuSEXP);
+    rcpp_result_gen = Rcpp::wrap(com_moments_vec_cpp(lambda, nu));
+    return rcpp_result_gen;
+END_RCPP
+}
 // find_lambda_cpp
 double find_lambda_cpp(double mu, double nu, double tol, int max_iter);
 RcppExport SEXP _flexCountReg_find_lambda_cpp(SEXP muSEXP, SEXP nuSEXP, SEXP tolSEXP, SEXP max_iterSEXP) {
@@ -259,6 +271,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_flexCountReg_com_expect_cpp", (DL_FUNC) &_flexCountReg_com_expect_cpp, 4},
+    {"_flexCountReg_com_moments_vec_cpp", (DL_FUNC) &_flexCountReg_com_moments_vec_cpp, 2},
     {"_flexCountReg_find_lambda_cpp", (DL_FUNC) &_flexCountReg_find_lambda_cpp, 4},
     {"_flexCountReg_find_lambda_vec_cpp", (DL_FUNC) &_flexCountReg_find_lambda_vec_cpp, 4},
     {"_flexCountReg_cmp_normalizer_vec_cpp", (DL_FUNC) &_flexCountReg_cmp_normalizer_vec_cpp, 4},

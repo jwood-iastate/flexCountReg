@@ -96,6 +96,7 @@ repois <- function(formula,
   if (stderr != "boot") bootstraps <- NULL
   
   method <- .fcr_check_method(method)
+  .fcr_check_controls(max.iters)
   if (missing(group_var) || is.null(group_var)) {
     stop("`group_var` must name the column(s) that identify the groups.",
          call. = FALSE)
@@ -105,12 +106,11 @@ repois <- function(formula,
   # groups), training blueprint and the rows used
   prep <- prepare_model_data(formula, data, offset = offset,
                              group_var = group_var)
+  formula <- prep$formula   # with `.` expanded
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }
   y <- as.numeric(prep$y)
-  if (any(y < 0)) stop("The response variable must be nonnegative.",
-                       call. = FALSE)
   X <- prep$X
   cluster_list <- split(seq_along(y), prep$group, drop = TRUE)
   x_names <- c(colnames(X), "lnalpha")
@@ -146,7 +146,7 @@ repois <- function(formula,
   
   if (stderr == "robust") {
     # One log-likelihood contribution per cluster: cluster-robust sandwich
-    V <- sandwich::sandwich(fit$maxLik_object)
+    V <- .fcr_robust_vcov(fit$maxLik_object)
   } else if (stderr == "boot") {
     # Resample whole groups and refit from the full-sample estimates
     bs <- .fcr_cluster_bootstrap(prep, as.integer(bootstraps), x_names,
@@ -156,7 +156,8 @@ repois <- function(formula,
         cluster_list = split(seq_along(sub$y), sub$group, drop = TRUE),
         method = method, max.iters = max.iters, print.level = 0,
         bootstraps = NULL, compute_vcov = FALSE)
-      stats::setNames(f$par, x_names)
+      .fcr_refit_result(stats::setNames(f$par, x_names),
+                        .fcr_converged(list(code = f$convergence), method))
     })
     V <- bs$vcov
     fit$n_boot_ok <- bs$n_ok
@@ -242,9 +243,11 @@ repois <- function(formula,
     eta_i <- eta[idx]
     ysum <- sum(y_i)
     s <- sum(exp(eta_i))
-    lgamma(ysum + 1 / alpha) - lgamma(1 / alpha) + ysum * log(alpha) -
-      (ysum + 1 / alpha) * log1p(alpha * s) + sum(y_i * eta_i) -
-      sum(lgamma(y_i + 1))
+    r <- 1 / alpha
+    # lgamma(Y + r) - lgamma(r) + Y log(alpha) without cancellation, which
+    # tends to the Poisson log-likelihood as alpha -> 0
+    .fcr_lgamma_diff_rel(r, ysum) - (ysum + r) * log1p(alpha * s) +
+      sum(y_i * eta_i) - sum(lgamma(y_i + 1))
   }, numeric(1))
   if (any(!is.finite(ll))) return(rep(-Inf, n_cl))
   unname(ll)

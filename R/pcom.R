@@ -98,6 +98,20 @@ dcom <- function(x, mu = NULL, lambda = 1, nu = 1, log = FALSE){
 #' @export
 pcom <- function(q, mu = NULL, lambda = 1, nu = 1, lower.tail = TRUE,
                  log.p = FALSE){
+  # Same recycling rule as dcom() and qcom(): length 1 or length(q)
+  for (nm in c("mu", "lambda", "nu")) {
+    v <- get(nm)
+    if (!is.null(v) && !length(v) %in% c(1L, length(q))) {
+      stop("`", nm, "` must be a single value or a vector with the same ",
+           "length as `q`.", call. = FALSE)
+    }
+  }
+  .fcr_p_contract(.pcom_core, q, list(mu = mu, lambda = lambda, nu = nu),
+                  lower.tail, log.p)
+}
+
+.pcom_core <- function(q, mu = NULL, lambda = 1, nu = 1, lower.tail = TRUE,
+                 log.p = FALSE){
   
   if (any(!is.numeric(q)) | any(q < 0) | any(floor(q) != q))
     warning("The value of `q` must be a non-negative whole number.")

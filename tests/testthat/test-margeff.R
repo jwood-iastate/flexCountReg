@@ -95,7 +95,7 @@ test_that("bootstrap standard errors resample rows or clusters", {
   # multiple of its original number of rows
   set.seed(3)
   d30 <- washington_roads[1:30, ]
-  rs <- .margEff_resample_data(d30, cluster_var = "ID")
+  rs <- .margEff_resample_data(d30, cluster_var = "ID")$data
   n_orig <- table(as.character(d30$ID))
   n_boot <- table(as.character(rs$ID))
   expect_true(all(n_boot %% n_orig[names(n_boot)] == 0))

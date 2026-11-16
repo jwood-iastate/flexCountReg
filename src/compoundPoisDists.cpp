@@ -186,11 +186,10 @@ NumericVector dpLnorm_cpp(NumericVector x, NumericVector mean, NumericVector sig
       double lognormal_effect = pow(exp_h_sigma[j], current_sigma);
       double mu_j = current_mean * lognormal_effect;
       
-      // Add overflow protection
-      if (mu_j > 1e10) {
-        Rcpp::warning("Very large mu detected, results may be unreliable");
-        continue;
-      }
+      // A huge conditional mean (tried by optimizers) has negligible
+      // probability for observed counts; no per-element warning, which made
+      // likelihood evaluations very slow
+      if (!(mu_j < 1e10)) continue;
       
       p += poisson_pmf(x[i], mu_j);
     }

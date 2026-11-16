@@ -33,7 +33,7 @@ test_that("regCompTest() warns for comparisons that are not nested", {
                                    method = "NM", max.iters = 1,
                                    start.vals = c(-1, 0, 2)))
   expect_warning(r2 <- regCompTest(p, model2 = bad), "higher")
-  expect_equal(r2$LR_pvalue, 1)
+  expect_true(is.na(r2$LR_pvalue))
 })
 
 test_that("negmultinom() validates its inputs", {
@@ -45,7 +45,7 @@ test_that("negmultinom() validates its inputs", {
                    max.iters = 300)
   expect_equal(m$model$method, "NM")
   expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", d,
-                           start.vals = c(0, 1)), "must have length 3")
+                           start.vals = c(0, 1)), "has 3 parameter")
   expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", d,
                            dis_param_formula_1 = y ~ x), "one-sided")
   expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", as.matrix(d)),
@@ -57,17 +57,9 @@ test_that("negmultinom() validates its inputs", {
                "not found")
   dn <- d
   dn$Total_crashes[1] <- -1
-  expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", dn), "nonnegative")
+  expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", dn), "non-negative")
   dn$Total_crashes[1] <- 0.5
-  # The starting Poisson fit also warns about the non-integer count
-  ws <- character()
-  withCallingHandlers(
-    negmultinom(Total_crashes ~ lnaadt, "ID", dn, max.iters = 100),
-    warning = function(w) {
-      ws <<- c(ws, conditionMessage(w))
-      invokeRestart("muffleWarning")
-    })
-  expect_true(any(grepl("not integer", ws)))
+  expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", dn), "whole numbers")
   expect_error(predict(m, newdata = d, method = "Exact"), "Standard")
 })
 
@@ -91,7 +83,7 @@ test_that("renb(), poisLind.re() and repois() validate their inputs", {
   dn <- d
   dn$Total_crashes[1] <- -1
   expect_error(repois(Total_crashes ~ lnaadt, group_var = "ID", data = dn),
-               "nonnegative")
+               "non-negative")
   # Every optimizer accepted by the check reaches the same maximum
   ll <- vapply(c("BFGS", "NR", "NM"), function(meth) {
     repois(Total_crashes ~ lnaadt, group_var = "ID", data = d,

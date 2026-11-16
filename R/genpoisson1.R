@@ -43,13 +43,31 @@
 # Vectorized log normalizing constant (0 unless phi < 0).
 .gp1_lnorm_vec <- function(mu, phi) {
   out <- numeric(length(mu))
-  for (i in which(!is.na(phi) & phi < 0 & phi > -1 & !is.na(mu) & mu > 0)) {
-    K <- min(floor(-mu[i] / phi[i]), .gp_cap(mu[i]))
-    lp <- .gp1_lraw_vec(0:K, rep(mu[i], K + 1), rep(phi[i], K + 1))
-    m <- max(lp)
-    out[i] <- m + log(sum(exp(lp - m)))
+  neg <- which(!is.na(phi) & phi < 0 & phi > -1 & !is.na(mu) & mu > 0)
+  # In chunks: a (K + 1) x chunk matrix of log-probabilities per chunk
+  for (i in split(neg, ceiling(seq_along(neg) / 5000))) {
+    lp <- .gp1_trunc_lraw(mu[i], phi[i])
+    mx <- .fcr_col_max(lp)
+    out[i] <- mx + log(colSums(exp(lp - rep(mx, each = nrow(lp)))))
   }
   out
+}
+
+# Unnormalized log-PMF of GP1(mu, phi < 0) at 0, ..., max(K), one column per
+# element, with -Inf beyond each element's truncation point K.
+.gp1_trunc_lraw <- function(mu, phi) {
+  K <- pmin(floor(-mu / phi), .gp_cap(mu))
+  nk <- max(K) + 1
+  y <- rep(0:(nk - 1), times = length(mu))
+  lp <- .gp1_lraw_vec(y, rep(mu, each = nk), rep(phi, each = nk))
+  lp[y > rep(K, each = nk)] <- -Inf
+  matrix(lp, nk)
+}
+
+# Column maxima of a matrix (faster than apply() for many columns)
+.fcr_col_max <- function(m) {
+  if (nrow(m) == 1L) return(m[1, ])
+  Reduce(pmax, lapply(seq_len(nrow(m)), function(r) m[r, ]))
 }
 
 # Vectorized GP1 log-PMF for counts y (support beyond the truncation is -Inf).
@@ -209,6 +227,13 @@ dgp1 <- function(x, mu = 1, phi = 1, log = FALSE) {
 #' @rdname GeneralizedPoisson
 #' @export
 pgp1 <- function(q, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE) {
+  .fcr_p_contract(.pgp1_core, q, list(mu = mu, phi = phi),
+                  lower.tail, log.p,
+                  logdens = function(x, ...)
+                    suppressWarnings(dgp1(x, ..., log = TRUE)))
+}
+
+.pgp1_core <- function(q, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE) {
   .gp1_validate(mu, phi)
   
   n <- max(length(q), length(mu), length(phi))

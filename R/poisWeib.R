@@ -124,7 +124,16 @@ dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL,
 
 #' @rdname PoissonWeibull
 #' @export
-ppoisweibull <- Vectorize(function(
+ppoisweibull <- function(q, lambda = NULL, alpha = NULL, sigma = NULL,
+                         mean_value = NULL, sd_value = NULL, ndraws = 1500,
+                         lower.tail = TRUE, log.p = FALSE) {
+  .fcr_p_contract(.ppoisweibull_core, q,
+                  list(lambda = lambda, alpha = alpha, sigma = sigma,
+                       mean_value = mean_value, sd_value = sd_value),
+                  lower.tail, log.p, ndraws = ndraws)
+}
+
+.ppoisweibull_core <- Vectorize(function(
     q, lambda=NULL, alpha = NULL, sigma = NULL, 
     mean_value = NULL, sd_value = NULL, 
     ndraws=1500, lower.tail = TRUE, log.p = FALSE) {

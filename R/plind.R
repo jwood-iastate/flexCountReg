@@ -105,6 +105,13 @@ dplind <- function(x, mean = 1, theta = 1, lambda = NULL, log = FALSE) {
 #' @export
 pplind <- function(q, mean = 1, theta = 1, lambda = NULL,
                    lower.tail = TRUE, log.p = FALSE) {
+  .fcr_p_contract(.pplind_core, q, list(mean = mean, theta = theta, lambda = lambda),
+                  lower.tail, log.p,
+                  logdens = function(x, ...) dplind(x, ..., log = TRUE))
+}
+
+.pplind_core <- function(q, mean = 1, theta = 1, lambda = NULL,
+                   lower.tail = TRUE, log.p = FALSE) {
   
   # --- Input Validation ---
   if (is.null(lambda)) {
@@ -212,6 +219,7 @@ qplind <- function(p, mean = 1, theta = 1, lambda = NULL) {
     warning(msg2)
   }
   .fcr_qcount(p, function(y, mean, theta) {
+    if (is.na(mean) || is.na(theta)) return(rep(NA_real_, length(y)))
     if (!(mean > 0 && theta > 0)) return(rep(NaN, length(y)))
     cumsum(dplind(y, mean = mean, theta = theta))
   }, mean, theta)

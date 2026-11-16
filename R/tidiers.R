@@ -110,7 +110,8 @@ generics::augment
 .fcr_response <- function(object, data) {
   lhs <- object$formula[[2]]
   if (!all(all.vars(lhs) %in% names(data))) return(NULL)
-  f <- stats::as.formula(call("~", lhs, 1))
+  f <- stats::as.formula(call("~", lhs, 1),
+                         env = environment(object$formula) %||% parent.frame())
   as.numeric(stats::model.response(stats::model.frame(
     f, data, na.action = stats::na.pass)))
 }
@@ -183,13 +184,27 @@ augment.flexCountReg <- function(x, data = NULL, new_data = NULL,
     }
     return(out)
   }
-  d <- if (is.null(data)) .fcr_training_rows(x) else {
+  if (!is.null(data)) {
+    # Supplied data: predicted row by row, in the order given (rows with
+    # missing values are left out)
     dd <- as.data.frame(data)
-    rows <- x$model[["rows_used"]]
-    if (!is.null(rows) && !is.null(x$data) &&
-        nrow(dd) == nrow(as.data.frame(x$data))) dd[rows, , drop = FALSE] else dd
+    fit <- as.vector(stats::predict(x, newdata = dd, ...))
+    y <- .fcr_response(x, dd)
+    if (is.null(y)) {
+      stop("`data` does not contain the model's outcome; use `new_data`.",
+           call. = FALSE)
+    }
+    keep <- !is.na(fit) & !is.na(y)
+    out <- tibble::as_tibble(dd[keep, , drop = FALSE])
+    out$.fitted <- fit[keep]
+    r <- y[keep] - fit[keep]
+    if (type.residuals == "pearson") {
+      r <- r / sqrt(.fcr_fitted_variance(x, dd[keep, , drop = FALSE]))
+    }
+    out$.resid <- r
+    return(out)
   }
-  out <- tibble::as_tibble(d)
+  out <- tibble::as_tibble(.fcr_training_rows(x))
   out$.fitted <- as.vector(stats::fitted(x, ...))
   out$.resid <- as.vector(stats::residuals(x, type = type.residuals, ...))
   out

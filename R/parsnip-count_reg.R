@@ -82,7 +82,15 @@ count_family <- function(values = c("POISSON", "NB1", "NB2", "NBP", "GP1",
 #' @keywords internal
 #' @export
 count_reg_fit <- function(formula, data, family = "NB2", weights = NULL, ...) {
-  if (!is.null(weights)) weights <- as.numeric(weights)
+  if (!is.null(weights)) {
+    if (inherits(weights, "hardhat_importance_weights")) {
+      warning("countreg() treats case weights as frequency weights; ",
+              "importance weights are used as if they were frequencies, so ",
+              "standard errors, likelihoods and BIC are those of the ",
+              "expanded data.", call. = FALSE)
+    }
+    weights <- as.numeric(weights)
+  }
   countreg(formula, data = data, family = family, weights = weights, ...)
 }
 
@@ -90,10 +98,17 @@ count_reg_fit <- function(formula, data, family = "NB2", weights = NULL, ...) {
 .fcr_register_count_reg <- function() {
   if (!requireNamespace("parsnip", quietly = TRUE)) return(invisible(FALSE))
   current <- parsnip::get_model_env()
-  if ("count_reg" %in% current$models) return(invisible(TRUE))
-
-  parsnip::set_new_model("count_reg")
-  parsnip::set_model_mode("count_reg", "regression")
+  if (!"count_reg" %in% current$models) {
+    parsnip::set_new_model("count_reg")
+    parsnip::set_model_mode("count_reg", "regression")
+  }
+  # Idempotent: register the engine unless it is already registered (another
+  # package may have registered a count_reg model without this engine)
+  engines <- tryCatch(parsnip::get_from_env("count_reg"),
+                      error = function(e) NULL)
+  if (!is.null(engines) && "flexCountReg" %in% engines$engine) {
+    return(invisible(TRUE))
+  }
   parsnip::set_model_engine("count_reg", "regression", "flexCountReg")
   parsnip::set_dependency("count_reg", "flexCountReg", "flexCountReg",
                           mode = "regression")

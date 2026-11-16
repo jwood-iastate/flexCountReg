@@ -135,6 +135,7 @@ poisLind.re <- function(formula, group_var, data,
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   
   method <- .fcr_check_method(method)
+  .fcr_check_controls(max.iters)
   if (missing(group_var) || is.null(group_var)) {
     stop("`group_var` must name the column(s) that identify the panels.",
          call. = FALSE)
@@ -143,6 +144,7 @@ poisLind.re <- function(formula, group_var, data,
   # Data preparation: one complete-case frame; panels from `group_var`
   prep <- prepare_model_data(formula, data, offset = offset,
                              group_var = group_var)
+  formula <- prep$formula   # with `.` expanded
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }
@@ -239,7 +241,8 @@ poisLind.re <- function(formula, group_var, data,
                         X = sub$X, group = sub$group,
                         offset_vec = sub$offset, method = method,
                         control = list(iterlim = max.iters, printLevel = 0))
-    stats::setNames(m$estimate, x_names)
+    .fcr_refit_result(stats::setNames(m$estimate, x_names),
+                      .fcr_converged(m, method))
   })
   
   beta_est <- fit$estimate

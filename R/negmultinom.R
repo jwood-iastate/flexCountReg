@@ -245,6 +245,7 @@ negmultinom <- function(formula,
 
   family <- .nm_clean_family(family)
   method <- .nm_clean_method(method)
+  .fcr_check_controls(max.iters)
   stderr <- match.arg(stderr, c("normal", "robust", "boot"))
   if (stderr == "boot" &&
       (!is.numeric(bootstraps) || length(bootstraps) != 1L || bootstraps < 2)) {
@@ -265,11 +266,8 @@ negmultinom <- function(formula,
   start <- if (is.null(start.vals)) {
     .nm_start_values(prep, family)
   } else {
-    if (length(start.vals) != length(prep$par_names)) {
-      stop("`start.vals` must have length ", length(prep$par_names),
-           " (", paste(prep$par_names, collapse = ", "), ").")
-    }
-    as.numeric(start.vals)
+    # Matched by name when named (as in the other estimators)
+    .fcr_check_start(start.vals, prep$par_names)
   }
   names(start) <- prep$par_names
 
@@ -327,16 +325,19 @@ negmultinom <- function(formula,
   fit$nobs <- length(prep$y)
   fit$n_groups <- prep$G
   fit$aic <- -2 * fit$maximum + 2 * k
-  fit$bic <- -2 * fit$maximum + log(length(prep$y)) * k
-  fit$converged <- fit$code %in% c(0L, 1L, 2L, 8L)
+  # The panels are the independent units (as in logLik() and BIC())
+  fit$bic <- -2 * fit$maximum + log(prep$G) * k
+  fit$converged <- .fcr_converged(fit, method)
   fit$family <- family
   fit$model <- family
   fit$modelType <- "NegMultinom"
   fit$method <- method
-  fit$formula <- formula
-  fit$dis_param_formula_1 <- dis_param_formula_1
-  fit$dis_param_formula_2 <- dis_param_formula_2
-  fit$offset <- offset
+  fit$formula <- prep$formula
+  fit$dis_param_formula_1 <- prep$aux_formulas$dis1
+  fit$dis_param_formula_2 <- prep$aux_formulas$dis2
+  fit$offset <- prep$blueprint$offset_label
+  fit$blueprint <- prep$blueprint
+  fit$n_dropped <- prep$n_dropped
   fit$group_var <- group_var
   fit$n_beta <- prep$n_beta
   fit$n_alpha <- prep$n_alpha
@@ -344,8 +345,11 @@ negmultinom <- function(formula,
   fit$rows_used <- prep$rows_used
   fit$call <- call
 
-  .createFlexCountReg(model = fit, data = data, call = call, formula = formula,
-                      keep_data = keep_data)
+  if (prep$n_dropped > 0) {
+    message(prep$n_dropped, " row(s) with missing values were removed.")
+  }
+  .createFlexCountReg(model = fit, data = data, call = call,
+                      formula = prep$formula, keep_data = keep_data)
 }
 
 
@@ -375,13 +379,10 @@ negmultinom <- function(formula,
 
 # Build a design matrix for a one-sided formula on the rows used, and
 # collapse it to the cluster level (within-cluster means).
-.nm_cluster_design <- function(fml, data_used, g, G, label) {
-  fml <- stats::as.formula(fml)
-  if (length(fml) == 3L) {
-    stop("`", label, "` must be a one-sided formula, e.g. ~ x1 + x2.")
-  }
-  Z <- stats::model.matrix(fml, stats::model.frame(fml, data_used,
-                                                   na.action = stats::na.pass))
+# Cluster-level design for a dispersion formula: the within-cluster means of
+# its model matrix Z (rows in the order of the observations), with a warning
+# when a variable varies within clusters.
+.nm_cluster_design <- function(Z, g, G, label) {
   n_g <- tabulate(g, nbins = G)
   Zc <- rowsum(Z, g, reorder = TRUE) / n_g
   dev <- abs(Z - Zc[g, , drop = FALSE])
@@ -396,6 +397,9 @@ negmultinom <- function(formula,
   Zc
 }
 
+# Data for negmultinom(), built with the shared preparation
+# (prepare_model_data()): one complete-case frame, formula or argument
+# offsets (not both), the training blueprint and the rows used.
 .nm_prepare <- function(formula, group_var, data, offset,
                         dis_param_formula_1, dis_param_formula_2, family) {
   if (!inherits(data, "data.frame")) stop("`data` must be a data frame.")
@@ -408,74 +412,42 @@ negmultinom <- function(formula,
     stop("Grouping variable(s) not found in `data`: ",
          paste(miss, collapse = ", "))
   }
-  if (!is.null(offset)) {
-    if (!is.character(offset)) {
-      stop("`offset` must be a character vector naming variable(s) in `data`.")
+  if (!is.null(offset) && !is.character(offset)) {
+    stop("`offset` must be a character vector naming variable(s) in `data`.")
+  }
+  for (nm in c("dis_param_formula_1", "dis_param_formula_2")) {
+    f <- get(nm)
+    if (!is.null(f) && length(stats::as.formula(f)) == 3L) {
+      stop("`", nm, "` must be a one-sided formula, e.g. ~ x1 + x2.")
     }
-    miss <- setdiff(offset, names(data))
-    if (length(miss) > 0L) {
-      stop("Offset variable(s) not found in `data`: ",
-           paste(miss, collapse = ", "))
-    }
   }
+  pr <- prepare_model_data(
+    formula, data,
+    aux_formulas = list(dis1 = dis_param_formula_1,
+                        dis2 = if (family == "NMP") dis_param_formula_2),
+    offset = offset, group_var = group_var)
 
-  # Complete cases across every variable used anywhere in the model so all
-  # design matrices refer to the same rows.
-  vars <- unique(c(all.vars(formula),
-                   if (!is.null(dis_param_formula_1))
-                     all.vars(stats::as.formula(dis_param_formula_1)),
-                   if (!is.null(dis_param_formula_2))
-                     all.vars(stats::as.formula(dis_param_formula_2)),
-                   group_var, offset))
-  vars <- intersect(vars, names(data))
-  ok <- stats::complete.cases(data[, vars, drop = FALSE])
-  rows_used <- which(ok)
-  data_used <- data[ok, , drop = FALSE]
-  if (nrow(data_used) == 0L) stop("No complete observations remain.")
-
-  mf <- stats::model.frame(formula, data_used, na.action = stats::na.fail)
-  y <- as.numeric(stats::model.response(mf))
-  if (any(y < 0)) stop("The response variable must be nonnegative.")
-  if (any(abs(y - round(y)) > 1e-8)) {
-    warning("The response variable is not integer-valued.")
-  }
-  X <- stats::model.matrix(stats::terms(mf), mf)
-
-  off <- stats::model.offset(mf)
-  if (is.null(off)) off <- rep(0, length(y))
-  if (!is.null(offset)) {
-    off <- off + rowSums(as.matrix(data_used[, offset, drop = FALSE]))
-  }
-
-  gvals <- lapply(group_var, function(v) data_used[[v]])
-  gfac <- if (length(gvals) == 1L) {
-    factor(gvals[[1L]])
-  } else {
-    interaction(gvals, drop = TRUE, sep = ":")
-  }
-  gfac <- droplevels(gfac)
+  y <- as.numeric(pr$y)   # checked counts (prepare_model_data())
+  gfac <- pr$group
   g <- as.integer(gfac)
   G <- nlevels(gfac)
-
   n_g <- tabulate(g, nbins = G)
-  one_col <- matrix(1, nrow = G, ncol = 1L, dimnames = list(NULL, "(Intercept)"))
+  one_col <- matrix(1, nrow = G, ncol = 1L,
+                    dimnames = list(NULL, "(Intercept)"))
 
-  if (is.null(dis_param_formula_1)) {
+  if (is.null(pr$aux$dis1)) {
     Zc <- one_col
     alpha_names <- "ln(alpha)"
   } else {
-    Zc <- .nm_cluster_design(dis_param_formula_1, data_used, g, G,
-                             "dis_param_formula_1")
+    Zc <- .nm_cluster_design(pr$aux$dis1, g, G, "dis_param_formula_1")
     alpha_names <- paste0("ln(alpha):", colnames(Zc))
   }
-
   if (family == "NMP") {
-    if (is.null(dis_param_formula_2)) {
+    if (is.null(pr$aux$dis2)) {
       Wc <- one_col
       p_names <- "p"
     } else {
-      Wc <- .nm_cluster_design(dis_param_formula_2, data_used, g, G,
-                               "dis_param_formula_2")
+      Wc <- .nm_cluster_design(pr$aux$dis2, g, G, "dis_param_formula_2")
       p_names <- paste0("p:", colnames(Wc))
     }
   } else {
@@ -484,15 +456,17 @@ negmultinom <- function(formula,
   }
 
   list(
-    y = y, X = X, offset = off, g = g, G = G, n_g = n_g,
+    y = y, X = pr$X, offset = pr$offset, g = g, G = G, n_g = n_g,
     group_levels = levels(gfac),
     Zc = Zc, Wc = Wc,
-    n_beta = ncol(X), n_alpha = ncol(Zc),
+    n_beta = ncol(pr$X), n_alpha = ncol(Zc),
     n_p = if (is.null(Wc)) 0L else ncol(Wc),
-    par_names = c(colnames(X), alpha_names, p_names),
+    par_names = c(colnames(pr$X), alpha_names, p_names),
     Y = as.numeric(rowsum(y, g, reorder = TRUE)),
     lgy = as.numeric(rowsum(lgamma(y + 1), g, reorder = TRUE)),
-    rows_used = rows_used
+    rows_used = pr$rows_used, n_dropped = pr$n_dropped,
+    blueprint = pr$blueprint, formula = pr$formula,
+    aux_formulas = pr$aux_formulas
   )
 }
 
@@ -529,8 +503,10 @@ negmultinom <- function(formula,
     return(NA_real_)
   }
   syeta <- as.numeric(rowsum(prep$y * cp$eta, prep$g, reorder = TRUE))
-  ll <- lgamma(cp$r + cp$Y) - lgamma(cp$r) + cp$r * cp$logr -
-    (cp$r + cp$Y) * log(cp$r + cp$M) + syeta - prep$lgy
+  # lgamma(r + Y) - lgamma(r) + r log r - (r + Y) log(r + M), rewritten
+  # without cancellation for large r (near the Poisson limit)
+  ll <- .fcr_lgamma_diff_rel(cp$r, cp$Y) -
+    (cp$r + cp$Y) * log1p(cp$M / cp$r) + syeta - prep$lgy
   if (any(!is.finite(ll))) return(NA_real_)
   ll
 }
@@ -541,8 +517,8 @@ negmultinom <- function(formula,
   r <- cp$r
   rpM <- r + cp$M
   # d LL / d r and d LL / d M (cluster level)
-  dr <- digamma(r + cp$Y) - digamma(r) + cp$logr + 1 - log(rpM) -
-    (r + cp$Y) / rpM
+  # digamma(r + Y) - digamma(r) + log(r) + 1 - log(r + M) - (r + Y)/(r + M)
+  dr <- .fcr_digamma_diff(r, cp$Y) - log1p(cp$M / r) + (cp$M - cp$Y) / rpM
   dM <- -(r + cp$Y) / rpM
   # Total derivative w.r.t. M, including r's dependence on M:
   # d r / d M = (2 - p) r / M
@@ -634,7 +610,11 @@ negmultinom <- function(formula,
       .nm_fit_engine(bp, start = start, family = family, method = method,
                      max.iters = max.iters),
       error = function(e) NULL)
-    if (!is.null(bf) && all(is.finite(bf$estimate))) est[b, ] <- bf$estimate
+    # Only converged replicates with finite estimates are used
+    if (!is.null(bf) && !isFALSE(.fcr_converged(bf, method)) &&
+        all(is.finite(bf$estimate))) {
+      est[b, ] <- bf$estimate
+    }
   }
   est <- est[stats::complete.cases(est), , drop = FALSE]
   if (nrow(est) < 2L) {
@@ -654,18 +634,16 @@ negmultinom <- function(formula,
 
 # Marginal means or EB expected frequencies for (new) data, used by
 # predict.flexCountReg().
-.nm_predict <- function(model, data, method = "Standard") {
+.nm_predict <- function(object, data, method = "Standard") {
+  model <- object$model
   method <- toupper(method)
-  coefs <- as.numeric(unlist(model$estimate))
-  form_fixed <- stats::delete.response(stats::terms(model$formula))
-  mf <- stats::model.frame(form_fixed, data, na.action = stats::na.pass)
-  X <- stats::model.matrix(form_fixed, mf)
-  off <- stats::model.offset(mf)
-  if (is.null(off)) off <- rep(0, nrow(data))
-  if (!is.null(model$offset) && all(model$offset %in% names(data))) {
-    off <- off + rowSums(as.matrix(data[, model$offset, drop = FALSE]))
-  }
-  mu <- unname(exp(drop(X %*% coefs[seq_len(ncol(X))]) + off))
+  coefs <- model$estimate
+  # Training terms, factor levels, contrasts and offsets (one row per row of
+  # `data`; incomplete rows give NA)
+  bp <- model$blueprint %||% .fcr_blueprint(object)
+  fd <- forge_new_data(bp, data)
+  mu <- exp(as.vector(fd$X %*% .fcr_coefs(coefs, colnames(fd$X))) +
+              fd$offset)
 
   if (method %in% c("STANDARD", "MARGINAL")) return(mu)
   if (method != "EB") {
@@ -673,19 +651,38 @@ negmultinom <- function(formula,
          "or \"EB\".")
   }
 
-  y_name <- all.vars(model$formula)[1L]
-  need <- c(y_name, model$group_var)
-  if (!all(need %in% names(data))) {
+  # Empirical Bayes: the posterior mean of each cluster's frailty given the
+  # outcomes in `data`
+  y <- .fcr_response(object, data)
+  if (is.null(y) || !all(model$group_var %in% names(data))) {
     stop("EB predictions require the outcome and grouping variable(s) (",
-         paste(need, collapse = ", "), ") in `newdata`.")
+         paste(c(all.vars(model$formula[[2]]), model$group_var),
+               collapse = ", "), ") in `newdata`.")
   }
-  prep <- .nm_prepare(formula = model$formula, group_var = model$group_var,
-                      data = data, offset = model$offset,
-                      dis_param_formula_1 = model$dis_param_formula_1,
-                      dis_param_formula_2 = model$dis_param_formula_2,
-                      family = model$family)
-  cp <- .nm_components(coefs, prep, model$family)
+  ok <- !is.na(mu) & !is.na(y) &
+    stats::complete.cases(data[, model$group_var, drop = FALSE])
+  aux <- fd$aux
+  if (!is.null(aux$dis1)) ok <- ok & stats::complete.cases(aux$dis1)
+  if (!is.null(aux$dis2)) ok <- ok & stats::complete.cases(aux$dis2)
   out <- rep(NA_real_, nrow(data))
-  out[prep$rows_used] <- cp$mu * ((cp$r + cp$Y) / (cp$r + cp$M))[prep$g]
+  if (!any(ok)) return(out)
+  gfac <- droplevels(interaction(data[ok, model$group_var, drop = FALSE],
+                                 drop = TRUE, sep = ":"))
+  g <- as.integer(gfac)
+  G <- nlevels(gfac)
+  one_col <- matrix(1, G, 1, dimnames = list(NULL, "(Intercept)"))
+  Zc <- if (is.null(aux$dis1)) one_col else
+    suppressWarnings(.nm_cluster_design(aux$dis1[ok, , drop = FALSE], g, G,
+                                        "dis_param_formula_1"))
+  Wc <- if (model$family != "NMP") NULL else if (is.null(aux$dis2)) one_col
+    else suppressWarnings(.nm_cluster_design(aux$dis2[ok, , drop = FALSE], g,
+                                             G, "dis_param_formula_2"))
+  prep <- list(y = y[ok], X = fd$X[ok, , drop = FALSE],
+               offset = fd$offset[ok], g = g, G = G, Zc = Zc, Wc = Wc,
+               n_beta = ncol(fd$X), n_alpha = ncol(Zc),
+               n_p = if (is.null(Wc)) 0L else ncol(Wc),
+               Y = as.numeric(rowsum(y[ok], g, reorder = TRUE)))
+  cp <- .nm_components(as.numeric(coefs), prep, model$family)
+  out[ok] <- cp$mu * ((cp$r + cp$Y) / (cp$r + cp$M))[g]
   out
 }

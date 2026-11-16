@@ -62,5 +62,7 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Language: en-US
-URL: https://jwood-iastate.github.io/flexCountReg/
+URL: https://jwood-iastate.github.io/flexCountReg/,
+    https://github.com/jwood-iastate/flexCountReg
+BugReports: https://github.com/jwood-iastate/flexCountReg/issues
 Config/roxygen2/version: 8.1.0

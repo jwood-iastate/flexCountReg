@@ -29,7 +29,9 @@
 #'   row per row of \code{newdata} and one column per count
 #'   \eqn{k = 0, \dots,} \code{max_count} (passed in \code{...}; default the
 #'   largest count in the training data), for rootograms and for scoring
-#'   models out of sample. Types other than \code{"response"} are available
+#'   models out of sample. With \code{overflow = TRUE} (in \code{...}), a last
+#'   column holds the tail mass \eqn{P(Y > } \code{max_count}\eqn{)}, so each
+#'   row sums to 1. Types other than \code{"response"} are available
 #'   for \code{countreg} models only.
 #' 
 #' @details
@@ -175,7 +177,19 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
       y_tr <- object$model[["y"]]
       max_count <- if (!is.null(y_tr)) max(y_tr) else 20
     }
-    return(.fcr_prob_matrix(object, data, as.integer(max_count)))
+    if (!is.numeric(max_count) || length(max_count) != 1L ||
+        !is.finite(max_count) || max_count < 0 ||
+        max_count != round(max_count)) {
+      stop("`max_count` must be a single non-negative whole number.",
+           call. = FALSE)
+    }
+    P <- .fcr_prob_matrix(object, data, as.integer(max_count))
+    if (isTRUE(additional_args$overflow)) {
+      # Tail mass P(Y > max_count), so each row sums to 1
+      P <- cbind(P, pmax(0, 1 - rowSums(P)))
+      colnames(P)[ncol(P)] <- paste0(">", max_count)
+    }
+    return(P)
   }
   
   if (type != "response" && modtype != "countreg") {
@@ -210,7 +224,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     params <- get_params(family)
     coefs <- model$estimate
     
-    # Conventions of the fit: fits made before flexCountReg 0.1.3 have no
+    # Conventions of the fit: fits made with flexCountReg 0.1.1 or earlier have no
     # draw_version and used uniform draws on [mu - sigma/2, mu + sigma/2] and
     # multiplicative heterogeneity in means shared by all random parameters.
     legacy <- is.null(model$draw_version)
@@ -244,7 +258,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
       rand_var_params <- .fcr_coefs(coefs, paste0(rpar, ":St.Dev"))
       if (legacy && any(rpardists == "u")) {
         rlang::inform(paste(
-          "This model was fit with flexCountReg < 0.1.3, whose uniform",
+          "This model was fit with flexCountReg 0.1.1 or earlier, whose uniform",
           "random parameters span mu +/- St.Dev/2. Its uniform St.Dev values",
           "are halved to the current convention (mu +/- St.Dev); refit the",
           "model to update the estimates."),
@@ -273,17 +287,27 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, nrow(data))
     vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, nrow(data))
     mean_adj <- .fcr_mean_adjust(family, vec_1, vec_2)
+    # For GP1/GP2 with a negative dispersion E[Y] is not proportional to the
+    # mean parameter, so it is averaged over the draws instead
+    linear_mean <- .fcr_mean_is_linear(family, vec_1)
+    if (method == "Exact" && !linear_mean) {
+      message("Exact predictions need a mean proportional to exp(X beta), ",
+              "which does not hold for ", family, " with a negative ",
+              "dispersion; using Simulated predictions.")
+      method <- "Simulated"
+    }
     
     mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
     
     # --- Exact: moment generating functions (Wood and Gayah, 2025) ---
-    if (method == "Exact") {
+    # E[exp(x beta)] per row; also used to check, for Simulated predictions,
+    # whether the expected value exists
+    if (method %in% c("Exact", "Simulated")) {
       loc <- .fcr_rp_locations(random_coefs_means, rpardists, nrow(data),
                                het_mean_coefs, X_het_mean, het_var_coefs,
                                X_het_var, het_form)
       if (correlated) {
-        L <- matrix(0, N_rand, N_rand)
-        L[lower.tri(L, diag = TRUE)] <- rand_var_params
+        L <- .fcr_chol_unpack(rand_var_params, N_rand)
         W <- X_rand * loc$var_multiplier
         rp_factor <- exp(rowSums(X_rand * loc$mu_mat) +
                            0.5 * rowSums((W %*% L)^2))
@@ -295,19 +319,22 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                    abs(rand_var_params[k]) * loc$var_multiplier)
         }
       }
-      n_inf <- sum(is.infinite(rp_factor))
-      if (n_inf > 0) {
-        warning(n_inf, " prediction(s) are infinite: the expected value does ",
-                "not exist for a lognormal random parameter with a positive ",
-                "x, or a gamma random parameter with x * sigma^2 / mu >= 1. ",
-                "See ?countreg.rp.", call. = FALSE)
+      no_mean <- is.infinite(rp_factor)
+      if (any(no_mean)) {
+        warning(sum(no_mean), " prediction(s) are infinite: the expected ",
+                "value does not exist for a lognormal random parameter with ",
+                "a positive x, or a gamma random parameter with ",
+                "x * sigma^2 / mu >= 1. See ?countreg.rp.", call. = FALSE)
       }
-      return(as.vector(mu_fixed * rp_factor * mean_adj))
+      if (method == "Exact") {
+        return(as.vector(mu_fixed * rp_factor * mean_adj))
+      }
     }
     
     # --- Simulated or Individual (Empirical Bayes) ---
     hdraws <- 
-      as.matrix(randtoolbox::halton(ndraws, N_rand, mixed = scrambled))
+      .fcr_halton(ndraws, N_rand + 1, isTRUE(scrambled),
+                  model$draw_seed)[, seq_len(N_rand), drop = FALSE]
     
     draw_args <- list(
       hdraws = hdraws, 
@@ -328,14 +355,25 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     mu_mat <- exp(draws_info$xb_rand_mat) * mu_fixed
     
     if (method == 'Simulated') {
-      return(as.vector(rowMeans(mu_mat)) * mean_adj)
+      out <- if (linear_mean) {
+        as.vector(rowMeans(mu_mat)) * mean_adj
+      } else {
+        D <- ncol(mu_mat)
+        m <- .fcr_family_mean(family, as.vector(mu_mat), rep(vec_1, D),
+                              if (!is.null(vec_2)) rep(vec_2, D))
+        rowMeans(matrix(m, nrow = nrow(mu_mat)))
+      }
+      # A finite average of draws is not an estimate of a mean that does
+      # not exist
+      out[no_mean] <- Inf
+      return(out)
     }
     
     dist_haltons <- if (legacy) {
       randtoolbox::halton(model$ndraws, 1)
     } else {
-      as.matrix(randtoolbox::halton(model$ndraws, N_rand + 1,
-                                    mixed = scrambled))[, N_rand + 1]
+      .fcr_halton(model$mix_draws %||% model$ndraws, N_rand + 1,
+                  isTRUE(scrambled), model$draw_seed)[, N_rand + 1]
     }
     return(.fcr_rp_eb_predict(
       model = model, data = data, family = family, mu_mat = mu_mat,
@@ -350,7 +388,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   # 2a. NEGATIVE MULTINOMIAL FAMILY (negmultinom)
   # =========================================================================
   else if (modtype == "NegMultinom") {
-    return(.nm_predict(model, data, method = method))
+    return(.nm_predict(object, data, method = method))
   }
   
   # =========================================================================
@@ -360,7 +398,14 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     
     bp <- .fcr_blueprint(object)
     fd <- forge_new_data(bp, data)
-    beta_pred <- model$beta_pred
+    # Coefficients by name from the estimates (so that methods that perturb
+    # the estimates, such as delta-method standard errors, change the
+    # predictions); fits from earlier versions may only have beta_pred
+    beta_pred <- if (all(colnames(fd$X) %in% names(model$estimate))) {
+      .fcr_coefs(model$estimate, colnames(fd$X))
+    } else {
+      model$beta_pred
+    }
     if (length(beta_pred) != ncol(fd$X)) {
       stop("The model's coefficients do not match its design matrix.",
            call. = FALSE)
@@ -416,7 +461,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     und_lin <- as.vector(X_und %*% und_pars)
     und_family <- model$underreport_family
     if (identical(und_family, "probit") && is.null(model$underreport_sign)) {
-      # Fits from flexCountReg <= 0.1.2 used P(reported) = 1 - pnorm(z'g)
+      # Fits from flexCountReg 0.1.1 and earlier used P(reported) = 1 - pnorm(z'g)
       p_report <- stats::pnorm(und_lin, lower.tail = FALSE)
     } else {
       p_report <- .report_prob(und_lin, und_family)
@@ -426,9 +471,14 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, n)
   vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, n)
   mu_link <- exp(link)
+  # alpha and sigma are the parameters of the reported counts' distribution
+  # (equal to the true counts' parameters without underreporting)
+  thin <- .fcr_thin_params(family, vec_1, vec_2,
+                           if (!is.null(X_und)) p_report)
   parts <- list(link = link, mu_link = mu_link, p_report = p_report,
-                alpha = vec_1, sigma = vec_2, family = family,
-                mu_true = mu_link * .fcr_mean_adjust(family, vec_1, vec_2),
+                alpha = thin$alpha, sigma = thin$sigma,
+                alpha_true = vec_1, sigma_true = vec_2, family = family,
+                mu_true = .fcr_family_mean(family, mu_link, vec_1, vec_2),
                 zero_type = model$zero_type)
   parts$response <- parts$mu_true * p_report
   
@@ -441,8 +491,11 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     if (model$zero_type == "inflated") {
       parts$response <- (1 - zp) * parts$mu_true
     } else {
-      parts$f0 <- .fcr_parts_density(object, parts, 0)
-      parts$response <- zp * parts$mu_true / (1 - parts$f0)
+      lf0 <- .fcr_parts_density(object, parts, 0, log = TRUE)
+      parts$f0 <- exp(lf0)
+      parts$lf0 <- lf0
+      # 1 - P(Y = 0), accurate when P(Y = 0) is close to 1
+      parts$response <- zp * parts$mu_true / -expm1(lf0)
     }
   }
   parts
@@ -450,7 +503,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
 
 # Count-family density P(Y = k) for every row of a .fcr_countreg_parts()
 # result, evaluated as in the likelihood (before any zero model).
-.fcr_parts_density <- function(object, parts, k) {
+.fcr_parts_density <- function(object, parts, k, log = FALSE) {
   m <- object$model
   dens <- get_probFunc(parts$family)
   haltons <- randtoolbox::halton(m$ndraws %||% 1500)
@@ -462,7 +515,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                     alpha = if (!is.null(parts$alpha)) parts$alpha[ok],
                     sigma = if (!is.null(parts$sigma)) parts$sigma[ok],
                     haltons = haltons, normed_haltons = stats::qnorm(haltons),
-                    engine = m$engine %||% "halton")
+                    engine = m$engine %||% "halton", log = log)
   }
   out
 }
@@ -470,7 +523,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
 # ---- Internal helpers for predict() ------------------------------------------
 
 # Training-data blueprint (terms, factor levels, contrasts, offsets). Fits from
-# flexCountReg >= 0.1.3 store it; for older fits and for estimators that do
+# flexCountReg >= 0.1.2 store it; for older fits and for estimators that do
 # not yet store it, it is rebuilt from the training data kept in the object.
 .fcr_blueprint <- function(object, aux_formulas = list()) {
   model <- object$model
@@ -570,8 +623,8 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                     haltons = dist_haltons,
                     normed_haltons = stats::qnorm(dist_haltons),
                     engine = if (is.null(model$engine)) "halton"
-                             else model$engine)
-  log_probs <- matrix(log(probs), nrow = n_ok, ncol = D)
+                             else model$engine, log = TRUE)
+  log_probs <- matrix(probs, nrow = n_ok, ncol = D)
   
   # Panel log-likelihood per draw, then normalized weights (log-sum-exp)
   pg <- as.character(panel[ok])
@@ -608,13 +661,16 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     eb_sd[ok, k] <- sqrt(pmax(m2 - m1^2, 0))
   }
   
-  adj <- rep_len(mean_adj, N)[ok]
+  a1 <- if (!is.null(vec_1)) vec_1[ok]
+  a2 <- if (!is.null(vec_2)) vec_2[ok]
   if (eb_type == "coefficients") {
-    out[ok] <- mu_fixed[ok] *
-      exp(rowSums(X_rand[ok, , drop = FALSE] * eb_coef[ok, , drop = FALSE])) *
-      adj
+    mu_eb <- mu_fixed[ok] *
+      exp(rowSums(X_rand[ok, , drop = FALSE] * eb_coef[ok, , drop = FALSE]))
+    out[ok] <- .fcr_family_mean(family, mu_eb, a1, a2)
   } else {
-    out[ok] <- rowSums(W_obs * mu_ok) * adj
+    m <- .fcr_family_mean(family, as.vector(mu_ok), rep(a1, D),
+                          if (!is.null(a2)) rep(a2, D))
+    out[ok] <- rowSums(W_obs * matrix(m, nrow = n_ok))
   }
   
   structure(out, eb_coefficients = eb_coef, eb_sd = eb_sd)

@@ -100,3 +100,82 @@ test_that("augment() residuals use the transformed response", {
   expect_error(augment(m, new_data = nd, type.residuals = "pearson"),
                "response residuals")
 })
+
+# Second Copilot review (PR #5) -------------------------------------------------
+
+test_that("fitted objects keep the expanded `.` formulas", {
+  d <- washington_roads[, c("Total_crashes", "lnaadt", "lnlength")]
+  m <- countreg(Total_crashes ~ ., d, method = "BFGS")
+  expect_equal(attr(terms(m$formula), "term.labels"), c("lnaadt", "lnlength"))
+  # Methods that re-read the formula without data work
+  expect_equal(margEffTable(m)$term, c("lnaadt", "lnlength"))
+  # Bootstrap refits of countreg.rp() must not expand `.` against the
+  # bootstrap panel column (it would add a coefficient)
+  set.seed(1)
+  r <- countreg.rp(Total_crashes ~ . - lnlength,
+                   rpar_formula = ~ -1 + lnlength,
+                   data = d, ndraws = 20, method = "BFGS", stderr = "boot",
+                   bootstraps = 3, max.iters = 50)
+  expect_equal(dim(vcov(r)), rep(length(coef(r)), 2))
+  expect_equal(r$model$n_boot_ok, 3)
+})
+
+test_that("factor responses are rejected instead of fit as level codes", {
+  d <- washington_roads
+  d$Total_crashes <- factor(d$Total_crashes)
+  msg <- "response must be a numeric count vector, not factor"
+  expect_error(countreg(Total_crashes ~ lnaadt, d), msg)
+  expect_error(repois(Total_crashes ~ lnaadt, d, group_var = "ID"), msg)
+  expect_error(renb(Total_crashes ~ lnaadt, d, group_var = "ID"), msg)
+  expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", d), msg)
+})
+
+test_that("COM upper tails are summed directly (no negative probabilities)", {
+  # nu = 1 is the Poisson distribution
+  up <- pcom(c(5, 25, 40), lambda = 1, nu = 1, lower.tail = FALSE)
+  expect_true(all(up > 0))
+  expect_equal(up, ppois(c(5, 25, 40), 1, lower.tail = FALSE),
+               tolerance = 1e-10)
+  expect_equal(pcom(0:40, lambda = 4, nu = 1, lower.tail = FALSE,
+                    log.p = TRUE),
+               ppois(0:40, 4, lower.tail = FALSE, log.p = TRUE),
+               tolerance = 1e-10)
+  lo <- pcom(0:30, lambda = 3, nu = 0.7)
+  expect_lte(max(lo), 1)
+  expect_equal(lo + pcom(0:30, lambda = 3, nu = 0.7, lower.tail = FALSE),
+               rep(1, 31), tolerance = 1e-12)
+})
+
+test_that("missing parameters give NA quantiles, not an error", {
+  expect_identical(is.na(qplind(c(0.5, 0.5), mean = c(NA, 2))),
+                   c(TRUE, FALSE))
+  expect_true(is.na(qplindLnorm(0.5, mean = NA_real_, theta = 1.5,
+                                sigma = 0.5, ndraws = 100)))
+})
+
+test_that("sigma = 0 is the Poisson-Lindley limit in qplindLnorm()", {
+  p <- c(0.1, 0.5, 0.9)
+  expect_equal(qplindLnorm(p, mean = 2, theta = 1.5, sigma = 0),
+               qplind(p, mean = 2, theta = 1.5))
+  expect_no_warning(rplindLnorm(5, mean = 2, theta = 1.5, sigma = 0))
+  expect_warning(qplindLnorm(0.5, mean = 2, theta = 1.5, sigma = -1),
+                 "non-negative")
+})
+
+test_that("method = \"Nelder-Mead\" is accepted as an alias of \"NM\"", {
+  expect_identical(.fcr_check_method("Nelder-Mead"), "NM")
+  m <- repois(Total_crashes ~ lnaadt, washington_roads, group_var = "ID",
+              method = "Nelder-Mead")
+  expect_identical(m$model$method, "NM")
+})
+
+test_that("augment() evaluates response transformations where the model was fit", {
+  fit_local <- function() {
+    tf <- function(y) 2 * y
+    countreg(tf(Total_crashes) ~ lnaadt, washington_roads, method = "BFGS")
+  }
+  m <- fit_local()
+  nd <- washington_roads[1:4, ]
+  a <- augment(m, new_data = nd)
+  expect_equal(a$.resid, 2 * nd$Total_crashes - a$.fitted)
+})

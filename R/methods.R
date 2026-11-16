@@ -34,6 +34,8 @@
 #' and \code{countreg.rp()} with \code{panel_id}), the \code{nobs} attribute
 #' of \code{logLik()}, which \code{BIC()} uses, is the number of panels,
 #' because the panels are the independent units.
+#' With frequency weights (\code{weights}), it is the sum of the weights
+#' of the rows (or panels), the size of the expanded data.
 #'
 #' \code{fitted()} and \code{residuals()} are for the rows used in
 #' estimation (rows with missing values are not included). \code{simulate()}
@@ -86,10 +88,10 @@ nobs.flexCountReg <- function(object, ...) {
 #' @rdname flexCountReg-methods
 #' @export
 logLik.flexCountReg <- function(object, ...) {
-  n_indep <- object$model[["n_groups"]]
-  if (is.null(n_indep)) n_indep <- stats::nobs(object)
-  structure(object$model[["maximum"]], df = length(stats::coef(object)),
-            nobs = as.integer(n_indep), class = "logLik")
+  m <- object$model
+  n_indep <- m[["n_bic"]] %||% m[["n_groups"]] %||% stats::nobs(object)
+  structure(m[["maximum"]], df = length(stats::coef(object)),
+            nobs = n_indep, class = "logLik")
 }
 
 #' @rdname flexCountReg-methods
@@ -162,12 +164,13 @@ residuals.flexCountReg <- function(object,
 # The observed count follows the model's family with mean parameter
 # exp(X beta + offset) * p, where p is the reporting probability (p = 1
 # without underreporting), as in the likelihood of countreg().
-.fcr_fitted_variance <- function(object) {
+.fcr_fitted_variance <- function(object, data = NULL) {
   if (!inherits(object, "countreg")) {
     stop("Pearson residuals are available for countreg() models.",
          call. = FALSE)
   }
-  parts <- .fcr_countreg_parts(object, .fcr_training_rows(object))
+  parts <- .fcr_countreg_parts(object,
+                               data %||% .fcr_training_rows(object))
   v <- .fcr_family_variance(parts$family, parts$mu_link * parts$p_report,
                             parts$alpha, parts$sigma)
   if (is.null(v)) {
@@ -178,7 +181,8 @@ residuals.flexCountReg <- function(object,
     # Mixture moments: E[Y^2] = w (V + m^2) for the count part with weight w
     m <- parts$mu_true
     zp <- parts$zero_prob
-    w <- if (parts$zero_type == "inflated") 1 - zp else zp / (1 - parts$f0)
+    w <- if (parts$zero_type == "inflated") 1 - zp else
+      zp / -expm1(parts$lf0 %||% log(parts$f0))
     v <- w * (v + m^2) - (w * m)^2
   }
   v
@@ -191,7 +195,15 @@ simulate.flexCountReg <- function(object, nsim = 1, seed = NULL, ...) {
   if (!inherits(object, "countreg")) {
     stop("simulate() is available for countreg() models.", call. = FALSE)
   }
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {
+    # Reproducible with `seed`, without changing the caller's random-number
+    # stream afterwards
+    old <- if (exists(".Random.seed", envir = globalenv()))
+      get(".Random.seed", envir = globalenv())
+    on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
+      assign(".Random.seed", old, envir = globalenv()))
+    set.seed(seed)
+  }
   rng_state <- if (exists(".Random.seed", envir = globalenv()))
     get(".Random.seed", envir = globalenv())
   parts <- .fcr_countreg_parts(object, .fcr_training_rows(object))
@@ -202,23 +214,18 @@ simulate.flexCountReg <- function(object, nsim = 1, seed = NULL, ...) {
                   if (!is.null(parts$alpha)) parts$alpha[idx],
                   if (!is.null(parts$sigma)) parts$sigma[idx])
   }
+  zp <- parts$zero_prob
   sims <- lapply(seq_len(nsim), function(i) {
-    y <- as.numeric(draw(seq_len(n)))
-    zp <- parts$zero_prob
-    if (!is.null(zp)) {
-      if (parts$zero_type == "inflated") {
-        y[stats::runif(n) < zp] <- 0
-      } else {
-        # Positive counts from the zero-truncated family (redraw zeros)
-        need <- which(y == 0)
-        for (iter in seq_len(1000)) {
-          if (!length(need)) break
-          y[need] <- draw(need)
-          need <- need[y[need] == 0]
-        }
-        y[stats::runif(n) >= zp] <- 0
-      }
+    if (!is.null(zp) && parts$zero_type == "hurdle") {
+      # Hurdle: membership first, then positive counts from the
+      # zero-truncated family for the rows that are positive
+      y <- numeric(n)
+      pos <- which(stats::runif(n) < zp)
+      y[pos] <- .fcr_rtrunc_positive(object, parts, pos)
+      return(y)
     }
+    y <- as.numeric(draw(seq_len(n)))
+    if (!is.null(zp)) y[stats::runif(n) < zp] <- 0   # zero-inflated
     y
   })
   out <- as.data.frame(sims)
@@ -251,3 +258,35 @@ print.flexCountReg <- function(x, digits = max(3L, getOption("digits") - 3L),
   if (isFALSE(m[["converged"]])) cat("Warning: the optimizer did not converge.\n")
   invisible(x)
 }
+
+# Draws from the zero-truncated count family for rows `idx` of a
+# .fcr_countreg_parts() result, by inversion: the smallest k >= 1 with
+# P(1 <= Y <= k) >= u * P(Y > 0), where P(Y > 0) = -expm1(log P(Y = 0)) keeps
+# its precision when P(Y = 0) is close to 1.
+.fcr_rtrunc_positive <- function(object, parts, idx, max_count = 1e6) {
+  if (!length(idx)) return(numeric(0))
+  lf0 <- .fcr_parts_density(object, parts, 0, log = TRUE)[idx]
+  target <- stats::runif(length(idx)) * -expm1(lf0)
+  out <- rep(NA_real_, length(idx))
+  cum <- numeric(length(idx))
+  todo <- seq_along(idx)
+  k <- 1
+  while (length(todo) && k <= max_count) {
+    sub_parts <- parts
+    for (nm in c("mu_link", "p_report", "alpha", "sigma")) {
+      if (!is.null(parts[[nm]])) sub_parts[[nm]] <- parts[[nm]][idx[todo]]
+    }
+    pk <- exp(.fcr_parts_density(object, sub_parts, k, log = TRUE))
+    cum[todo] <- cum[todo] + pk
+    done <- cum[todo] >= target[todo] | !is.finite(pk)
+    out[todo[done]] <- k
+    todo <- todo[!done]
+    k <- k + 1
+  }
+  if (length(todo)) {
+    stop("Zero-truncated draws did not finish within ", max_count,
+         " counts.", call. = FALSE)
+  }
+  out
+}
+

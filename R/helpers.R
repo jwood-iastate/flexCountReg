@@ -12,6 +12,7 @@ NULL
 .fcr_check_method <- function(method) {
   valid <- c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH")
   m <- toupper(gsub("[^[:alnum:]]", "", method))
+  m[m == "NELDERMEAD"] <- "NM"
   if (length(m) != 1L || !m %in% valid) {
     stop("`method` must be one of: ", toString(paste0('"', valid, '"')), ".",
          call. = FALSE)
@@ -24,6 +25,9 @@ NULL
   start.vals <- unlist(start.vals)
   if (!is.numeric(start.vals)) {
     stop("`start.vals` must be numeric.", call. = FALSE)
+  }
+  if (any(!is.finite(start.vals))) {
+    stop("`start.vals` must be finite (no NA, NaN or Inf).", call. = FALSE)
   }
   if (length(start.vals) != length(x_names)) {
     stop("`start.vals` has ", length(start.vals), " value(s), but the model ",
@@ -79,30 +83,70 @@ NULL
 #   n          number of rows (or clusters) to resample
 #   B          number of replicates
 #   coef_names names of the estimates, in order
-#   refit      function(idx) returning a named numeric vector of estimates
-# Returns a B x length(coef_names) matrix; failed replicates are NA rows.
+#   refit      function(idx) returning a named numeric vector of estimates,
+#              with attribute "converged" (logical) when known
+# A replicate is accepted only when the refit succeeds, reports convergence
+# (or does not report it) and gives finite estimates for every parameter.
+# Returns a B x length(coef_names) matrix with NA rows for failed replicates
+# and attribute "failures" (counts by reason).
 .fcr_bootstrap <- function(n, B, coef_names, refit) {
   draws <- matrix(NA_real_, nrow = B, ncol = length(coef_names),
                   dimnames = list(NULL, coef_names))
+  why <- character(B)
   for (b in seq_len(B)) {
     idx <- sample.int(n, n, replace = TRUE)
     est <- tryCatch(suppressWarnings(suppressMessages(refit(idx))),
                     error = function(e) NULL)
-    if (!is.null(est) && all(coef_names %in% names(est))) {
+    why[b] <- if (is.null(est)) {
+      "error"
+    } else if (isFALSE(attr(est, "converged"))) {
+      "not converged"
+    } else if (!all(coef_names %in% names(est)) ||
+               !all(is.finite(est[coef_names]))) {
+      "non-finite estimates"
+    } else {
       draws[b, ] <- est[coef_names]
+      ""
     }
   }
-  n_ok <- sum(stats::complete.cases(draws))
+  failures <- table(factor(why[nzchar(why)],
+                           levels = c("error", "not converged",
+                                      "non-finite estimates")))
+  n_ok <- sum(!nzchar(why))
+  reasons <- failures[failures > 0]
   if (n_ok < 2) {
-    stop("Fewer than 2 bootstrap replicates succeeded; bootstrapped ",
-         "standard errors cannot be computed.", call. = FALSE)
+    # The estimates are still usable; their standard errors are NA
+    warning("Fewer than 2 bootstrap replicates succeeded (",
+            paste(names(reasons), reasons, sep = ": ", collapse = ", "),
+            "); bootstrapped standard errors are NA.", call. = FALSE)
+  } else if (n_ok < 0.9 * B) {
+    warning(B - n_ok, " of ", B, " bootstrap replicates failed (",
+            paste(names(reasons), reasons, sep = ": ", collapse = ", "),
+            "); the bootstrapped standard errors use the ", n_ok,
+            " that succeeded.", call. = FALSE)
   }
-  if (n_ok < 0.9 * B) {
-    warning(B - n_ok, " of ", B, " bootstrap replicates failed; the ",
-            "bootstrapped standard errors use the ", n_ok, " that succeeded.",
-            call. = FALSE)
-  }
+  attr(draws, "failures") <- failures
   draws
+}
+
+# Covariance of the accepted bootstrap replicates (complete rows only, so
+# every entry uses the same replicates).
+.fcr_boot_cov <- function(draws) {
+  ok <- stats::complete.cases(draws)
+  if (sum(ok) < 2) {
+    return(matrix(NA_real_, ncol(draws), ncol(draws),
+                  dimnames = list(colnames(draws), colnames(draws))))
+  }
+  V <- stats::cov(draws[ok, , drop = FALSE])
+  dimnames(V) <- list(colnames(draws), colnames(draws))
+  V
+}
+
+# Estimates of a refit, with its convergence status attached.
+.fcr_refit_result <- function(estimate, converged) {
+  attr(estimate, "converged") <- if (length(converged) == 1L)
+    as.logical(converged) else NA
+  estimate
 }
 
 # --- Internal Likelihood Functions ---
@@ -118,7 +162,7 @@ NULL
 #                      (n_het x K) matrix: beta_ik = mu_k + z_i' delta_k
 #                      ("n", "t", "u"; on the log scale for "ln"), and
 #                      beta_ik = mu_k * exp(z_i' delta_k) for "g". For
-#                      het_form = "legacy" (fits before flexCountReg 0.1.3) a
+#                      het_form = "legacy" (fits from flexCountReg 0.1.1 and earlier) a
 #                      vector shared by all parameters: mu_ik = mu_k exp(z_i'd).
 #   het_var_coefs      heterogeneity in scales: sigma_ik = sigma_k exp(s_i' phi)
 #
@@ -147,8 +191,7 @@ generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params,
   
   if (correlated) {
     # --- Correlated (normal only) ---
-    L <- matrix(0, n_params, n_params)
-    L[lower.tri(L, diag = TRUE)] <- rand_var_params
+    L <- .fcr_chol_unpack(rand_var_params, n_params)
     corr_draws <- stats::qnorm(hdraws[, seq_len(n_params), drop = FALSE]) %*%
       t(L)
     xb_deterministic <- rowSums(X_rand * mu_mat)
@@ -231,33 +274,51 @@ rp_mgf <- function(dist, t, mu, sigma) {
   mu <- rep_len(mu, n)
   sigma <- rep_len(abs(sigma), n)
   ts <- t * sigma
-  small <- abs(ts) < 1e-8
-  switch(dist,
+  small <- !is.na(ts) & abs(ts) < 1e-8
+  zero <- !is.na(sigma) & sigma == 0
+  out <- switch(dist,
     n = exp(t * mu + 0.5 * t^2 * sigma^2),
-    u = ifelse(small, exp(t * mu), exp(t * mu) * sinh(ts) / ts),
-    t = ifelse(small, exp(t * mu),
-               exp(t * (mu - sigma)) * (exp(ts) - 1)^2 / ts^2),
+    # Uniform on [mu - sigma, mu + sigma]: exp(t mu) sinh(ts) / ts, on the
+    # log scale (no overflow for large |ts|)
+    u = exp(t * mu + ifelse(small, 0, .fcr_log_sinhc(ts))),
+    # Triangular on [mu - sigma, mu + sigma] with mode mu:
+    # exp(t (mu - sigma)) (exp(ts) - 1)^2 / ts^2
+    t = exp(ifelse(small, t * mu,
+                   t * (mu - sigma) + 2 * (.fcr_log_abs_expm1(ts) -
+                                             log(abs(ts))))),
     g = {
       b <- 1 - t * sigma^2 / mu
-      out <- ifelse(b > 0, b^(-(mu^2) / sigma^2), Inf)
-      out[mu <= 0] <- NaN
-      out
+      o <- ifelse(b > 0, exp(-(mu^2) / sigma^2 * log(b)), Inf)
+      o[zero] <- exp(t[zero] * mu[zero])   # degenerate at mu
+      o[mu <= 0] <- NaN
+      o
     },
     ln = {
-      out <- rep(Inf, n)
-      out[t == 0] <- 1
-      neg <- !is.na(t) & t < 0
+      o <- rep(Inf, n)
+      o[t == 0] <- 1
+      o[zero] <- exp(t[zero] * exp(mu[zero]))   # degenerate at exp(mu)
+      neg <- !is.na(t) & t < 0 & !zero
       if (any(neg)) {
         a <- -exp(mu[neg]) * t[neg] * sigma[neg]^2
         rlang::check_installed(
           "lamW", reason = "for lognormal random-parameter predictions.")
         w <- lamW::lambertW0(a)
-        out[neg] <- exp(-(w^2 + 2 * w) / (2 * sigma[neg]^2)) / sqrt(1 + w)
+        o[neg] <- exp(-(w^2 + 2 * w) / (2 * sigma[neg]^2)) / sqrt(1 + w)
       }
-      out[is.na(t)] <- NA
-      out
+      o
     },
     stop("Unknown random-parameter distribution: ", dist, call. = FALSE))
+  out[is.na(t)] <- NA
+  out
+}
+
+# log(sinh(x) / x) and log|exp(x) - 1|, stable for large |x|
+.fcr_log_sinhc <- function(x) {
+  ax <- abs(x)
+  ax + log1p(-exp(-2 * ax)) - log(2) - log(ax)
+}
+.fcr_log_abs_expm1 <- function(x) {
+  ifelse(x > 30, x + log1p(-exp(-x)), log(abs(expm1(x))))
 }
 
 # Rows of a prepare_model_data() result for a resample of clusters. `idx`
@@ -277,9 +338,8 @@ rp_mgf <- function(dist, t, mu, sigma) {
   draws <- .fcr_bootstrap(nlevels(prep$group), B, coef_names, function(idx) {
     refit(.fcr_cluster_subset(prep, idx))
   })
-  V <- stats::cov(draws, use = "pairwise.complete.obs")
-  dimnames(V) <- list(coef_names, coef_names)
-  list(vcov = V, n_ok = sum(stats::complete.cases(draws)))
+  list(vcov = .fcr_boot_cov(draws), n_ok = sum(stats::complete.cases(draws)),
+       failures = attr(draws, "failures"))
 }
 
 # Common post-fit bookkeeping for the random-effects estimators.
@@ -303,7 +363,7 @@ rp_mgf <- function(dist, t, mu, sigma) {
     fit$bootstraps <- as.integer(bootstraps)
   } else if (stderr == "robust") {
     # One log-likelihood contribution per panel, so this is cluster-robust
-    V <- sandwich::sandwich(fit)
+    V <- .fcr_robust_vcov(fit)
     fit$vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)
@@ -372,6 +432,29 @@ rp_mgf <- function(dist, t, mu, sigma) {
 # (probs), P(Y = 0) (f0) and the zero-model probability zp: the structural
 # zero probability (inflated) or the probability of a positive count
 # (hurdle).
+# The same on the log scale: log-probabilities lp and log P(Y = 0) lf0 of the
+# count family, and the zero model's linear predictor eta (zp = plogis(eta)).
+.fcr_zero_adjust_log <- function(y, lp, lf0, eta, zero_type) {
+  l_zp <- stats::plogis(eta, log.p = TRUE)                       # log zp
+  l_1mzp <- stats::plogis(eta, lower.tail = FALSE, log.p = TRUE) # log(1-zp)
+  if (zero_type == "inflated") {
+    ifelse(y == 0, .fcr_logadd(l_zp, l_1mzp + lf0), l_1mzp + lp)
+  } else {
+    ifelse(y == 0, l_1mzp, l_zp + lp - .fcr_log1mexp(lf0))
+  }
+}
+
+# Elementwise log(exp(a) + exp(b)) and log(1 - exp(a)) for a <= 0.
+.fcr_logadd <- function(a, b) {
+  m <- pmax(a, b)
+  out <- m + log1p(exp(-abs(a - b)))
+  out[is.infinite(m) & m < 0] <- -Inf
+  out
+}
+.fcr_log1mexp <- function(a) {
+  ifelse(a > -log(2), log(-expm1(a)), log1p(-exp(a)))
+}
+
 .fcr_zero_adjust <- function(y, probs, f0, zp, zero_type) {
   if (zero_type == "inflated") {
     ifelse(y == 0, zp + (1 - zp) * f0, (1 - zp) * probs)
@@ -413,3 +496,79 @@ rp_mgf <- function(dist, t, mu, sigma) {
   G[w == 0, ] <- 0
   G
 }
+
+# ---- Cholesky factor of correlated random parameters -----------------------
+# The lower-triangular factor L (Var = L L') is packed column by column, the
+# order of L[lower.tri(L, diag = TRUE)]. Labels, starting values, the
+# likelihood and predictions all use these helpers.
+.fcr_chol_index <- function(K) {
+  which(lower.tri(diag(K), diag = TRUE), arr.ind = TRUE)
+}
+
+.fcr_chol_names <- function(rpar) {
+  idx <- .fcr_chol_index(length(rpar))
+  paste0("Chol:", rpar[idx[, 1]], "_", rpar[idx[, 2]])
+}
+
+.fcr_chol_pack <- function(L) {
+  L[lower.tri(L, diag = TRUE)]
+}
+
+.fcr_chol_unpack <- function(v, K) {
+  if (length(v) != K * (K + 1) / 2) {
+    stop("A Cholesky factor for ", K, " random parameters needs ",
+         K * (K + 1) / 2, " values, not ", length(v), ".", call. = FALSE)
+  }
+  L <- matrix(0, K, K)
+  L[lower.tri(L, diag = TRUE)] <- v
+  L
+}
+
+# Robust (sandwich) covariance for a maxLik fit whose log-likelihood
+# contributions (rows or panels) are multiplied by frequency weights w. The
+# scores are then w_i s_i, and the meat must be sum_i w_i s_i s_i' (as for
+# the expanded data), not sum_i w_i^2 s_i s_i'. With w = 1 this is
+# sandwich::sandwich(fit).
+.fcr_robust_vcov <- function(fit, w = NULL) {
+  G <- sandwich::estfun(fit)
+  if (is.null(w)) w <- rep(1, nrow(G))
+  keep <- w > 0
+  meat <- crossprod(G[keep, , drop = FALSE] / sqrt(w[keep]))
+  bread <- .fcr_hessian_vcov(fit)
+  V <- bread %*% meat %*% bread
+  dimnames(V) <- dimnames(bread)
+  V
+}
+
+# Scalar optimizer and integration controls: whole numbers, at least 0 for
+# max.iters (0 evaluates the model at the starting values) and at least 1
+# for ndraws.
+.fcr_check_controls <- function(max.iters = NULL, ndraws = NULL) {
+  for (nm in c("max.iters", "ndraws")) {
+    v <- get(nm)
+    if (is.null(v)) next
+    lo <- if (nm == "ndraws") 1 else 0
+    if (!is.numeric(v) || length(v) != 1L || !is.finite(v) || v < lo ||
+        v != round(v)) {
+      stop("`", nm, "` must be a single whole number of at least ", lo, ".",
+           call. = FALSE)
+    }
+  }
+  invisible(NULL)
+}
+
+# Halton draws (n x dim). Scrambled draws are generated from `seed`, without
+# changing the caller's random-number stream, so the same draws can be
+# generated again for prediction.
+.fcr_halton <- function(n, dim, scrambled = FALSE, seed = NULL) {
+  if (!scrambled || is.null(seed)) {
+    return(as.matrix(randtoolbox::halton(n, dim, mixed = scrambled)))
+  }
+  old <- if (exists(".Random.seed", envir = globalenv()))
+    get(".Random.seed", envir = globalenv())
+  on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
+    assign(".Random.seed", old, envir = globalenv()))
+  set.seed(seed)
+  as.matrix(randtoolbox::halton(n, dim, mixed = TRUE))
+}
+

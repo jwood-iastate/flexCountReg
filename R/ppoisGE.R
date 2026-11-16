@@ -230,6 +230,12 @@ dpge <- function(
 #' @export
 ppge <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
                  lower.tail = TRUE, log.p = FALSE, haltons = NULL) {
+  .fcr_p_contract(.ppge_core, q, list(mean = mean, shape = shape, scale = scale),
+                  lower.tail, log.p, ndraws = ndraws, haltons = haltons)
+}
+
+.ppge_core <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
+                 lower.tail = TRUE, log.p = FALSE, haltons = NULL) {
   
   
   # --- Input Validation ---

@@ -188,6 +188,13 @@ dgp2 <- function(x, mu = 1, alpha = 0, log = FALSE) {
 #' @rdname GeneralizedPoisson2
 #' @export
 pgp2 <- function(q, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE) {
+  .fcr_p_contract(.pgp2_core, q, list(mu = mu, alpha = alpha),
+                  lower.tail, log.p,
+                  logdens = function(x, ...)
+                    suppressWarnings(dgp2(x, ..., log = TRUE)))
+}
+
+.pgp2_core <- function(q, mu = 1, alpha = 0, lower.tail = TRUE, log.p = FALSE) {
   n <- max(length(q), length(mu), length(alpha), length(lower.tail), length(log.p))
   q <- rep_len(q, n)
   mu <- rep_len(mu, n)

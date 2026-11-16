@@ -68,6 +68,19 @@ it. When two fitted models are supplied, the function compares them
 directly; the model with fewer parameters is the restricted (base) model of
 the LR test.
 
+The LR test is reported only when the restricted model is nested in the
+larger one with a regular restriction: the same estimator, zero and
+underreporting components and random parameters, the restricted model's
+parameters a subset of the larger model's, and the same family or a
+nested family (Poisson in NB1, NB2, PLN, PIG1, PIG2, PIG, GP1, GP2 and
+COM; NB1 and NB2 in NBP; PL in PLG and PLL). When the restriction puts
+one parameter on the boundary of its space (e.g. Poisson in NB2), the
+p-value uses a 50:50 mixture of chi-square distributions with df - 1 and
+df degrees of freedom. Two fitted models must use the same observations,
+outcome, offsets and weights. Otherwise the LR statistic and p-value are
+\code{NA} (\code{LR_type} gives the kind of restriction); AIC and BIC are
+always reported.
+
 The function performs the following steps for the single-model
 workflow:
 \enumerate{

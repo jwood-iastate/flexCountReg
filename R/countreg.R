@@ -24,11 +24,17 @@
 #' @param dis_param_formula_2 a symbolic description of the model for the second
 #'   parameter of the count distribution used. Further details are provided
 #'   below.
-#' @param underreport_formula an optional formula to estimate the underreporting
-#'   for any of the count model options. The underreporting is estimated as a
-#'   function (logit or probit) of the predictors in the model. For the model to
-#'   be tractable, the independent variables cannot be the exact same as the
-#'   count model. The default is `NULL`.
+#' @param underreport_formula an optional formula for the probability that a
+#'   true count is reported (binomial thinning of the true counts), as a logit
+#'   or probit function of its predictors. Available for the Poisson, NB1,
+#'   NB2, NBP, PLN, PGE, PIG1, PIG2, PIG, PL, PLG, PLL, PW and SI families,
+#'   whose reported counts follow the same family (for NB1 and PIG1 with
+#'   dispersion \eqn{p\alpha}, and for NBP with \eqn{\alpha p^{2-P}}). It
+#'   is identified only by variables that affect reporting but not the true
+#'   counts (and, weakly, by the shape of the link function): an
+#'   intercept-only formula is an error, and a warning is given when the
+#'   reporting and count coefficients are nearly collinear. Cannot be combined
+#'   with `zero_formula`. The default is `NULL`.
 #' @param underreport_family the name of the distribution/model type to estimate
 #'   the underreporting portion of the model when `underreport_formula` is
 #'   specified. The default is "logit" for a binary logistic regression model.
@@ -171,13 +177,13 @@
 #'  \item Not Applicable for the Negative Binomial 2 model.
 #'  \item \eqn{ln(p)} for the Negative Binomial P model.
 #'  \item Not Applicable for the Poisson-Lognormal model.
-#'  \item \eqn{ln(scale)} for the Poisson-Generalized-Exponential model.
+#'  \item Not Applicable for the Poisson-Generalized-Exponential model.
 #'  \item Not Applicable for the Poisson-Inverse-Gaussian model.
 #'  \item Not Applicable for the Poisson-Inverse-Gamma model.
 #'  \item Not Applicable for the Poisson-Lindley model.
 #'  \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
 #'  \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
-#'  \item \eqn{ln(\sigma)} for the Poisson-Weibull model.
+#'  \item Not Applicable for the Poisson-Weibull model.
 #'  \item \eqn{ln(\sigma)} for the Sichel model.
 #'  \item \eqn{ln(\rho-1)} for the Generalized Waring model.
 #'  \item Not Applicable for the Conway-Maxwell-Poisson model.
@@ -240,6 +246,14 @@
 #' To account for the range of possible values, this is modeled as 
 #' \deqn{ln(\phi+1)}.
 #' 
+#' Underdispersion: when the dispersion parameter is negative, the PMF is
+#' truncated at this point and renormalized, so its mean and variance differ
+#' from the formulas above and \eqn{\mu} is a location parameter rather than
+#' the mean (e.g. GP1 with \eqn{\mu = 0.75} and \eqn{\phi = -0.5} has mean
+#' 0.803; if \eqn{-\mu/\phi < 1} all probability is at 0). Predictions,
+#' Pearson residuals, simulations and marginal effects use the exact moments
+#' of the renormalized PMF.
+#' 
 #' ## Generalized Poisson Version 2 Model
 #' This implements the Generalized Poisson Version 2 model using MLE.
 #' 
@@ -271,6 +285,14 @@
 #' To account for the range of possible values, this is modeled as 
 #' \deqn{ln(\alpha+1)}.
 #' 
+#' Underdispersion: when the dispersion parameter is negative, the PMF is
+#' truncated at this point and renormalized, so its mean and variance differ
+#' from the formulas above and \eqn{\mu} is a location parameter rather than
+#' the mean (e.g. GP1 with \eqn{\mu = 0.75} and \eqn{\phi = -0.5} has mean
+#' 0.803; if \eqn{-\mu/\phi < 1} all probability is at 0). Predictions,
+#' Pearson residuals, simulations and marginal effects use the exact moments
+#' of the renormalized PMF.
+#' 
 #' ## Negative Binomial Models
 #' 
 #' The NB-1, NB-2, and NB-P versions of the negative binomial distribution are 
@@ -297,12 +319,12 @@
 #' 
 #' ### NB-2 Model
 #' The PMF and log-likelihood functions are:
-#' \deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} 
-#' \left( \frac{\alpha}{\alpha + \mu} \right)^\alpha 
-#' \left( \frac{\mu}{\alpha + \mu} \right)^y}
-#' \deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - 
-#' \ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + 
-#' \mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
+#' \deqn{P(Y = y) = \frac{\Gamma(y + 1/\alpha)}{y! \, \Gamma(1/\alpha)} 
+#' \left( \frac{1}{1 + \alpha\mu} \right)^{1/\alpha} 
+#' \left( \frac{\alpha\mu}{1 + \alpha\mu} \right)^y}
+#' \deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + 1/\alpha) - 
+#' \ln \Gamma(1/\alpha) - \ln y_i! - \frac{1}{\alpha} \ln(1 + \alpha\mu_i)
+#' + y_i \ln \left( \frac{\alpha\mu_i}{1 + \alpha\mu_i} \right) \right]}
 #' 
 #' The mean is:
 #' \deqn{\mu = exp(X\beta)}
@@ -383,8 +405,12 @@
 #' e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\right) x}}{y!}\frac{\alpha}{\gamma}
 #' \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
 #' 
-#' Halton draws are used to perform simulation over the lognormal distribution 
-#' to solve the integral.
+#' Halton draws are used to integrate over the generalized-exponential
+#' distribution.
+#' 
+#' Substituting \eqn{x = \gamma u} shows that the scale \eqn{\gamma} cancels
+#' out of this PMF, so it cannot be estimated: it is fixed at 1 and only the
+#' shape \eqn{\alpha} is estimated (`dis_param_formula_2` does not apply).
 #' 
 #' ## Poisson-Inverse-Gaussian Type 1 (PIG1)  and Type 2 (PIG2) Models
 #' The Poisson-Inverse-Gaussian regression model is based on the 
@@ -443,26 +469,17 @@
 #' regression analysis is:
 #' \deqn{\lambda=\frac{\mu\theta(\theta+1)}{\theta+2}}
 #' 
-#' Using the replacement and simplifying results in:
-#' \deqn{f(y \mid \theta, \mu) = \\ \frac{\theta^2 (\mu \theta (\theta+1))^y 
-#' (\theta^2 (1+\mu) + \theta (2+\mu) + (\theta+2) (y+1))}{(\theta+1) 
-#' (\theta+2)^{y+1} (\theta^2 (1+\mu) + \theta (2+\mu))^{y+2}}}
-#' And
-#' \deqn{LL=2 \log(\theta) + y (\log(\mu) + \log(\theta) + \log(\theta+1)) + 
-#' \log(\theta^2 (1+\mu) + \theta (2+\mu) + (\theta+2) (y+1)) - \log(\theta+1) 
-#' - (y+1) \log(\theta+2) - (y+2) \log(\theta^2 (1+\mu) + \theta (2+\mu))}
+#' The PMF above is evaluated at this \eqn{\lambda}.
 #'
 #' The variance function is defined as:
 #' \deqn{\sigma^2=\mu+\left(1-\frac{2}{(\theta+2)^2}\right)\mu^2}
 #' 
 #' It should be noted that the p-value for the parameter `ln(theta)` in the 
 #' model summary is testing if the parameter `theta` is equal to a value of 1. 
-#' This has no practical meaning. The Likelihood-Ratio (LR) test compares the 
-#' Poisson-Lindley regression with a Poisson regression with the same 
-#' independent variables. Thus, the LR test result indicates the statistical 
-#' significance for the improvement in how well the model fits the data over a 
-#' Poisson regression. This indicates the statistical significance of the 
-#' `theta` parameter.
+#' This has no practical meaning. The PL model does not reduce to the Poisson
+#' model for any \eqn{\theta} (its variance is at least
+#' \eqn{\mu + \mu^2/2}), so a likelihood-ratio test against Poisson is not
+#' valid; compare the models with AIC and BIC.
 #' 
 #' ## Poisson-Lindley-Gamma (PLG) Model
 #' The Poisson-Lindley-Gamma regression is based on a compound Poisson-Lindley-
@@ -485,12 +502,13 @@
 #' Lindley-Lognormal distribution. Details of the distribution can be seen at 
 #' \code{\link[flexCountReg]{dplindLnorm}}.
 #'
-#' The mean for the regression model is:
-#' \deqn{\mu=e^{X\beta}}
+#' The Poisson-Lindley mean parameter is \eqn{\mu=e^{X\beta}}, and the mean
+#' of the regression model (used by \code{predict()}) is:
+#' \deqn{E[Y]=m=e^{X\beta+\sigma^2/2}}
 #'
-#' The variance function is defined as:
-#' \deqn{\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}
-#' {2}}}+e^{\sigma^2}-1\right)\mu^2}
+#' The variance function is:
+#' \deqn{Var(Y)=m+\left(\left(2-\frac{2}{(\theta+2)^2}\right)
+#' e^{\sigma^2}-1\right)m^2}
 #'
 #' It should be noted that the p-value for the parameters `ln(theta)` and 
 #' `ln(sigma)` in the model summary are testing if the parameter `theta` and 
@@ -524,6 +542,10 @@
 #' The variance for the Poisson-Weibull regression is:
 #' \deqn{V[Y]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}
 #' {\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2}
+#' 
+#' The scale \eqn{\sigma} cancels out of the PMF after this substitution, so
+#' it cannot be estimated: it is fixed at 1 and only the shape \eqn{\alpha} is
+#' estimated (`dis_param_formula_2` does not apply).
 #' 
 #' ## Sichel (SI) Model
 #' The compound Probability Mass Function (PMF) for the Sichel distribution uses
@@ -771,10 +793,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
   }
   method <- .fcr_check_method(method)
+  .fcr_check_controls(max.iters, ndraws)
   underreport_family <- match.arg(tolower(underreport_family),
                                   c("logit", "probit"))
   stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
   zero_type <- match.arg(zero_type)
+  if (!is.null(underreport_formula)) .fcr_check_thinning(family)
   if (!is.null(zero_formula) && !is.null(underreport_formula)) {
     stop("`zero_formula` and `underreport_formula` cannot be combined: both ",
          "act on the zeros, so they are not separately identified.",
@@ -793,14 +817,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     bootstraps <- as.integer(bootstraps)
   }
   
-  if (is.null(params[[1]]) && !is.null(dis_param_formula_1)) {
-    stop("`dis_param_formula_1` was given, but family \"", family,
-         "\" has no distribution parameter to model.", call. = FALSE)
-  }
-  if (is.null(params[[2]]) && !is.null(dis_param_formula_2)) {
-    stop("`dis_param_formula_2` was given, but family \"", family,
-         "\" has no second distribution parameter to model.", call. = FALSE)
-  }
+  .fcr_check_dis_formulas(family, params, dis_param_formula_1,
+                          dis_param_formula_2)
   
   # ---- Data: one complete-case model frame for everything --------------------
   prep <- prepare_model_data(formula, data,
@@ -810,6 +828,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                                underreport = underreport_formula,
                                zero = zero_formula),
                              offset = offset, weights = weights)
+  # Keep the formulas with `.` expanded, for prediction, methods and refits
+  formula <- prep$formula
+  dis_param_formula_1 <- prep$aux_formulas$dis1
+  dis_param_formula_2 <- prep$aux_formulas$dis2
+  underreport_formula <- prep$aux_formulas$underreport
+  zero_formula <- prep$aux_formulas$zero
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }
@@ -821,6 +845,15 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   mod_alpha_frame <- prep$aux$dis1
   mod_sigma_frame <- prep$aux$dis2
   X_underreport <- prep$aux$underreport
+  if (!is.null(X_underreport) &&
+      all(colnames(X_underreport) == "(Intercept)") &&
+      "(Intercept)" %in% colnames(prep$X)) {
+    stop("An intercept-only `underreport_formula` is not identified: a ",
+         "constant reporting probability p and the count-model intercept ",
+         "b0 enter the likelihood only through exp(b0) * p. Add variables ",
+         "that affect reporting but not the true counts, or analyze the ",
+         "reported counts without an underreporting model.", call. = FALSE)
+  }
   X_zero <- prep$aux$zero
   
   # ---- Parameter bookkeeping -------------------------------------------------
@@ -933,27 +966,37 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     
     predicted <- exp(as.vector(X %*% fixed_coefs) + X_offset) *
       underreport_prob
+    if (N_underreport > 0) {
+      # Distribution of the reported counts (binomial thinning)
+      thin <- .fcr_thin_params(family, alpha, sigma, underreport_prob)
+      alpha <- thin$alpha
+      sigma <- thin$sigma
+    }
     
     # Parameter values outside a distribution's support make the C++ code
     # stop(); return NA instead so the optimizer can step back.
-    probs <- tryCatch(
-      local_probFunc(y = y, predicted = predicted, alpha = alpha,
-                     sigma = sigma, haltons = haltons,
-                     normed_haltons = normed_haltons, engine = engine),
+    # Log-probabilities, computed on the log scale (finite in the tails)
+    ll <- tryCatch(
+      as.vector(local_probFunc(y = y, predicted = predicted, alpha = alpha,
+                               sigma = sigma, haltons = haltons,
+                               normed_haltons = normed_haltons,
+                               engine = engine, log = TRUE)),
       error = function(e) rep(NA_real_, length(y)))
     
     if (N_zero > 0) {
-      f0 <- tryCatch(
-        local_probFunc(y = rep(0, length(y)), predicted = predicted,
-                       alpha = alpha, sigma = sigma, haltons = haltons,
-                       normed_haltons = normed_haltons, engine = engine),
+      lf0 <- tryCatch(
+        as.vector(local_probFunc(y = rep(0, length(y)), predicted = predicted,
+                                 alpha = alpha, sigma = sigma,
+                                 haltons = haltons,
+                                 normed_haltons = normed_haltons,
+                                 engine = engine, log = TRUE)),
         error = function(e) rep(NA_real_, length(y)))
-      zp <- stats::plogis(as.vector(X_zero %*% coefs[idx_zero]))
-      probs <- .fcr_zero_adjust(y, as.vector(probs), as.vector(f0), zp,
-                                zero_type)
+      ll <- .fcr_zero_adjust_log(y, ll, lf0,
+                                 as.vector(X_zero %*% coefs[idx_zero]),
+                                 zero_type)
     }
     
-    ll <- log(as.vector(probs))
+    # Rows with zero weight contribute exactly 0 (also when -Inf)
     ll[weights.df == 0] <- 0
     ll * weights.df
   }
@@ -1006,19 +1049,22 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                       max.iters = max.iters, start.vals = fit$estimate,
                       stderr = "normal", engine = engine,
                       keep_data = FALSE)
-        m$model$estimate
+        .fcr_refit_result(m$model$estimate, m$model$converged)
       })
-    V <- stats::cov(draws, use = "pairwise.complete.obs")
+    V <- .fcr_boot_cov(draws)
+    fit$boot_failures <- attr(draws, "failures")
     fit$n_boot_ok <- sum(stats::complete.cases(draws))
     vcov_type <- "bootstrap"
   } else if (stderr == "robust") {
-    V <- sandwich::sandwich(fit)
+    V <- .fcr_robust_vcov(fit, weights.df)
     vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)
     vcov_type <- "hessian"
   }
   dimnames(V) <- list(x_names, x_names)
+  
+  if (N_underreport > 0) .fcr_check_report_identification(V)
   
   fit$vcov <- V
   fit$vcov_type <- vcov_type
@@ -1046,13 +1092,15 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$zero_type <- if (!is.null(zero_formula)) zero_type
   fit$underreport_family <- underreport_family
   # Sign convention for probit underreporting: 1 = P(reported) = pnorm(z'g)
-  # (flexCountReg >= 0.1.3). Fits without this field used 1 - pnorm(z'g).
+  # (flexCountReg >= 0.1.2). Fits without this field used 1 - pnorm(z'g).
   fit$underreport_sign <- 1L
   fit$params <- params
   fit$blueprint <- prep$blueprint
   fit$y <- y
   fit$weights <- weights.df
   fit$nobs <- length(y)
+  # Independent units for BIC: the rows, counted with their frequency weights
+  fit$n_bic <- sum(weights.df)
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   
@@ -1061,3 +1109,38 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                              formula = formula)
   return(obj)
 }
+
+# Warn when underreporting coefficients are nearly collinear with the count
+# model's coefficients (a flat likelihood ridge): the split between the true
+# count mean and the reporting probability is then not identified by the
+# data, even when the optimizer converges and the standard errors are finite.
+.fcr_check_report_identification <- function(V, threshold = 0.99) {
+  if (!all(is.finite(V))) return(invisible(NULL))
+  ev <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
+  if (min(ev) <= 0) {
+    warning("The underreporting model is weakly identified: the covariance ",
+            "matrix of the estimates is not positive definite (a flat ",
+            "likelihood ridge). The data do not separate the true count ",
+            "mean from the reporting probability; interpret the true-count ",
+            "estimates with caution, and consider reporting variables that ",
+            "do not affect the true counts or external validation data.",
+            call. = FALSE)
+    return(invisible(NULL))
+  }
+  R <- stats::cov2cor(V)
+  und <- grepl("^Underreporting:", rownames(R))
+  r <- abs(R[und, !und, drop = FALSE])
+  if (any(r > threshold, na.rm = TRUE)) {
+    k <- which(r == max(r, na.rm = TRUE), arr.ind = TRUE)[1, ]
+    warning("The underreporting model is weakly identified: the estimates of ",
+            rownames(r)[k[1]], " and ", colnames(r)[k[2]],
+            " have correlation ", format(round(R[und, !und, drop = FALSE][
+              k[1], k[2]], 3)), ". The data barely separate the true count ",
+            "mean from the reporting probability; interpret the true-count ",
+            "estimates with caution, and consider reporting variables that ",
+            "do not affect the true counts or external validation data.",
+            call. = FALSE)
+  }
+  invisible(NULL)
+}
+

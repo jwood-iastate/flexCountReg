@@ -41,7 +41,8 @@ mean of the distribution is \code{mean * exp(sigma^2 / 2)}.}
 
 \item{theta}{Poisson-Lindley theta parameter (>0).}
 
-\item{sigma}{lognormal sigma parameter (>0).}
+\item{sigma}{lognormal sigma parameter (>= 0; 0 gives the
+Poisson-Lindley distribution).}
 
 \item{ndraws}{number of Halton draws.}
 
@@ -86,14 +87,15 @@ small y and allows flexible heavy tails.
 The PMF is:
 \deqn{
 f(y|\mu,\theta,\sigma)=\int_0^\infty
-  \frac{\theta^2\mu^y x^y(\theta+\mu x+y+1)}
-       {(\theta+1)(\theta+\mu x)^{y+2}}
+  \frac{\theta^2(\lambda x)^y(\theta+\lambda x+y+1)}
+       {(\theta+1)(\theta+\lambda x)^{y+2}}
   \frac{\exp\left(-\frac{\ln^2(x)}{2\sigma^2}\right)}
        {x\sigma\sqrt{2\pi}}dx
 }
 
-Where \eqn{\mu} is the \code{mean} argument (the Poisson-Lindley mean). The
-mean of the distribution is:
+Where \eqn{\mu} is the \code{mean} argument (the Poisson-Lindley mean) and
+\eqn{\lambda=\mu\theta(\theta+1)/(\theta+2)} is the corresponding
+Poisson-Lindley scale. The mean of the distribution is:
 \deqn{
 E[y]=\mu e^{\sigma^2/2}=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
             {\theta(\theta+1)}

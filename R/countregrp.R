@@ -247,6 +247,14 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                                het_var = het_var_formula),
                              offset = offset, weights = weights,
                              group_var = group_var)
+  # Keep the formulas with `.` expanded, for prediction, methods and refits
+  # (a refit must not expand `.` against the bootstrap panel column)
+  formula <- prep$formula
+  rpar_formula <- prep$aux_formulas$rpar
+  dis_param_formula_1 <- prep$aux_formulas$dis1
+  dis_param_formula_2 <- prep$aux_formulas$dis2
+  het_mean_formula <- prep$aux_formulas$het_mean
+  het_var_formula <- prep$aux_formulas$het_var
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }

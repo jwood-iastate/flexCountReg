@@ -131,6 +131,12 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   d <- data[keep, , drop = FALSE]
 
   mf <- stats::model.frame(formula, d, na.action = stats::na.fail)
+  y <- stats::model.response(mf)
+  if (!is.null(y) && (!is.numeric(y) || is.matrix(y))) {
+    stop("The response must be a numeric count vector, not ",
+         class(y)[1], ". Convert factors with as.numeric(as.character()).",
+         call. = FALSE)
+  }
   tt <- stats::terms(mf)
   X <- stats::model.matrix(tt, mf)
 
@@ -172,7 +178,8 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
     offset
   }
 
-  list(y = stats::model.response(mf), X = X, offset = off, weights = w,
+  list(y = y, X = X, offset = off, weights = w,
+       formula = formula, aux_formulas = aux_formulas,
        group = g, aux = aux, rows_used = which(keep),
        n_dropped = sum(!keep),
        blueprint = list(terms = tt,

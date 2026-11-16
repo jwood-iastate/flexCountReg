@@ -810,6 +810,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                                underreport = underreport_formula,
                                zero = zero_formula),
                              offset = offset, weights = weights)
+  # Keep the formulas with `.` expanded, for prediction, methods and refits
+  formula <- prep$formula
+  dis_param_formula_1 <- prep$aux_formulas$dis1
+  dis_param_formula_2 <- prep$aux_formulas$dis2
+  underreport_formula <- prep$aux_formulas$underreport
+  zero_formula <- prep$aux_formulas$zero
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }

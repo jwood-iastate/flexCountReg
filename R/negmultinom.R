@@ -434,7 +434,12 @@ negmultinom <- function(formula,
   if (nrow(data_used) == 0L) stop("No complete observations remain.")
 
   mf <- stats::model.frame(formula, data_used, na.action = stats::na.fail)
-  y <- as.numeric(stats::model.response(mf))
+  y <- stats::model.response(mf)
+  if (!is.numeric(y) || is.matrix(y)) {
+    stop("The response must be a numeric count vector, not ", class(y)[1],
+         ". Convert factors with as.numeric(as.character()).")
+  }
+  y <- as.numeric(y)
   if (any(y < 0)) stop("The response variable must be nonnegative.")
   if (any(abs(y - round(y)) > 1e-8)) {
     warning("The response variable is not integer-valued.")

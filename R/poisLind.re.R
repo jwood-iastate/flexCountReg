@@ -143,6 +143,7 @@ poisLind.re <- function(formula, group_var, data,
   # Data preparation: one complete-case frame; panels from `group_var`
   prep <- prepare_model_data(formula, data, offset = offset,
                              group_var = group_var)
+  formula <- prep$formula   # with `.` expanded
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }

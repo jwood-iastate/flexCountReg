@@ -167,7 +167,11 @@
 
 ## Bug fixes found by the extended test suite
 
-* `pcom()` ignored `lower.tail` and `log.p`. Recycling of `mu`, `lambda` and
+* `pcom()` ignored `lower.tail` and `log.p`. Both tails are now summed
+  directly on the log scale with a precise normalizing constant, so upper
+  tails are never negative and keep their relative precision (e.g.
+  `pcom(25, lambda = 1, nu = 1, lower.tail = FALSE)` equals the Poisson
+  value 9.5e-28). Recycling of `mu`, `lambda` and
   `nu` in `dcom()`, `pcom()` and `qcom()` follows the base-R rule (length 1
   or the length of the first argument; other lengths are an error).
 * `dpoisweibull()` and friends used `lambda` inconsistently between the PMF
@@ -199,13 +203,22 @@
   bootstrap covariance matrix is computed from the coefficient draws, the
   rows used are recorded, and a prediction blueprint is stored, so
   `predict()` and `augment()` work with `keep_data = FALSE`.
-* Data preparation rejects infinite counts, expands `.` in formulas, and
-  keeps the contrasts of factors in auxiliary formulas for prediction.
+* Data preparation rejects infinite counts and non-numeric (e.g. factor)
+  responses, expands `.` in formulas, and keeps the contrasts of factors in
+  auxiliary formulas for prediction. Fitted objects store the expanded
+  formulas, so `margEffTable()` and bootstrap refits of models written with
+  `.` work.
+* `method = "Nelder-Mead"` is accepted by every estimator as an alias of
+  `"NM"`, and `repois()` accepts all optimizers the other estimators accept.
+* `qplind()` and `qplindLnorm()` return `NA` for missing parameters instead
+  of failing, and `qplindLnorm()`/`rplindLnorm()` accept `sigma = 0` (the
+  Poisson-Lindley limit).
 * `regCompTable()` fits the baseline model only when the pseudo-R^2 is
   requested. `tidy()` classifies parameters from the model's bookkeeping
   (covariates named like distribution parameters are no longer
   misclassified), and `augment()` computes residuals from the transformed
-  response (e.g. `log(y + 1) ~ x`).
+  response (e.g. `log(y + 1) ~ x`), evaluated in the environment of the
+  model formula.
 
 ## Documentation
 

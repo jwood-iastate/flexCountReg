@@ -212,6 +212,7 @@ qplind <- function(p, mean = 1, theta = 1, lambda = NULL) {
     warning(msg2)
   }
   .fcr_qcount(p, function(y, mean, theta) {
+    if (is.na(mean) || is.na(theta)) return(rep(NA_real_, length(y)))
     if (!(mean > 0 && theta > 0)) return(rep(NaN, length(y)))
     cumsum(dplind(y, mean = mean, theta = theta))
   }, mean, theta)

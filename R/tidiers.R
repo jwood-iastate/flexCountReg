@@ -110,7 +110,8 @@ generics::augment
 .fcr_response <- function(object, data) {
   lhs <- object$formula[[2]]
   if (!all(all.vars(lhs) %in% names(data))) return(NULL)
-  f <- stats::as.formula(call("~", lhs, 1))
+  f <- stats::as.formula(call("~", lhs, 1),
+                         env = environment(object$formula) %||% parent.frame())
   as.numeric(stats::model.response(stats::model.frame(
     f, data, na.action = stats::na.pass)))
 }

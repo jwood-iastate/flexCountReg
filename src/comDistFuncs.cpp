@@ -189,30 +189,41 @@ NumericVector dcom_vec_cpp(IntegerVector x_vec, NumericVector lambda_values, Num
   return probabilities;
 }
 
-double pcom_cpp(int q, double lambda, double nu) {
-  double adjuster = com_adjustFactor_cpp(lambda, nu);
-  double cum_prob = 0.0;
-  
-  for (int x = 0; x <= q; ++x) {
-    double log_p = x * std::log(lambda) - nu * std::lgamma(x + 1) - std::log(adjuster);
-    cum_prob += std::exp(log_p);
-  }
-  
-  return cum_prob;
+// log(a + b) from log(a) and log(b)
+static double com_logadd(double a, double b) {
+  if (a == R_NegInf) return b;
+  if (b == R_NegInf) return a;
+  double m = std::max(a, b);
+  return m + std::log1p(std::exp(std::min(a, b) - m));
 }
 
-// double pcom_cpp(int q, double lambda, double nu) {
-//   double adjuster = com_adjustFactor_cpp(lambda, nu);
-//   double prob_x = 0.0;
-//   
-//   for (int x = 0; x <= q; ++x) {
-//     double term = std::pow(lambda, x) / (std::pow(std::tgamma(x + 1), nu) * adjuster);
-//     prob_x += term;
-//   }
-//   
-//   return prob_x;
-// }
+// Log of the sum of the unnormalized COM terms lambda^x / (x!)^nu for x in
+// [from, to] (to < 0: to the end of the support), summed until the terms
+// past the mode are negligible relative to the running sum.
+static double com_log_sum(int from, int to, double lambda, double nu) {
+  double loglam = std::log(lambda);
+  double mode = std::pow(lambda, 1.0 / nu);
+  double total = R_NegInf;
+  const double negligible = std::log(1e-17);
+  for (long x = from; to < 0 || x <= to; ++x) {
+    double lt = x * loglam - nu * std::lgamma(x + 1.0);
+    total = com_logadd(total, lt);
+    if (to < 0 && x > mode && lt - total < negligible) break;
+    if (x - from > 10000000L) break;
+  }
+  return total;
+}
 
+// log P(Y <= q) (lower) or log P(Y > q) (upper), each tail summed directly
+// so that small tails keep their relative precision.
+double com_log_tail_cpp(int q, double lambda, double nu, bool lower_tail) {
+  if (!(lambda > 0) || !(nu > 0) || ISNAN(lambda) || ISNAN(nu)) return R_NaN;
+  if (q < 0) return lower_tail ? R_NegInf : 0.0;
+  double log_z = com_log_sum(0, -1, lambda, nu);
+  double log_t = lower_tail ? com_log_sum(0, q, lambda, nu)
+                            : com_log_sum(q + 1, -1, lambda, nu);
+  return std::min(0.0, log_t - log_z);
+}
 
 // [[Rcpp::export]]
 NumericVector pcom_vec_cpp(IntegerVector q_vec, NumericVector lambda_values, NumericVector nu_vec, bool lower_tail = true, bool log_p = false) {
@@ -225,10 +236,8 @@ NumericVector pcom_vec_cpp(IntegerVector q_vec, NumericVector lambda_values, Num
     double lambda = lambda_values[i];
     double nu = nu_vec[i];
     
-    double pr = pcom_cpp(q, lambda, nu);
-    if (!lower_tail) pr = 1.0 - pr;
-    if (log_p) pr = std::log(pr);
-    cumulative_probs[i] = pr;
+    double lp = com_log_tail_cpp(q, lambda, nu, lower_tail);
+    cumulative_probs[i] = log_p ? lp : std::exp(lp);
   }
   
   return cumulative_probs;

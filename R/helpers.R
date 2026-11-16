@@ -12,6 +12,7 @@ NULL
 .fcr_check_method <- function(method) {
   valid <- c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH")
   m <- toupper(gsub("[^[:alnum:]]", "", method))
+  m[m == "NELDERMEAD"] <- "NM"
   if (length(m) != 1L || !m %in% valid) {
     stop("`method` must be one of: ", toString(paste0('"', valid, '"')), ".",
          call. = FALSE)

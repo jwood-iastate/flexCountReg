@@ -223,7 +223,7 @@ with a Poisson base model:
 
 ``` r
 tidy(gen.nb2, conf.int = TRUE)
-#> # A tibble: 7 x 8
+#> # A tibble: 7 × 8
 #>   term        component estimate std.error statistic  p.value conf.low conf.high
 #>   <chr>       <chr>        <dbl>     <dbl>     <dbl>    <dbl>    <dbl>     <dbl>
 #> 1 (Intercept) mean        -7.40     0.473     -15.7  3.28e-55   -8.33     -6.47 
@@ -231,25 +231,25 @@ tidy(gen.nb2, conf.int = TRUE)
 #> 3 lnlength    mean         0.843    0.0700     12.0  2.24e-33    0.706     0.980
 #> 4 speed50     mean        -0.470    0.115      -4.08 4.46e- 5   -0.695    -0.244
 #> 5 AADT10kplus mean         0.770    0.130       5.92 3.13e- 9    0.515     1.02 
-#> 6 ln(alpha):~ distribu~   -1.62     0.374      -4.33 1.50e- 5   -2.35     -0.886
-#> 7 ln(alpha):~ distribu~    1.31     0.596       2.19 2.85e- 2    0.137     2.47
+#> 6 ln(alpha):… distribu…   -1.62     0.374      -4.33 1.50e- 5   -2.35     -0.886
+#> 7 ln(alpha):… distribu…    1.31     0.596       2.19 2.85e- 2    0.137     2.47
 glance(gen.nb2)
-#> # A tibble: 1 x 10
+#> # A tibble: 1 × 10
 #>   model    family logLik   AIC   BIC    df  nobs n_groups converged vcov_type
 #>   <chr>    <chr>   <dbl> <dbl> <dbl> <int> <int>    <int> <lgl>     <chr>    
 #> 1 countreg NB2    -1065. 2144. 2181.     7  1501       NA TRUE      hessian
 regCompTest(gen.nb2, basemodel = "Poisson", variables = TRUE)$statistics
-#> # A tibble: 8 x 3
-#>   Statistic                 Model BaseModel
-#>   <chr>                     <dbl>     <dbl>
-#> 1 Log-likelihood        -1065.       -1076.
-#> 2 Number of parameters      7            5 
-#> 3 AIC                    2144.        2162.
-#> 4 BIC                    2181.        2188.
-#> 5 LR Test Statistic        22.1         NA 
-#> 6 LR degrees of freedom     2           NA 
-#> 7 LR p-value                0           NA 
-#> 8 McFadden's Pseudo R^2     0.206       NA
+#> # A tibble: 8 × 3
+#>   Statistic                  Model BaseModel
+#>   <chr>                      <dbl>     <dbl>
+#> 1 Log-likelihood        -1065.        -1076.
+#> 2 Number of parameters      7             5 
+#> 3 AIC                    2144.         2162.
+#> 4 BIC                    2181.         2188.
+#> 5 LR Test Statistic        22.1          NA 
+#> 6 LR degrees of freedom     2            NA 
+#> 7 LR p-value                0            NA 
+#> 8 McFadden's Pseudo R^2     0.0103       NA
 ```
 
 A rootogram shows how well the fitted distribution reproduces the
@@ -263,7 +263,7 @@ rootogram(pois, main = "Poisson")
 rootogram(gen.nb2, main = "Generalized NB-2")
 ```
 
-<img src="man/figures/README-rootogram-1.png" width="100%" />
+<img src="man/figures/README-rootogram-1.png" alt="" width="100%" />
 
 ``` r
 par(oldpar)
@@ -273,7 +273,15 @@ Checking the CURE plot:
 
 ``` r
 cureplot(gen.nb2, indvar = "lnaadt")
+#> Covariate: indvar_values
+#> CURE data frame was provided. Its first column, lnaadt, will be used.
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
+#> Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
 ```
+
+<img src="man/figures/README-cureplot-initial-1.png" alt="" width="100%" />
 
 Modifying the model:
 
@@ -309,11 +317,12 @@ summary(gen.nb2)
 #> Log-likelihood: -1061.914 | AIC: 2141.828 | BIC: 2189.653 
 #> N: 1501
 #> LR test vs Poisson: chi-sq = 16.247 on 2 df, p-value = 0.000297
+cureplot(gen.nb2, indvar = "lnaadt")
+#> Covariate: indvar_values
+#> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
 
-``` r
-cureplot(gen.nb2, indvar = "lnaadt")
-```
+<img src="man/figures/README-cureplot-updt-1.png" alt="" width="100%" />
 
 Estimating another model (NB-P), without the interaction:
 
@@ -334,15 +343,15 @@ summary(gen.nbp)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                       Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)            -7.7637     0.4931  -15.75  < 2e-16 ***
-#> lnaadt                  0.9382     0.0576   16.28  < 2e-16 ***
-#> lnlength                0.8362     0.0696   12.01  < 2e-16 ***
-#> speed50                -0.3843     0.1106   -3.47  0.00051 ***
-#> ShouldWidth04           0.2578     0.0922    2.80  0.00516 ** 
-#> AADT10kplus             0.6893     0.1327    5.19    2e-07 ***
-#> ln(alpha):(Intercept)  -1.4960     0.5461   -2.74  0.00615 ** 
-#> ln(alpha):lnlength     -0.1673     0.4468   -0.37  0.70804    
-#> ln(p)                   0.5247     0.1838    2.85  0.00431 ** 
+#> (Intercept)            -7.7637     0.4407  -17.62  < 2e-16 ***
+#> lnaadt                  0.9382     0.0518   18.12  < 2e-16 ***
+#> lnlength                0.8362     0.0695   12.04  < 2e-16 ***
+#> speed50                -0.3843     0.1086   -3.54   0.0004 ***
+#> ShouldWidth04           0.2578     0.0915    2.82   0.0048 ** 
+#> AADT10kplus             0.6893     0.1257    5.48  4.2e-08 ***
+#> ln(alpha):(Intercept)  -1.4960     0.1212  -12.34  < 2e-16 ***
+#> ln(alpha):lnlength     -0.1673     0.2548   -0.66   0.5114    
+#> ln(p)                   0.5247     0.1879    2.79   0.0052 ** 
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -357,30 +366,34 @@ modified NB-2):
 
 ``` r
 cureplot(gen.nbp, indvar = "lnaadt")
+#> Covariate: indvar_values
+#> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
+
+<img src="man/figures/README-cureplot-lnaadt-1.png" alt="" width="100%" />
 
 Creating a table to compare the models:
 
 ``` r
 regCompTable(list("Generalized NB-2" = gen.nb2, "Generalized NB-P" = gen.nbp))
-#> # A tibble: 15 x 3
+#> # A tibble: 15 × 3
 #>    Parameter             `Generalized NB-2` `Generalized NB-P`
 #>    <chr>                 <chr>              <chr>             
-#>  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.493)*** 
-#>  2 lnaadt                0.93 (0.057)***    0.938 (0.058)***  
-#>  3 lnlength              0.853 (0.07)***    0.836 (0.07)***   
-#>  4 speed50               -0.4 (0.109)***    -0.384 (0.111)*** 
+#>  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.441)*** 
+#>  2 lnaadt                0.93 (0.057)***    0.938 (0.052)***  
+#>  3 lnlength              0.853 (0.07)***    0.836 (0.069)***  
+#>  4 speed50               -0.4 (0.109)***    -0.384 (0.109)*** 
 #>  5 ShouldWidth04         0.261 (0.092)**    0.258 (0.092)**   
-#>  6 AADT10kplus           5.961 (4.512)      0.689 (0.133)***  
+#>  6 AADT10kplus           5.961 (4.512)      0.689 (0.126)***  
 #>  7 I(AADT10kplus/lnaadt) -50.133 (43.002)   ---               
-#>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.546)**  
-#>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.447)    
-#> 10 ln(p)                 ---                0.525 (0.184)**   
+#>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.121)*** 
+#>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.255)    
+#> 10 ln(p)                 ---                0.525 (0.188)**   
 #> 11 N Obs.                1501               1501              
 #> 12 LL                    -1061.914          -1062.195         
 #> 13 AIC                   2141.828           2142.389          
 #> 14 BIC                   2189.653           2190.214          
-#> 15 Pseudo-R-Sq.          0.209              0.208
+#> 15 Pseudo-R-Sq.          0.303              0.303
 ```
 
 Note that the metrics for comparison are similar. While the models both
@@ -394,7 +407,7 @@ each count is also available:
 ``` r
 nd <- washington_roads[1:3, ]
 predict(gen.nbp, newdata = nd)
-#> [1] 0.6417932 0.5787698 0.8832648
+#> [1] 0.6417932 0.5787699 0.8832648
 round(predict(gen.nbp, newdata = nd, type = "prob", max_count = 4), 3)
 #>          0     1     2     3     4
 #> [1,] 0.556 0.300 0.105 0.030 0.008
@@ -413,16 +426,16 @@ mean(washington_roads$Animal == 0)
 zip <- countreg(Animal ~ lnaadt + lnlength, data = washington_roads,
                 family = "Poisson", zero_formula = ~ speed50, method = "NR")
 tidy(zip)
-#> # A tibble: 5 x 6
-#>   term             component estimate std.error statistic  p.value
-#>   <chr>            <chr>        <dbl>     <dbl>     <dbl>    <dbl>
-#> 1 (Intercept)      mean        -8.64      1.16     -7.48  7.26e-14
-#> 2 lnaadt           mean         0.976     0.133     7.34  2.14e-13
-#> 3 lnlength         mean         1.53      0.212     7.22  5.29e-13
-#> 4 Zero:(Intercept) zero        -0.116     0.469    -0.247 8.05e- 1
-#> 5 Zero:speed50     zero         1.51      0.474     3.19  1.43e- 3
+#> # A tibble: 5 × 6
+#>   term             component estimate std.error statistic   p.value
+#>   <chr>            <chr>        <dbl>     <dbl>     <dbl>     <dbl>
+#> 1 (Intercept)      mean        -8.64     NA        NA     NA       
+#> 2 lnaadt           mean         0.976    NA        NA     NA       
+#> 3 lnlength         mean         1.53      0.195     7.86   3.75e-15
+#> 4 Zero:(Intercept) zero        -0.115     0.320    -0.360  7.19e- 1
+#> 5 Zero:speed50     zero         1.51      0.419     3.60   3.12e- 4
 regCompTest(update(zip, zero_formula = NULL), model2 = zip)$statistics
-#> # A tibble: 8 x 3
+#> # A tibble: 8 × 3
 #>   Statistic                Model BaseModel
 #>   <chr>                    <dbl>     <dbl>
 #> 1 Log-likelihood        -266.     -278.   

@@ -99,6 +99,7 @@ export(rgwar)
 export(rinvgamma)
 export(rlindley)
 export(rmse)
+export(rootogram)
 export(rpLnorm)
 export(rpge)
 export(rpinvgamma)
@@ -106,7 +107,6 @@ export(rpinvgaus)
 export(rplind)
 export(rplindGamma)
 export(rplindLnorm)
-export(rootogram)
 export(rpoisweibull)
 export(rsichel)
 export(rtri)
@@ -143,6 +143,7 @@ importFrom(maxLik,
 importFrom(randtoolbox,halton)
 importFrom(sandwich,sandwich)
 importFrom(stats,
+  .getXlevels,
   as.formula,
   coef,
   complete.cases,
@@ -152,7 +153,6 @@ importFrom(stats,
   dnorm,
   dpois,
   formula,
-  .getXlevels,
   glm,
   glm.fit,
   model.frame,

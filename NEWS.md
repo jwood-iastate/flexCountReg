@@ -195,6 +195,18 @@
   reporting and count coefficients are nearly collinear (correlation above
   0.99), which happens when reporting is separated from the count mean only
   by the curvature of the link function.
+* Likelihood-ratio tests are reported only for valid nesting. `summary()`
+  no longer reports a test against Poisson for PL, PLG and PLL (which cannot
+  reduce to Poisson: their variance is at least mu + mu^2 / 2), for NBP, SI,
+  PW, PGE and GW (nonregular restrictions), or for boundary families with a
+  dispersion formula. `regCompTest()` uses the same rules (same estimator
+  and model components, nested parameters and families), uses a
+  50:50 chi-square mixture when one parameter is on the boundary (also with
+  extra mean covariates), requires two fitted models to use the same
+  observations, outcome, offsets and weights, returns `LR_type`, and gives
+  no p-value (instead of 1) when the larger model has the lower
+  log-likelihood. The README zero-inflation example now compares models by
+  AIC and BIC.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

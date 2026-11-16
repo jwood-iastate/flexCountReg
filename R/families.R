@@ -177,7 +177,8 @@
   PLG = .fcr_family(
     params = list("ln(theta)", "ln(alpha)"),
     dens = function(y, predicted, alpha, sigma, ...)
-      dplindGamma(x = y, mean = predicted, theta = alpha, alpha = sigma),
+      .fcr_quiet_dens(dplindGamma(x = y, mean = predicted, theta = alpha,
+                                  alpha = sigma)),
     variance = function(mu, alpha, sigma)
       mu + ((1 + sigma) * (2 - 2 / (alpha + 2)^2) - 1) * mu^2,
     rand = function(n, mu, alpha, sigma)

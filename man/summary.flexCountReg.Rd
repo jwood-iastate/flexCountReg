@@ -44,12 +44,17 @@ The standard errors are those chosen when the model was fit: Hessian-based,
 robust (sandwich), or bootstrapped. The z statistics and p-values use the
 normal distribution.
 
-For \code{countreg()} models of families that nest the Poisson model, a
-likelihood-ratio test against a Poisson model with the same mean
-specification, rows, offset and weights is reported. For one-parameter
-mixtures where the Poisson model lies on the boundary of the parameter
-space (NB1, NB2, PLN, PIG1, PIG2, PIG, PL), the p-value is halved (a
-50:50 mixture of chi-square distributions with 0 and 1 degrees of freedom).
+For \code{countreg()} models of families that nest the Poisson model with
+a regular restriction, a likelihood-ratio test against a Poisson model
+with the same mean specification, rows, offset and weights is reported.
+For NB1, NB2, PLN, PIG1, PIG2 and PIG with a scalar dispersion parameter
+the Poisson model is on the boundary of the parameter space, and the
+p-value uses a 50:50 mixture of chi-square distributions with 0 and 1
+degrees of freedom; for GP1, GP2 and COM the restriction is interior. No
+test is reported for PL, PLG and PLL (which do not reduce to Poisson), for
+NBP, SI, PW, PGE and GW (nonregular restrictions), for boundary families
+with a dispersion formula, or for models with zero or underreporting
+components.
 }
 \examples{
 \donttest{

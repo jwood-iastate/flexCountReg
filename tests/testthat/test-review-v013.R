@@ -140,3 +140,64 @@ test_that("F03/F04: NB1 underreporting: thinned dispersion, identification", {
   expect_error(countreg(y ~ x, d, family = "NB1", underreport_formula = ~ 1),
                "intercept-only `underreport_formula` is not identified")
 })
+
+test_that("F05: no LR test against Poisson when Poisson is not nested", {
+  d <- washington_roads
+  pl <- countreg(Total_crashes ~ lnaadt, d, family = "PL", method = "BFGS")
+  expect_null(summary(pl)$lr_test)
+  expect_message(r <- regCompTest(pl), "not nested")
+  expect_true(is.na(r$LR_pvalue))
+  expect_true(is.finite(r$AICbase))
+  # NB2 with a scalar dispersion: boundary test (chi-bar-square)
+  nb <- countreg(Total_crashes ~ lnaadt, d, method = "BFGS")
+  lr <- summary(nb)$lr_test
+  expect_true(lr$boundary)
+  expect_equal(lr$p.value, 0.5 * pchisq(lr$statistic, 1, lower.tail = FALSE))
+  # With covariates in the base model too: 0.5 chi2(df - 1) + 0.5 chi2(df)
+  r <- regCompTest(nb)
+  expect_equal(r$LRdof, 2)
+  expect_equal(r$LR_type, "boundary")
+  expect_equal(r$LR_pvalue,
+               0.5 * pchisq(r$LR, 1, lower.tail = FALSE) +
+                 0.5 * pchisq(r$LR, 2, lower.tail = FALSE))
+  # A dispersion formula makes the Poisson restriction nonregular
+  nbf <- countreg(Total_crashes ~ lnaadt, d, method = "BFGS",
+                  dis_param_formula_1 = ~ speed50)
+  expect_null(summary(nbf)$lr_test)
+  # GP1: interior restriction (phi = 0), ordinary chi-square
+  gp <- countreg(Total_crashes ~ lnaadt, d, family = "GP1", method = "BFGS")
+  lr <- summary(gp)$lr_test
+  expect_false(lr$boundary)
+  expect_equal(lr$p.value, pchisq(lr$statistic, 1, lower.tail = FALSE))
+})
+
+test_that("F05: two-model LR tests check nesting and the sample", {
+  d <- washington_roads
+  nb1 <- countreg(Total_crashes ~ lnaadt, d, family = "NB1", method = "BFGS")
+  nbp <- countreg(Total_crashes ~ lnaadt, d, family = "NBP", method = "BFGS")
+  pl <- countreg(Total_crashes ~ lnaadt, d, family = "PL", method = "BFGS")
+  plg <- countreg(Total_crashes ~ lnaadt, d, family = "PLG", method = "BFGS")
+  # NB1 is NBP with P = 1 (interior)
+  r <- regCompTest(nb1, model2 = nbp)
+  expect_equal(r$LR_type, "interior")
+  expect_equal(r$LR_pvalue, pchisq(r$LR, 1, lower.tail = FALSE))
+  # PL is PLG with alpha = 0 (boundary)
+  expect_equal(.fcr_nesting(.fcr_model_spec(pl), .fcr_model_spec(plg))$type,
+               "boundary")
+  # Poisson within NB2, two-model form: boundary test
+  po <- countreg(Total_crashes ~ lnaadt, d, family = "POISSON",
+                 method = "BFGS")
+  nb2 <- countreg(Total_crashes ~ lnaadt, d, method = "BFGS")
+  r <- regCompTest(nb2, model2 = po)
+  expect_equal(r$LR_type, "boundary")
+  expect_equal(r$LR_pvalue, 0.5 * pchisq(r$LR, 1, lower.tail = FALSE))
+  # PL and NB1 have the same number of parameters; PL vs NBP is not nested
+  expect_warning(r <- regCompTest(pl, model2 = nbp), "not nested")
+  expect_true(is.na(r$LR_pvalue))
+  # Same number of rows but different observations
+  d2 <- d
+  d2$Total_crashes <- rev(d2$Total_crashes)
+  other <- countreg(Total_crashes ~ lnaadt, d2, family = "NBP",
+                    method = "BFGS")
+  expect_error(regCompTest(nb1, model2 = other), "same observations")
+})

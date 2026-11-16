@@ -115,6 +115,19 @@ get_model_components <- function(trained_model, data, basemodel = "Poisson",
 #' directly; the model with fewer parameters is the restricted (base) model of
 #' the LR test.
 #'
+#' The LR test is reported only when the restricted model is nested in the
+#' larger one with a regular restriction: the same estimator, zero and
+#' underreporting components and random parameters, the restricted model's
+#' parameters a subset of the larger model's, and the same family or a
+#' nested family (Poisson in NB1, NB2, PLN, PIG1, PIG2, PIG, GP1, GP2 and
+#' COM; NB1 and NB2 in NBP; PL in PLG and PLL). When the restriction puts
+#' one parameter on the boundary of its space (e.g. Poisson in NB2), the
+#' p-value uses a 50:50 mixture of chi-square distributions with df - 1 and
+#' df degrees of freedom. Two fitted models must use the same observations,
+#' outcome, offsets and weights. Otherwise the LR statistic and p-value are
+#' \code{NA} (\code{LR_type} gives the kind of restriction); AIC and BIC are
+#' always reported.
+#'
 #' @name regCompTest
 #' @param model A fitted regression model object.
 #' @param data An optional data frame containing the variables in the model.
@@ -222,20 +235,11 @@ regCompTest <- function(
     round(x, digits)
   }
   
-  make_single_model_stats <- function(model_res, base_res) {
-    LR <- NA_real_
-    LRdof <- NA_integer_
-    LR_pvalue <- NA_real_
-    
-    if (model_res$n.coef > base_res$n.coef) {
-      LR <- -2 * (base_res$LL - model_res$LL)
-      LRdof <- model_res$n.coef - base_res$n.coef
-      if (is.finite(LR) && is.finite(LRdof) && LR > 0 && LRdof > 0) {
-        LR_pvalue <- pchisq(LR, LRdof, lower.tail = FALSE)
-      } else {
-        LR_pvalue <- 1
-      }
-    }
+  make_single_model_stats <- function(model_res, base_res, nest) {
+    test <- .fcr_lr_pvalue(model_res$LL, base_res$LL, nest)
+    LR <- test$LR
+    LRdof <- if (isTRUE(nest$nested)) nest$df else NA_integer_
+    LR_pvalue <- test$p
     
     statistics <- tibble::tibble(
       Statistic = c(
@@ -273,19 +277,16 @@ regCompTest <- function(
     )
   }
   
-  make_pairwise_stats <- function(res1, res2, base_index) {
+  make_pairwise_stats <- function(res1, res2, base_index, nest) {
     comparison_index <- if (base_index == 1L) 2L else 1L
     base_res <- if (base_index == 1L) res1 else res2
     comparison_res <- if (comparison_index == 1L) res1 else res2
     
     # comparison = full model, base = restricted model
-    LRdof <- comparison_res$n.coef - base_res$n.coef
-    LR <- if (LRdof > 0) 2 * (comparison_res$LL - base_res$LL) else NA_real_
-    LR_pvalue <- if (is.finite(LR)) {
-      stats::pchisq(max(LR, 0), LRdof, lower.tail = FALSE)
-    } else {
-      NA_real_
-    }
+    test <- .fcr_lr_pvalue(comparison_res$LL, base_res$LL, nest)
+    LR <- test$LR
+    LRdof <- if (isTRUE(nest$nested)) nest$df else NA_integer_
+    LR_pvalue <- test$p
     
     statistics <- tibble::tibble(
       Statistic = c(
@@ -337,6 +338,7 @@ regCompTest <- function(
            res_a$nobs, " and ", res_b$nobs, "); an LR test is not valid.",
            call. = FALSE)
     }
+    .fcr_check_same_sample(res_a$pieces, res_b$pieces)
     # The restricted (base) model is the one with fewer parameters
     if (res_a$n.coef <= res_b$n.coef) {
       res1 <- res_a; res2 <- res_b; restricted_is_first <- TRUE
@@ -358,6 +360,15 @@ regCompTest <- function(
     }
     LLbase <- base_fit$LL
     n.coef.base <- base_fit$n.coef
+    mean_cols <- colnames(pc$X)
+    base_spec <- .fcr_base_spec(
+      basemodel, if (variables) mean_cols else "(Intercept)")
+    nest <- .fcr_nesting(base_spec, .fcr_model_spec(model))
+    if (!nest$nested && res1$n.coef > n.coef.base) {
+      message("No LR test: the ", toupper(basemodel), " base model is not ",
+              "nested in the fitted model with a regular restriction (",
+              nest$reason, "). Compare the models with AIC and BIC.")
+    }
     AICbase <- -2 * LLbase + 2 * n.coef.base
     BICbase <- -2 * LLbase + log(res1$n_bic) * n.coef.base
     
@@ -368,7 +379,7 @@ regCompTest <- function(
       BIC = BICbase
     )
     
-    summary_res <- make_single_model_stats(res1, base_res)
+    summary_res <- make_single_model_stats(res1, base_res, nest)
     
     gtTable <- gt::gt(summary_res$statistics) |>
       tab_header(title = "Model Comparison Statistics") |>
@@ -386,6 +397,7 @@ regCompTest <- function(
       BIC = res1$BIC,
       BICbase = BICbase,
       LR_pvalue = summary_res$LR_pvalue,
+      LR_type = if (nest$nested) nest$type else NA_character_,
       PseudoR2 = res1$PseudoR2,
       statistics = summary_res$statistics,
       gtTable = gtTable,
@@ -403,15 +415,23 @@ regCompTest <- function(
       )
     )
   } else {
+    nest <- .fcr_nesting(.fcr_model_spec(res1$object),
+                         .fcr_model_spec(res2$object))
     if (res1$n.coef == res2$n.coef) {
       warning("The models have the same number of parameters, so they are ",
               "not nested; the LR test is not reported.", call. = FALSE)
-    } else if (res1$LL > res2$LL + 1e-8) {
+    } else if (!nest$nested) {
+      warning("The models are not nested with a regular restriction (",
+              nest$reason, "); the LR test is not reported. Compare them ",
+              "with AIC and BIC.", call. = FALSE)
+    } else if (res1$LL > res2$LL + 1e-6) {
       warning("The restricted model (fewer parameters) has the higher ",
-              "log-likelihood. The models may not be nested, or one of them ",
-              "did not converge.", call. = FALSE)
+              "log-likelihood, so the larger model did not reach its ",
+              "maximum (check its convergence); the LR test is not ",
+              "reported.", call. = FALSE)
+      nest <- list(nested = FALSE)
     }
-    pair_res <- make_pairwise_stats(res2, res1, base_index = 2L)
+    pair_res <- make_pairwise_stats(res2, res1, base_index = 2L, nest)
     pair_res$base_index <- if (restricted_is_first) 1L else 2L
     pair_res$comparison_index <- 3L - pair_res$base_index
     
@@ -429,6 +449,7 @@ regCompTest <- function(
       LR = pair_res$LR,
       LRdof = pair_res$LRdof,
       LR_pvalue = pair_res$LR_pvalue,
+      LR_type = if (isTRUE(nest$nested)) nest$type else NA_character_,
       PseudoR2_base = pair_res$base_model$PseudoR2,
       PseudoR2_comparison = pair_res$comparison_model$PseudoR2,
       statistics = pair_res$statistics,
@@ -454,3 +475,17 @@ regCompTest <- function(
   
   return(test)
 }
+
+# Two fits compared by an LR test must use the same observations, outcome,
+# offsets and weights.
+.fcr_check_same_sample <- function(pa, pb) {
+  same <- length(pa$y) == length(pb$y) && isTRUE(all.equal(pa$y, pb$y)) &&
+    isTRUE(all.equal(pa$weights, pb$weights)) &&
+    isTRUE(all.equal(pa$offset, pb$offset))
+  if (!same) {
+    stop("The two models were not fit to the same observations, outcome, ",
+         "offsets and weights; an LR test is not valid.", call. = FALSE)
+  }
+  invisible(NULL)
+}
+

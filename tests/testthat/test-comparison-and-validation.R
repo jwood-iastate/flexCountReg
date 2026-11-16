@@ -33,7 +33,7 @@ test_that("regCompTest() warns for comparisons that are not nested", {
                                    method = "NM", max.iters = 1,
                                    start.vals = c(-1, 0, 2)))
   expect_warning(r2 <- regCompTest(p, model2 = bad), "higher")
-  expect_equal(r2$LR_pvalue, 1)
+  expect_true(is.na(r2$LR_pvalue))
 })
 
 test_that("negmultinom() validates its inputs", {

@@ -330,8 +330,10 @@
 * Packaging: the parsnip engine is registered even when another package has
   already registered a `count_reg` model; `DESCRIPTION` has `BugReports`
   and the GitHub URL; a `CITATION` file and a contributor guide with a
-  release checklist were added; CI also checks the minimum R version
-  (4.1.0); the slowest stochastic tests are skipped on CRAN.
+  release checklist were added; CI also checks the minimum R version; the
+  slowest stochastic tests are skipped on CRAN.
+* The minimum R version is now 4.5.0, because the current CRAN release of
+  the gsl package (an import) requires it.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

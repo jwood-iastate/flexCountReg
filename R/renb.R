@@ -107,6 +107,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   
   method <- .fcr_check_method(method)
+  .fcr_check_controls(max.iters)
   if (missing(group_var) || is.null(group_var)) {
     stop("`group_var` must name the column(s) that identify the panels.",
          call. = FALSE)

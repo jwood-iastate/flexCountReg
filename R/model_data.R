@@ -135,15 +135,19 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   if (!any(keep)) stop("No complete cases in `data`.", call. = FALSE)
   d <- data[keep, , drop = FALSE]
 
-  mf <- stats::model.frame(formula, d, na.action = stats::na.fail)
+  # Missing raw values were removed above; values made invalid by a
+  # transformation (e.g. log of a negative) are reported by the checks below
+  mf <- stats::model.frame(formula, d, na.action = stats::na.pass)
   y <- stats::model.response(mf)
   if (!is.null(y) && (!is.numeric(y) || is.matrix(y))) {
     stop("The response must be a numeric count vector, not ",
          class(y)[1], ". Convert factors with as.numeric(as.character()).",
          call. = FALSE)
   }
+  if (!is.null(y)) .fcr_check_counts(y)
   tt <- stats::terms(mf)
   X <- stats::model.matrix(tt, mf)
+  .fcr_check_design(X, "formula")
 
   off <- stats::model.offset(mf)
   if (is.null(off)) off <- rep(0, nrow(d))
@@ -160,6 +164,7 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   aux <- Map(function(f, nm) .fcr_rhs_matrix(f, d,
                                              drop_intercept = nm %in% het),
              aux_formulas, names(aux_formulas))
+  for (nm in names(aux)) .fcr_check_design(aux[[nm]], nm)
 
   w <- if (is.null(weights)) {
     rep(1, nrow(d))
@@ -168,7 +173,11 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   } else {
     as.numeric(weights[keep])
   }
+  if (any(!is.finite(w))) stop("`weights` must be finite.", call. = FALSE)
   if (any(w < 0)) stop("`weights` must be non-negative.", call. = FALSE)
+  if (sum(w) <= 0) {
+    stop("`weights` must have a positive total.", call. = FALSE)
+  }
 
   g <- NULL
   if (!is.null(group_var)) {
@@ -238,4 +247,45 @@ forge_new_data <- function(blueprint, new_data) {
   }, blueprint$aux_formulas, names(blueprint$aux_formulas))
 
   list(X = X, offset = as.numeric(off), aux = aux)
+}
+
+# The response must be finite, non-negative whole numbers.
+.fcr_check_counts <- function(y) {
+  y <- as.numeric(y)
+  if (any(!is.finite(y))) {
+    stop("The response must be finite counts (it has infinite or NaN ",
+         "values).", call. = FALSE)
+  }
+  if (any(y < 0)) {
+    stop("The response must be non-negative counts (", sum(y < 0),
+         " negative value(s)).", call. = FALSE)
+  }
+  if (any(abs(y - round(y)) > sqrt(.Machine$double.eps))) {
+    stop("The response must be whole numbers (counts); ",
+         sum(abs(y - round(y)) > sqrt(.Machine$double.eps)),
+         " value(s) are not.", call. = FALSE)
+  }
+  invisible(NULL)
+}
+
+# Design matrices after all formula transformations: finite values (a
+# transformation such as log() of a non-positive value gives NaN or -Inf)
+# and full column rank (no aliased columns).
+.fcr_check_design <- function(X, what) {
+  if (is.null(X) || !ncol(X)) return(invisible(NULL))
+  bad <- colnames(X)[colSums(!is.finite(X)) > 0]
+  if (length(bad)) {
+    stop("The design matrix of `", what, "` has non-finite values in ",
+         "column(s) ", toString(bad), " (e.g. log() of a non-positive ",
+         "value).", call. = FALSE)
+  }
+  qx <- qr(X)
+  if (qx$rank < ncol(X)) {
+    aliased <- colnames(X)[qx$pivot[seq(qx$rank + 1, ncol(X))]]
+    stop("The design matrix of `", what, "` is rank deficient: ",
+         toString(aliased), " ", if (length(aliased) == 1) "is" else "are",
+         " a linear combination of other columns (aliased). Remove ",
+         if (length(aliased) == 1) "it" else "them", ".", call. = FALSE)
+  }
+  invisible(NULL)
 }

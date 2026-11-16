@@ -592,3 +592,33 @@ test_that("F19: CURE and augment(data = ) keep rows aligned", {
   expect_error(cureplot(m, indvar = "nope"), "not found")
   expect_error(cureplot(m, method = "Exact"), "applies only")
 })
+
+test_that("F20: invalid data and controls fail before optimization", {
+  d <- washington_roads
+  f <- Total_crashes ~ lnaadt
+  bad_y <- function(v) { dd <- d; dd$Total_crashes[1] <- v; dd }
+  for (fit in list(
+    function(dd) countreg(f, dd),
+    function(dd) countreg.rp(f, rpar_formula = ~ -1 + speed50, data = dd),
+    function(dd) renb(f, dd, group_var = "ID"),
+    function(dd) negmultinom(f, "ID", dd))) {
+    expect_error(fit(bad_y(-1)), "non-negative counts")
+    expect_error(fit(bad_y(1.5)), "whole numbers")
+  }
+  dd <- d
+  dd$z <- -1
+  expect_error(countreg(Total_crashes ~ log(z), dd), "non-finite values")
+  expect_error(countreg(f, transform(d, z = 0),
+                        dis_param_formula_1 = ~ log(z - 1)),
+               "design matrix of `dis1` has non-finite")
+  dd$x2 <- 2 * dd$lnaadt
+  expect_error(countreg(Total_crashes ~ lnaadt + x2, dd),
+               "rank deficient: x2")
+  expect_error(countreg(f, d, weights = rep(0, nrow(d))), "positive total")
+  expect_error(countreg(f, d, weights = rep(Inf, nrow(d))), "finite")
+  expect_error(countreg(f, d, start.vals = c(NA, 1, 0)), "must be finite")
+  expect_error(countreg(f, d, max.iters = -5), "`max.iters`")
+  expect_error(countreg(f, d, family = "PLN", ndraws = 0), "`ndraws`")
+  expect_error(countreg.rp(f, rpar_formula = ~ -1 + speed50, data = d,
+                           rpardists = "zz"), "Unknown random-parameter")
+})

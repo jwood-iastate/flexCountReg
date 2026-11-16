@@ -279,6 +279,21 @@
   0 or failed with "result would be too long a vector"), the upper tail and
   log scale follow, and zero-length input gives `numeric(0)`. Small upper
   tails are summed directly on the log scale instead of taken as 1 - CDF.
+* `cureplot()` uses the rows used in estimation by default, builds the
+  outcome, predictions and plotting variable with one mask of complete rows
+  (they could be misaligned after missing values), errors for an unknown
+  `indvar`, and passes `method` only to random-parameter and negative
+  multinomial models (the default `NULL` uses the estimator's default).
+  `augment(data = )` predicts the rows of `data` in the order given
+  (before, data of the training size were matched to the cached fitted
+  values by position).
+* Input checks before optimization, shared by all estimators: the response
+  must be finite, non-negative whole numbers (non-integer counts are now an
+  error, not a warning); design matrices must be finite after formula
+  transformations (e.g. `log()` of a non-positive value) and of full column
+  rank (aliased columns are named); weights must be finite with a positive
+  total; `start.vals` must be finite; `max.iters` and `ndraws` must be
+  whole numbers.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

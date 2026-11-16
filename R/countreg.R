@@ -801,6 +801,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
   }
   method <- .fcr_check_method(method)
+  .fcr_check_controls(max.iters, ndraws)
   underreport_family <- match.arg(tolower(underreport_family),
                                   c("logit", "probit"))
   stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))

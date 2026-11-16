@@ -96,6 +96,7 @@ repois <- function(formula,
   if (stderr != "boot") bootstraps <- NULL
   
   method <- .fcr_check_method(method)
+  .fcr_check_controls(max.iters)
   if (missing(group_var) || is.null(group_var)) {
     stop("`group_var` must name the column(s) that identify the groups.",
          call. = FALSE)
@@ -110,8 +111,6 @@ repois <- function(formula,
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }
   y <- as.numeric(prep$y)
-  if (any(y < 0)) stop("The response variable must be nonnegative.",
-                       call. = FALSE)
   X <- prep$X
   cluster_list <- split(seq_along(y), prep$group, drop = TRUE)
   x_names <- c(colnames(X), "lnalpha")

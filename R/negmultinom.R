@@ -245,6 +245,7 @@ negmultinom <- function(formula,
 
   family <- .nm_clean_family(family)
   method <- .nm_clean_method(method)
+  .fcr_check_controls(max.iters)
   stderr <- match.arg(stderr, c("normal", "robust", "boot"))
   if (stderr == "boot" &&
       (!is.numeric(bootstraps) || length(bootstraps) != 1L || bootstraps < 2)) {
@@ -426,11 +427,7 @@ negmultinom <- function(formula,
                         dis2 = if (family == "NMP") dis_param_formula_2),
     offset = offset, group_var = group_var)
 
-  y <- as.numeric(pr$y)
-  if (any(y < 0)) stop("The response variable must be nonnegative.")
-  if (any(abs(y - round(y)) > 1e-8)) {
-    warning("The response variable is not integer-valued.")
-  }
+  y <- as.numeric(pr$y)   # checked counts (prepare_model_data())
   gfac <- pr$group
   g <- as.integer(gfac)
   G <- nlevels(gfac)

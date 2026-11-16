@@ -203,6 +203,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
   }
   method <- .fcr_check_method(method)
+  .fcr_check_controls(max.iters, ndraws)
   .fcr_check_dis_formulas(family, params, dis_param_formula_1,
                           dis_param_formula_2)
   

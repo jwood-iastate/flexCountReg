@@ -26,6 +26,9 @@ NULL
   if (!is.numeric(start.vals)) {
     stop("`start.vals` must be numeric.", call. = FALSE)
   }
+  if (any(!is.finite(start.vals))) {
+    stop("`start.vals` must be finite (no NA, NaN or Inf).", call. = FALSE)
+  }
   if (length(start.vals) != length(x_names)) {
     stop("`start.vals` has ", length(start.vals), " value(s), but the model ",
          "has ", length(x_names), " parameter(s): ", toString(x_names), ".",
@@ -511,5 +514,22 @@ rp_mgf <- function(dist, t, mu, sigma) {
   V <- bread %*% meat %*% bread
   dimnames(V) <- dimnames(bread)
   V
+}
+
+# Scalar optimizer and integration controls: whole numbers, at least 0 for
+# max.iters (0 evaluates the model at the starting values) and at least 1
+# for ndraws.
+.fcr_check_controls <- function(max.iters = NULL, ndraws = NULL) {
+  for (nm in c("max.iters", "ndraws")) {
+    v <- get(nm)
+    if (is.null(v)) next
+    lo <- if (nm == "ndraws") 1 else 0
+    if (!is.numeric(v) || length(v) != 1L || !is.finite(v) || v < lo ||
+        v != round(v)) {
+      stop("`", nm, "` must be a single whole number of at least ", lo, ".",
+           call. = FALSE)
+    }
+  }
+  invisible(NULL)
 }
 

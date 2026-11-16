@@ -295,6 +295,14 @@ Furthermore, \eqn{\phi>-1} is required for this distribution. When
 \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
 To account for the range of possible values, this is modeled as
 \deqn{ln(\phi+1)}.
+
+Underdispersion: when the dispersion parameter is negative, the PMF is
+truncated at this point and renormalized, so its mean and variance differ
+from the formulas above and \eqn{\mu} is a location parameter rather than
+the mean (e.g. GP1 with \eqn{\mu = 0.75} and \eqn{\phi = -0.5} has mean
+0.803; if \eqn{-\mu/\phi < 1} all probability is at 0). Predictions,
+Pearson residuals, simulations and marginal effects use the exact moments
+of the renormalized PMF.
 }
 
 \subsection{Generalized Poisson Version 2 Model}{
@@ -328,6 +336,14 @@ is bounded above by \eqn{\left\lceil -1/\alpha \right\rceil - 1},
 i.e., the largest integer satisfying \eqn{1 + \alpha y > 0}.
 To account for the range of possible values, this is modeled as
 \deqn{ln(\alpha+1)}.
+
+Underdispersion: when the dispersion parameter is negative, the PMF is
+truncated at this point and renormalized, so its mean and variance differ
+from the formulas above and \eqn{\mu} is a location parameter rather than
+the mean (e.g. GP1 with \eqn{\mu = 0.75} and \eqn{\phi = -0.5} has mean
+0.803; if \eqn{-\mu/\phi < 1} all probability is at 0). Predictions,
+Pearson residuals, simulations and marginal effects use the exact moments
+of the renormalized PMF.
 }
 
 \subsection{Negative Binomial Models}{

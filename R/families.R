@@ -15,13 +15,47 @@
 #             or NULL when no closed form is available.
 #   rand      function(n, mu, alpha, sigma): random draws.
 #   mean_adj  function(alpha, sigma): E[Y] / mu (1 except PLN and PLL).
+#   mean      optional function(mu, alpha, sigma): E[Y], for families whose
+#             mean is not proportional to mu (default mu * mean_adj).
 #
 # Adding a family means adding one entry below.
 
 .fcr_family <- function(params, dens, variance = NULL, rand = NULL,
-                        mean_adj = function(alpha, sigma) 1, start = 0) {
+                        mean_adj = function(alpha, sigma) 1, start = 0,
+                        mean = NULL) {
   list(params = params, dens = dens, variance = variance, rand = rand,
-       mean_adj = mean_adj, start = start)
+       mean_adj = mean_adj, start = start, mean = mean)
+}
+
+# Density values for the likelihood: parameter values outside the valid
+# range (tried by the optimizer) have probability 0, without warnings.
+.fcr_quiet_dens <- function(expr) {
+  p <- suppressWarnings(expr)
+  p[is.na(p)] <- 0
+  p
+}
+
+# Exact mean and variance of GP1(mu, phi) as implemented. For phi >= 0 these
+# are the textbook moments mu and mu (1 + phi)^2. For phi < 0 the support is
+# truncated and the PMF renormalized, so mu is a location parameter and the
+# moments are summed from the PMF (each distinct (mu, phi) pair once).
+.gp1_moments <- function(mu, phi) {
+  r <- .fcr_recycle(mu, phi)
+  mu <- r[[1]]; phi <- r[[2]]
+  m <- mu
+  v <- mu * (1 + phi)^2
+  neg <- which(!is.na(mu) & !is.na(phi) & phi < 0 & phi > -1 & mu > 0)
+  for (idx in split(neg, ceiling(seq_along(neg) / 5000))) {
+    lp <- .gp1_trunc_lraw(mu[idx], phi[idx])
+    nk <- nrow(lp)
+    w <- exp(lp - rep(.fcr_col_max(lp), each = nk))
+    w <- w / rep(colSums(w), each = nk)
+    y <- 0:(nk - 1)
+    m1 <- colSums(y * w)
+    m[idx] <- m1
+    v[idx] <- colSums(y^2 * w) - m1^2
+  }
+  list(mean = m, var = v)
 }
 
 .fcr_family_registry <- list(
@@ -35,15 +69,23 @@
   GP1 = .fcr_family(
     params = list("ln(phi+1)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) dgp1(y, mu = predicted, phi = (alpha - 1)),
-    variance = function(mu, alpha, sigma) alpha^2 * mu,   # phi = alpha - 1
+                    engine) .fcr_quiet_dens(dgp1(y, mu = predicted,
+                                                  phi = alpha - 1)),
+    # phi = alpha - 1; for phi < 0, mu is a location parameter (see
+    # .gp1_moments())
+    variance = function(mu, alpha, sigma) .gp1_moments(mu, alpha - 1)$var,
+    mean = function(mu, alpha, sigma) .gp1_moments(mu, alpha - 1)$mean,
     rand = function(n, mu, alpha, sigma) rgp1(n, mu = mu, phi = alpha - 1)),
 
   GP2 = .fcr_family(
     params = list("ln(alpha+1)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) dgp2(y, mu = predicted, alpha = (alpha - 1)),
-    variance = function(mu, alpha, sigma) mu * (1 + (alpha - 1) * mu)^2,
+                    engine) .fcr_quiet_dens(dgp2(y, mu = predicted,
+                                                  alpha = alpha - 1)),
+    # GP2(mu, a) is GP1(mu, phi = a * mu), with a = alpha - 1
+    variance = function(mu, alpha, sigma)
+      .gp1_moments(mu, (alpha - 1) * mu)$var,
+    mean = function(mu, alpha, sigma) .gp1_moments(mu, (alpha - 1) * mu)$mean,
     rand = function(n, mu, alpha, sigma) rgp2(n, mu = mu, alpha = alpha - 1)),
 
   NB1 = .fcr_family(
@@ -264,6 +306,21 @@ get_probFunc <- function(family) {
          call. = FALSE)
   }
   r(n, mu, alpha, sigma)
+}
+
+# Mean of the family at mean parameter mu: E[Y] (mu times the mean
+# adjustment, or the family's own mean function)
+.fcr_family_mean <- function(family, mu, alpha = NULL, sigma = NULL) {
+  f <- .fcr_family_registry[[family]]
+  if (!is.null(f$mean)) return(f$mean(mu, alpha, sigma))
+  mu * .fcr_mean_adjust(family, alpha, sigma)
+}
+
+# Is E[Y] proportional to mu (so it can be applied after averaging over
+# random parameters)? Not for GP1/GP2 with a negative dispersion.
+.fcr_mean_is_linear <- function(family, alpha = NULL) {
+  if (!family %in% c("GP1", "GP2") || is.null(alpha)) return(TRUE)
+  all(alpha >= 1, na.rm = TRUE)   # alpha = dispersion + 1
 }
 
 # Ratio of the mean to exp(X beta)

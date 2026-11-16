@@ -273,6 +273,15 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, nrow(data))
     vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, nrow(data))
     mean_adj <- .fcr_mean_adjust(family, vec_1, vec_2)
+    # For GP1/GP2 with a negative dispersion E[Y] is not proportional to the
+    # mean parameter, so it is averaged over the draws instead
+    linear_mean <- .fcr_mean_is_linear(family, vec_1)
+    if (method == "Exact" && !linear_mean) {
+      message("Exact predictions need a mean proportional to exp(X beta), ",
+              "which does not hold for ", family, " with a negative ",
+              "dispersion; using Simulated predictions.")
+      method <- "Simulated"
+    }
     
     mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
     
@@ -328,7 +337,11 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     mu_mat <- exp(draws_info$xb_rand_mat) * mu_fixed
     
     if (method == 'Simulated') {
-      return(as.vector(rowMeans(mu_mat)) * mean_adj)
+      if (linear_mean) return(as.vector(rowMeans(mu_mat)) * mean_adj)
+      D <- ncol(mu_mat)
+      m <- .fcr_family_mean(family, as.vector(mu_mat), rep(vec_1, D),
+                            if (!is.null(vec_2)) rep(vec_2, D))
+      return(rowMeans(matrix(m, nrow = nrow(mu_mat))))
     }
     
     dist_haltons <- if (legacy) {
@@ -428,7 +441,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   mu_link <- exp(link)
   parts <- list(link = link, mu_link = mu_link, p_report = p_report,
                 alpha = vec_1, sigma = vec_2, family = family,
-                mu_true = mu_link * .fcr_mean_adjust(family, vec_1, vec_2),
+                mu_true = .fcr_family_mean(family, mu_link, vec_1, vec_2),
                 zero_type = model$zero_type)
   parts$response <- parts$mu_true * p_report
   
@@ -608,13 +621,16 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     eb_sd[ok, k] <- sqrt(pmax(m2 - m1^2, 0))
   }
   
-  adj <- rep_len(mean_adj, N)[ok]
+  a1 <- if (!is.null(vec_1)) vec_1[ok]
+  a2 <- if (!is.null(vec_2)) vec_2[ok]
   if (eb_type == "coefficients") {
-    out[ok] <- mu_fixed[ok] *
-      exp(rowSums(X_rand[ok, , drop = FALSE] * eb_coef[ok, , drop = FALSE])) *
-      adj
+    mu_eb <- mu_fixed[ok] *
+      exp(rowSums(X_rand[ok, , drop = FALSE] * eb_coef[ok, , drop = FALSE]))
+    out[ok] <- .fcr_family_mean(family, mu_eb, a1, a2)
   } else {
-    out[ok] <- rowSums(W_obs * mu_ok) * adj
+    m <- .fcr_family_mean(family, as.vector(mu_ok), rep(a1, D),
+                          if (!is.null(a2)) rep(a2, D))
+    out[ok] <- rowSums(W_obs * matrix(m, nrow = n_ok))
   }
   
   structure(out, eb_coefficients = eb_coef, eb_sd = eb_sd)

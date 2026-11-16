@@ -365,8 +365,12 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     } else {
       s_var <- ifelse(is_g, pmax(0.5 * s_rand, 0.05), 0.1)
     }
+    # Scalar distribution parameters start near the Poisson limit (small
+    # overdispersion); GP1/GP2 start exactly at it (dispersion 0), because a
+    # strongly underdispersed start gives zero probability to larger counts
+    dis_start <- if (family %in% c("GP1", "GP2")) 0 else -2
     start <- c(s_fixed, s_rand, s_var, rep(0, N_het_mean + N_het_var),
-               rep(-2, N_dis_1 > 0 && is.null(X_dis_1)),
+               rep(dis_start, N_dis_1 > 0 && is.null(X_dis_1)),
                rep(0, if (!is.null(X_dis_1)) N_dis_1 else 0),
                rep(-2, N_dis_2 > 0 && is.null(X_dis_2)),
                rep(0, if (!is.null(X_dis_2)) N_dis_2 else 0))

@@ -174,6 +174,18 @@
   `dis_param_formula_2` is an error for them. Predictions from fits made with
   earlier versions are unchanged. The `dpge()`/`dpoisweibull()` families of
   functions keep their scale arguments.
+* GP1 and GP2 with a negative dispersion: the PMF is truncated and
+  renormalized, so `mu` is a location parameter, not the mean (GP1 with
+  mu = 0.75 and phi = -0.5 has mean 0.803). Predictions, Pearson residuals
+  (variances), Empirical Bayes and random-parameter predictions now use the
+  exact moments of the implemented PMF. Exact random-parameter predictions
+  fall back to Simulated for these models, because the mean is not
+  proportional to exp(X beta). The GP normalizing constants are computed
+  vectorized, which makes GP random-parameter models much faster.
+* `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
+  instead of a strongly underdispersed value that gave larger counts zero
+  probability, so default GP fits no longer fail with "NA in the initial
+  gradient".
 
 ## Bug fixes found by the extended test suite
 

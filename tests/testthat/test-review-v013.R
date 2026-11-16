@@ -328,3 +328,128 @@ test_that("F10: a free-location random slope cannot also be a fixed slope", {
                                  method = "BFGS", max.iters = 20)),
     "countreg_rp")
 })
+
+test_that("F12: negmultinom predictions use the training blueprint", {
+  d <- washington_roads
+  d$fac <- factor(ifelse(d$speed50 == 1, "fast", "slow"))
+  m <- negmultinom(Total_crashes ~ lnaadt + fac, "ID", d,
+                   offset = "lnlength")
+  # A single row, a factor subset and reordered rows predict the same values
+  all_p <- predict(m, newdata = d)
+  expect_equal(predict(m, newdata = d[5, ]), all_p[5])
+  slow <- d[d$fac == "slow", ][1:3, ]
+  expect_equal(predict(m, newdata = slow), all_p[as.numeric(rownames(slow))])
+  o <- c(10, 3, 7)
+  expect_equal(predict(m, newdata = d[o, ]), all_p[o])
+  # A missing offset column is an error, not a silently dropped offset
+  expect_error(predict(m, newdata = d[1:3, setdiff(names(d), "lnlength")]))
+  # Formula and argument offsets agree; both together are an error
+  m2 <- negmultinom(Total_crashes ~ lnaadt + fac + offset(lnlength), "ID", d)
+  expect_equal(coef(m2), coef(m), tolerance = 1e-6)
+  expect_error(negmultinom(Total_crashes ~ lnaadt + offset(lnlength), "ID", d,
+                           offset = "lnlength"), "not both")
+  # EB predictions on the training data match the fitted EB values
+  expect_equal(predict(m, newdata = d, method = "EB"), m$model$eb.fitted,
+               tolerance = 1e-8)
+  # Named start values are matched by name
+  sv <- rev(coef(m))
+  m3 <- negmultinom(Total_crashes ~ lnaadt + fac, "ID", d,
+                    offset = "lnlength", start.vals = sv)
+  expect_equal(coef(m3), coef(m), tolerance = 1e-5)
+})
+
+test_that("F13: panel-model marginal-effect SEs follow the delta method", {
+  d <- washington_roads
+  for (fit in list(
+    renb(Total_crashes ~ lnaadt + speed50, d, group_var = "ID",
+         method = "BFGS"),
+    poisLind.re(Total_crashes ~ lnaadt + speed50, d, group_var = "ID",
+                method = "BFGS"),
+    repois(Total_crashes ~ lnaadt + speed50, d, group_var = "ID",
+           method = "BFGS"))) {
+    me <- margEffTable(fit, digits = 8)
+    b <- coef(fit)[["speed50"]]
+    se_b <- sqrt(vcov(fit)["speed50", "speed50"])
+    expect_equal(me$std_error[me$term == "speed50"],
+                 100 * exp(b) * se_b, tolerance = 1e-4,
+                 label = class(fit)[1])
+    expect_gt(me$std_error[me$term == "lnaadt"], 0)
+  }
+})
+
+test_that("F24: negmultinom convergence uses the optimizer's codes", {
+  m <- suppressWarnings(negmultinom(Total_crashes ~ lnaadt, "ID",
+                                    washington_roads, method = "BFGS",
+                                    max.iters = 2))
+  expect_false(m$model$converged)
+  m <- negmultinom(Total_crashes ~ lnaadt, "ID", washington_roads)
+  expect_true(m$model$converged)
+  expect_equal(m$model$bic, BIC(m))
+})
+
+test_that("F11: auxiliary formulas keep their trained data-dependent bases", {
+  d <- washington_roads
+  m <- countreg(Total_crashes ~ lnaadt, d, offset = "lnlength",
+                dis_param_formula_1 = ~ poly(AADT, 2), method = "BFGS")
+  p_all <- predict(m, newdata = d, type = "prob", max_count = 3)
+  # One row alone, or in a different batch, gives the same prediction
+  for (i in c(1, 50, 200)) {
+    expect_equal(predict(m, newdata = d[i, ], type = "prob", max_count = 3),
+                 p_all[i, , drop = FALSE], ignore_attr = TRUE)
+  }
+  o <- c(200, 3, 77, 15)
+  expect_equal(predict(m, newdata = d[o, ], type = "prob", max_count = 3),
+               p_all[o, ], ignore_attr = TRUE)
+  # Pearson variances use the same dispersion as in estimation
+  expect_equal(residuals(m, type = "pearson"),
+               as.numeric(d$Total_crashes - fitted(m)) /
+                 sqrt(.fcr_fitted_variance(m)))
+  # scale() in a zero model
+  z <- countreg(Animal ~ lnaadt, d, family = "POISSON",
+                zero_formula = ~ scale(AADT), method = "NR")
+  zp <- predict(z, newdata = d, type = "zero")
+  expect_equal(predict(z, newdata = d[c(9, 2), ], type = "zero"), zp[c(9, 2)])
+})
+
+test_that("F14: the marginal-effect bootstrap resamples independent units", {
+  d <- washington_roads
+  # A cluster drawn twice becomes two panels with fresh ids
+  set.seed(1)
+  rs <- .margEff_resample_data(d[1:40, ], cluster_var = "ID")
+  ids <- split(rs$data$ID, rs$data$.fcr_boot_id)
+  expect_true(all(vapply(ids, function(v) length(unique(v)) == 1, NA)))
+  expect_equal(sum(lengths(ids)), length(rs$idx))
+  expect_true(any(duplicated(vapply(ids, function(v) as.character(v[1]), ""))))
+  # Panel models resample panels by default, and each refit sees one panel
+  # per sampled cluster
+  re <- renb(Total_crashes ~ lnaadt + speed50, d, group_var = "ID",
+             method = "BFGS")
+  calls <- list()
+  trace_refit <- function(object, boot_data, panel = NULL, weights = NULL) {
+    calls[[length(calls) + 1]] <<- list(panel = panel,
+                                        n = length(unique(boot_data[[panel]])))
+    stop("skip")
+  }
+  local_mocked_bindings(.margEff_refit = trace_refit)
+  suppressWarnings(margEffTable(re, vars = "lnaadt", se = "bootstrap",
+                                bootstraps = 3))
+  expect_length(calls, 3)
+  expect_equal(calls[[1]]$panel, ".fcr_boot_id")
+  expect_equal(calls[[1]]$n, length(unique(d$ID)))
+  expect_error(margEffTable(re, se = "bootstrap", cluster_var = "nope"),
+               "not found")
+})
+
+test_that("F14: refits resample numeric weights and do not bootstrap again", {
+  d <- washington_roads
+  w <- rep(1:2, length.out = nrow(d))
+  m <- countreg(Total_crashes ~ lnaadt, d, weights = w, method = "BFGS",
+                stderr = "boot", bootstraps = 5)
+  set.seed(2)
+  rs <- .margEff_resample_data(d)
+  r <- .margEff_refit(m, rs$data, weights = w[rs$idx])
+  ref <- countreg(Total_crashes ~ lnaadt, rs$data, weights = w[rs$idx],
+                  method = "BFGS")
+  expect_equal(coef(r), coef(ref), tolerance = 1e-8)
+  expect_equal(r$model$vcov_type, "hessian")
+})

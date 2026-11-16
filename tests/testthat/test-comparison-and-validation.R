@@ -45,7 +45,7 @@ test_that("negmultinom() validates its inputs", {
                    max.iters = 300)
   expect_equal(m$model$method, "NM")
   expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", d,
-                           start.vals = c(0, 1)), "must have length 3")
+                           start.vals = c(0, 1)), "has 3 parameter")
   expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", d,
                            dis_param_formula_1 = y ~ x), "one-sided")
   expect_error(negmultinom(Total_crashes ~ lnaadt, "ID", as.matrix(d)),

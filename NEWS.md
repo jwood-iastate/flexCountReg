@@ -231,6 +231,27 @@
   when its random parameter is normal, uniform or triangular (only the sum
   of the fixed coefficient and the random mean is identified). Lognormal
   and gamma random parameters with a fixed shift are still allowed.
+* Auxiliary formulas (distribution parameters, underreporting, zero model,
+  random parameters, heterogeneity) keep their trained terms, so
+  data-dependent bases such as `poly()`, `splines::ns()` and `scale()` are
+  evaluated with the training values at prediction time (a row is predicted
+  the same alone or in any batch).
+* `negmultinom()` uses the shared data preparation and stores the training
+  blueprint: predictions use the training factor levels, contrasts and
+  bases and coefficients by name; a missing offset column is an error
+  instead of silently dropping the offset; giving both a formula offset and
+  `offset` is an error; EB predictions handle transformed responses; named
+  `start.vals` are matched by name; convergence uses the optimizer's own
+  return codes (a BFGS fit stopped at the iteration limit was reported as
+  converged); and the stored BIC uses the number of panels, as `BIC()` does.
+* `renb()`, `poisLind.re()` and `repois()` predictions use the estimates by
+  name rather than a cached copy, so their delta-method marginal-effect
+  standard errors are no longer zero.
+* The `margEffTable()` bootstrap resamples the model's independent units by
+  default (panels for panel models), gives every sampled cluster a fresh id
+  (a cluster drawn twice is two panels), resamples a numeric weights vector
+  with its rows, refits without an inner bootstrap, counts only converged
+  refits, and errors for a `cluster_var` that is not in the data.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

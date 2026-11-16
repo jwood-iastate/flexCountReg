@@ -23,18 +23,23 @@ NULL
   !is.null(attr(stats::terms(stats::as.formula(formula)), "offset"))
 }
 
-# Right-hand-side design matrix for an auxiliary formula. Rows with missing
-# values are kept as NA rows (na.pass), so the caller controls row filtering.
+# Right-hand-side design matrix for an auxiliary formula, or for the trained
+# terms of one (which carry the data-dependent bases of poly(), ns(),
+# scale() etc. in their "predvars"). Rows with missing values are kept as NA
+# rows (na.pass), so the caller controls row filtering. The trained terms
+# are returned in attribute "terms".
 .fcr_rhs_matrix <- function(fml, mf_data, xlev = NULL,
                             drop_intercept = FALSE, contrasts = NULL) {
   if (is.null(fml)) return(NULL)
-  tt <- stats::delete.response(stats::terms(stats::as.formula(fml)))
+  tt <- if (inherits(fml, "terms")) fml else
+    stats::delete.response(stats::terms(stats::as.formula(fml)))
   mf <- .fcr_model_frame_xlev(tt, mf_data, xlev)
   X <- stats::model.matrix(tt, mf, contrasts.arg = contrasts)
   ctr <- attr(X, "contrasts")
   if (drop_intercept) X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
   attr(X, "xlevels") <- stats::.getXlevels(tt, mf)
   attr(X, "contrasts") <- ctr
+  attr(X, "terms") <- attr(mf, "terms")
   X
 }
 
@@ -190,6 +195,7 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
                         aux_formulas = aux_formulas,
                         aux_xlevels = lapply(aux, attr, "xlevels"),
                         aux_contrasts = lapply(aux, attr, "contrasts"),
+                        aux_terms = lapply(aux, attr, "terms"),
                         x_names = colnames(X)))
 }
 
@@ -221,9 +227,14 @@ forge_new_data <- function(blueprint, new_data) {
   }
 
   het <- c("het_mean", "het_var")
+  # Trained terms (data-dependent bases fixed at their training values);
+  # blueprints from earlier versions only have the formulas
   aux <- Map(function(f, nm) {
-    .fcr_rhs_matrix(f, new_data, blueprint$aux_xlevels[[nm]], nm %in% het,
-                    contrasts = blueprint$aux_contrasts[[nm]])
+    m <- .fcr_rhs_matrix(blueprint$aux_terms[[nm]] %||% f, new_data,
+                         blueprint$aux_xlevels[[nm]], nm %in% het,
+                         contrasts = blueprint$aux_contrasts[[nm]])
+    attr(m, "terms") <- NULL
+    m
   }, blueprint$aux_formulas, names(blueprint$aux_formulas))
 
   list(X = X, offset = as.numeric(off), aux = aux)

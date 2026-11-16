@@ -362,7 +362,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   # 2a. NEGATIVE MULTINOMIAL FAMILY (negmultinom)
   # =========================================================================
   else if (modtype == "NegMultinom") {
-    return(.nm_predict(model, data, method = method))
+    return(.nm_predict(object, data, method = method))
   }
   
   # =========================================================================
@@ -372,7 +372,14 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     
     bp <- .fcr_blueprint(object)
     fd <- forge_new_data(bp, data)
-    beta_pred <- model$beta_pred
+    # Coefficients by name from the estimates (so that methods that perturb
+    # the estimates, such as delta-method standard errors, change the
+    # predictions); fits from earlier versions may only have beta_pred
+    beta_pred <- if (all(colnames(fd$X) %in% names(model$estimate))) {
+      .fcr_coefs(model$estimate, colnames(fd$X))
+    } else {
+      model$beta_pred
+    }
     if (length(beta_pred) != ncol(fd$X)) {
       stop("The model's coefficients do not match its design matrix.",
            call. = FALSE)

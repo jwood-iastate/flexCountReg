@@ -112,7 +112,8 @@ test_that("fitted objects keep the expanded `.` formulas", {
   # Bootstrap refits of countreg.rp() must not expand `.` against the
   # bootstrap panel column (it would add a coefficient)
   set.seed(1)
-  r <- countreg.rp(Total_crashes ~ ., rpar_formula = ~ -1 + lnlength,
+  r <- countreg.rp(Total_crashes ~ . - lnlength,
+                   rpar_formula = ~ -1 + lnlength,
                    data = d, ndraws = 20, method = "BFGS", stderr = "boot",
                    bootstraps = 3, max.iters = 50)
   expect_equal(dim(vcov(r)), rep(length(coef(r)), 2))

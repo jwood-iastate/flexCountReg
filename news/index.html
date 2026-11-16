@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,9 +32,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.3" id="flexcountreg-013-development">flexCountReg 0.1.3 (development)<a class="anchor" aria-label="anchor" href="#flexcountreg-013-development"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.1.2" id="flexcountreg-012-development">flexCountReg 0.1.2 (development)<a class="anchor" aria-label="anchor" href="#flexcountreg-012-development"></a></h2>
 <div class="section level3">
-<h3 id="tidymodels-and-broom-0-1-3">tidymodels and broom<a class="anchor" aria-label="anchor" href="#tidymodels-and-broom-0-1-3"></a></h3>
+<h3 id="tidymodels-and-broom-0-1-2">tidymodels and broom<a class="anchor" aria-label="anchor" href="#tidymodels-and-broom-0-1-2"></a></h3>
 <ul><li>
 <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> and <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code> methods, using the generics package (re-exported, so <code><a href="https://jwood-iastate.github.io/flexCountReg/">library(flexCountReg)</a></code> provides them). <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> returns the standard broom columns plus a <code>component</code> column (mean, distribution, underreporting, random-parameter and heterogeneity parameters), with <code>conf.int</code> and <code>exponentiate</code> (incidence rate ratios for the mean model). <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> now works for every estimator. broom is no longer a dependency.</li>
 <li>New <code><a href="../reference/count_reg.html">count_reg()</a></code> parsnip model with a <code>"flexCountReg"</code> engine, registered when parsnip is loaded (parsnip is suggested, not required). The count <code>family</code> is a main argument and can be tuned with <code><a href="../reference/count_family.html">count_family()</a></code> (a dials parameter). Case weights are passed as frequency weights.</li>
@@ -43,7 +43,7 @@
 <li>Standard errors are <code>NA</code> (instead of 0) when the estimated variance is negative, which happens for weakly identified parameters. <code><a href="../reference/regCompTable.html">regCompTable()</a></code> shows such standard errors as <code>NA</code> without significance stars.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="breaking-changes-and-changed-results-0-1-3">Breaking changes and changed results<a class="anchor" aria-label="anchor" href="#breaking-changes-and-changed-results-0-1-3"></a></h3>
+<h3 id="breaking-changes-and-changed-results-0-1-2">Breaking changes and changed results<a class="anchor" aria-label="anchor" href="#breaking-changes-and-changed-results-0-1-2"></a></h3>
 <ul><li><p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> now returns a <code>summary.flexCountReg</code> object with a print method (coefficients with z statistics, the standard-error type, log-likelihood, AIC, BIC, N and panels, convergence, and a likelihood-ratio test against Poisson for <code><a href="../reference/countreg.html">countreg()</a></code> models). Use <code>summary(m)$coefficients</code> for the coefficient matrix, or <code>tibble::as_tibble(summary(m))</code> for the tibble that <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> returned before. The offset is shown as a note, not as a coefficient row.</p></li>
 <li><p>Fitted objects have class <code>c(&lt;estimator&gt;, "flexCountReg")</code>, with <code>&lt;estimator&gt;</code> one of <code>countreg</code>, <code>countreg_rp</code>, <code>renb</code>, <code>poislind_re</code>, <code>repois</code> and <code>negmultinom</code>. The unused S4 class definition is removed. The training data are stored once (<code>obj$data</code>); <code>obj$model$data</code> is gone.</p></li>
 <li><p><code><a href="../reference/regCompTest.html">regCompTest()</a></code> with two models now treats the model with fewer parameters as the restricted model (before: the one with the higher log-likelihood), errors when the models were fit to different numbers of observations, and warns when the restricted model has the higher log-likelihood. Its base and null models use the same rows, offset and weights as the fitted model. McFadden’s R^2 is computed against an intercept-only Poisson model for every model by default (so it is comparable across distributions); a different baseline family, with or without the mean covariates, can be chosen with <code>basemodel</code> and <code>variables</code> in both <code><a href="../reference/regCompTest.html">regCompTest()</a></code> and <code><a href="../reference/regCompTable.html">regCompTable()</a></code>.</p></li>
@@ -65,7 +65,7 @@
 <li><p><code><a href="../reference/PoissonLognormal.html">dpLnorm()</a></code>, <code><a href="../reference/PoissonInverseGaussian.html">dpinvgaus()</a></code>, <code><a href="../reference/PoissonInverseGamma.html">dpinvgamma()</a></code>, <code><a href="../reference/PoissonLindley.html">dplind()</a></code> and <code><a href="../reference/Generalized-Waring.html">dgwar()</a></code> are vectorized directly instead of through <code><a href="https://rdrr.io/r/base/Vectorize.html" class="external-link">Vectorize()</a></code>. Off-support <code>x</code> gives 0 with a warning, and invalid parameters give <code>NaN</code> with a warning.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-0-1-3">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-3"></a></h3>
+<h3 id="bug-fixes-0-1-2">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-1-2"></a></h3>
 <ul><li>
 <code><a href="../reference/countreg.html">countreg()</a></code>: offsets given with <code><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset()</a></code> in the formula are now used in estimation and prediction.</li>
 <li>
@@ -88,7 +88,7 @@
 <code><a href="../reference/countreg.rp.html">countreg.rp()</a></code> now stores its offset, so <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> uses it. Simulated predictions now include heterogeneity in means and variances.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-distributions-and-panel-models-0-1-3">Bug fixes (distributions and panel models)<a class="anchor" aria-label="anchor" href="#bug-fixes-distributions-and-panel-models-0-1-3"></a></h3>
+<h3 id="bug-fixes-distributions-and-panel-models-0-1-2">Bug fixes (distributions and panel models)<a class="anchor" aria-label="anchor" href="#bug-fixes-distributions-and-panel-models-0-1-2"></a></h3>
 <ul><li>
 <code><a href="../reference/PoissonInverseGaussian.html">dpinvgaus()</a></code> and <code><a href="../reference/PoissonInverseGamma.html">dpinvgamma()</a></code> are computed on the log scale, so they no longer return <code>Inf</code> or <code>NaN</code> at large counts (e.g. y &gt; 85 with mu = 2, eta = 0.5).</li>
 <li>r-functions (<code><a href="../reference/PoissonLognormal.html">rpLnorm()</a></code>, <code><a href="../reference/PoissonLindley.html">rplind()</a></code>, <code><a href="../reference/PoissonLindleyLognormal.html">rplindLnorm()</a></code>, <code><a href="../reference/NegativeBinomialLindley.html">rplindGamma()</a></code>, <code><a href="../reference/PoissonGeneralizedExponential.html">rpge()</a></code>, <code><a href="../reference/COMDistribution.html">rcom()</a></code>, <code><a href="../reference/GeneralizedPoisson.html">rgp1()</a></code>, <code><a href="../reference/GeneralizedPoisson2.html">rgp2()</a></code>) accept vector parameters, as needed for simulation from fitted models. Mixture families draw the mixing variable per observation.</li>
@@ -108,7 +108,7 @@
 <code>predict(method = "Exact")</code> for <code><a href="../reference/countreg.rp.html">countreg.rp()</a></code> includes heterogeneity in means and variances.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="bug-fixes-found-by-the-extended-test-suite-0-1-3">Bug fixes found by the extended test suite<a class="anchor" aria-label="anchor" href="#bug-fixes-found-by-the-extended-test-suite-0-1-3"></a></h3>
+<h3 id="bug-fixes-found-by-the-extended-test-suite-0-1-2">Bug fixes found by the extended test suite<a class="anchor" aria-label="anchor" href="#bug-fixes-found-by-the-extended-test-suite-0-1-2"></a></h3>
 <ul><li>
 <code><a href="../reference/COMDistribution.html">pcom()</a></code> ignored <code>lower.tail</code> and <code>log.p</code>. Recycling of <code>mu</code>, <code>lambda</code> and <code>nu</code> in <code><a href="../reference/COMDistribution.html">dcom()</a></code>, <code><a href="../reference/COMDistribution.html">pcom()</a></code> and <code><a href="../reference/COMDistribution.html">qcom()</a></code> follows the base-R rule (length 1 or the length of the first argument; other lengths are an error).</li>
 <li>
@@ -131,7 +131,7 @@
 <code><a href="../reference/regCompTable.html">regCompTable()</a></code> fits the baseline model only when the pseudo-R^2 is requested. <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> classifies parameters from the model’s bookkeeping (covariates named like distribution parameters are no longer misclassified), and <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code> computes residuals from the transformed response (e.g. <code>log(y + 1) ~ x</code>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-0-1-3">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-1-3"></a></h3>
+<h3 id="documentation-0-1-2">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-1-2"></a></h3>
 <ul><li>Corrected the Generalized Poisson parameter restrictions, the parameter table in <code><a href="../reference/countreg.html">?countreg</a></code> (PGE, Sichel), the Poisson-Lindley-Lognormal mean and parameter descriptions, the RENB density, the Sichel reference (Zou, Lord and Zhang, 2012) and several typos. <code><a href="../reference/countreg.html">?countreg</a></code> no longer claims that an LR test is printed; see <code><a href="../reference/regCompTest.html">regCompTest()</a></code>.</li>
 <li>
 <code><a href="../reference/countreg.rp.html">?countreg.rp</a></code> documents each random-parameter distribution’s scale, the heterogeneity specification and the lognormal caveat.</li>
@@ -139,7 +139,7 @@
 <code><a href="../reference/washington_roads.html">?washington_roads</a></code> describes the panel structure; the <code>Rollover</code> label in the data is corrected. The README function list is corrected and completed.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="other-changes-0-1-3">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-1-3"></a></h3>
+<h3 id="other-changes-0-1-2">Other changes<a class="anchor" aria-label="anchor" href="#other-changes-0-1-2"></a></h3>
 <ul><li><p>Dependencies: broom, dplyr, modelr, purrr, stringr and tidyr are no longer used; generics is added. Whole-namespace imports are replaced by <code>importFrom()</code>. lamW stays in Suggests (its uses in <code><a href="../reference/Lindley.html">qlindley()</a></code> and lognormal random-parameter predictions are checked with <code><a href="https://rlang.r-lib.org/reference/is_installed.html" class="external-link">rlang::check_installed()</a></code>); dials and parsnip are added to Suggests.</p></li>
 <li><p><code><a href="../reference/Lindley.html">rlindley()</a></code> draws from the gamma mixture form directly (no longer needs lamW) and no longer warns for every whole-number <code>n</code>.</p></li>
 <li><p><code>src/Makevars</code> and <code>src/Makevars.win</code> are removed (no OpenMP or BLAS is used), so <code>SystemRequirements: GNU make</code> is dropped.</p></li>
@@ -148,7 +148,7 @@
 <li><p><code>msg1</code> and <code>.dpge_one</code> are no longer exported. The hand-maintained <code>Collate</code> field is removed.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="new-features-0-1-3">New features<a class="anchor" aria-label="anchor" href="#new-features-0-1-3"></a></h3>
+<h3 id="new-features-0-1-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-1-2"></a></h3>
 <ul><li><p>Zero-inflated and hurdle models for every <code><a href="../reference/countreg.html">countreg()</a></code> family, through the new <code>zero_formula</code> and <code>zero_type</code> arguments (checked against <code><a href="https://rdrr.io/pkg/pscl/man/zeroinfl.html" class="external-link">pscl::zeroinfl()</a></code> and <code><a href="https://rdrr.io/pkg/pscl/man/hurdle.html" class="external-link">pscl::hurdle()</a></code>).</p></li>
 <li><p><code>predict(type = "prob")</code> (probabilities of each count), randomized quantile residuals (<code>residuals(type = "quantile")</code>) and <code><a href="../reference/rootogram.html">rootogram()</a></code>.</p></li>
 <li><p>Analytic gradients for the Poisson, NB1 and NB2 families (with or without a dispersion formula), used by the gradient-based optimizers and by robust standard errors.</p></li>
@@ -158,14 +158,14 @@
 <li><p><code><a href="../reference/countreg.html">countreg()</a></code> accepts <code>weights</code> as a numeric vector as well as a column name.</p></li>
 </ul></div>
 <div class="section level3">
-<h3 id="deprecations-0-1-3">Deprecations<a class="anchor" aria-label="anchor" href="#deprecations-0-1-3"></a></h3>
+<h3 id="deprecations-0-1-2">Deprecations<a class="anchor" aria-label="anchor" href="#deprecations-0-1-2"></a></h3>
 <ul><li>
 <code>predict(object, data = ...)</code> is deprecated; use <code>newdata</code>.</li>
 <li>
 <code>print.level</code> in <code><a href="../reference/renb.html">renb()</a></code>, <code><a href="../reference/poisLindRE.html">poisLind.re()</a></code> and <code><a href="../reference/repois.html">repois()</a></code> is deprecated; use <code>verbose</code>. <code>panel_id</code> in <code><a href="../reference/countreg.rp.html">countreg.rp()</a></code> is deprecated; use <code>group_var</code>. The old names still work, with a once-per-session warning.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="methods-and-api-consistency-0-1-3">Methods and API consistency<a class="anchor" aria-label="anchor" href="#methods-and-api-consistency-0-1-3"></a></h3>
+<h3 id="methods-and-api-consistency-0-1-2">Methods and API consistency<a class="anchor" aria-label="anchor" href="#methods-and-api-consistency-0-1-2"></a></h3>
 <ul><li>New methods for all models: <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, <code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code>, <code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> (response and, for <code><a href="../reference/countreg.html">countreg()</a></code>, Pearson), <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code>, <code><a href="https://rdrr.io/r/stats/formula.html" class="external-link">formula()</a></code>, <code><a href="https://rdrr.io/r/stats/terms.html" class="external-link">terms()</a></code> and <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>. <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code> and <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> now work. For panel models, <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code> reports the number of panels as its <code>nobs</code>, so <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code> uses the number of independent units.</li>
 <li>
 <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code> draws responses from fitted <code><a href="../reference/countreg.html">countreg()</a></code> models (all families, including underreporting).</li>

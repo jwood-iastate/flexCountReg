@@ -224,14 +224,14 @@ zero-inflated or hurdle version of any family can be fitted with
 
 zinb <- countreg(f, data = washington_roads, family = "NB2",
                  offset = "lnlength", zero_formula = ~ 1, method = "NR")
-#> Warning in stats::dnbinom(y, size = 1/alpha, mu = predicted): NaNs produced
-#> Warning in stats::dnbinom(y, size = 1/alpha, mu = predicted): NaNs produced
+#> Warning: The Hessian is singular; standard errors use a generalized inverse and
+#> may be unreliable. The model may not be identified.
 c(NB2 = as.numeric(logLik(models$NB2)), ZINB = as.numeric(logLik(zinb)))
 #>       NB2      ZINB 
-#> -1090.559 -1090.591
+#> -1090.559 -1090.559
 # Estimated probability of a structural zero
 unname(plogis(coef(zinb)["Zero:(Intercept)"]))
-#> [1] 0.0003252701
+#> [1] 8.163093e-06
 ```
 
 Here the probability of a structural zero is estimated at essentially
@@ -268,7 +268,7 @@ margEffTable(models$NB2)
 #> Method: delta 
 #> 
 #>     term variable_type           effect_metric estimate std_error t_value
-#>   lnaadt    continuous Average marginal effect    0.532     0.037  14.495
+#>   lnaadt    continuous Average marginal effect    0.532     0.037  14.536
 #>  speed50     indicator   Pseudo-elasticity (%)  -43.319     6.246  -6.935
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
 #>        0 ***    0.460    0.604  1501                    NA

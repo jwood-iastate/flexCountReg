@@ -83,7 +83,7 @@ s
 #>     method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 47 
+#> Iterations: 48 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -102,10 +102,10 @@ s
 #> LR test vs Poisson: chi-sq = 36.843 on 2 df, p-value = 9.99e-09 
 s$coefficients
 #>                         Estimate Std. Error    z value     Pr(>|z|)      2.5 %
-#> (Intercept)           -8.7563978 0.44040867 -19.882437 5.775863e-88 -9.6195830
+#> (Intercept)           -8.7563978 0.44040867 -19.882437 5.775862e-88 -9.6195830
 #> lnaadt                 1.0803267 0.05178872  20.860270 1.229765e-96  0.9788227
 #> lnlength               0.7588171 0.06909183  10.982731 4.627175e-28  0.6233996
-#> speed50               -0.5406739 0.11728001  -4.610112 4.024529e-06 -0.7705385
+#> speed50               -0.5406739 0.11728001  -4.610112 4.024528e-06 -0.7705385
 #> ln(alpha):(Intercept) -1.3232832 0.31500069  -4.200890 2.658677e-05 -1.9406732
 #> ln(alpha):speed50      1.2669833 0.48492203   2.612757 8.981519e-03  0.3165536
 #>                           97.5 %

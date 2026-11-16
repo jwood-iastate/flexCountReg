@@ -884,9 +884,9 @@ if (requireNamespace("poilog", quietly = TRUE)) {
 #>             Estimate Std. Error z value Pr(>|z|)    
 #> (Intercept)   -7.507         NA      NA       NA    
 #> lnaadt         0.910         NA      NA       NA    
-#> lnlength       0.847      0.110    7.70  1.4e-14 ***
-#> speed50       -0.459      0.105   -4.37  1.2e-05 ***
-#> AADT10kplus    0.809      0.133    6.09  1.1e-09 ***
+#> lnlength       0.847      0.112    7.58  3.5e-14 ***
+#> speed50       -0.459      0.106   -4.34  1.4e-05 ***
+#> AADT10kplus    0.809      0.133    6.07  1.3e-09 ***
 #> ln(sigma)     -0.734         NA      NA       NA    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -915,15 +915,15 @@ summary(plogn_underreport)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                            Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)                 -6.6903     1.1072   -6.04  1.5e-09 ***
-#> lnaadt                       0.9189     0.0551   16.68  < 2e-16 ***
-#> lnlength                     0.8470     0.0700   12.11  < 2e-16 ***
-#> speed50                      0.0534     0.4474    0.12     0.90    
-#> AADT10kplus                 -0.0274     1.0722   -0.03     0.98    
-#> ln(alpha)                   -1.4959     0.3417   -4.38  1.2e-05 ***
-#> Underreporting:(Intercept)  -0.0898     1.1909   -0.08     0.94    
-#> Underreporting:speed50      -0.5394     0.6136   -0.88     0.38    
-#> Underreporting:AADT10kplus   2.5350     4.5067    0.56     0.57    
+#> (Intercept)                 -6.6903     0.8897   -7.52  5.5e-14 ***
+#> lnaadt                       0.9189     0.0553   16.62  < 2e-16 ***
+#> lnlength                     0.8470     0.0700   12.10  < 2e-16 ***
+#> speed50                      0.0534     0.3896    0.14     0.89    
+#> AADT10kplus                 -0.0274     0.8150   -0.03     0.97    
+#> ln(alpha)                   -1.4959     0.3406   -4.39  1.1e-05 ***
+#> Underreporting:(Intercept)  -0.0898     0.9580   -0.09     0.93    
+#> Underreporting:speed50      -0.5394     0.4020   -1.34     0.18    
+#> Underreporting:AADT10kplus   2.5350     2.6316    0.96     0.34    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -945,12 +945,12 @@ summary(com_model)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  -7.4214     0.4652  -15.95  < 2e-16 ***
-#> lnaadt        0.9124     0.0562   16.23  < 2e-16 ***
-#> lnlength      0.8399     0.0667   12.59  < 2e-16 ***
-#> speed50      -0.4451     0.1031   -4.32  1.6e-05 ***
-#> AADT10kplus   0.7875     0.1259    6.25  4.0e-10 ***
-#> ln(nu)       -0.6194     0.1714   -3.61    3e-04 ***
+#> (Intercept)  -7.4202     0.4674  -15.88  < 2e-16 ***
+#> lnaadt        0.9123     0.0565   16.16  < 2e-16 ***
+#> lnlength      0.8399     0.0668   12.58  < 2e-16 ***
+#> speed50      -0.4452     0.1031   -4.32  1.6e-05 ***
+#> AADT10kplus   0.7877     0.1259    6.26  4.0e-10 ***
+#> ln(nu)       -0.6195     0.1714   -3.61    3e-04 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

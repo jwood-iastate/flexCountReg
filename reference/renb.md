@@ -172,13 +172,13 @@ summary(renb.mod)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>               Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -9.466      1.309   -7.23  4.8e-13 ***
-#> lnaadt           0.978      0.153    6.41  1.5e-10 ***
-#> speed50         -0.966      0.338   -2.85   0.0043 ** 
-#> ShouldWidth04   -0.363      0.276   -1.32   0.1880    
-#> AADTover10k     -0.946      0.535   -1.77   0.0771 .  
-#> ln(a-1)          2.977      0.290   10.26  < 2e-16 ***
-#> ln(b)            0.573      0.423    1.36   0.1749    
+#> (Intercept)     -9.466      0.869  -10.89   <2e-16 ***
+#> lnaadt           0.978      0.101    9.73   <2e-16 ***
+#> speed50         -0.966      0.342   -2.82   0.0048 ** 
+#> ShouldWidth04   -0.363      0.273   -1.33   0.1844    
+#> AADTover10k     -0.946      0.510   -1.85   0.0636 .  
+#> ln(a-1)          2.977         NA      NA       NA    
+#> ln(b)            0.573      0.134    4.27    2e-05 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> Offset: lnlength (coefficient fixed at 1)

@@ -1,6 +1,6 @@
 # Changelog
 
-## flexCountReg 0.1.3 (development)
+## flexCountReg 0.1.2 (development)
 
 ### tidymodels and broom
 

@@ -41,7 +41,8 @@ negmultinom(
   start.vals = NULL,
   stderr = "normal",
   bootstraps = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  keep_data = TRUE
 )
 ```
 
@@ -121,6 +122,15 @@ negmultinom(
 - verbose:
 
   logical. If `TRUE`, optimizer progress is printed.
+
+- keep_data:
+
+  logical; if `FALSE`, the training data are not stored in the fitted
+  object (saving memory).
+  [`predict()`](https://rdrr.io/r/stats/predict.html) then needs
+  `newdata`, and
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html)/[`residuals()`](https://rdrr.io/r/stats/residuals.html)
+  are unavailable.
 
 ## Value
 
@@ -262,24 +272,27 @@ nm2 <- negmultinom(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
                    offset = "lnlength")
 summary(nm2)
 #> Call:
-#>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
+#> negmultinom(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + 
+#>     AADTover10k, group_var = "ID", data = washington_roads, offset = "lnlength")
 #> 
-#>  Method:  NegMultinom 
-#> Iterations:  39 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -265.1241 
+#> Model: negmultinom | family: NM2 | optimizer: BFGS
+#> Iterations: 34 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 7 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.71        1.36    -7.12      0        -12.4       -7.04 
-#> 2 lnaadt              1.00        0.159    6.32      0          0.692      1.32 
-#> 3 speed50            -0.821       0.327   -2.51      0.012     -1.46      -0.18 
-#> 4 ShouldWidth04      -0.425       0.281   -1.51      0.131     -0.977      0.126
-#> 5 AADTover10k        -0.911       0.513   -1.78      0.076     -1.92       0.095
-#> 6 ln(alpha)          -0.023       0.472   -0.048     0.962     -0.948      0.903
-#> 7 lnlength (Offset …  1          NA       NA        NA         NA         NA    
+#> Coefficients (standard errors: Hessian-based):
+#>               Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)    -9.7059     1.3624   -7.12  1.0e-12 ***
+#> lnaadt          1.0035     0.1589    6.32  2.7e-10 ***
+#> speed50        -0.8214     0.3274   -2.51    0.012 *  
+#> ShouldWidth04  -0.4252     0.2813   -1.51    0.131    
+#> AADTover10k    -0.9110     0.5132   -1.78    0.076 .  
+#> ln(alpha)      -0.0226     0.4723   -0.05    0.962    
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> Offset: lnlength (coefficient fixed at 1)
+#> 
+#> Log-likelihood: -265.124 | AIC: 542.248 | BIC: 567.619 
+#> N: 1501 | panels: 507
 
 # NM1: cluster totals follow an NB-1 distribution
 nm1 <- negmultinom(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
@@ -287,24 +300,28 @@ nm1 <- negmultinom(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
                    family = "NM1", offset = "lnlength")
 summary(nm1)
 #> Call:
-#>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
+#> negmultinom(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + 
+#>     AADTover10k, group_var = "ID", data = washington_roads, family = "NM1", 
+#>     offset = "lnlength")
 #> 
-#>  Method:  NegMultinom 
-#> Iterations:  30 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -264.7622 
+#> Model: negmultinom | family: NM1 | optimizer: BFGS
+#> Iterations: 30 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 7 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.26        1.37     -6.74     0        -12.0       -6.57 
-#> 2 lnaadt              0.959       0.159     6.03     0          0.647      1.27 
-#> 3 speed50            -0.919       0.334    -2.75     0.006     -1.57      -0.265
-#> 4 ShouldWidth04      -0.436       0.279    -1.56     0.118     -0.981      0.11 
-#> 5 AADTover10k        -0.896       0.549    -1.63     0.103     -1.97       0.18 
-#> 6 ln(alpha)          -0.722       0.438    -1.65     0.099     -1.58       0.135
-#> 7 lnlength (Offset …  1          NA        NA       NA         NA         NA    
+#> Coefficients (standard errors: Hessian-based):
+#>               Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)     -9.263      1.374   -6.74  1.6e-11 ***
+#> lnaadt           0.959      0.159    6.03  1.7e-09 ***
+#> speed50         -0.919      0.334   -2.75   0.0059 ** 
+#> ShouldWidth04   -0.436      0.279   -1.56   0.1179    
+#> AADTover10k     -0.896      0.549   -1.63   0.1028    
+#> ln(alpha)       -0.722      0.438   -1.65   0.0988 .  
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> Offset: lnlength (coefficient fixed at 1)
+#> 
+#> Log-likelihood: -264.762 | AIC: 541.524 | BIC: 566.895 
+#> N: 1501 | panels: 507
 
 # NM-P with ln(alpha) as a function of a site-level variable and
 # cluster-robust standard errors
@@ -315,26 +332,30 @@ nmp <- negmultinom(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
                    stderr = "robust")
 summary(nmp)
 #> Call:
-#>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
+#> negmultinom(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + 
+#>     AADTover10k, group_var = "ID", data = washington_roads, family = "NMP", 
+#>     offset = "lnlength", dis_param_formula_1 = ~speed50, stderr = "robust")
 #> 
-#>  Method:  NegMultinom 
-#> Iterations:  41 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -263.5557 
+#> Model: negmultinom | family: NMP | optimizer: BFGS
+#> Iterations: 41 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 9 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.94        1.41    -7.06      0        -12.7       -7.18 
-#> 2 lnaadt              1.03        0.163    6.33      0          0.712      1.35 
-#> 3 speed50            -0.748       0.465   -1.61      0.108     -1.66       0.165
-#> 4 ShouldWidth04      -0.429       0.284   -1.51      0.131     -0.985      0.127
-#> 5 AADTover10k        -0.888       0.557   -1.60      0.111     -1.98       0.204
-#> 6 ln(alpha):(Interc… -0.354       0.817   -0.434     0.664     -1.96       1.25 
-#> 7 ln(alpha):speed50   2.33        5.18     0.45      0.653     -7.82      12.5  
-#> 8 p                   2.23        2.54     0.877     0.38      -2.75       7.20 
-#> 9 lnlength (Offset …  1          NA       NA        NA         NA         NA    
+#> Coefficients (standard errors: robust (sandwich)):
+#>                       Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)             -9.940      1.408   -7.06  1.7e-12 ***
+#> lnaadt                   1.032      0.163    6.33  2.5e-10 ***
+#> speed50                 -0.748      0.465   -1.61     0.11    
+#> ShouldWidth04           -0.429      0.284   -1.51     0.13    
+#> AADTover10k             -0.888      0.557   -1.59     0.11    
+#> ln(alpha):(Intercept)   -0.354      0.817   -0.43     0.66    
+#> ln(alpha):speed50        2.330      5.176    0.45     0.65    
+#> p                        2.226      2.538    0.88     0.38    
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> Offset: lnlength (coefficient fixed at 1)
+#> 
+#> Log-likelihood: -263.556 | AIC: 543.111 | BIC: 576.94 
+#> N: 1501 | panels: 507
 
 # Marginal means and empirical Bayes expected frequencies
 head(predict(nm2))

@@ -134,7 +134,9 @@ poilog package is used to solve the integral if the engine is set to
 ``` r
 dpLnorm(0, mean=0.75, sigma=2, ndraws=10)
 #> [1] 0.5271804
-dpLnorm(0, mean=0.75, sigma=2, engine="poilog")
+if (requireNamespace("poilog", quietly = TRUE)) {
+  dpLnorm(0, mean=0.75, sigma=2, engine="poilog")
+}
 #> [1] 0.4609574
 ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
 #> [1] 0.5271804 0.7245134 0.8159930 0.8646682 0.9165510 0.9516880 0.9777184
@@ -142,6 +144,6 @@ ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
 #> [1] 0 0 0 5 7
 rpLnorm(30, mean=0.75,  sigma=2)
-#>  [1]  0  2  3  0  0  0 46  2  1  1  0  2  0  0  0  0  0  0  2  0  2  1  4  3  0
-#> [26]  0  0 85  0  2
+#>  [1]   0   3   3   1   0   2   0   0   5   3  10  10   1   2  18   0   4   0   0
+#> [20]   6   6   3   0  62   1   0   0 270   0   1
 ```

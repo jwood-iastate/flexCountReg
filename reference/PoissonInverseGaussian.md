@@ -99,7 +99,7 @@ f(y\>0)=f(0)\frac{\mu^y}{y!}(1+2\eta)^{-y/2}
 
 The variance is: \$\$\sigma^2=\mu+\eta\mu\$\$
 
-Type 2 modifies \\\eta\\ → \\\eta\mu\\: \$\$
+Type 2 modifies \\\eta\\ -\> \\\eta\mu\\: \$\$
 f(0)=\exp\left(\frac{1}{\eta}(1-\sqrt{1+2\eta\mu})\right) \$\$ \$\$
 f(y\>0)=f(0)\frac{\mu^y}{y!}(1+2\eta\mu)^{-y/2}
 \sum\_{j=0}^{y-1}\frac{\Gamma(y+j)} {\Gamma(y-j)\Gamma(j+1)}
@@ -110,7 +110,7 @@ Resulting variance: \$\$\sigma^2=\mu+\eta\mu^2\$\$
 ## References
 
 Cameron & Trivedi (2013). Regression Analysis of Count Data. Dean,
-Lawless & Willmot (1989). Mixed Poisson–Inverse Gaussian Models. Hilbe
+Lawless & Willmot (1989). Mixed Poisson-Inverse Gaussian Models. Hilbe
 (2011). Negative Binomial Regression.
 
 ## Examples
@@ -124,5 +124,5 @@ ppinvgaus(c(0,1,2,3,5,7,9,10), mu=0.75, eta=3, form="Type 2")
 qpinvgaus(c(0.1,0.3,0.5,0.9,0.95), mu=0.75, eta=0.5, form="Type 2")
 #> [1] 0 0 0 2 3
 rpinvgaus(30, mu=0.75, eta=1.5)
-#>  [1] 0 9 1 0 0 1 0 0 1 1 1 3 1 1 3 2 0 0 1 0 0 7 0 0 1 1 0 0 0 0
+#>  [1] 1 0 0 1 0 0 0 1 2 0 0 0 0 2 0 0 0 0 0 1 0 3 1 1 3 0 0 0 0 0
 ```

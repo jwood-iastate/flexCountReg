@@ -62,7 +62,10 @@ countreg(
   start.vals = NULL,
   stderr = "normal",
   bootstraps = NULL,
-  engine = "halton"
+  engine = "halton",
+  keep_data = TRUE,
+  zero_formula = NULL,
+  zero_type = c("inflated", "hurdle")
 )
 ```
 
@@ -86,13 +89,15 @@ countreg(
 
   the name of a variable, or vector of variable names, in the data frame
   that should be used as an offset (i.e., included but forced to have a
-  coefficient of 1). The normal method of setting an offset in the
-  equation can also be used (overrides the offset option).
+  coefficient of 1). When several names are given, the offsets are
+  summed. Alternatively, an offset can be given in the formula with
+  [`offset()`](https://rdrr.io/r/stats/offset.html). Use only one of the
+  two approaches: supplying both is an error.
 
 - weights:
 
-  the name of a variable in the data frame that should be used as a
-  frequency weight.
+  the name of a variable in the data frame, or a numeric vector with one
+  value per row of `data`, to be used as frequency weights.
 
 - verbose:
 
@@ -136,9 +141,9 @@ countreg(
 
 - method:
 
-  Optimization method to be used for maximum likelihood estimation. See
-  `maxLik` documentation for options. The default is "NM" for the
-  Nelder-Mead method.
+  Optimization method to be used for maximum likelihood estimation. One
+  of "NM" (Nelder-Mead, the default), "BFGS", "BFGSR", "CG", "NR",
+  "BHHH", or "SANN". See `maxLik` documentation for details.
 
 - max.iters:
 
@@ -146,19 +151,21 @@ countreg(
 
 - start.vals:
 
-  Optional vector of starting values for the optimization.
+  Optional vector of starting values for the optimization. It must have
+  one value per parameter. If the vector is named, the values are
+  matched to the parameters by name.
 
 - stderr:
 
-  Type of standard errors to use. The default is "normal". Other options
-  include "boot" for bootstrapped standard errors, or "robust" for
-  robust standard errors.
+  Type of standard errors to use. The default is "normal" (based on the
+  Hessian). Other options include "boot" for bootstrapped standard
+  errors, or "robust" for robust (sandwich) standard errors.
 
 - bootstraps:
 
   Optional integer specifying the number of bootstrap samples to be used
-  for estimating standard errors when `stderr`= "boot". Note that this
-  currently does not work when an offset variable is used.
+  for estimating standard errors when `stderr`= "boot". Defaults to 200
+  when `stderr = "boot"` and `bootstraps` is not given.
 
 - engine:
 
@@ -166,9 +173,36 @@ countreg(
   distribution is used. Options include "halton" which uses Halton draws
   or "poilog" which uses the poilog package. The default is "halton".
 
+- keep_data:
+
+  logical; if `FALSE`, the training data are not stored in the fitted
+  object (saving memory).
+  [`predict()`](https://rdrr.io/r/stats/predict.html) then needs
+  `newdata`, and
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html)/[`residuals()`](https://rdrr.io/r/stats/residuals.html)
+  are unavailable.
+
+- zero_formula:
+
+  an optional one-sided formula for a zero model (`~ 1` for a constant),
+  turning the model into a zero-inflated or hurdle model (see
+  `zero_type`) for any `family`. The zero model is a logit model. Its
+  coefficients are named `Zero:<variable>`. Cannot be combined with
+  `underreport_formula`.
+
+- zero_type:
+
+  `"inflated"` (default) or `"hurdle"`. In a zero-inflated model, a
+  structural zero occurs with probability \\\pi = logit^{-1}(z\gamma)\\
+  and otherwise the count follows the family: \\P(0) = \pi + (1 - \pi)
+  f(0)\\ and \\P(y) = (1 - \pi) f(y)\\ for \\y \> 0\\. In a hurdle
+  model, \\q = logit^{-1}(z\gamma)\\ is the probability of a positive
+  count and positive counts follow the zero-truncated family: \\P(0) =
+  1 - q\\ and \\P(y) = q f(y) / (1 - f(0))\\.
+
 ## Value
 
-An object of class `countreg` which is a list with the following
+An object of class `flexCountReg` which is a list with the following
 components:
 
 - model: the fitted model object.
@@ -241,9 +275,9 @@ The parameters for the different models are as follows:
 
 For `dis_param_formula_1`, the models are for the parameters:
 
-- \\ln(\phi+1)\\ for the Generlized Poisson Version 1.
+- \\ln(\phi+1)\\ for the Generalized Poisson Version 1.
 
-- \\ln(\alpha+1)\\ for the Generlized Poisson Version 2.
+- \\ln(\alpha+1)\\ for the Generalized Poisson Version 2.
 
 - \\ln(\alpha)\\ for the Negative Binomial 1 model.
 
@@ -253,7 +287,7 @@ For `dis_param_formula_1`, the models are for the parameters:
 
 - \\ln(\sigma)\\ for the Poisson-Lognormal model.
 
-- shape parameter for the Poisson-Generalized-Exponential model.
+- \\ln(shape)\\ for the Poisson-Generalized-Exponential model.
 
 - \\ln(\eta)\\ for the Poisson-Inverse-Gaussian model.
 
@@ -267,7 +301,9 @@ For `dis_param_formula_1`, the models are for the parameters:
 
 - \\ln(\alpha)\\ for the Poisson-Weibull model.
 
-- \\\gamma\\ for the Sichel model.
+- \\\gamma\\ for the Sichel model. This parameter can be negative, so it
+  is modeled directly (identity link), \\\gamma = W\delta\\, rather than
+  through \\\exp()\\.
 
 - \\ln(k)\\ for the Generalized Waring model.
 
@@ -277,6 +313,8 @@ For `dis_param_formula_2`, the models are for the parameters:
 
 - Not Applicable for the Generalized Poisson Version 1 model.
 
+- Not Applicable for the Generalized Poisson Version 2 model.
+
 - Not Applicable for the Negative Binomial 1 model.
 
 - Not Applicable for the Negative Binomial 2 model.
@@ -285,7 +323,7 @@ For `dis_param_formula_2`, the models are for the parameters:
 
 - Not Applicable for the Poisson-Lognormal model.
 
-- scale parameter for the Poisson-Generalized-Exponential model.
+- \\ln(scale)\\ for the Poisson-Generalized-Exponential model.
 
 - Not Applicable for the Poisson-Inverse-Gaussian model.
 
@@ -344,8 +382,8 @@ This implements the Generalized Poisson Version 1 model using MLE.
 The PMF is: \$\$ f(y\|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1}
 exp\left(-\frac{\mu+\phi y} {1+\phi}\right)}{(1+\phi)^y y!} \$\$
 
-Where \\\phi\\ is a scale parameter with the restriction that
-\\\eta\>0\\, \\\mu\>0\\ is the mean value, and \\y\\ is a non-negative
+Where \\\phi\\ is a dispersion parameter with the restriction that
+\\\phi\>-1\\, \\\mu\>0\\ is the mean value, and \\y\\ is a non-negative
 integer. The mean is modeled as: \$\$\mu = exp(X\beta)\$\$
 
 The variance of the GP-1 distribution is: \$\$\sigma^2=(1+\phi)^2
@@ -356,7 +394,7 @@ distribution is equidispersed. If \\\phi\<0\\, the distribution is
 underdispersed.
 
 Furthermore, \\\phi\>-1\\ is required for this distribution. When
-\\\phi\<0\\, there is also a maximum value of support for the integar
+\\\phi\<0\\, there is also a maximum value of support for the integer
 value \\y\\. This is \\y_max=\left\lfloor -\frac{\mu}{\phi}
 \right\rfloor\\. To account for the range of possible values, this is
 modeled as \$\$ln(\phi+1)\$\$.
@@ -369,9 +407,9 @@ The PMF is: \$\$ f(y\|\mu,\alpha)= \frac{\mu(\mu+\alpha\mu y)^{y-1}
 \exp\left(-\frac{\mu+\alpha\mu y}{1+\alpha\mu}\right)} {(1+\alpha\mu)^y
 y!} \$\$
 
-Where \\\phi\\ is a scale parameter with the restriction that
-\\\eta\>0\\, \\\mu\>0\\ is the mean value, and \\y\\ is a non-negative
-integer. The mean is modeled as: \$\$\mu = exp(X\beta)\$\$
+Where \\\alpha\\ is a dispersion parameter with the restriction that
+\\1+\alpha\mu\>0\\, \\\mu\>0\\ is the mean value, and \\y\\ is a
+non-negative integer. The mean is modeled as: \$\$\mu = exp(X\beta)\$\$
 
 The variance of the GP-2 distribution is:
 \$\$\sigma^2=\mu(1+\alpha\mu)^2\$\$
@@ -460,10 +498,10 @@ The t-statistics and p-values for the coefficients related to ln(sigma)
 are, by default, testing if the coefficients are different from a value
 of 0. This has little practical meaning given that they are coefficients
 for ln(sigma). They are not testing if the coefficients have statistical
-significance in terms of improvement over a Poisson model. The
-Likelihood-Ratio test results provided in the output provide a test
-comparing if the Poisson-Lognormal model provides a statistically
-significant improvement in model fit over the Poisson model.
+significance in terms of improvement over a Poisson model. To test
+whether the Poisson-Lognormal model fits significantly better than the
+Poisson model, use a likelihood-ratio test with
+[`regCompTest`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md).
 
 ### Poisson Generalized-Exponential (PGE) Model
 
@@ -627,19 +665,19 @@ function) for the Poisson-Weibull distribution is given by:
 \lambda^y x^y }{y!}
 \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}
 \right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx\$\$ where
-d\\f(x\| \alpha, \sigma)\\ is the PDF of the Weibull distribution and
-\$\$\lambda\$\$ is the mean of the Poisson distribution.
+\\f(x\| \alpha, \sigma)\\ is the PDF of the Weibull distribution and
+\\\lambda\\ is the mean of the Poisson distribution.
 
 For the Poisson-Weibull Regression model, the expected values is:
 \$\$E\[Y\]=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)\$\$ Where
-\$\$\lambda\$\$ is the mean of the Poisson distribution, \$\$\alpha\$\$
-is the shape parameter, and \$\$\sigma\$\$ is the scale parameter.
+\\\lambda\\ is the mean of the Poisson distribution, \\\alpha\\ is the
+shape parameter, and \\\sigma\\ is the scale parameter.
 
 To ensure that the regression model predicts the mean value, the
 regression utilizes:
 \$\$\mu=\exp{X\gamma}=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)\$\$
-Where \$\$X\$\$ is a matrix of independent variables and \$\$\gamma\$\$
-is a vector of coefficients.
+Where \\X\\ is a matrix of independent variables and \\\gamma\\ is a
+vector of coefficients.
 
 This leads to:
 \$\$\lambda=\frac{\mu}{\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}\$\$
@@ -651,16 +689,16 @@ The variance for the Poisson-Weibull regression is:
 ### Sichel (SI) Model
 
 The compound Probability Mass Function (PMF) for the Sichel distribution
-uses the formulation from Zhou et al. (2011) and Rigby et al. (2008):
-\$\$f(y\|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y
+uses the formulation from Zou, Lord and Zhang (2012) and Rigby et al.
+(2008): \$\$f(y\|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y
 K\_{y+\gamma}(\alpha)}{K\_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}\$\$
 
-Where \$\$\sigma\$\$ and \$\$\gamma\$\$ are distribution parameters with
-\$\$\sigma\>0\$\$,
+Where \\\sigma\\ and \\\gamma\\ are distribution parameters with
+\\\sigma\>0\\,
 \$\$c=\frac{K\_{\gamma+1}(1/\sigma)}{K\_\gamma(1/\sigma)}\$\$,
 \$\$\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}\$\$, a mean value of
-\$\$\mu\$\$, \$\$y\$\$ is a non-negative integer, and \$\$K_j(x)\$\$ is
-a modified Bessel function of the third kind with order \$\$j\$\$ and
+\\\mu\\, \\y\\ is a non-negative integer, and \$\$K_j(x)\$\$ is a
+modified Bessel function of the third kind with order \$\$j\$\$ and
 argument \$\$x\$\$.
 
 The variance of the distribution is:
@@ -784,15 +822,15 @@ nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
                method='BFGS')
 #> initial  value 1087.972055 
 #> iter   2 value 1086.761180
-#> iter   3 value 1082.460820
-#> iter   4 value 1081.386386
-#> iter   5 value 1080.983879
-#> iter   6 value 1079.708981
-#> iter   7 value 1070.603402
-#> iter   8 value 1068.239213
-#> iter   9 value 1065.881516
-#> iter  10 value 1065.612936
-#> iter  11 value 1065.068994
+#> iter   3 value 1082.460817
+#> iter   4 value 1081.386383
+#> iter   5 value 1080.983877
+#> iter   6 value 1079.708975
+#> iter   7 value 1070.603399
+#> iter   8 value 1068.239211
+#> iter   9 value 1065.881517
+#> iter  10 value 1065.612937
+#> iter  11 value 1065.068995
 #> iter  12 value 1064.893660
 #> iter  13 value 1064.876776
 #> iter  14 value 1064.876161
@@ -803,50 +841,59 @@ nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 #> converged
 summary(nb2)
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
+#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
+#>     AADT10kplus, data = washington_roads, family = "NB2", verbose = TRUE, 
+#>     dis_param_formula_1 = ~speed50, method = "BFGS")
 #> 
-#>  Method:  countreg 
-#> Iterations:  44 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -1064.876 
+#> Model: countreg | family: NB2 | optimizer: BFGS
+#> Iterations: 44 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 7 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -7.40        0.465   -15.9      0         -8.31      -6.49 
-#> 2 lnaadt              0.912       0.056    16.3      0          0.802      1.02 
-#> 3 lnlength            0.843       0.07     12.0      0          0.706      0.98 
-#> 4 speed50            -0.47        0.115    -4.08     0         -0.695     -0.244
-#> 5 AADT10kplus         0.77        0.13      5.93     0          0.515      1.02 
-#> 6 ln(alpha):(Interc… -1.62        0.38     -4.26     0         -2.36      -0.875
-#> 7 ln(alpha):speed50   1.31        0.599     2.18     0.029      0.132      2.48 
+#> Coefficients (standard errors: Hessian-based):
+#>                       Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)            -7.4015     0.4729  -15.65  < 2e-16 ***
+#> lnaadt                  0.9116     0.0566   16.09  < 2e-16 ***
+#> lnlength                0.8428     0.0700   12.04  < 2e-16 ***
+#> speed50                -0.4699     0.1151   -4.08  4.5e-05 ***
+#> AADT10kplus             0.7697     0.1299    5.92  3.1e-09 ***
+#> ln(alpha):(Intercept)  -1.6192     0.3740   -4.33  1.5e-05 ***
+#> ln(alpha):speed50       1.3059     0.5963    2.19    0.029 *  
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Log-likelihood: -1064.876 | AIC: 2143.752 | BIC: 2180.949 
+#> N: 1501
+#> LR test vs Poisson: chi-sq = 22.092 on 2 df, p-value = 1.59e-05 
 
 
-# Estimate a Poisson-Lognormal model 
-pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PLN", engine="poilog")
-#> Warning: NaNs produced
-#> Warning: NaNs produced
-summary(pln)  
+# Estimate a Poisson-Lognormal model (integration with the poilog package)
+if (requireNamespace("poilog", quietly = TRUE)) {
+  pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+                  data = washington_roads, family = "PLN", engine="poilog")
+  summary(pln)
+}
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
+#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
+#>     AADT10kplus, data = washington_roads, family = "PLN", engine = "poilog")
 #> 
-#>  Method:  countreg 
-#> Iterations:  733 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -1066.67 
+#> Model: countreg | family: PLN | optimizer: NM
+#> Iterations: 733 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 6 × 7
-#>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept) -7.51       NA        NA           NA     NA         NA    
-#> 2 lnaadt       0.91       NA        NA           NA     NA         NA    
-#> 3 lnlength     0.847       0.112     7.58         0      0.628      1.07 
-#> 4 speed50     -0.459       0.106    -4.34         0     -0.666     -0.252
-#> 5 AADT10kplus  0.809       0.133     6.07         0      0.548      1.07 
-#> 6 ln(sigma)   -0.734      NA        NA           NA     NA         NA    
+#> Coefficients (standard errors: Hessian-based):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)   -7.507         NA      NA       NA    
+#> lnaadt         0.910         NA      NA       NA    
+#> lnlength       0.847      0.110    7.70  1.4e-14 ***
+#> speed50       -0.459      0.105   -4.37  1.2e-05 ***
+#> AADT10kplus    0.809      0.133    6.09  1.1e-09 ***
+#> ln(sigma)     -0.734         NA      NA       NA    
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Log-likelihood: -1066.67 | AIC: 2145.341 | BIC: 2177.224 
+#> N: 1501
+#> LR test vs Poisson: chi-sq = 18.504 on 1 df, p-value = 8.48e-06 (boundary-corrected) 
 
 # Estimate a Negative Binomial with underreporting (probit)
 plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
@@ -854,30 +901,34 @@ plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
               data = washington_roads, family = "NB2",
               underreport_formula = ~ speed50 + AADT10kplus, 
               underreport_family = "probit")
-#> Warning: NaNs produced
-#> Warning: NaNs produced
+#> Warning: The optimizer did not report convergence (iteration limit exceeded). Consider a different `method` or more `max.iters`.
 summary(plogn_underreport)
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
+#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
+#>     AADT10kplus, data = washington_roads, family = "NB2", underreport_formula = ~speed50 + 
+#>     AADT10kplus, underreport_family = "probit")
 #> 
-#>  Method:  countreg 
-#> Iterations:  500 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -1065.087 
+#> Model: countreg | family: NB2 | optimizer: NM
+#> Iterations: 1002 
+#> Convergence: iteration limit exceeded 
+#> Warning: the optimizer did not report convergence.
 #> 
-#> Parameter Estimates:
-#> # A tibble: 9 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -6.69        3.54    -1.89      0.058    -13.6        0.24 
-#> 2 lnaadt              0.901       0.055   16.3       0          0.793      1.01 
-#> 3 lnlength            0.832       0.07    12.0       0          0.696      0.968
-#> 4 speed50            -0.924       1.57    -0.587     0.557     -4.01       2.16 
-#> 5 AADT10kplus         2.22        1.44     1.54      0.123     -0.599      5.04 
-#> 6 ln(alpha)          -1.50        0.345   -4.36      0         -2.18      -0.828
-#> 7 Underreporting:(I… -0.084       4.69    -0.018     0.986     -9.28       9.12 
-#> 8 Underreporting:sp… -0.774      NA       NA        NA         NA         NA    
-#> 9 Underreporting:AA…  1.24       NA       NA        NA         NA         NA    
+#> Coefficients (standard errors: Hessian-based):
+#>                            Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)                 -6.6903     1.1072   -6.04  1.5e-09 ***
+#> lnaadt                       0.9189     0.0551   16.68  < 2e-16 ***
+#> lnlength                     0.8470     0.0700   12.11  < 2e-16 ***
+#> speed50                      0.0534     0.4474    0.12     0.90    
+#> AADT10kplus                 -0.0274     1.0722   -0.03     0.98    
+#> ln(alpha)                   -1.4959     0.3417   -4.38  1.2e-05 ***
+#> Underreporting:(Intercept)  -0.0898     1.1909   -0.08     0.94    
+#> Underreporting:speed50      -0.5394     0.6136   -0.88     0.38    
+#> Underreporting:AADT10kplus   2.5350     4.5067    0.56     0.57    
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Log-likelihood: -1065.202 | AIC: 2148.404 | BIC: 2196.229 
+#> N: 1501
 
 # Estimate a Conway-Maxwell-Poisson model
 com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
@@ -885,70 +936,82 @@ com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
                       data = washington_roads, family = "COM", method="BHHH")
 summary(com_model)
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
+#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
+#>     AADT10kplus, data = washington_roads, family = "COM", method = "BHHH")
 #> 
-#>  Method:  countreg 
-#> Iterations:  6 
-#> Convergence:  successive function values within relative tolerance limit (reltol) 
-#> Log-likelihood:  -1066.063 
+#> Model: countreg | family: COM | optimizer: BHHH
+#> Iterations: 6 
+#> Convergence: successive function values within relative tolerance limit (reltol) 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 6 × 7
-#>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept) -7.42        0.467   -15.9          0     -8.34      -6.50 
-#> 2 lnaadt       0.912       0.056    16.2          0      0.802      1.02 
-#> 3 lnlength     0.84        0.067    12.6          0      0.709      0.971
-#> 4 speed50     -0.445       0.103    -4.32         0     -0.647     -0.243
-#> 5 AADT10kplus  0.788       0.126     6.26         0      0.541      1.03 
-#> 6 ln(nu)      -0.62        0.171    -3.61         0     -0.955     -0.284
+#> Coefficients (standard errors: Hessian-based):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)  -7.4214     0.4652  -15.95  < 2e-16 ***
+#> lnaadt        0.9124     0.0562   16.23  < 2e-16 ***
+#> lnlength      0.8399     0.0667   12.59  < 2e-16 ***
+#> speed50      -0.4451     0.1031   -4.32  1.6e-05 ***
+#> AADT10kplus   0.7875     0.1259    6.25  4.0e-10 ***
+#> ln(nu)       -0.6194     0.1714   -3.61    3e-04 ***
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Log-likelihood: -1066.063 | AIC: 2144.126 | BIC: 2176.009 
+#> N: 1501
+#> LR test vs Poisson: chi-sq = 19.719 on 1 df, p-value = 8.97e-06 
 
-# Estimate a CGenerlized-Poisson Version 1 model
+# Estimate a Generalized-Poisson Version 1 model
 gp1_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
                       AADT10kplus,
                       data = washington_roads, family = "GP1", method="BHHH")
 summary(gp1_model)
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
+#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
+#>     AADT10kplus, data = washington_roads, family = "GP1", method = "BHHH")
 #> 
-#>  Method:  countreg 
-#> Iterations:  6 
-#> Convergence:  successive function values within relative tolerance limit (reltol) 
-#> Log-likelihood:  -1069.222 
+#> Model: countreg | family: GP1 | optimizer: BHHH
+#> Iterations: 6 
+#> Convergence: successive function values within relative tolerance limit (reltol) 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 6 × 7
-#>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept) -7.30        0.475   -15.4      0         -8.23      -6.36 
-#> 2 lnaadt       0.896       0.057    15.9      0          0.786      1.01 
-#> 3 lnlength     0.82        0.062    13.3      0          0.699      0.941
-#> 4 speed50     -0.445       0.098    -4.56     0         -0.636     -0.253
-#> 5 AADT10kplus  0.768       0.109     7.03     0          0.554      0.983
-#> 6 ln(phi+1)    0.088       0.028     3.16     0.002      0.033      0.142
+#> Coefficients (standard errors: Hessian-based):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)  -7.2956     0.4747  -15.37  < 2e-16 ***
+#> lnaadt        0.8963     0.0565   15.86  < 2e-16 ***
+#> lnlength      0.8200     0.0616   13.30  < 2e-16 ***
+#> speed50      -0.4448     0.0976   -4.56  5.2e-06 ***
+#> AADT10kplus   0.7684     0.1093    7.03  2.0e-12 ***
+#> ln(phi+1)     0.0875     0.0277    3.16   0.0016 ** 
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Log-likelihood: -1069.222 | AIC: 2150.445 | BIC: 2182.328 
+#> N: 1501
+#> LR test vs Poisson: chi-sq = 13.4 on 1 df, p-value = 0.000252 
 
-#' # Estimate a CGenerlized-Poisson Version 2 model
+# Estimate a Generalized-Poisson Version 2 model
 gp2_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
                       AADT10kplus,
                       data = washington_roads, family = "GP2", method="BHHH")
 summary(gp2_model)
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
+#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
+#>     AADT10kplus, data = washington_roads, family = "GP2", method = "BHHH")
 #> 
-#>  Method:  countreg 
-#> Iterations:  7 
-#> Convergence:  successive function values within relative tolerance limit (reltol) 
-#> Log-likelihood:  -1066.757 
+#> Model: countreg | family: GP2 | optimizer: BHHH
+#> Iterations: 7 
+#> Convergence: successive function values within relative tolerance limit (reltol) 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 6 × 7
-#>   parameter    coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>        <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept) -7.38        0.461   -16.0          0     -8.28      -6.48 
-#> 2 lnaadt       0.909       0.056    16.3          0      0.799      1.02 
-#> 3 lnlength     0.847       0.069    12.2          0      0.711      0.983
-#> 4 speed50     -0.46        0.103    -4.48         0     -0.661     -0.259
-#> 5 AADT10kplus  0.812       0.135     6.02         0      0.548      1.08 
-#> 6 ln(alpha+1)  0.106       0.028     3.72         0      0.05       0.161
+#> Coefficients (standard errors: Hessian-based):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)  -7.3820     0.4606  -16.03  < 2e-16 ***
+#> lnaadt        0.9088     0.0558   16.28  < 2e-16 ***
+#> lnlength      0.8470     0.0692   12.23  < 2e-16 ***
+#> speed50      -0.4599     0.1027   -4.48  7.5e-06 ***
+#> AADT10kplus   0.8123     0.1350    6.02  1.8e-09 ***
+#> ln(alpha+1)   0.1056     0.0284    3.72    2e-04 ***
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Log-likelihood: -1066.757 | AIC: 2145.513 | BIC: 2177.397 
+#> N: 1501
+#> LR test vs Poisson: chi-sq = 18.331 on 1 df, p-value = 1.86e-05 
 # }
 ```

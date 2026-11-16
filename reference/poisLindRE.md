@@ -12,9 +12,12 @@ poisLind.re(
   data,
   method = "NM",
   max.iters = 1000,
-  print.level = 0,
+  verbose = FALSE,
+  stderr = "normal",
   bootstraps = NULL,
-  offset = NULL
+  offset = NULL,
+  keep_data = TRUE,
+  print.level = NULL
 )
 ```
 
@@ -27,7 +30,7 @@ poisLind.re(
 - group_var:
 
   the grouping variable(s) indicating random effects (e.g., individual
-  ID).
+  ID). Required. Several columns are combined into one panel identifier.
 
 - data:
 
@@ -46,23 +49,48 @@ poisLind.re(
   the maximum number of iterations to allow the optimization method to
   perform.
 
-- print.level:
+- verbose:
 
-  Integer specifying the verbosity of output during optimization.
+  logical; if `TRUE`, print the progress of the optimization.
+
+- stderr:
+
+  the type of standard errors: `"normal"` (Hessian-based, the default),
+  `"robust"` (sandwich; clustered by panel because the likelihood has
+  one contribution per panel), or `"boot"` (bootstrap that resamples
+  whole panels). Giving `bootstraps` without `stderr` also requests
+  bootstrapped standard errors.
 
 - bootstraps:
 
   Optional integer specifying the number of bootstrap samples to be used
-  for estimating standard errors. If not specified, no bootstrapping is
-  performed.
+  for estimating standard errors. Whole panels (groups) are resampled,
+  so the standard errors account for the correlation within panels. If
+  not specified, no bootstrapping is performed.
 
 - offset:
 
-  an optional offset term provided as a string.
+  an optional character vector of offset column names (summed when
+  several are given; on the log scale). An offset can instead be given
+  with [`offset()`](https://rdrr.io/r/stats/offset.html) in `formula`;
+  use only one of the two.
+
+- keep_data:
+
+  logical; if `FALSE`, the training data are not stored in the fitted
+  object (saving memory).
+  [`predict()`](https://rdrr.io/r/stats/predict.html) then needs
+  `newdata`, and
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html)/[`residuals()`](https://rdrr.io/r/stats/residuals.html)
+  are unavailable.
+
+- print.level:
+
+  deprecated; use `verbose`.
 
 ## Value
 
-An object of class `countreg` which is a list with the following
+An object of class `flexCountReg` which is a list with the following
 components:
 
 - model: the fitted model object.
@@ -74,6 +102,9 @@ components:
 - formula: the formula used to fit the model.
 
 ## Details
+
+`poislind_re()` is the same function as `poisLind.re()`, under a name
+that tools do not mistake for an S3 method.
 
 The function `poisLindRE` is similar to the `poisLind` function, but it
 includes an additional argument `group_var` that specifies the grouping
@@ -124,27 +155,29 @@ poislind.mod <- poisLind.re(
   method    = "NM",
   max.iters = 1000
 )
-#> Warning: NaNs produced
 summary(poislind.mod)
 #> Call:
-#>  Animal ~ lnaadt + lnlength + speed50 + ShouldWidth04 + AADTover10k 
+#> poisLind.re(formula = Animal ~ lnaadt + lnlength + speed50 + 
+#>     ShouldWidth04 + AADTover10k, group_var = "ID", data = washington_roads, 
+#>     method = "NM", max.iters = 1000)
 #> 
-#>  Method:  poisLindRE 
-#> Iterations:  726 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -263.098 
+#> Model: poislind_re | optimizer: NM
+#> Iterations: 828 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 8 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.61        1.14     -8.46     0        -11.8       -7.38 
-#> 2 lnaadt              1.03        0.132     7.82     0          0.775      1.29 
-#> 3 lnlength            1.46        0.235     6.22     0          0.998      1.92 
-#> 4 speed50            -0.856       0.335    -2.56     0.011     -1.51      -0.199
-#> 5 ShouldWidth04      -0.434       0.284    -1.53     0.126     -0.991      0.122
-#> 6 AADTover10k        -0.758       0.132    -5.72     0         -1.02      -0.498
-#> 7 ln(theta)           3.51       NA        NA       NA         NA         NA    
-#> 8 Offset (Offset va…  1          NA        NA       NA         NA         NA    
+#> Coefficients (standard errors: Hessian-based):
+#>               Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)     -9.623      1.426   -6.75  1.5e-11 ***
+#> lnaadt           1.036      0.167    6.19  5.9e-10 ***
+#> lnlength         1.456      0.236    6.18  6.4e-10 ***
+#> speed50         -0.855      0.335   -2.55    0.011 *  
+#> ShouldWidth04   -0.434      0.291   -1.49    0.136    
+#> AADTover10k     -0.756      0.532   -1.42    0.155    
+#> ln(theta)        6.068         NA      NA       NA    
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Log-likelihood: -263.098 | AIC: 540.195 | BIC: 569.795 
+#> N: 1501 | panels: 507
 # }
 ```

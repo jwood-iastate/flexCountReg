@@ -11,9 +11,12 @@ renb(
   data,
   method = "NM",
   max.iters = 1000,
-  print.level = 0,
+  verbose = FALSE,
+  stderr = "normal",
   bootstraps = NULL,
-  offset = NULL
+  offset = NULL,
+  keep_data = TRUE,
+  print.level = NULL
 )
 ```
 
@@ -26,7 +29,8 @@ renb(
 - group_var:
 
   the grouping variable(s) for the random effects (e.g., individual ID
-  or other panel ID variables).
+  or other panel ID variables). Required. Several columns are combined
+  into one panel identifier.
 
 - data:
 
@@ -45,23 +49,48 @@ renb(
   the maximum number of iterations to allow the optimization method to
   perform.
 
-- print.level:
+- verbose:
 
-  Integer specifying the verbosity of output during optimization.
+  logical; if `TRUE`, print the progress of the optimization.
+
+- stderr:
+
+  the type of standard errors: `"normal"` (Hessian-based, the default),
+  `"robust"` (sandwich; clustered by panel because the likelihood has
+  one contribution per panel), or `"boot"` (bootstrap that resamples
+  whole panels). Giving `bootstraps` without `stderr` also requests
+  bootstrapped standard errors.
 
 - bootstraps:
 
   Optional integer specifying the number of bootstrap samples to be used
-  for estimating standard errors. If not specified, no bootstrapping is
-  performed.
+  for estimating standard errors. Whole panels (groups) are resampled,
+  so the standard errors account for the correlation within panels. If
+  not specified, no bootstrapping is performed.
 
 - offset:
 
-  an optional offset term provided as a string.
+  an optional character vector of offset column names (summed when
+  several are given; on the log scale). An offset can instead be given
+  with [`offset()`](https://rdrr.io/r/stats/offset.html) in `formula`;
+  use only one of the two.
+
+- keep_data:
+
+  logical; if `FALSE`, the training data are not stored in the fitted
+  object (saving memory).
+  [`predict()`](https://rdrr.io/r/stats/predict.html) then needs
+  `newdata`, and
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html)/[`residuals()`](https://rdrr.io/r/stats/residuals.html)
+  are unavailable.
+
+- print.level:
+
+  deprecated; use `verbose`.
 
 ## Value
 
-An object of class `countreg` which is a list with the following
+An object of class `flexCountReg` which is a list with the following
 components:
 
 - model: the fitted model object.
@@ -77,7 +106,7 @@ components:
 This function estimates a random effects negative binomial (RENB)
 regression model. This model is based on the NB-1 model. The PDF for the
 RENB is: \$\$f(y\_{it}\|\lambda\_{it}, a, b) = \frac{\Gamma(a+b)
-\Gamma(a + \sum\_{t = 1}^{n_i} \\lambda\_{it}) \Gamma(b +
+\Gamma(a + \sum\_{t = 1}^{n_i} \lambda\_{it}) \Gamma(b +
 \sum\_{t=1}^{n_i}y\_{it})} {\Gamma(a) \Gamma(b) \Gamma(a + b +
 \sum\_{t=1}^{n_i}\lambda\_{it} + \sum\_{t=1}^{n_i}y\_{it})}
 \prod\_{t=1}^{n_i}
@@ -113,7 +142,7 @@ can specify the optimization method and maximum iterations.
 ## References
 
 Hausman, Jerry A., Bronwyn H. Hall, and Zvi Griliches. "Econometric
-models for count data with an application to the patents–R&D
+models for count data with an application to the patents-R&D
 relationship." Econometrica: Journal of the Econometric Society (1984):
 909-938.
 
@@ -133,24 +162,28 @@ renb.mod <- renb(Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k,
                                 max.iters = 1000)
 summary(renb.mod)
 #> Call:
-#>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
+#> renb(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k, 
+#>     group_var = "ID", data = washington_roads, method = "nm", 
+#>     max.iters = 1000, offset = "lnlength")
 #> 
-#>  Method:  RENB 
-#> Iterations:  788 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -263.7953 
+#> Model: renb | optimizer: NM
+#> Iterations: 680 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 8 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.35        1.23     -7.62     0        -11.8       -6.94 
-#> 2 lnaadt              0.966       0.143     6.74     0          0.685      1.25 
-#> 3 speed50            -0.987       0.346    -2.86     0.004     -1.66      -0.309
-#> 4 ShouldWidth04      -0.415       0.274    -1.51     0.13      -0.953      0.122
-#> 5 AADTover10k        -0.867       0.5      -1.73     0.083     -1.85       0.113
-#> 6 ln(a-1)             2.91        0.358     8.14     0          2.21       3.61 
-#> 7 ln(b)               0.621       0.239     2.60     0.009      0.152      1.09 
-#> 8 lnlength (Offset …  1          NA        NA       NA         NA         NA    
+#> Coefficients (standard errors: Hessian-based):
+#>               Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)     -9.466      1.309   -7.23  4.8e-13 ***
+#> lnaadt           0.978      0.153    6.41  1.5e-10 ***
+#> speed50         -0.966      0.338   -2.85   0.0043 ** 
+#> ShouldWidth04   -0.363      0.276   -1.32   0.1880    
+#> AADTover10k     -0.946      0.535   -1.77   0.0771 .  
+#> ln(a-1)          2.977      0.290   10.26  < 2e-16 ***
+#> ln(b)            0.573      0.423    1.36   0.1749    
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> Offset: lnlength (coefficient fixed at 1)
+#> 
+#> Log-likelihood: -263.831 | AIC: 541.661 | BIC: 571.261 
+#> N: 1501 | panels: 507
 # }
 ```

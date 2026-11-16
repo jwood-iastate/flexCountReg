@@ -17,7 +17,10 @@ data that has 1,501 rows (507 unique road segments) and 13 columns:
 
 - ID:
 
-  Anonymized road ID. Factor.
+  Anonymized road ID. Factor. The data are a panel: 507 road segments,
+  each observed in up to 3 years (2016-2018), so `ID` is the natural
+  `group_var` or `panel_id` for the random-effects and random-parameters
+  models.
 
 - Year:
 

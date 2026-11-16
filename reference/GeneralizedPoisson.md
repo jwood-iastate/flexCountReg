@@ -95,7 +95,7 @@ distribution is equidispersed. If \\\phi\<0\\, the distribution is
 underdispersed.
 
 Furthermore, \\\phi\>-1\\ is required for this distribution. When
-\\\phi\<0\\, there is also a maximum value of support for the integar
+\\\phi\<0\\, there is also a maximum value of support for the integer
 value \\y\\. This is \\y_max=\left\lfloor -\frac{\mu}{\phi}
 \right\rfloor\\.
 

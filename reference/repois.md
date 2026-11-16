@@ -15,9 +15,12 @@ repois(
   data,
   method = "NM",
   max.iters = 1000,
-  print.level = 0,
+  verbose = FALSE,
+  stderr = "normal",
   bootstraps = NULL,
-  offset = NULL
+  offset = NULL,
+  keep_data = TRUE,
+  print.level = NULL
 )
 ```
 
@@ -47,9 +50,16 @@ repois(
   the maximum number of iterations to allow the optimization method to
   perform.
 
-- print.level:
+- verbose:
 
-  integer specifying the verbosity of output during optimization.
+  logical; if `TRUE`, print the progress of the optimization.
+
+- stderr:
+
+  the type of standard errors: `"normal"` (Hessian-based, the default),
+  `"robust"` (sandwich, clustered by group), or `"boot"` (bootstrap that
+  resamples whole groups). Giving `bootstraps` without `stderr` also
+  requests bootstrapped standard errors.
 
 - bootstraps:
 
@@ -60,6 +70,15 @@ repois(
 - offset:
 
   an optional offset term provided as a string.
+
+- keep_data:
+
+  logical; if `FALSE`, the training data are not stored in the fitted
+  object.
+
+- print.level:
+
+  deprecated; use `verbose`.
 
 ## Value
 
@@ -108,23 +127,27 @@ repois.mod <- repois(
 
 summary(repois.mod)
 #> Call:
-#>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k 
+#> repois(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + 
+#>     AADTover10k, group_var = "ID", data = washington_roads, method = "BFGS", 
+#>     max.iters = 1000, offset = "lnlength")
 #> 
-#>  Method:  REPoisson 
-#> Iterations:  7 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -271.7189 
+#> Model: repois | optimizer: BFGS
+#> Iterations: 11 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 7 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -9.82        1.36     -7.24     0        -12.5       -7.16 
-#> 2 lnaadt              1.03        0.156     6.58     0          0.721      1.33 
-#> 3 speed50            -0.919       0.291    -3.16     0.002     -1.49      -0.348
-#> 4 ShouldWidth04      -0.486       0.248    -1.96     0.05      -0.971     -0.001
-#> 5 AADTover10k        -0.87        0.466    -1.86     0.062     -1.78       0.044
-#> 6 lnalpha           -13.8         3.45     -4.00     0        -20.6       -7.05 
-#> 7 lnlength (Offset…   1          NA        NA       NA         NA         NA    
+#> Coefficients (standard errors: Hessian-based):
+#>               Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)     -9.818      1.221   -8.04  9.0e-16 ***
+#> lnaadt           1.026      0.141    7.29  3.1e-13 ***
+#> speed50         -0.919      0.292   -3.15   0.0017 ** 
+#> ShouldWidth04   -0.486      0.243   -2.00   0.0459 *  
+#> AADTover10k     -0.870      0.457   -1.90   0.0568 .  
+#> lnalpha        -13.816         NA      NA       NA    
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> Offset: lnlength (coefficient fixed at 1)
+#> 
+#> Log-likelihood: -271.719 | AIC: 555.438 | BIC: 580.809 
+#> N: 1501 | panels: 507
 # }
 ```

@@ -43,7 +43,7 @@ cluster-level variables."><meta property="og:image" content="https://jwood-iasta
 
     <a class="navbar-brand me-2" href="../index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -52,6 +52,7 @@ cluster-level variables."><meta property="og:image" content="https://jwood-iasta
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -101,7 +102,8 @@ cluster-level variables.</p>
 <span>  start.vals <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stderr <span class="op">=</span> <span class="st">"normal"</span>,</span>
 <span>  bootstraps <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -181,6 +183,12 @@ bootstrap; requires <code>bootstraps</code>).</p></dd>
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>logical. If <code>TRUE</code>, optimizer progress is printed.</p></dd>
+
+
+<dt id="arg-keep-data">keep_data<a class="anchor" aria-label="anchor" href="#arg-keep-data"></a></dt>
+<dd><p>logical; if <code>FALSE</code>, the training data are not stored
+in the fitted object (saving memory). <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> then needs
+<code>newdata</code>, and <code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>/<code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> are unavailable.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -340,24 +348,27 @@ Econometrica, 52(4), 909-938.</p>
 <span class="r-in"><span>                   offset <span class="op">=</span> <span class="st">"lnlength"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">nm2</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> negmultinom(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     AADTover10k, group_var = "ID", data = washington_roads, offset = "lnlength")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Method:  NegMultinom </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations:  39 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence:  successful convergence  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -265.1241 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model: negmultinom | family: NM2 | optimizer: BFGS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 34 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence: successful convergence </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Parameter Estimates:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 7 × 7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept)        -<span style="color: #BB0000;">9.71</span>        1.36    -<span style="color: #BB0000;">7.12</span>      0        -<span style="color: #BB0000;">12.4</span>       -<span style="color: #BB0000;">7.04</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt              1.00        0.159    6.32      0          0.692      1.32 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> speed50            -<span style="color: #BB0000;">0.821</span>       0.327   -<span style="color: #BB0000;">2.51</span>      0.012     -<span style="color: #BB0000;">1.46</span>      -<span style="color: #BB0000;">0.18</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> ShouldWidth04      -<span style="color: #BB0000;">0.425</span>       0.281   -<span style="color: #BB0000;">1.51</span>      0.131     -<span style="color: #BB0000;">0.977</span>      0.126</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> AADTover10k        -<span style="color: #BB0000;">0.911</span>       0.513   -<span style="color: #BB0000;">1.78</span>      0.076     -<span style="color: #BB0000;">1.92</span>       0.095</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> ln(alpha)          -<span style="color: #BB0000;">0.023</span>       0.472   -<span style="color: #BB0000;">0.048</span>     0.962     -<span style="color: #BB0000;">0.948</span>      0.903</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> lnlength (Offset …  1          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Std. Error z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)    -9.7059     1.3624   -7.12  1.0e-12 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt          1.0035     0.1589    6.32  2.7e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50        -0.8214     0.3274   -2.51    0.012 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ShouldWidth04  -0.4252     0.2813   -1.51    0.131    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k    -0.9110     0.5132   -1.78    0.076 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha)      -0.0226     0.4723   -0.05    0.962    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Offset: lnlength (coefficient fixed at 1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -265.124 | AIC: 542.248 | BIC: 567.619 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> N: 1501 | panels: 507</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># NM1: cluster totals follow an NB-1 distribution</span></span></span>
 <span class="r-in"><span><span class="va">nm1</span> <span class="op">&lt;-</span> <span class="fu">negmultinom</span><span class="op">(</span><span class="va">Animal</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span> <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADTover10k</span>,</span></span>
@@ -365,24 +376,28 @@ Econometrica, 52(4), 909-938.</p>
 <span class="r-in"><span>                   family <span class="op">=</span> <span class="st">"NM1"</span>, offset <span class="op">=</span> <span class="st">"lnlength"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">nm1</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> negmultinom(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     AADTover10k, group_var = "ID", data = washington_roads, family = "NM1", </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     offset = "lnlength")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Method:  NegMultinom </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations:  30 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence:  successful convergence  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -264.7622 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model: negmultinom | family: NM1 | optimizer: BFGS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 30 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence: successful convergence </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Parameter Estimates:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 7 × 7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept)        -<span style="color: #BB0000;">9.26</span>        1.37     -<span style="color: #BB0000;">6.74</span>     0        -<span style="color: #BB0000;">12.0</span>       -<span style="color: #BB0000;">6.57</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt              0.959       0.159     6.03     0          0.647      1.27 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> speed50            -<span style="color: #BB0000;">0.919</span>       0.334    -<span style="color: #BB0000;">2.75</span>     0.006     -<span style="color: #BB0000;">1.57</span>      -<span style="color: #BB0000;">0.265</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> ShouldWidth04      -<span style="color: #BB0000;">0.436</span>       0.279    -<span style="color: #BB0000;">1.56</span>     0.118     -<span style="color: #BB0000;">0.981</span>      0.11 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> AADTover10k        -<span style="color: #BB0000;">0.896</span>       0.549    -<span style="color: #BB0000;">1.63</span>     0.103     -<span style="color: #BB0000;">1.97</span>       0.18 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> ln(alpha)          -<span style="color: #BB0000;">0.722</span>       0.438    -<span style="color: #BB0000;">1.65</span>     0.099     -<span style="color: #BB0000;">1.58</span>       0.135</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> lnlength (Offset …  1          <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Std. Error z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)     -9.263      1.374   -6.74  1.6e-11 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt           0.959      0.159    6.03  1.7e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50         -0.919      0.334   -2.75   0.0059 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ShouldWidth04   -0.436      0.279   -1.56   0.1179    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k     -0.896      0.549   -1.63   0.1028    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha)       -0.722      0.438   -1.65   0.0988 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Offset: lnlength (coefficient fixed at 1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -264.762 | AIC: 541.524 | BIC: 566.895 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> N: 1501 | panels: 507</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># NM-P with ln(alpha) as a function of a site-level variable and</span></span></span>
 <span class="r-in"><span><span class="co"># cluster-robust standard errors</span></span></span>
@@ -393,26 +408,30 @@ Econometrica, 52(4), 909-938.</p>
 <span class="r-in"><span>                   stderr <span class="op">=</span> <span class="st">"robust"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">nmp</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> negmultinom(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     AADTover10k, group_var = "ID", data = washington_roads, family = "NMP", </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     offset = "lnlength", dis_param_formula_1 = ~speed50, stderr = "robust")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Method:  NegMultinom </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations:  41 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence:  successful convergence  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -263.5557 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model: negmultinom | family: NMP | optimizer: BFGS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 41 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence: successful convergence </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Parameter Estimates:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 9 × 7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept)        -<span style="color: #BB0000;">9.94</span>        1.41    -<span style="color: #BB0000;">7.06</span>      0        -<span style="color: #BB0000;">12.7</span>       -<span style="color: #BB0000;">7.18</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt              1.03        0.163    6.33      0          0.712      1.35 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> speed50            -<span style="color: #BB0000;">0.748</span>       0.465   -<span style="color: #BB0000;">1.61</span>      0.108     -<span style="color: #BB0000;">1.66</span>       0.165</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> ShouldWidth04      -<span style="color: #BB0000;">0.429</span>       0.284   -<span style="color: #BB0000;">1.51</span>      0.131     -<span style="color: #BB0000;">0.985</span>      0.127</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> AADTover10k        -<span style="color: #BB0000;">0.888</span>       0.557   -<span style="color: #BB0000;">1.60</span>      0.111     -<span style="color: #BB0000;">1.98</span>       0.204</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> ln(alpha):(Interc… -<span style="color: #BB0000;">0.354</span>       0.817   -<span style="color: #BB0000;">0.434</span>     0.664     -<span style="color: #BB0000;">1.96</span>       1.25 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> ln(alpha):speed50   2.33        5.18     0.45      0.653     -<span style="color: #BB0000;">7.82</span>      12.5  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> p                   2.23        2.54     0.877     0.38      -<span style="color: #BB0000;">2.75</span>       7.20 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">9</span> lnlength (Offset …  1          <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: robust (sandwich)):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                       Estimate Std. Error z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)             -9.940      1.408   -7.06  1.7e-12 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt                   1.032      0.163    6.33  2.5e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50                 -0.748      0.465   -1.61     0.11    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ShouldWidth04           -0.429      0.284   -1.51     0.13    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k             -0.888      0.557   -1.59     0.11    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha):(Intercept)   -0.354      0.817   -0.43     0.66    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha):speed50        2.330      5.176    0.45     0.65    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> p                        2.226      2.538    0.88     0.38    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Offset: lnlength (coefficient fixed at 1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -263.556 | AIC: 543.111 | BIC: 576.94 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> N: 1501 | panels: 507</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Marginal means and empirical Bayes expected frequencies</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">nm2</span><span class="op">)</span><span class="op">)</span></span></span>

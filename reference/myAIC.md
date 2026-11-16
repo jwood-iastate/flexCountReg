@@ -25,6 +25,9 @@ Numeric value representing the AIC.
 
 ## Details
 
+For a fitted flexCountReg model, use `AIC(model)` instead, which takes
+the log-likelihood and number of parameters from the model.
+
 The AIC is calculated using the formula: \$\$AIC = -2 \cdot LL + 2 \cdot
 nparam\$\$ Where \\LL\\ is the log-likelihood of the model and
 \\nparam\\ is the number of parameters.

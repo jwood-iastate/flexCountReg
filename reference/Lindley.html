@@ -9,7 +9,7 @@ with parameter theta."><meta property="og:image" content="https://jwood-iastate.
 
     <a class="navbar-brand me-2" href="../index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,6 +18,7 @@ with parameter theta."><meta property="og:image" content="https://jwood-iastate.
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -139,20 +140,18 @@ $$\sigma^2=\frac{\mu}{\theta+2}\left(\frac{6}{\theta}-4\right)-\mu^2$$</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1702836 0.9688948 0.1702836</span>
 <span class="r-in"><span><span class="fu">plindley</span><span class="op">(</span><span class="va">q</span>, theta <span class="op">=</span> <span class="fl">0.5</span>, lower.tail <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.9651599 0.4462603 0.9651599</span>
-<span class="r-in"><span><span class="fu">qlindley</span><span class="op">(</span><span class="va">p</span>, theta <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1145570 0.2376153 0.3721440 0.5222804 0.6942468 0.8982645 1.1532321</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [8] 1.5010908 2.0740189</span>
-<span class="r-in"><span><span class="fu">qlindley</span><span class="op">(</span><span class="va">p</span>, theta <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"lamW"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="fu">qlindley</span><span class="op">(</span><span class="va">p</span>, theta <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">qlindley</span><span class="op">(</span><span class="va">p</span>, theta <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5440196 1.0430722 1.5435368 2.0718301 2.6536848 3.3240888 4.1429816</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [8] 5.2395404 7.0163914</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123154</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">rlindley</span><span class="op">(</span><span class="fl">5</span>, theta <span class="op">=</span> <span class="fl">1.5</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>'n' must be a non-negative integer</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1.40543787 0.97518942 0.42922042 0.06554152 0.24698987</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.95192063 0.95013010 0.49317275 0.06599424 0.88669659</span>
 <span class="r-in"><span><span class="fu">rlindley</span><span class="op">(</span><span class="fl">5</span>, theta <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>'n' must be a non-negative integer</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.5089347 2.5340820 1.4101438 0.1856275 3.6330299</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 6.1118442 3.4184654 8.5105935 0.3579881 3.0144305</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

@@ -1,12 +1,18 @@
-# Custom summary method for flexCountReg models
+# Summarize a flexCountReg model
 
-Custom summary method for flexCountReg models
+Summarize a flexCountReg model
 
 ## Usage
 
 ``` r
 # S3 method for class 'flexCountReg'
-summary(object, ...)
+summary(object, level = 0.95, ...)
+
+# S3 method for class 'summary.flexCountReg'
+print(x, digits = x$digits, ...)
+
+# S3 method for class 'summary.flexCountReg'
+as_tibble(x, ...)
 ```
 
 ## Arguments
@@ -15,61 +21,109 @@ summary(object, ...)
 
   A flexCountReg model object.
 
+- level:
+
+  the confidence level for the confidence intervals. Default is 0.95.
+
 - ...:
 
-  Optional parameters that include `confint_level` and `digits`.
+  Optional arguments. The arguments `confint_level` and `digits` of
+  earlier versions are still accepted.
+
+- x:
+
+  a `summary.flexCountReg` object.
+
+- digits:
+
+  the number of digits (decimal places) to round to when printing.
+  Default is 3.
 
 ## Value
 
-Prints the model formula, method used for estimation, number of
-iterations used, if the model converged, and the log-likelihood. Then,
-it prints a table containing parameter estimates, standard errors,
-t-statistics, p-values, and confidence intervals. Also quietly returns a
-tibble with these values.
+An object of class `summary.flexCountReg`, a list with `coefficients` (a
+matrix with the estimate, standard error, z value, p-value and
+confidence limits of every parameter), `vcov_type`, `logLik`, `AIC`,
+`BIC`, `nobs`, `n_groups`, `n_dropped`, `converged`, `offset` and
+`lr_test`. Printing it shows the results. Use
+[`tibble::as_tibble()`](https://tibble.tidyverse.org/reference/as_tibble.html)
+on it for the coefficient table as a tibble (the value returned by
+[`summary()`](https://rdrr.io/r/base/summary.html) in earlier versions),
+or
+[`tidy.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.md).
 
 ## Details
 
-This summary method accounts for bootstrapped or robust standard errors
-(when used).
+The standard errors are those chosen when the model was fit:
+Hessian-based, robust (sandwich), or bootstrapped. The z statistics and
+p-values use the normal distribution.
 
-## Note
-
-Optional parameter `confint_level`: A numeric value between 0 and 1
-indicating the confidence level for confidence intervals. Default is
-0.95.
-
-Optional parameter `digits`: Number of digits (decimal places) to round
-to. Default is 3.
+For
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+models of families that nest the Poisson model, a likelihood-ratio test
+against a Poisson model with the same mean specification, rows, offset
+and weights is reported. For one-parameter mixtures where the Poisson
+model lies on the boundary of the parameter space (NB1, NB2, PLN, PIG1,
+PIG2, PIG, PL), the p-value is halved (a 50:50 mixture of chi-square
+distributions with 0 and 1 degrees of freedom).
 
 ## Examples
 
 ``` r
 # \donttest{
-# NB2 Model
 data("washington_roads")
-washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
-nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50,
                 data = washington_roads, family = "NB2",
-                dis_param_formula_1 = ~ speed50, method='BFGS')
-summary(nb2)
+                dis_param_formula_1 = ~ speed50, method = "BFGS")
+s <- summary(nb2)
+s
 #> Call:
-#>  Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus 
+#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50, 
+#>     data = washington_roads, family = "NB2", dis_param_formula_1 = ~speed50, 
+#>     method = "BFGS")
 #> 
-#>  Method:  countreg 
-#> Iterations:  44 
-#> Convergence:  successful convergence  
-#> Log-likelihood:  -1064.876 
+#> Model: countreg | family: NB2 | optimizer: BFGS
+#> Iterations: 47 
+#> Convergence: successful convergence 
 #> 
-#> Parameter Estimates:
-#> # A tibble: 7 × 7
-#>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`
-#>   <chr>               <dbl>       <dbl>    <dbl>     <dbl>      <dbl>      <dbl>
-#> 1 (Intercept)        -7.40        0.465   -15.9      0         -8.31      -6.49 
-#> 2 lnaadt              0.912       0.056    16.3      0          0.802      1.02 
-#> 3 lnlength            0.843       0.07     12.0      0          0.706      0.98 
-#> 4 speed50            -0.47        0.115    -4.08     0         -0.695     -0.244
-#> 5 AADT10kplus         0.77        0.13      5.93     0          0.515      1.02 
-#> 6 ln(alpha):(Interc… -1.62        0.38     -4.26     0         -2.36      -0.875
-#> 7 ln(alpha):speed50   1.31        0.599     2.18     0.029      0.132      2.48 
+#> Coefficients (standard errors: Hessian-based):
+#>                       Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)            -8.7564     0.4404  -19.88  < 2e-16 ***
+#> lnaadt                  1.0803     0.0518   20.86  < 2e-16 ***
+#> lnlength                0.7588     0.0691   10.98  < 2e-16 ***
+#> speed50                -0.5407     0.1173   -4.61  4.0e-06 ***
+#> ln(alpha):(Intercept)  -1.3233     0.3150   -4.20  2.7e-05 ***
+#> ln(alpha):speed50       1.2670     0.4849    2.61    0.009 ** 
+#> ---
+#> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#> 
+#> Log-likelihood: -1082.176 | AIC: 2176.352 | BIC: 2208.235 
+#> N: 1501
+#> LR test vs Poisson: chi-sq = 36.843 on 2 df, p-value = 9.99e-09 
+s$coefficients
+#>                         Estimate Std. Error    z value     Pr(>|z|)      2.5 %
+#> (Intercept)           -8.7563978 0.44040867 -19.882437 5.775863e-88 -9.6195830
+#> lnaadt                 1.0803267 0.05178872  20.860270 1.229765e-96  0.9788227
+#> lnlength               0.7588171 0.06909183  10.982731 4.627175e-28  0.6233996
+#> speed50               -0.5406739 0.11728001  -4.610112 4.024529e-06 -0.7705385
+#> ln(alpha):(Intercept) -1.3232832 0.31500069  -4.200890 2.658677e-05 -1.9406732
+#> ln(alpha):speed50      1.2669833 0.48492203   2.612757 8.981519e-03  0.3165536
+#>                           97.5 %
+#> (Intercept)           -7.8932127
+#> lnaadt                 1.1818308
+#> lnlength               0.8942346
+#> speed50               -0.3108093
+#> ln(alpha):(Intercept) -0.7058932
+#> ln(alpha):speed50      2.2174130
+tibble::as_tibble(s)
+#> # A tibble: 6 × 7
+#>   parameter          coeff `Std. Err.` `z value` `p-value` `lower CI` `upper CI`
+#>   <chr>              <dbl>       <dbl>     <dbl>     <dbl>      <dbl>      <dbl>
+#> 1 (Intercept)       -8.76        0.44     -19.9      0         -9.62      -7.89 
+#> 2 lnaadt             1.08        0.052     20.9      0          0.979      1.18 
+#> 3 lnlength           0.759       0.069     11.0      0          0.623      0.894
+#> 4 speed50           -0.541       0.117     -4.61     0         -0.771     -0.311
+#> 5 ln(alpha):(Inter… -1.32        0.315     -4.20     0         -1.94      -0.706
+#> 6 ln(alpha):speed50  1.27        0.485      2.61     0.009      0.317      2.22 
 # }
 ```

@@ -9,7 +9,7 @@ generation for the Poisson-Lindley-Lognormal (PLL) Distribution."><meta property
 
     <a class="navbar-brand me-2" href="../index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,6 +18,7 @@ generation for the Poisson-Lindley-Lognormal (PLL) Distribution."><meta property
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -75,7 +76,8 @@ generation for the Poisson-Lindley-Lognormal (PLL) Distribution.</p>
 
 
 <dt id="arg-mean">mean<a class="anchor" aria-label="anchor" href="#arg-mean"></a></dt>
-<dd><p>mean (&gt;0).</p></dd>
+<dd><p>the Poisson-Lindley mean before the lognormal factor (&gt;0); the
+mean of the distribution is <code>mean * exp(sigma^2 / 2)</code>.</p></dd>
 
 
 <dt id="arg-theta">theta<a class="anchor" aria-label="anchor" href="#arg-theta"></a></dt>
@@ -103,7 +105,8 @@ generation for the Poisson-Lindley-Lognormal (PLL) Distribution.</p>
 
 
 <dt id="arg-lambda">lambda<a class="anchor" aria-label="anchor" href="#arg-lambda"></a></dt>
-<dd><p>optional lambda parameter (&gt;0).</p></dd>
+<dd><p>optional Poisson scale parameter (&gt;0), an alternative to
+<code>mean</code>: <code>mean = lambda * (theta + 2) / (theta * (theta + 1))</code>.</p></dd>
 
 
 <dt id="arg-lower-tail">lower.tail<a class="anchor" aria-label="anchor" href="#arg-lower-tail"></a></dt>
@@ -134,10 +137,10 @@ maximum of the lengths of the numerical arguments for the other functions.</p>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The PLL is a 3-parameter count distribution that captures high mass at
 small y and allows flexible heavy tails.</p>
-<p><code>dplind</code> computes the PLL density.
-<code>pplind</code> computes the PLL CDF.
-<code>qplind</code> computes quantiles.
-<code>rplind</code> generates random draws.</p>
+<p><code>dplindLnorm</code> computes the PLL density.
+<code>pplindLnorm</code> computes the PLL CDF.
+<code>qplindLnorm</code> computes quantiles.
+<code>rplindLnorm</code> generates random draws.</p>
 <p>The PMF is:
 $$
 f(y|\mu,\theta,\sigma)=\int_0^\infty
@@ -146,9 +149,10 @@ f(y|\mu,\theta,\sigma)=\int_0^\infty
   \frac{\exp\left(-\frac{\ln^2(x)}{2\sigma^2}\right)}
        {x\sigma\sqrt{2\pi}}dx
 $$</p>
-<p>Mean:
+<p>Where \(\mu\) is the <code>mean</code> argument (the Poisson-Lindley mean). The
+mean of the distribution is:
 $$
-E[y]=\mu=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
+E[y]=\mu e^{\sigma^2/2}=\frac{\lambda(\theta+2)e^{\sigma^2/2}}
             {\theta(\theta+1)}
 $$</p>
 <p>Halton draws are used to evaluate the integral.</p>
@@ -162,9 +166,9 @@ $$</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.6072274 0.7717043 0.8450268 0.8859278 0.9117652 0.9294614 0.9422986</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [8] 0.9520167 0.9596144 0.9657016 0.9706706</span>
 <span class="r-in"><span><span class="fu">qplindLnorm</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.5</span>,<span class="fl">0.9</span><span class="op">)</span>, lambda<span class="op">=</span><span class="fl">4.67</span>, theta<span class="op">=</span><span class="fl">7</span>, sigma<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1]  0  3 61</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0 0 9</span>
 <span class="r-in"><span><span class="fu">rplindLnorm</span><span class="op">(</span><span class="fl">5</span>, mean<span class="op">=</span><span class="fl">0.75</span>, theta<span class="op">=</span><span class="fl">7</span>, sigma<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0 0 0 0 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0 0 1 4 0</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

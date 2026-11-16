@@ -11,7 +11,7 @@ Information Criterion (BIC)."><meta property="og:image" content="https://jwood-i
 
     <a class="navbar-brand me-2" href="../index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,7 @@ Information Criterion (BIC)."><meta property="og:image" content="https://jwood-i
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -113,10 +114,10 @@ and does not estimate a separate base model.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>When only one fitted model is supplied, the function estimates a base model
-from the supplied data and compares the fitted model against that base
-model. When two fitted models are supplied, the function compares the two
-fitted models directly and uses the model with the larger log-likelihood as
-the base model for the LR test.</p>
+on the same rows, offset and weights and compares the fitted model against
+it. When two fitted models are supplied, the function compares them
+directly; the model with fewer parameters is the restricted (base) model of
+the LR test.</p>
 <p>The function performs the following steps for the single-model
 workflow:</p><ol><li><p>Fits the base model, either a Poisson regression or another specified
 model.</p></li>
@@ -126,16 +127,24 @@ model.</p></li>
 <li><p>Conducts a Likelihood Ratio test to compare the fitted model against
 the estimated base model when the fitted model has more parameters than
 the base model.</p></li>
-<li><p>Computes McFadden's Pseudo R^2.</p></li>
-</ol><p>For the two-model workflow, the function compares the two fitted models
-directly. The model with the larger log-likelihood is treated as the base
-model for the LR test, and the other model is treated as the comparison
-model.</p>
-<p>The Likelihood-Ratio test is computed as $$LR = -2 (LL_{base} - LL_{comparison})$$.
-The test is chi-squared with degrees of freedom
-$$dof = |N_{base \ params} - N_{comparison \ params}|$$.
-The AIC is calculated as $$AIC = -2 \cdot LL + 2 \cdot nparam$$, and the
-BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
+<li><p>Computes McFadden's Pseudo R^2, \(1 - LL/LL_0\), where
+\(LL_0\) is the log-likelihood of an intercept-only model of the same
+family for <code><a href="countreg.html">countreg()</a></code> models (an intercept-only Poisson model for
+the other estimators).</p></li>
+</ol><p>For the two-model workflow, the model with fewer parameters is the
+restricted (base) model and the other is the comparison (full) model. The
+models must be fit to the same observations (an error is raised otherwise)
+and should be nested; a warning is given when the restricted model has the
+higher log-likelihood (a sign that the models are not nested or that one
+did not converge), and no LR test is reported when they have the same
+number of parameters. The LR test assumes the restricted model is in the
+interior of the parameter space; when it is on the boundary (for example
+Poisson within NB2), the p-value is conservative.</p>
+<p>The Likelihood-Ratio test is computed as
+$$LR = 2 (LL_{comparison} - LL_{base})$$
+and is chi-squared with degrees of freedom equal to the difference in the
+number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code> and
+<code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code>; for panel models, BIC uses the number of panels.</p>
     </div>
 
     <div class="section level2">
@@ -152,23 +161,23 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">regCompTest</span><span class="op">(</span><span class="va">nbp.base</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, basemodel <span class="op">=</span> <span class="st">"Poisson"</span>,</span></span>
 <span class="r-in"><span>            variables <span class="op">=</span> <span class="cn">TRUE</span>, print <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="arnljmwske" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#arnljmwske table {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="ujyntsapwa" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#ujyntsapwa table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   -webkit-font-smoothing: antialiased;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   -moz-osx-font-smoothing: grayscale;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske thead, #arnljmwske tbody, #arnljmwske tfoot, #arnljmwske tr, #arnljmwske td, #arnljmwske th {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa thead, #ujyntsapwa tbody, #ujyntsapwa tfoot, #ujyntsapwa tr, #ujyntsapwa td, #ujyntsapwa th {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-style: none;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske p {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa p {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_table {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   display: table;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-collapse: collapse;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   line-height: normal;</span>
@@ -194,12 +203,12 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-left-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_caption {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_caption {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_title {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_title {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 125%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: initial;</span>
@@ -211,7 +220,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_subtitle {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_subtitle {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 85%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: initial;</span>
@@ -223,7 +232,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: center;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #FFFFFF;</span>
@@ -235,13 +244,13 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_bottom_border {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_bottom_border {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_col_headings {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_col_headings {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
@@ -256,7 +265,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_col_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_col_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -276,7 +285,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   overflow-x: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_column_spanner_outer {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_column_spanner_outer {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -288,15 +297,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_column_spanner_outer:first-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_column_spanner_outer:first-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_column_spanner_outer:last-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_column_spanner_outer:last-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_column_spanner {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_column_spanner {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
@@ -308,11 +317,11 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   width: 100%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_spanner_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_spanner_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_group_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_group_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -338,7 +347,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: left;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_empty_group_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_empty_group_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding: 0.5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
@@ -353,15 +362,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: middle;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_from_md &gt; :first-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_from_md &gt; :first-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-top: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_from_md &gt; :last-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_from_md &gt; :last-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-bottom: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -380,7 +389,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   overflow-x: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_stub {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_stub {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -393,7 +402,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_stub_row_group {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_stub_row_group {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -407,15 +416,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: top;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_row_group_first td {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_row_group_first td {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_row_group_first th {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_row_group_first th {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-transform: inherit;</span>
@@ -425,16 +434,16 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_first_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_first_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_first_summary_row.thick {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_first_summary_row.thick {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_last_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_last_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -444,7 +453,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_grand_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_grand_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-transform: inherit;</span>
@@ -454,7 +463,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_first_grand_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_first_grand_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -464,7 +473,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_last_grand_summary_row_top {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_last_grand_summary_row_top {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -474,11 +483,11 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_striped {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_striped {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: rgba(128, 128, 128, 0.05);</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_table_body {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_table_body {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
@@ -487,7 +496,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_footnotes {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_footnotes {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: none;</span>
@@ -501,7 +510,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_footnote {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_footnote {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin: 0px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 90%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
@@ -510,7 +519,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_sourcenotes {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_sourcenotes {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: none;</span>
@@ -524,7 +533,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_sourcenote {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_sourcenote {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 90%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 4px;</span>
@@ -532,72 +541,72 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_left {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_left {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: left;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_center {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_center {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: center;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_right {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_right {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: right;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-variant-numeric: tabular-nums;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_font_normal {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_font_normal {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: normal;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_font_bold {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_font_bold {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: bold;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_font_italic {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_font_italic {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-style: italic;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_super {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_super {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 65%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_footnote_marks {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_footnote_marks {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 75%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: 0.4em;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   position: initial;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_asterisk {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_asterisk {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_indent_1 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_indent_1 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_indent_2 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_indent_2 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 10px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_indent_3 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_indent_3 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 15px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_indent_4 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_indent_4 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 20px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .gt_indent_5 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .gt_indent_5 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 25px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske .katex-display {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa .katex-display {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   display: inline-flex !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-bottom: 0.75em !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #arnljmwske div.Reactable &gt; div.rt-table &gt; div.rt-thead &gt; div.rt-tr.rt-tr-group-header &gt; div.rt-th-group:after {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #ujyntsapwa div.Reactable &gt; div.rt-table &gt; div.rt-thead &gt; div.rt-tr.rt-tr-group-header &gt; div.rt-th-group:after {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   height: 0px !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/style&gt;</span>
@@ -636,7 +645,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0001&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.2083&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
@@ -742,7 +751,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0001232406</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $PseudoR2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.3028972</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2083299</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $statistics</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 3</span></span>
@@ -755,26 +764,26 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR Test Statistic        18.0          <span style="color: #BB0000;">NA</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> LR degrees of freedom     2            <span style="color: #BB0000;">NA</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> LR p-value                0.000<span style="text-decoration: underline;">1</span>       <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.303        <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.208        <span style="color: #BB0000;">NA</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $gtTable</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="yeczcjssbi" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#yeczcjssbi table {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="zzmwnfmrog" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#zzmwnfmrog table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   -webkit-font-smoothing: antialiased;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   -moz-osx-font-smoothing: grayscale;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi thead, #yeczcjssbi tbody, #yeczcjssbi tfoot, #yeczcjssbi tr, #yeczcjssbi td, #yeczcjssbi th {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog thead, #zzmwnfmrog tbody, #zzmwnfmrog tfoot, #zzmwnfmrog tr, #zzmwnfmrog td, #zzmwnfmrog th {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-style: none;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi p {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog p {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_table {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   display: table;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-collapse: collapse;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   line-height: normal;</span>
@@ -800,12 +809,12 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-left-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_caption {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_caption {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_title {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_title {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 125%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: initial;</span>
@@ -817,7 +826,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_subtitle {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_subtitle {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 85%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: initial;</span>
@@ -829,7 +838,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: center;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #FFFFFF;</span>
@@ -841,13 +850,13 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_bottom_border {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_bottom_border {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_col_headings {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_col_headings {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
@@ -862,7 +871,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_col_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_col_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -882,7 +891,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   overflow-x: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_column_spanner_outer {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_column_spanner_outer {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -894,15 +903,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_column_spanner_outer:first-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_column_spanner_outer:first-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_column_spanner_outer:last-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_column_spanner_outer:last-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_column_spanner {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_column_spanner {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
@@ -914,11 +923,11 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   width: 100%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_spanner_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_spanner_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_group_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_group_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -944,7 +953,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: left;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_empty_group_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_empty_group_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding: 0.5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
@@ -959,15 +968,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: middle;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_from_md &gt; :first-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_from_md &gt; :first-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-top: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_from_md &gt; :last-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_from_md &gt; :last-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-bottom: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -986,7 +995,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   overflow-x: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_stub {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_stub {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -999,7 +1008,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_stub_row_group {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_stub_row_group {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -1013,15 +1022,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: top;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_row_group_first td {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_row_group_first td {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_row_group_first th {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_row_group_first th {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-transform: inherit;</span>
@@ -1031,16 +1040,16 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_first_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_first_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_first_summary_row.thick {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_first_summary_row.thick {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_last_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_last_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -1050,7 +1059,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_grand_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_grand_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-transform: inherit;</span>
@@ -1060,7 +1069,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_first_grand_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_first_grand_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -1070,7 +1079,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_last_grand_summary_row_top {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_last_grand_summary_row_top {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -1080,11 +1089,11 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_striped {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_striped {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: rgba(128, 128, 128, 0.05);</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_table_body {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_table_body {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
@@ -1093,7 +1102,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_footnotes {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_footnotes {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: none;</span>
@@ -1107,7 +1116,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_footnote {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_footnote {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin: 0px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 90%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
@@ -1116,7 +1125,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_sourcenotes {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_sourcenotes {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: none;</span>
@@ -1130,7 +1139,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_sourcenote {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_sourcenote {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 90%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 4px;</span>
@@ -1138,72 +1147,72 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_left {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_left {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: left;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_center {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_center {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: center;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_right {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_right {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: right;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-variant-numeric: tabular-nums;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_font_normal {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_font_normal {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: normal;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_font_bold {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_font_bold {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: bold;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_font_italic {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_font_italic {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-style: italic;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_super {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_super {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 65%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_footnote_marks {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_footnote_marks {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 75%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: 0.4em;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   position: initial;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_asterisk {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_asterisk {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_indent_1 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_indent_1 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_indent_2 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_indent_2 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 10px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_indent_3 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_indent_3 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 15px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_indent_4 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_indent_4 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 20px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .gt_indent_5 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .gt_indent_5 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 25px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi .katex-display {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog .katex-display {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   display: inline-flex !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-bottom: 0.75em !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #yeczcjssbi div.Reactable &gt; div.rt-table &gt; div.rt-thead &gt; div.rt-tr.rt-tr-group-header &gt; div.rt-th-group:after {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #zzmwnfmrog div.Reactable &gt; div.rt-table &gt; div.rt-thead &gt; div.rt-tr.rt-tr-group-header &gt; div.rt-th-group:after {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   height: 0px !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/style&gt;</span>
@@ -1242,7 +1251,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0001&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.2083&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
@@ -1266,7 +1275,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 2.0000 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.0001 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.3029 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.2083 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \bottomrule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{tabular}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{table}</span>
@@ -1319,7 +1328,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; McFadden's Pseudo R^2 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.3029 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.2083 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/tbody&gt;</span>
@@ -1331,26 +1340,27 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-in"><span>                     <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADTover10k</span>,</span></span>
 <span class="r-in"><span>                     data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>, method <span class="op">=</span> <span class="st">"NM"</span>,</span></span>
 <span class="r-in"><span>                     max.iters <span class="op">=</span> <span class="fl">3000</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The optimizer did not report convergence (iteration limit exceeded). Consider a different `method` or more `max.iters`.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">regCompTest</span><span class="op">(</span><span class="va">nbp.base</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, model2 <span class="op">=</span> <span class="va">nb2.base</span>,</span></span>
 <span class="r-in"><span>            print <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="pubdkdnilr" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#pubdkdnilr table {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="vxkvczrocj" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#vxkvczrocj table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   -webkit-font-smoothing: antialiased;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   -moz-osx-font-smoothing: grayscale;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr thead, #pubdkdnilr tbody, #pubdkdnilr tfoot, #pubdkdnilr tr, #pubdkdnilr td, #pubdkdnilr th {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj thead, #vxkvczrocj tbody, #vxkvczrocj tfoot, #vxkvczrocj tr, #vxkvczrocj td, #vxkvczrocj th {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-style: none;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr p {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj p {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_table {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   display: table;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-collapse: collapse;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   line-height: normal;</span>
@@ -1376,12 +1386,12 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-left-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_caption {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_caption {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_title {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_title {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 125%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: initial;</span>
@@ -1393,7 +1403,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_subtitle {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_subtitle {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 85%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: initial;</span>
@@ -1405,7 +1415,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: center;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #FFFFFF;</span>
@@ -1417,13 +1427,13 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_bottom_border {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_bottom_border {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_col_headings {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_col_headings {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
@@ -1438,7 +1448,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_col_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_col_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -1458,7 +1468,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   overflow-x: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_column_spanner_outer {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_column_spanner_outer {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -1470,15 +1480,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_column_spanner_outer:first-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_column_spanner_outer:first-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_column_spanner_outer:last-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_column_spanner_outer:last-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_column_spanner {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_column_spanner {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
@@ -1490,11 +1500,11 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   width: 100%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_spanner_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_spanner_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_group_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_group_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -1520,7 +1530,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: left;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_empty_group_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_empty_group_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding: 0.5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
@@ -1535,15 +1545,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: middle;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_from_md &gt; :first-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_from_md &gt; :first-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-top: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_from_md &gt; :last-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_from_md &gt; :last-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-bottom: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -1562,7 +1572,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   overflow-x: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_stub {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_stub {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -1575,7 +1585,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_stub_row_group {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_stub_row_group {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -1589,15 +1599,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: top;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_row_group_first td {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_row_group_first td {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_row_group_first th {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_row_group_first th {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-transform: inherit;</span>
@@ -1607,16 +1617,16 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_first_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_first_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_first_summary_row.thick {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_first_summary_row.thick {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_last_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_last_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -1626,7 +1636,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_grand_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_grand_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-transform: inherit;</span>
@@ -1636,7 +1646,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_first_grand_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_first_grand_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -1646,7 +1656,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_last_grand_summary_row_top {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_last_grand_summary_row_top {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -1656,11 +1666,11 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_striped {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_striped {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: rgba(128, 128, 128, 0.05);</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_table_body {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_table_body {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
@@ -1669,7 +1679,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_footnotes {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_footnotes {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: none;</span>
@@ -1683,7 +1693,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_footnote {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_footnote {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin: 0px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 90%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
@@ -1692,7 +1702,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_sourcenotes {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_sourcenotes {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: none;</span>
@@ -1706,7 +1716,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_sourcenote {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_sourcenote {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 90%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 4px;</span>
@@ -1714,72 +1724,72 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_left {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_left {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: left;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_center {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_center {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: center;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_right {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_right {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: right;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-variant-numeric: tabular-nums;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_font_normal {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_font_normal {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: normal;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_font_bold {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_font_bold {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: bold;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_font_italic {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_font_italic {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-style: italic;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_super {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_super {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 65%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_footnote_marks {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_footnote_marks {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 75%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: 0.4em;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   position: initial;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_asterisk {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_asterisk {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_indent_1 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_indent_1 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_indent_2 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_indent_2 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 10px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_indent_3 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_indent_3 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 15px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_indent_4 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_indent_4 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 20px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .gt_indent_5 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .gt_indent_5 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 25px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr .katex-display {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj .katex-display {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   display: inline-flex !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-bottom: 0.75em !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #pubdkdnilr div.Reactable &gt; div.rt-table &gt; div.rt-thead &gt; div.rt-tr.rt-tr-group-header &gt; div.rt-th-group:after {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #vxkvczrocj div.Reactable &gt; div.rt-table &gt; div.rt-thead &gt; div.rt-tr.rt-tr-group-header &gt; div.rt-th-group:after {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   height: 0px !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/style&gt;</span>
@@ -1818,37 +1828,37 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.1286&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;0.3021&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.2083&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;0.2075&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/div&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $base_model</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Nelder-Mead maximization, 917 iterations</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Return code 0: successful convergence </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -1062.266 (8 free parameter(s))</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Estimate(s): -7.796102 0.9417162 0.8342337 -0.3870385 0.2592118 0.6860279 -1.326803 0.5023309 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $comparison_model</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Nelder-Mead maximization, 3002 iterations</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Return code 1: iteration limit exceeded </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -1063.421 (7 free parameter(s))</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Estimate(s): -7.350311 0.8911364 0.8436279 -0.370684 0.254564 0.7938497 -1.320848 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $base_index</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $comparison_model</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Maximum Likelihood estimation</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Nelder-Mead maximization, 917 iterations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Return code 0: successful convergence </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-Likelihood: -1062.266 (8 free parameter(s))</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Estimate(s): -7.796102 0.9417162 0.8342337 -0.3870385 0.2592118 0.6860279 -1.326803 0.5023309 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> $comparison_index</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $base_index</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> $comparison_index</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $LL_base</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1062.266</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1063.421</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $LL_comparison</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1063.421</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] -1062.266</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $LR</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.309402</span>
@@ -1860,10 +1870,10 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1285935</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $PseudoR2_base</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.3028972</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2074693</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $PseudoR2_comparison</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.3021394</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2083299</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $statistics</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 3</span></span>
@@ -1876,26 +1886,26 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR Test Statistic         2.31     <span style="color: #BB0000;">NA</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> LR degrees of freedom     1        <span style="color: #BB0000;">NA</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> LR p-value                0.129    <span style="color: #BB0000;">NA</span>    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.303     0.302</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.208     0.208</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $gtTable</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="zbvzxkvftf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#zbvzxkvftf table {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="pvteseuwbf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;style&gt;#pvteseuwbf table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   -webkit-font-smoothing: antialiased;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   -moz-osx-font-smoothing: grayscale;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf thead, #zbvzxkvftf tbody, #zbvzxkvftf tfoot, #zbvzxkvftf tr, #zbvzxkvftf td, #zbvzxkvftf th {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf thead, #pvteseuwbf tbody, #pvteseuwbf tfoot, #pvteseuwbf tr, #pvteseuwbf td, #pvteseuwbf th {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-style: none;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf p {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf p {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_table {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_table {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   display: table;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-collapse: collapse;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   line-height: normal;</span>
@@ -1921,12 +1931,12 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-left-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_caption {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_caption {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_title {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_title {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 125%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: initial;</span>
@@ -1938,7 +1948,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_subtitle {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_subtitle {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 85%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: initial;</span>
@@ -1950,7 +1960,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: center;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #FFFFFF;</span>
@@ -1962,13 +1972,13 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_bottom_border {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_bottom_border {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_col_headings {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_col_headings {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
@@ -1983,7 +1993,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_col_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_col_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -2003,7 +2013,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   overflow-x: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_column_spanner_outer {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_column_spanner_outer {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -2015,15 +2025,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_column_spanner_outer:first-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_column_spanner_outer:first-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_column_spanner_outer:last-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_column_spanner_outer:last-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_column_spanner {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_column_spanner {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
@@ -2035,11 +2045,11 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   width: 100%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_spanner_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_spanner_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_group_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_group_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -2065,7 +2075,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: left;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_empty_group_heading {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_empty_group_heading {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding: 0.5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
@@ -2080,15 +2090,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: middle;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_from_md &gt; :first-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_from_md &gt; :first-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-top: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_from_md &gt; :last-child {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_from_md &gt; :last-child {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-bottom: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -2107,7 +2117,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   overflow-x: hidden;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_stub {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_stub {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -2120,7 +2130,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_stub_row_group {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_stub_row_group {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
@@ -2134,15 +2144,15 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: top;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_row_group_first td {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_row_group_first td {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_row_group_first th {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_row_group_first th {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-transform: inherit;</span>
@@ -2152,16 +2162,16 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_first_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_first_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_first_summary_row.thick {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_first_summary_row.thick {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_last_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_last_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -2171,7 +2181,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_grand_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_grand_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-transform: inherit;</span>
@@ -2181,7 +2191,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_first_grand_summary_row {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_first_grand_summary_row {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -2191,7 +2201,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_last_grand_summary_row_top {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_last_grand_summary_row_top {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 8px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-left: 5px;</span>
@@ -2201,11 +2211,11 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_striped {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_striped {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: rgba(128, 128, 128, 0.05);</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_table_body {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_table_body {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-style: solid;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-width: 2px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-top-color: #D3D3D3;</span>
@@ -2214,7 +2224,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_footnotes {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_footnotes {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: none;</span>
@@ -2228,7 +2238,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_footnote {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_footnote {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin: 0px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 90%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
@@ -2237,7 +2247,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_sourcenotes {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_sourcenotes {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   color: #333333;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   background-color: #FFFFFF;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-bottom-style: none;</span>
@@ -2251,7 +2261,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   border-right-color: #D3D3D3;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_sourcenote {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_sourcenote {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 90%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-top: 4px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-bottom: 4px;</span>
@@ -2259,72 +2269,72 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   padding-right: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_left {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_left {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: left;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_center {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_center {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: center;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_right {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_right {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-align: right;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-variant-numeric: tabular-nums;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_font_normal {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_font_normal {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: normal;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_font_bold {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_font_bold {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-weight: bold;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_font_italic {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_font_italic {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-style: italic;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_super {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_super {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 65%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_footnote_marks {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_footnote_marks {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 75%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: 0.4em;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   position: initial;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_asterisk {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_asterisk {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   font-size: 100%;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   vertical-align: 0;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_indent_1 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_indent_1 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 5px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_indent_2 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_indent_2 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 10px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_indent_3 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_indent_3 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 15px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_indent_4 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_indent_4 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 20px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .gt_indent_5 {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .gt_indent_5 {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   text-indent: 25px;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf .katex-display {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf .katex-display {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   display: inline-flex !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   margin-bottom: 0.75em !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> #zbvzxkvftf div.Reactable &gt; div.rt-table &gt; div.rt-thead &gt; div.rt-tr.rt-tr-group-header &gt; div.rt-th-group:after {</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> #pvteseuwbf div.Reactable &gt; div.rt-table &gt; div.rt-thead &gt; div.rt-tr.rt-tr-group-header &gt; div.rt-th-group:after {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   height: 0px !important;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/style&gt;</span>
@@ -2363,8 +2373,8 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.1286&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;0.3021&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.2083&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;0.2075&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
@@ -2387,7 +2397,7 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 1.0000 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.1286 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.3029 &amp; 0.3021\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.2083 &amp; 0.2075\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \bottomrule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{tabular}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{table}</span>
@@ -2440,8 +2450,8 @@ BIC is calculated as $$BIC = -2 \cdot LL + nparam \cdot \log(n)$$.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; McFadden's Pseudo R^2 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.3029 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.3021 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.2083 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.2075 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>

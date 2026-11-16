@@ -38,8 +38,11 @@ margEffTable(
 - vars:
 
   Optional character vector of variable names to evaluate. If `NULL`,
-  the function uses the non-response variables appearing in the model
-  formula that are present in `data`.
+  the function uses the non-response variables of the model formula and
+  of the formulas that also change the expected value: the
+  underreporting, random-parameter and heterogeneity formulas, and the
+  distribution-parameter formulas of the PLN and PLL families. Offsets
+  and panel identifiers are excluded.
 
 - measure:
 
@@ -157,15 +160,15 @@ margEffTable(nb2, tableType = "tibble")
 #> Method: delta 
 #> 
 #>         term variable_type           effect_metric estimate std_error t_value
-#>       lnaadt    continuous Average marginal effect    0.424     0.033  12.822
-#>     lnlength    continuous Average marginal effect    0.394     0.038  10.227
-#>      speed50     indicator   Pseudo-elasticity (%)  -36.692     6.757  -5.431
-#>  AADT10kplus     indicator   Pseudo-elasticity (%)  124.036    29.027   4.273
+#>       lnaadt    continuous Average marginal effect    0.424     0.034  12.619
+#>     lnlength    continuous Average marginal effect    0.394     0.039  10.097
+#>      speed50     indicator   Pseudo-elasticity (%)  -36.692     6.759  -5.429
+#>  AADT10kplus     indicator   Pseudo-elasticity (%)  124.036    29.298   4.234
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
-#>        0 ***    0.359    0.488  1501                    NA
-#>        0 ***    0.318    0.469  1501                    NA
-#>        0 ***  -49.935  -23.450  1501                    NA
-#>        0 ***   67.144  180.928  1501                    NA
+#>        0 ***    0.358    0.489  1501                    NA
+#>        0 ***    0.317    0.470  1501                    NA
+#>        0 ***  -49.940  -23.445  1501                    NA
+#>        0 ***   66.612  181.460  1501                    NA
 margEffTable(nb2, tableType = "gt")
 
 

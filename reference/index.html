@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,6 +16,7 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -30,7 +31,199 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="count-regression-models">Count regression models<a class="anchor" aria-label="anchor" href="#count-regression-models"></a></h2>
+
+      <div class="section-desc"><p>Estimate count models with flexible distributions, underreporting, random parameters and random effects.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="countreg.html">countreg()</a></code>
+
+        </dt>
+        <dd>Count regression models</dd>
+
+        <dt>
+
+          <code><a href="countreg.rp.html">countreg.rp()</a></code>
+
+        </dt>
+        <dd>Random Parameters Count Regression Models</dd>
+
+        <dt>
+
+          <code><a href="renb.html">renb()</a></code>
+
+        </dt>
+        <dd>Estimate a Random Effects Negative Binomial regression model</dd>
+
+        <dt>
+
+          <code><a href="poisLindRE.html">poisLind.re()</a></code>
+
+        </dt>
+        <dd>Function for estimating a Random Effects Poisson-Lindley regression model</dd>
+
+        <dt>
+
+          <code><a href="repois.html">repois()</a></code>
+
+        </dt>
+        <dd>Estimate a Random Effects Poisson Panel Model</dd>
+
+        <dt>
+
+          <code><a href="negmultinom.html">negmultinom()</a></code>
+
+        </dt>
+        <dd>Negative Multinomial Family Panel Regression (NM1, NM2, NM-P)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="working-with-fitted-models">Working with fitted models<a class="anchor" aria-label="anchor" href="#working-with-fitted-models"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="summary.flexCountReg.html">summary(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="summary.flexCountReg.html">print(<i>&lt;summary.flexCountReg&gt;</i>)</a></code> <code><a href="summary.flexCountReg.html">as_tibble(<i>&lt;summary.flexCountReg&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a flexCountReg model</dd>
+
+        <dt>
+
+          <code><a href="flexCountReg-methods.html">coef(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">vcov(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">nobs(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">logLik(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">formula(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">terms(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">confint(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">fitted(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">residuals(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">simulate(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">print(<i>&lt;flexCountReg&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Standard methods for flexCountReg models</dd>
+
+        <dt>
+
+          <code><a href="flexCountReg-tidiers.html">tidy(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-tidiers.html">glance(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-tidiers.html">augment(<i>&lt;flexCountReg&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Tidy, glance and augment flexCountReg models</dd>
+
+        <dt>
+
+          <code><a href="predict.flexCountReg.html">predict(<i>&lt;flexCountReg&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Predictions for flexCountReg models</dd>
+      </dl></div><div class="section level2">
+      <h2 id="prediction-effects-and-diagnostics">Prediction, effects and diagnostics<a class="anchor" aria-label="anchor" href="#prediction-effects-and-diagnostics"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="margEffTable.html">margEffTable()</a></code>
+
+        </dt>
+        <dd>Marginal Effects, Elasticities, and Pseudo-Elasticities for flexCountReg Models</dd>
+
+        <dt>
+
+          <code><a href="cureplot.html">cureplot()</a></code>
+
+        </dt>
+        <dd>Cumulative Residuals (CURE) Plot for Count Models</dd>
+
+        <dt>
+
+          <code><a href="rootogram.html">rootogram()</a></code>
+
+        </dt>
+        <dd>Rootogram for a count regression model</dd>
+      </dl></div><div class="section level2">
+      <h2 id="model-comparison-and-fit-metrics">Model comparison and fit metrics<a class="anchor" aria-label="anchor" href="#model-comparison-and-fit-metrics"></a></h2>
+
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="regCompTest.html">regCompTest()</a></code>
+
+        </dt>
+        <dd>Compare Regression Models with Likelihood Ratio Test, AIC, and BIC</dd>
+
+        <dt>
+
+          <code><a href="regCompTable.html">regCompTable()</a></code>
+
+        </dt>
+        <dd>Create a Table Comparing Regression Models with AIC, BIC, and McFadden's Pseudo-R-Squared</dd>
+
+        <dt>
+
+          <code><a href="mae.html">mae()</a></code>
+
+        </dt>
+        <dd>Calculate Mean Absolute Error (MAE)</dd>
+
+        <dt>
+
+          <code><a href="rmse.html">rmse()</a></code>
+
+        </dt>
+        <dd>Calculate Root Mean Squared Error (RMSE)</dd>
+
+        <dt>
+
+          <code><a href="myAIC.html">myAIC()</a></code>
+
+        </dt>
+        <dd>Calculate Akaike Information Criterion (AIC)</dd>
+
+        <dt>
+
+          <code><a href="myBIC.html">myBIC()</a></code>
+
+        </dt>
+        <dd>Calculate Bayesian Information Criterion (BIC)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="tidymodels">tidymodels<a class="anchor" aria-label="anchor" href="#tidymodels"></a></h2>
+
+      <div class="section-desc"><p>A parsnip model specification with the flexCountReg engine.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="count_reg.html">count_reg()</a></code>
+
+        </dt>
+        <dd>Count regression model specification for tidymodels</dd>
+
+        <dt>
+
+          <code><a href="count_family.html">count_family()</a></code>
+
+        </dt>
+        <dd>Count distribution tuning parameter</dd>
+      </dl></div><div class="section level2">
+      <h2 id="count-distributions">Count distributions<a class="anchor" aria-label="anchor" href="#count-distributions"></a></h2>
 
 
 
@@ -69,13 +262,6 @@
 
         <dt>
 
-          <code><a href="Lindley.html">dlindley()</a></code> <code><a href="Lindley.html">plindley()</a></code> <code><a href="Lindley.html">qlindley()</a></code> <code><a href="Lindley.html">rlindley()</a></code>
-
-        </dt>
-        <dd>One-Parameter Lindley Distribution</dd>
-
-        <dt>
-
           <code><a href="NegativeBinomialLindley.html">dplindGamma()</a></code> <code><a href="NegativeBinomialLindley.html">pplindGamma()</a></code> <code><a href="NegativeBinomialLindley.html">qplindGamma()</a></code> <code><a href="NegativeBinomialLindley.html">rplindGamma()</a></code>
 
         </dt>
@@ -83,7 +269,7 @@
 
         <dt>
 
-          <code><a href="PoissonGeneralizedExponential.html">.dpge_one()</a></code> <code><a href="PoissonGeneralizedExponential.html">dpge()</a></code> <code><a href="PoissonGeneralizedExponential.html">ppge()</a></code> <code><a href="PoissonGeneralizedExponential.html">qpge()</a></code> <code><a href="PoissonGeneralizedExponential.html">rpge()</a></code>
+          <code><a href="PoissonGeneralizedExponential.html">dpge()</a></code> <code><a href="PoissonGeneralizedExponential.html">ppge()</a></code> <code><a href="PoissonGeneralizedExponential.html">qpge()</a></code> <code><a href="PoissonGeneralizedExponential.html">rpge()</a></code>
 
         </dt>
         <dd>Poisson-Generalized-Exponential Distribution</dd>
@@ -104,7 +290,7 @@
 
         <dt>
 
-          <code><a href="PoissonLindley.html">msg1</a></code> <code><a href="PoissonLindley.html">dplind()</a></code> <code><a href="PoissonLindley.html">pplind()</a></code> <code><a href="PoissonLindley.html">qplind()</a></code> <code><a href="PoissonLindley.html">rplind()</a></code>
+          <code><a href="PoissonLindley.html">dplind()</a></code> <code><a href="PoissonLindley.html">pplind()</a></code> <code><a href="PoissonLindley.html">qplind()</a></code> <code><a href="PoissonLindley.html">rplind()</a></code>
 
         </dt>
         <dd>Poisson-Lindley Distribution</dd>
@@ -136,62 +322,22 @@
 
         </dt>
         <dd>Sichel Distribution</dd>
+      </dl></div><div class="section level2">
+      <h2 id="continuous-distributions-and-simulation-tools">Continuous distributions and simulation tools<a class="anchor" aria-label="anchor" href="#continuous-distributions-and-simulation-tools"></a></h2>
 
-        <dt>
 
-          <code><a href="Triangular.html">dtri()</a></code> <code><a href="Triangular.html">ptri()</a></code> <code><a href="Triangular.html">qtri()</a></code> <code><a href="Triangular.html">rtri()</a></code>
 
-        </dt>
-        <dd>Triangle Distribution</dd>
+      <dl></dl></div><div class="section level2">
 
-        <dt>
 
-          <code><a href="cor2cov.html">cor2cov()</a></code>
 
-        </dt>
-        <dd>Generate a covariance matrix using a correlation matrix and vector of standard deviations</dd>
 
-        <dt>
+      <dl><dt>
 
-          <code><a href="corr_haltons.html">corr_haltons()</a></code>
+          <code><a href="Lindley.html">dlindley()</a></code> <code><a href="Lindley.html">plindley()</a></code> <code><a href="Lindley.html">qlindley()</a></code> <code><a href="Lindley.html">rlindley()</a></code>
 
         </dt>
-        <dd>Generate Correlated Random Variables Using Halton or Scrambled Halton Draws</dd>
-
-        <dt>
-
-          <code><a href="countreg.html">countreg()</a></code>
-
-        </dt>
-        <dd>Count regression models</dd>
-
-        <dt>
-
-          <code><a href="countreg.rp.html">countreg.rp()</a></code>
-
-        </dt>
-        <dd>Random Parameters Count Regression Models</dd>
-
-        <dt>
-
-          <code><a href="cureplot.html">cureplot()</a></code>
-
-        </dt>
-        <dd>Cumulative Residuals (CURE) Plot for Count Models</dd>
-
-        <dt>
-
-          <code><a href="flexCountReg-class.html">flexCountReg-class</a></code>
-
-        </dt>
-        <dd>flexCountReg Class</dd>
-
-        <dt>
-
-          <code><a href="halton_dists.html">halton_dists()</a></code>
-
-        </dt>
-        <dd>Generate pseudo-random draws from specified distributions using Halton draws</dd>
+        <dd>One-Parameter Lindley Distribution</dd>
 
         <dt>
 
@@ -202,17 +348,17 @@
 
         <dt>
 
-          <code><a href="mae.html">mae()</a></code>
+          <code><a href="rinvgaus.html">rinvgaus()</a></code>
 
         </dt>
-        <dd>Calculate Mean Absolute Error (MAE)</dd>
+        <dd>Generate inverse-Gaussian random numbers</dd>
 
         <dt>
 
-          <code><a href="margEffTable.html">margEffTable()</a></code>
+          <code><a href="Triangular.html">dtri()</a></code> <code><a href="Triangular.html">ptri()</a></code> <code><a href="Triangular.html">qtri()</a></code> <code><a href="Triangular.html">rtri()</a></code>
 
         </dt>
-        <dd>Marginal Effects, Elasticities, and Pseudo-Elasticities for flexCountReg Models</dd>
+        <dd>Triangle Distribution</dd>
 
         <dt>
 
@@ -223,96 +369,43 @@
 
         <dt>
 
-          <code><a href="myAIC.html">myAIC()</a></code>
+          <code><a href="halton_dists.html">halton_dists()</a></code>
 
         </dt>
-        <dd>Calculate Akaike Information Criterion (AIC)</dd>
+        <dd>Generate pseudo-random draws from specified distributions using Halton draws</dd>
 
         <dt>
 
-          <code><a href="myBIC.html">myBIC()</a></code>
+          <code><a href="corr_haltons.html">corr_haltons()</a></code>
 
         </dt>
-        <dd>Calculate Bayesian Information Criterion (BIC)</dd>
+        <dd>Generate Correlated Random Variables Using Halton or Scrambled Halton Draws</dd>
 
         <dt>
 
-          <code><a href="negmultinom.html">negmultinom()</a></code>
+          <code><a href="cor2cov.html">cor2cov()</a></code>
 
         </dt>
-        <dd>Negative Multinomial Family Panel Regression (NM1, NM2, NM-P)</dd>
+        <dd>Generate a covariance matrix using a correlation matrix and vector of standard deviations</dd>
+      </dl></div><div class="section level2">
+      <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
 
-        <dt>
 
-          <code><a href="poisLindRE.html">poisLind.re()</a></code>
 
-        </dt>
-        <dd>Function for estimating a Random Effects Poisson-Lindley regression model</dd>
+      <dl></dl></div><div class="section level2">
 
-        <dt>
 
-          <code><a href="predict.flexCountReg.html">predict(<i>&lt;flexCountReg&gt;</i>)</a></code>
 
-        </dt>
-        <dd>Predictions for flexCountReg models</dd>
 
-        <dt>
-
-          <code><a href="regCompTable.html">regCompTable()</a></code>
-
-        </dt>
-        <dd>Create a Table Comparing Regression Models with AIC, BIC, and McFadden's Pseudo-R-Squared</dd>
-
-        <dt>
-
-          <code><a href="regCompTest.html">regCompTest()</a></code>
-
-        </dt>
-        <dd>Compare Regression Models with Likelihood Ratio Test, AIC, and BIC</dd>
-
-        <dt>
-
-          <code><a href="renb.html">renb()</a></code>
-
-        </dt>
-        <dd>Estimate a Random Effects Negative Binomial regression model</dd>
-
-        <dt>
-
-          <code><a href="repois.html">repois()</a></code>
-
-        </dt>
-        <dd>Estimate a Random Effects Poisson Panel Model</dd>
-
-        <dt>
-
-          <code><a href="rmse.html">rmse()</a></code>
-
-        </dt>
-        <dd>Calculate Root Mean Squared Error (RMSE)</dd>
-
-        <dt>
-
-          <code><a href="summary.flexCountReg.html">summary(<i>&lt;flexCountReg&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Custom summary method for flexCountReg models</dd>
-
-        <dt>
-
-          <code><a href="tidy.flexCountReg.html">tidy(<i>&lt;flexCountReg&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Tidy a flexCountReg object</dd>
-
-        <dt>
+      <dl><dt>
 
           <code><a href="washington_roads.html">washington_roads</a></code>
 
         </dt>
         <dd>Washington Road Crashes</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">

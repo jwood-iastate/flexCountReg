@@ -11,7 +11,7 @@ Poisson-Inverse-Gaussian (PInvGaus) Distribution."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,7 @@ Poisson-Inverse-Gaussian (PInvGaus) Distribution."><meta property="og:image" con
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -134,7 +135,7 @@ f(y&gt;0)=f(0)\frac{\mu^y}{y!}(1+2\eta)^{-y/2}
 \end{cases}$$</p>
 <p>The variance is:
 $$\sigma^2=\mu+\eta\mu$$</p>
-<p>Type 2 modifies \(\eta\) → \(\eta\mu\):
+<p>Type 2 modifies \(\eta\) -&gt; \(\eta\mu\):
 $$
 f(0)=\exp\left(\frac{1}{\eta}(1-\sqrt{1+2\eta\mu})\right)
 $$
@@ -150,7 +151,7 @@ $$\sigma^2=\mu+\eta\mu^2$$</p>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>Cameron &amp; Trivedi (2013). Regression Analysis of Count Data.
-Dean, Lawless &amp; Willmot (1989). Mixed Poisson–Inverse Gaussian Models.
+Dean, Lawless &amp; Willmot (1989). Mixed Poisson-Inverse Gaussian Models.
 Hilbe (2011). Negative Binomial Regression.</p>
     </div>
 
@@ -164,7 +165,7 @@ Hilbe (2011). Negative Binomial Regression.</p>
 <span class="r-in"><span><span class="fu">qpinvgaus</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.3</span>,<span class="fl">0.5</span>,<span class="fl">0.9</span>,<span class="fl">0.95</span><span class="op">)</span>, mu<span class="op">=</span><span class="fl">0.75</span>, eta<span class="op">=</span><span class="fl">0.5</span>, form<span class="op">=</span><span class="st">"Type 2"</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0 0 0 2 3</span>
 <span class="r-in"><span><span class="fu">rpinvgaus</span><span class="op">(</span><span class="fl">30</span>, mu<span class="op">=</span><span class="fl">0.75</span>, eta<span class="op">=</span><span class="fl">1.5</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0 9 1 0 0 1 0 0 1 1 1 3 1 1 3 2 0 0 1 0 0 7 0 0 1 1 0 0 0 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 1 0 0 1 0 0 0 1 2 0 0 0 0 2 0 0 0 0 0 1 0 3 1 1 3 0 0 0 0 0</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

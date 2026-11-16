@@ -11,7 +11,7 @@ version of this model can be estimated using the negmultinom() function."><meta 
 
     <a class="navbar-brand me-2" href="../index.html">flexCountReg</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.2.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,6 +20,7 @@ version of this model can be estimated using the negmultinom() function."><meta 
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
@@ -49,9 +50,12 @@ version of this model can be estimated using the <code><a href="negmultinom.html
 <span>  <span class="va">data</span>,</span>
 <span>  method <span class="op">=</span> <span class="st">"NM"</span>,</span>
 <span>  max.iters <span class="op">=</span> <span class="fl">1000</span>,</span>
-<span>  print.level <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  stderr <span class="op">=</span> <span class="st">"normal"</span>,</span>
 <span>  bootstraps <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  offset <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  print.level <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -82,9 +86,17 @@ estimation. For options, see <code><a href="https://rdrr.io/pkg/maxLik/man/maxLi
 method to perform.</p></dd>
 
 
-<dt id="arg-print-level">print.level<a class="anchor" aria-label="anchor" href="#arg-print-level"></a></dt>
-<dd><p>integer specifying the verbosity of output during
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>logical; if <code>TRUE</code>, print the progress of the
 optimization.</p></dd>
+
+
+<dt id="arg-stderr">stderr<a class="anchor" aria-label="anchor" href="#arg-stderr"></a></dt>
+<dd><p>the type of standard errors: <code>"normal"</code> (Hessian-based,
+the default), <code>"robust"</code> (sandwich, clustered by group), or
+<code>"boot"</code> (bootstrap that resamples whole groups). Giving
+<code>bootstraps</code> without <code>stderr</code> also requests bootstrapped
+standard errors.</p></dd>
 
 
 <dt id="arg-bootstraps">bootstraps<a class="anchor" aria-label="anchor" href="#arg-bootstraps"></a></dt>
@@ -95,6 +107,15 @@ bootstrapping is performed.</p></dd>
 
 <dt id="arg-offset">offset<a class="anchor" aria-label="anchor" href="#arg-offset"></a></dt>
 <dd><p>an optional offset term provided as a string.</p></dd>
+
+
+<dt id="arg-keep-data">keep_data<a class="anchor" aria-label="anchor" href="#arg-keep-data"></a></dt>
+<dd><p>logical; if <code>FALSE</code>, the training data are not stored
+in the fitted object.</p></dd>
+
+
+<dt id="arg-print-level">print.level<a class="anchor" aria-label="anchor" href="#arg-print-level"></a></dt>
+<dd><p>deprecated; use <code>verbose</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -139,24 +160,28 @@ $$P(y_{it} \mid \mu_{it}) =
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">repois.mod</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Animal ~ lnaadt + speed50 + ShouldWidth04 + AADTover10k </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> repois(formula = Animal ~ lnaadt + speed50 + ShouldWidth04 + </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     AADTover10k, group_var = "ID", data = washington_roads, method = "BFGS", </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     max.iters = 1000, offset = "lnlength")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Method:  REPoisson </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations:  7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence:  successful convergence  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood:  -271.7189 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Model: repois | optimizer: BFGS</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Iterations: 11 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Convergence: successful convergence </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Parameter Estimates:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 7 × 7</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   parameter           coeff `Std. Err.` `t-stat` `p-value` `lower CI` `upper CI`</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>               <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept)        -<span style="color: #BB0000;">9.82</span>        1.36     -<span style="color: #BB0000;">7.24</span>     0        -<span style="color: #BB0000;">12.5</span>       -<span style="color: #BB0000;">7.16</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt              1.03        0.156     6.58     0          0.721      1.33 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> speed50            -<span style="color: #BB0000;">0.919</span>       0.291    -<span style="color: #BB0000;">3.16</span>     0.002     -<span style="color: #BB0000;">1.49</span>      -<span style="color: #BB0000;">0.348</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> ShouldWidth04      -<span style="color: #BB0000;">0.486</span>       0.248    -<span style="color: #BB0000;">1.96</span>     0.05      -<span style="color: #BB0000;">0.971</span>     -<span style="color: #BB0000;">0.001</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> AADTover10k        -<span style="color: #BB0000;">0.87</span>        0.466    -<span style="color: #BB0000;">1.86</span>     0.062     -<span style="color: #BB0000;">1.78</span>       0.044</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> lnalpha           -<span style="color: #BB0000;">13.8</span>         3.45     -<span style="color: #BB0000;">4.00</span>     0        -<span style="color: #BB0000;">20.6</span>       -<span style="color: #BB0000;">7.05</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> lnlength (Offset…   1          <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>       <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>         <span style="color: #BB0000;">NA</span>    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Std. Error z value Pr(&gt;|z|)    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)     -9.818      1.221   -8.04  9.0e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt           1.026      0.141    7.29  3.1e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50         -0.919      0.292   -3.15   0.0017 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ShouldWidth04   -0.486      0.243   -2.00   0.0459 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k     -0.870      0.457   -1.90   0.0568 .  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnalpha        -13.816         NA      NA       NA    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Offset: lnlength (coefficient fixed at 1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -271.719 | AIC: 555.438 | BIC: 580.809 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> N: 1501 | panels: 507</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

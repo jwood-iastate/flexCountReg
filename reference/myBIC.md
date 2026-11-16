@@ -29,6 +29,9 @@ Numeric value representing the BIC.
 
 ## Details
 
+For a fitted flexCountReg model, use `BIC(model)` instead, which also
+uses the number of panels for panel models.
+
 The BIC is calculated using the formula: \$\$BIC = -2 \cdot LL + nparam
 \cdot \log(n)\$\$ Where \\LL\\ is the log-likelihood of the model,
 \\nparam\\ is the number of parameters, and \\n\\ is the number of

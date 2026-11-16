@@ -1,6 +1,85 @@
 # Package index
 
-## All functions
+## Count regression models
+
+Estimate count models with flexible distributions, underreporting,
+random parameters and random effects.
+
+- [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  : Count regression models
+- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+  : Random Parameters Count Regression Models
+- [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
+  : Estimate a Random Effects Negative Binomial regression model
+- [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
+  : Function for estimating a Random Effects Poisson-Lindley regression
+  model
+- [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  : Estimate a Random Effects Poisson Panel Model
+- [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+  : Negative Multinomial Family Panel Regression (NM1, NM2, NM-P)
+
+## Working with fitted models
+
+- [`summary(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)
+  [`print(`*`<summary.flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)
+  [`as_tibble(`*`<summary.flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)
+  : Summarize a flexCountReg model
+- [`coef(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`vcov(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`nobs(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`logLik(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`formula(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`terms(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`confint(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`fitted(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`residuals(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`simulate(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  [`print(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
+  : Standard methods for flexCountReg models
+- [`tidy(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.md)
+  [`glance(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.md)
+  [`augment(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.md)
+  : Tidy, glance and augment flexCountReg models
+- [`predict(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md)
+  : Predictions for flexCountReg models
+
+## Prediction, effects and diagnostics
+
+- [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  : Marginal Effects, Elasticities, and Pseudo-Elasticities for
+  flexCountReg Models
+- [`cureplot()`](https://jwood-iastate.github.io/flexCountReg/reference/cureplot.md)
+  : Cumulative Residuals (CURE) Plot for Count Models
+- [`rootogram()`](https://jwood-iastate.github.io/flexCountReg/reference/rootogram.md)
+  : Rootogram for a count regression model
+
+## Model comparison and fit metrics
+
+- [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
+  : Compare Regression Models with Likelihood Ratio Test, AIC, and BIC
+- [`regCompTable()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.md)
+  : Create a Table Comparing Regression Models with AIC, BIC, and
+  McFadden's Pseudo-R-Squared
+- [`mae()`](https://jwood-iastate.github.io/flexCountReg/reference/mae.md)
+  : Calculate Mean Absolute Error (MAE)
+- [`rmse()`](https://jwood-iastate.github.io/flexCountReg/reference/rmse.md)
+  : Calculate Root Mean Squared Error (RMSE)
+- [`myAIC()`](https://jwood-iastate.github.io/flexCountReg/reference/myAIC.md)
+  : Calculate Akaike Information Criterion (AIC)
+- [`myBIC()`](https://jwood-iastate.github.io/flexCountReg/reference/myBIC.md)
+  : Calculate Bayesian Information Criterion (BIC)
+
+## tidymodels
+
+A parsnip model specification with the flexCountReg engine.
+
+- [`count_reg()`](https://jwood-iastate.github.io/flexCountReg/reference/count_reg.md)
+  : Count regression model specification for tidymodels
+- [`count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md)
+  : Count distribution tuning parameter
+
+## Count distributions
 
 - [`dcom()`](https://jwood-iastate.github.io/flexCountReg/reference/COMDistribution.md)
   [`pcom()`](https://jwood-iastate.github.io/flexCountReg/reference/COMDistribution.md)
@@ -22,18 +101,12 @@
   [`qgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
   [`rgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md)
   : Generalized Poisson Version 2 Distribution
-- [`dlindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
-  [`plindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
-  [`qlindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
-  [`rlindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
-  : One-Parameter Lindley Distribution
 - [`dplindGamma()`](https://jwood-iastate.github.io/flexCountReg/reference/NegativeBinomialLindley.md)
   [`pplindGamma()`](https://jwood-iastate.github.io/flexCountReg/reference/NegativeBinomialLindley.md)
   [`qplindGamma()`](https://jwood-iastate.github.io/flexCountReg/reference/NegativeBinomialLindley.md)
   [`rplindGamma()`](https://jwood-iastate.github.io/flexCountReg/reference/NegativeBinomialLindley.md)
   : Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
-- [`.dpge_one()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
-  [`dpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
+- [`dpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
   [`ppge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
   [`qpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
   [`rpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)
@@ -48,8 +121,7 @@
   [`qpinvgaus()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonInverseGaussian.md)
   [`rpinvgaus()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonInverseGaussian.md)
   : Poisson-Inverse-Gaussian Distribution
-- [`msg1`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindley.md)
-  [`dplind()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindley.md)
+- [`dplind()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindley.md)
   [`pplind()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindley.md)
   [`qplind()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindley.md)
   [`rplind()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindley.md)
@@ -74,65 +146,39 @@
   [`qsichel()`](https://jwood-iastate.github.io/flexCountReg/reference/SichelDistribution.md)
   [`rsichel()`](https://jwood-iastate.github.io/flexCountReg/reference/SichelDistribution.md)
   : Sichel Distribution
-- [`dtri()`](https://jwood-iastate.github.io/flexCountReg/reference/Triangular.md)
-  [`ptri()`](https://jwood-iastate.github.io/flexCountReg/reference/Triangular.md)
-  [`qtri()`](https://jwood-iastate.github.io/flexCountReg/reference/Triangular.md)
-  [`rtri()`](https://jwood-iastate.github.io/flexCountReg/reference/Triangular.md)
-  : Triangle Distribution
-- [`cor2cov()`](https://jwood-iastate.github.io/flexCountReg/reference/cor2cov.md)
-  : Generate a covariance matrix using a correlation matrix and vector
-  of standard deviations
-- [`corr_haltons()`](https://jwood-iastate.github.io/flexCountReg/reference/corr_haltons.md)
-  : Generate Correlated Random Variables Using Halton or Scrambled
-  Halton Draws
-- [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-  : Count regression models
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
-  : Random Parameters Count Regression Models
-- [`cureplot()`](https://jwood-iastate.github.io/flexCountReg/reference/cureplot.md)
-  : Cumulative Residuals (CURE) Plot for Count Models
-- [`flexCountReg-class`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-class.md)
-  : flexCountReg Class
-- [`halton_dists()`](https://jwood-iastate.github.io/flexCountReg/reference/halton_dists.md)
-  : Generate pseudo-random draws from specified distributions using
-  Halton draws
+
+## Continuous distributions and simulation tools
+
+- [`dlindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
+  [`plindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
+  [`qlindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
+  [`rlindley()`](https://jwood-iastate.github.io/flexCountReg/reference/Lindley.md)
+  : One-Parameter Lindley Distribution
 - [`dinvgamma()`](https://jwood-iastate.github.io/flexCountReg/reference/invgamma.md)
   [`pinvgamma()`](https://jwood-iastate.github.io/flexCountReg/reference/invgamma.md)
   [`qinvgamma()`](https://jwood-iastate.github.io/flexCountReg/reference/invgamma.md)
   [`rinvgamma()`](https://jwood-iastate.github.io/flexCountReg/reference/invgamma.md)
   : Inverse Gamma Distribution
-- [`mae()`](https://jwood-iastate.github.io/flexCountReg/reference/mae.md)
-  : Calculate Mean Absolute Error (MAE)
-- [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
-  : Marginal Effects, Elasticities, and Pseudo-Elasticities for
-  flexCountReg Models
+- [`rinvgaus()`](https://jwood-iastate.github.io/flexCountReg/reference/rinvgaus.md)
+  : Generate inverse-Gaussian random numbers
+- [`dtri()`](https://jwood-iastate.github.io/flexCountReg/reference/Triangular.md)
+  [`ptri()`](https://jwood-iastate.github.io/flexCountReg/reference/Triangular.md)
+  [`qtri()`](https://jwood-iastate.github.io/flexCountReg/reference/Triangular.md)
+  [`rtri()`](https://jwood-iastate.github.io/flexCountReg/reference/Triangular.md)
+  : Triangle Distribution
 - [`moment_lognormal()`](https://jwood-iastate.github.io/flexCountReg/reference/moment_lognormal.md)
   : Raw Moment of a Lognormal Distribution
-- [`myAIC()`](https://jwood-iastate.github.io/flexCountReg/reference/myAIC.md)
-  : Calculate Akaike Information Criterion (AIC)
-- [`myBIC()`](https://jwood-iastate.github.io/flexCountReg/reference/myBIC.md)
-  : Calculate Bayesian Information Criterion (BIC)
-- [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
-  : Negative Multinomial Family Panel Regression (NM1, NM2, NM-P)
-- [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
-  : Function for estimating a Random Effects Poisson-Lindley regression
-  model
-- [`predict(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md)
-  : Predictions for flexCountReg models
-- [`regCompTable()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.md)
-  : Create a Table Comparing Regression Models with AIC, BIC, and
-  McFadden's Pseudo-R-Squared
-- [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
-  : Compare Regression Models with Likelihood Ratio Test, AIC, and BIC
-- [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
-  : Estimate a Random Effects Negative Binomial regression model
-- [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
-  : Estimate a Random Effects Poisson Panel Model
-- [`rmse()`](https://jwood-iastate.github.io/flexCountReg/reference/rmse.md)
-  : Calculate Root Mean Squared Error (RMSE)
-- [`summary(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)
-  : Custom summary method for flexCountReg models
-- [`tidy(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/tidy.flexCountReg.md)
-  : Tidy a flexCountReg object
+- [`halton_dists()`](https://jwood-iastate.github.io/flexCountReg/reference/halton_dists.md)
+  : Generate pseudo-random draws from specified distributions using
+  Halton draws
+- [`corr_haltons()`](https://jwood-iastate.github.io/flexCountReg/reference/corr_haltons.md)
+  : Generate Correlated Random Variables Using Halton or Scrambled
+  Halton Draws
+- [`cor2cov()`](https://jwood-iastate.github.io/flexCountReg/reference/cor2cov.md)
+  : Generate a covariance matrix using a correlation matrix and vector
+  of standard deviations
+
+## Data
+
 - [`washington_roads`](https://jwood-iastate.github.io/flexCountReg/reference/washington_roads.md)
   : Washington Road Crashes

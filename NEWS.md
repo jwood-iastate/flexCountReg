@@ -14,7 +14,8 @@
   dials parameter). Case weights are passed as frequency weights.
 * `predict()` accepts `new_data` (the tidymodels name) as well as `newdata`.
 * Standard errors are `NA` (instead of 0) when the estimated variance is
-  negative, which happens for weakly identified parameters.
+  negative, which happens for weakly identified parameters. `regCompTable()`
+  shows such standard errors as `NA` without significance stars.
 
 ## Breaking changes and changed results
 

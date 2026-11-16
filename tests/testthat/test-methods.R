@@ -168,3 +168,13 @@ test_that("cor2cov validates its input", {
   expect_error(cor2cov(matrix(c(1, 0.2, 0.3, 1), 2), c(1, 1)), "symmetric")
   expect_error(cor2cov(matrix(c(2, 0.2, 0.2, 1), 2), c(1, 1)), "diagonal")
 })
+
+test_that("regCompTable handles NA standard errors (negative variances)", {
+  m <- countreg(Total_crashes ~ lnaadt, washington_roads, method = "BFGS")
+  m$model$vcov[3, 3] <- -0.1   # as for a weakly identified parameter
+  tab <- regCompTable(list(A = m))
+  expect_true(is.na(tidy(m)$std.error[3]))
+  expect_equal(tab$A[tab$Parameter == "ln(alpha)"],
+               paste0(round(coef(m)[3], 3), " (NA)"))
+  expect_match(tab$A[tab$Parameter == "lnaadt"], "\\*\\*\\*$")
+})

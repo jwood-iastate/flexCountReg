@@ -121,18 +121,10 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
       if (vars[j] %in% coefNames){
         for (k in seq_along(coefNames)){
           if (coefNames[k] == vars[j]){
-            if(t[k] >= 3.29){
-              coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")***")
-            }
-            else if (t[k] >= 2.5758) {
-              coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")**")
-            }
-            else if (t[k] >= 1.96){
-              coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")*")
-            }
-            else{
-              coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")")
-            }
+            # Standard errors are NA when the estimated variance is
+            # negative (weakly identified parameters): no stars then
+            coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")",
+                              .fcr_stars(t[k]))
             tablecoefs <- append(tablecoefs, coefval)
           }
         }
@@ -183,4 +175,10 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
                                caption = "Model Comparison Statistics")
     return(latexTable)
   }
+}
+
+# Significance stars for an absolute z statistic ("" when NA).
+.fcr_stars <- function(t) {
+  if (is.na(t)) return("")
+  if (t >= 3.29) "***" else if (t >= 2.5758) "**" else if (t >= 1.96) "*" else ""
 }

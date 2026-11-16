@@ -123,3 +123,66 @@
     warning("NAs produced: ", what, call. = FALSE)
   }
 }
+
+# Shared contract of the count-distribution p-functions: arguments are
+# recycled; NA q (or NaN) gives NA; q < 0 (including -Inf) gives
+# P(Y <= q) = 0; q = Inf gives 1; the upper tail and log scale follow. Only
+# finite q >= 0 reach `core`, which gets the matching elements of the
+# vector parameters in `pars` (NULL entries are dropped: NULL is each
+# core's default) and the remaining arguments in `...`. With `logdens`
+# (function(x, <pars>) returning log P(Y = x)), small upper tails are
+# summed directly instead of taken as 1 - CDF.
+.fcr_p_contract <- function(core, q, pars, lower.tail, log.p, ...,
+                            logdens = NULL) {
+  lens <- c(length(q), vapply(Filter(Negate(is.null), pars), length, 1L))
+  if (any(lens == 0L)) return(numeric(0))
+  n <- max(lens)
+  q <- rep_len(as.numeric(q), n)
+  sub <- function(p, ok) if (length(p) == 1L) p else rep_len(p, n)[ok]
+  out <- rep(NA_real_, n)
+  low <- !is.na(q) & q < 0
+  high <- !is.na(q) & q == Inf
+  out[low] <- if (lower.tail) 0 else 1
+  out[high] <- if (lower.tail) 1 else 0
+  if (log.p) out[low | high] <- log(out[low | high])
+  ok <- !is.na(q) & is.finite(q) & q >= 0
+  if (any(ok)) {
+    pars <- Filter(Negate(is.null), pars)   # NULL is each core's default
+    out[ok] <- do.call(core, c(list(q[ok]), lapply(pars, sub, ok = ok),
+                               list(lower.tail = lower.tail, log.p = log.p),
+                               list(...)))
+    # Small upper tails: 1 - CDF has no relative precision below ~1e-16, so
+    # sum the log-PMF beyond q directly
+    if (!lower.tail && !is.null(logdens)) {
+      small <- which(ok & !is.na(out) &
+                       (if (log.p) out < log(1e-8) else out < 1e-8))
+      for (i in small) {
+        pi <- lapply(pars, function(p) if (length(p) == 1L) p else
+          rep_len(p, n)[i])
+        lt <- .fcr_log_upper_tail(floor(q[i]), function(x)
+          do.call(logdens, c(list(x), pi)))
+        if (!is.na(lt)) out[i] <- if (log.p) lt else exp(lt)
+      }
+    }
+  }
+  out
+}
+
+# log P(Y > q) by summing log-probabilities logd(x) for x = q + 1, q + 2, ...
+# in blocks until the terms are negligible (NA if they do not decrease).
+.fcr_log_upper_tail <- function(q, logd, block = 200L, max_terms = 1e6) {
+  total <- -Inf
+  start <- q + 1
+  while (start - q <= max_terms) {
+    x <- start + 0:(block - 1L)
+    lp <- logd(x)
+    if (anyNA(lp)) return(NA_real_)
+    m <- max(lp, total)
+    if (!is.finite(m)) return(total)
+    total <- m + log(exp(total - m) + sum(exp(lp - m)))
+    # Stop when the block's last term is negligible and the terms decrease
+    if (lp[block] < total + log(1e-17) && lp[block] <= lp[1]) return(total)
+    start <- start + block
+  }
+  NA_real_
+}

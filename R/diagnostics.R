@@ -22,7 +22,8 @@
       P <- P * (1 - zp)
       P[, 1] <- zp + (1 - zp) * f0
     } else {
-      P <- P * (zp / (1 - f0))
+      lf0 <- parts$lf0 %||% log(f0)
+      P <- P * (zp / -expm1(lf0))
       P[, 1] <- 1 - zp
     }
   }

@@ -180,7 +180,8 @@ residuals.flexCountReg <- function(object,
     # Mixture moments: E[Y^2] = w (V + m^2) for the count part with weight w
     m <- parts$mu_true
     zp <- parts$zero_prob
-    w <- if (parts$zero_type == "inflated") 1 - zp else zp / (1 - parts$f0)
+    w <- if (parts$zero_type == "inflated") 1 - zp else
+      zp / -expm1(parts$lf0 %||% log(parts$f0))
     v <- w * (v + m^2) - (w * m)^2
   }
   v
@@ -204,23 +205,18 @@ simulate.flexCountReg <- function(object, nsim = 1, seed = NULL, ...) {
                   if (!is.null(parts$alpha)) parts$alpha[idx],
                   if (!is.null(parts$sigma)) parts$sigma[idx])
   }
+  zp <- parts$zero_prob
   sims <- lapply(seq_len(nsim), function(i) {
-    y <- as.numeric(draw(seq_len(n)))
-    zp <- parts$zero_prob
-    if (!is.null(zp)) {
-      if (parts$zero_type == "inflated") {
-        y[stats::runif(n) < zp] <- 0
-      } else {
-        # Positive counts from the zero-truncated family (redraw zeros)
-        need <- which(y == 0)
-        for (iter in seq_len(1000)) {
-          if (!length(need)) break
-          y[need] <- draw(need)
-          need <- need[y[need] == 0]
-        }
-        y[stats::runif(n) >= zp] <- 0
-      }
+    if (!is.null(zp) && parts$zero_type == "hurdle") {
+      # Hurdle: membership first, then positive counts from the
+      # zero-truncated family for the rows that are positive
+      y <- numeric(n)
+      pos <- which(stats::runif(n) < zp)
+      y[pos] <- .fcr_rtrunc_positive(object, parts, pos)
+      return(y)
     }
+    y <- as.numeric(draw(seq_len(n)))
+    if (!is.null(zp)) y[stats::runif(n) < zp] <- 0   # zero-inflated
     y
   })
   out <- as.data.frame(sims)
@@ -253,3 +249,35 @@ print.flexCountReg <- function(x, digits = max(3L, getOption("digits") - 3L),
   if (isFALSE(m[["converged"]])) cat("Warning: the optimizer did not converge.\n")
   invisible(x)
 }
+
+# Draws from the zero-truncated count family for rows `idx` of a
+# .fcr_countreg_parts() result, by inversion: the smallest k >= 1 with
+# P(1 <= Y <= k) >= u * P(Y > 0), where P(Y > 0) = -expm1(log P(Y = 0)) keeps
+# its precision when P(Y = 0) is close to 1.
+.fcr_rtrunc_positive <- function(object, parts, idx, max_count = 1e6) {
+  if (!length(idx)) return(numeric(0))
+  lf0 <- .fcr_parts_density(object, parts, 0, log = TRUE)[idx]
+  target <- stats::runif(length(idx)) * -expm1(lf0)
+  out <- rep(NA_real_, length(idx))
+  cum <- numeric(length(idx))
+  todo <- seq_along(idx)
+  k <- 1
+  while (length(todo) && k <= max_count) {
+    sub_parts <- parts
+    for (nm in c("mu_link", "p_report", "alpha", "sigma")) {
+      if (!is.null(parts[[nm]])) sub_parts[[nm]] <- parts[[nm]][idx[todo]]
+    }
+    pk <- exp(.fcr_parts_density(object, sub_parts, k, log = TRUE))
+    cum[todo] <- cum[todo] + pk
+    done <- cum[todo] >= target[todo] | !is.finite(pk)
+    out[todo[done]] <- k
+    todo <- todo[!done]
+    k <- k + 1
+  }
+  if (length(todo)) {
+    stop("Zero-truncated draws did not finish within ", max_count,
+         " counts.", call. = FALSE)
+  }
+  out
+}
+

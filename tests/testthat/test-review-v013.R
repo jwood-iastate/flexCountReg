@@ -503,3 +503,70 @@ test_that("F16: frequency weights match the expanded data", {
                     method = "BFGS", max.iters = 50)
   expect_equal(attr(logLik(rp), "nobs"), sum(wp[!duplicated(d$ID)]))
 })
+
+test_that("F17: hurdle simulation never puts zeros in the positive part", {
+  set.seed(5)
+  n <- 4000
+  d <- data.frame(x = rnorm(n))
+  # Tiny count means: P(Y > 0) of the count part is about 1e-3
+  d$y <- ifelse(runif(n) < 0.4, 1 + rpois(n, 0.001), 0)
+  m <- countreg(y ~ 1, d, family = "POISSON", zero_formula = ~ 1,
+                zero_type = "hurdle", method = "BFGS")
+  p0 <- predict(m, type = "zero")   # P(Y = 0) of the hurdle model
+  sims <- simulate(m, nsim = 20, seed = 1)
+  # The zero share matches P(Y = 0)
+  expect_equal(mean(unlist(sims) == 0), mean(p0), tolerance = 0.02)
+  # Positive draws from the truncated Poisson with a tiny mean are almost
+  # all 1, and their mean matches the truncated mean
+  pos <- unlist(sims)[unlist(sims) > 0]
+  mu <- exp(coef(m)[["(Intercept)"]])
+  expect_equal(mean(pos), mu / -expm1(-mu), tolerance = 0.01)
+  # Mean predictions use the precise 1 - P(Y = 0) of the count part
+  expect_equal(predict(m)[1], (1 - p0[1]) * mu / -expm1(-mu),
+               tolerance = 1e-8)
+})
+
+test_that("F18: every count p-function follows the same contract", {
+  fs <- list(
+    pplind = function(q, ...) pplind(q, mean = 2, theta = 1.5, ...),
+    ppinvgaus = function(q, ...) ppinvgaus(q, mu = 2, eta = 0.5, ...),
+    ppinvgamma = function(q, ...) ppinvgamma(q, mu = 2, eta = 0.5, ...),
+    ppLnorm = function(q, ...) ppLnorm(q, mean = 2, sigma = 0.5, ...),
+    pplindLnorm = function(q, ...)
+      pplindLnorm(q, mean = 2, theta = 1.5, sigma = 0.5, ndraws = 200, ...),
+    pplindGamma = function(q, ...)
+      pplindGamma(q, mean = 2, theta = 1.5, alpha = 0.4, ...),
+    ppge = function(q, ...) ppge(q, mean = 2, shape = 1.5, scale = 1, ...),
+    ppoisweibull = function(q, ...)
+      ppoisweibull(q, lambda = 2, alpha = 1.5, sigma = 1, ...),
+    psichel = function(q, ...) psichel(q, mu = 2, sigma = 1, gamma = -0.5,
+                                       ...),
+    pgwar = function(q, ...) pgwar(q, mu = 2, k = 2, rho = 3, ...),
+    pcom = function(q, ...) pcom(q, mu = 2, nu = 0.7, ...),
+    pgp1 = function(q, ...) pgp1(q, mu = 2, phi = 0.3, ...),
+    pgp2 = function(q, ...) pgp2(q, mu = 2, alpha = 0.3, ...))
+  for (nm in names(fs)) {
+    f <- fs[[nm]]
+    p <- f(c(NA, -Inf, -1, Inf))
+    expect_true(is.na(p[1]), label = nm)
+    expect_equal(p[2:4], c(0, 0, 1), label = nm)
+    expect_equal(f(c(-1, Inf), lower.tail = FALSE), c(1, 0), label = nm)
+    expect_equal(f(-1, log.p = TRUE), -Inf, label = nm)
+    lo <- f(0:6)
+    expect_true(all(diff(lo) >= 0), label = paste(nm, "monotone"))
+    expect_equal(lo + f(0:6, lower.tail = FALSE), rep(1, 7),
+                 tolerance = 1e-6, label = paste(nm, "tails"))
+    expect_identical(f(numeric(0)), numeric(0), label = nm)
+  }
+  # Small upper tails are summed directly (1 - CDF would be 0 or noise)
+  expect_equal(pplind(60, mean = 2, theta = 1.5, lower.tail = FALSE,
+                      log.p = TRUE),
+               log(sum(dplind(61:3000, mean = 2, theta = 1.5))),
+               tolerance = 1e-8)
+  expect_equal(pgp1(40, mu = 2, phi = 0.3, lower.tail = FALSE),
+               sum(dgp1(41:2000, 2, 0.3)), tolerance = 1e-8)
+  expect_equal(ppinvgaus(80, mu = 2, eta = 0.5, lower.tail = FALSE,
+                         log.p = TRUE),
+               log(sum(dpinvgaus(81:3000, mu = 2, eta = 0.5))),
+               tolerance = 1e-8)
+})

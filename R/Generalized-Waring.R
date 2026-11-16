@@ -113,6 +113,12 @@ dgwar <- function(y, mu, k, rho, log = FALSE) {
 #' @rdname Generalized-Waring
 #' @export
 pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
+  .fcr_p_contract(.pgwar_core, q, list(mu = mu, k = k, rho = rho),
+                  lower.tail, log.p,
+                  logdens = function(x, ...) dgwar(x, ..., log = TRUE))
+}
+
+.pgwar_core <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
   
   # --- 1. Vectorization Setup ---
   # Ensure all inputs are the same length before checking values

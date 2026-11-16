@@ -265,6 +265,20 @@
   panel are an error (they were silently replaced by the first weight of
   the panel). The parsnip engine warns that importance weights are treated
   as frequencies.
+* Hurdle models: `simulate()` draws membership first and positive counts
+  from the exact zero-truncated distribution (by inversion), instead of
+  redrawing zeros at most 1,000 times and keeping the remaining zeros (about
+  37% of the "positive" draws were zero for a count mean of 0.001).
+  Predictions, Pearson variances and probability matrices use
+  1 - P(Y = 0) = -expm1(log P(Y = 0)), which keeps its precision when
+  P(Y = 0) is close to 1.
+* All count p-functions (`pplind()`, `ppinvgaus()`, `ppinvgamma()`,
+  `ppLnorm()`, `pplindLnorm()`, `pplindGamma()`, `ppge()`, `ppoisweibull()`,
+  `psichel()`, `pgwar()`, `pcom()`, `pgp1()`, `pgp2()`) follow one contract:
+  NA gives NA (it gave 0), q < 0 and -Inf give 0, Inf gives 1 (several gave
+  0 or failed with "result would be too long a vector"), the upper tail and
+  log scale follow, and zero-length input gives `numeric(0)`. Small upper
+  tails are summed directly on the log scale instead of taken as 1 - CDF.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

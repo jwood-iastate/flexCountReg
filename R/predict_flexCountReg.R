@@ -465,8 +465,11 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     if (model$zero_type == "inflated") {
       parts$response <- (1 - zp) * parts$mu_true
     } else {
-      parts$f0 <- .fcr_parts_density(object, parts, 0)
-      parts$response <- zp * parts$mu_true / (1 - parts$f0)
+      lf0 <- .fcr_parts_density(object, parts, 0, log = TRUE)
+      parts$f0 <- exp(lf0)
+      parts$lf0 <- lf0
+      # 1 - P(Y = 0), accurate when P(Y = 0) is close to 1
+      parts$response <- zp * parts$mu_true / -expm1(lf0)
     }
   }
   parts
@@ -474,7 +477,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
 
 # Count-family density P(Y = k) for every row of a .fcr_countreg_parts()
 # result, evaluated as in the likelihood (before any zero model).
-.fcr_parts_density <- function(object, parts, k) {
+.fcr_parts_density <- function(object, parts, k, log = FALSE) {
   m <- object$model
   dens <- get_probFunc(parts$family)
   haltons <- randtoolbox::halton(m$ndraws %||% 1500)
@@ -486,7 +489,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                     alpha = if (!is.null(parts$alpha)) parts$alpha[ok],
                     sigma = if (!is.null(parts$sigma)) parts$sigma[ok],
                     haltons = haltons, normed_haltons = stats::qnorm(haltons),
-                    engine = m$engine %||% "halton")
+                    engine = m$engine %||% "halton", log = log)
   }
   out
 }

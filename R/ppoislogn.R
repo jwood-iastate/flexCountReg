@@ -114,6 +114,13 @@ dpLnorm <- function(x, mean = 1, sigma = 1, ndraws = 1500, log = FALSE,
 ppLnorm <- function(q, mean = 1, sigma = 1, ndraws = 1500,
                     lower.tail = TRUE, log.p = FALSE,
                     engine = c("halton", "poilog")) {
+  .fcr_p_contract(.ppLnorm_core, q, list(mean = mean, sigma = sigma),
+                  lower.tail, log.p, ndraws = ndraws, engine = engine)
+}
+
+.ppLnorm_core <- function(q, mean = 1, sigma = 1, ndraws = 1500,
+                    lower.tail = TRUE, log.p = FALSE,
+                    engine = c("halton", "poilog")) {
   engine <- match.arg(engine)
   if (any(mean <= 0, na.rm = TRUE) || any(sigma <= 0, na.rm = TRUE)) {
     warning("The values of `mean` and `sigma` must be greater than 0.")

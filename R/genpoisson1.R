@@ -227,6 +227,13 @@ dgp1 <- function(x, mu = 1, phi = 1, log = FALSE) {
 #' @rdname GeneralizedPoisson
 #' @export
 pgp1 <- function(q, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE) {
+  .fcr_p_contract(.pgp1_core, q, list(mu = mu, phi = phi),
+                  lower.tail, log.p,
+                  logdens = function(x, ...)
+                    suppressWarnings(dgp1(x, ..., log = TRUE)))
+}
+
+.pgp1_core <- function(q, mu = 1, phi = 1, lower.tail = TRUE, log.p = FALSE) {
   .gp1_validate(mu, phi)
   
   n <- max(length(q), length(mu), length(phi))

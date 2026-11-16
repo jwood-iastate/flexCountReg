@@ -101,6 +101,13 @@ dpinvgamma <- function(x, mu = 1, eta = 1, log = FALSE) {
 #' @export
 ppinvgamma <- function(q, mu = 1, eta = 1, lower.tail = TRUE,
                        log.p = FALSE) {
+  .fcr_p_contract(.ppinvgamma_core, q, list(mu = mu, eta = eta),
+                  lower.tail, log.p,
+                  logdens = function(x, ...) dpinvgamma(x, ..., log = TRUE))
+}
+
+.ppinvgamma_core <- function(q, mu = 1, eta = 1, lower.tail = TRUE,
+                       log.p = FALSE) {
   if (any(eta <= 0, na.rm = TRUE)) warning("'eta' must be positive")
   if (any(mu <= 0, na.rm = TRUE)) warning("'mu' must be positive")
   

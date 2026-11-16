@@ -86,6 +86,13 @@ dplindLnorm <- function(x, mean=1, theta=1, sigma=1,
 pplindLnorm <- function(q, mean=1, theta=1, lambda=NULL,
                         sigma=1, ndraws=1500,
                         lower.tail=TRUE, log.p=FALSE) {
+  .fcr_p_contract(.pplindLnorm_core, q, list(mean = mean, theta = theta, lambda = lambda, sigma = sigma),
+                  lower.tail, log.p, ndraws = ndraws)
+}
+
+.pplindLnorm_core <- function(q, mean=1, theta=1, lambda=NULL,
+                        sigma=1, ndraws=1500,
+                        lower.tail=TRUE, log.p=FALSE) {
   
   if(!is.null(lambda)) {
     mean <- lambda * (theta + 2) / (theta * (theta + 1))

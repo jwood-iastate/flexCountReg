@@ -598,6 +598,13 @@ dplindGamma <- function(x, mean = 1, theta = 1, alpha = 1, log = FALSE,
 pplindGamma <- function(q, mean = 1, theta = 1, alpha = 1,
                         lower.tail = TRUE, log.p = FALSE,
                         rel.tol = 1e-8, subdivisions = 200L) {
+  .fcr_p_contract(.pplindGamma_core, q, list(mean = mean, theta = theta, alpha = alpha),
+                  lower.tail, log.p, rel.tol = rel.tol, subdivisions = subdivisions)
+}
+
+.pplindGamma_core <- function(q, mean = 1, theta = 1, alpha = 1,
+                        lower.tail = TRUE, log.p = FALSE,
+                        rel.tol = 1e-8, subdivisions = 200L) {
   .plg_flag(lower.tail, "lower.tail")
   .plg_flag(log.p, "log.p")
   .plg_control(rel.tol, subdivisions)

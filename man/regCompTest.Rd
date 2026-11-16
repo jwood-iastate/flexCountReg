@@ -23,7 +23,9 @@ used when available.}
 
 \item{basemodel}{A character string specifying the family of base model to
 compare against (options include the family from
-\code{\link{countreg}} or "Poisson"). Default is "Poisson".}
+\code{\link{countreg}} or "Poisson"). Default is "Poisson". It is
+used for the LR test of a single model and, in both workflows, as the
+baseline of McFadden's Pseudo R^2.}
 
 \item{variables}{Logical. If \code{TRUE}, the base model will include the
 same variables as the provided model. If \code{FALSE}, the base model
@@ -78,9 +80,9 @@ model.
 the estimated base model when the fitted model has more parameters than
 the base model.
 \item Computes McFadden's Pseudo R^2, \eqn{1 - LL/LL_0}, where
-\eqn{LL_0} is the log-likelihood of an intercept-only model of the same
-family for \code{countreg()} models (an intercept-only Poisson model for
-the other estimators).
+\eqn{LL_0} is the log-likelihood of the base model (by default an
+intercept-only Poisson model, the base count model, so that the pseudo
+R^2 is comparable across models and distributions).
 }
 
 For the two-model workflow, the model with fewer parameters is the

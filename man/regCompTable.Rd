@@ -12,7 +12,9 @@ regCompTable(
   BIC = TRUE,
   RSquare = TRUE,
   tableType = "tibble",
-  digits = 3
+  digits = 3,
+  basemodel = "Poisson",
+  variables = FALSE
 )
 }
 \arguments{
@@ -30,10 +32,10 @@ the models should be included.}
 the models should be included.}
 
 \item{RSquare}{A logical. The default value \code{TRUE} indicates that the
-McFadden's Pseudo-R-Squared statistic should be included. It compares
-against an intercept-only model of the same family for \code{countreg()}
-models, and an intercept-only Poisson model otherwise (see
-\code{\link{regCompTest}}).}
+McFadden's Pseudo-R-Squared statistic should be included. By default it
+compares every model against the same intercept-only Poisson model (the
+base count model), so the values are comparable across models; see
+\code{basemodel} and \code{variables}.}
 
 \item{tableType}{The type of table format to return. Options include "tibble"
 for returning the table as a tibble, "gt" for a \link[gt]{gt} table object,
@@ -41,6 +43,14 @@ or "latex" for a latex table. The default is "tibble".}
 
 \item{digits}{An integer value indicating the number of decimals to round the
 table values to.}
+
+\item{basemodel}{the family of the baseline model for McFadden's
+Pseudo-R-Squared: "Poisson" (default) or a family of
+\code{\link{countreg}}.}
+
+\item{variables}{logical; if \code{TRUE}, the baseline model includes the
+mean-model covariates of each model; if \code{FALSE} (default), it is an
+intercept-only model (with the model's offset).}
 }
 \value{
 A table comparing the models supplied to the function in the format

@@ -80,10 +80,11 @@ and `regCompTable()` builds a coefficient table across models:
 regCompTable(models[c("Poisson", "NB1", "NB2")])
 ```
 
-McFadden's pseudo R-squared compares each model with an intercept-only model
-of the same family, so it measures how much the covariates improve on that
-family's null model. It is not comparable across families; use the
-log-likelihood, AIC or BIC to compare distributions.
+McFadden's pseudo R-squared compares each model with the same baseline, an
+intercept-only Poisson model (the base count model), so the values are
+comparable across distributions. A different baseline can be chosen with the
+`basemodel` and `variables` arguments of `regCompTable()` and
+`regCompTest()`.
 
 ## Does the model reproduce the counts?
 

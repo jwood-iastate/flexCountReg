@@ -178,3 +178,25 @@ test_that("regCompTable handles NA standard errors (negative variances)", {
                paste0(round(coef(m)[3], 3), " (NA)"))
   expect_match(tab$A[tab$Parameter == "lnaadt"], "\\*\\*\\*$")
 })
+
+test_that("McFadden's pseudo R^2 uses an intercept-only Poisson baseline", {
+  d <- washington_roads
+  f <- Total_crashes ~ lnaadt + speed50
+  ms <- lapply(c(P = "Poisson", NB1 = "NB1", NB2 = "NB2"), function(fm) {
+    countreg(f, d, family = fm, offset = "lnlength", method = "BFGS")
+  })
+  ll0 <- as.numeric(logLik(glm(Total_crashes ~ 1 + offset(lnlength),
+                               poisson, d)))
+  r2 <- vapply(ms, function(m) 1 - as.numeric(logLik(m)) / ll0, numeric(1))
+  tab <- regCompTable(ms)
+  expect_equal(as.numeric(unlist(tab[tab$Parameter == "Pseudo-R-Sq.", -1])),
+               unname(round(r2, 3)))
+  # Same baseline for every model: R^2 ranks models like the log-likelihood
+  expect_true(all(diff(r2) > 0))
+  rt <- regCompTest(ms$P, model2 = ms$NB2)
+  expect_equal(rt$statistics$Model[8], round(r2[["NB2"]], 4))
+  expect_equal(rt$statistics$BaseModel[8], round(r2[["P"]], 4))
+  # A baseline with the covariates: the Poisson model itself scores 0
+  tv <- regCompTable(ms, variables = TRUE)
+  expect_equal(as.numeric(tv$P[tv$Parameter == "Pseudo-R-Sq."]), 0)
+})

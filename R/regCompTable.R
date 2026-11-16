@@ -15,10 +15,16 @@
 #' @param BIC A logical. The default value `TRUE` indicates that BIC values for
 #'   the models should be included.
 #' @param RSquare A logical. The default value `TRUE` indicates that the
-#'   McFadden's Pseudo-R-Squared statistic should be included. It compares
-#'   against an intercept-only model of the same family for \code{countreg()}
-#'   models, and an intercept-only Poisson model otherwise (see
-#'   \code{\link{regCompTest}}).
+#'   McFadden's Pseudo-R-Squared statistic should be included. By default it
+#'   compares every model against the same intercept-only Poisson model (the
+#'   base count model), so the values are comparable across models; see
+#'   \code{basemodel} and \code{variables}.
+#' @param basemodel the family of the baseline model for McFadden's
+#'   Pseudo-R-Squared: "Poisson" (default) or a family of
+#'   \code{\link{countreg}}.
+#' @param variables logical; if \code{TRUE}, the baseline model includes the
+#'   mean-model covariates of each model; if \code{FALSE} (default), it is an
+#'   intercept-only model (with the model's offset).
 #' @param tableType The type of table format to return. Options include "tibble"
 #'   for returning the table as a tibble, "gt" for a \link[gt]{gt} table object,
 #'   or "latex" for a latex table. The default is "tibble".
@@ -61,7 +67,8 @@
 #' print(comptable)
 #' @export
 regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE, 
-                         tableType="tibble", digits=3){
+                         tableType="tibble", digits=3,
+                         basemodel = "Poisson", variables = FALSE){
   
   Nmodels <- length(models)
   if(Nmodels < 2) {
@@ -76,8 +83,8 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
   vars <- c() # names of estimated coefficients
   modNames <- names(models)
   for (i in seq_along(models)){
-    variables <- names(models[[i]]$model$estimate) # Get the variable names
-    for (item in variables) { # Add any new, unique, variables/coefficient names
+    coef_names_i <- names(models[[i]]$model$estimate) # Coefficient names
+    for (item in coef_names_i) { # Add any new, unique, variables/coefficient names
       if (!(item %in% vars)) {
         vars <- append(vars, item)
       }
@@ -103,7 +110,8 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     # Log-likelihood, AIC and BIC from the model's methods; McFadden's R^2
     # against the same null model as regCompTest()
     LL <- as.numeric(stats::logLik(m_i))
-    LLbase <- .fit_null_ll(m_i, .fcr_fit_pieces(m_i))
+    LLbase <- .fit_null_ll(m_i, .fcr_fit_pieces(m_i), basemodel = basemodel,
+                           variables = variables)
     aic <- round(stats::AIC(m_i), digits)
     bic <- round(stats::BIC(m_i), digits)
     rsq <- round(.mcfadden_r2(LL, LLbase), digits)

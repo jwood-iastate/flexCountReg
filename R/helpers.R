@@ -370,3 +370,37 @@ rp_mgf <- function(dist, t, mu, sigma) {
     ifelse(y == 0, 1 - zp, zp * probs / (1 - f0))
   }
 }
+
+# Analytic per-observation gradient (scores) of the countreg() log-likelihood
+# for the Poisson, NB1 and NB2 families, with an optional dispersion formula
+# (no underreporting or zero model). Rows are multiplied by the weights.
+# p = c(beta, delta); eta = X beta + offset; mu = exp(eta);
+# alpha = exp(W delta). Returns an n x length(p) matrix.
+.fcr_analytic_grad <- function(family, p, y, X, offset, W_alpha, w) {
+  kx <- ncol(X)
+  beta <- p[seq_len(kx)]
+  mu <- exp(as.vector(X %*% beta) + offset)
+  if (family == "POISSON") {
+    G <- (y - mu) * X
+  } else {
+    delta <- p[kx + seq_len(ncol(W_alpha))]
+    alpha <- exp(as.vector(W_alpha %*% delta))
+    if (family == "NB2") {
+      r <- 1 / alpha
+      d_eta <- (y - mu) / (1 + alpha * mu)
+      d_r <- digamma(y + r) - digamma(r) + log(r / (r + mu)) +
+        (mu - y) / (r + mu)
+      d_lnalpha <- -r * d_r                      # dr / dln(alpha) = -r
+    } else {                                     # NB1: size r = mu / alpha
+      r <- mu / alpha
+      psi <- digamma(y + r) - digamma(r)
+      d_eta <- r * (psi - log1p(alpha))
+      d_lnalpha <- -r * (psi - log1p(alpha)) - r * alpha / (1 + alpha) +
+        y / (1 + alpha)
+    }
+    G <- cbind(d_eta * X, d_lnalpha * W_alpha)
+  }
+  G <- G * w
+  G[w == 0, ] <- 0
+  G
+}

@@ -958,8 +958,21 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     ll * weights.df
   }
   
+  # Analytic gradient for the closed-form Poisson, NB1 and NB2 families
+  # (without underreporting or a zero model); numeric otherwise.
+  gradFunc <- NULL
+  if (family %in% c("POISSON", "NB1", "NB2") && N_underreport == 0 &&
+      N_zero == 0) {
+    W_alpha <- if (N_alpha == 0) NULL else if (is.null(mod_alpha_frame))
+      matrix(1, length(y), 1) else mod_alpha_frame
+    gradFunc <- function(p) {
+      .fcr_analytic_grad(family, as.vector(p), y, X, X_offset, W_alpha,
+                         weights.df)
+    }
+  }
+  
   # ---- Estimation ------------------------------------------------------------
-  fit <- maxLik::maxLik(logLikFunc, 
+  fit <- maxLik::maxLik(logLikFunc, grad = gradFunc,
                         start = start,
                         method = method, 
                         control = list(iterlim = max.iters, 

@@ -195,6 +195,17 @@
 
 ## New features
 
+* Zero-inflated and hurdle models for every `countreg()` family, through the
+  new `zero_formula` and `zero_type` arguments (checked against
+  `pscl::zeroinfl()` and `pscl::hurdle()`).
+* `predict(type = "prob")` (probabilities of each count), randomized quantile
+  residuals (`residuals(type = "quantile")`) and `rootogram()`.
+* Analytic gradients for the Poisson, NB1 and NB2 families (with or without a
+  dispersion formula), used by the gradient-based optimizers and by robust
+  standard errors.
+* Internally, each count family is defined once in a family registry
+  (`R/families.R`), which makes adding a family a one-file change.
+
 * `predict(method = "Individual")` (alias `"EB"`) for `countreg.rp()` models
   now computes Empirical Bayes observation-specific predictions following
   Wood and Gayah (2025), weighting each draw by the likelihood of the unit's

@@ -141,3 +141,33 @@ test_that("convergence is reported", {
              max.iters = 3),
     "did not report convergence")
 })
+
+test_that("analytic gradients match numeric gradients (Poisson, NB1, NB2)", {
+  d <- washington_roads
+  w <- rep(1:3, length.out = nrow(d))
+  X <- model.matrix(~ lnaadt + lnlength, d)
+  W <- model.matrix(~ speed50, d)
+  y <- d$Total_crashes
+  off <- rep(0.1, nrow(d))
+  for (fam in c("POISSON", "NB1", "NB2")) {
+    Wa <- if (fam == "POISSON") NULL else W
+    p <- c(-8, 1, 0.7, if (fam != "POISSON") c(-0.5, 0.3))
+    ll <- function(p) {
+      mu <- as.vector(exp(X %*% p[1:3] + off))
+      a <- if (!is.null(Wa)) as.vector(exp(Wa %*% p[4:5]))
+      w * switch(fam,
+                 POISSON = dpois(y, mu, log = TRUE),
+                 NB2 = dnbinom(y, size = 1 / a, mu = mu, log = TRUE),
+                 NB1 = dnbinom(y, size = mu / a, mu = mu, log = TRUE))
+    }
+    num <- maxLik::numericGradient(ll, p)
+    an <- .fcr_analytic_grad(fam, p, y, X, off, Wa, w)
+    expect_equal(an, num, tolerance = 1e-6, ignore_attr = TRUE)
+  }
+  # All optimizers reach the same maximum
+  lls <- vapply(c("BFGS", "BHHH", "NR"), function(meth) {
+    countreg(Total_crashes ~ lnaadt + lnlength, d,
+             dis_param_formula_1 = ~ speed50, method = meth)$model$maximum
+  }, numeric(1))
+  expect_lt(diff(range(lls)), 1e-4)
+})

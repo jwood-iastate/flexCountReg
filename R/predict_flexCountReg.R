@@ -286,7 +286,9 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
     
     # --- Exact: moment generating functions (Wood and Gayah, 2025) ---
-    if (method == "Exact") {
+    # E[exp(x beta)] per row; also used to check, for Simulated predictions,
+    # whether the expected value exists
+    if (method %in% c("Exact", "Simulated")) {
       loc <- .fcr_rp_locations(random_coefs_means, rpardists, nrow(data),
                                het_mean_coefs, X_het_mean, het_var_coefs,
                                X_het_var, het_form)
@@ -303,19 +305,22 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                    abs(rand_var_params[k]) * loc$var_multiplier)
         }
       }
-      n_inf <- sum(is.infinite(rp_factor))
-      if (n_inf > 0) {
-        warning(n_inf, " prediction(s) are infinite: the expected value does ",
-                "not exist for a lognormal random parameter with a positive ",
-                "x, or a gamma random parameter with x * sigma^2 / mu >= 1. ",
-                "See ?countreg.rp.", call. = FALSE)
+      no_mean <- is.infinite(rp_factor)
+      if (any(no_mean)) {
+        warning(sum(no_mean), " prediction(s) are infinite: the expected ",
+                "value does not exist for a lognormal random parameter with ",
+                "a positive x, or a gamma random parameter with ",
+                "x * sigma^2 / mu >= 1. See ?countreg.rp.", call. = FALSE)
       }
-      return(as.vector(mu_fixed * rp_factor * mean_adj))
+      if (method == "Exact") {
+        return(as.vector(mu_fixed * rp_factor * mean_adj))
+      }
     }
     
     # --- Simulated or Individual (Empirical Bayes) ---
     hdraws <- 
-      as.matrix(randtoolbox::halton(ndraws, N_rand, mixed = scrambled))
+      .fcr_halton(ndraws, N_rand + 1, isTRUE(scrambled),
+                  model$draw_seed)[, seq_len(N_rand), drop = FALSE]
     
     draw_args <- list(
       hdraws = hdraws, 
@@ -336,18 +341,25 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     mu_mat <- exp(draws_info$xb_rand_mat) * mu_fixed
     
     if (method == 'Simulated') {
-      if (linear_mean) return(as.vector(rowMeans(mu_mat)) * mean_adj)
-      D <- ncol(mu_mat)
-      m <- .fcr_family_mean(family, as.vector(mu_mat), rep(vec_1, D),
-                            if (!is.null(vec_2)) rep(vec_2, D))
-      return(rowMeans(matrix(m, nrow = nrow(mu_mat))))
+      out <- if (linear_mean) {
+        as.vector(rowMeans(mu_mat)) * mean_adj
+      } else {
+        D <- ncol(mu_mat)
+        m <- .fcr_family_mean(family, as.vector(mu_mat), rep(vec_1, D),
+                              if (!is.null(vec_2)) rep(vec_2, D))
+        rowMeans(matrix(m, nrow = nrow(mu_mat)))
+      }
+      # A finite average of draws is not an estimate of a mean that does
+      # not exist
+      out[no_mean] <- Inf
+      return(out)
     }
     
     dist_haltons <- if (legacy) {
       randtoolbox::halton(model$ndraws, 1)
     } else {
-      as.matrix(randtoolbox::halton(model$ndraws, N_rand + 1,
-                                    mixed = scrambled))[, N_rand + 1]
+      .fcr_halton(model$mix_draws %||% model$ndraws, N_rand + 1,
+                  isTRUE(scrambled), model$draw_seed)[, N_rand + 1]
     }
     return(.fcr_rp_eb_predict(
       model = model, data = data, family = family, mu_mat = mu_mat,

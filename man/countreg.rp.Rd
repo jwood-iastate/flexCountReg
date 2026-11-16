@@ -29,7 +29,8 @@ countreg.rp(
   bootstraps = NULL,
   engine = "halton",
   keep_data = TRUE,
-  panel_id = NULL
+  panel_id = NULL,
+  mix_draws = NULL
 )
 }
 \arguments{
@@ -79,7 +80,10 @@ all random parameters. The intercept is dropped.}
 \item{ndraws}{the number of Halton draws to use for estimating the random
 parameters.}
 
-\item{scrambled}{if the Halton draws should be scrambled.}
+\item{scrambled}{if the Halton draws should be scrambled. Scrambled
+draws are generated from a random seed that is stored in the fit, so
+predictions reuse the same draws (and \code{set.seed()} before fitting
+makes the fit reproducible).}
 
 \item{correlated}{if the random parameters should be correlated.
 If TRUE, only normal distributions are used.}
@@ -122,6 +126,13 @@ draws or "poilog" which uses the poilog package. The default is "halton".}
 in the fitted object. \code{predict()} then needs \code{newdata}.}
 
 \item{panel_id}{deprecated; use \code{group_var}.}
+
+\item{mix_draws}{the number of Halton draws for integrating over the
+mixing distribution of the PLN, PGE, PLL and PW families (inside each
+random-parameter draw). The default is \code{min(ndraws, 200)}. The
+cost of these families grows with \code{ndraws * mix_draws}, so
+increasing \code{ndraws} no longer also increases the inner
+integration.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

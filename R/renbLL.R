@@ -41,3 +41,36 @@ renb_ll <- function(y, mu, a, b, panels) {
   }
   out
 }
+
+# lgamma(x + d) - lgamma(x) - d * log(x): tends to 0 as x -> Inf (the
+# Poisson limit of negative binomial panel terms with x = 1 / alpha), where
+# the direct expression loses all significant digits.
+.fcr_lgamma_diff_rel <- function(x, d) {
+  n <- max(length(x), length(d))
+  x <- rep_len(x, n); d <- rep_len(d, n)
+  out <- lgamma(x + d) - lgamma(x) - d * log(x)
+  big <- is.finite(x) & x > 1e4 * (1 + d^2)
+  if (any(big)) {
+    xb <- x[big]; db <- d[big]
+    # Stirling series of log Gamma(x + d) - log Gamma(x) - d log x
+    out[big] <- db * (db - 1) / (2 * xb) -
+      db * (db - 1) * (2 * db - 1) / (12 * xb^2) +
+      db^2 * (db - 1)^2 / (12 * xb^3)
+  }
+  out
+}
+
+# digamma(x + d) - digamma(x), accurate for large x
+.fcr_digamma_diff <- function(x, d) {
+  n <- max(length(x), length(d))
+  x <- rep_len(x, n); d <- rep_len(d, n)
+  out <- digamma(x + d) - digamma(x)
+  big <- is.finite(x) & x > 1e4 * (1 + d^2)
+  if (any(big)) {
+    xb <- x[big]; db <- d[big]
+    out[big] <- db / xb - db * (db - 1) / (2 * xb^2) +
+      db * (db - 1) * (2 * db - 1) / (6 * xb^3)
+  }
+  out
+}
+

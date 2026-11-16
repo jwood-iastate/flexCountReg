@@ -113,12 +113,13 @@ NULL
                            levels = c("error", "not converged",
                                       "non-finite estimates")))
   n_ok <- sum(!nzchar(why))
+  reasons <- failures[failures > 0]
   if (n_ok < 2) {
-    stop("Fewer than 2 bootstrap replicates succeeded; bootstrapped ",
-         "standard errors cannot be computed.", call. = FALSE)
-  }
-  if (n_ok < 0.9 * B) {
-    reasons <- failures[failures > 0]
+    # The estimates are still usable; their standard errors are NA
+    warning("Fewer than 2 bootstrap replicates succeeded (",
+            paste(names(reasons), reasons, sep = ": ", collapse = ", "),
+            "); bootstrapped standard errors are NA.", call. = FALSE)
+  } else if (n_ok < 0.9 * B) {
     warning(B - n_ok, " of ", B, " bootstrap replicates failed (",
             paste(names(reasons), reasons, sep = ": ", collapse = ", "),
             "); the bootstrapped standard errors use the ", n_ok,
@@ -131,7 +132,12 @@ NULL
 # Covariance of the accepted bootstrap replicates (complete rows only, so
 # every entry uses the same replicates).
 .fcr_boot_cov <- function(draws) {
-  V <- stats::cov(draws[stats::complete.cases(draws), , drop = FALSE])
+  ok <- stats::complete.cases(draws)
+  if (sum(ok) < 2) {
+    return(matrix(NA_real_, ncol(draws), ncol(draws),
+                  dimnames = list(colnames(draws), colnames(draws))))
+  }
+  V <- stats::cov(draws[ok, , drop = FALSE])
   dimnames(V) <- list(colnames(draws), colnames(draws))
   V
 }
@@ -268,33 +274,51 @@ rp_mgf <- function(dist, t, mu, sigma) {
   mu <- rep_len(mu, n)
   sigma <- rep_len(abs(sigma), n)
   ts <- t * sigma
-  small <- abs(ts) < 1e-8
-  switch(dist,
+  small <- !is.na(ts) & abs(ts) < 1e-8
+  zero <- !is.na(sigma) & sigma == 0
+  out <- switch(dist,
     n = exp(t * mu + 0.5 * t^2 * sigma^2),
-    u = ifelse(small, exp(t * mu), exp(t * mu) * sinh(ts) / ts),
-    t = ifelse(small, exp(t * mu),
-               exp(t * (mu - sigma)) * (exp(ts) - 1)^2 / ts^2),
+    # Uniform on [mu - sigma, mu + sigma]: exp(t mu) sinh(ts) / ts, on the
+    # log scale (no overflow for large |ts|)
+    u = exp(t * mu + ifelse(small, 0, .fcr_log_sinhc(ts))),
+    # Triangular on [mu - sigma, mu + sigma] with mode mu:
+    # exp(t (mu - sigma)) (exp(ts) - 1)^2 / ts^2
+    t = exp(ifelse(small, t * mu,
+                   t * (mu - sigma) + 2 * (.fcr_log_abs_expm1(ts) -
+                                             log(abs(ts))))),
     g = {
       b <- 1 - t * sigma^2 / mu
-      out <- ifelse(b > 0, b^(-(mu^2) / sigma^2), Inf)
-      out[mu <= 0] <- NaN
-      out
+      o <- ifelse(b > 0, exp(-(mu^2) / sigma^2 * log(b)), Inf)
+      o[zero] <- exp(t[zero] * mu[zero])   # degenerate at mu
+      o[mu <= 0] <- NaN
+      o
     },
     ln = {
-      out <- rep(Inf, n)
-      out[t == 0] <- 1
-      neg <- !is.na(t) & t < 0
+      o <- rep(Inf, n)
+      o[t == 0] <- 1
+      o[zero] <- exp(t[zero] * exp(mu[zero]))   # degenerate at exp(mu)
+      neg <- !is.na(t) & t < 0 & !zero
       if (any(neg)) {
         a <- -exp(mu[neg]) * t[neg] * sigma[neg]^2
         rlang::check_installed(
           "lamW", reason = "for lognormal random-parameter predictions.")
         w <- lamW::lambertW0(a)
-        out[neg] <- exp(-(w^2 + 2 * w) / (2 * sigma[neg]^2)) / sqrt(1 + w)
+        o[neg] <- exp(-(w^2 + 2 * w) / (2 * sigma[neg]^2)) / sqrt(1 + w)
       }
-      out[is.na(t)] <- NA
-      out
+      o
     },
     stop("Unknown random-parameter distribution: ", dist, call. = FALSE))
+  out[is.na(t)] <- NA
+  out
+}
+
+# log(sinh(x) / x) and log|exp(x) - 1|, stable for large |x|
+.fcr_log_sinhc <- function(x) {
+  ax <- abs(x)
+  ax + log1p(-exp(-2 * ax)) - log(2) - log(ax)
+}
+.fcr_log_abs_expm1 <- function(x) {
+  ifelse(x > 30, x + log1p(-exp(-x)), log(abs(expm1(x))))
 }
 
 # Rows of a prepare_model_data() result for a resample of clusters. `idx`
@@ -531,5 +555,20 @@ rp_mgf <- function(dist, t, mu, sigma) {
     }
   }
   invisible(NULL)
+}
+
+# Halton draws (n x dim). Scrambled draws are generated from `seed`, without
+# changing the caller's random-number stream, so the same draws can be
+# generated again for prediction.
+.fcr_halton <- function(n, dim, scrambled = FALSE, seed = NULL) {
+  if (!scrambled || is.null(seed)) {
+    return(as.matrix(randtoolbox::halton(n, dim, mixed = scrambled)))
+  }
+  old <- if (exists(".Random.seed", envir = globalenv()))
+    get(".Random.seed", envir = globalenv())
+  on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
+    assign(".Random.seed", old, envir = globalenv()))
+  set.seed(seed)
+  as.matrix(randtoolbox::halton(n, dim, mixed = TRUE))
 }
 

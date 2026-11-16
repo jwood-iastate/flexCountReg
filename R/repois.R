@@ -243,9 +243,11 @@ repois <- function(formula,
     eta_i <- eta[idx]
     ysum <- sum(y_i)
     s <- sum(exp(eta_i))
-    lgamma(ysum + 1 / alpha) - lgamma(1 / alpha) + ysum * log(alpha) -
-      (ysum + 1 / alpha) * log1p(alpha * s) + sum(y_i * eta_i) -
-      sum(lgamma(y_i + 1))
+    r <- 1 / alpha
+    # lgamma(Y + r) - lgamma(r) + Y log(alpha) without cancellation, which
+    # tends to the Poisson log-likelihood as alpha -> 0
+    .fcr_lgamma_diff_rel(r, ysum) - (ysum + r) * log1p(alpha * s) +
+      sum(y_i * eta_i) - sum(lgamma(y_i + 1))
   }, numeric(1))
   if (any(!is.finite(ll))) return(rep(-Inf, n_cl))
   unname(ll)

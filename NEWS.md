@@ -294,6 +294,23 @@
   rank (aliased columns are named); weights must be finite with a positive
   total; `start.vals` must be finite; `max.iters` and `ndraws` must be
   whole numbers.
+* Random-parameter predictions: Simulated predictions now report a
+  nonexistent expected value (lognormal coefficient with positive x, gamma
+  coefficient beyond its MGF domain) like Exact predictions, instead of a
+  finite average of draws. `rp_mgf()` handles zero-scale lognormal and gamma
+  coefficients exactly and computes uniform and triangular MGFs on the log
+  scale.
+* `countreg.rp()` has a `mix_draws` argument for the inner integration of
+  the PLN, PGE, PLL and PW families (default `min(ndraws, 200)`), so the
+  cost is proportional to `ndraws * mix_draws` instead of `ndraws^2`.
+  Scrambled Halton draws are generated from a seed stored in the fit, so
+  predictions reuse the estimation draws and leave the caller's random
+  numbers unchanged.
+* `repois()` and `negmultinom()` compute their panel log-likelihoods and
+  scores without the cancellation in lgamma(r + Y) - lgamma(r) for large
+  r = 1 / alpha, so they tend continuously to the Poisson log-likelihood.
+* When fewer than 2 bootstrap replicates succeed, the fit is returned with
+  NA standard errors and a warning, instead of an error.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

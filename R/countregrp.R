@@ -38,7 +38,16 @@
 #'   all random parameters. The intercept is dropped.
 #' @param ndraws the number of Halton draws to use for estimating the random 
 #'        parameters.
-#' @param scrambled if the Halton draws should be scrambled.
+#' @param scrambled if the Halton draws should be scrambled. Scrambled
+#'   draws are generated from a random seed that is stored in the fit, so
+#'   predictions reuse the same draws (and \code{set.seed()} before fitting
+#'   makes the fit reproducible).
+#' @param mix_draws the number of Halton draws for integrating over the
+#'   mixing distribution of the PLN, PGE, PLL and PW families (inside each
+#'   random-parameter draw). The default is \code{min(ndraws, 200)}. The
+#'   cost of these families grows with \code{ndraws * mix_draws}, so
+#'   increasing \code{ndraws} no longer also increases the inner
+#'   integration.
 #' @param correlated if the random parameters should be correlated. 
 #'        If TRUE, only normal distributions are used.
 #' @param group_var an optional variable name (string), or a vector with one
@@ -181,7 +190,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          start.vals = NULL, verbose = FALSE,
                          stderr = "normal", bootstraps = NULL,
                          engine = "halton", keep_data = TRUE,
-                         panel_id = NULL) {
+                         panel_id = NULL, mix_draws = NULL) {
   
   print.level <- if (verbose) 2 else 0
   if (!is.null(panel_id)) {
@@ -323,10 +332,13 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   
   # Halton draws: one dimension per random parameter, plus a separate one
   # for the mixing distribution of PLN, PGE, PLL and PW families
-  all_draws <- as.matrix(randtoolbox::halton(ndraws, N_rand + 1,
-                                             mixed = scrambled))
-  hdraws <- all_draws[, seq_len(N_rand), drop = FALSE]
-  dist_haltons <- all_draws[, N_rand + 1]
+  if (is.null(mix_draws)) mix_draws <- min(ndraws, 200)
+  .fcr_check_controls(ndraws = mix_draws)
+  draw_seed <- if (scrambled) sample.int(.Machine$integer.max, 1L)
+  hdraws <- .fcr_halton(ndraws, N_rand + 1, scrambled,
+                        draw_seed)[, seq_len(N_rand), drop = FALSE]
+  dist_haltons <- .fcr_halton(mix_draws, N_rand + 1, scrambled,
+                              draw_seed)[, N_rand + 1]
   normed_dist_haltons <- stats::qnorm(dist_haltons)
   
   # --- 4. Parameter names and starting values ---
@@ -480,6 +492,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$modelType <- "countreg.rp"
   fit$method <- method
   fit$ndraws <- ndraws
+  fit$mix_draws <- mix_draws
+  fit$draw_seed <- draw_seed
   fit$scrambled <- scrambled
   fit$correlated <- correlated
   fit$panel_id <- panel_id 
@@ -527,6 +541,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          het_mean_formula = het_mean_formula,
                          het_var_formula = het_var_formula,
                          ndraws = ndraws, scrambled = scrambled,
+                         mix_draws = mix_draws,
                          correlated = correlated,
                          group_var = ".fcr_boot_panel",
                          weights = if (is.numeric(boot_w)) boot_w[r] else

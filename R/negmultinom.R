@@ -503,8 +503,10 @@ negmultinom <- function(formula,
     return(NA_real_)
   }
   syeta <- as.numeric(rowsum(prep$y * cp$eta, prep$g, reorder = TRUE))
-  ll <- lgamma(cp$r + cp$Y) - lgamma(cp$r) + cp$r * cp$logr -
-    (cp$r + cp$Y) * log(cp$r + cp$M) + syeta - prep$lgy
+  # lgamma(r + Y) - lgamma(r) + r log r - (r + Y) log(r + M), rewritten
+  # without cancellation for large r (near the Poisson limit)
+  ll <- .fcr_lgamma_diff_rel(cp$r, cp$Y) -
+    (cp$r + cp$Y) * log1p(cp$M / cp$r) + syeta - prep$lgy
   if (any(!is.finite(ll))) return(NA_real_)
   ll
 }
@@ -515,8 +517,8 @@ negmultinom <- function(formula,
   r <- cp$r
   rpM <- r + cp$M
   # d LL / d r and d LL / d M (cluster level)
-  dr <- digamma(r + cp$Y) - digamma(r) + cp$logr + 1 - log(rpM) -
-    (r + cp$Y) / rpM
+  # digamma(r + Y) - digamma(r) + log(r) + 1 - log(r + M) - (r + Y)/(r + M)
+  dr <- .fcr_digamma_diff(r, cp$Y) - log1p(cp$M / r) + (cp$M - cp$Y) / rpM
   dM <- -(r + cp$Y) / rpM
   # Total derivative w.r.t. M, including r's dependence on M:
   # d r / d M = (2 - p) r / M

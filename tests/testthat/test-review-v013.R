@@ -472,10 +472,17 @@ test_that("F15: bootstrap replicates must converge and be finite", {
                c(3, 3))
   # A refit stopped at the iteration limit is not accepted
   d <- washington_roads
-  expect_error(suppressWarnings(
+  ws <- character()
+  m <- withCallingHandlers(
     countreg(Total_crashes ~ lnaadt, d, method = "BFGS", stderr = "boot",
-             bootstraps = 4, max.iters = 1)),
-    "Fewer than 2 bootstrap replicates succeeded")
+             bootstraps = 4, max.iters = 1),
+    warning = function(w) {
+      ws <<- c(ws, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    })
+  expect_true(any(grepl("Fewer than 2 bootstrap replicates succeeded \\(not converged: 4\\)", ws)))
+  expect_true(all(is.na(m$model$se)))
+  expect_length(coef(m), 3)
 })
 
 test_that("F16: frequency weights match the expanded data", {
@@ -621,4 +628,90 @@ test_that("F20: invalid data and controls fail before optimization", {
   expect_error(countreg(f, d, family = "PLN", ndraws = 0), "`ndraws`")
   expect_error(countreg.rp(f, rpar_formula = ~ -1 + speed50, data = d,
                            rpardists = "zz"), "Unknown random-parameter")
+})
+
+test_that("F21: Simulated and Exact agree on whether the mean exists", {
+  d <- washington_roads
+  rp <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+                    data = d, rpardists = c(speed50 = "ln"), ndraws = 50,
+                    method = "BFGS", max.iters = 50)
+  nd <- d[c(which(d$speed50 == 1)[1:2], which(d$speed50 == 0)[1:2]), ]
+  expect_warning(ex <- predict(rp, newdata = nd, method = "Exact"),
+                 "2 prediction\\(s\\) are infinite")
+  expect_warning(sm <- predict(rp, newdata = nd, method = "Simulated"),
+                 "2 prediction\\(s\\) are infinite")
+  expect_equal(is.infinite(sm), is.infinite(ex))
+  expect_equal(sm[3:4], ex[3:4])
+  # Zero-scale limits equal fixed coefficients
+  expect_equal(rp_mgf("ln", c(-1, 0.5, 2), 0.3, 0), exp(c(-1, 0.5, 2) *
+                                                          exp(0.3)))
+  expect_equal(rp_mgf("g", c(-1, 0.5), 0.3, 0), exp(c(-1, 0.5) * 0.3))
+  # Uniform and triangular MGFs: no overflow, and match numerical integration
+  expect_true(is.finite(log(rp_mgf("u", 400, 0, 2))) ||
+                rp_mgf("u", 400, 0, 2) == Inf)
+  for (dist in c("u", "t")) {
+    dens <- if (dist == "u") function(b) dunif(b, -0.5, 1.5) else
+      function(b) ifelse(b < 0.5, (b + 0.5), (1.5 - b))
+    num <- integrate(function(b) exp(1.7 * b) * dens(b), -0.5, 1.5)$value
+    expect_equal(rp_mgf(dist, 1.7, 0.5, 1), num, tolerance = 1e-8)
+    expect_equal(rp_mgf(dist, -1e-10, 0.5, 1), exp(-1e-10 * 0.5),
+                 tolerance = 1e-12)
+  }
+})
+
+test_that("F22: inner mixing draws are separate, scrambled draws reproducible", {
+  d <- washington_roads
+  t_small <- system.time(
+    a <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+                     data = d, family = "PLN", ndraws = 100, mix_draws = 20,
+                     method = "BFGS", max.iters = 30))["elapsed"]
+  expect_equal(a$model$mix_draws, 20)
+  # Scrambled draws: predictions reuse the fit's draws and leave the
+  # caller's random-number stream unchanged
+  set.seed(4)
+  s1 <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+                    data = d, ndraws = 50, scrambled = TRUE, method = "BFGS",
+                    max.iters = 30)
+  set.seed(4)
+  s2 <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+                    data = d, ndraws = 50, scrambled = TRUE, method = "BFGS",
+                    max.iters = 30)
+  expect_equal(coef(s1), coef(s2))
+  set.seed(10)
+  u1 <- runif(1)
+  set.seed(10)
+  p1 <- predict(s1, newdata = d[1:20, ], method = "Simulated")
+  u2 <- runif(1)
+  expect_equal(u1, u2)
+  expect_equal(predict(s1, newdata = d[1:20, ], method = "Simulated"), p1)
+})
+
+test_that("F23: panel NB likelihoods reach the Poisson limit without cancellation", {
+  # lgamma(x + d) - lgamma(x) - d log x = d (d - 1) / (2 x) + ... for large x
+  expect_equal(.fcr_lgamma_diff_rel(1e12, 7), 21 / 1e12, tolerance = 1e-6)
+  expect_equal(.fcr_lgamma_diff_rel(10, 7),
+               lgamma(17) - lgamma(10) - 7 * log(10))
+  expect_equal(.fcr_digamma_diff(1e8, 7), sum(1 / (1e8 + 0:6)),
+               tolerance = 1e-10)
+  set.seed(1)
+  n <- 60
+  d <- data.frame(id = rep(1:20, each = 3), x = rnorm(n))
+  d$y <- rpois(n, exp(0.5 + 0.3 * d$x))
+  X <- cbind(1, d$x)
+  cl <- split(seq_len(n), d$id)
+  pois <- sum(dpois(d$y, exp(0.5 + 0.3 * d$x), log = TRUE))
+  for (lna in c(-15, -25, -35)) {
+    ll <- sum(.repois_loglik(c(0.5, 0.3, lna), d$y, X, rep(0, n), cl))
+    expect_equal(ll, pois, tolerance = 1e-6, label = paste("repois", lna))
+  }
+  prep <- .nm_prepare(y ~ x, "id", d, NULL, NULL, NULL, "NM2")
+  for (lna in c(-15, -25)) {
+    ll <- sum(.nm_loglik(c(0.5, 0.3, lna), prep, "NM2"))
+    expect_equal(ll, pois, tolerance = 1e-6, label = paste("NM2", lna))
+  }
+  # Analytic scores stay finite and match numerical ones near the limit
+  g <- colSums(.nm_grad(c(0.5, 0.3, -12), prep, "NM2"))
+  num <- maxLik::numericGradient(function(p) sum(.nm_loglik(p, prep, "NM2")),
+                                 c(0.5, 0.3, -12))
+  expect_equal(g, as.vector(num), tolerance = 1e-4)
 })

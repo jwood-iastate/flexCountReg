@@ -134,6 +134,12 @@
 # summed directly instead of taken as 1 - CDF.
 .fcr_p_contract <- function(core, q, pars, lower.tail, log.p, ...,
                             logdens = NULL) {
+  for (nm in c("lower.tail", "log.p")) {
+    v <- get(nm)
+    if (!is.logical(v) || length(v) != 1L || is.na(v)) {
+      stop("'", nm, "' must be TRUE or FALSE", call. = FALSE)
+    }
+  }
   lens <- c(length(q), vapply(Filter(Negate(is.null), pars), length, 1L))
   if (any(lens == 0L)) return(numeric(0))
   n <- max(lens)

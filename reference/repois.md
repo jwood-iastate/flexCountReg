@@ -132,16 +132,16 @@ summary(repois.mod)
 #>     max.iters = 1000, offset = "lnlength")
 #> 
 #> Model: repois | optimizer: BFGS
-#> Iterations: 7 
+#> Iterations: 11 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>               Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -9.818      1.270   -7.73  1.1e-14 ***
-#> lnaadt           1.026      0.147    7.00  2.5e-12 ***
-#> speed50         -0.919      0.290   -3.16   0.0016 ** 
-#> ShouldWidth04   -0.486      0.243   -2.00   0.0456 *  
-#> AADTover10k     -0.870      0.459   -1.89   0.0582 .  
+#> (Intercept)     -9.818      1.221   -8.04  9.0e-16 ***
+#> lnaadt           1.026      0.141    7.29  3.1e-13 ***
+#> speed50         -0.919      0.292   -3.15   0.0017 ** 
+#> ShouldWidth04   -0.486      0.243   -2.00   0.0459 *  
+#> AADTover10k     -0.870      0.457   -1.90   0.0568 .  
 #> lnalpha        -13.816         NA      NA       NA    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

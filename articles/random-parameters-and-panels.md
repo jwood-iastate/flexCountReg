@@ -50,11 +50,11 @@ summary(rp)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -8.9052     0.4514  -19.73  < 2e-16 ***
-#> lnaadt           1.1251     0.0519   21.68  < 2e-16 ***
-#> speed50:Mean    -0.6991     0.1462   -4.78  1.7e-06 ***
-#> speed50:St.Dev   0.6413     0.1699    3.77  0.00016 ***
-#> ln(alpha)       -1.1395     0.2757   -4.13  3.6e-05 ***
+#> (Intercept)     -8.9052     0.4493  -19.82  < 2e-16 ***
+#> lnaadt           1.1251     0.0516   21.78  < 2e-16 ***
+#> speed50:Mean    -0.6991     0.1464   -4.78  1.8e-06 ***
+#> speed50:St.Dev   0.6413     0.1702    3.77  0.00016 ***
+#> ln(alpha)       -1.1395     0.2739   -4.16  3.2e-05 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> Offset: lnlength (coefficient fixed at 1)
@@ -86,12 +86,12 @@ tidy(rp_het)
 #> # A tibble: 6 × 6
 #>   term                          component estimate std.error statistic   p.value
 #>   <chr>                         <chr>        <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 (Intercept)                   mean        -8.98     0.462     -19.5  2.86e- 84
-#> 2 lnaadt                        mean         1.13     0.0530     21.4  2.08e-101
-#> 3 speed50:Mean                  random_m…   -0.859    0.159      -5.39 7.03e-  8
-#> 4 speed50:St.Dev                random_s…    0.551    0.170       3.24 1.20e-  3
-#> 5 HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.240       2.92 3.53e-  3
-#> 6 ln(alpha)                     distribu…   -1.13     0.270      -4.20 2.70e-  5
+#> 1 (Intercept)                   mean        -8.98     0.453     -19.8  1.57e- 87
+#> 2 lnaadt                        mean         1.13     0.0520     21.8  2.10e-105
+#> 3 speed50:Mean                  random_m…   -0.859    0.160      -5.38 7.48e-  8
+#> 4 speed50:St.Dev                random_s…    0.551    0.170       3.23 1.22e-  3
+#> 5 HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.240       2.91 3.58e-  3
+#> 6 ln(alpha)                     distribu…   -1.13     0.269      -4.21 2.59e-  5
 ```
 
 ### Predictions
@@ -169,7 +169,7 @@ do.call(rbind, lapply(names(re_models), function(nm) {
                                     "n_groups")])
 }))
 #>        model    logLik      AIC      BIC nobs n_groups
-#> 1       RENB -1070.459 2150.918 2172.060 1501      507
+#> 1       RENB -1070.457 2150.914 2172.056 1501      507
 #> 2 PoisLindRE -1070.830 2149.660 2166.574 1501      507
 #> 3        NM2 -1070.454 2148.908 2165.822 1501      507
 ```
@@ -193,10 +193,10 @@ tidy(re_robust)
 #> # A tibble: 4 × 6
 #>   term        component    estimate std.error statistic  p.value
 #>   <chr>       <chr>           <dbl>     <dbl>     <dbl>    <dbl>
-#> 1 (Intercept) mean           -8.77     0.599     -14.6  1.36e-48
-#> 2 lnaadt      mean            1.11     0.0702     15.9  1.41e-56
-#> 3 speed50     mean           -0.561    0.131      -4.29 1.79e- 5
-#> 4 ln(theta)   distribution   -7.13     0.0642   -111.   0    
+#> 1 (Intercept) mean           -8.77     0.607     -14.4  2.76e-47
+#> 2 lnaadt      mean            1.11     0.0712     15.6  4.96e-55
+#> 3 speed50     mean           -0.561    0.131      -4.28 1.85e- 5
+#> 4 ln(theta)   distribution   -7.13     0.594     -12.0  3.35e-33
 ```
 
 Cross-sectional models can also be fitted with `stderr = "robust"` or

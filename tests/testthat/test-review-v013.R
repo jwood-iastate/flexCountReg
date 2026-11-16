@@ -268,3 +268,63 @@ test_that("F07: COM uses log normalizers, consistent support and a checked solve
   expect_equal(.fcr_family_variance("COM", 4, 0.6),
                sum((0:200)^2 * p) - 16, tolerance = 1e-6)
 })
+
+test_that("F08: Cholesky labels, starts and decoding use one packing", {
+  for (K in 1:4) {
+    set.seed(K)
+    L <- matrix(0, K, K)
+    L[lower.tri(L, diag = TRUE)] <- rnorm(K * (K + 1) / 2)
+    v <- .fcr_chol_pack(L)
+    expect_equal(.fcr_chol_unpack(v, K), L)
+    rp <- letters[seq_len(K)]
+    nm <- .fcr_chol_names(rp)
+    # Each named element is the matching element of L
+    for (k in seq_along(nm)) {
+      ij <- strsplit(sub("^Chol:", "", nm[k]), "_")[[1]]
+      expect_equal(v[k], L[match(ij[1], rp), match(ij[2], rp)])
+    }
+    expect_equal(.fcr_chol_unpack(.fcr_chol_pack(diag(0.1, K)), K),
+                 diag(0.1, K))
+  }
+  expect_error(.fcr_chol_unpack(1:4, 3), "needs 6 values")
+  # Three correlated random parameters: the default start is 0.1 * I, and
+  # named start values are placed by name
+  d <- washington_roads
+  d$x3 <- d$ShouldWidth04
+  rp3 <- ~ -1 + lnaadt + speed50 + x3
+  m <- suppressWarnings(countreg.rp(Total_crashes ~ 1, rpar_formula = rp3,
+                                    data = d, correlated = TRUE, ndraws = 20,
+                                    method = "BFGS", max.iters = 0))
+  ch <- coef(m)[grepl("^Chol:", names(coef(m)))]
+  L0 <- .fcr_chol_unpack(unname(ch), 3)
+  expect_equal(L0, diag(0.1, 3))
+  expect_equal(names(ch)[c(1, 4, 6)],
+               c("Chol:lnaadt_lnaadt", "Chol:speed50_speed50", "Chol:x3_x3"))
+  # The simulated covariance of the draws is L L'
+  L <- matrix(c(0.3, 0.1, -0.2, 0, 0.4, 0.05, 0, 0, 0.25), 3)
+  h <- randtoolbox::halton(20000, 3)
+  dr <- generate_random_draws(
+    hdraws = h, random_coefs_means = c(0, 0, 0),
+    rand_var_params = .fcr_chol_pack(L), rpardists = rep("n", 3),
+    rpar = c("a", "b", "c"), X_rand = diag(3), correlated = TRUE)
+  expect_equal(cov(t(dr$xb_rand_mat)), L %*% t(L), tolerance = 0.02)
+})
+
+test_that("F10: a free-location random slope cannot also be a fixed slope", {
+  d <- washington_roads
+  expect_error(countreg.rp(Total_crashes ~ lnaadt + speed50,
+                           rpar_formula = ~ -1 + speed50, data = d,
+                           rpardists = c(speed50 = "n")),
+               "Only the sum of the fixed coefficient")
+  expect_error(countreg.rp(Total_crashes ~ lnaadt + speed50,
+                           rpar_formula = ~ -1 + speed50, data = d,
+                           rpardists = c(speed50 = "u")),
+               "both `formula` and `rpar_formula`")
+  # Gamma random parameters have a fixed support, so a fixed shift is allowed
+  expect_s3_class(
+    suppressWarnings(countreg.rp(Total_crashes ~ lnaadt + speed50,
+                                 rpar_formula = ~ -1 + speed50, data = d,
+                                 rpardists = c(speed50 = "g"), ndraws = 20,
+                                 method = "BFGS", max.iters = 20)),
+    "countreg_rp")
+})

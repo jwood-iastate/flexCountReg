@@ -148,8 +148,7 @@ generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params,
   
   if (correlated) {
     # --- Correlated (normal only) ---
-    L <- matrix(0, n_params, n_params)
-    L[lower.tri(L, diag = TRUE)] <- rand_var_params
+    L <- .fcr_chol_unpack(rand_var_params, n_params)
     corr_draws <- stats::qnorm(hdraws[, seq_len(n_params), drop = FALSE]) %*%
       t(L)
     xb_deterministic <- rowSums(X_rand * mu_mat)
@@ -437,3 +436,31 @@ rp_mgf <- function(dist, t, mu, sigma) {
   G[w == 0, ] <- 0
   G
 }
+
+# ---- Cholesky factor of correlated random parameters -----------------------
+# The lower-triangular factor L (Var = L L') is packed column by column, the
+# order of L[lower.tri(L, diag = TRUE)]. Labels, starting values, the
+# likelihood and predictions all use these helpers.
+.fcr_chol_index <- function(K) {
+  which(lower.tri(diag(K), diag = TRUE), arr.ind = TRUE)
+}
+
+.fcr_chol_names <- function(rpar) {
+  idx <- .fcr_chol_index(length(rpar))
+  paste0("Chol:", rpar[idx[, 1]], "_", rpar[idx[, 2]])
+}
+
+.fcr_chol_pack <- function(L) {
+  L[lower.tri(L, diag = TRUE)]
+}
+
+.fcr_chol_unpack <- function(v, K) {
+  if (length(v) != K * (K + 1) / 2) {
+    stop("A Cholesky factor for ", K, " random parameters needs ",
+         K * (K + 1) / 2, " values, not ", length(v), ".", call. = FALSE)
+  }
+  L <- matrix(0, K, K)
+  L[lower.tri(L, diag = TRUE)] <- v
+  L
+}
+

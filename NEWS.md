@@ -219,6 +219,18 @@
   bracketed solver for the rate given the mean (accurate to about 1e-8,
   NaN with a warning when it fails, instead of silently returning an
   unconverged value).
+* Correlated random parameters with three or more parameters: the `Chol:`
+  labels and the default starting values were built row by row while the
+  Cholesky factor was filled column by column, so labels were attached to
+  the wrong elements, named starting values went to the wrong elements, and
+  the default start was a singular matrix instead of 0.1 * I. Labels,
+  starting values, the likelihood and predictions now use one packing.
+  Estimates and predictions of earlier fits were internally consistent;
+  only their labels were wrong.
+* `countreg.rp()` rejects a variable in both `formula` and `rpar_formula`
+  when its random parameter is normal, uniform or triangular (only the sum
+  of the fixed coefficient and the random mean is identified). Lognormal
+  and gamma random parameters with a fixed shift are still allowed.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

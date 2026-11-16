@@ -291,8 +291,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                                het_mean_coefs, X_het_mean, het_var_coefs,
                                X_het_var, het_form)
       if (correlated) {
-        L <- matrix(0, N_rand, N_rand)
-        L[lower.tri(L, diag = TRUE)] <- rand_var_params
+        L <- .fcr_chol_unpack(rand_var_params, N_rand)
         W <- X_rand * loc$var_multiplier
         rp_factor <- exp(rowSums(X_rand * loc$mu_mat) +
                            0.5 * rowSums((W %*% L)^2))

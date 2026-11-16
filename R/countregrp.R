@@ -295,6 +295,19 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     stop("`rpar_formula` has no random parameters.", call. = FALSE)
   }
   rpardists <- .fcr_match_rpardists(rpardists, rpar, correlated)
+  # A variable in both formulas: with a free-location random parameter
+  # (normal, uniform, triangular) only the sum of the fixed coefficient and
+  # the random parameter's mean is identified. Lognormal and gamma random
+  # parameters have a fixed support, so a fixed shift is identified.
+  both <- intersect(rpar, colnames(X_Fixed))
+  free_loc <- both[rpardists[both] %in% c("n", "u", "t")]
+  if (length(free_loc)) {
+    stop("Variable(s) ", toString(free_loc), " are in both `formula` and ",
+         "`rpar_formula` with a normal, uniform or triangular random ",
+         "parameter. Only the sum of the fixed coefficient and the random ",
+         "parameter's mean is identified; remove them from `formula` (the ",
+         "random parameter's mean is the average effect).", call. = FALSE)
+  }
   
   N_fixed <- ncol(X_Fixed)
   
@@ -317,11 +330,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   # --- 4. Parameter names and starting values ---
   x_names <- c(colnames(X_Fixed), paste0(rpar, ":Mean"))
   if (correlated) {
-    chol_names <- character(0)
-    for (i in seq_along(rpar)) for (j in 1:i) {
-      chol_names <- c(chol_names, paste0("Chol:", rpar[i], "_", rpar[j]))
-    }
-    x_names <- c(x_names, chol_names)
+    x_names <- c(x_names, .fcr_chol_names(rpar))
   } else {
     x_names <- c(x_names, paste0(rpar, ":St.Dev"))
   }
@@ -359,9 +368,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     is_g <- rpardists == "g"
     s_rand[is_g] <- pmax(abs(s_rand[is_g]), 0.1)
     if (correlated) {
-      s_var <- unlist(lapply(seq_along(rpar), function(i) {
-        c(rep(0, i - 1), 0.1)
-      }))
+      # Lower-triangular Cholesky factor 0.1 * I, packed
+      s_var <- .fcr_chol_pack(diag(0.1, N_rand))
     } else {
       s_var <- ifelse(is_g, pmax(0.5 * s_rand, 0.05), 0.1)
     }

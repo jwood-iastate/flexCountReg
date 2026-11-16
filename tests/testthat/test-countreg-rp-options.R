@@ -55,7 +55,7 @@ test_that("invalid specifications give clear errors or warnings", {
                            data = d, ndraws = 20),
                "no random parameters")
   dw <- d
-  dw$w <- seq_len(nrow(dw))
+  dw$w <- rep(1:2, length.out = nrow(dw))
   expect_warning(countreg_rp(Total_crashes ~ lnaadt,
                              rpar_formula = ~ -1 + speed50, data = dw,
                              weights = "w", group_var = "ID", ndraws = 20,

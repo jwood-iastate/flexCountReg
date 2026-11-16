@@ -130,7 +130,6 @@ margEffTable <- function(object,
   if (is.null(vars)) {
     vars <- candidate_vars
   } else {
-    vars <- intersect(vars, names(data))
     missing_vars <- setdiff(vars, names(data))
     if (length(missing_vars) > 0L) {
       stop("The following variables are not in `data`: ", paste(missing_vars, collapse = ", "))
@@ -724,5 +723,7 @@ print.flexEffectTable <- function(x, ...) {
   }
   
   fit_call$data <- boot_data
-  eval(fit_call, envir = parent.frame())
+  # Evaluate where the model was specified, so other objects the call refers
+  # to (weights vectors, formulas) are found
+  eval(fit_call, envir = environment(object$formula))
 }

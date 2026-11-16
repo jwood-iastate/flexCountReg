@@ -346,6 +346,11 @@ rp_mgf <- function(dist, t, mu, sigma) {
 # Validate stderr; `bootstraps` given without `stderr` means bootstrap, as in
 # earlier versions.
 .fcr_resolve_stderr <- function(stderr, stderr_missing, bootstraps) {
+  if (!is.null(bootstraps) &&
+      (!is.numeric(bootstraps) || length(bootstraps) != 1L ||
+       is.na(bootstraps) || bootstraps < 2)) {
+    stop("`bootstraps` must be a single number of at least 2.", call. = FALSE)
+  }
   if (stderr_missing && !is.null(bootstraps)) return("boot")
   stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
   stderr

@@ -8,7 +8,8 @@
 #   start     starting value(s) on the linear-predictor scale for the
 #             distribution parameters (recycled).
 #   dens      function(y, predicted, alpha, sigma, haltons, normed_haltons,
-#             engine) returning P(Y = y), with predicted = exp(X beta +
+#             engine, log = FALSE) returning P(Y = y) (its log when
+#             log = TRUE, computed on the log scale where possible), with predicted = exp(X beta +
 #             offset) (times the reporting probability) and alpha, sigma the
 #             exponentiated distribution parameters.
 #   variance  function(mu, alpha, sigma): Var(Y) at the mean parameter mu,
@@ -29,9 +30,9 @@
 
 # Density values for the likelihood: parameter values outside the valid
 # range (tried by the optimizer) have probability 0, without warnings.
-.fcr_quiet_dens <- function(expr) {
+.fcr_quiet_dens <- function(expr, log = FALSE) {
   p <- suppressWarnings(expr)
-  p[is.na(p)] <- 0
+  p[is.na(p)] <- if (log) -Inf else 0
   p
 }
 
@@ -61,16 +62,16 @@
 .fcr_family_registry <- list(
   POISSON = .fcr_family(
     params = list(NULL, NULL),
-    dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) stats::dpois(y, predicted),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      stats::dpois(y, predicted, log = log),
     variance = function(mu, alpha, sigma) mu,
     rand = function(n, mu, alpha, sigma) stats::rpois(n, mu)),
 
   GP1 = .fcr_family(
     params = list("ln(phi+1)", NULL),
-    dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) .fcr_quiet_dens(dgp1(y, mu = predicted,
-                                                  phi = alpha - 1)),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      .fcr_quiet_dens(dgp1(y, mu = predicted, phi = alpha - 1, log = log),
+                      log),
     # phi = alpha - 1; for phi < 0, mu is a location parameter (see
     # .gp1_moments())
     variance = function(mu, alpha, sigma) .gp1_moments(mu, alpha - 1)$var,
@@ -79,9 +80,9 @@
 
   GP2 = .fcr_family(
     params = list("ln(alpha+1)", NULL),
-    dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) .fcr_quiet_dens(dgp2(y, mu = predicted,
-                                                  alpha = alpha - 1)),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      .fcr_quiet_dens(dgp2(y, mu = predicted, alpha = alpha - 1, log = log),
+                      log),
     # GP2(mu, a) is GP1(mu, phi = a * mu), with a = alpha - 1
     variance = function(mu, alpha, sigma)
       .gp1_moments(mu, (alpha - 1) * mu)$var,
@@ -90,29 +91,27 @@
 
   NB1 = .fcr_family(
     params = list("ln(alpha)", NULL),
-    dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) .fcr_quiet_dens(
-                      stats::dnbinom(y, size = predicted / alpha,
-                                     mu = predicted)),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      .fcr_quiet_dens(stats::dnbinom(y, size = predicted / alpha,
+                                     mu = predicted, log = log), log),
     variance = function(mu, alpha, sigma) mu * (1 + alpha),
     rand = function(n, mu, alpha, sigma)
       stats::rnbinom(n, size = mu / alpha, mu = mu)),
 
   NB2 = .fcr_family(
     params = list("ln(alpha)", NULL),
-    dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) .fcr_quiet_dens(
-                      stats::dnbinom(y, size = 1 / alpha, mu = predicted)),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      .fcr_quiet_dens(stats::dnbinom(y, size = 1 / alpha, mu = predicted,
+                                     log = log), log),
     variance = function(mu, alpha, sigma) mu + alpha * mu^2,
     rand = function(n, mu, alpha, sigma)
       stats::rnbinom(n, size = 1 / alpha, mu = mu)),
 
   NBP = .fcr_family(
     params = list("ln(alpha)", "ln(p)"),
-    dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) .fcr_quiet_dens(stats::dnbinom(
-                      y, size = (predicted^(2 - sigma)) / alpha,
-                      mu = predicted)),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      .fcr_quiet_dens(stats::dnbinom(y, size = predicted^(2 - sigma) / alpha,
+                                     mu = predicted, log = log), log),
     variance = function(mu, alpha, sigma) mu + alpha * mu^sigma,
     rand = function(n, mu, alpha, sigma)
       stats::rnbinom(n, size = mu^(2 - sigma) / alpha, mu = mu)),
@@ -120,8 +119,9 @@
   PLN = .fcr_family(
     params = list("ln(sigma)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) dpLnorm(x = y, mean = predicted, sigma = alpha,
-                                    hdraws = haltons, engine = engine),
+                    engine, log = FALSE)
+      dpLnorm(x = y, mean = predicted, sigma = alpha, hdraws = haltons,
+              engine = engine, log = log),
     variance = function(mu, alpha, sigma) {
       m <- mu * exp(alpha^2 / 2)
       m + (exp(alpha^2) - 1) * m^2
@@ -135,8 +135,9 @@
   PGE = .fcr_family(
     params = list("ln(shape)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) dpge(y, mean = predicted, shape = alpha,
-                                 scale = 1, haltons = haltons),
+                    engine, log = FALSE)
+      dpge(y, mean = predicted, shape = alpha, scale = 1, haltons = haltons,
+           log = log),
     variance = function(mu, alpha, sigma) {
       mu + mu^2 * (trigamma(1) - trigamma(alpha + 1)) /
         (digamma(alpha + 1) - digamma(1))^2
@@ -146,39 +147,39 @@
 
   PIG1 = .fcr_family(
     params = list("ln(eta)", NULL),
-    dens = function(y, predicted, alpha, sigma, ...)
-      dpinvgaus(y, mu = predicted, eta = alpha),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      dpinvgaus(y, mu = predicted, eta = alpha, log = log),
     variance = function(mu, alpha, sigma) mu * (1 + alpha),
     rand = function(n, mu, alpha, sigma) rpinvgaus(n, mu = mu, eta = alpha)),
 
   PIG2 = .fcr_family(
     params = list("ln(eta)", NULL),
-    dens = function(y, predicted, alpha, sigma, ...)
-      dpinvgaus(y, mu = predicted, eta = alpha, form = "Type 2"),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      dpinvgaus(y, mu = predicted, eta = alpha, form = "Type 2", log = log),
     variance = function(mu, alpha, sigma) mu + alpha * mu^2,
     rand = function(n, mu, alpha, sigma)
       rpinvgaus(n, mu = mu, eta = alpha, form = "Type 2")),
 
   PIG = .fcr_family(
     params = list("ln(eta)", NULL),
-    dens = function(y, predicted, alpha, sigma, ...)
-      dpinvgamma(y, mu = predicted, eta = alpha),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      dpinvgamma(y, mu = predicted, eta = alpha, log = log),
     variance = function(mu, alpha, sigma) mu + alpha * mu^2,
     rand = function(n, mu, alpha, sigma) rpinvgamma(n, mu = mu, eta = alpha)),
 
   PL = .fcr_family(
     params = list("ln(theta)", NULL),
-    dens = function(y, predicted, alpha, sigma, ...)
-      dplind(y, mean = predicted, theta = alpha),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      dplind(y, mean = predicted, theta = alpha, log = log),
     variance = function(mu, alpha, sigma)
       mu + mu^2 * (1 - 2 / (alpha + 2)^2),
     rand = function(n, mu, alpha, sigma) rplind(n, mean = mu, theta = alpha)),
 
   PLG = .fcr_family(
     params = list("ln(theta)", "ln(alpha)"),
-    dens = function(y, predicted, alpha, sigma, ...)
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
       .fcr_quiet_dens(dplindGamma(x = y, mean = predicted, theta = alpha,
-                                  alpha = sigma)),
+                                  alpha = sigma, log = log), log),
     variance = function(mu, alpha, sigma)
       mu + ((1 + sigma) * (2 - 2 / (alpha + 2)^2) - 1) * mu^2,
     rand = function(n, mu, alpha, sigma)
@@ -187,8 +188,9 @@
   PLL = .fcr_family(
     params = list("ln(theta)", "ln(sigma)"),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) dplindLnorm(x = y, mean = predicted, theta = alpha,
-                                        sigma = sigma, hdraws = haltons),
+                    engine, log = FALSE)
+      dplindLnorm(x = y, mean = predicted, theta = alpha, sigma = sigma,
+                  hdraws = haltons, log = log),
     variance = function(mu, alpha, sigma) {
       m <- mu * exp(sigma^2 / 2)
       m + ((2 - 2 / (alpha + 2)^2) * exp(sigma^2) - 1) * m^2
@@ -200,8 +202,11 @@
   PW = .fcr_family(
     params = list("ln(alpha)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) dpWeib_cpp(y, mean = predicted, alpha = alpha,
-                                       sigma = 1, h = haltons),
+                    engine, log = FALSE) {
+      p <- dpWeib_cpp(y, mean = predicted, alpha = alpha, sigma = 1,
+                      h = haltons)
+      if (log) base::log(p) else p
+    },
     variance = function(mu, alpha, sigma)
       mu + (gamma(1 + 2 / alpha) / gamma(1 + 1 / alpha)^2 - 1) * mu^2,
     rand = function(n, mu, alpha, sigma)
@@ -211,8 +216,9 @@
   SI = .fcr_family(
     params = list("gamma", "ln(sigma)"),
     # gamma can be negative, so it is passed as log(alpha) = W delta
-    dens = function(y, predicted, alpha, sigma, ...)
-      dsichel(x = y, mu = predicted, sigma = sigma, gamma = log(alpha)),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      dsichel(x = y, mu = predicted, sigma = sigma, gamma = base::log(alpha),
+              log = log),
     variance = function(mu, alpha, sigma) {
       gam <- log(alpha)
       cc <- besselK(1 / sigma, gam + 1) / besselK(1 / sigma, gam)
@@ -237,16 +243,12 @@
 
   COM = .fcr_family(
     params = list("ln(nu)", NULL),
-    dens = function(y, predicted, alpha, sigma, ...)
-      dcom(x = y, mu = predicted, nu = alpha),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      dcom(x = y, mu = predicted, nu = alpha, log = log),
     variance = function(mu, alpha, sigma) {
       r <- .fcr_recycle(mu, alpha)
-      vapply(seq_along(r[[1]]), function(i) {
-        yy <- 0:max(100, ceiling(20 * r[[1]][i] + 50))
-        p <- dcom(yy, mu = r[[1]][i], nu = r[[2]][i])
-        p <- p / sum(p)
-        sum(yy^2 * p) - sum(yy * p)^2
-      }, numeric(1))
+      lambda <- find_lambda_vec_cpp(r[[1]], r[[2]])
+      com_moments_vec_cpp(lambda, r[[2]])[, 2]
     },
     rand = function(n, mu, alpha, sigma) rcom(n, mu = mu, nu = alpha))
 )

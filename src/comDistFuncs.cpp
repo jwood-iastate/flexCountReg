@@ -1,364 +1,296 @@
-// Functions for the Conway-Maxwell-Poisson distribution
+// Conway-Maxwell-Poisson (COM) distribution:
+//   P(Y = y) = lambda^y / (y!)^nu / Z(lambda, nu),  y = 0, 1, 2, ...
+// Everything is computed on the log scale. All functions use the same
+// support rule: terms are summed from y = 0 until y is past the mode
+// lambda^(1/nu) and the next term is negligible (relative 1e-17) compared
+// with the running sum, so the normalizing constant, moments, CDF and
+// quantiles are consistent with each other.
 // [[Rcpp::plugins(cpp11)]]
 #include <Rcpp.h>
-# include <math.h>
+#include <cmath>
 using namespace Rcpp;
-using Rcpp::NumericVector;
 
+static const long COM_MAX_TERMS = 10000000L;
+static const double COM_NEGLIGIBLE = -39.14; // log(1e-17)
 
-// double com_adjustFactor_cpp(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 10000){
-//   int x = 0;
-//   double sumval = 0;
-//   double iterval = 0;
-//   bool notconverged = true;
-//   
-//   while (notconverged) {
-//     double log_term = x * std::log(lambda) - nu * std::lgamma(x + 1);
-//     iterval = std::exp(log_term);
-//     sumval += iterval;
-//     if (iterval<rel_tol){
-//       notconverged = false;
-//     }
-//     x += 1;
-//     if (x>=max_iter){
-//       Rcpp::warning("Maximum number of iterations reached in com_adjustFactor_cpp.");
-//       notconverged = false;
-//     }
-//   }
-//   
-//   return(sumval);
-// }
-
-double com_adjustFactor_cpp(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 10000) {
-  // Use log-sum-exp trick for numerical stability
-  std::vector<double> log_terms;
-  log_terms.reserve(1000);
-  
-  double max_log_term = -INFINITY;
-  int x = 0;
-  bool converged = false;
-  
-  while (!converged && x < max_iter) {
-    double log_term = x * std::log(lambda) - nu * std::lgamma(x + 1);
-    log_terms.push_back(log_term);
-    
-    if (log_term > max_log_term) {
-      max_log_term = log_term;
-    }
-    
-    // Check convergence based on contribution to sum
-    if (x > 0 && std::exp(log_term - max_log_term) < rel_tol) {
-      converged = true;
-    }
-    x++;
-  }
-  
-  // Log-sum-exp computation
-  double sum = 0.0;
-  for (const auto& lt : log_terms) {
-    sum += std::exp(lt - max_log_term);
-  }
-  
-  return std::exp(max_log_term + std::log(sum));
+static inline double com_logterm(double y, double loglam, double nu) {
+  return y * loglam - nu * std::lgamma(y + 1.0);
 }
 
-// derivative of the log-transformed adjustment factor
-double log_adjust_deriv(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 1000){
-  double h = 1e-6 * lambda; // Small increment proportional to lambda
-  
-  // Ensure h is positive and not too small
-  if (h <= 0) {
-    h = 1e-8;
-  }
-  
-  double log_adjust0 = std::log(com_adjustFactor_cpp(lambda - h, nu, rel_tol, max_iter));
-  double log_adjust1 = std::log(com_adjustFactor_cpp(lambda + h, nu, rel_tol, max_iter));
-  double numderiv = (log_adjust1 - log_adjust0) / (2 * h);
-  
-  // Check if numderiv is valid
-  if (numderiv < 1e-12) {
-    Rcpp::warning("Numerical derivative is too small or negative.");
-    numderiv = 1e-12; // Assign a minimal positive value to avoid division by zero later
-  }
-  
-  return(numderiv);
-}
-
-// com_expect_cpp with adaptive summation
-// [[Rcpp::export]]
-double com_expect_cpp(double lambda, double nu, double rel_tol = 1e-10, int max_iter = 1000) {
-  
-  return(lambda*log_adjust_deriv(lambda, nu, rel_tol, max_iter));
-}
-
-
-// Secant method implemented in Rcpp to find lambda values
-// [[Rcpp::export]]
-double find_lambda_cpp(double mu, double nu, double tol = 1e-8, int max_iter = 1000) {
-  double lambda0 = mu * 0.5;
-  double lambda1 = mu * 1.5;
-  double f0 = com_expect_cpp(lambda0, nu) - mu;
-  double f1 = com_expect_cpp(lambda1, nu) - mu;
-  double lambda_new;
-  
-  for (int i = 0; i < max_iter; ++i) {
-    // Check for division by zero
-    if (std::abs(f1 - f0) < 1e-12) {
-      Rcpp::warning("Division by zero encountered in find_lambda_cpp.");
-      return lambda1;
-    }
-    // Update lambda using secant formula
-    lambda_new = lambda1 - f1 * (lambda1 - lambda0) / (f1 - f0);
-    
-    // Ensure lambda_new is positive
-    if (lambda_new <= 0) {
-      lambda_new = (lambda1 + lambda0) / 2.0;
-    }
-    
-    // Check for convergence
-    if (std::abs(lambda_new - lambda1) < tol) {
-      return lambda_new;
-    }
-    
-    // Prepare for next iteration
-    lambda0 = lambda1;
-    f0 = f1;
-    lambda1 = lambda_new;
-    f1 = com_expect_cpp(lambda1, nu) - mu;
-  }
-  
-  return lambda1;
-}
-
-
-// Find lambda for a vector
-// [[Rcpp::export]]
-NumericVector find_lambda_vec_cpp(NumericVector mu, NumericVector nu, double tol = 1e-8, int max_iter = 1000) {
-  int n = mu.size();
-  NumericVector results(n);
-  
-  for (int i = 0; i < n; ++i) {
-    results[i] = find_lambda_cpp(mu[i], nu[i], tol, max_iter);
-  }
-  
-  return results;
-}
-
-// Calculate the normalizing constant for the Conway-Maxwell-Poisson distribution
-// [[Rcpp::export]]
-NumericVector cmp_normalizer_vec_cpp(NumericVector lambda_vec, NumericVector nu_vec, double rel_tol=1e-8, int max_iter = 1000) {
-  int n = lambda_vec.size();
-  NumericVector results(n);
-  
-  for (int i = 0; i < n; ++i) {
-    double lambda = lambda_vec[i];
-    double nu = nu_vec[i];
-    
-    results[i] = com_adjustFactor_cpp(lambda, nu, rel_tol, max_iter);
-  }
-  
-  return results;
-}
-
-
-// [[Rcpp::export]]
-NumericVector dcom_vec_cpp(IntegerVector x_vec, NumericVector lambda_values, NumericVector nu_vec, bool log_prob = false) {
-  int n = x_vec.size();
-  NumericVector probabilities(n);
-  
-  // Compute the normalizers
-  NumericVector normalizers = cmp_normalizer_vec_cpp(lambda_values, nu_vec);
-  
-  // Compute probabilities
-  for (int i = 0; i < n; ++i) {
-    double lambda = lambda_values[i];
-    double nu = nu_vec[i];
-    int x = x_vec[i];
-    double normfactor = normalizers[i];
-    
-    // Compute log probability using lgamma for numerical stability
-    double log_p = x * std::log(lambda) - nu * std::lgamma(x + 1) - std::log(normfactor);
-    
-    if (log_prob) {
-      probabilities[i] = log_p;
-    } else {
-      probabilities[i] = std::exp(log_p);
-    }
-  }
-  
-  return probabilities;
-}
-
-// log(a + b) from log(a) and log(b)
-static double com_logadd(double a, double b) {
+// log(exp(a) + exp(b))
+static inline double com_logadd(double a, double b) {
   if (a == R_NegInf) return b;
   if (b == R_NegInf) return a;
   double m = std::max(a, b);
   return m + std::log1p(std::exp(std::min(a, b) - m));
 }
 
-// Log of the sum of the unnormalized COM terms lambda^x / (x!)^nu for x in
-// [from, to] (to < 0: to the end of the support), summed until the terms
-// past the mode are negligible relative to the running sum.
-static double com_log_sum(int from, int to, double lambda, double nu) {
+static inline bool com_valid(double lambda, double nu) {
+  return !ISNAN(lambda) && !ISNAN(nu) && lambda > 0 && nu > 0 &&
+    R_FINITE(lambda) && R_FINITE(nu);
+}
+
+// Log of the sum of the unnormalized terms for y in [from, to] (to < 0: to
+// the end of the support).
+static double com_log_sum(long from, long to, double lambda, double nu) {
   double loglam = std::log(lambda);
   double mode = std::pow(lambda, 1.0 / nu);
   double total = R_NegInf;
-  const double negligible = std::log(1e-17);
-  for (long x = from; to < 0 || x <= to; ++x) {
-    double lt = x * loglam - nu * std::lgamma(x + 1.0);
+  for (long y = from; to < 0 || y <= to; ++y) {
+    double lt = com_logterm((double) y, loglam, nu);
     total = com_logadd(total, lt);
-    if (to < 0 && x > mode && lt - total < negligible) break;
-    if (x - from > 10000000L) break;
+    if (to < 0 && y > mode && lt - total < COM_NEGLIGIBLE) return total;
+    if (y - from > COM_MAX_TERMS) return R_NaN;  // reported by callers
+    if ((y & 0xFFFF) == 0) Rcpp::checkUserInterrupt();
   }
   return total;
+}
+
+// log Z(lambda, nu)
+static double com_log_z(double lambda, double nu) {
+  if (!com_valid(lambda, nu)) return R_NaN;
+  return com_log_sum(0, -1, lambda, nu);
+}
+
+// Mean and variance from the normalized log weights
+static void com_moments(double lambda, double nu, double &mean,
+                        double &var) {
+  mean = R_NaN;
+  var = R_NaN;
+  double log_z = com_log_z(lambda, nu);
+  if (ISNAN(log_z)) return;
+  double loglam = std::log(lambda);
+  double mode = std::pow(lambda, 1.0 / nu);
+  double m1 = 0.0, m2 = 0.0;
+  for (long y = 0; y <= COM_MAX_TERMS; ++y) {
+    double lt = com_logterm((double) y, loglam, nu) - log_z;
+    double p = std::exp(lt);
+    m1 += y * p;
+    m2 += (double) y * y * p;
+    if (y > mode && lt < COM_NEGLIGIBLE && y * p < 1e-17 * (m1 + 1e-300))
+      break;
+  }
+  mean = m1;
+  var = m2 - m1 * m1;
+}
+
+// [[Rcpp::export]]
+double com_expect_cpp(double lambda, double nu, double rel_tol = 1e-10,
+                      int max_iter = 1000) {
+  double m, v;
+  com_moments(lambda, nu, m, v);
+  return m;
+}
+
+// Mean and variance for vectors of parameters: a matrix with columns mean
+// and variance.
+// [[Rcpp::export]]
+NumericMatrix com_moments_vec_cpp(NumericVector lambda, NumericVector nu) {
+  int n = lambda.size();
+  NumericMatrix out(n, 2);
+  for (int i = 0; i < n; ++i) {
+    double m, v;
+    com_moments(lambda[i], nu[i], m, v);
+    out(i, 0) = m;
+    out(i, 1) = v;
+  }
+  return out;
+}
+
+// Rate lambda with E[Y] = mu, solved in log(lambda) (the mean increases
+// with lambda) by a bracketed regula falsi (Illinois) method. NaN, with a
+// warning, when the solution is not found.
+// [[Rcpp::export]]
+double find_lambda_cpp(double mu, double nu, double tol = 1e-8,
+                       int max_iter = 1000) {
+  if (ISNAN(mu) || ISNAN(nu) || !(mu > 0) || !(nu > 0) || !R_FINITE(mu) ||
+      !R_FINITE(nu)) {
+    return R_NaN;
+  }
+  // A mean that cannot be computed (support too long) is treated as too
+  // large, so the bracket moves to smaller rates
+  auto f = [&](double t) {
+    double m = com_expect_cpp(std::exp(t), nu) - mu;
+    return ISNAN(m) ? R_PosInf : m;
+  };
+  // Starting guess from the approximation E[Y] ~ lambda^(1/nu) - (nu-1)/(2nu)
+  double g = mu + (nu - 1.0) / (2.0 * nu);
+  double t0 = nu * std::log(g > 0 ? g : mu);
+  // Narrow first steps: d E[Y] / d log(lambda) = Var(Y) can be very large
+  double step = 0.1 * std::min(1.0, nu);
+  double lo = t0 - step, hi = t0 + step;
+  double flo = f(lo), fhi = f(hi);
+  for (int k = 0; k < 200 && !(flo < 0); ++k) {
+    hi = lo; fhi = flo;
+    lo -= step * std::pow(2.0, k + 1);
+    flo = f(lo);
+  }
+  for (int k = 0; k < 200 && !(fhi > 0); ++k) {
+    lo = hi; flo = fhi;
+    hi += step * std::pow(2.0, k + 1);
+    fhi = f(hi);
+  }
+  if (fhi == R_PosInf) {
+    // Shrink towards lo until the mean can be computed
+    for (int k = 0; k < 200 && fhi == R_PosInf; ++k) {
+      hi = (lo + hi) / 2;
+      fhi = f(hi);
+    }
+    if (!(fhi > 0)) { lo = hi; flo = fhi; hi = lo; }
+  }
+  if (!(flo < 0 && fhi > 0)) {
+    Rcpp::warning("find_lambda_cpp: could not bracket the COM rate; NaN "
+                  "returned.");
+    return R_NaN;
+  }
+  int side = 0;
+  double tol_f = 1e-10 * std::max(1.0, mu);
+  for (int it = 0; it < 500; ++it) {
+    double t = (lo * fhi - hi * flo) / (fhi - flo);
+    double ft = f(t);
+    if (ISNAN(ft)) break;
+    if (std::fabs(ft) < tol_f || (hi - lo) < 1e-13 * std::max(1.0,
+                                                               std::fabs(t)))
+      return std::exp(t);
+    if (ft < 0) {
+      lo = t; flo = ft;
+      if (side == -1) fhi /= 2;
+      side = -1;
+    } else {
+      hi = t; fhi = ft;
+      if (side == 1) flo /= 2;
+      side = 1;
+    }
+  }
+  Rcpp::warning("find_lambda_cpp: the COM rate did not converge; NaN "
+                "returned.");
+  return R_NaN;
+}
+
+// [[Rcpp::export]]
+NumericVector find_lambda_vec_cpp(NumericVector mu, NumericVector nu,
+                                  double tol = 1e-8, int max_iter = 1000) {
+  int n = mu.size();
+  NumericVector results(n);
+  for (int i = 0; i < n; ++i) {
+    results[i] = find_lambda_cpp(mu[i], nu[i], tol, max_iter);
+  }
+  return results;
+}
+
+// Normalizing constants Z (kept for compatibility; may overflow to Inf, so
+// the other functions use log Z).
+// [[Rcpp::export]]
+NumericVector cmp_normalizer_vec_cpp(NumericVector lambda_vec,
+                                     NumericVector nu_vec,
+                                     double rel_tol = 1e-8,
+                                     int max_iter = 1000) {
+  int n = lambda_vec.size();
+  NumericVector results(n);
+  for (int i = 0; i < n; ++i) {
+    results[i] = std::exp(com_log_z(lambda_vec[i], nu_vec[i]));
+  }
+  return results;
+}
+
+// [[Rcpp::export]]
+NumericVector dcom_vec_cpp(IntegerVector x_vec, NumericVector lambda_values,
+                           NumericVector nu_vec, bool log_prob = false) {
+  int n = x_vec.size();
+  NumericVector out(n);
+  double prev_lambda = R_NaN, prev_nu = R_NaN, log_z = R_NaN;
+  for (int i = 0; i < n; ++i) {
+    double lambda = lambda_values[i];
+    double nu = nu_vec[i];
+    if (!com_valid(lambda, nu)) {
+      out[i] = R_NaN;
+      continue;
+    }
+    if (lambda != prev_lambda || nu != prev_nu) {
+      log_z = com_log_z(lambda, nu);
+      prev_lambda = lambda;
+      prev_nu = nu;
+    }
+    double lp;
+    if (x_vec[i] == NA_INTEGER) {
+      out[i] = NA_REAL;
+      continue;
+    } else if (x_vec[i] < 0) {
+      lp = R_NegInf;
+    } else {
+      lp = com_logterm((double) x_vec[i], std::log(lambda), nu) - log_z;
+    }
+    out[i] = log_prob ? lp : std::exp(lp);
+  }
+  return out;
 }
 
 // log P(Y <= q) (lower) or log P(Y > q) (upper), each tail summed directly
 // so that small tails keep their relative precision.
 double com_log_tail_cpp(int q, double lambda, double nu, bool lower_tail) {
-  if (!(lambda > 0) || !(nu > 0) || ISNAN(lambda) || ISNAN(nu)) return R_NaN;
+  if (!com_valid(lambda, nu)) return R_NaN;
   if (q < 0) return lower_tail ? R_NegInf : 0.0;
-  double log_z = com_log_sum(0, -1, lambda, nu);
+  double log_z = com_log_z(lambda, nu);
   double log_t = lower_tail ? com_log_sum(0, q, lambda, nu)
-                            : com_log_sum(q + 1, -1, lambda, nu);
+                            : com_log_sum((long) q + 1, -1, lambda, nu);
   return std::min(0.0, log_t - log_z);
 }
 
 // [[Rcpp::export]]
-NumericVector pcom_vec_cpp(IntegerVector q_vec, NumericVector lambda_values, NumericVector nu_vec, bool lower_tail = true, bool log_p = false) {
+NumericVector pcom_vec_cpp(IntegerVector q_vec, NumericVector lambda_values,
+                           NumericVector nu_vec, bool lower_tail = true,
+                           bool log_p = false) {
   int n = q_vec.size();
-  NumericVector cumulative_probs(n);
-
-  
+  NumericVector out(n);
   for (int i = 0; i < n; ++i) {
-    int q = q_vec[i];
-    double lambda = lambda_values[i];
-    double nu = nu_vec[i];
-    
-    double lp = com_log_tail_cpp(q, lambda, nu, lower_tail);
-    cumulative_probs[i] = log_p ? lp : std::exp(lp);
-  }
-  
-  return cumulative_probs;
-}
-
-double qcom_cpp(double p, double lambda, double nu) {
-  if (p < 0 || p > 1) return NAN;
-  if (p == 1.0) return INFINITY; 
-  
-  double adjuster = com_adjustFactor_cpp(lambda, nu);
-  double log_adjuster = std::log(adjuster);
-  double cum_prob = 0.0;
-  int x = 0;
-  
-  // Safety break to prevent infinite loops in extreme cases
-  int safety_max = 100000; 
-  
-  while(x < safety_max) {
-    double log_p = x * std::log(lambda) - nu * std::lgamma(x + 1) - log_adjuster;
-    cum_prob += std::exp(log_p);
-    
-    if (cum_prob >= p) {
-      return x;
+    if (q_vec[i] == NA_INTEGER) {
+      out[i] = NA_REAL;
+      continue;
     }
-    x++;
+    double lp = com_log_tail_cpp(q_vec[i], lambda_values[i], nu_vec[i],
+                                 lower_tail);
+    out[i] = log_p ? lp : std::exp(lp);
   }
-  
-  Rcpp::warning("qcom_cpp did not converge within safety limit.");
-  return x;
+  return out;
 }
 
-// double qcom_cpp(double p, double lambda, double nu) {
-//   double adjuster = com_adjustFactor_cpp(lambda, nu);
-//   double cum_prob = 0.0;
-//   int x = -1;
-//   
-//   while (cum_prob < p) {
-//     x += 1;
-//     double term = std::pow(lambda, x) / (std::pow(std::tgamma(x + 1), nu) * adjuster);
-//     cum_prob += term;
-//     
-//     if (x >= 1e6) { // Prevent infinite loop
-//       Rcpp::warning("Reached maximum x in qcom_cpp.");
-//       break;
-//     }
-//   }
-//   
-//   return x;
-// }
-
+// Smallest y with P(Y <= y) >= p, using the same support rule as the
+// normalizing constant.
+static double qcom_cpp(double p, double lambda, double nu) {
+  if (ISNAN(p)) return NA_REAL;
+  if (!com_valid(lambda, nu) || p < 0 || p > 1) return R_NaN;
+  if (p == 1.0) return R_PosInf;
+  double log_z = com_log_z(lambda, nu);
+  if (ISNAN(log_z)) return R_NaN;
+  double loglam = std::log(lambda);
+  double mode = std::pow(lambda, 1.0 / nu);
+  double cum = 0.0;
+  for (long y = 0; y <= COM_MAX_TERMS; ++y) {
+    double lt = com_logterm((double) y, loglam, nu) - log_z;
+    cum += std::exp(lt);
+    if (cum >= p) return (double) y;
+    // Past the end of the support (p within rounding of 1)
+    if (y > mode && lt < COM_NEGLIGIBLE) return (double) y;
+    if ((y & 0xFFFF) == 0) Rcpp::checkUserInterrupt();
+  }
+  return R_NaN;
+}
 
 // [[Rcpp::export]]
-NumericVector qcom_vec_cpp(NumericVector p_vec, NumericVector lambda_values, NumericVector nu_vec) {
+NumericVector qcom_vec_cpp(NumericVector p_vec, NumericVector lambda_values,
+                           NumericVector nu_vec) {
   int n = p_vec.size();
-  NumericVector quantiles(n);
-  
+  NumericVector out(n);
   for (int i = 0; i < n; ++i) {
-    double p = p_vec[i];
-    double lambda = lambda_values[i];
-    double nu = nu_vec[i];
-    
-    quantiles[i] = qcom_cpp(p, lambda, nu);
+    out[i] = qcom_cpp(p_vec[i], lambda_values[i], nu_vec[i]);
   }
-  
-  return quantiles;
+  return out;
 }
-
 
 // [[Rcpp::export]]
 NumericVector rcom_cpp(int n, double lambda, double nu) {
-  NumericVector quantiles = Rcpp::runif(n);
-  NumericVector lambda_vect(n, lambda);
-  NumericVector nu_vect(n, nu);
-  
-  NumericVector random_numbers = qcom_vec_cpp(quantiles, lambda_vect, nu_vect);
-
-  return random_numbers;
+  NumericVector u = Rcpp::runif(n);
+  NumericVector out(n);
+  for (int i = 0; i < n; ++i) out[i] = qcom_cpp(u[i], lambda, nu);
+  return out;
 }
-
-
-// 
-// // Calculate the variance of the Conway-Maxwell-Poisson distribution
-// // [[Rcpp::export]]
-// double com_var_cpp(double lambda, double nu, int maxval = 1000) {
-//   double sum = 0.0;
-//   double sum_expect = 0.0;
-//   double sum_expect2 = 0.0;
-//   double log_lambda = std::log(lambda);
-//   double log_fact = 0.0;
-//   double max_log_term = -INFINITY;
-//   std::vector<double> log_terms(maxval + 1);
-//   
-//   // Compute log terms and find the maximum for numerical stability
-//   for (int k = 0; k <= maxval; ++k) {
-//     if (k > 0) {
-//       log_fact += std::log(k);
-//     }
-//     double log_term = k * log_lambda - nu * log_fact;
-//     log_terms[k] = log_term;
-//     if (log_term > max_log_term) {
-//       max_log_term = log_term;
-//     }
-//   }
-//   
-//   // Compute the sums using the log-sum-exp trick
-//   for (int k = 0; k <= maxval; ++k) {
-//     double term = std::exp(log_terms[k] - max_log_term);
-//     sum += term;
-//     sum_expect += k * term;
-//     sum_expect2 += k * k * term;
-//   }
-//   
-//   sum *= std::exp(max_log_term);
-//   sum_expect *= std::exp(max_log_term);
-//   sum_expect2 *= std::exp(max_log_term);
-//   
-//   double mean = sum_expect / sum;
-//   double mean2 = sum_expect2 / sum;
-//   return mean2 - mean * mean; // Variance = E[X^2] - (E[X])^2
-// }
-
-
-
-

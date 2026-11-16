@@ -982,24 +982,28 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     
     # Parameter values outside a distribution's support make the C++ code
     # stop(); return NA instead so the optimizer can step back.
-    probs <- tryCatch(
-      local_probFunc(y = y, predicted = predicted, alpha = alpha,
-                     sigma = sigma, haltons = haltons,
-                     normed_haltons = normed_haltons, engine = engine),
+    # Log-probabilities, computed on the log scale (finite in the tails)
+    ll <- tryCatch(
+      as.vector(local_probFunc(y = y, predicted = predicted, alpha = alpha,
+                               sigma = sigma, haltons = haltons,
+                               normed_haltons = normed_haltons,
+                               engine = engine, log = TRUE)),
       error = function(e) rep(NA_real_, length(y)))
     
     if (N_zero > 0) {
-      f0 <- tryCatch(
-        local_probFunc(y = rep(0, length(y)), predicted = predicted,
-                       alpha = alpha, sigma = sigma, haltons = haltons,
-                       normed_haltons = normed_haltons, engine = engine),
+      lf0 <- tryCatch(
+        as.vector(local_probFunc(y = rep(0, length(y)), predicted = predicted,
+                                 alpha = alpha, sigma = sigma,
+                                 haltons = haltons,
+                                 normed_haltons = normed_haltons,
+                                 engine = engine, log = TRUE)),
         error = function(e) rep(NA_real_, length(y)))
-      zp <- stats::plogis(as.vector(X_zero %*% coefs[idx_zero]))
-      probs <- .fcr_zero_adjust(y, as.vector(probs), as.vector(f0), zp,
-                                zero_type)
+      ll <- .fcr_zero_adjust_log(y, ll, lf0,
+                                 as.vector(X_zero %*% coefs[idx_zero]),
+                                 zero_type)
     }
     
-    ll <- log(as.vector(probs))
+    # Rows with zero weight contribute exactly 0 (also when -Inf)
     ll[weights.df == 0] <- 0
     ll * weights.df
   }
@@ -1115,11 +1119,18 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
 # count mean and the reporting probability is then not identified by the
 # data, even when the optimizer converges and the standard errors are finite.
 .fcr_check_report_identification <- function(V, threshold = 0.99) {
-  # Only for a positive-definite covariance matrix (a singular Hessian is
-  # reported separately)
   if (!all(is.finite(V))) return(invisible(NULL))
   ev <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
-  if (min(ev) <= 0) return(invisible(NULL))
+  if (min(ev) <= 0) {
+    warning("The underreporting model is weakly identified: the covariance ",
+            "matrix of the estimates is not positive definite (a flat ",
+            "likelihood ridge). The data do not separate the true count ",
+            "mean from the reporting probability; interpret the true-count ",
+            "estimates with caution, and consider reporting variables that ",
+            "do not affect the true counts or external validation data.",
+            call. = FALSE)
+    return(invisible(NULL))
+  }
   R <- stats::cov2cor(V)
   und <- grepl("^Underreporting:", rownames(R))
   r <- abs(R[und, !und, drop = FALSE])

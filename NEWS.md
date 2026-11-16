@@ -207,6 +207,18 @@
   no p-value (instead of 1) when the larger model has the lower
   log-likelihood. The README zero-inflation example now compares models by
   AIC and BIC.
+* Likelihoods use log-probabilities computed on the log scale (every family
+  density has a `log` argument), so extreme counts keep finite
+  log-likelihoods (log P(Y = 1000 | mu = 1) = -5913 instead of log(0)).
+  Zero-inflated and hurdle adjustments are done on the log scale, and rows
+  or panels with zero weight contribute exactly 0.
+* The Conway-Maxwell-Poisson functions use the log normalizing constant (it
+  overflowed for lambda = 1000, nu = 1, so `dcom(1000, lambda = 1000,
+  nu = 1)` was 0 instead of 0.0126), one support rule for the PMF, CDF,
+  quantiles and moments, moments computed from the normalized PMF, and a
+  bracketed solver for the rate given the mean (accurate to about 1e-8,
+  NaN with a warning when it fails, instead of silently returning an
+  unconverged value).
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

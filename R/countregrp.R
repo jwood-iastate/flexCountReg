@@ -428,15 +428,17 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                      sigma = if (!is.null(vec_2)) rep(vec_2, times = D),
                      haltons = dist_haltons, 
                      normed_haltons = normed_dist_haltons,
-                     engine = engine),
+                     engine = engine, log = TRUE),
       error = function(e) rep(NA_real_, N_obs * D))
     
     # Panel log-likelihood per draw, averaged over draws on the log scale
-    log_probs <- matrix(log(probs_flat), nrow = N_obs, ncol = D)
+    log_probs <- matrix(probs_flat, nrow = N_obs, ncol = D)
     sum_log <- rowsum(log_probs, group = panel_group, reorder = TRUE)
     m <- apply(sum_log, 1, max)
     ll_panel <- m + log(rowMeans(exp(sum_log - m)))
     ll_panel[!is.finite(m)] <- m[!is.finite(m)]
+    # Panels with zero weight contribute exactly 0 (also when -Inf)
+    ll_panel[w_panel == 0] <- 0
     
     ll_panel * w_panel
   }

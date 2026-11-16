@@ -588,8 +588,8 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                     haltons = dist_haltons,
                     normed_haltons = stats::qnorm(dist_haltons),
                     engine = if (is.null(model$engine)) "halton"
-                             else model$engine)
-  log_probs <- matrix(log(probs), nrow = n_ok, ncol = D)
+                             else model$engine, log = TRUE)
+  log_probs <- matrix(probs, nrow = n_ok, ncol = D)
   
   # Panel log-likelihood per draw, then normalized weights (log-sum-exp)
   pg <- as.character(panel[ok])

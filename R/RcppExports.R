@@ -5,6 +5,10 @@ com_expect_cpp <- function(lambda, nu, rel_tol = 1e-10, max_iter = 1000L) {
     .Call('_flexCountReg_com_expect_cpp', PACKAGE = 'flexCountReg', lambda, nu, rel_tol, max_iter)
 }
 
+com_moments_vec_cpp <- function(lambda, nu) {
+    .Call('_flexCountReg_com_moments_vec_cpp', PACKAGE = 'flexCountReg', lambda, nu)
+}
+
 find_lambda_cpp <- function(mu, nu, tol = 1e-8, max_iter = 1000L) {
     .Call('_flexCountReg_find_lambda_cpp', PACKAGE = 'flexCountReg', mu, nu, tol, max_iter)
 }

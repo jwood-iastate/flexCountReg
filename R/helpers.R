@@ -373,6 +373,29 @@ rp_mgf <- function(dist, t, mu, sigma) {
 # (probs), P(Y = 0) (f0) and the zero-model probability zp: the structural
 # zero probability (inflated) or the probability of a positive count
 # (hurdle).
+# The same on the log scale: log-probabilities lp and log P(Y = 0) lf0 of the
+# count family, and the zero model's linear predictor eta (zp = plogis(eta)).
+.fcr_zero_adjust_log <- function(y, lp, lf0, eta, zero_type) {
+  l_zp <- stats::plogis(eta, log.p = TRUE)                       # log zp
+  l_1mzp <- stats::plogis(eta, lower.tail = FALSE, log.p = TRUE) # log(1-zp)
+  if (zero_type == "inflated") {
+    ifelse(y == 0, .fcr_logadd(l_zp, l_1mzp + lf0), l_1mzp + lp)
+  } else {
+    ifelse(y == 0, l_1mzp, l_zp + lp - .fcr_log1mexp(lf0))
+  }
+}
+
+# Elementwise log(exp(a) + exp(b)) and log(1 - exp(a)) for a <= 0.
+.fcr_logadd <- function(a, b) {
+  m <- pmax(a, b)
+  out <- m + log1p(exp(-abs(a - b)))
+  out[is.infinite(m) & m < 0] <- -Inf
+  out
+}
+.fcr_log1mexp <- function(a) {
+  ifelse(a > -log(2), log(-expm1(a)), log1p(-exp(a)))
+}
+
 .fcr_zero_adjust <- function(y, probs, f0, zp, zero_type) {
   if (zero_type == "inflated") {
     ifelse(y == 0, zp + (1 - zp) * f0, (1 - zp) * probs)

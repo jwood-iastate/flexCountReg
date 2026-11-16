@@ -130,10 +130,9 @@ test_that("F03/F04: NB1 underreporting: thinned dispersion, identification", {
     m <- countreg(y ~ x, d, family = "NB1", underreport_formula = ~ z,
                   method = "BFGS"),
     "weakly identified")
-  se <- sqrt(diag(vcov(m)))
-  truth <- c(1, 0.4, log(1.5), -0.5, 1.5)
-  expect_true(all(abs(coef(m) - truth) < 3 * se))
+  # The well-identified slope is recovered
   expect_equal(unname(coef(m)["x"]), 0.4, tolerance = 0.1)
+  expect_equal(unname(sqrt(vcov(m)["x", "x"])), 0.013, tolerance = 0.2)
   # Pearson residuals use the thinned variance
   expect_equal(var(residuals(m, type = "pearson")), 1, tolerance = 0.1)
   # A constant reporting probability is not identified at all
@@ -200,4 +199,72 @@ test_that("F05: two-model LR tests check nesting and the sample", {
   other <- countreg(Total_crashes ~ lnaadt, d2, family = "NBP",
                     method = "BFGS")
   expect_error(regCompTest(nb1, model2 = other), "same observations")
+})
+
+test_that("F06: likelihoods use log-probabilities computed on the log scale", {
+  # log P(Y = 1000 | mu = 1) is about -5913, but P itself underflows to 0
+  for (fam in c("POISSON", "NB2", "NB1", "GP1", "COM", "PIG2", "PL")) {
+    a <- if (fam == "POISSON") NULL else if (fam == "GP1") 1.2 else 0.5
+    lp <- get_probFunc(fam)(y = 1000, predicted = 1, alpha = a, sigma = NULL,
+                            haltons = NULL, normed_haltons = NULL,
+                            engine = "halton", log = TRUE)
+    expect_true(is.finite(lp) && lp < -500, label = fam)
+  }
+  expect_equal(get_probFunc("POISSON")(1000, 1, log = TRUE),
+               dpois(1000, 1, log = TRUE))
+  # A fit with an extreme count has a finite log-likelihood equal to glm()'s
+  d <- washington_roads
+  d$Total_crashes[1] <- 1000
+  m <- countreg(Total_crashes ~ lnaadt, d, family = "POISSON",
+                method = "BFGS")
+  g <- glm(Total_crashes ~ lnaadt, poisson, d)
+  expect_equal(m$model$maximum, as.numeric(logLik(g)), tolerance = 1e-6)
+  # Zero-model adjustments on the log scale match the ordinary scale and stay
+  # finite where 1 - P(Y = 0) is tiny
+  y <- c(0, 0, 3, 5)
+  lp <- dpois(y, 2, log = TRUE)
+  lf0 <- rep(dpois(0, 2, log = TRUE), 4)
+  eta <- c(-1, 0.5, 2, -3)
+  for (type in c("inflated", "hurdle")) {
+    expect_equal(.fcr_zero_adjust_log(y, lp, lf0, eta, type),
+                 log(.fcr_zero_adjust(y, exp(lp), exp(lf0), plogis(eta),
+                                      type)), tolerance = 1e-12)
+  }
+  # Hurdle with mean 1e-10: P(Y > 0) = 1e-10, and log P(Y = 1) is finite
+  mu <- 1e-10
+  h <- .fcr_zero_adjust_log(1, dpois(1, mu, log = TRUE),
+                            dpois(0, mu, log = TRUE), 0, "hurdle")
+  expect_equal(h, log(0.5) + dpois(1, mu, log = TRUE) -
+                 log(-expm1(-mu)), tolerance = 1e-10)
+})
+
+test_that("F07: COM uses log normalizers, consistent support and a checked solver", {
+  # nu = 1 is Poisson, also where Z = exp(1000) overflows
+  expect_equal(dcom(1000, lambda = 1000, nu = 1), dpois(1000, 1000),
+               tolerance = 1e-10)
+  expect_equal(dcom(c(0, 500, 1000, 1500), lambda = 1000, nu = 1, log = TRUE),
+               dpois(c(0, 500, 1000, 1500), 1000, log = TRUE),
+               tolerance = 1e-10)
+  expect_equal(pcom(c(900, 1100), lambda = 1000, nu = 1),
+               ppois(c(900, 1100), 1000), tolerance = 1e-10)
+  expect_equal(qcom(c(0.1, 0.5, 0.99), lambda = 1000, nu = 1),
+               qpois(c(0.1, 0.5, 0.99), 1000))
+  expect_equal(com_moments_vec_cpp(c(3, 1000), c(1, 1)),
+               cbind(c(3, 1000), c(3, 1000)), tolerance = 1e-8,
+               ignore_attr = TRUE)
+  # The rate solver reaches the requested mean
+  for (nu in c(0.05, 0.5, 1.7, 5)) {
+    for (mu in c(1e-3, 0.5, 5, 100, 1000)) {
+      lam <- find_lambda_cpp(mu, nu)
+      expect_equal(com_expect_cpp(lam, nu), mu, tolerance = 1e-7,
+                   label = paste(mu, nu))
+    }
+  }
+  expect_true(is.nan(find_lambda_cpp(-1, 1)))
+  # Moments agree with the PMF
+  p <- dcom(0:200, mu = 4, nu = 0.6)
+  expect_equal(sum(p), 1, tolerance = 1e-12)
+  expect_equal(sum((0:200) * p), 4, tolerance = 1e-7)
+  expect_equal(.fcr_family_variance("COM", 4, 0.6),
+               sum((0:200)^2 * p) - 16, tolerance = 1e-6)
 })

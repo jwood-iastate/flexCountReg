@@ -21,11 +21,19 @@ knitr::opts_chunk$set(
 [![codecov](https://codecov.io/gh/jwood-iastate/flexCountReg/graph/badge.svg?token=BX2FJQNPK2)](https://app.codecov.io/gh/jwood-iastate/flexCountReg)
 <!-- badges: end -->
 
-The goal of flexCountReg is to provide functions that allow the analyst to estimate count regression models that can handle multiple analysis issues including excess zeros, overdispersion as a function of variables (i.e., generalized count models), random parameters, etc.
+The goal of flexCountReg is to provide functions that allow the analyst to estimate count regression models that can handle multiple analysis issues, including:
+
+- many count distributions beyond the Poisson and negative binomial (see the list below), with any distribution parameter modeled as a function of variables (generalized count models);
+- underreporting, and zero-inflated or hurdle versions of every distribution;
+- random parameters, with heterogeneity in their means and variances, and exact, simulated and Empirical Bayes (observation-specific) predictions;
+- random-effects panel models (negative binomial, Poisson-Lindley, negative multinomial);
+- model comparison and diagnostics: likelihood-ratio tests, comparison tables, marginal effects, CURE plots, rootograms and randomized quantile residuals.
+
+Fitted models work with the standard R generics (`coef()`, `vcov()`, `AIC()`, `BIC()`, `confint()`, `predict()`, `simulate()`, `update()`, ...), with `tidy()`, `glance()` and `augment()`, and with tidymodels through the `count_reg()` parsnip model.
 
 ## Installation
 
-You can install the development version of flexCountReg like using:
+You can install the development version of flexCountReg using:
 
 ``` r
 # install.packages("devtools")
@@ -33,146 +41,64 @@ devtools::install_github("jwood-iastate/flexCountReg")
 ```
 
 ## Functions and Data
-The following functions are included in the `flexCountReg` package, grouped by continuous and count distributions.
-
-**Distribution Functions**
-
-*Continuous Distributions*
-
-- Inverse Gamma Distribution
-
-  - `dinvgamma` for the density function
-  - `pinvgamma` for the cumulative density function
-  - `qinvgamma` for the quantile function
-  - `rinvgamma` for random number generation
-
-- Triangle Distribution
-
-  - `dtri` for the density function
-  - `ptri` for the cumulative density function
-  - `qtri` for the quantile function
-  - `rtri` for random number generation
-
-- Lindley Distribution
-
-  - `dlindley`, `plindley`, `qlindley`, `rlindley`
-
-- Lognormal Distribution
-
-  - `moment_lognormal` for the moments of the lognormal distribution
-
-
-*Count Distributions*
-
-- Generalized Waring Distribution
-
-  - `dgwar` for the density function
-  - `pgwar` for the cumulative density function
-  - `qgwar` for the quantile function
-  - `rgwar` for random number generation
-
-- Poisson-Generalized-Exponential Distribution
-
-  - `dpge` for the density function
-  - `ppge` for the cumulative density function
-  - `qpge` for the quantile function
-  - `rpge` for random number generation
-
-- Poisson-Inverse-Gaussian Distribution (Types 1 and 2)
-
-  - `dpinvgaus` for the density function
-  - `ppinvgaus` for the cumulative density function
-  - `qpinvgaus` for the quantile function
-  - `rpinvgaus` for random number generation
-  
-- Poisson-Inverse-Gamma Distribution
-
-  - `dpinvgamma` for the density function
-  - `ppinvgamma` for the cumulative density function
-  - `qpinvgamma` for the quantile function
-  - `rpinvgamma` for random number generation
-
-- Generalized Poisson Distribution (Types 1 and 2)
-
-  - `dgp1`, `dgp2` for the density function
-  - `pgp1`, `pgp2` for the cumulative density function
-  - `qgp1`, `qgp2` for the quantile function
-  - `rgp1`, `rgp2` for random number generation
-
-- Poisson-Lindley Distribution
-
-  - `dplind` for the density function
-  - `pplind` for the cumulative density function
-  - `qplind` for the quantile function
-  - `rplind` for random number generation
-
-- Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
-
-  - `dplindGamma` for the density function
-  - `pplindGamma` for the cumulative density function
-  - `qplindGamma` for the quantile function
-  - `rplindGamma` for random number generation
-
-- Poisson-Lindley-Lognormal Distribution
-
-  - `dplindLnorm` for the density function
-  - `pplindLnorm` for the cumulative density function
-  - `qplindLnorm` for the quantile function
-  - `rplindLnorm` for random number generation
-
-- Poisson-Lognormal Distribution
-
-  - `dpLnorm` for the density function
-  - `ppLnorm` for the cumulative density function
-  - `qpLnorm` for the quantile function
-  - `rpLnorm` for random number generation
-
-- Poisson-Weibull Distribution
-
-  - `dpoisweibull` for the density function
-  - `ppoisweibull` for the cumulative density function
-  - `qpoisweibull` for the quantile function
-  - `rpoisweibull` for random number generation
-
-- Sichel Distribution
-
-  - `dsichel` for the density function
-  - `psichel` for the cumulative density function
-  - `qsichel` for the quantile function
-  - `rsichel` for random number generation
-  
-- Conway-Maxwell-Poisson Distribution
-
-  - `dcom` for the density function
-  - `pcom` for the cumulative density function
-  - `qcom` for the quantile function
-  - `rcom` for random number generation
 
 **Model Estimation Functions**
 
-- `countreg` is a general function for estimating the non-panel, non-random parameters count regression models
-- `countreg.rp` estimates the random parameters count models.
-- `poisLind.re` estimates the random effects Poisson-Lindley model
-- `renb` estimates the random effects negative binomial regression model.
-- `negmultinom` estimates negative multinomial (random effects) panel models (NM1, NM2 and NM-P).
-- `repois` estimates the random effects Poisson model with a gamma random effect.
+- `countreg()` estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models.
+- `countreg.rp()` (also `countreg_rp()`) estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.
+- `renb()` estimates the random effects negative binomial regression model.
+- `poisLind.re()` (also `poislind_re()`) estimates the random effects Poisson-Lindley model.
+- `negmultinom()` estimates negative multinomial (random effects) panel models (NM1, NM2 and NM-P).
+- `repois()` estimates the random effects Poisson model with a gamma random effect.
+- `count_reg()` is a [parsnip](https://parsnip.tidymodels.org/) model specification with a `"flexCountReg"` engine, for use with tidymodels (the distribution can be tuned with `count_family()`).
+
+**Working with Fitted Models**
+
+- `summary()` gives the coefficient table, standard-error type, fit statistics and a likelihood-ratio test against the Poisson model.
+- `predict()` gives expected counts (one per row of `newdata`, `NA` for incomplete rows), the probability of each count, and the components of underreporting and zero models. For random parameters models it offers exact, simulated and Empirical Bayes (`"Individual"`) predictions.
+- `coef()`, `vcov()`, `confint()`, `logLik()`, `AIC()`, `BIC()`, `nobs()`, `fitted()`, `residuals()` (response, Pearson and randomized quantile), `simulate()` and `update()` work as for other R models.
+- `tidy()`, `glance()` and `augment()` return tibbles in the broom format.
 
 **Model Evaluation, Comparison, and Convenience Functions**
 
-- `margEffTable` computes marginal effects (or elasticities) with delta-method or bootstrap standard errors.
-- `halton_dists`, `corr_haltons` and `cor2cov` generate (correlated) Halton draws and convert correlation matrices to covariance matrices.
-- `cureplot` generates a CURE plot for the specified model, based on the [cureplots package](https://gbasulto.github.io/cureplots/).
-- `mae` computes the Mean Absolute Error (MAE).
-- `myAIC` computes the Akaike Information Criterion (AIC) value.
-- `myBIC` computes the Bayesian Information Criterion (BIC) value.
-- `regCompTable` creates a publication-ready table comparing multiple models. This can include the regression estimate results, AIC, BIC, and Pseudo R-Square values.
-- `regCompTest` compares any given model with a base model. This can be used to perform a likelihood ratio test between models.
-- `rmse` computes the Root Mean Squared Error (RMSE).
-- `predict` allows the predict function to be used for out-of-sample predictions for any of the flexCountReg models.
-- `summary` allows the use of the summary function to get a model summary from a flexCountReg regression object.
+- `regCompTest()` compares a model with a base model, or two fitted models, with a likelihood ratio test, AIC, BIC and McFadden's pseudo R-squared.
+- `regCompTable()` creates a publication-ready table comparing multiple models.
+- `margEffTable()` computes marginal effects (or elasticities) with delta-method or bootstrap standard errors.
+- `cureplot()` generates a CURE plot for the specified model, based on the [cureplots package](https://gbasulto.github.io/cureplots/).
+- `rootogram()` compares observed and expected count frequencies.
+- `mae()` and `rmse()` compute the mean absolute error and root mean squared error; `myAIC()` and `myBIC()` compute AIC and BIC from a log-likelihood.
+- `halton_dists()`, `corr_haltons()` and `cor2cov()` generate (correlated) Halton draws and convert correlation matrices to covariance matrices.
+
+**Distribution Functions**
+
+Density (`d`), distribution (`p`), quantile (`q`) and random generation (`r`) functions are provided for each distribution:
+
+*Count distributions*
+
+- Conway-Maxwell-Poisson: `dcom`, `pcom`, `qcom`, `rcom`
+- Generalized Poisson (Types 1 and 2): `dgp1`, `pgp1`, `qgp1`, `rgp1`, `dgp2`, `pgp2`, `qgp2`, `rgp2`
+- Generalized Waring: `dgwar`, `pgwar`, `qgwar`, `rgwar`
+- Poisson-Generalized-Exponential: `dpge`, `ppge`, `qpge`, `rpge`
+- Poisson-Inverse-Gamma: `dpinvgamma`, `ppinvgamma`, `qpinvgamma`, `rpinvgamma`
+- Poisson-Inverse-Gaussian (Types 1 and 2): `dpinvgaus`, `ppinvgaus`, `qpinvgaus`, `rpinvgaus`
+- Poisson-Lindley: `dplind`, `pplind`, `qplind`, `rplind`
+- Poisson-Lindley-Gamma (Negative Binomial-Lindley): `dplindGamma`, `pplindGamma`, `qplindGamma`, `rplindGamma`
+- Poisson-Lindley-Lognormal: `dplindLnorm`, `pplindLnorm`, `qplindLnorm`, `rplindLnorm`
+- Poisson-Lognormal: `dpLnorm`, `ppLnorm`, `qpLnorm`, `rpLnorm`
+- Poisson-Weibull: `dpoisweibull`, `ppoisweibull`, `qpoisweibull`, `rpoisweibull`
+- Sichel: `dsichel`, `psichel`, `qsichel`, `rsichel`
+
+*Continuous distributions*
+
+- Inverse Gamma: `dinvgamma`, `pinvgamma`, `qinvgamma`, `rinvgamma`
+- Inverse Gaussian: `rinvgaus`
+- Lindley: `dlindley`, `plindley`, `qlindley`, `rlindley`
+- Triangular: `dtri`, `ptri`, `qtri`, `rtri`
+- Lognormal: `moment_lognormal` for the moments of the lognormal distribution
 
 **Data**
-A dataset, `washington_roads`, is included. It is based on a sample of Washington primary 2-lane roads from the years 2016-2018. Data for the roads, traffic volumes (AADT) and associated crashes were obtained from the [Highway Safety Information System (HSIS)](https://highways.dot.gov/research/safety/hsis).
+
+A dataset, `washington_roads`, is included. It is based on a sample of Washington primary 2-lane roads from the years 2016-2018 (507 road segments, each observed in up to three years). Data for the roads, traffic volumes (AADT) and associated crashes were obtained from the [Highway Safety Information System (HSIS)](https://highways.dot.gov/research/safety/hsis).
 
 ### Probability Distributions
 As noted in the list of functions, the probability distributions below are included in the flexCountReg package. Details of the distributions are provided in the documentation (help files).
@@ -214,72 +140,104 @@ As noted in the list of functions, the probability distributions below are inclu
 The following is an example of using flexCountReg to estimate a negative binomial (NB-2) regression model with the overdispersion parameter as a function of predictor variables:
 
 ```{r example}
-library(gt) # used to format summary tables here
 library(flexCountReg)
-library(knitr)
 
 data("washington_roads")
 washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
 gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-               data = washington_roads, family = "NB2",
-               dis_param_formula_1 = ~ speed50,  method='BFGS')
+                    data = washington_roads, family = "NB2",
+                    dis_param_formula_1 = ~ speed50, method = "BFGS")
+summary(gen.nb2)
 ```
 
+The results are also available as tibbles, and the model can be compared with a Poisson base model:
 
 ```{r example-cont}
-kable(summary(gen.nb2), caption = "NB-2 Model Summary")
+tidy(gen.nb2, conf.int = TRUE)
+glance(gen.nb2)
+regCompTest(gen.nb2, basemodel = "Poisson", variables = TRUE)$statistics
 ```
 
+A rootogram shows how well the fitted distribution reproduces the observed counts; bars that end above or below zero show counts that are over- or under-predicted:
 
-```{r example-cont2}
-teststats <- regCompTest(gen.nb2)
-kable(teststats$statistics)
+```{r rootogram, fig.height = 3.5}
+pois <- update(gen.nb2, family = "Poisson", dis_param_formula_1 = NULL)
+oldpar <- par(mfrow = c(1, 2))
+rootogram(pois, main = "Poisson")
+rootogram(gen.nb2, main = "Generalized NB-2")
+par(oldpar)
 ```
 
 Checking the CURE plot:
 ```{r cureplot-initial}
-cureplot(gen.nb2, indvar  ="lnaadt")
+cureplot(gen.nb2, indvar = "lnaadt")
 ```
 
-Modifying the model to fit better:
+Modifying the model:
 
 ```{r cureplot-updt}
-
-
-gen.nb2 <- countreg(Total_crashes ~ lnaadt  + lnlength + speed50 +
-                                ShouldWidth04 + AADT10kplus + 
-                                I(AADT10kplus/lnaadt),
-                                data = washington_roads, family = "NB2",
-                                dis_param_formula_1 = ~ lnlength,  method='BFGS')
-
-kable(summary(gen.nb2), caption = "Modified NB-2 Model Summary")
-teststats <- regCompTest(gen.nb2)
-kable(teststats$statistics)
-cureplot(gen.nb2, indvar  ="lnaadt")
+gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
+                      ShouldWidth04 + AADT10kplus + I(AADT10kplus / lnaadt),
+                    data = washington_roads, family = "NB2",
+                    dis_param_formula_1 = ~ lnlength, method = "BFGS")
+summary(gen.nb2)
+cureplot(gen.nb2, indvar = "lnaadt")
 ```
 
+Estimating another model (NB-P), without the interaction:
 
-Estimating another model (NB-P) - without the interaction:
-
-```{r}
-gen.nbp <- countreg(Total_crashes ~ lnaadt  + lnlength + speed50 +
-                                ShouldWidth04 + AADT10kplus,
-                                data = washington_roads, family = "NBp",
-                                dis_param_formula_1 = ~ lnlength,  method='BFGS')
-kable(summary(gen.nbp), caption = "NB-P Model Summary")
-teststats <- regCompTest(gen.nbp)
-kable(teststats$statistics)
+```{r nbp}
+gen.nbp <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
+                      ShouldWidth04 + AADT10kplus,
+                    data = washington_roads, family = "NBP",
+                    dis_param_formula_1 = ~ lnlength, method = "BFGS")
+summary(gen.nbp)
 ```
 
 Checking the CURE plot (notice that the CURE plot is MUCH better in this case than the NB-2 without the interaction and still better than the modified NB-2):
 ```{r cureplot-lnaadt}
-cureplot(gen.nbp, indvar  ="lnaadt")
+cureplot(gen.nbp, indvar = "lnaadt")
 ```
 
 Creating a table to compare the models:
-```{r}
-regCompTable(list("Generalized NB-2"=gen.nb2, "Generalized NB-P"=gen.nbp), tableType="tibble") |> 
-  kable()
+```{r comptable}
+regCompTable(list("Generalized NB-2" = gen.nb2, "Generalized NB-P" = gen.nbp))
 ```
 
 Note that the metrics for comparison are similar. While the models both have the same number of parameters, the NB-P was able to get better performance without requiring the interaction terms (which leads to strange relationships between the exposure metric and the outcome).
+
+Predictions have one value per row of new data, and the probability of each count is also available:
+
+```{r predict}
+nd <- washington_roads[1:3, ]
+predict(gen.nbp, newdata = nd)
+round(predict(gen.nbp, newdata = nd, type = "prob", max_count = 4), 3)
+```
+
+Zero-inflated and hurdle versions of any distribution are fitted with `zero_formula`. For example, animal-related crashes are zero on most segment-years, and a zero-inflated Poisson model with the zero probability depending on the speed limit improves on the Poisson model:
+
+```{r zip}
+mean(washington_roads$Animal == 0)
+zip <- countreg(Animal ~ lnaadt + lnlength, data = washington_roads,
+                family = "Poisson", zero_formula = ~ speed50, method = "NR")
+tidy(zip)
+regCompTest(update(zip, zero_formula = NULL), model2 = zip)$statistics
+```
+
+With tidymodels (requires the parsnip package):
+
+```{r tidymodels, eval = FALSE}
+library(parsnip)
+spec <- count_reg(family = "NB2") |> set_engine("flexCountReg", method = "BFGS")
+fit <- fit(spec, Total_crashes ~ lnaadt + lnlength + speed50,
+           data = washington_roads)
+predict(fit, new_data = washington_roads[1:5, ])
+```
+
+## Learning more
+
+The vignettes cover the main workflows:
+
+- `vignette("choosing-a-count-distribution", package = "flexCountReg")`
+- `vignette("random-parameters-and-panels", package = "flexCountReg")`
+

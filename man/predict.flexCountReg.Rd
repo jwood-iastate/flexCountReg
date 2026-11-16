@@ -8,7 +8,7 @@
   object,
   newdata = NULL,
   ...,
-  type = c("response", "true", "prob_reported", "link"),
+  type = c("response", "true", "prob_reported", "link", "prob", "zero"),
   new_data = NULL
 )
 }
@@ -33,8 +33,17 @@ underreporting probability), \code{"prob_reported"} is the probability of
 being reported \eqn{p}, and \code{"link"} is the linear predictor
 \eqn{X\beta} plus the offset. For models without underreporting,
 \code{"true"} equals \code{"response"} and \code{"prob_reported"} is 1.
-Types other than \code{"response"} are available for \code{countreg}
-models only.}
+For zero-inflated and hurdle models (\code{zero_formula}),
+\code{"response"} includes the zero model, \code{"true"} is the mean of
+the count distribution alone, and \code{"zero"} is the probability from
+the zero model: the probability of a structural zero (zero-inflated) or
+of a zero count (hurdle).
+\code{"prob"} returns a matrix of probabilities \eqn{P(Y = k)} with one
+row per row of \code{newdata} and one column per count
+\eqn{k = 0, \dots,} \code{max_count} (passed in \code{...}; default the
+largest count in the training data), for rootograms and for scoring
+models out of sample. Types other than \code{"response"} are available
+for \code{countreg} models only.}
 
 \item{new_data}{the same as \code{newdata}, under the name used by
 tidymodels. Give one or the other.}

@@ -64,6 +64,8 @@ because these models have several equations:
 \item{distribution}{parameters of the count distribution (for example
 \code{ln(alpha)}), including their own regression coefficients;}
 \item{underreporting}{coefficients of the reporting model;}
+\item{zero}{coefficients of the zero model of zero-inflated and hurdle
+models;}
 \item{random_mean, random_scale, random_cholesky}{means, scales and
 Cholesky elements of random parameters;}
 \item{heterogeneity}{heterogeneity-in-means and -variances coefficients.}

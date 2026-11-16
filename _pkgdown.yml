@@ -2,6 +2,12 @@ url: https://jwood-iastate.github.io/flexCountReg/
 template:
   bootstrap: 5
 
+articles:
+- title: Articles
+  contents:
+  - choosing-a-count-distribution
+  - random-parameters-and-panels
+
 reference:
 - title: Count regression models
   desc: Estimate count models with flexible distributions, underreporting,
@@ -25,6 +31,7 @@ reference:
   contents:
   - margEffTable
   - cureplot
+  - rootogram
 
 - title: Model comparison and fit metrics
   contents:

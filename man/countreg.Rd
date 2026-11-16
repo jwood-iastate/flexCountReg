@@ -22,7 +22,9 @@ countreg(
   stderr = "normal",
   bootstraps = NULL,
   engine = "halton",
-  keep_data = TRUE
+  keep_data = TRUE,
+  zero_formula = NULL,
+  zero_type = c("inflated", "hurdle")
 )
 }
 \arguments{
@@ -98,6 +100,21 @@ draws or "poilog" which uses the poilog package. The default is "halton".}
 \item{keep_data}{logical; if \code{FALSE}, the training data are not stored
 in the fitted object (saving memory). \code{predict()} then needs
 \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
+
+\item{zero_formula}{an optional one-sided formula for a zero model
+(\code{~ 1} for a constant), turning the model into a zero-inflated or
+hurdle model (see \code{zero_type}) for any \code{family}. The zero model
+is a logit model. Its coefficients are named \code{Zero:<variable>}.
+Cannot be combined with \code{underreport_formula}.}
+
+\item{zero_type}{\code{"inflated"} (default) or \code{"hurdle"}. In a
+zero-inflated model, a structural zero occurs with probability
+\eqn{\pi = logit^{-1}(z\gamma)} and otherwise the count follows the
+family: \eqn{P(0) = \pi + (1 - \pi) f(0)} and
+\eqn{P(y) = (1 - \pi) f(y)} for \eqn{y > 0}. In a hurdle model,
+\eqn{q = logit^{-1}(z\gamma)} is the probability of a positive count and
+positive counts follow the zero-truncated family:
+\eqn{P(0) = 1 - q} and \eqn{P(y) = q f(y) / (1 - f(0))}.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

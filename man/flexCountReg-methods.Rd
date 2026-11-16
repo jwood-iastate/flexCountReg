@@ -31,7 +31,7 @@
 
 \method{fitted}{flexCountReg}(object, ...)
 
-\method{residuals}{flexCountReg}(object, type = c("response", "pearson"), ...)
+\method{residuals}{flexCountReg}(object, type = c("response", "pearson", "quantile"), ...)
 
 \method{simulate}{flexCountReg}(object, nsim = 1, seed = NULL, ...)
 
@@ -51,8 +51,11 @@ all parameters are considered.}
 \item{level}{the confidence level required.}
 
 \item{type}{the type of residuals: \code{"response"} (observed minus
-fitted) or \code{"pearson"} (divided by the standard deviation implied
-by the fitted distribution; available for \code{countreg()} models).}
+fitted), \code{"pearson"} (divided by the standard deviation implied by
+the fitted distribution) or \code{"quantile"} (randomized quantile
+residuals of Dunn and Smyth, 1996, which are standard normal when the
+model is correct). Pearson and quantile residuals are available for
+\code{countreg()} models.}
 
 \item{nsim}{number of response vectors to simulate.}
 

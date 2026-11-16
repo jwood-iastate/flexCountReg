@@ -121,11 +121,7 @@ tidy.flexCountReg <- function(x, conf.int = FALSE, conf.level = 0.95,
                               exponentiate = FALSE, ...) {
   cf <- stats::coef(x)
   V <- stats::vcov(x)
-  se <- if (is.matrix(V) && all(dim(V) == length(cf))) {
-    .fcr_se(V)
-  } else {
-    rep(NA_real_, length(cf))
-  }
+  se <- .fcr_se(V, length(cf))
   out <- tibble::tibble(term = names(cf),
                         component = .component_of(names(cf), .fcr_n_mean(x)),
                         estimate = unname(cf), std.error = unname(se))

@@ -50,11 +50,7 @@ summary.flexCountReg <- function(object, level = 0.95, ...) {
 
   cf <- stats::coef(object)
   V <- stats::vcov(object)
-  se <- if (is.matrix(V) && all(dim(V) == length(cf))) {
-    .fcr_se(V)
-  } else {
-    rep(NA_real_, length(cf))
-  }
+  se <- .fcr_se(V, length(cf))
   se[!is.finite(se)] <- NA_real_
   z <- cf / se
   ci <- stats::confint(object, level = level)

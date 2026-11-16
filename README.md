@@ -188,34 +188,33 @@ library(flexCountReg)
 
 data("washington_roads")
 washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
-gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50,
                     data = washington_roads, family = "NB2",
                     dis_param_formula_1 = ~ speed50, method = "BFGS")
 summary(gen.nb2)
 #> Call:
-#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
-#>     AADT10kplus, data = washington_roads, family = "NB2", dis_param_formula_1 = ~speed50, 
+#> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50, 
+#>     data = washington_roads, family = "NB2", dis_param_formula_1 = ~speed50, 
 #>     method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 44 
+#> Iterations: 51 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                       Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)            -7.4015     0.4729  -15.65  < 2e-16 ***
-#> lnaadt                  0.9116     0.0566   16.09  < 2e-16 ***
-#> lnlength                0.8428     0.0700   12.04  < 2e-16 ***
-#> speed50                -0.4699     0.1151   -4.08  4.5e-05 ***
-#> AADT10kplus             0.7697     0.1299    5.92  3.1e-09 ***
-#> ln(alpha):(Intercept)  -1.6192     0.3740   -4.33  1.5e-05 ***
-#> ln(alpha):speed50       1.3059     0.5963    2.19    0.029 *  
+#> (Intercept)            -8.7564     0.4404  -19.88  < 2e-16 ***
+#> lnaadt                  1.0803     0.0518   20.86  < 2e-16 ***
+#> lnlength                0.7588     0.0691   10.98  < 2e-16 ***
+#> speed50                -0.5407     0.1173   -4.61  4.0e-06 ***
+#> ln(alpha):(Intercept)  -1.3233     0.3150   -4.20  2.7e-05 ***
+#> ln(alpha):speed50       1.2670     0.4849    2.61    0.009 ** 
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
-#> Log-likelihood: -1064.876 | AIC: 2143.752 | BIC: 2180.949 
+#> Log-likelihood: -1082.176 | AIC: 2176.352 | BIC: 2208.235 
 #> N: 1501
-#> LR test vs Poisson: chi-sq = 22.092 on 2 df, p-value = 1.59e-05
+#> LR test vs Poisson: chi-sq = 36.843 on 2 df, p-value = 9.99e-09
 ```
 
 The results are also available as tibbles, and the model can be compared
@@ -223,33 +222,32 @@ with a Poisson base model:
 
 ``` r
 tidy(gen.nb2, conf.int = TRUE)
-#> # A tibble: 7 × 8
+#> # A tibble: 6 × 8
 #>   term        component estimate std.error statistic  p.value conf.low conf.high
 #>   <chr>       <chr>        <dbl>     <dbl>     <dbl>    <dbl>    <dbl>     <dbl>
-#> 1 (Intercept) mean        -7.40     0.473     -15.7  3.28e-55   -8.33     -6.47 
-#> 2 lnaadt      mean         0.912    0.0566     16.1  2.90e-58    0.801     1.02 
-#> 3 lnlength    mean         0.843    0.0700     12.0  2.24e-33    0.706     0.980
-#> 4 speed50     mean        -0.470    0.115      -4.08 4.46e- 5   -0.695    -0.244
-#> 5 AADT10kplus mean         0.770    0.130       5.92 3.13e- 9    0.515     1.02 
-#> 6 ln(alpha):… distribu…   -1.62     0.374      -4.33 1.50e- 5   -2.35     -0.886
-#> 7 ln(alpha):… distribu…    1.31     0.596       2.19 2.85e- 2    0.137     2.47
+#> 1 (Intercept) mean        -8.76     0.440     -19.9  5.78e-88   -9.62     -7.89 
+#> 2 lnaadt      mean         1.08     0.0518     20.9  1.23e-96    0.979     1.18 
+#> 3 lnlength    mean         0.759    0.0691     11.0  4.63e-28    0.623     0.894
+#> 4 speed50     mean        -0.541    0.117      -4.61 4.02e- 6   -0.771    -0.311
+#> 5 ln(alpha):… distribu…   -1.32     0.315      -4.20 2.66e- 5   -1.94     -0.706
+#> 6 ln(alpha):… distribu…    1.27     0.485       2.61 8.98e- 3    0.317     2.22
 glance(gen.nb2)
 #> # A tibble: 1 × 10
 #>   model    family logLik   AIC   BIC    df  nobs n_groups converged vcov_type
 #>   <chr>    <chr>   <dbl> <dbl> <dbl> <int> <int>    <int> <lgl>     <chr>    
-#> 1 countreg NB2    -1065. 2144. 2181.     7  1501       NA TRUE      hessian
+#> 1 countreg NB2    -1082. 2176. 2208.     6  1501       NA TRUE      hessian
 regCompTest(gen.nb2, basemodel = "Poisson", variables = TRUE)$statistics
 #> # A tibble: 8 × 3
 #>   Statistic                  Model BaseModel
 #>   <chr>                      <dbl>     <dbl>
-#> 1 Log-likelihood        -1065.        -1076.
-#> 2 Number of parameters      7             5 
-#> 3 AIC                    2144.         2162.
-#> 4 BIC                    2181.         2188.
-#> 5 LR Test Statistic        22.1          NA 
+#> 1 Log-likelihood        -1082.        -1101.
+#> 2 Number of parameters      6             4 
+#> 3 AIC                    2176.         2209.
+#> 4 BIC                    2208.         2230.
+#> 5 LR Test Statistic        36.8          NA 
 #> 6 LR degrees of freedom     2            NA 
 #> 7 LR p-value                0            NA 
-#> 8 McFadden's Pseudo R^2     0.0103       NA
+#> 8 McFadden's Pseudo R^2     0.0167       NA
 ```
 
 A rootogram shows how well the fitted distribution reproduces the
@@ -360,9 +358,9 @@ summary(gen.nbp)
 #> LR test vs Poisson: chi-sq = 18.145 on 3 df, p-value = 0.000411
 ```
 
-Checking the CURE plot (notice that the CURE plot is MUCH better in this
-case than the NB-2 without the interaction and still better than the
-modified NB-2):
+Checking the CURE plot (notice that the CURE plot is better in this case
+than the NB-2 without the interaction and still better than the modified
+NB-2):
 
 ``` r
 cureplot(gen.nbp, indvar = "lnaadt")

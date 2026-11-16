@@ -68,18 +68,51 @@ generics::glance
 #' @export
 generics::augment
 
-# Model component of each parameter name.
-.component_of <- function(nm) {
-  out <- rep("mean", length(nm))
-  dist <- grepl("^ln\\(|^gamma($|:)|^p($|:)|^lnalpha$", nm)
-  out[dist] <- "distribution"
-  out[grepl("^Underreporting:", nm)] <- "underreporting"
-  out[grepl("^Zero:", nm)] <- "zero"
-  out[grepl(":Mean$", nm)] <- "random_mean"
-  out[grepl(":(St\\.Dev|Spread)$", nm)] <- "random_scale"
-  out[grepl("^Chol:", nm)] <- "random_cholesky"
-  out[grepl("^Het(Mean|Var):", nm)] <- "heterogeneity"
+# Model component of each parameter. The first parameters are always the
+# mean-model coefficients (their number is recorded in the training
+# blueprint), so covariate names never decide the component. The other
+# parameters are identified by the prefixes and suffixes the estimators
+# give them; anything else is a distribution parameter.
+.component_of <- function(nm, n_mean = NULL) {
+  out <- rep("distribution", length(nm))
+  if (is.null(n_mean)) {
+    # Fallback for objects without bookkeeping: name patterns
+    out[!grepl("^ln\\(|^gamma($|:)|^p($|:)|^lnalpha$", nm)] <- "mean"
+  } else {
+    out[seq_len(min(n_mean, length(nm)))] <- "mean"
+  }
+  rest <- if (is.null(n_mean)) rep(TRUE, length(nm)) else
+    seq_along(nm) > n_mean
+  set <- function(pattern, value) {
+    out[rest & grepl(pattern, nm)] <<- value
+  }
+  set("^Underreporting:", "underreporting")
+  set("^Zero:", "zero")
+  set(":Mean$", "random_mean")
+  set(":(St\\.Dev|Spread)$", "random_scale")
+  set("^Chol:", "random_cholesky")
+  set("^Het(Mean|Var):", "heterogeneity")
   out
+}
+
+# Number of mean-model coefficients of a fitted model.
+.fcr_n_mean <- function(x) {
+  m <- x$model
+  if (!is.null(m[["blueprint"]])) return(length(m[["blueprint"]]$x_names))
+  if (!is.null(m[["n_beta"]])) return(m[["n_beta"]])
+  if (!is.null(m[["beta_pred"]])) return(length(m[["beta_pred"]]))
+  NULL
+}
+
+# Outcome of `data` evaluated through the model's formula (so transformed
+# responses such as I(y + 1) are handled); NULL when the outcome variables
+# are not all in `data`. Rows with missing values give NA.
+.fcr_response <- function(object, data) {
+  lhs <- object$formula[[2]]
+  if (!all(all.vars(lhs) %in% names(data))) return(NULL)
+  f <- stats::as.formula(call("~", lhs, 1))
+  as.numeric(stats::model.response(stats::model.frame(
+    f, data, na.action = stats::na.pass)))
 }
 
 #' @rdname flexCountReg-tidiers
@@ -93,7 +126,8 @@ tidy.flexCountReg <- function(x, conf.int = FALSE, conf.level = 0.95,
   } else {
     rep(NA_real_, length(cf))
   }
-  out <- tibble::tibble(term = names(cf), component = .component_of(names(cf)),
+  out <- tibble::tibble(term = names(cf),
+                        component = .component_of(names(cf), .fcr_n_mean(x)),
                         estimate = unname(cf), std.error = unname(se))
   out$statistic <- out$estimate / out$std.error
   out$p.value <- 2 * stats::pnorm(-abs(out$statistic))
@@ -143,13 +177,13 @@ augment.flexCountReg <- function(x, data = NULL, new_data = NULL,
     nd <- as.data.frame(new_data)
     out <- tibble::as_tibble(nd)
     out$.fitted <- as.vector(stats::predict(x, newdata = nd, ...))
-    y_name <- all.vars(x$formula)[1]
-    if (y_name %in% names(nd)) {
-      if (type.residuals == "pearson") {
-        stop("Pearson residuals are only available for the training data.",
+    y <- .fcr_response(x, nd)
+    if (!is.null(y)) {
+      if (type.residuals != "response") {
+        stop("Only response residuals are available for `new_data`.",
              call. = FALSE)
       }
-      out$.resid <- as.numeric(nd[[y_name]]) - out$.fitted
+      out$.resid <- y - out$.fitted
     }
     return(out)
   }

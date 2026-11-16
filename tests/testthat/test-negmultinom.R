@@ -36,9 +36,11 @@ test_that("analytic gradient matches numerical gradient for all families", {
 test_that("NM2 log-likelihood equals the repois log-likelihood", {
   mod <- negmultinom(y ~ x1 + z, group_var = "id", data = nm_data,
                      offset = "lnL")
-  pr <- ns$.repois_prepare_inputs(y ~ x1 + z, "id", nm_data, "lnL")
-  ll_re <- sum(ns$.repois_loglik(mod$model$estimate, pr$y, pr$X,
-                             pr$offset_vec, pr$cluster_list))
+  pr <- ns$prepare_model_data(y ~ x1 + z, nm_data, offset = "lnL",
+                              group_var = "id")
+  ll_re <- sum(ns$.repois_loglik(mod$model$estimate, as.numeric(pr$y), pr$X,
+                                 pr$offset,
+                                 split(seq_along(pr$y), pr$group)))
   expect_equal(mod$model$maximum, ll_re, tolerance = 1e-8,
                ignore_attr = TRUE)
 })

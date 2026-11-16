@@ -26,15 +26,40 @@ NULL
 # Right-hand-side design matrix for an auxiliary formula. Rows with missing
 # values are kept as NA rows (na.pass), so the caller controls row filtering.
 .fcr_rhs_matrix <- function(fml, mf_data, xlev = NULL,
-                            drop_intercept = FALSE) {
+                            drop_intercept = FALSE, contrasts = NULL) {
   if (is.null(fml)) return(NULL)
   tt <- stats::delete.response(stats::terms(stats::as.formula(fml)))
-  mf <- stats::model.frame(tt, mf_data, na.action = stats::na.pass,
-                           xlev = xlev)
-  X <- stats::model.matrix(tt, mf)
+  mf <- .fcr_model_frame_xlev(tt, mf_data, xlev)
+  X <- stats::model.matrix(tt, mf, contrasts.arg = contrasts)
+  ctr <- attr(X, "contrasts")
   if (drop_intercept) X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
   attr(X, "xlevels") <- stats::.getXlevels(tt, mf)
+  attr(X, "contrasts") <- ctr
   X
+}
+
+# model.frame() with training factor levels. Re-applying the levels drops any
+# contrasts attribute of a factor in the new data (with a warning); the
+# training contrasts are passed to model.matrix() afterwards, so that
+# warning is expected and muffled.
+.fcr_model_frame_xlev <- function(tt, data, xlev) {
+  withCallingHandlers(
+    stats::model.frame(tt, data, na.action = stats::na.pass, xlev = xlev),
+    warning = function(w) {
+      if (grepl("contrasts dropped from factor", conditionMessage(w))) {
+        invokeRestart("muffleWarning")
+      }
+    })
+}
+
+# Expand a `.` in a formula against the columns of `data` (as lm() does).
+.fcr_expand_dot <- function(fml, data) {
+  if (is.null(fml)) return(NULL)
+  fml <- stats::as.formula(fml)
+  if (!"." %in% all.vars(fml)) return(fml)
+  out <- stats::formula(stats::terms(fml, data = data))
+  environment(out) <- environment(fml)
+  out
 }
 
 # Prepare all data used by an estimator.
@@ -50,8 +75,10 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
                                offset = NULL, weights = NULL,
                                group_var = NULL) {
   data <- as.data.frame(data)
-  formula <- stats::as.formula(formula)
-  aux_formulas <- Filter(Negate(is.null), aux_formulas)
+  # Expand `.` before any checks; the expanded forms go into the blueprint
+  formula <- .fcr_expand_dot(formula, data)
+  aux_formulas <- lapply(Filter(Negate(is.null), aux_formulas),
+                         .fcr_expand_dot, data = data)
 
   formula_offset <- .fcr_has_formula_offset(formula)
   if (!is.null(offset) && formula_offset) {
@@ -155,6 +182,7 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
                         offset_label = offset_label,
                         aux_formulas = aux_formulas,
                         aux_xlevels = lapply(aux, attr, "xlevels"),
+                        aux_contrasts = lapply(aux, attr, "contrasts"),
                         x_names = colnames(X)))
 }
 
@@ -171,8 +199,7 @@ forge_new_data <- function(blueprint, new_data) {
          call. = FALSE)
   }
 
-  mf <- stats::model.frame(tt, new_data, na.action = stats::na.pass,
-                           xlev = blueprint$xlevels)
+  mf <- .fcr_model_frame_xlev(tt, new_data, blueprint$xlevels)
   X <- stats::model.matrix(tt, mf, contrasts.arg = blueprint$contrasts)
   if (!identical(colnames(X), blueprint$x_names)) {
     stop("`newdata` produces different model columns than the training ",
@@ -188,7 +215,8 @@ forge_new_data <- function(blueprint, new_data) {
 
   het <- c("het_mean", "het_var")
   aux <- Map(function(f, nm) {
-    .fcr_rhs_matrix(f, new_data, blueprint$aux_xlevels[[nm]], nm %in% het)
+    .fcr_rhs_matrix(f, new_data, blueprint$aux_xlevels[[nm]], nm %in% het,
+                    contrasts = blueprint$aux_contrasts[[nm]])
   }, blueprint$aux_formulas, names(blueprint$aux_formulas))
 
   list(X = X, offset = as.numeric(off), aux = aux)

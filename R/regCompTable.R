@@ -110,8 +110,14 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     # Log-likelihood, AIC and BIC from the model's methods; McFadden's R^2
     # against the same null model as regCompTest()
     LL <- as.numeric(stats::logLik(m_i))
-    LLbase <- .fit_null_ll(m_i, .fcr_fit_pieces(m_i), basemodel = basemodel,
-                           variables = variables)
+    # The baseline is fit only when the pseudo R^2 is requested (it needs
+    # the training data)
+    LLbase <- if (RSquare) {
+      .fit_null_ll(m_i, .fcr_fit_pieces(m_i), basemodel = basemodel,
+                   variables = variables)
+    } else {
+      NA_real_
+    }
     aic <- round(stats::AIC(m_i), digits)
     bic <- round(stats::BIC(m_i), digits)
     rsq <- round(.mcfadden_r2(LL, LLbase), digits)

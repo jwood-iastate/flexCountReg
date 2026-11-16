@@ -144,7 +144,7 @@ library(flexCountReg)
 
 data("washington_roads")
 washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
-gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+gen.nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50,
                     data = washington_roads, family = "NB2",
                     dis_param_formula_1 = ~ speed50, method = "BFGS")
 summary(gen.nb2)
@@ -194,7 +194,7 @@ gen.nbp <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
 summary(gen.nbp)
 ```
 
-Checking the CURE plot (notice that the CURE plot is MUCH better in this case than the NB-2 without the interaction and still better than the modified NB-2):
+Checking the CURE plot (notice that the CURE plot is better in this case than the NB-2 without the interaction and still better than the modified NB-2):
 ```{r cureplot-lnaadt}
 cureplot(gen.nbp, indvar = "lnaadt")
 ```

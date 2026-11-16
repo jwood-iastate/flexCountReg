@@ -34,8 +34,7 @@ models <- list(
   Poisson = fit("Poisson"),
   NB1 = fit("NB1"),
   NB2 = fit("NB2"),
-  PIG2 = fit("PIG2"),
-  PL = fit("PL"),
+  PIG1 = fit("PIG1"),
   GP1 = fit("GP1")
 )
 ```
@@ -55,9 +54,8 @@ do.call(rbind, lapply(names(models), function(nm) {
 #> 1 Poisson -1110.057 2226.114 2242.056  3
 #> 2     NB1 -1097.226 2202.451 2223.707  4
 #> 3     NB2 -1090.559 2189.118 2210.374  4
-#> 4    PIG2 -1090.181 2188.362 2209.618  4
-#> 5      PL -1091.096 2190.192 2211.447  4
-#> 6     GP1 -1097.124 2202.247 2223.503  4
+#> 4    PIG1 -1096.941 2201.882 2223.138  4
+#> 5     GP1 -1097.124 2202.247 2223.503  4
 ```
 
 The Poisson model fits far worse than the overdispersed families. For a
@@ -108,7 +106,7 @@ regCompTest(models$Poisson, model2 = models$NB2)$statistics
 #> 5 LR Test Statistic        39.0      NA    
 #> 6 LR degrees of freedom     1        NA    
 #> 7 LR p-value                0        NA    
-#> 8 McFadden's Pseudo R^2     0.193     0.279
+#> 8 McFadden's Pseudo R^2     0.292     0.279
 ```
 
 and
@@ -117,21 +115,28 @@ builds a coefficient table across models:
 
 ``` r
 
-regCompTable(models[c("Poisson", "NB2", "PIG2")])
-#> # A tibble: 10 × 4
-#>    Parameter    Poisson           NB2               PIG2             
-#>    <chr>        <chr>             <chr>             <chr>            
-#>  1 (Intercept)  -9.119 (0.424)*** -8.895 (0.446)*** -8.874 (0.442)***
-#>  2 lnaadt       1.147 (0.048)***  1.124 (0.051)***  1.123 (0.051)*** 
-#>  3 speed50      -0.54 (0.096)***  -0.568 (0.11)***  -0.583 (0.111)***
-#>  4 ln(alpha)    ---               -0.912 (0.228)*** ---              
-#>  5 ln(eta)      ---               ---               -0.809 (0.254)** 
-#>  6 N Obs.       1501              1501              1501             
-#>  7 LL           -1110.057         -1090.559         -1090.181        
-#>  8 AIC          2226.114          2189.118          2188.362         
-#>  9 BIC          2242.056          2210.374          2209.618         
-#> 10 Pseudo-R-Sq. 0.279             0.193             0.19
+regCompTable(models[c("Poisson", "NB1", "NB2")])
+#> # A tibble: 9 × 4
+#>   Parameter    Poisson           NB1               NB2              
+#>   <chr>        <chr>             <chr>             <chr>            
+#> 1 (Intercept)  -9.119 (0.424)*** -8.68 (0.471)***  -8.895 (0.446)***
+#> 2 lnaadt       1.147 (0.048)***  1.097 (0.054)***  1.124 (0.051)*** 
+#> 3 speed50      -0.54 (0.096)***  -0.562 (0.107)*** -0.568 (0.11)*** 
+#> 4 ln(alpha)    ---               -1.309 (0.261)*** -0.912 (0.228)***
+#> 5 N Obs.       1501              1501              1501             
+#> 6 LL           -1110.057         -1097.226         -1090.559        
+#> 7 AIC          2226.114          2202.451          2189.118         
+#> 8 BIC          2242.056          2223.707          2210.374         
+#> 9 Pseudo-R-Sq. 0.279             0.288             0.292
 ```
+
+McFadden’s pseudo R-squared compares each model with the same baseline,
+an intercept-only Poisson model (the base count model), so the values
+are comparable across distributions. A different baseline can be chosen
+with the `basemodel` and `variables` arguments of
+[`regCompTable()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.md)
+and
+[`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md).
 
 ## Does the model reproduce the counts?
 
@@ -219,14 +224,14 @@ zero-inflated or hurdle version of any family can be fitted with
 
 zinb <- countreg(f, data = washington_roads, family = "NB2",
                  offset = "lnlength", zero_formula = ~ 1, method = "NR")
-#> Warning in stats::dnbinom(y, size = 1/alpha, mu = predicted): NaNs produced
-#> Warning in stats::dnbinom(y, size = 1/alpha, mu = predicted): NaNs produced
+#> Warning: The Hessian is singular; standard errors use a generalized inverse and
+#> may be unreliable. The model may not be identified.
 c(NB2 = as.numeric(logLik(models$NB2)), ZINB = as.numeric(logLik(zinb)))
 #>       NB2      ZINB 
-#> -1090.559 -1090.591
+#> -1090.559 -1090.559
 # Estimated probability of a structural zero
 unname(plogis(coef(zinb)["Zero:(Intercept)"]))
-#> [1] 0.0003252701
+#> [1] 8.163093e-06
 ```
 
 Here the probability of a structural zero is estimated at essentially
@@ -263,7 +268,7 @@ margEffTable(models$NB2)
 #> Method: delta 
 #> 
 #>     term variable_type           effect_metric estimate std_error t_value
-#>   lnaadt    continuous Average marginal effect    0.532     0.037  14.495
+#>   lnaadt    continuous Average marginal effect    0.532     0.037  14.536
 #>  speed50     indicator   Pseudo-elasticity (%)  -43.319     6.246  -6.935
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
 #>        0 ***    0.460    0.604  1501                    NA

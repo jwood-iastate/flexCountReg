@@ -90,8 +90,7 @@ fastest choice for the closed-form families.</p>
 <span>  Poisson <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"Poisson"</span><span class="op">)</span>,</span>
 <span>  NB1 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"NB1"</span><span class="op">)</span>,</span>
 <span>  NB2 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"NB2"</span><span class="op">)</span>,</span>
-<span>  PIG2 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"PIG2"</span><span class="op">)</span>,</span>
-<span>  PL <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"PL"</span><span class="op">)</span>,</span>
+<span>  PIG1 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"PIG1"</span><span class="op">)</span>,</span>
 <span>  GP1 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"GP1"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
@@ -108,9 +107,8 @@ the candidates can be compared side by side.</p>
 <span><span class="co">#&gt; 1 Poisson -1110.057 2226.114 2242.056  3</span></span>
 <span><span class="co">#&gt; 2     NB1 -1097.226 2202.451 2223.707  4</span></span>
 <span><span class="co">#&gt; 3     NB2 -1090.559 2189.118 2210.374  4</span></span>
-<span><span class="co">#&gt; 4    PIG2 -1090.181 2188.362 2209.618  4</span></span>
-<span><span class="co">#&gt; 5      PL -1091.096 2190.192 2211.447  4</span></span>
-<span><span class="co">#&gt; 6     GP1 -1097.124 2202.247 2223.503  4</span></span></code></pre></div>
+<span><span class="co">#&gt; 4    PIG1 -1096.941 2201.882 2223.138  4</span></span>
+<span><span class="co">#&gt; 5     GP1 -1097.124 2202.247 2223.503  4</span></span></code></pre></div>
 <p>The Poisson model fits far worse than the overdispersed families. For
 a single model, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports a likelihood-ratio test
 against the Poisson model with the same mean specification:</p>
@@ -151,24 +149,29 @@ treating the one with fewer parameters as the restricted model:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> LR Test Statistic        39.0      <span style="color: #BB0000;">NA</span>    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> LR degrees of freedom     1        <span style="color: #BB0000;">NA</span>    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> LR p-value                0        <span style="color: #BB0000;">NA</span>    </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.193     0.279</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.292     0.279</span></span></code></pre></div>
 <p>and <code><a href="../reference/regCompTable.html">regCompTable()</a></code> builds a coefficient table across
 models:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="va">models</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Poisson"</span>, <span class="st">"NB2"</span>, <span class="st">"PIG2"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 4</span></span></span>
-<span><span class="co">#&gt;    Parameter    Poisson           NB2               PIG2             </span></span>
-<span><span class="co">#&gt;    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span> (Intercept)  -9.119 (0.424)*** -8.895 (0.446)*** -8.874 (0.442)***</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span> lnaadt       1.147 (0.048)***  1.124 (0.051)***  1.123 (0.051)*** </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span> speed50      -0.54 (0.096)***  -0.568 (0.11)***  -0.583 (0.111)***</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span> ln(alpha)    ---               -0.912 (0.228)*** ---              </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span> ln(eta)      ---               ---               -0.809 (0.254)** </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span> N Obs.       1501              1501              1501             </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span> LL           -1110.057         -1090.559         -1090.181        </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span> AIC          2226.114          2189.118          2188.362         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> BIC          2242.056          2210.374          2209.618         </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> Pseudo-R-Sq. 0.279             0.193             0.19</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="va">models</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Poisson"</span>, <span class="st">"NB1"</span>, <span class="st">"NB2"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 9 × 4</span></span></span>
+<span><span class="co">#&gt;   Parameter    Poisson           NB1               NB2              </span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept)  -9.119 (0.424)*** -8.68 (0.471)***  -8.895 (0.446)***</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt       1.147 (0.048)***  1.097 (0.054)***  1.124 (0.051)*** </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50      -0.54 (0.096)***  -0.562 (0.107)*** -0.568 (0.11)*** </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ln(alpha)    ---               -1.309 (0.261)*** -0.912 (0.228)***</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> N Obs.       1501              1501              1501             </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> LL           -1110.057         -1097.226         -1090.559        </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> AIC          2226.114          2202.451          2189.118         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> BIC          2242.056          2223.707          2210.374         </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">9</span> Pseudo-R-Sq. 0.279             0.288             0.292</span></span></code></pre></div>
+<p>McFadden’s pseudo R-squared compares each model with the same
+baseline, an intercept-only Poisson model (the base count model), so the
+values are comparable across distributions. A different baseline can be
+chosen with the <code>basemodel</code> and <code>variables</code>
+arguments of <code><a href="../reference/regCompTable.html">regCompTable()</a></code> and
+<code><a href="../reference/regCompTest.html">regCompTest()</a></code>.</p>
 </div>
 <div class="section level2">
 <h2 id="does-the-model-reproduce-the-counts">Does the model reproduce the counts?<a class="anchor" aria-label="anchor" href="#does-the-model-reproduce-the-counts"></a>
@@ -232,14 +235,14 @@ zero-inflated or hurdle version of any family can be fitted with
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">zinb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
 <span>                 offset <span class="op">=</span> <span class="st">"lnlength"</span>, zero_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="st">"NR"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in stats::dnbinom(y, size = 1/alpha, mu = predicted): NaNs produced</span></span>
-<span><span class="co">#&gt; Warning in stats::dnbinom(y, size = 1/alpha, mu = predicted): NaNs produced</span></span>
+<span><span class="co">#&gt; Warning: The Hessian is singular; standard errors use a generalized inverse and</span></span>
+<span><span class="co">#&gt; may be unreliable. The model may not be identified.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>NB2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span><span class="op">)</span><span class="op">)</span>, ZINB <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;       NB2      ZINB </span></span>
-<span><span class="co">#&gt; -1090.559 -1090.591</span></span>
+<span><span class="co">#&gt; -1090.559 -1090.559</span></span>
 <span><span class="co"># Estimated probability of a structural zero</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span><span class="op">[</span><span class="st">"Zero:(Intercept)"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.0003252701</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 8.163093e-06</span></span></code></pre></div>
 <p>Here the probability of a structural zero is estimated at essentially
 zero and the log-likelihood equals that of NB2: the zeros are already
 explained by the negative binomial, so the zero-inflated model adds
@@ -268,7 +271,7 @@ count, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link
 <span><span class="co">#&gt; Method: delta </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     term variable_type           effect_metric estimate std_error t_value</span></span>
-<span><span class="co">#&gt;   lnaadt    continuous Average marginal effect    0.532     0.037  14.495</span></span>
+<span><span class="co">#&gt;   lnaadt    continuous Average marginal effect    0.532     0.037  14.536</span></span>
 <span><span class="co">#&gt;  speed50     indicator   Pseudo-elasticity (%)  -43.319     6.246  -6.935</span></span>
 <span><span class="co">#&gt;  p_value sig lower_ci upper_ci n_obs successful_bootstraps</span></span>
 <span><span class="co">#&gt;        0 ***    0.460    0.604  1501                    NA</span></span>

@@ -27,6 +27,8 @@
   (the tidymodels name) as well as `newdata`.
 - Standard errors are `NA` (instead of 0) when the estimated variance is
   negative, which happens for weakly identified parameters.
+  [`regCompTable()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.md)
+  shows such standard errors as `NA` without significance stars.
 
 ### Breaking changes and changed results
 
@@ -52,12 +54,13 @@
   errors when the models were fit to different numbers of observations,
   and warns when the restricted model has the higher log-likelihood. Its
   base and null models use the same rows, offset and weights as the
-  fitted model, and McFadden’s R^2 uses an intercept-only model of the
-  same family for
-  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-  models.
-  [`regCompTable()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.md)
-  uses the same definitions.
+  fitted model. McFadden’s R^2 is computed against an intercept-only
+  Poisson model for every model by default (so it is comparable across
+  distributions); a different baseline family, with or without the mean
+  covariates, can be chosen with `basemodel` and `variables` in both
+  [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
+  and
+  [`regCompTable()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.md).
 
 - [`cor2cov()`](https://jwood-iastate.github.io/flexCountReg/reference/cor2cov.md)
   stops (instead of warning and returning `NULL`) on invalid input, and

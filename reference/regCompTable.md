@@ -13,7 +13,9 @@ regCompTable(
   BIC = TRUE,
   RSquare = TRUE,
   tableType = "tibble",
-  digits = 3
+  digits = 3,
+  basemodel = "Poisson",
+  variables = FALSE
 )
 ```
 
@@ -42,11 +44,10 @@ regCompTable(
 - RSquare:
 
   A logical. The default value `TRUE` indicates that the McFadden's
-  Pseudo-R-Squared statistic should be included. It compares against an
-  intercept-only model of the same family for
-  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-  models, and an intercept-only Poisson model otherwise (see
-  [`regCompTest`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)).
+  Pseudo-R-Squared statistic should be included. By default it compares
+  every model against the same intercept-only Poisson model (the base
+  count model), so the values are comparable across models; see
+  `basemodel` and `variables`.
 
 - tableType:
 
@@ -59,6 +60,18 @@ regCompTable(
 
   An integer value indicating the number of decimals to round the table
   values to.
+
+- basemodel:
+
+  the family of the baseline model for McFadden's Pseudo-R-Squared:
+  "Poisson" (default) or a family of
+  [`countreg`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md).
+
+- variables:
+
+  logical; if `TRUE`, the baseline model includes the mean-model
+  covariates of each model; if `FALSE` (default), it is an
+  intercept-only model (with the model's offset).
 
 ## Value
 
@@ -102,13 +115,13 @@ print(comptable)
 #> \toprule
 #> Parameter & NB-1 & NB-2 & NB-P\\
 #> \midrule
-#> (Intercept) & -7.811 (0.497)*** & -7.153 (0.477)*** & -7.796 (0.49)***\\
-#> lnaadt & 0.942 (0.058)*** & 0.867 (0.056)*** & 0.942 (0.057)***\\
+#> (Intercept) & -7.811 (0.497)*** & -7.153 (0.477)*** & -7.796 (0.5)***\\
+#> lnaadt & 0.942 (0.058)*** & 0.867 (0.056)*** & 0.942 (0.058)***\\
 #> lnlength & 0.819 (0.066)*** & 0.836 (0.07)*** & 0.834 (0.069)***\\
 #> speed50 & -0.368 (0.11)*** & -0.402 (0.11)*** & -0.387 (0.112)***\\
 #> ShouldWidth04 & 0.257 (0.089)** & 0.23 (0.092)* & 0.259 (0.092)**\\
 #> \addlinespace
-#> AADTover10k & 0.653 (0.122)*** & 0.829 (0.137)*** & 0.686 (0.131)***\\
+#> AADTover10k & 0.653 (0.122)*** & 0.829 (0.137)*** & 0.686 (0.132)***\\
 #> ln(alpha) & -1.707 (0.344)*** & -1.326 (0.286)*** & -1.327 (0.293)***\\
 #> ln(p) & --- & --- & 0.502 (0.176)**\\
 #> N Obs. & 1501 & 1501 & 1501\\
@@ -116,7 +129,7 @@ print(comptable)
 #> \addlinespace
 #> AIC & 2144.167 & 2141.345 & 2140.532\\
 #> BIC & 2181.364 & 2178.542 & 2183.043\\
-#> Pseudo-R-Sq. & 0.206 & 0.207 & 0.208\\
+#> Pseudo-R-Sq. & 0.301 & 0.302 & 0.303\\
 #> \bottomrule
 #> \end{tabular}
 #> \end{table}

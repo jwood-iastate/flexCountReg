@@ -35,7 +35,9 @@ regCompTest(
   A character string specifying the family of base model to compare
   against (options include the family from
   [`countreg`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-  or "Poisson"). Default is "Poisson".
+  or "Poisson"). Default is "Poisson". It is used for the LR test of a
+  single model and, in both workflows, as the baseline of McFadden's
+  Pseudo R^2.
 
 - variables:
 
@@ -97,9 +99,9 @@ The function performs the following steps for the single-model workflow:
     than the base model.
 
 5.  Computes McFadden's Pseudo R^2, \\1 - LL/LL_0\\, where \\LL_0\\ is
-    the log-likelihood of an intercept-only model of the same family for
-    [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-    models (an intercept-only Poisson model for the other estimators).
+    the log-likelihood of the base model (by default an intercept-only
+    Poisson model, the base count model, so that the pseudo R^2 is
+    comparable across models and distributions).
 
 For the two-model workflow, the model with fewer parameters is the
 restricted (base) model and the other is the comparison (full) model.
@@ -618,7 +620,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> <td headers="Model" class="gt_row gt_right">0.0001</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>     <tr><td headers="Statistic" class="gt_row gt_left">McFadden's Pseudo R^2</td>
-#> <td headers="Model" class="gt_row gt_right">0.2083</td>
+#> <td headers="Model" class="gt_row gt_right">0.0084</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>   </tbody>
 #>   
@@ -724,7 +726,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> [1] 0.0001232406
 #> 
 #> $PseudoR2
-#> [1] 0.2083299
+#> [1] 0.008402545
 #> 
 #> $statistics
 #> # A tibble: 8 × 3
@@ -737,7 +739,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> 5 LR Test Statistic        18.0          NA 
 #> 6 LR degrees of freedom     2            NA 
 #> 7 LR p-value                0.0001       NA 
-#> 8 McFadden's Pseudo R^2     0.208        NA 
+#> 8 McFadden's Pseudo R^2     0.0084       NA 
 #> 
 #> $gtTable
 #> <div id="zzmwnfmrog" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
@@ -1224,7 +1226,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> <td headers="Model" class="gt_row gt_right">0.0001</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>     <tr><td headers="Statistic" class="gt_row gt_left">McFadden's Pseudo R^2</td>
-#> <td headers="Model" class="gt_row gt_right">0.2083</td>
+#> <td headers="Model" class="gt_row gt_right">0.0084</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>   </tbody>
 #>   
@@ -1248,7 +1250,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> \addlinespace
 #> LR degrees of freedom & 2.0000 & NA\\
 #> LR p-value & 0.0001 & NA\\
-#> McFadden's Pseudo R\textasciicircum{}2 & 0.2083 & NA\\
+#> McFadden's Pseudo R\textasciicircum{}2 & 0.0084 & NA\\
 #> \bottomrule
 #> \end{tabular}
 #> \end{table}
@@ -1301,7 +1303,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> McFadden's Pseudo R^2 </td>
-#>    <td style="text-align:right;"> 0.2083 </td>
+#>    <td style="text-align:right;"> 0.0084 </td>
 #>    <td style="text-align:right;"> NA </td>
 #>   </tr>
 #> </tbody>
@@ -1801,8 +1803,8 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> <td headers="Model" class="gt_row gt_right">0.1286</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>     <tr><td headers="Statistic" class="gt_row gt_left">McFadden's Pseudo R^2</td>
-#> <td headers="Model" class="gt_row gt_right">0.2083</td>
-#> <td headers="BaseModel" class="gt_row gt_right">0.2075</td></tr>
+#> <td headers="Model" class="gt_row gt_right">0.3029</td>
+#> <td headers="BaseModel" class="gt_row gt_right">0.3021</td></tr>
 #>   </tbody>
 #>   
 #> </table>
@@ -1843,10 +1845,10 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> [1] 0.1285935
 #> 
 #> $PseudoR2_base
-#> [1] 0.2074693
+#> [1] 0.3021394
 #> 
 #> $PseudoR2_comparison
-#> [1] 0.2083299
+#> [1] 0.3028972
 #> 
 #> $statistics
 #> # A tibble: 8 × 3
@@ -1859,7 +1861,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> 5 LR Test Statistic         2.31     NA    
 #> 6 LR degrees of freedom     1        NA    
 #> 7 LR p-value                0.129    NA    
-#> 8 McFadden's Pseudo R^2     0.208     0.208
+#> 8 McFadden's Pseudo R^2     0.303     0.302
 #> 
 #> $gtTable
 #> <div id="pvteseuwbf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
@@ -2346,8 +2348,8 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> <td headers="Model" class="gt_row gt_right">0.1286</td>
 #> <td headers="BaseModel" class="gt_row gt_right">NA</td></tr>
 #>     <tr><td headers="Statistic" class="gt_row gt_left">McFadden's Pseudo R^2</td>
-#> <td headers="Model" class="gt_row gt_right">0.2083</td>
-#> <td headers="BaseModel" class="gt_row gt_right">0.2075</td></tr>
+#> <td headers="Model" class="gt_row gt_right">0.3029</td>
+#> <td headers="BaseModel" class="gt_row gt_right">0.3021</td></tr>
 #>   </tbody>
 #>   
 #> </table>
@@ -2370,7 +2372,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> \addlinespace
 #> LR degrees of freedom & 1.0000 & NA\\
 #> LR p-value & 0.1286 & NA\\
-#> McFadden's Pseudo R\textasciicircum{}2 & 0.2083 & 0.2075\\
+#> McFadden's Pseudo R\textasciicircum{}2 & 0.3029 & 0.3021\\
 #> \bottomrule
 #> \end{tabular}
 #> \end{table}
@@ -2423,8 +2425,8 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   </tr>
 #>   <tr>
 #>    <td style="text-align:left;"> McFadden's Pseudo R^2 </td>
-#>    <td style="text-align:right;"> 0.2083 </td>
-#>    <td style="text-align:right;"> 0.2075 </td>
+#>    <td style="text-align:right;"> 0.3029 </td>
+#>    <td style="text-align:right;"> 0.3021 </td>
 #>   </tr>
 #> </tbody>
 #> </table>

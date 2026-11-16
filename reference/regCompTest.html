@@ -72,7 +72,9 @@ used when available.</p></dd>
 <dt id="arg-basemodel">basemodel<a class="anchor" aria-label="anchor" href="#arg-basemodel"></a></dt>
 <dd><p>A character string specifying the family of base model to
 compare against (options include the family from
-<code><a href="countreg.html">countreg</a></code> or "Poisson"). Default is "Poisson".</p></dd>
+<code><a href="countreg.html">countreg</a></code> or "Poisson"). Default is "Poisson". It is
+used for the LR test of a single model and, in both workflows, as the
+baseline of McFadden's Pseudo R^2.</p></dd>
 
 
 <dt id="arg-variables">variables<a class="anchor" aria-label="anchor" href="#arg-variables"></a></dt>
@@ -128,9 +130,9 @@ model.</p></li>
 the estimated base model when the fitted model has more parameters than
 the base model.</p></li>
 <li><p>Computes McFadden's Pseudo R^2, \(1 - LL/LL_0\), where
-\(LL_0\) is the log-likelihood of an intercept-only model of the same
-family for <code><a href="countreg.html">countreg()</a></code> models (an intercept-only Poisson model for
-the other estimators).</p></li>
+\(LL_0\) is the log-likelihood of the base model (by default an
+intercept-only Poisson model, the base count model, so that the pseudo
+R^2 is comparable across models and distributions).</p></li>
 </ol><p>For the two-model workflow, the model with fewer parameters is the
 restricted (base) model and the other is the comparison (full) model. The
 models must be fit to the same observations (an error is raised otherwise)
@@ -645,7 +647,7 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0001&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.2083&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0084&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
@@ -751,7 +753,7 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.0001232406</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $PseudoR2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2083299</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.008402545</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $statistics</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 3</span></span>
@@ -764,7 +766,7 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR Test Statistic        18.0          <span style="color: #BB0000;">NA</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> LR degrees of freedom     2            <span style="color: #BB0000;">NA</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> LR p-value                0.000<span style="text-decoration: underline;">1</span>       <span style="color: #BB0000;">NA</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.208        <span style="color: #BB0000;">NA</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.008<span style="text-decoration: underline;">4</span>       <span style="color: #BB0000;">NA</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $gtTable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="zzmwnfmrog" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
@@ -1251,7 +1253,7 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0001&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.2083&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.0084&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
@@ -1275,7 +1277,7 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 2.0000 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.0001 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.2083 &amp; NA\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.0084 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \bottomrule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{tabular}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{table}</span>
@@ -1328,7 +1330,7 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; McFadden's Pseudo R^2 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.2083 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.0084 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; NA &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/tbody&gt;</span>
@@ -1828,8 +1830,8 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.1286&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.2083&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;0.2075&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;0.3021&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
@@ -1870,10 +1872,10 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1285935</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $PseudoR2_base</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2074693</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.3021394</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $PseudoR2_comparison</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2083299</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.3028972</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $statistics</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 8 × 3</span></span>
@@ -1886,7 +1888,7 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> LR Test Statistic         2.31     <span style="color: #BB0000;">NA</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">6</span> LR degrees of freedom     1        <span style="color: #BB0000;">NA</span>    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">7</span> LR p-value                0.129    <span style="color: #BB0000;">NA</span>    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.208     0.208</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.303     0.302</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $gtTable</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;div id="pvteseuwbf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;"&gt;</span>
@@ -2373,8 +2375,8 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.1286&lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;NA&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     &lt;tr&gt;&lt;td headers="Statistic" class="gt_row gt_left"&gt;McFadden's Pseudo R^2&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.2083&lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;0.2075&lt;/td&gt;&lt;/tr&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="Model" class="gt_row gt_right"&gt;0.3029&lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;td headers="BaseModel" class="gt_row gt_right"&gt;0.3021&lt;/td&gt;&lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>
@@ -2397,7 +2399,7 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LR degrees of freedom &amp; 1.0000 &amp; NA\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> LR p-value &amp; 0.1286 &amp; NA\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.2083 &amp; 0.2075\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> McFadden's Pseudo R\textasciicircum{}2 &amp; 0.3029 &amp; 0.3021\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \bottomrule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{tabular}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{table}</span>
@@ -2450,8 +2452,8 @@ number of parameters. AIC and BIC are those of <code><a href="https://rdrr.io/r/
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:left;"&gt; McFadden's Pseudo R^2 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.2083 &lt;/td&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.2075 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.3029 &lt;/td&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;td style="text-align:right;"&gt; 0.3021 &lt;/td&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   &lt;/tr&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/tbody&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;/table&gt;</span>

@@ -276,7 +276,7 @@ summary(nm2)
 #>     AADTover10k, group_var = "ID", data = washington_roads, offset = "lnlength")
 #> 
 #> Model: negmultinom | family: NM2 | optimizer: BFGS
-#> Iterations: 34 
+#> Iterations: 39 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):

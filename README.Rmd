@@ -241,4 +241,5 @@ The vignettes cover the main workflows:
 
 - `vignette("choosing-a-count-distribution", package = "flexCountReg")`
 - `vignette("random-parameters-and-panels", package = "flexCountReg")`
+- `vignette("inference-prediction-and-comparison", package = "flexCountReg")`
 

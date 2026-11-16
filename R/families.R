@@ -278,7 +278,7 @@
       paste0(" With the mean parameterization the scale of its mixing ",
              "distribution cancels out of the likelihood, so it is not ",
              "estimated (it was estimated, without effect, in ",
-             "flexCountReg <= 0.1.2).")
+             "flexCountReg 0.1.1 and earlier).")
     } else ""
     stop("`dis_param_formula_2` was given, but family \"", family,
          "\" has no second distribution parameter to model.", why,

@@ -15,6 +15,10 @@
   formula <- formula(stats::as.formula(model$formula))
   model <- .fcr_normalize_model(model)
   model$data <- NULL   # the training data is stored once, in obj$data
+  # Package version that created the object (for migrating saved fits)
+  model$fcr_version <- tryCatch(
+    as.character(utils::packageVersion("flexCountReg")),
+    error = function(e) NA_character_)
 
   subclass <- switch(model$modelType %||% "countreg",
                      countreg = "countreg",

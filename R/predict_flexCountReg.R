@@ -210,7 +210,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     params <- get_params(family)
     coefs <- model$estimate
     
-    # Conventions of the fit: fits made before flexCountReg 0.1.3 have no
+    # Conventions of the fit: fits made with flexCountReg 0.1.1 or earlier have no
     # draw_version and used uniform draws on [mu - sigma/2, mu + sigma/2] and
     # multiplicative heterogeneity in means shared by all random parameters.
     legacy <- is.null(model$draw_version)
@@ -244,7 +244,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
       rand_var_params <- .fcr_coefs(coefs, paste0(rpar, ":St.Dev"))
       if (legacy && any(rpardists == "u")) {
         rlang::inform(paste(
-          "This model was fit with flexCountReg < 0.1.3, whose uniform",
+          "This model was fit with flexCountReg 0.1.1 or earlier, whose uniform",
           "random parameters span mu +/- St.Dev/2. Its uniform St.Dev values",
           "are halved to the current convention (mu +/- St.Dev); refit the",
           "model to update the estimates."),
@@ -447,7 +447,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     und_lin <- as.vector(X_und %*% und_pars)
     und_family <- model$underreport_family
     if (identical(und_family, "probit") && is.null(model$underreport_sign)) {
-      # Fits from flexCountReg <= 0.1.2 used P(reported) = 1 - pnorm(z'g)
+      # Fits from flexCountReg 0.1.1 and earlier used P(reported) = 1 - pnorm(z'g)
       p_report <- stats::pnorm(und_lin, lower.tail = FALSE)
     } else {
       p_report <- .report_prob(und_lin, und_family)
@@ -509,7 +509,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
 # ---- Internal helpers for predict() ------------------------------------------
 
 # Training-data blueprint (terms, factor levels, contrasts, offsets). Fits from
-# flexCountReg >= 0.1.3 store it; for older fits and for estimators that do
+# flexCountReg >= 0.1.2 store it; for older fits and for estimators that do
 # not yet store it, it is rebuilt from the training data kept in the object.
 .fcr_blueprint <- function(object, aux_formulas = list()) {
   model <- object$model

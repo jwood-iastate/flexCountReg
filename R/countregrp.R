@@ -92,7 +92,7 @@
 #'   symmetric triangular on \eqn{[-1, 1]}, so \eqn{\beta} lies in
 #'   \eqn{[\mu - \sigma, \mu + \sigma]}. Here \eqn{\sigma} is a half-width;
 #'   the standard deviation is \eqn{\sigma/\sqrt{3}} (uniform) or
-#'   \eqn{\sigma/\sqrt{6}} (triangular). Models fitted before version 0.1.3
+#'   \eqn{\sigma/\sqrt{6}} (triangular). Models fitted with version 0.1.1 or earlier
 #'   used \eqn{[\mu - \sigma/2, \mu + \sigma/2]} for the uniform; their
 #'   \eqn{\sigma} is converted automatically in \code{predict()}.
 #'   \item lognormal ("ln"): \eqn{\beta = \exp(\mu + \sigma \upsilon)},
@@ -501,7 +501,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$offset <- prep$blueprint$offset_label
   fit$engine <- engine
   fit$rpardists <- rpardists
-  # Draw conventions (flexCountReg >= 0.1.3): uniform draws on
+  # Draw conventions (flexCountReg >= 0.1.2): uniform draws on
   # [mu - sigma, mu + sigma], additive heterogeneity in means with one
   # coefficient per random parameter, separate Halton dimension for the
   # mixing distribution. Fits without this field used the older conventions.

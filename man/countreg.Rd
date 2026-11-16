@@ -380,12 +380,12 @@ The variance is:
 \subsection{NB-2 Model}{
 
 The PMF and log-likelihood functions are:
-\deqn{P(Y = y) = \frac{\Gamma(y + \alpha)}{y! \, \Gamma(\alpha)} 
-\left( \frac{\alpha}{\alpha + \mu} \right)^\alpha 
-\left( \frac{\mu}{\alpha + \mu} \right)^y}
-\deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + \alpha) - 
-\ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left( \frac{\alpha}{\alpha + 
-\mu_i} \right) + y_i \ln \left( \frac{\mu_i}{\alpha + \mu_i} \right) \right]}
+\deqn{P(Y = y) = \frac{\Gamma(y + 1/\alpha)}{y! \, \Gamma(1/\alpha)} 
+\left( \frac{1}{1 + \alpha\mu} \right)^{1/\alpha} 
+\left( \frac{\alpha\mu}{1 + \alpha\mu} \right)^y}
+\deqn{LL_{\text{NB2}} = \sum_{i=1}^n \left[ \ln \Gamma(y_i + 1/\alpha) - 
+\ln \Gamma(1/\alpha) - \ln y_i! - \frac{1}{\alpha} \ln(1 + \alpha\mu_i)
++ y_i \ln \left( \frac{\alpha\mu_i}{1 + \alpha\mu_i} \right) \right]}
 
 The mean is:
 \deqn{\mu = exp(X\beta)}
@@ -544,26 +544,17 @@ Thus, the parameter \eqn{\lambda} in the PL distribution when applied to
 regression analysis is:
 \deqn{\lambda=\frac{\mu\theta(\theta+1)}{\theta+2}}
 
-Using the replacement and simplifying results in:
-\deqn{f(y \mid \theta, \mu) = \\ \frac{\theta^2 (\mu \theta (\theta+1))^y 
-(\theta^2 (1+\mu) + \theta (2+\mu) + (\theta+2) (y+1))}{(\theta+1) 
-(\theta+2)^{y+1} (\theta^2 (1+\mu) + \theta (2+\mu))^{y+2}}}
-And
-\deqn{LL=2 \log(\theta) + y (\log(\mu) + \log(\theta) + \log(\theta+1)) + 
-\log(\theta^2 (1+\mu) + \theta (2+\mu) + (\theta+2) (y+1)) - \log(\theta+1) 
-- (y+1) \log(\theta+2) - (y+2) \log(\theta^2 (1+\mu) + \theta (2+\mu))}
+The PMF above is evaluated at this \eqn{\lambda}.
 
 The variance function is defined as:
 \deqn{\sigma^2=\mu+\left(1-\frac{2}{(\theta+2)^2}\right)\mu^2}
 
 It should be noted that the p-value for the parameter \code{ln(theta)} in the
 model summary is testing if the parameter \code{theta} is equal to a value of 1.
-This has no practical meaning. The Likelihood-Ratio (LR) test compares the
-Poisson-Lindley regression with a Poisson regression with the same
-independent variables. Thus, the LR test result indicates the statistical
-significance for the improvement in how well the model fits the data over a
-Poisson regression. This indicates the statistical significance of the
-\code{theta} parameter.
+This has no practical meaning. The PL model does not reduce to the Poisson
+model for any \eqn{\theta} (its variance is at least
+\eqn{\mu + \mu^2/2}), so a likelihood-ratio test against Poisson is not
+valid; compare the models with AIC and BIC.
 }
 
 \subsection{Poisson-Lindley-Gamma (PLG) Model}{
@@ -590,12 +581,13 @@ The Poisson-Lindley-Lognormal regression is based on a compound Poisson-
 Lindley-Lognormal distribution. Details of the distribution can be seen at
 \code{\link[flexCountReg]{dplindLnorm}}.
 
-The mean for the regression model is:
-\deqn{\mu=e^{X\beta}}
+The Poisson-Lindley mean parameter is \eqn{\mu=e^{X\beta}}, and the mean
+of the regression model (used by \code{predict()}) is:
+\deqn{E[Y]=m=e^{X\beta+\sigma^2/2}}
 
-The variance function is defined as:
-\deqn{\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}
-{2}}}+e^{\sigma^2}-1\right)\mu^2}
+The variance function is:
+\deqn{Var(Y)=m+\left(\left(2-\frac{2}{(\theta+2)^2}\right)
+e^{\sigma^2}-1\right)m^2}
 
 It should be noted that the p-value for the parameters \code{ln(theta)} and
 \code{ln(sigma)} in the model summary are testing if the parameter \code{theta} and

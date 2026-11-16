@@ -162,7 +162,7 @@ NULL
 #                      (n_het x K) matrix: beta_ik = mu_k + z_i' delta_k
 #                      ("n", "t", "u"; on the log scale for "ln"), and
 #                      beta_ik = mu_k * exp(z_i' delta_k) for "g". For
-#                      het_form = "legacy" (fits before flexCountReg 0.1.3) a
+#                      het_form = "legacy" (fits from flexCountReg 0.1.1 and earlier) a
 #                      vector shared by all parameters: mu_ik = mu_k exp(z_i'd).
 #   het_var_coefs      heterogeneity in scales: sigma_ik = sigma_k exp(s_i' phi)
 #

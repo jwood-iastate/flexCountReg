@@ -311,6 +311,16 @@
   r = 1 / alpha, so they tend continuously to the Poisson log-likelihood.
 * When fewer than 2 bootstrap replicates succeed, the fit is returned with
   NA standard errors and a warning, instead of an error.
+* Documentation now matches the implementation: the NB2 PMF uses size
+  1/alpha (as the variance and the code do); the PLL regression mean is
+  exp(X beta + sigma^2 / 2) with the corresponding variance; the PLL integral
+  uses the Poisson-Lindley scale lambda, not the mean; the PL regression
+  section gives the base PMF evaluated at lambda (the expanded formula had
+  the wrong power of theta + 2) and no longer describes an LR test against
+  Poisson; the PGE integral is over the generalized-exponential
+  distribution. Version references in code and messages refer to 0.1.1
+  (the last release) instead of a nonexistent 0.1.3, and fitted objects
+  record the package version that created them (`model$fcr_version`).
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

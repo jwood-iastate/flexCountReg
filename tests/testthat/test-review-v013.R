@@ -1,5 +1,5 @@
 # Regression tests for the corrections from the development review of
-# flexCountReg 0.1.3 (findings F01-F28).
+# flexCountReg 0.1.2 (findings F01-F28).
 
 test_that("F01: PGE and PW estimate only the shape parameter", {
   h <- randtoolbox::halton(200)
@@ -663,9 +663,13 @@ test_that("F22: inner mixing draws are separate, scrambled draws reproducible", 
   d <- washington_roads
   t_small <- system.time(
     a <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
-                     data = d, family = "PLN", ndraws = 100, mix_draws = 20,
-                     method = "BFGS", max.iters = 30))["elapsed"]
-  expect_equal(a$model$mix_draws, 20)
+                     data = d, family = "PLN", ndraws = 30, mix_draws = 10,
+                     method = "BFGS", max.iters = 10))["elapsed"]
+  expect_equal(a$model$mix_draws, 10)
+  expect_equal(countreg.rp(Total_crashes ~ lnaadt,
+                           rpar_formula = ~ -1 + speed50, data = d,
+                           family = "PLN", ndraws = 300, max.iters = 0,
+                           method = "BFGS")$model$mix_draws, 200)
   # Scrambled draws: predictions reuse the fit's draws and leave the
   # caller's random-number stream unchanged
   set.seed(4)

@@ -242,7 +242,7 @@
 <p>The results are also available as tibbles, and the model can be compared with a Poisson base model:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">gen.nb2</span>, conf.int <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 7 x 8</span></span>
+<span><span class="co">#&gt; # A tibble: 7 × 8</span></span>
 <span><span class="co">#&gt;   term        component estimate std.error statistic  p.value conf.low conf.high</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;       &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 (Intercept) mean        -7.40     0.473     -15.7  3.28e-55   -8.33     -6.47 </span></span>
@@ -250,37 +250,44 @@
 <span><span class="co">#&gt; 3 lnlength    mean         0.843    0.0700     12.0  2.24e-33    0.706     0.980</span></span>
 <span><span class="co">#&gt; 4 speed50     mean        -0.470    0.115      -4.08 4.46e- 5   -0.695    -0.244</span></span>
 <span><span class="co">#&gt; 5 AADT10kplus mean         0.770    0.130       5.92 3.13e- 9    0.515     1.02 </span></span>
-<span><span class="co">#&gt; 6 ln(alpha):~ distribu~   -1.62     0.374      -4.33 1.50e- 5   -2.35     -0.886</span></span>
-<span><span class="co">#&gt; 7 ln(alpha):~ distribu~    1.31     0.596       2.19 2.85e- 2    0.137     2.47</span></span>
+<span><span class="co">#&gt; 6 ln(alpha):… distribu…   -1.62     0.374      -4.33 1.50e- 5   -2.35     -0.886</span></span>
+<span><span class="co">#&gt; 7 ln(alpha):… distribu…    1.31     0.596       2.19 2.85e- 2    0.137     2.47</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">gen.nb2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 1 x 10</span></span>
+<span><span class="co">#&gt; # A tibble: 1 × 10</span></span>
 <span><span class="co">#&gt;   model    family logLik   AIC   BIC    df  nobs n_groups converged vcov_type</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;    &lt;chr&gt;   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt; &lt;int&gt;    &lt;int&gt; &lt;lgl&gt;     &lt;chr&gt;    </span></span>
 <span><span class="co">#&gt; 1 countreg NB2    -1065. 2144. 2181.     7  1501       NA TRUE      hessian</span></span>
 <span><span class="fu"><a href="reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="va">gen.nb2</span>, basemodel <span class="op">=</span> <span class="st">"Poisson"</span>, variables <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">$</span><span class="va">statistics</span></span>
-<span><span class="co">#&gt; # A tibble: 8 x 3</span></span>
-<span><span class="co">#&gt;   Statistic                 Model BaseModel</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;                     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 Log-likelihood        -1065.       -1076.</span></span>
-<span><span class="co">#&gt; 2 Number of parameters      7            5 </span></span>
-<span><span class="co">#&gt; 3 AIC                    2144.        2162.</span></span>
-<span><span class="co">#&gt; 4 BIC                    2181.        2188.</span></span>
-<span><span class="co">#&gt; 5 LR Test Statistic        22.1         NA </span></span>
-<span><span class="co">#&gt; 6 LR degrees of freedom     2           NA </span></span>
-<span><span class="co">#&gt; 7 LR p-value                0           NA </span></span>
-<span><span class="co">#&gt; 8 McFadden's Pseudo R^2     0.206       NA</span></span></code></pre></div>
+<span><span class="co">#&gt; # A tibble: 8 × 3</span></span>
+<span><span class="co">#&gt;   Statistic                  Model BaseModel</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;                      &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 Log-likelihood        -1065.        -1076.</span></span>
+<span><span class="co">#&gt; 2 Number of parameters      7             5 </span></span>
+<span><span class="co">#&gt; 3 AIC                    2144.         2162.</span></span>
+<span><span class="co">#&gt; 4 BIC                    2181.         2188.</span></span>
+<span><span class="co">#&gt; 5 LR Test Statistic        22.1          NA </span></span>
+<span><span class="co">#&gt; 6 LR degrees of freedom     2            NA </span></span>
+<span><span class="co">#&gt; 7 LR p-value                0            NA </span></span>
+<span><span class="co">#&gt; 8 McFadden's Pseudo R^2     0.0103       NA</span></span></code></pre></div>
 <p>A rootogram shows how well the fitted distribution reproduces the observed counts; bars that end above or below zero show counts that are over- or under-predicted:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pois</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">gen.nb2</span>, family <span class="op">=</span> <span class="st">"Poisson"</span>, dis_param_formula_1 <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span><span class="va">oldpar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">pois</span>, main <span class="op">=</span> <span class="st">"Poisson"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">gen.nb2</span>, main <span class="op">=</span> <span class="st">"Generalized NB-2"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-rootogram-1.png" width="100%"></p>
+<p><img src="reference/figures/README-rootogram-1.png" alt="" width="100%"></p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">oldpar</span><span class="op">)</span></span></code></pre></div>
 <p>Checking the CURE plot:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Covariate: indvar_values</span></span>
+<span><span class="co">#&gt; CURE data frame was provided. Its first column, lnaadt, will be used.</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span>
+<span><span class="co">#&gt; Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
+<p><img src="reference/figures/README-cureplot-initial-1.png" alt="" width="100%"></p>
 <p>Modifying the model:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gen.nb2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span>
@@ -313,11 +320,13 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Log-likelihood: -1061.914 | AIC: 2141.828 | BIC: 2189.653 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span>
-<span><span class="co">#&gt; LR test vs Poisson: chi-sq = 16.247 on 2 df, p-value = 0.000297</span></span></code></pre></div>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co">#&gt; LR test vs Poisson: chi-sq = 16.247 on 2 df, p-value = 0.000297</span></span>
+<span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Covariate: indvar_values</span></span>
+<span><span class="co">#&gt; CURE data frame was provided. Its first column, lnaadt, will be used.</span></span></code></pre></div>
+<p><img src="reference/figures/README-cureplot-updt-1.png" alt="" width="100%"></p>
 <p>Estimating another model (NB-P), without the interaction:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gen.nbp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span>
 <span>                      <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADT10kplus</span>,</span>
 <span>                    data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NBP"</span>,</span>
@@ -334,15 +343,15 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
 <span><span class="co">#&gt;                       Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; (Intercept)            -7.7637     0.4931  -15.75  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; lnaadt                  0.9382     0.0576   16.28  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; lnlength                0.8362     0.0696   12.01  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; speed50                -0.3843     0.1106   -3.47  0.00051 ***</span></span>
-<span><span class="co">#&gt; ShouldWidth04           0.2578     0.0922    2.80  0.00516 ** </span></span>
-<span><span class="co">#&gt; AADT10kplus             0.6893     0.1327    5.19    2e-07 ***</span></span>
-<span><span class="co">#&gt; ln(alpha):(Intercept)  -1.4960     0.5461   -2.74  0.00615 ** </span></span>
-<span><span class="co">#&gt; ln(alpha):lnlength     -0.1673     0.4468   -0.37  0.70804    </span></span>
-<span><span class="co">#&gt; ln(p)                   0.5247     0.1838    2.85  0.00431 ** </span></span>
+<span><span class="co">#&gt; (Intercept)            -7.7637     0.4407  -17.62  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; lnaadt                  0.9382     0.0518   18.12  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; lnlength                0.8362     0.0695   12.04  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; speed50                -0.3843     0.1086   -3.54   0.0004 ***</span></span>
+<span><span class="co">#&gt; ShouldWidth04           0.2578     0.0915    2.82   0.0048 ** </span></span>
+<span><span class="co">#&gt; AADT10kplus             0.6893     0.1257    5.48  4.2e-08 ***</span></span>
+<span><span class="co">#&gt; ln(alpha):(Intercept)  -1.4960     0.1212  -12.34  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; ln(alpha):lnlength     -0.1673     0.2548   -0.66   0.5114    </span></span>
+<span><span class="co">#&gt; ln(p)                   0.5247     0.1879    2.79   0.0052 ** </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -350,57 +359,60 @@
 <span><span class="co">#&gt; N: 1501</span></span>
 <span><span class="co">#&gt; LR test vs Poisson: chi-sq = 18.145 on 3 df, p-value = 0.000411</span></span></code></pre></div>
 <p>Checking the CURE plot (notice that the CURE plot is MUCH better in this case than the NB-2 without the interaction and still better than the modified NB-2):</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nbp</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nbp</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Covariate: indvar_values</span></span>
+<span><span class="co">#&gt; CURE data frame was provided. Its first column, lnaadt, will be used.</span></span></code></pre></div>
+<p><img src="reference/figures/README-cureplot-lnaadt-1.png" alt="" width="100%"></p>
 <p>Creating a table to compare the models:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Generalized NB-2"</span> <span class="op">=</span> <span class="va">gen.nb2</span>, <span class="st">"Generalized NB-P"</span> <span class="op">=</span> <span class="va">gen.nbp</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 15 x 3</span></span>
+<span><span class="co">#&gt; # A tibble: 15 × 3</span></span>
 <span><span class="co">#&gt;    Parameter             `Generalized NB-2` `Generalized NB-P`</span></span>
 <span><span class="co">#&gt;    &lt;chr&gt;                 &lt;chr&gt;              &lt;chr&gt;             </span></span>
-<span><span class="co">#&gt;  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.493)*** </span></span>
-<span><span class="co">#&gt;  2 lnaadt                0.93 (0.057)***    0.938 (0.058)***  </span></span>
-<span><span class="co">#&gt;  3 lnlength              0.853 (0.07)***    0.836 (0.07)***   </span></span>
-<span><span class="co">#&gt;  4 speed50               -0.4 (0.109)***    -0.384 (0.111)*** </span></span>
+<span><span class="co">#&gt;  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.441)*** </span></span>
+<span><span class="co">#&gt;  2 lnaadt                0.93 (0.057)***    0.938 (0.052)***  </span></span>
+<span><span class="co">#&gt;  3 lnlength              0.853 (0.07)***    0.836 (0.069)***  </span></span>
+<span><span class="co">#&gt;  4 speed50               -0.4 (0.109)***    -0.384 (0.109)*** </span></span>
 <span><span class="co">#&gt;  5 ShouldWidth04         0.261 (0.092)**    0.258 (0.092)**   </span></span>
-<span><span class="co">#&gt;  6 AADT10kplus           5.961 (4.512)      0.689 (0.133)***  </span></span>
+<span><span class="co">#&gt;  6 AADT10kplus           5.961 (4.512)      0.689 (0.126)***  </span></span>
 <span><span class="co">#&gt;  7 I(AADT10kplus/lnaadt) -50.133 (43.002)   ---               </span></span>
-<span><span class="co">#&gt;  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.546)**  </span></span>
-<span><span class="co">#&gt;  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.447)    </span></span>
-<span><span class="co">#&gt; 10 ln(p)                 ---                0.525 (0.184)**   </span></span>
+<span><span class="co">#&gt;  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.121)*** </span></span>
+<span><span class="co">#&gt;  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.255)    </span></span>
+<span><span class="co">#&gt; 10 ln(p)                 ---                0.525 (0.188)**   </span></span>
 <span><span class="co">#&gt; 11 N Obs.                1501               1501              </span></span>
 <span><span class="co">#&gt; 12 LL                    -1061.914          -1062.195         </span></span>
 <span><span class="co">#&gt; 13 AIC                   2141.828           2142.389          </span></span>
 <span><span class="co">#&gt; 14 BIC                   2189.653           2190.214          </span></span>
-<span><span class="co">#&gt; 15 Pseudo-R-Sq.          0.209              0.208</span></span></code></pre></div>
+<span><span class="co">#&gt; 15 Pseudo-R-Sq.          0.303              0.303</span></span></code></pre></div>
 <p>Note that the metrics for comparison are similar. While the models both have the same number of parameters, the NB-P was able to get better performance without requiring the interaction terms (which leads to strange relationships between the exposure metric and the outcome).</p>
 <p>Predictions have one value per row of new data, and the probability of each count is also available:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nd</span> <span class="op">&lt;-</span> <span class="va">washington_roads</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">gen.nbp</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.6417932 0.5787698 0.8832648</span></span>
+<span><span class="co">#&gt; [1] 0.6417932 0.5787699 0.8832648</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">gen.nbp</span>, newdata <span class="op">=</span> <span class="va">nd</span>, type <span class="op">=</span> <span class="st">"prob"</span>, max_count <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          0     1     2     3     4</span></span>
 <span><span class="co">#&gt; [1,] 0.556 0.300 0.105 0.030 0.008</span></span>
 <span><span class="co">#&gt; [2,] 0.587 0.288 0.093 0.025 0.006</span></span>
 <span><span class="co">#&gt; [3,] 0.450 0.326 0.147 0.053 0.017</span></span></code></pre></div>
 <p>Zero-inflated and hurdle versions of any distribution are fitted with <code>zero_formula</code>. For example, animal-related crashes are zero on most segment-years, and a zero-inflated Poisson model with the zero probability depending on the speed limit improves on the Poisson model:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">washington_roads</span><span class="op">$</span><span class="va">Animal</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.9540306</span></span>
 <span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Animal</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>, data <span class="op">=</span> <span class="va">washington_roads</span>,</span>
 <span>                family <span class="op">=</span> <span class="st">"Poisson"</span>, zero_formula <span class="op">=</span> <span class="op">~</span> <span class="va">speed50</span>, method <span class="op">=</span> <span class="st">"NR"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">zip</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 5 x 6</span></span>
-<span><span class="co">#&gt;   term             component estimate std.error statistic  p.value</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 (Intercept)      mean        -8.64      1.16     -7.48  7.26e-14</span></span>
-<span><span class="co">#&gt; 2 lnaadt           mean         0.976     0.133     7.34  2.14e-13</span></span>
-<span><span class="co">#&gt; 3 lnlength         mean         1.53      0.212     7.22  5.29e-13</span></span>
-<span><span class="co">#&gt; 4 Zero:(Intercept) zero        -0.116     0.469    -0.247 8.05e- 1</span></span>
-<span><span class="co">#&gt; 5 Zero:speed50     zero         1.51      0.474     3.19  1.43e- 3</span></span>
+<span><span class="co">#&gt; # A tibble: 5 × 6</span></span>
+<span><span class="co">#&gt;   term             component estimate std.error statistic   p.value</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 (Intercept)      mean        -8.64     NA        NA     NA       </span></span>
+<span><span class="co">#&gt; 2 lnaadt           mean         0.976    NA        NA     NA       </span></span>
+<span><span class="co">#&gt; 3 lnlength         mean         1.53      0.195     7.86   3.75e-15</span></span>
+<span><span class="co">#&gt; 4 Zero:(Intercept) zero        -0.115     0.320    -0.360  7.19e- 1</span></span>
+<span><span class="co">#&gt; 5 Zero:speed50     zero         1.51      0.419     3.60   3.12e- 4</span></span>
 <span><span class="fu"><a href="reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">zip</span>, zero_formula <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span>, model2 <span class="op">=</span> <span class="va">zip</span><span class="op">)</span><span class="op">$</span><span class="va">statistics</span></span>
-<span><span class="co">#&gt; # A tibble: 8 x 3</span></span>
+<span><span class="co">#&gt; # A tibble: 8 × 3</span></span>
 <span><span class="co">#&gt;   Statistic                Model BaseModel</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;                    &lt;dbl&gt;     &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 Log-likelihood        -266.     -278.   </span></span>
@@ -412,7 +424,7 @@
 <span><span class="co">#&gt; 7 LR p-value               0        NA    </span></span>
 <span><span class="co">#&gt; 8 McFadden's Pseudo R^2    0.222     0.187</span></span></code></pre></div>
 <p>With tidymodels (requires the parsnip package):</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tidymodels/parsnip" class="external-link">parsnip</a></span><span class="op">)</span></span>
 <span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/count_reg.html">count_reg</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"flexCountReg"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">spec</span>, <span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span>,</span>

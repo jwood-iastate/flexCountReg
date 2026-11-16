@@ -128,7 +128,9 @@ and
 with `panel_id`), the `nobs` attribute of
 [`logLik()`](https://rdrr.io/r/stats/logLik.html), which
 [`BIC()`](https://rdrr.io/r/stats/AIC.html) uses, is the number of
-panels, because the panels are the independent units.
+panels, because the panels are the independent units. With frequency
+weights (`weights`), it is the sum of the weights of the rows (or
+panels), the size of the expanded data.
 
 [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) and
 [`residuals()`](https://rdrr.io/r/stats/residuals.html) are for the rows

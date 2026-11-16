@@ -30,6 +30,7 @@ standard way to compare the count distributions this package offers."><meta prop
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/jwood-iastate/flexCountReg/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -38,7 +39,7 @@ standard way to compare the count distributions this package offers."><meta prop
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Rootogram for a count regression model</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/jwood-iastate/flexCountReg/blob/main/R/diagnostics.R" class="external-link"><code>R/diagnostics.R</code></a></small>
       <div class="d-none name"><code>rootogram.Rd</code></div>
     </div>
 
@@ -76,7 +77,9 @@ standard way to compare the count distributions this package offers.</p>
 
 <dt id="arg-newdata">newdata<a class="anchor" aria-label="anchor" href="#arg-newdata"></a></dt>
 <dd><p>optional data (with the outcome) to evaluate the model on;
-defaults to the rows used in estimation.</p></dd>
+defaults to the rows used in estimation.
+Without <code>newdata</code>, the observed and expected frequencies count each
+row with its frequency weight.</p></dd>
 
 
 <dt id="arg-max-count">max_count<a class="anchor" aria-label="anchor" href="#arg-max-count"></a></dt>

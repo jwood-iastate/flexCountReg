@@ -49,7 +49,8 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 - sigma:
 
-  lognormal sigma parameter (\>0).
+  lognormal sigma parameter (\>= 0; 0 gives the Poisson-Lindley
+  distribution).
 
 - ndraws:
 
@@ -108,12 +109,14 @@ CDF. `qplindLnorm` computes quantiles. `rplindLnorm` generates random
 draws.
 
 The PMF is: \$\$ f(y\|\mu,\theta,\sigma)=\int_0^\infty
-\frac{\theta^2\mu^y x^y(\theta+\mu x+y+1)} {(\theta+1)(\theta+\mu
-x)^{y+2}} \frac{\exp\left(-\frac{\ln^2(x)}{2\sigma^2}\right)}
+\frac{\theta^2(\lambda x)^y(\theta+\lambda x+y+1)}
+{(\theta+1)(\theta+\lambda x)^{y+2}}
+\frac{\exp\left(-\frac{\ln^2(x)}{2\sigma^2}\right)}
 {x\sigma\sqrt{2\pi}}dx \$\$
 
-Where \\\mu\\ is the `mean` argument (the Poisson-Lindley mean). The
-mean of the distribution is: \$\$ E\[y\]=\mu
+Where \\\mu\\ is the `mean` argument (the Poisson-Lindley mean) and
+\\\lambda=\mu\theta(\theta+1)/(\theta+2)\\ is the corresponding
+Poisson-Lindley scale. The mean of the distribution is: \$\$ E\[y\]=\mu
 e^{\sigma^2/2}=\frac{\lambda(\theta+2)e^{\sigma^2/2}} {\theta(\theta+1)}
 \$\$
 

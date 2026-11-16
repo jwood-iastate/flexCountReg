@@ -82,7 +82,9 @@ predict(
   matrix of probabilities \\P(Y = k)\\ with one row per row of `newdata`
   and one column per count \\k = 0, \dots,\\ `max_count` (passed in
   `...`; default the largest count in the training data), for rootograms
-  and for scoring models out of sample. Types other than `"response"`
+  and for scoring models out of sample. With `overflow = TRUE` (in
+  `...`), a last column holds the tail mass \\P(Y \> \\
+  `max_count`\\)\\, so each row sums to 1. Types other than `"response"`
   are available for `countreg` models only.
 
 - new_data:

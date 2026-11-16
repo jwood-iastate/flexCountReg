@@ -510,6 +510,7 @@ The vignettes cover the main workflows:
 
 - [`vignette("choosing-a-count-distribution", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/choosing-a-count-distribution.md)
 - [`vignette("random-parameters-and-panels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md)
+- [`vignette("inference-prediction-and-comparison", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/inference-prediction-and-comparison.md)
 
 # Package index
 
@@ -704,3 +705,5 @@ A parsnip model specification with the flexCountReg engine.
   distribution](https://jwood-iastate.github.io/flexCountReg/articles/choosing-a-count-distribution.md):
 - [Random parameters and panel
   models](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md):
+- [Inference, prediction and model
+  comparison](https://jwood-iastate.github.io/flexCountReg/articles/inference-prediction-and-comparison.md):

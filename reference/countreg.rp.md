@@ -29,7 +29,8 @@ countreg.rp(
   bootstraps = NULL,
   engine = "halton",
   keep_data = TRUE,
-  panel_id = NULL
+  panel_id = NULL,
+  mix_draws = NULL
 )
 ```
 
@@ -104,7 +105,10 @@ countreg.rp(
 
 - scrambled:
 
-  if the Halton draws should be scrambled.
+  if the Halton draws should be scrambled. Scrambled draws are generated
+  from a random seed that is stored in the fit, so predictions reuse the
+  same draws (and [`set.seed()`](https://rdrr.io/r/base/Random.html)
+  before fitting makes the fit reproducible).
 
 - correlated:
 
@@ -176,6 +180,14 @@ countreg.rp(
 
   deprecated; use `group_var`.
 
+- mix_draws:
+
+  the number of Halton draws for integrating over the mixing
+  distribution of the PLN, PGE, PLL and PW families (inside each
+  random-parameter draw). The default is `min(ndraws, 200)`. The cost of
+  these families grows with `ndraws * mix_draws`, so increasing `ndraws`
+  no longer also increases the inner integration.
+
 ## Value
 
 An object of class `flexCountReg` which is a list with the following
@@ -205,9 +217,9 @@ that tools do not mistake for an S3 method.
   symmetric triangular on \\\[-1, 1\]\\, so \\\beta\\ lies in \\\[\mu -
   \sigma, \mu + \sigma\]\\. Here \\\sigma\\ is a half-width; the
   standard deviation is \\\sigma/\sqrt{3}\\ (uniform) or
-  \\\sigma/\sqrt{6}\\ (triangular). Models fitted before version 0.1.3
-  used \\\[\mu - \sigma/2, \mu + \sigma/2\]\\ for the uniform; their
-  \\\sigma\\ is converted automatically in
+  \\\sigma/\sqrt{6}\\ (triangular). Models fitted with version 0.1.1 or
+  earlier used \\\[\mu - \sigma/2, \mu + \sigma/2\]\\ for the uniform;
+  their \\\sigma\\ is converted automatically in
   [`predict()`](https://rdrr.io/r/stats/predict.html).
 
 - lognormal ("ln"): \\\beta = \exp(\mu + \sigma \upsilon)\\, always

@@ -11,7 +11,7 @@ cureplot(
   model,
   data = NULL,
   indvar = NULL,
-  method = "Simulated",
+  method = NULL,
   n_resamples = 0,
   ...
 )
@@ -25,8 +25,9 @@ cureplot(
 
 - data:
 
-  Optional dataframe. If not provided, the data used to fit the model
-  will be used.
+  Optional dataframe. If not provided, the rows used to fit the model
+  are used. Rows with missing values in the outcome, the predictors or
+  `indvar` are left out.
 
 - indvar:
 
@@ -37,9 +38,11 @@ cureplot(
 
 - method:
 
-  Optional parameter to pass to the predict function. This is only used
-  for random parameters models (e.g., "Simulated" or "Individual"). For
-  further details, see
+  Optional prediction method passed to
+  [`predict()`](https://rdrr.io/r/stats/predict.html) for
+  random-parameter models (e.g. "Simulated", "Exact" or "Individual")
+  and negative multinomial models ("Standard" or "EB"). The default
+  (`NULL`) uses the estimator's default. For further details, see
   [`predict.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md).
 
 - n_resamples:

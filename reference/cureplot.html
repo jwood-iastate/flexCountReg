@@ -24,6 +24,7 @@ package."><meta property="og:image" content="https://jwood-iastate.github.io/fle
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/jwood-iastate/flexCountReg/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -32,7 +33,7 @@ package."><meta property="og:image" content="https://jwood-iastate.github.io/fle
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Cumulative Residuals (CURE) Plot for Count Models</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/jwood-iastate/flexCountReg/blob/main/R/cureplot.R" class="external-link"><code>R/cureplot.R</code></a></small>
       <div class="d-none name"><code>cureplot.Rd</code></div>
     </div>
 
@@ -48,7 +49,7 @@ package.</p>
 <span>  <span class="va">model</span>,</span>
 <span>  data <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  indvar <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"Simulated"</span>,</span>
+<span>  method <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_resamples <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -63,8 +64,9 @@ package.</p>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
-<dd><p>Optional dataframe. If not provided, the data used to fit the
-model will be used.</p></dd>
+<dd><p>Optional dataframe. If not provided, the rows used to fit the
+model are used. Rows with missing values in the outcome, the
+predictors or <code>indvar</code> are left out.</p></dd>
 
 
 <dt id="arg-indvar">indvar<a class="anchor" aria-label="anchor" href="#arg-indvar"></a></dt>
@@ -74,9 +76,11 @@ against. If not provided, the plot will be against the predicted values.</p></dd
 
 
 <dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>Optional parameter to pass to the predict function. This is
-only used for random parameters models (e.g., "Simulated" or "Individual").
-For further details, see <code><a href="predict.flexCountReg.html">predict.flexCountReg</a></code>.</p></dd>
+<dd><p>Optional prediction method passed to <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> for
+random-parameter models (e.g. "Simulated", "Exact" or "Individual") and
+negative multinomial models ("Standard" or "EB"). The default
+(<code>NULL</code>) uses the estimator's default. For further details, see
+<code><a href="predict.flexCountReg.html">predict.flexCountReg</a></code>.</p></dd>
 
 
 <dt id="arg-n-resamples">n_resamples<a class="anchor" aria-label="anchor" href="#arg-n-resamples"></a></dt>

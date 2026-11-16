@@ -264,11 +264,226 @@
   [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
   includes heterogeneity in means and variances.
 
+### Corrections from the development review
+
+- PGE and PW: with the mean parameterization, the scale of the mixing
+  distribution cancels out of the likelihood, so it was not identified
+  (the PMF is identical for every scale). These families now estimate
+  only the shape parameter (one fewer parameter, so AIC and BIC change),
+  and `dis_param_formula_2` is an error for them. Predictions from fits
+  made with earlier versions are unchanged. The
+  [`dpge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md)/[`dpoisweibull()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonWeibull.md)
+  families of functions keep their scale arguments.
+- GP1 and GP2 with a negative dispersion: the PMF is truncated and
+  renormalized, so `mu` is a location parameter, not the mean (GP1 with
+  mu = 0.75 and phi = -0.5 has mean 0.803). Predictions, Pearson
+  residuals (variances), Empirical Bayes and random-parameter
+  predictions now use the exact moments of the implemented PMF. Exact
+  random-parameter predictions fall back to Simulated for these models,
+  because the mean is not proportional to exp(X beta). The GP
+  normalizing constants are computed vectorized, which makes GP
+  random-parameter models much faster.
+- Underreporting is binomial thinning of the true counts, and the model
+  of the reported counts now matches it: for NB1 and PIG1 the reported
+  counts’ dispersion is p \* alpha, and for NBP alpha \* p^(2 - P)
+  (before, the true-count dispersion was used unchanged, which is not
+  the distribution of thinned counts). Poisson, NB2, PIG2, PIG and the
+  mixed-Poisson families (PLN, PL, PLG, PLL, PGE, PW, SI) were already
+  exact. GP1, GP2, COM and GW are not closed under thinning, so
+  underreporting is now an error for them. This changes NB1, NBP and
+  PIG1 underreporting estimates.
+- Underreporting identification: an intercept-only `underreport_formula`
+  is an error (only exp(b0) \* p is identified), and
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  warns when the reporting and count coefficients are nearly collinear
+  (correlation above 0.99), which happens when reporting is separated
+  from the count mean only by the curvature of the link function.
+- Likelihood-ratio tests are reported only for valid nesting.
+  [`summary()`](https://rdrr.io/r/base/summary.html) no longer reports a
+  test against Poisson for PL, PLG and PLL (which cannot reduce to
+  Poisson: their variance is at least mu + mu^2 / 2), for NBP, SI, PW,
+  PGE and GW (nonregular restrictions), or for boundary families with a
+  dispersion formula.
+  [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
+  uses the same rules (same estimator and model components, nested
+  parameters and families), uses a 50:50 chi-square mixture when one
+  parameter is on the boundary (also with extra mean covariates),
+  requires two fitted models to use the same observations, outcome,
+  offsets and weights, returns `LR_type`, and gives no p-value (instead
+  of 1) when the larger model has the lower log-likelihood. The README
+  zero-inflation example now compares models by AIC and BIC.
+- Likelihoods use log-probabilities computed on the log scale (every
+  family density has a `log` argument), so extreme counts keep finite
+  log-likelihoods (log P(Y = 1000 \| mu = 1) = -5913 instead of log(0)).
+  Zero-inflated and hurdle adjustments are done on the log scale, and
+  rows or panels with zero weight contribute exactly 0.
+- The Conway-Maxwell-Poisson functions use the log normalizing constant
+  (it overflowed for lambda = 1000, nu = 1, so
+  `dcom(1000, lambda = 1000, nu = 1)` was 0 instead of 0.0126), one
+  support rule for the PMF, CDF, quantiles and moments, moments computed
+  from the normalized PMF, and a bracketed solver for the rate given the
+  mean (accurate to about 1e-8, NaN with a warning when it fails,
+  instead of silently returning an unconverged value).
+- Correlated random parameters with three or more parameters: the
+  `Chol:` labels and the default starting values were built row by row
+  while the Cholesky factor was filled column by column, so labels were
+  attached to the wrong elements, named starting values went to the
+  wrong elements, and the default start was a singular matrix instead of
+  0.1 \* I. Labels, starting values, the likelihood and predictions now
+  use one packing. Estimates and predictions of earlier fits were
+  internally consistent; only their labels were wrong.
+- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+  rejects a variable in both `formula` and `rpar_formula` when its
+  random parameter is normal, uniform or triangular (only the sum of the
+  fixed coefficient and the random mean is identified). Lognormal and
+  gamma random parameters with a fixed shift are still allowed.
+- Auxiliary formulas (distribution parameters, underreporting, zero
+  model, random parameters, heterogeneity) keep their trained terms, so
+  data-dependent bases such as
+  [`poly()`](https://rdrr.io/r/stats/poly.html),
+  [`splines::ns()`](https://rdrr.io/r/splines/ns.html) and
+  [`scale()`](https://rdrr.io/r/base/scale.html) are evaluated with the
+  training values at prediction time (a row is predicted the same alone
+  or in any batch).
+- [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+  uses the shared data preparation and stores the training blueprint:
+  predictions use the training factor levels, contrasts and bases and
+  coefficients by name; a missing offset column is an error instead of
+  silently dropping the offset; giving both a formula offset and
+  `offset` is an error; EB predictions handle transformed responses;
+  named `start.vals` are matched by name; convergence uses the
+  optimizer’s own return codes (a BFGS fit stopped at the iteration
+  limit was reported as converged); and the stored BIC uses the number
+  of panels, as [`BIC()`](https://rdrr.io/r/stats/AIC.html) does.
+- [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
+  [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
+  and
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  predictions use the estimates by name rather than a cached copy, so
+  their delta-method marginal-effect standard errors are no longer zero.
+- The
+  [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  bootstrap resamples the model’s independent units by default (panels
+  for panel models), gives every sampled cluster a fresh id (a cluster
+  drawn twice is two panels), resamples a numeric weights vector with
+  its rows, refits without an inner bootstrap, counts only converged
+  refits, and errors for a `cluster_var` that is not in the data.
+- Bootstrapped standard errors use only replicates whose refit converged
+  and gave finite estimates for every parameter (failed optimizations
+  were counted as successes before). The warning about failed replicates
+  gives the reasons, the counts are stored (`boot_failures`), and the
+  covariance uses the accepted replicates only (not pairwise deletion).
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+  applies the same rule.
+- Frequency weights now give the same results as expanding the data: the
+  robust (sandwich) covariance uses sum(w s s’) instead of sum(w^2 s
+  s’), and BIC uses the sum of the weights (of rows, or of panels in
+  panel models) as the sample size.
+  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+  weights that vary within a panel are an error (they were silently
+  replaced by the first weight of the panel). The parsnip engine warns
+  that importance weights are treated as frequencies.
+- Hurdle models: [`simulate()`](https://rdrr.io/r/stats/simulate.html)
+  draws membership first and positive counts from the exact
+  zero-truncated distribution (by inversion), instead of redrawing zeros
+  at most 1,000 times and keeping the remaining zeros (about 37% of the
+  “positive” draws were zero for a count mean of 0.001). Predictions,
+  Pearson variances and probability matrices use 1 - P(Y = 0) =
+  -expm1(log P(Y = 0)), which keeps its precision when P(Y = 0) is close
+  to 1.
+- All count p-functions
+  ([`pplind()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindley.md),
+  [`ppinvgaus()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonInverseGaussian.md),
+  [`ppinvgamma()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonInverseGamma.md),
+  [`ppLnorm()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLognormal.md),
+  [`pplindLnorm()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindleyLognormal.md),
+  [`pplindGamma()`](https://jwood-iastate.github.io/flexCountReg/reference/NegativeBinomialLindley.md),
+  [`ppge()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonGeneralizedExponential.md),
+  [`ppoisweibull()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonWeibull.md),
+  [`psichel()`](https://jwood-iastate.github.io/flexCountReg/reference/SichelDistribution.md),
+  [`pgwar()`](https://jwood-iastate.github.io/flexCountReg/reference/Generalized-Waring.md),
+  [`pcom()`](https://jwood-iastate.github.io/flexCountReg/reference/COMDistribution.md),
+  [`pgp1()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson.md),
+  [`pgp2()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedPoisson2.md))
+  follow one contract: NA gives NA (it gave 0), q \< 0 and -Inf give 0,
+  Inf gives 1 (several gave 0 or failed with “result would be too long a
+  vector”), the upper tail and log scale follow, and zero-length input
+  gives `numeric(0)`. Small upper tails are summed directly on the log
+  scale instead of taken as 1 - CDF.
+- [`cureplot()`](https://jwood-iastate.github.io/flexCountReg/reference/cureplot.md)
+  uses the rows used in estimation by default, builds the outcome,
+  predictions and plotting variable with one mask of complete rows (they
+  could be misaligned after missing values), errors for an unknown
+  `indvar`, and passes `method` only to random-parameter and negative
+  multinomial models (the default `NULL` uses the estimator’s default).
+  `augment(data = )` predicts the rows of `data` in the order given
+  (before, data of the training size were matched to the cached fitted
+  values by position).
+- Input checks before optimization, shared by all estimators: the
+  response must be finite, non-negative whole numbers (non-integer
+  counts are now an error, not a warning); design matrices must be
+  finite after formula transformations
+  (e.g. [`log()`](https://rdrr.io/r/base/Log.html) of a non-positive
+  value) and of full column rank (aliased columns are named); weights
+  must be finite with a positive total; `start.vals` must be finite;
+  `max.iters` and `ndraws` must be whole numbers.
+- Random-parameter predictions: Simulated predictions now report a
+  nonexistent expected value (lognormal coefficient with positive x,
+  gamma coefficient beyond its MGF domain) like Exact predictions,
+  instead of a finite average of draws. `rp_mgf()` handles zero-scale
+  lognormal and gamma coefficients exactly and computes uniform and
+  triangular MGFs on the log scale.
+- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+  has a `mix_draws` argument for the inner integration of the PLN, PGE,
+  PLL and PW families (default `min(ndraws, 200)`), so the cost is
+  proportional to `ndraws * mix_draws` instead of `ndraws^2`. Scrambled
+  Halton draws are generated from a seed stored in the fit, so
+  predictions reuse the estimation draws and leave the caller’s random
+  numbers unchanged.
+- [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  and
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+  compute their panel log-likelihoods and scores without the
+  cancellation in lgamma(r + Y) - lgamma(r) for large r = 1 / alpha, so
+  they tend continuously to the Poisson log-likelihood.
+- When fewer than 2 bootstrap replicates succeed, the fit is returned
+  with NA standard errors and a warning, instead of an error.
+- Documentation now matches the implementation: the NB2 PMF uses size
+  1/alpha (as the variance and the code do); the PLL regression mean is
+  exp(X beta + sigma^2 / 2) with the corresponding variance; the PLL
+  integral uses the Poisson-Lindley scale lambda, not the mean; the PL
+  regression section gives the base PMF evaluated at lambda (the
+  expanded formula had the wrong power of theta + 2) and no longer
+  describes an LR test against Poisson; the PGE integral is over the
+  generalized-exponential distribution. Version references in code and
+  messages refer to 0.1.1 (the last release) instead of a nonexistent
+  0.1.3, and fitted objects record the package version that created them
+  (`model$fcr_version`).
+- Diagnostics: randomized quantile residuals are computed in chunks of
+  rows sorted by the outcome (bounded memory; one large count no longer
+  widens every row’s probability grid); `predict(type = "prob")`
+  validates `max_count` and adds the tail mass P(Y \> max_count) with
+  `overflow = TRUE`; rootograms count frequency weights; and
+  `simulate(seed = )` restores the caller’s random-number state.
+- Packaging: the parsnip engine is registered even when another package
+  has already registered a `count_reg` model; `DESCRIPTION` has
+  `BugReports` and the GitHub URL; a `CITATION` file and a contributor
+  guide with a release checklist were added; CI also checks the minimum
+  R version (4.1.0); the slowest stochastic tests are skipped on CRAN.
+- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+  starts GP1/GP2 at zero dispersion (the Poisson model) instead of a
+  strongly underdispersed value that gave larger counts zero
+  probability, so default GP fits no longer fail with “NA in the initial
+  gradient”.
+
 ### Bug fixes found by the extended test suite
 
 - [`pcom()`](https://jwood-iastate.github.io/flexCountReg/reference/COMDistribution.md)
-  ignored `lower.tail` and `log.p`. Recycling of `mu`, `lambda` and `nu`
-  in
+  ignored `lower.tail` and `log.p`. Both tails are now summed directly
+  on the log scale with a precise normalizing constant, so upper tails
+  are never negative and keep their relative precision (e.g.
+  `pcom(25, lambda = 1, nu = 1, lower.tail = FALSE)` equals the Poisson
+  value 9.5e-28). Recycling of `mu`, `lambda` and `nu` in
   [`dcom()`](https://jwood-iastate.github.io/flexCountReg/reference/COMDistribution.md),
   [`pcom()`](https://jwood-iastate.github.io/flexCountReg/reference/COMDistribution.md)
   and
@@ -316,8 +531,22 @@
   [`predict()`](https://rdrr.io/r/stats/predict.html) and
   [`augment()`](https://generics.r-lib.org/reference/augment.html) work
   with `keep_data = FALSE`.
-- Data preparation rejects infinite counts, expands `.` in formulas, and
-  keeps the contrasts of factors in auxiliary formulas for prediction.
+- Data preparation rejects infinite counts and non-numeric (e.g. factor)
+  responses, expands `.` in formulas, and keeps the contrasts of factors
+  in auxiliary formulas for prediction. Fitted objects store the
+  expanded formulas, so
+  [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  and bootstrap refits of models written with `.` work.
+- `method = "Nelder-Mead"` is accepted by every estimator as an alias of
+  `"NM"`, and
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  accepts all optimizers the other estimators accept.
+- [`qplind()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindley.md)
+  and
+  [`qplindLnorm()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindleyLognormal.md)
+  return `NA` for missing parameters instead of failing, and
+  [`qplindLnorm()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindleyLognormal.md)/[`rplindLnorm()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindleyLognormal.md)
+  accept `sigma = 0` (the Poisson-Lindley limit).
 - [`regCompTable()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.md)
   fits the baseline model only when the pseudo-R^2 is requested.
   [`tidy()`](https://generics.r-lib.org/reference/tidy.html) classifies
@@ -325,7 +554,8 @@
   distribution parameters are no longer misclassified), and
   [`augment()`](https://generics.r-lib.org/reference/augment.html)
   computes residuals from the transformed response
-  (e.g. `log(y + 1) ~ x`).
+  (e.g. `log(y + 1) ~ x`), evaluated in the environment of the model
+  formula.
 
 ### Documentation
 

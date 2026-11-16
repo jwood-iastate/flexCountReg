@@ -167,9 +167,9 @@ summary(poislind.mod)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>               Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -9.623      1.337   -7.20  6.2e-13 ***
-#> lnaadt           1.036      0.157    6.61  3.8e-11 ***
-#> lnlength         1.456      0.236    6.17  6.9e-10 ***
+#> (Intercept)     -9.623      1.426   -6.75  1.5e-11 ***
+#> lnaadt           1.036      0.167    6.19  5.9e-10 ***
+#> lnlength         1.456      0.236    6.18  6.4e-10 ***
 #> speed50         -0.855      0.335   -2.55    0.011 *  
 #> ShouldWidth04   -0.434      0.291   -1.49    0.136    
 #> AADTover10k     -0.756      0.532   -1.42    0.155    

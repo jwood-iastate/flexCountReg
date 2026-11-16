@@ -82,6 +82,7 @@ underreporting)."><meta property="og:image" content="https://jwood-iastate.githu
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/jwood-iastate/flexCountReg/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -90,7 +91,7 @@ underreporting)."><meta property="og:image" content="https://jwood-iastate.githu
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Predictions for flexCountReg models</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/jwood-iastate/flexCountReg/blob/main/R/predict_flexCountReg.R" class="external-link"><code>R/predict_flexCountReg.R</code></a></small>
       <div class="d-none name"><code>predict.flexCountReg.Rd</code></div>
     </div>
 
@@ -178,7 +179,9 @@ of a zero count (hurdle).
 row per row of <code>newdata</code> and one column per count
 \(k = 0, \dots,\) <code>max_count</code> (passed in <code>...</code>; default the
 largest count in the training data), for rootograms and for scoring
-models out of sample. Types other than <code>"response"</code> are available
+models out of sample. With <code>overflow = TRUE</code> (in <code>...</code>), a last
+column holds the tail mass \(P(Y &gt; \) <code>max_count</code>\()\), so each
+row sums to 1. Types other than <code>"response"</code> are available
 for <code>countreg</code> models only.</p></dd>
 
 

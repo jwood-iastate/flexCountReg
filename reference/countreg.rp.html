@@ -20,6 +20,7 @@
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/jwood-iastate/flexCountReg/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -28,7 +29,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Random Parameters Count Regression Models</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/jwood-iastate/flexCountReg/blob/main/R/countregrp.R" class="external-link"><code>R/countregrp.R</code></a></small>
       <div class="d-none name"><code>countreg.rp.Rd</code></div>
     </div>
 
@@ -62,7 +63,8 @@
 <span>  bootstraps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  engine <span class="op">=</span> <span class="st">"halton"</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  panel_id <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  panel_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  mix_draws <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -137,7 +139,10 @@ parameters.</p></dd>
 
 
 <dt id="arg-scrambled">scrambled<a class="anchor" aria-label="anchor" href="#arg-scrambled"></a></dt>
-<dd><p>if the Halton draws should be scrambled.</p></dd>
+<dd><p>if the Halton draws should be scrambled. Scrambled
+draws are generated from a random seed that is stored in the fit, so
+predictions reuse the same draws (and <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before fitting
+makes the fit reproducible).</p></dd>
 
 
 <dt id="arg-correlated">correlated<a class="anchor" aria-label="anchor" href="#arg-correlated"></a></dt>
@@ -207,6 +212,15 @@ in the fitted object. <code><a href="https://rdrr.io/r/stats/predict.html" class
 <dt id="arg-panel-id">panel_id<a class="anchor" aria-label="anchor" href="#arg-panel-id"></a></dt>
 <dd><p>deprecated; use <code>group_var</code>.</p></dd>
 
+
+<dt id="arg-mix-draws">mix_draws<a class="anchor" aria-label="anchor" href="#arg-mix-draws"></a></dt>
+<dd><p>the number of Halton draws for integrating over the
+mixing distribution of the PLN, PGE, PLL and PW families (inside each
+random-parameter draw). The default is <code>min(ndraws, 200)</code>. The
+cost of these families grows with <code>ndraws * mix_draws</code>, so
+increasing <code>ndraws</code> no longer also increases the inner
+integration.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -227,7 +241,7 @@ standard deviation.</p></li>
 symmetric triangular on \([-1, 1]\), so \(\beta\) lies in
 \([\mu - \sigma, \mu + \sigma]\). Here \(\sigma\) is a half-width;
 the standard deviation is \(\sigma/\sqrt{3}\) (uniform) or
-\(\sigma/\sqrt{6}\) (triangular). Models fitted before version 0.1.3
+\(\sigma/\sqrt{6}\) (triangular). Models fitted with version 0.1.1 or earlier
 used \([\mu - \sigma/2, \mu + \sigma/2]\) for the uniform; their
 \(\sigma\) is converted automatically in <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>.</p></li>
 <li><p>lognormal ("ln"): \(\beta = \exp(\mu + \sigma \upsilon)\),

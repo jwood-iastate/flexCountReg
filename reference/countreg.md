@@ -117,11 +117,17 @@ countreg(
 
 - underreport_formula:
 
-  an optional formula to estimate the underreporting for any of the
-  count model options. The underreporting is estimated as a function
-  (logit or probit) of the predictors in the model. For the model to be
-  tractable, the independent variables cannot be the exact same as the
-  count model. The default is `NULL`.
+  an optional formula for the probability that a true count is reported
+  (binomial thinning of the true counts), as a logit or probit function
+  of its predictors. Available for the Poisson, NB1, NB2, NBP, PLN, PGE,
+  PIG1, PIG2, PIG, PL, PLG, PLL, PW and SI families, whose reported
+  counts follow the same family (for NB1 and PIG1 with dispersion
+  \\p\alpha\\, and for NBP with \\\alpha p^{2-P}\\). It is identified
+  only by variables that affect reporting but not the true counts (and,
+  weakly, by the shape of the link function): an intercept-only formula
+  is an error, and a warning is given when the reporting and count
+  coefficients are nearly collinear. Cannot be combined with
+  `zero_formula`. The default is `NULL`.
 
 - underreport_family:
 
@@ -323,7 +329,7 @@ For `dis_param_formula_2`, the models are for the parameters:
 
 - Not Applicable for the Poisson-Lognormal model.
 
-- \\ln(scale)\\ for the Poisson-Generalized-Exponential model.
+- Not Applicable for the Poisson-Generalized-Exponential model.
 
 - Not Applicable for the Poisson-Inverse-Gaussian model.
 
@@ -335,7 +341,7 @@ For `dis_param_formula_2`, the models are for the parameters:
 
 - \\ln(\sigma)\\ for the Poisson-Lindley-Lognormal model.
 
-- \\ln(\sigma)\\ for the Poisson-Weibull model.
+- Not Applicable for the Poisson-Weibull model.
 
 - \\ln(\sigma)\\ for the Sichel model.
 
@@ -399,6 +405,14 @@ value \\y\\. This is \\y_max=\left\lfloor -\frac{\mu}{\phi}
 \right\rfloor\\. To account for the range of possible values, this is
 modeled as \$\$ln(\phi+1)\$\$.
 
+Underdispersion: when the dispersion parameter is negative, the PMF is
+truncated at this point and renormalized, so its mean and variance
+differ from the formulas above and \\\mu\\ is a location parameter
+rather than the mean (e.g. GP1 with \\\mu = 0.75\\ and \\\phi = -0.5\\
+has mean 0.803; if \\-\mu/\phi \< 1\\ all probability is at 0).
+Predictions, Pearson residuals, simulations and marginal effects use the
+exact moments of the renormalized PMF.
+
 ### Generalized Poisson Version 2 Model
 
 This implements the Generalized Poisson Version 2 model using MLE.
@@ -423,6 +437,14 @@ Under the underdispersed case, the largest possible value of \\y\\ is
 bounded above by \\\left\lceil -1/\alpha \right\rceil - 1\\, i.e., the
 largest integer satisfying \\1 + \alpha y \> 0\\. To account for the
 range of possible values, this is modeled as \$\$ln(\alpha+1)\$\$.
+
+Underdispersion: when the dispersion parameter is negative, the PMF is
+truncated at this point and renormalized, so its mean and variance
+differ from the formulas above and \\\mu\\ is a location parameter
+rather than the mean (e.g. GP1 with \\\mu = 0.75\\ and \\\phi = -0.5\\
+has mean 0.803; if \\-\mu/\phi \< 1\\ all probability is at 0).
+Predictions, Pearson residuals, simulations and marginal effects use the
+exact moments of the renormalized PMF.
 
 ### Negative Binomial Models
 
@@ -451,12 +473,12 @@ The variance is: \$\$\text{Var}(Y) = \mu + \alpha\mu\$\$
 #### NB-2 Model
 
 The PMF and log-likelihood functions are: \$\$P(Y = y) =
-\frac{\Gamma(y + \alpha)}{y! \\ \Gamma(\alpha)} \left(
-\frac{\alpha}{\alpha + \mu} \right)^\alpha \left( \frac{\mu}{\alpha +
-\mu} \right)^y\$\$ \$\$LL\_{\text{NB2}} = \sum\_{i=1}^n \left\[ \ln
-\Gamma(y_i + \alpha) - \ln \Gamma(\alpha) - \ln y_i! + \alpha \ln \left(
-\frac{\alpha}{\alpha + \mu_i} \right) + y_i \ln \left(
-\frac{\mu_i}{\alpha + \mu_i} \right) \right\]\$\$
+\frac{\Gamma(y + 1/\alpha)}{y! \\ \Gamma(1/\alpha)} \left( \frac{1}{1 +
+\alpha\mu} \right)^{1/\alpha} \left( \frac{\alpha\mu}{1 + \alpha\mu}
+\right)^y\$\$ \$\$LL\_{\text{NB2}} = \sum\_{i=1}^n \left\[ \ln
+\Gamma(y_i + 1/\alpha) - \ln \Gamma(1/\alpha) - \ln y_i! -
+\frac{1}{\alpha} \ln(1 + \alpha\mu_i) + y_i \ln \left(
+\frac{\alpha\mu_i}{1 + \alpha\mu_i} \right) \right\]\$\$
 
 The mean is: \$\$\mu = exp(X\beta)\$\$
 
@@ -539,8 +561,13 @@ x}}{y!}\frac{\alpha}{\gamma}
 \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}
 dx\$\$
 
-Halton draws are used to perform simulation over the lognormal
-distribution to solve the integral.
+Halton draws are used to integrate over the generalized-exponential
+distribution.
+
+Substituting \\x = \gamma u\\ shows that the scale \\\gamma\\ cancels
+out of this PMF, so it cannot be estimated: it is fixed at 1 and only
+the shape \\\alpha\\ is estimated (`dis_param_formula_2` does not
+apply).
 
 ### Poisson-Inverse-Gaussian Type 1 (PIG1) and Type 2 (PIG2) Models
 
@@ -600,26 +627,17 @@ Thus, the parameter \\\lambda\\ in the PL distribution when applied to
 regression analysis is:
 \$\$\lambda=\frac{\mu\theta(\theta+1)}{\theta+2}\$\$
 
-Using the replacement and simplifying results in: \$\$f(y \mid \theta,
-\mu) = \\ \frac{\theta^2 (\mu \theta (\theta+1))^y (\theta^2 (1+\mu) +
-\theta (2+\mu) + (\theta+2) (y+1))}{(\theta+1) (\theta+2)^{y+1}
-(\theta^2 (1+\mu) + \theta (2+\mu))^{y+2}}\$\$ And \$\$LL=2
-\log(\theta) + y (\log(\mu) + \log(\theta) + \log(\theta+1)) +
-\log(\theta^2 (1+\mu) + \theta (2+\mu) + (\theta+2) (y+1)) -
-\log(\theta+1) - (y+1) \log(\theta+2) - (y+2) \log(\theta^2 (1+\mu) +
-\theta (2+\mu))\$\$
+The PMF above is evaluated at this \\\lambda\\.
 
 The variance function is defined as:
 \$\$\sigma^2=\mu+\left(1-\frac{2}{(\theta+2)^2}\right)\mu^2\$\$
 
 It should be noted that the p-value for the parameter `ln(theta)` in the
 model summary is testing if the parameter `theta` is equal to a value
-of 1. This has no practical meaning. The Likelihood-Ratio (LR) test
-compares the Poisson-Lindley regression with a Poisson regression with
-the same independent variables. Thus, the LR test result indicates the
-statistical significance for the improvement in how well the model fits
-the data over a Poisson regression. This indicates the statistical
-significance of the `theta` parameter.
+of 1. This has no practical meaning. The PL model does not reduce to the
+Poisson model for any \\\theta\\ (its variance is at least \\\mu +
+\mu^2/2\\), so a likelihood-ratio test against Poisson is not valid;
+compare the models with AIC and BIC.
 
 ### Poisson-Lindley-Gamma (PLG) Model
 
@@ -645,11 +663,14 @@ Lindley-Lognormal distribution. Details of the distribution can be seen
 at
 [`dplindLnorm`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonLindleyLognormal.md).
 
-The mean for the regression model is: \$\$\mu=e^{X\beta}\$\$
+The Poisson-Lindley mean parameter is \\\mu=e^{X\beta}\\, and the mean
+of the regression model (used by
+[`predict()`](https://rdrr.io/r/stats/predict.html)) is:
+\$\$E\[Y\]=m=e^{X\beta+\sigma^2/2}\$\$
 
-The variance function is defined as:
-\$\$\sigma^2=\mu+\left(\frac{1-\frac{2}{(\theta+2)^2}}{e^{\frac{\sigma^2}
-{2}}}+e^{\sigma^2}-1\right)\mu^2\$\$
+The variance function is:
+\$\$Var(Y)=m+\left(\left(2-\frac{2}{(\theta+2)^2}\right)
+e^{\sigma^2}-1\right)m^2\$\$
 
 It should be noted that the p-value for the parameters `ln(theta)` and
 `ln(sigma)` in the model summary are testing if the parameter `theta`
@@ -685,6 +706,10 @@ This leads to:
 The variance for the Poisson-Weibull regression is:
 \$\$V\[Y\]=\mu+\left(\frac{\Gamma\left(1+\frac{2}{\alpha}\right)}
 {\Gamma\left(1+\frac{1}{\alpha}\right)^2}-1\right)\mu^2\$\$
+
+The scale \\\sigma\\ cancels out of the PMF after this substitution, so
+it cannot be estimated: it is fixed at 1 and only the shape \\\alpha\\
+is estimated (`dis_param_formula_2` does not apply).
 
 ### Sichel (SI) Model
 
@@ -863,7 +888,6 @@ summary(nb2)
 #> 
 #> Log-likelihood: -1064.876 | AIC: 2143.752 | BIC: 2180.949 
 #> N: 1501
-#> LR test vs Poisson: chi-sq = 22.092 on 2 df, p-value = 1.59e-05 
 
 
 # Estimate a Poisson-Lognormal model (integration with the poilog package)
@@ -884,9 +908,9 @@ if (requireNamespace("poilog", quietly = TRUE)) {
 #>             Estimate Std. Error z value Pr(>|z|)    
 #> (Intercept)   -7.507         NA      NA       NA    
 #> lnaadt         0.910         NA      NA       NA    
-#> lnlength       0.847      0.112    7.58  3.5e-14 ***
-#> speed50       -0.459      0.106   -4.34  1.4e-05 ***
-#> AADT10kplus    0.809      0.133    6.07  1.3e-09 ***
+#> lnlength       0.847      0.110    7.70  1.4e-14 ***
+#> speed50       -0.459      0.105   -4.37  1.2e-05 ***
+#> AADT10kplus    0.809      0.133    6.09  1.1e-09 ***
 #> ln(sigma)     -0.734         NA      NA       NA    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -902,6 +926,7 @@ plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
               underreport_formula = ~ speed50 + AADT10kplus, 
               underreport_family = "probit")
 #> Warning: The optimizer did not report convergence (iteration limit exceeded). Consider a different `method` or more `max.iters`.
+#> Warning: The underreporting model is weakly identified: the estimates of Underreporting:(Intercept) and AADT10kplus have correlation 0.993. The data barely separate the true count mean from the reporting probability; interpret the true-count estimates with caution, and consider reporting variables that do not affect the true counts or external validation data.
 summary(plogn_underreport)
 #> Call:
 #> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
@@ -915,15 +940,15 @@ summary(plogn_underreport)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                            Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)                 -6.6903     0.8897   -7.52  5.5e-14 ***
-#> lnaadt                       0.9189     0.0553   16.62  < 2e-16 ***
-#> lnlength                     0.8470     0.0700   12.10  < 2e-16 ***
-#> speed50                      0.0534     0.3896    0.14     0.89    
-#> AADT10kplus                 -0.0274     0.8150   -0.03     0.97    
-#> ln(alpha)                   -1.4959     0.3406   -4.39  1.1e-05 ***
-#> Underreporting:(Intercept)  -0.0898     0.9580   -0.09     0.93    
-#> Underreporting:speed50      -0.5394     0.4020   -1.34     0.18    
-#> Underreporting:AADT10kplus   2.5350     2.6316    0.96     0.34    
+#> (Intercept)                 -6.6903     1.2945   -5.17  2.4e-07 ***
+#> lnaadt                       0.9189     0.0562   16.34  < 2e-16 ***
+#> lnlength                     0.8470     0.0700   12.11  < 2e-16 ***
+#> speed50                      0.0534     0.4555    0.12     0.91    
+#> AADT10kplus                 -0.0274     1.2208   -0.02     0.98    
+#> ln(alpha)                   -1.4959     0.3468   -4.31  1.6e-05 ***
+#> Underreporting:(Intercept)  -0.0898     1.3666   -0.07     0.95    
+#> Underreporting:speed50      -0.5394     0.6725   -0.80     0.42    
+#> Underreporting:AADT10kplus   2.5350     4.8914    0.52     0.60    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -945,12 +970,12 @@ summary(com_model)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  -7.4202     0.4674  -15.88  < 2e-16 ***
-#> lnaadt        0.9123     0.0565   16.16  < 2e-16 ***
-#> lnlength      0.8399     0.0668   12.58  < 2e-16 ***
-#> speed50      -0.4452     0.1031   -4.32  1.6e-05 ***
-#> AADT10kplus   0.7877     0.1259    6.26  4.0e-10 ***
-#> ln(nu)       -0.6195     0.1714   -3.61    3e-04 ***
+#> (Intercept)  -7.4230     0.4677  -15.87  < 2e-16 ***
+#> lnaadt        0.9127     0.0565   16.16  < 2e-16 ***
+#> lnlength      0.8400     0.0668   12.58  < 2e-16 ***
+#> speed50      -0.4451     0.1031   -4.32  1.6e-05 ***
+#> AADT10kplus   0.7872     0.1259    6.25  4.1e-10 ***
+#> ln(nu)       -0.6199     0.1715   -3.62    3e-04 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

@@ -35,7 +35,8 @@ rootogram(
 - newdata:
 
   optional data (with the outcome) to evaluate the model on; defaults to
-  the rows used in estimation.
+  the rows used in estimation. Without `newdata`, the observed and
+  expected frequencies count each row with its frequency weight.
 
 - max_count:
 

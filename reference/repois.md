@@ -137,11 +137,11 @@ summary(repois.mod)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>               Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -9.818      1.270   -7.73  1.1e-14 ***
-#> lnaadt           1.026      0.147    7.00  2.5e-12 ***
-#> speed50         -0.919      0.290   -3.16   0.0016 ** 
-#> ShouldWidth04   -0.486      0.243   -2.00   0.0456 *  
-#> AADTover10k     -0.870      0.459   -1.89   0.0582 .  
+#> (Intercept)     -9.818      1.256   -7.82  5.5e-15 ***
+#> lnaadt           1.026      0.146    7.03  2.0e-12 ***
+#> speed50         -0.919         NA      NA       NA    
+#> ShouldWidth04   -0.486      0.240   -2.03    0.043 *  
+#> AADTover10k     -0.870      0.459   -1.89    0.058 .  
 #> lnalpha        -13.816         NA      NA       NA    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

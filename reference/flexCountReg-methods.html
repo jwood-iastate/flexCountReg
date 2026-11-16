@@ -24,6 +24,7 @@ update() and packages that build on these generics."><meta property="og:image" c
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/jwood-iastate/flexCountReg/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -32,7 +33,7 @@ update() and packages that build on these generics."><meta property="og:image" c
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.png" class="logo" alt=""><h1>Standard methods for flexCountReg models</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/jwood-iastate/flexCountReg/blob/main/R/methods.R" class="external-link"><code>R/methods.R</code></a></small>
       <div class="d-none name"><code>flexCountReg-methods.Rd</code></div>
     </div>
 
@@ -143,7 +144,9 @@ fit time: Hessian-based, robust (sandwich) or bootstrapped (see the
 (<code><a href="renb.html">renb()</a></code>, <code><a href="poisLindRE.html">poisLind.re()</a></code>, <code><a href="repois.html">repois()</a></code>, <code><a href="negmultinom.html">negmultinom()</a></code>
 and <code><a href="countreg.rp.html">countreg.rp()</a></code> with <code>panel_id</code>), the <code>nobs</code> attribute
 of <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, which <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code> uses, is the number of panels,
-because the panels are the independent units.</p>
+because the panels are the independent units.
+With frequency weights (<code>weights</code>), it is the sum of the weights
+of the rows (or panels), the size of the expanded data.</p>
 <p><code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code> and <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> are for the rows used in
 estimation (rows with missing values are not included). <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code>
 draws new responses from the fitted distribution for the same rows; it is

@@ -43,8 +43,7 @@ models <- list(
   Poisson = fit("Poisson"),
   NB1 = fit("NB1"),
   NB2 = fit("NB2"),
-  PIG2 = fit("PIG2"),
-  PL = fit("PL"),
+  PIG1 = fit("PIG1"),
   GP1 = fit("GP1")
 )
 ```
@@ -78,8 +77,13 @@ regCompTest(models$Poisson, model2 = models$NB2)$statistics
 and `regCompTable()` builds a coefficient table across models:
 
 ```{r table}
-regCompTable(models[c("Poisson", "NB2", "PIG2")])
+regCompTable(models[c("Poisson", "NB1", "NB2")])
 ```
+
+McFadden's pseudo R-squared compares each model with an intercept-only model
+of the same family, so it measures how much the covariates improve on that
+family's null model. It is not comparable across families; use the
+log-likelihood, AIC or BIC to compare distributions.
 
 ## Does the model reproduce the counts?
 

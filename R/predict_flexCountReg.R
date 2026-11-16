@@ -29,7 +29,9 @@
 #'   row per row of \code{newdata} and one column per count
 #'   \eqn{k = 0, \dots,} \code{max_count} (passed in \code{...}; default the
 #'   largest count in the training data), for rootograms and for scoring
-#'   models out of sample. Types other than \code{"response"} are available
+#'   models out of sample. With \code{overflow = TRUE} (in \code{...}), a last
+#'   column holds the tail mass \eqn{P(Y > } \code{max_count}\eqn{)}, so each
+#'   row sums to 1. Types other than \code{"response"} are available
 #'   for \code{countreg} models only.
 #' 
 #' @details
@@ -175,7 +177,19 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
       y_tr <- object$model[["y"]]
       max_count <- if (!is.null(y_tr)) max(y_tr) else 20
     }
-    return(.fcr_prob_matrix(object, data, as.integer(max_count)))
+    if (!is.numeric(max_count) || length(max_count) != 1L ||
+        !is.finite(max_count) || max_count < 0 ||
+        max_count != round(max_count)) {
+      stop("`max_count` must be a single non-negative whole number.",
+           call. = FALSE)
+    }
+    P <- .fcr_prob_matrix(object, data, as.integer(max_count))
+    if (isTRUE(additional_args$overflow)) {
+      # Tail mass P(Y > max_count), so each row sums to 1
+      P <- cbind(P, pmax(0, 1 - rowSums(P)))
+      colnames(P)[ncol(P)] <- paste0(">", max_count)
+    }
+    return(P)
   }
   
   if (type != "response" && modtype != "countreg") {

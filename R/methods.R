@@ -195,7 +195,15 @@ simulate.flexCountReg <- function(object, nsim = 1, seed = NULL, ...) {
   if (!inherits(object, "countreg")) {
     stop("simulate() is available for countreg() models.", call. = FALSE)
   }
-  if (!is.null(seed)) set.seed(seed)
+  if (!is.null(seed)) {
+    # Reproducible with `seed`, without changing the caller's random-number
+    # stream afterwards
+    old <- if (exists(".Random.seed", envir = globalenv()))
+      get(".Random.seed", envir = globalenv())
+    on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
+      assign(".Random.seed", old, envir = globalenv()))
+    set.seed(seed)
+  }
   rng_state <- if (exists(".Random.seed", envir = globalenv()))
     get(".Random.seed", envir = globalenv())
   parts <- .fcr_countreg_parts(object, .fcr_training_rows(object))

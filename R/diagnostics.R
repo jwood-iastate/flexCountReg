@@ -33,17 +33,27 @@
 # Randomized quantile residuals (Dunn and Smyth, 1996): for each training
 # row, u ~ Uniform(F(y - 1), F(y)) under the fitted distribution, and the
 # residual is qnorm(u).
-.fcr_quantile_residuals <- function(object) {
+.fcr_quantile_residuals <- function(object, chunk = 1000L) {
   d <- .fcr_training_rows(object)
   y <- as.numeric(object$model[["y"]])
-  P <- .fcr_prob_matrix(object, d, max_count = max(y))
-  cdf <- t(apply(P, 1, cumsum))
-  if (max(y) == 0) cdf <- t(cdf)
-  upper <- cdf[cbind(seq_along(y), y + 1)]
-  lower <- ifelse(y > 0, cdf[cbind(seq_along(y), pmax(y, 1))], 0)
+  n <- length(y)
+  lower <- upper <- numeric(n)
+  # Rows sorted by y and processed in chunks, so memory is bounded and a
+  # single large count does not widen the probability grid of every row
+  ord <- order(y)
+  for (idx in split(ord, ceiling(seq_len(n) / chunk))) {
+    yc <- y[idx]
+    P <- .fcr_prob_matrix(object, d[idx, , drop = FALSE],
+                          max_count = max(yc))
+    cdf <- P
+    if (ncol(P) > 1) for (j in 2:ncol(P)) cdf[, j] <- cdf[, j - 1] + P[, j]
+    r <- seq_along(idx)
+    upper[idx] <- cdf[cbind(r, yc + 1)]
+    lower[idx] <- ifelse(yc > 0, cdf[cbind(r, pmax(yc, 1))], 0)
+  }
   upper <- pmin(upper, 1)
   lower <- pmin(lower, upper)
-  stats::qnorm(stats::runif(length(y), lower, upper))
+  stats::qnorm(stats::runif(n, lower, upper))
 }
 
 #' Rootogram for a count regression model
@@ -58,6 +68,8 @@
 #' @param object a \code{countreg()} model.
 #' @param newdata optional data (with the outcome) to evaluate the model on;
 #'   defaults to the rows used in estimation.
+#'   Without \code{newdata}, the observed and expected frequencies count each
+#'   row with its frequency weight.
 #' @param max_count the largest count shown. Defaults to the largest observed
 #'   count.
 #' @param style \code{"hanging"} (bars hang from the expected curve) or
@@ -100,10 +112,14 @@ rootogram <- function(object, newdata = NULL, max_count = NULL,
     object$formula, d, na.action = stats::na.pass)))
   if (is.null(max_count)) max_count <- max(y, na.rm = TRUE)
   P <- .fcr_prob_matrix(object, d, max_count)
-  keep <- !is.na(y) & stats::complete.cases(P)
+  # Frequency weights of the training rows count each row w times
+  w <- if (is.null(newdata) && length(object$model$weights) == nrow(d))
+    object$model$weights else rep(1, nrow(d))
+  keep <- !is.na(y) & stats::complete.cases(P) & y <= max_count
   counts <- 0:max_count
-  obs <- tabulate(y[keep] + 1, nbins = max_count + 1)
-  expd <- colSums(P[keep, , drop = FALSE])
+  obs <- as.vector(tapply(w[keep], factor(y[keep], levels = counts), sum))
+  obs[is.na(obs)] <- 0
+  expd <- colSums(P[keep, , drop = FALSE] * w[keep])
   out <- data.frame(count = counts, observed = obs, expected = unname(expd))
   class(out) <- c("flexCountReg_rootogram", "data.frame")
 

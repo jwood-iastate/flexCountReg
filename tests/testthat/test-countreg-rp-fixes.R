@@ -35,6 +35,7 @@ test_that("uniform draws span mu +/- sigma", {
 })
 
 test_that("Exact and Simulated agree with heterogeneity, for each distribution", {
+  skip_on_cran()  # slow (stochastic recovery); run on CI and locally
   d <- rp_data()
   for (dist in c("n", "u", "t", "g")) {
     m <- suppressWarnings(countreg.rp(
@@ -108,6 +109,7 @@ test_that("an implicit intercept in rpar_formula is not a random parameter", {
 })
 
 test_that("gamma random parameters start from a positive mean", {
+  skip_on_cran()  # slow (stochastic recovery); run on CI and locally
   d <- rp_data()
   d$negx <- -d$speed50   # Poisson start for this coefficient is negative
   m <- suppressWarnings(countreg.rp(

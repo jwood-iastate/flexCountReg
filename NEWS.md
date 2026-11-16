@@ -321,6 +321,17 @@
   distribution. Version references in code and messages refer to 0.1.1
   (the last release) instead of a nonexistent 0.1.3, and fitted objects
   record the package version that created them (`model$fcr_version`).
+* Diagnostics: randomized quantile residuals are computed in chunks of rows
+  sorted by the outcome (bounded memory; one large count no longer widens
+  every row's probability grid); `predict(type = "prob")` validates
+  `max_count` and adds the tail mass P(Y > max_count) with
+  `overflow = TRUE`; rootograms count frequency weights; and
+  `simulate(seed = )` restores the caller's random-number state.
+* Packaging: the parsnip engine is registered even when another package has
+  already registered a `count_reg` model; `DESCRIPTION` has `BugReports`
+  and the GitHub URL; a `CITATION` file and a contributor guide with a
+  release checklist were added; CI also checks the minimum R version
+  (4.1.0); the slowest stochastic tests are skipped on CRAN.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

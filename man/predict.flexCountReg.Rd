@@ -42,7 +42,9 @@ of a zero count (hurdle).
 row per row of \code{newdata} and one column per count
 \eqn{k = 0, \dots,} \code{max_count} (passed in \code{...}; default the
 largest count in the training data), for rootograms and for scoring
-models out of sample. Types other than \code{"response"} are available
+models out of sample. With \code{overflow = TRUE} (in \code{...}), a last
+column holds the tail mass \eqn{P(Y > } \code{max_count}\eqn{)}, so each
+row sums to 1. Types other than \code{"response"} are available
 for \code{countreg} models only.}
 
 \item{new_data}{the same as \code{newdata}, under the name used by

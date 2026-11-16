@@ -98,10 +98,17 @@ count_reg_fit <- function(formula, data, family = "NB2", weights = NULL, ...) {
 .fcr_register_count_reg <- function() {
   if (!requireNamespace("parsnip", quietly = TRUE)) return(invisible(FALSE))
   current <- parsnip::get_model_env()
-  if ("count_reg" %in% current$models) return(invisible(TRUE))
-
-  parsnip::set_new_model("count_reg")
-  parsnip::set_model_mode("count_reg", "regression")
+  if (!"count_reg" %in% current$models) {
+    parsnip::set_new_model("count_reg")
+    parsnip::set_model_mode("count_reg", "regression")
+  }
+  # Idempotent: register the engine unless it is already registered (another
+  # package may have registered a count_reg model without this engine)
+  engines <- tryCatch(parsnip::get_from_env("count_reg"),
+                      error = function(e) NULL)
+  if (!is.null(engines) && "flexCountReg" %in% engines$engine) {
+    return(invisible(TRUE))
+  }
   parsnip::set_model_engine("count_reg", "regression", "flexCountReg")
   parsnip::set_dependency("count_reg", "flexCountReg", "flexCountReg",
                           mode = "regression")

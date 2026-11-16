@@ -20,7 +20,9 @@ rootogram(
 \item{object}{a \code{countreg()} model.}
 
 \item{newdata}{optional data (with the outcome) to evaluate the model on;
-defaults to the rows used in estimation.}
+defaults to the rows used in estimation.
+Without \code{newdata}, the observed and expected frequencies count each
+row with its frequency weight.}
 
 \item{max_count}{the largest count shown. Defaults to the largest observed
 count.}

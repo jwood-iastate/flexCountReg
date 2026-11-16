@@ -719,3 +719,37 @@ test_that("F23: panel NB likelihoods reach the Poisson limit without cancellatio
                                  c(0.5, 0.3, -12))
   expect_equal(g, as.vector(num), tolerance = 1e-4)
 })
+
+test_that("F26: diagnostics have bounded cost and explicit contracts", {
+  d <- washington_roads
+  d$Total_crashes[1] <- 400   # one large count
+  m <- countreg(Total_crashes ~ lnaadt, d, method = "BFGS")
+  # Quantile residuals in chunks equal the full-grid computation
+  set.seed(1)
+  r1 <- residuals(m, type = "quantile")
+  set.seed(1)
+  r2 <- .fcr_quantile_residuals(m, chunk = 100000L)
+  expect_equal(r1, r2)
+  # Probability grids: validated max_count and an optional overflow column
+  P <- predict(m, newdata = d[1:5, ], type = "prob", max_count = 4,
+               overflow = TRUE)
+  expect_equal(colnames(P), c(as.character(0:4), ">4"))
+  expect_equal(rowSums(P), rep(1, 5), tolerance = 1e-12)
+  expect_error(predict(m, type = "prob", max_count = -1), "non-negative")
+  expect_error(predict(m, type = "prob", max_count = 2.5), "whole number")
+  # Rootograms count frequency weights
+  w <- rep(1:2, length.out = nrow(washington_roads))
+  mw <- countreg(Total_crashes ~ lnaadt, washington_roads, weights = w,
+                 method = "BFGS")
+  rg <- rootogram(mw, plot = FALSE, max_count = 5)
+  y <- washington_roads$Total_crashes
+  expect_equal(rg$observed, vapply(0:5, function(k) sum(w[y == k]), 0))
+  # simulate(seed =) is reproducible and leaves the caller's RNG unchanged
+  set.seed(99)
+  u1 <- runif(1)
+  set.seed(99)
+  s1 <- simulate(m, nsim = 1, seed = 5)
+  u2 <- runif(1)
+  expect_equal(u1, u2)
+  expect_equal(simulate(m, nsim = 1, seed = 5), s1)
+})

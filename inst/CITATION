@@ -1,0 +1,14 @@
+bibentry(
+  bibtype = "Manual",
+  title = "{flexCountReg}: Estimation of a Variety of Count Regression Models",
+  author = c(person("Jonathan", "Wood"),
+             person("Guillermo", "Basulto-Elias")),
+  year = format(Sys.Date(), "%Y"),
+  note = paste("R package version", meta$Version),
+  url = "https://jwood-iastate.github.io/flexCountReg/",
+  textVersion = paste0(
+    "Wood, J. and Basulto-Elias, G. (", format(Sys.Date(), "%Y"), "). ",
+    "flexCountReg: Estimation of a Variety of Count Regression Models. ",
+    "R package version ", meta$Version, ". ",
+    "https://jwood-iastate.github.io/flexCountReg/")
+)

@@ -106,6 +106,7 @@ test_that("Poisson-Lindley", {
 })
 
 test_that("Poisson-Lindley-Gamma", {
+  skip_on_cran()  # slow (stochastic recovery); run on CI and locally
   data("washington_roads")
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT>10000,1,0)
   model <- countreg(Animal ~ lnaadt + speed50 + AADT10kplus, 

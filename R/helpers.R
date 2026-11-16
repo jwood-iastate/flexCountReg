@@ -8,11 +8,6 @@ NULL
 
 # ---- Internal helpers for estimators ----------------------------------------
 
-# Families supported by countreg() (names used by get_params/get_probFunc)
-.fcr_families <- c("POISSON", "GP1", "GP2", "NB1", "NB2", "NBP", "PLN", "PGE",
-                   "PIG1", "PIG2", "PIG", "PL", "PLG", "PLL", "PW", "SI", "GW",
-                   "COM")
-
 # Validate and normalize the optimizer name. An unknown method is an error.
 .fcr_check_method <- function(method) {
   valid <- c("SANN", "NM", "BFGS", "BFGSR", "CG", "NR", "BHHH")
@@ -108,82 +103,6 @@ NULL
             call. = FALSE)
   }
   draws
-}
-
-# Determine model to estimate, probability distribution to use, and parameters
-get_params <- function(family) {
-  switch( # pattern: list("alpha", "sigma")
-    family,
-    "POISSON" = list(NULL, NULL),
-    "GP1" = list("ln(phi+1)", NULL),
-    "GP2" = list("ln(alpha+1)", NULL),
-    "NB1" = list("ln(alpha)", NULL),
-    "NB2" = list("ln(alpha)", NULL),
-    "NBP" = list("ln(alpha)", "ln(p)"),
-    "PLN" = list("ln(sigma)", NULL),
-    "PGE" = list("ln(shape)", "ln(scale)"),
-    "PIG1" = list("ln(eta)", NULL),
-    "PIG2" = list("ln(eta)", NULL),
-    "PIG" = list("ln(eta)", NULL),
-    "PL" = list("ln(theta)", NULL),
-    "PLG" = list("ln(theta)", "ln(alpha)"),
-    "PLL" = list("ln(theta)", "ln(sigma)"),
-    "PW" = list("ln(alpha)", "ln(sigma)"),
-    "SI" = list("gamma", "ln(sigma)"),
-    "GW" = list("ln(k)", "ln(rho-1)"),
-    "COM" = list("ln(nu)", NULL)
-  )
-}
-
-get_probFunc <- function(family){
-  switch( # get the probability function for the specified distribution
-    family,
-    "POISSON" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) {
-      return(stats::dpois(y, predicted))
-    },
-    "GP1"=function(y, predicted, alpha, sigma, haltons, normed_haltons, engine){
-      return(dgp1(y, mu=predicted, phi=(alpha-1)))
-    },
-    "GP2"=function(y, predicted, alpha, sigma, haltons, normed_haltons, engine){
-      return(dgp2(y, mu=predicted, alpha=(alpha-1)))
-    },
-    "NB1" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) {
-      return(stats::dnbinom(y, size = predicted/alpha, mu = predicted))
-    },
-    "NB2" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) {
-      return(stats::dnbinom(y, size = 1/alpha, mu = predicted))
-    },
-    "NBP" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine){
-      return(
-        stats::dnbinom(y, size = (predicted^(2-sigma))/alpha, mu = predicted))
-    },
-    "PLN" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
-      dpLnorm(x = y, mean = predicted, sigma = alpha, hdraws = haltons, engine=engine),
-    "PGE" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
-      dpge(y, mean = predicted, shape = alpha, scale = sigma,haltons = haltons),
-    "PIG1" = function(y, predicted, alpha, sigma, ...) 
-      dpinvgaus(y, mu = predicted, eta = alpha),
-    "PIG2" = function(y, predicted, alpha, sigma, ...) 
-      dpinvgaus(y, mu=predicted, eta = alpha, form = "Type 2"),
-    "PIG" = function(y, predicted, alpha, sigma, ...) 
-      dpinvgamma(y, mu = predicted, eta = alpha),
-    "PL" = function(y, predicted, alpha, sigma, ...) 
-      dplind(y, mean = predicted, theta = alpha),
-    "PLG" = function(y, predicted, alpha, sigma, ...) 
-      dplindGamma(x = y, mean = predicted, theta = alpha, alpha = sigma),
-    "PLL" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
-      dplindLnorm(x = y, mean = predicted, theta = alpha, sigma = sigma, 
-                  hdraws = haltons),
-    "PW" = function(y, predicted, alpha, sigma, haltons, normed_haltons, engine) 
-      dpWeib_cpp(y, mean = predicted, alpha = alpha, sigma = sigma, h =haltons),
-    "SI" = function(y, predicted, alpha, sigma, ...) 
-      dsichel(x = y, mu = predicted, sigma = sigma, gamma = log(alpha)),
-    "GW" = function(y, predicted, alpha, sigma, ..., log = FALSE)
-      dgwar(y, mu = predicted, k = alpha, rho = 1 + sigma,
-            log = log),
-    "COM" = function(y, predicted, alpha, sigma, ...) 
-      dcom(x = y, mu = predicted, nu = alpha)
-  )
 }
 
 # --- Internal Likelihood Functions ---
@@ -405,44 +324,6 @@ rp_mgf <- function(dist, t, mu, sigma) {
   fit
 }
 
-# Variance of a countreg() family at mean parameter `mu` (exp of the linear
-# predictor plus offset, before the PLN/PLL mean factor), with the
-# distribution parameters `alpha` and `sigma` on the scale passed to
-# get_probFunc(). Returns NULL for families without a closed form.
-.fcr_family_variance <- function(family, mu, alpha = NULL, sigma = NULL) {
-  switch(family,
-    POISSON = mu,
-    NB1 = mu * (1 + alpha),
-    NB2 = mu + alpha * mu^2,
-    NBP = mu + alpha * mu^sigma,
-    GP1 = alpha^2 * mu,                       # phi = alpha - 1
-    GP2 = mu * (1 + (alpha - 1) * mu)^2,      # alpha_GP2 = alpha - 1
-    PLN = { m <- mu * exp(alpha^2 / 2); m + (exp(alpha^2) - 1) * m^2 },
-    PIG1 = mu * (1 + alpha),
-    PIG2 = mu + alpha * mu^2,
-    PIG = mu + alpha * mu^2,
-    PL = mu + mu^2 * (1 - 2 / (alpha + 2)^2),
-    PLG = mu + ((1 + sigma) * (2 - 2 / (alpha + 2)^2) - 1) * mu^2,
-    PLL = { m <- mu * exp(sigma^2 / 2)
-            m + ((2 - 2 / (alpha + 2)^2) * exp(sigma^2) - 1) * m^2 },
-    PGE = mu + mu^2 * (trigamma(1) - trigamma(alpha + 1)) /
-      (digamma(alpha + 1) - digamma(1))^2,
-    PW = mu + (gamma(1 + 2 / alpha) / gamma(1 + 1 / alpha)^2 - 1) * mu^2,
-    SI = { gam <- log(alpha)                   # gamma = log(alpha)
-           cc <- besselK(1 / sigma, gam + 1) / besselK(1 / sigma, gam)
-           mu + mu^2 * (2 * sigma * (gam + 1) / cc + 1 / cc^2 - 1) },
-    COM = { r <- .fcr_recycle(mu, alpha)
-            vapply(seq_along(r[[1]]), function(i) {
-              yy <- 0:max(100, ceiling(20 * r[[1]][i] + 50))
-              p <- dcom(yy, mu = r[[1]][i], nu = r[[2]][i])
-              p <- p / sum(p)
-              sum(yy^2 * p) - sum(yy * p)^2
-            }, numeric(1)) },
-    GW = { k <- alpha; rho <- 1 + sigma; a <- mu * (rho - 1) / k
-           ifelse(rho > 2, a * k * (a + rho - 1) * (k + rho - 1) /
-                    ((rho - 1)^2 * (rho - 2)), Inf) },
-    NULL)
-}
 
 # Once-per-session deprecation warning for a renamed argument.
 .fcr_deprecated_arg <- function(fun, old, new) {

@@ -29,6 +29,7 @@ Description: An implementation of multiple regression models for
 Imports: 
     cureplots,
     generics,
+    graphics,
     gsl,
     gt,
     knitr,

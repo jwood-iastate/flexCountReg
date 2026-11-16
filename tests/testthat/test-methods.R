@@ -53,13 +53,14 @@ test_that("summary returns an object with a print method and tibble path", {
   expect_false(any(grepl("Offset", rownames(summary(mo)$coefficients))))
 })
 
-test_that("Pearson residuals with underreporting use the thinned variance", {
+test_that("Pearson residuals with underreporting use the model's variance", {
   m <- countreg(Total_crashes ~ lnaadt + lnlength, washington_roads,
                 underreport_formula = ~ ShouldWidth04, method = "BFGS")
   p <- predict(m, newdata = washington_roads, type = "prob_reported")
   mu <- predict(m, newdata = washington_roads, type = "true")
   alpha <- exp(coef(m)["ln(alpha)"])
-  v <- p^2 * (mu + alpha * mu^2) + p * (1 - p) * mu
+  # The observed count is NB2 with mean mu * p (as in the likelihood)
+  v <- mu * p + alpha * (mu * p)^2
   expect_equal(as.numeric(residuals(m, "pearson")),
                (as.numeric(washington_roads$Total_crashes) - mu * p) /
                  sqrt(v))

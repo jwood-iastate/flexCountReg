@@ -106,6 +106,7 @@ export(rpinvgaus)
 export(rplind)
 export(rplindGamma)
 export(rplindLnorm)
+export(rootogram)
 export(rpoisweibull)
 export(rsichel)
 export(rtri)
@@ -120,6 +121,13 @@ importFrom(generics,
   augment,
   glance,
   tidy
+)
+importFrom(graphics,
+  abline,
+  lines,
+  plot,
+  points,
+  rect
 )
 importFrom(gsl,hyperg_U)
 importFrom(gt,

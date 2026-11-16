@@ -20,8 +20,12 @@
 #'   being reported \eqn{p}, and \code{"link"} is the linear predictor
 #'   \eqn{X\beta} plus the offset. For models without underreporting,
 #'   \code{"true"} equals \code{"response"} and \code{"prob_reported"} is 1.
-#'   Types other than \code{"response"} are available for \code{countreg}
-#'   models only.
+#'   \code{"prob"} returns a matrix of probabilities \eqn{P(Y = k)} with one
+#'   row per row of \code{newdata} and one column per count
+#'   \eqn{k = 0, \dots,} \code{max_count} (passed in \code{...}; default the
+#'   largest count in the training data), for rootograms and for scoring
+#'   models out of sample. Types other than \code{"response"} are available
+#'   for \code{countreg} models only.
 #' 
 #' @details
 #' The returned vector always has one element per row of \code{newdata}, in the
@@ -128,7 +132,7 @@
 #' @export
 predict.flexCountReg <- function(object, newdata = NULL, ...,
                                  type = c("response", "true",
-                                          "prob_reported", "link"),
+                                          "prob_reported", "link", "prob"),
                                  new_data = NULL){
   
   type <- match.arg(type)
@@ -157,6 +161,15 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     modtype <- model$modelType
   } else {
     modtype <- "countreg" 
+  }
+  
+  if (type == "prob") {
+    max_count <- additional_args$max_count
+    if (is.null(max_count)) {
+      y_tr <- object$model[["y"]]
+      max_count <- if (!is.null(y_tr)) max(y_tr) else 20
+    }
+    return(.fcr_prob_matrix(object, data, as.integer(max_count)))
   }
   
   if (type != "response" && modtype != "countreg") {
@@ -442,14 +455,6 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                   .fcr_coefs(coefs, paste0(pname, ":", colnames(X_dis)))))
 }
 
-# Ratio of the distribution mean to exp(X*beta). For the Poisson-lognormal
-# (sigma = parameter 1) and Poisson-Lindley-lognormal (sigma = parameter 2),
-# the lognormal factor has mean exp(sigma^2 / 2).
-.fcr_mean_adjust <- function(family, vec_1, vec_2) {
-  if (family == "PLN" && !is.null(vec_1)) return(exp(vec_1^2 / 2))
-  if (family == "PLL" && !is.null(vec_2)) return(exp(vec_2^2 / 2))
-  1
-}
 
 # Panel (cluster) identifier for the rows of `data` in a countreg.rp model.
 .fcr_rp_panel <- function(model, data) {

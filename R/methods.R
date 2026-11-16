@@ -10,8 +10,11 @@
 #'   all parameters are considered.
 #' @param level the confidence level required.
 #' @param type the type of residuals: \code{"response"} (observed minus
-#'   fitted) or \code{"pearson"} (divided by the standard deviation implied
-#'   by the fitted distribution; available for \code{countreg()} models).
+#'   fitted), \code{"pearson"} (divided by the standard deviation implied by
+#'   the fitted distribution) or \code{"quantile"} (randomized quantile
+#'   residuals of Dunn and Smyth, 1996, which are standard normal when the
+#'   model is correct). Pearson and quantile residuals are available for
+#'   \code{countreg()} models.
 #' @param nsim number of response vectors to simulate.
 #' @param seed an optional random seed, as in \code{\link[stats]{simulate}}.
 #' @param digits the number of significant digits to print.
@@ -138,9 +141,11 @@ fitted.flexCountReg <- function(object, ...) {
 
 #' @rdname flexCountReg-methods
 #' @export
-residuals.flexCountReg <- function(object, type = c("response", "pearson"),
+residuals.flexCountReg <- function(object,
+                                   type = c("response", "pearson", "quantile"),
                                    ...) {
   type <- match.arg(type)
+  if (type == "quantile") return(.fcr_quantile_residuals(object))
   y <- object$model[["y"]]
   if (is.null(y)) {
     d <- .fcr_training_rows(object)
@@ -154,49 +159,22 @@ residuals.flexCountReg <- function(object, type = c("response", "pearson"),
 }
 
 # Variance of the observed outcome for each training row (countreg only).
-# With underreporting, Y_obs is a binomial thinning of Y_true with
-# probability p: Var(Y_obs) = p^2 Var(Y_true) + p (1 - p) E(Y_true).
+# The observed count follows the model's family with mean parameter
+# exp(X beta + offset) * p, where p is the reporting probability (p = 1
+# without underreporting), as in the likelihood of countreg().
 .fcr_fitted_variance <- function(object) {
   if (!inherits(object, "countreg")) {
     stop("Pearson residuals are available for countreg() models.",
          call. = FALSE)
   }
   parts <- .fcr_countreg_parts(object, .fcr_training_rows(object))
-  v <- .fcr_family_variance(parts$family, parts$mu_link, parts$alpha,
-                            parts$sigma)
+  v <- .fcr_family_variance(parts$family, parts$mu_link * parts$p_report,
+                            parts$alpha, parts$sigma)
   if (is.null(v)) {
     stop("A variance function is not available for family \"",
          parts$family, "\".", call. = FALSE)
   }
-  p <- parts$p_report
-  p^2 * v + p * (1 - p) * parts$mu_true
-}
-
-# Random draws from a countreg() family given its mean parameter and
-# distribution parameters (same scales as get_probFunc()).
-.fcr_family_r <- function(family, n, mu, alpha = NULL, sigma = NULL) {
-  switch(family,
-    POISSON = stats::rpois(n, mu),
-    NB1 = stats::rnbinom(n, size = mu / alpha, mu = mu),
-    NB2 = stats::rnbinom(n, size = 1 / alpha, mu = mu),
-    NBP = stats::rnbinom(n, size = mu^(2 - sigma) / alpha, mu = mu),
-    GP1 = rgp1(n, mu = mu, phi = alpha - 1),
-    GP2 = rgp2(n, mu = mu, alpha = alpha - 1),
-    PLN = rpLnorm(n, mean = mu, sigma = alpha),
-    PGE = rpge(n, mean = mu, shape = alpha, scale = sigma),
-    PIG1 = rpinvgaus(n, mu = mu, eta = alpha),
-    PIG2 = rpinvgaus(n, mu = mu, eta = alpha, form = "Type 2"),
-    PIG = rpinvgamma(n, mu = mu, eta = alpha),
-    PL = rplind(n, mean = mu, theta = alpha),
-    PLG = rplindGamma(n, mean = mu, theta = alpha, alpha = sigma),
-    PLL = rplindLnorm(n, mean = mu, theta = alpha, sigma = sigma),
-    PW = rpoisweibull(n, lambda = mu / (sigma * gamma(1 + 1 / alpha)),
-                      alpha = alpha, sigma = sigma),
-    SI = rsichel(n, mu = mu, sigma = sigma, gamma = log(alpha)),
-    GW = rgwar(n, mu = mu, k = alpha, rho = 1 + sigma),
-    COM = rcom(n, mu = mu, nu = alpha),
-    stop("simulate() is not available for family \"", family, "\".",
-         call. = FALSE))
+  v
 }
 
 #' @rdname flexCountReg-methods
@@ -212,12 +190,9 @@ simulate.flexCountReg <- function(object, nsim = 1, seed = NULL, ...) {
   parts <- .fcr_countreg_parts(object, .fcr_training_rows(object))
   n <- length(parts$mu_link)
   sims <- lapply(seq_len(nsim), function(i) {
-    y <- .fcr_family_r(parts$family, n, parts$mu_link, parts$alpha,
-                       parts$sigma)
-    if (any(parts$p_report < 1)) {
-      y <- stats::rbinom(n, size = y, prob = parts$p_report)
-    }
-    as.numeric(y)
+    as.numeric(.fcr_family_r(parts$family, n,
+                             parts$mu_link * parts$p_report, parts$alpha,
+                             parts$sigma))
   })
   out <- as.data.frame(sims)
   names(out) <- paste0("sim_", seq_len(nsim))

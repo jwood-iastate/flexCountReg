@@ -844,7 +844,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     start <- p_model$coefficients
     start[is.na(start)] <- 0
     extra <- N_alpha + N_sigma + N_underreport
-    start <- c(start, rep(if (family %in% c("GW", "SI")) 0.1 else 0, extra))
+    start <- c(start, rep_len(.fcr_get_family(family)$start, extra))
     names(start) <- x_names
   } else {
     start <- .fcr_check_start(start.vals, x_names)
@@ -967,6 +967,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$dis_param_formula_1 <- dis_param_formula_1
   fit$dis_param_formula_2 <- dis_param_formula_2
   fit$ndraws <- ndraws
+  fit$engine <- engine
   fit$bootstraps <- bootstraps
   fit$offset <- prep$blueprint$offset_label
   fit$modelType <- "countreg"

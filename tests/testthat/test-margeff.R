@@ -121,3 +121,43 @@ test_that("gt and LaTeX output", {
   g <- margEffTable(m, tableType = "gt")
   expect_s3_class(g, "gt_tbl")
 })
+
+# Evaluate `expr`, expecting one or more warnings that all match `pattern`
+# (margEffTable() warns once per variable).
+expect_warnings <- function(expr, pattern) {
+  ws <- character()
+  out <- withCallingHandlers(expr, warning = function(w) {
+    ws <<- c(ws, conditionMessage(w))
+    invokeRestart("muffleWarning")
+  })
+  expect_gt(length(ws), 0)
+  expect_match(ws, pattern, all = TRUE)
+  out
+}
+
+test_that("delta-method SEs fall back to the Hessian or the stored SEs", {
+  m <- nb2()
+  ref <- margEffTable(m, digits = 8)
+  # Without the covariance matrix: the inverse negative Hessian
+  m_h <- m
+  m_h$model$vcov <- NULL
+  m_h$model$hessian <- -solve(vcov(m))
+  expect_equal(margEffTable(m_h, digits = 8)$std_error, ref$std_error,
+               tolerance = 1e-6)
+  # Without the Hessian: a diagonal approximation, with a warning
+  m_d <- m_h
+  m_d$model$hessian <- NULL
+  me <- expect_warnings(margEffTable(m_d, digits = 8), "diagonal covariance")
+  # The pseudo-elasticity depends on one coefficient only, so it is unchanged
+  expect_equal(me$std_error[2], ref$std_error[2], tolerance = 1e-6)
+  # Nothing at all: NA standard errors with a warning
+  m_n <- m_d
+  m_n$model$se <- NULL
+  me <- expect_warnings(margEffTable(m_n), "No covariance matrix")
+  expect_true(all(is.na(me$std_error)))
+  # Mismatched dimensions
+  m_x <- m
+  m_x$model$vcov <- diag(2)
+  me <- expect_warnings(margEffTable(m_x), "dimensions do not match")
+  expect_true(all(is.na(me$std_error)))
+})

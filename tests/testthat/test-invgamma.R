@@ -45,3 +45,34 @@ test_that("Inverse Gamma Tests", {
 
 
 
+
+test_that("inverse-gamma functions give NaN for invalid parameters", {
+  expect_warning(d <- dinvgamma(1, shape = -1), "'shape' must be positive")
+  expect_true(is.nan(d))
+  expect_warning(pr <- pinvgamma(c(1, 2), scale = c(-1, 1)),
+                 "'scale' must be positive")
+  expect_true(is.nan(pr[1]))
+  expect_equal(pr[2], pinvgamma(2))
+  expect_warning(q <- qinvgamma(c(1.2, 0.5), shape = 2), "must be in \\[0, 1\\]")
+  expect_true(is.nan(q[1]))
+  expect_equal(q[2], qinvgamma(0.5, shape = 2))
+  expect_warning(q <- qinvgamma(0.5, shape = 2, scale = 0), "'scale'")
+  expect_true(is.nan(q))
+  expect_true(is.na(dinvgamma(NA)))
+  expect_true(is.na(pinvgamma(NA)))
+  expect_true(is.na(qinvgamma(NA)))
+  expect_equal(pinvgamma(c(-1, 0, Inf)), c(0, 0, 1))
+  expect_equal(qinvgamma(c(0, 1)), c(0, Inf))
+})
+
+test_that("rinvgamma follows the base-R conventions for n and parameters", {
+  expect_length(rinvgamma(c(9, 9, 9)), 3)
+  expect_length(rinvgamma(0), 0)
+  expect_error(rinvgamma(-1), "non-negative")
+  expect_warning(r <- rinvgamma(3, shape = c(2, -1, 2)), "NAs produced")
+  expect_identical(is.na(r), c(FALSE, TRUE, FALSE))
+  set.seed(2)
+  r <- rinvgamma(20000, shape = c(3, 5), scale = 2)
+  expect_equal(mean(r[c(TRUE, FALSE)]), 2 / (3 - 1), tolerance = 0.03)
+  expect_equal(mean(r[c(FALSE, TRUE)]), 2 / (5 - 1), tolerance = 0.03)
+})

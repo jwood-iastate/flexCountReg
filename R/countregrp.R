@@ -269,8 +269,9 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   w_panel <- as.numeric(w_panel[levels(panel_group)])
   if (!is.null(weights) &&
       any(tapply(w_obs, panel_group, function(v) diff(range(v))) > 0)) {
-    warning("`weights` vary within panels; the first weight of each panel ",
-            "is used for the panel.", call. = FALSE)
+    stop("`weights` vary within panels. Weights are frequency weights of ",
+         "the panels (the independent units), so they must be constant ",
+         "within each panel.", call. = FALSE)
   }
   
   # --- 3. Random parameters ---
@@ -494,6 +495,9 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$y <- y
   fit$nobs <- N_obs
   fit$n_groups <- nlevels(panel_group)
+  # Independent units for BIC: the panels, counted with their frequency
+  # weights
+  fit$n_bic <- sum(w_panel)
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   
@@ -529,15 +533,17 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          offset = offset, method = method,
                          max.iters = max.iters, start.vals = fit$estimate,
                          engine = engine, keep_data = FALSE)
-        m$model$estimate
+        .fcr_refit_result(m$model$estimate, m$model$converged)
       })
-    V <- stats::cov(draws, use = "pairwise.complete.obs")
+    V <- .fcr_boot_cov(draws)
+    fit$boot_failures <- attr(draws, "failures")
     fit$n_boot_ok <- sum(stats::complete.cases(draws))
     fit$bootstraps <- as.integer(bootstraps)
     vcov_type <- "bootstrap"
   } else if (stderr == "robust") {
-    # One log-likelihood contribution per panel: cluster-robust sandwich
-    V <- sandwich::sandwich(fit)
+    # One log-likelihood contribution per panel: cluster-robust sandwich,
+    # with frequency weights per panel
+    V <- .fcr_robust_vcov(fit, w_panel)
     vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)

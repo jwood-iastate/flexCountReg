@@ -82,7 +82,15 @@ count_family <- function(values = c("POISSON", "NB1", "NB2", "NBP", "GP1",
 #' @keywords internal
 #' @export
 count_reg_fit <- function(formula, data, family = "NB2", weights = NULL, ...) {
-  if (!is.null(weights)) weights <- as.numeric(weights)
+  if (!is.null(weights)) {
+    if (inherits(weights, "hardhat_importance_weights")) {
+      warning("countreg() treats case weights as frequency weights; ",
+              "importance weights are used as if they were frequencies, so ",
+              "standard errors, likelihoods and BIC are those of the ",
+              "expanded data.", call. = FALSE)
+    }
+    weights <- as.numeric(weights)
+  }
   countreg(formula, data = data, family = family, weights = weights, ...)
 }
 

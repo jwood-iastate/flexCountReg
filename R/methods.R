@@ -34,6 +34,8 @@
 #' and \code{countreg.rp()} with \code{panel_id}), the \code{nobs} attribute
 #' of \code{logLik()}, which \code{BIC()} uses, is the number of panels,
 #' because the panels are the independent units.
+#' With frequency weights (\code{weights}), it is the sum of the weights
+#' of the rows (or panels), the size of the expanded data.
 #'
 #' \code{fitted()} and \code{residuals()} are for the rows used in
 #' estimation (rows with missing values are not included). \code{simulate()}
@@ -86,10 +88,10 @@ nobs.flexCountReg <- function(object, ...) {
 #' @rdname flexCountReg-methods
 #' @export
 logLik.flexCountReg <- function(object, ...) {
-  n_indep <- object$model[["n_groups"]]
-  if (is.null(n_indep)) n_indep <- stats::nobs(object)
-  structure(object$model[["maximum"]], df = length(stats::coef(object)),
-            nobs = as.integer(n_indep), class = "logLik")
+  m <- object$model
+  n_indep <- m[["n_bic"]] %||% m[["n_groups"]] %||% stats::nobs(object)
+  structure(m[["maximum"]], df = length(stats::coef(object)),
+            nobs = n_indep, class = "logLik")
 }
 
 #' @rdname flexCountReg-methods

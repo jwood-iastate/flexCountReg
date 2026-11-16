@@ -56,11 +56,11 @@ test_that("invalid specifications give clear errors or warnings", {
                "no random parameters")
   dw <- d
   dw$w <- rep(1:2, length.out = nrow(dw))
-  expect_warning(countreg_rp(Total_crashes ~ lnaadt,
-                             rpar_formula = ~ -1 + speed50, data = dw,
-                             weights = "w", group_var = "ID", ndraws = 20,
-                             method = "BFGS", max.iters = 20),
-                 "vary within panels")
+  expect_error(countreg_rp(Total_crashes ~ lnaadt,
+                           rpar_formula = ~ -1 + speed50, data = dw,
+                           weights = "w", group_var = "ID", ndraws = 20,
+                           method = "BFGS", max.iters = 20),
+               "vary within panels")
 })
 
 test_that("rpardists shorthands", {

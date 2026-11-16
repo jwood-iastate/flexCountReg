@@ -88,6 +88,8 @@ fit time: Hessian-based, robust (sandwich) or bootstrapped (see the
 and \code{countreg.rp()} with \code{panel_id}), the \code{nobs} attribute
 of \code{logLik()}, which \code{BIC()} uses, is the number of panels,
 because the panels are the independent units.
+With frequency weights (\code{weights}), it is the sum of the weights
+of the rows (or panels), the size of the expanded data.
 
 \code{fitted()} and \code{residuals()} are for the rows used in
 estimation (rows with missing values are not included). \code{simulate()}

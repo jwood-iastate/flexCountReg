@@ -1056,13 +1056,14 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                       max.iters = max.iters, start.vals = fit$estimate,
                       stderr = "normal", engine = engine,
                       keep_data = FALSE)
-        m$model$estimate
+        .fcr_refit_result(m$model$estimate, m$model$converged)
       })
-    V <- stats::cov(draws, use = "pairwise.complete.obs")
+    V <- .fcr_boot_cov(draws)
+    fit$boot_failures <- attr(draws, "failures")
     fit$n_boot_ok <- sum(stats::complete.cases(draws))
     vcov_type <- "bootstrap"
   } else if (stderr == "robust") {
-    V <- sandwich::sandwich(fit)
+    V <- .fcr_robust_vcov(fit, weights.df)
     vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)
@@ -1105,6 +1106,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$y <- y
   fit$weights <- weights.df
   fit$nobs <- length(y)
+  # Independent units for BIC: the rows, counted with their frequency weights
+  fit$n_bic <- sum(weights.df)
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   

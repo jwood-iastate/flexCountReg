@@ -147,7 +147,7 @@ repois <- function(formula,
   
   if (stderr == "robust") {
     # One log-likelihood contribution per cluster: cluster-robust sandwich
-    V <- sandwich::sandwich(fit$maxLik_object)
+    V <- .fcr_robust_vcov(fit$maxLik_object)
   } else if (stderr == "boot") {
     # Resample whole groups and refit from the full-sample estimates
     bs <- .fcr_cluster_bootstrap(prep, as.integer(bootstraps), x_names,
@@ -157,7 +157,8 @@ repois <- function(formula,
         cluster_list = split(seq_along(sub$y), sub$group, drop = TRUE),
         method = method, max.iters = max.iters, print.level = 0,
         bootstraps = NULL, compute_vcov = FALSE)
-      stats::setNames(f$par, x_names)
+      .fcr_refit_result(stats::setNames(f$par, x_names),
+                        .fcr_converged(list(code = f$convergence), method))
     })
     V <- bs$vcov
     fit$n_boot_ok <- bs$n_ok

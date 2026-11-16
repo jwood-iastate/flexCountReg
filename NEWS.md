@@ -252,6 +252,19 @@
   (a cluster drawn twice is two panels), resamples a numeric weights vector
   with its rows, refits without an inner bootstrap, counts only converged
   refits, and errors for a `cluster_var` that is not in the data.
+* Bootstrapped standard errors use only replicates whose refit converged
+  and gave finite estimates for every parameter (failed optimizations were
+  counted as successes before). The warning about failed replicates gives
+  the reasons, the counts are stored (`boot_failures`), and the covariance
+  uses the accepted replicates only (not pairwise deletion).
+  `negmultinom()` applies the same rule.
+* Frequency weights now give the same results as expanding the data: the
+  robust (sandwich) covariance uses sum(w s s') instead of sum(w^2 s s'),
+  and BIC uses the sum of the weights (of rows, or of panels in panel
+  models) as the sample size. `countreg.rp()` weights that vary within a
+  panel are an error (they were silently replaced by the first weight of
+  the panel). The parsnip engine warns that importance weights are treated
+  as frequencies.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

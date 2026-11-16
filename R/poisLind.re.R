@@ -240,7 +240,8 @@ poisLind.re <- function(formula, group_var, data,
                         X = sub$X, group = sub$group,
                         offset_vec = sub$offset, method = method,
                         control = list(iterlim = max.iters, printLevel = 0))
-    stats::setNames(m$estimate, x_names)
+    .fcr_refit_result(stats::setNames(m$estimate, x_names),
+                      .fcr_converged(m, method))
   })
   
   beta_est <- fit$estimate

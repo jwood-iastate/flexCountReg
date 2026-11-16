@@ -80,30 +80,64 @@ NULL
 #   n          number of rows (or clusters) to resample
 #   B          number of replicates
 #   coef_names names of the estimates, in order
-#   refit      function(idx) returning a named numeric vector of estimates
-# Returns a B x length(coef_names) matrix; failed replicates are NA rows.
+#   refit      function(idx) returning a named numeric vector of estimates,
+#              with attribute "converged" (logical) when known
+# A replicate is accepted only when the refit succeeds, reports convergence
+# (or does not report it) and gives finite estimates for every parameter.
+# Returns a B x length(coef_names) matrix with NA rows for failed replicates
+# and attribute "failures" (counts by reason).
 .fcr_bootstrap <- function(n, B, coef_names, refit) {
   draws <- matrix(NA_real_, nrow = B, ncol = length(coef_names),
                   dimnames = list(NULL, coef_names))
+  why <- character(B)
   for (b in seq_len(B)) {
     idx <- sample.int(n, n, replace = TRUE)
     est <- tryCatch(suppressWarnings(suppressMessages(refit(idx))),
                     error = function(e) NULL)
-    if (!is.null(est) && all(coef_names %in% names(est))) {
+    why[b] <- if (is.null(est)) {
+      "error"
+    } else if (isFALSE(attr(est, "converged"))) {
+      "not converged"
+    } else if (!all(coef_names %in% names(est)) ||
+               !all(is.finite(est[coef_names]))) {
+      "non-finite estimates"
+    } else {
       draws[b, ] <- est[coef_names]
+      ""
     }
   }
-  n_ok <- sum(stats::complete.cases(draws))
+  failures <- table(factor(why[nzchar(why)],
+                           levels = c("error", "not converged",
+                                      "non-finite estimates")))
+  n_ok <- sum(!nzchar(why))
   if (n_ok < 2) {
     stop("Fewer than 2 bootstrap replicates succeeded; bootstrapped ",
          "standard errors cannot be computed.", call. = FALSE)
   }
   if (n_ok < 0.9 * B) {
-    warning(B - n_ok, " of ", B, " bootstrap replicates failed; the ",
-            "bootstrapped standard errors use the ", n_ok, " that succeeded.",
-            call. = FALSE)
+    reasons <- failures[failures > 0]
+    warning(B - n_ok, " of ", B, " bootstrap replicates failed (",
+            paste(names(reasons), reasons, sep = ": ", collapse = ", "),
+            "); the bootstrapped standard errors use the ", n_ok,
+            " that succeeded.", call. = FALSE)
   }
+  attr(draws, "failures") <- failures
   draws
+}
+
+# Covariance of the accepted bootstrap replicates (complete rows only, so
+# every entry uses the same replicates).
+.fcr_boot_cov <- function(draws) {
+  V <- stats::cov(draws[stats::complete.cases(draws), , drop = FALSE])
+  dimnames(V) <- list(colnames(draws), colnames(draws))
+  V
+}
+
+# Estimates of a refit, with its convergence status attached.
+.fcr_refit_result <- function(estimate, converged) {
+  attr(estimate, "converged") <- if (length(converged) == 1L)
+    as.logical(converged) else NA
+  estimate
 }
 
 # --- Internal Likelihood Functions ---
@@ -277,9 +311,8 @@ rp_mgf <- function(dist, t, mu, sigma) {
   draws <- .fcr_bootstrap(nlevels(prep$group), B, coef_names, function(idx) {
     refit(.fcr_cluster_subset(prep, idx))
   })
-  V <- stats::cov(draws, use = "pairwise.complete.obs")
-  dimnames(V) <- list(coef_names, coef_names)
-  list(vcov = V, n_ok = sum(stats::complete.cases(draws)))
+  list(vcov = .fcr_boot_cov(draws), n_ok = sum(stats::complete.cases(draws)),
+       failures = attr(draws, "failures"))
 }
 
 # Common post-fit bookkeeping for the random-effects estimators.
@@ -303,7 +336,7 @@ rp_mgf <- function(dist, t, mu, sigma) {
     fit$bootstraps <- as.integer(bootstraps)
   } else if (stderr == "robust") {
     # One log-likelihood contribution per panel, so this is cluster-robust
-    V <- sandwich::sandwich(fit)
+    V <- .fcr_robust_vcov(fit)
     fit$vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)
@@ -462,5 +495,21 @@ rp_mgf <- function(dist, t, mu, sigma) {
   L <- matrix(0, K, K)
   L[lower.tri(L, diag = TRUE)] <- v
   L
+}
+
+# Robust (sandwich) covariance for a maxLik fit whose log-likelihood
+# contributions (rows or panels) are multiplied by frequency weights w. The
+# scores are then w_i s_i, and the meat must be sum_i w_i s_i s_i' (as for
+# the expanded data), not sum_i w_i^2 s_i s_i'. With w = 1 this is
+# sandwich::sandwich(fit).
+.fcr_robust_vcov <- function(fit, w = NULL) {
+  G <- sandwich::estfun(fit)
+  if (is.null(w)) w <- rep(1, nrow(G))
+  keep <- w > 0
+  meat <- crossprod(G[keep, , drop = FALSE] / sqrt(w[keep]))
+  bread <- .fcr_hessian_vcov(fit)
+  V <- bread %*% meat %*% bread
+  dimnames(V) <- dimnames(bread)
+  V
 }
 

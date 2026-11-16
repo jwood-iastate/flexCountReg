@@ -453,3 +453,53 @@ test_that("F14: refits resample numeric weights and do not bootstrap again", {
   expect_equal(coef(r), coef(ref), tolerance = 1e-8)
   expect_equal(r$model$vcov_type, "hessian")
 })
+
+test_that("F15: bootstrap replicates must converge and be finite", {
+  set.seed(1)
+  k <- 0
+  refit <- function(idx) {
+    k <<- k + 1
+    est <- c(a = mean(idx), b = 1)
+    if (k %% 4 == 1) attr(est, "converged") <- FALSE
+    if (k %% 4 == 2) est["b"] <- Inf
+    est
+  }
+  expect_warning(dr <- .fcr_bootstrap(10, 12, c("a", "b"), refit),
+                 "6 of 12 bootstrap replicates failed \\(not converged: 3, non-finite estimates: 3\\)")
+  expect_equal(sum(stats::complete.cases(dr)), 6)
+  expect_equal(as.vector(attr(dr, "failures")[c("not converged",
+                                                 "non-finite estimates")]),
+               c(3, 3))
+  # A refit stopped at the iteration limit is not accepted
+  d <- washington_roads
+  expect_error(suppressWarnings(
+    countreg(Total_crashes ~ lnaadt, d, method = "BFGS", stderr = "boot",
+             bootstraps = 4, max.iters = 1)),
+    "Fewer than 2 bootstrap replicates succeeded")
+})
+
+test_that("F16: frequency weights match the expanded data", {
+  d <- washington_roads[1:300, ]
+  w <- rep(1:3, length.out = nrow(d))
+  ex <- d[rep(seq_len(nrow(d)), w), ]
+  a <- countreg(Total_crashes ~ lnaadt, d, weights = w, method = "BFGS",
+                stderr = "robust")
+  b <- countreg(Total_crashes ~ lnaadt, ex, method = "BFGS",
+                stderr = "robust")
+  expect_equal(coef(a), coef(b), tolerance = 1e-6)
+  expect_equal(as.numeric(logLik(a)), as.numeric(logLik(b)),
+               tolerance = 1e-8)
+  expect_equal(vcov(a), vcov(b), tolerance = 1e-4)
+  expect_equal(BIC(a), BIC(b), tolerance = 1e-8)
+  # Without weights the robust covariance is sandwich::sandwich()
+  u <- countreg(Total_crashes ~ lnaadt, d, method = "BFGS", stderr = "robust")
+  expect_equal(vcov(u), sandwich::sandwich(u$model), tolerance = 1e-6,
+               ignore_attr = TRUE)
+  # Panel frequency weights (constant within panels): panels are counted
+  # with their weights in BIC
+  wp <- as.numeric(factor(d$ID)) %% 2 + 1
+  rp <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+                    data = d, weights = wp, group_var = "ID", ndraws = 20,
+                    method = "BFGS", max.iters = 50)
+  expect_equal(attr(logLik(rp), "nobs"), sum(wp[!duplicated(d$ID)]))
+})

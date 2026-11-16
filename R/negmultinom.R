@@ -611,7 +611,11 @@ negmultinom <- function(formula,
       .nm_fit_engine(bp, start = start, family = family, method = method,
                      max.iters = max.iters),
       error = function(e) NULL)
-    if (!is.null(bf) && all(is.finite(bf$estimate))) est[b, ] <- bf$estimate
+    # Only converged replicates with finite estimates are used
+    if (!is.null(bf) && !isFALSE(.fcr_converged(bf, method)) &&
+        all(is.finite(bf$estimate))) {
+      est[b, ] <- bf$estimate
+    }
   }
   est <- est[stats::complete.cases(est), , drop = FALSE]
   if (nrow(est) < 2L) {

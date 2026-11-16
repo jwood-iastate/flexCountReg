@@ -358,3 +358,15 @@ rp_mgf <- function(dist, t, mu, sigma) {
   v[!is.finite(v) | v < 0] <- NA_real_
   sqrt(v)
 }
+
+# Zero-inflated or hurdle probabilities from the count family's P(Y = y)
+# (probs), P(Y = 0) (f0) and the zero-model probability zp: the structural
+# zero probability (inflated) or the probability of a positive count
+# (hurdle).
+.fcr_zero_adjust <- function(y, probs, f0, zp, zero_type) {
+  if (zero_type == "inflated") {
+    ifelse(y == 0, zp + (1 - zp) * f0, (1 - zp) * probs)
+  } else {
+    ifelse(y == 0, 1 - zp, zp * probs / (1 - f0))
+  }
+}

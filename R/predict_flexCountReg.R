@@ -20,6 +20,11 @@
 #'   being reported \eqn{p}, and \code{"link"} is the linear predictor
 #'   \eqn{X\beta} plus the offset. For models without underreporting,
 #'   \code{"true"} equals \code{"response"} and \code{"prob_reported"} is 1.
+#'   For zero-inflated and hurdle models (\code{zero_formula}),
+#'   \code{"response"} includes the zero model, \code{"true"} is the mean of
+#'   the count distribution alone, and \code{"zero"} is the probability from
+#'   the zero model: the probability of a structural zero (zero-inflated) or
+#'   of a zero count (hurdle).
 #'   \code{"prob"} returns a matrix of probabilities \eqn{P(Y = k)} with one
 #'   row per row of \code{newdata} and one column per count
 #'   \eqn{k = 0, \dots,} \code{max_count} (passed in \code{...}; default the
@@ -132,7 +137,8 @@
 #' @export
 predict.flexCountReg <- function(object, newdata = NULL, ...,
                                  type = c("response", "true",
-                                          "prob_reported", "link", "prob"),
+                                          "prob_reported", "link", "prob",
+                                          "zero"),
                                  new_data = NULL){
   
   type <- match.arg(type)
@@ -370,11 +376,17 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   else {
     
     parts <- .fcr_countreg_parts(object, data)
+    if (type == "zero" && is.null(parts$zero_prob)) {
+      stop("type = \"zero\" requires a model with `zero_formula`.",
+           call. = FALSE)
+    }
     switch(type,
            link = parts$link,
            prob_reported = parts$p_report,
            true = parts$mu_true,
-           response = parts$mu_true * parts$p_report)
+           zero = if (parts$zero_type == "inflated") parts$zero_prob else
+             1 - parts$zero_prob,
+           response = parts$response)
   }
 }
 
@@ -390,7 +402,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   
   bp <- .fcr_blueprint(object, aux_formulas = list(
     dis1 = model$dis_param_formula_1, dis2 = model$dis_param_formula_2,
-    underreport = model$underreport_formula))
+    underreport = model$underreport_formula, zero = model$zero_formula))
   fd <- forge_new_data(bp, data)
   n <- nrow(as.data.frame(data))
   
@@ -414,9 +426,45 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, n)
   vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, n)
   mu_link <- exp(link)
-  list(link = link, mu_link = mu_link, p_report = p_report,
-       alpha = vec_1, sigma = vec_2, family = family,
-       mu_true = mu_link * .fcr_mean_adjust(family, vec_1, vec_2))
+  parts <- list(link = link, mu_link = mu_link, p_report = p_report,
+                alpha = vec_1, sigma = vec_2, family = family,
+                mu_true = mu_link * .fcr_mean_adjust(family, vec_1, vec_2),
+                zero_type = model$zero_type)
+  parts$response <- parts$mu_true * p_report
+  
+  # Zero-inflated or hurdle model
+  X_zero <- fd$aux$zero
+  if (!is.null(X_zero)) {
+    zp <- stats::plogis(as.vector(
+      X_zero %*% .fcr_coefs(coefs, paste0("Zero:", colnames(X_zero)))))
+    parts$zero_prob <- zp
+    if (model$zero_type == "inflated") {
+      parts$response <- (1 - zp) * parts$mu_true
+    } else {
+      parts$f0 <- .fcr_parts_density(object, parts, 0)
+      parts$response <- zp * parts$mu_true / (1 - parts$f0)
+    }
+  }
+  parts
+}
+
+# Count-family density P(Y = k) for every row of a .fcr_countreg_parts()
+# result, evaluated as in the likelihood (before any zero model).
+.fcr_parts_density <- function(object, parts, k) {
+  m <- object$model
+  dens <- get_probFunc(parts$family)
+  haltons <- randtoolbox::halton(m$ndraws %||% 1500)
+  mean_par <- parts$mu_link * parts$p_report
+  out <- rep(NA_real_, length(mean_par))
+  ok <- !is.na(mean_par)
+  if (any(ok)) {
+    out[ok] <- dens(y = rep(k, sum(ok)), predicted = mean_par[ok],
+                    alpha = if (!is.null(parts$alpha)) parts$alpha[ok],
+                    sigma = if (!is.null(parts$sigma)) parts$sigma[ok],
+                    haltons = haltons, normed_haltons = stats::qnorm(haltons),
+                    engine = m$engine %||% "halton")
+  }
+  out
 }
 
 # ---- Internal helpers for predict() ------------------------------------------

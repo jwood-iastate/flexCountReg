@@ -174,6 +174,13 @@ residuals.flexCountReg <- function(object,
     stop("A variance function is not available for family \"",
          parts$family, "\".", call. = FALSE)
   }
+  if (!is.null(parts$zero_prob)) {
+    # Mixture moments: E[Y^2] = w (V + m^2) for the count part with weight w
+    m <- parts$mu_true
+    zp <- parts$zero_prob
+    w <- if (parts$zero_type == "inflated") 1 - zp else zp / (1 - parts$f0)
+    v <- w * (v + m^2) - (w * m)^2
+  }
   v
 }
 
@@ -189,10 +196,30 @@ simulate.flexCountReg <- function(object, nsim = 1, seed = NULL, ...) {
     get(".Random.seed", envir = globalenv())
   parts <- .fcr_countreg_parts(object, .fcr_training_rows(object))
   n <- length(parts$mu_link)
+  draw <- function(idx) {
+    .fcr_family_r(parts$family, length(idx),
+                  (parts$mu_link * parts$p_report)[idx],
+                  if (!is.null(parts$alpha)) parts$alpha[idx],
+                  if (!is.null(parts$sigma)) parts$sigma[idx])
+  }
   sims <- lapply(seq_len(nsim), function(i) {
-    as.numeric(.fcr_family_r(parts$family, n,
-                             parts$mu_link * parts$p_report, parts$alpha,
-                             parts$sigma))
+    y <- as.numeric(draw(seq_len(n)))
+    zp <- parts$zero_prob
+    if (!is.null(zp)) {
+      if (parts$zero_type == "inflated") {
+        y[stats::runif(n) < zp] <- 0
+      } else {
+        # Positive counts from the zero-truncated family (redraw zeros)
+        need <- which(y == 0)
+        for (iter in seq_len(1000)) {
+          if (!length(need)) break
+          y[need] <- draw(need)
+          need <- need[y[need] == 0]
+        }
+        y[stats::runif(n) >= zp] <- 0
+      }
+    }
+    y
   })
   out <- as.data.frame(sims)
   names(out) <- paste0("sim_", seq_len(nsim))

@@ -54,6 +54,7 @@ Suggests:
     lamW,
     dials,
     parsnip,
+    pscl,
     testthat (>= 3.0.0), 
     poilog
 Config/testthat/edition: 3

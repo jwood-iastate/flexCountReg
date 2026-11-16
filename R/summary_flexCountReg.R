@@ -165,7 +165,8 @@ as_tibble.summary.flexCountReg <- function(x, ...) {
 .fcr_lr_vs_poisson <- function(object) {
   m <- object$model
   if (!inherits(object, "countreg") || identical(m$family, "POISSON") ||
-      !is.null(m$underreport_formula) || is.null(object$data)) {
+      !is.null(m$underreport_formula) || !is.null(m$zero_formula) ||
+      is.null(object$data)) {
     return(NULL)
   }
   fam <- m$family

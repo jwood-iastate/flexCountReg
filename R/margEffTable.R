@@ -275,8 +275,8 @@ print.flexEffectTable <- function(x, ...) {
   # underreporting, random parameters and their heterogeneity, and the
   # distribution parameters of families whose mean depends on them.
   m <- object$model
-  aux <- list(m$underreport_formula, m$rpar_formula, m$het_mean_formula,
-              m$het_var_formula)
+  aux <- list(m$underreport_formula, m$zero_formula, m$rpar_formula,
+              m$het_mean_formula, m$het_var_formula)
   if (isTRUE(m$family %in% c("PLN", "PLL"))) {
     aux <- c(aux, list(m$dis_param_formula_1, m$dis_param_formula_2))
   }

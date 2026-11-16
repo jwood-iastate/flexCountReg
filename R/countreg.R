@@ -55,6 +55,19 @@
 #' @param keep_data logical; if \code{FALSE}, the training data are not stored
 #'   in the fitted object (saving memory). \code{predict()} then needs
 #'   \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.
+#' @param zero_formula an optional one-sided formula for a zero model
+#'   (\code{~ 1} for a constant), turning the model into a zero-inflated or
+#'   hurdle model (see \code{zero_type}) for any \code{family}. The zero model
+#'   is a logit model. Its coefficients are named \code{Zero:<variable>}.
+#'   Cannot be combined with \code{underreport_formula}.
+#' @param zero_type \code{"inflated"} (default) or \code{"hurdle"}. In a
+#'   zero-inflated model, a structural zero occurs with probability
+#'   \eqn{\pi = logit^{-1}(z\gamma)} and otherwise the count follows the
+#'   family: \eqn{P(0) = \pi + (1 - \pi) f(0)} and
+#'   \eqn{P(y) = (1 - \pi) f(y)} for \eqn{y > 0}. In a hurdle model,
+#'   \eqn{q = logit^{-1}(z\gamma)} is the probability of a positive count and
+#'   positive counts follow the zero-truncated family:
+#'   \eqn{P(0) = 1 - q} and \eqn{P(y) = q f(y) / (1 - f(0))}.
 #' @param engine the engine to use for the integration if the Poisson Lognormal 
 #'   (PLN) distribution is used. Options include "halton" which uses Halton 
 #'   draws or "poilog" which uses the poilog package. The default is "halton".
@@ -738,7 +751,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      ndraws = 1500, method = "NM", 
                      max.iters = 1000, start.vals = NULL, 
                      stderr = "normal", bootstraps = NULL,
-                     engine = "halton", keep_data = TRUE) {
+                     engine = "halton", keep_data = TRUE,
+                     zero_formula = NULL,
+                     zero_type = c("inflated", "hurdle")) {
   
   print.level <- if (verbose) 2 else 0
   
@@ -759,6 +774,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   underreport_family <- match.arg(tolower(underreport_family),
                                   c("logit", "probit"))
   stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
+  zero_type <- match.arg(zero_type)
+  if (!is.null(zero_formula) && !is.null(underreport_formula)) {
+    stop("`zero_formula` and `underreport_formula` cannot be combined: both ",
+         "act on the zeros, so they are not separately identified.",
+         call. = FALSE)
+  }
   if (stderr == "boot") {
     if (is.null(bootstraps)) {
       bootstraps <- 200L
@@ -786,7 +807,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                              aux_formulas = list(
                                dis1 = dis_param_formula_1,
                                dis2 = dis_param_formula_2,
-                               underreport = underreport_formula),
+                               underreport = underreport_formula,
+                               zero = zero_formula),
                              offset = offset, weights = weights)
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
@@ -799,6 +821,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   mod_alpha_frame <- prep$aux$dis1
   mod_sigma_frame <- prep$aux$dis2
   X_underreport <- prep$aux$underreport
+  X_zero <- prep$aux$zero
   
   # ---- Parameter bookkeeping -------------------------------------------------
   N_predictors <- ncol(X)
@@ -830,7 +853,16 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   } else {
     N_underreport <- 0
   }
+  if (!is.null(X_zero)) {
+    N_zero <- ncol(X_zero)
+    x_names <- c(x_names, paste0("Zero:", colnames(X_zero)))
+  } else {
+    N_zero <- 0
+  }
   N_par <- length(x_names)
+  idx_under <- N_predictors + N_alpha + N_sigma + seq_len(N_underreport)
+  idx_zero <- N_predictors + N_alpha + N_sigma + N_underreport +
+    seq_len(N_zero)
   
   # Generate Halton draws to use as quantile values
   haltons <- randtoolbox::halton(ndraws)
@@ -845,6 +877,20 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     start[is.na(start)] <- 0
     extra <- N_alpha + N_sigma + N_underreport
     start <- c(start, rep_len(.fcr_get_family(family)$start, extra))
+    if (N_zero > 0) {
+      # Zero model: intercept at a structural-zero share of about 0.2
+      # (inflated) or at the observed share of positive counts (hurdle)
+      z0 <- rep(0, N_zero)
+      int <- which(colnames(X_zero) == "(Intercept)")
+      if (length(int)) {
+        z0[int] <- if (zero_type == "hurdle") {
+          stats::qlogis(min(max(mean(y > 0), 0.01), 0.99))
+        } else {
+          -1.5
+        }
+      }
+      start <- c(start, z0)
+    }
     names(start) <- x_names
   } else {
     start <- .fcr_check_start(start.vals, x_names)
@@ -879,9 +925,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     }
     
     if (N_underreport > 0) {
-      idx <- (N_par - N_underreport + 1):N_par
       underreport_prob <- .report_prob(
-        as.vector(X_underreport %*% coefs[idx]), underreport_family)
+        as.vector(X_underreport %*% coefs[idx_under]), underreport_family)
     } else {
       underreport_prob <- 1
     }
@@ -896,6 +941,17 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      sigma = sigma, haltons = haltons,
                      normed_haltons = normed_haltons, engine = engine),
       error = function(e) rep(NA_real_, length(y)))
+    
+    if (N_zero > 0) {
+      f0 <- tryCatch(
+        local_probFunc(y = rep(0, length(y)), predicted = predicted,
+                       alpha = alpha, sigma = sigma, haltons = haltons,
+                       normed_haltons = normed_haltons, engine = engine),
+        error = function(e) rep(NA_real_, length(y)))
+      zp <- stats::plogis(as.vector(X_zero %*% coefs[idx_zero]))
+      probs <- .fcr_zero_adjust(y, as.vector(probs), as.vector(f0), zp,
+                                zero_type)
+    }
     
     ll <- log(as.vector(probs))
     ll[weights.df == 0] <- 0
@@ -932,6 +988,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                       dis_param_formula_2 = dis_param_formula_2,
                       underreport_formula = underreport_formula,
                       underreport_family = underreport_family,
+                      zero_formula = zero_formula, zero_type = zero_type,
                       ndraws = ndraws, method = method,
                       max.iters = max.iters, start.vals = fit$estimate,
                       stderr = "normal", engine = engine,
@@ -972,6 +1029,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$offset <- prep$blueprint$offset_label
   fit$modelType <- "countreg"
   fit$underreport_formula <- underreport_formula
+  fit$zero_formula <- zero_formula
+  fit$zero_type <- if (!is.null(zero_formula)) zero_type
   fit$underreport_family <- underreport_family
   # Sign convention for probit underreporting: 1 = P(reported) = pnorm(z'g)
   # (flexCountReg >= 0.1.3). Fits without this field used 1 - pnorm(z'g).

@@ -10,24 +10,20 @@
     stop("Probability predictions are available for countreg() models.",
          call. = FALSE)
   }
-  m <- object$model
   parts <- .fcr_countreg_parts(object, data)
-  dens <- get_probFunc(parts$family)
-  haltons <- randtoolbox::halton(m$ndraws %||% 1500)
-  normed <- stats::qnorm(haltons)
-  engine <- m$engine %||% "halton"
-  n <- length(parts$mu_link)
-  mean_par <- parts$mu_link * parts$p_report
-  ok <- !is.na(mean_par)
-  P <- matrix(NA_real_, n, max_count + 1,
+  P <- vapply(0:max_count, function(k) .fcr_parts_density(object, parts, k),
+              numeric(length(parts$mu_link)))
+  P <- matrix(P, ncol = max_count + 1,
               dimnames = list(NULL, as.character(0:max_count)))
-  if (any(ok)) {
-    a <- if (!is.null(parts$alpha)) parts$alpha[ok]
-    s <- if (!is.null(parts$sigma)) parts$sigma[ok]
-    for (k in 0:max_count) {
-      P[ok, k + 1] <- dens(y = rep(k, sum(ok)), predicted = mean_par[ok],
-                           alpha = a, sigma = s, haltons = haltons,
-                           normed_haltons = normed, engine = engine)
+  if (!is.null(parts$zero_prob)) {
+    zp <- parts$zero_prob
+    f0 <- P[, 1]
+    if (parts$zero_type == "inflated") {
+      P <- P * (1 - zp)
+      P[, 1] <- zp + (1 - zp) * f0
+    } else {
+      P <- P * (zp / (1 - f0))
+      P[, 1] <- 1 - zp
     }
   }
   P

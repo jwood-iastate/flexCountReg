@@ -91,8 +91,9 @@
   NB1 = .fcr_family(
     params = list("ln(alpha)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) stats::dnbinom(y, size = predicted / alpha,
-                                           mu = predicted),
+                    engine) .fcr_quiet_dens(
+                      stats::dnbinom(y, size = predicted / alpha,
+                                     mu = predicted)),
     variance = function(mu, alpha, sigma) mu * (1 + alpha),
     rand = function(n, mu, alpha, sigma)
       stats::rnbinom(n, size = mu / alpha, mu = mu)),
@@ -100,8 +101,8 @@
   NB2 = .fcr_family(
     params = list("ln(alpha)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) stats::dnbinom(y, size = 1 / alpha,
-                                           mu = predicted),
+                    engine) .fcr_quiet_dens(
+                      stats::dnbinom(y, size = 1 / alpha, mu = predicted)),
     variance = function(mu, alpha, sigma) mu + alpha * mu^2,
     rand = function(n, mu, alpha, sigma)
       stats::rnbinom(n, size = 1 / alpha, mu = mu)),
@@ -109,9 +110,9 @@
   NBP = .fcr_family(
     params = list("ln(alpha)", "ln(p)"),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
-                    engine) stats::dnbinom(
+                    engine) .fcr_quiet_dens(stats::dnbinom(
                       y, size = (predicted^(2 - sigma)) / alpha,
-                      mu = predicted),
+                      mu = predicted)),
     variance = function(mu, alpha, sigma) mu + alpha * mu^sigma,
     rand = function(n, mu, alpha, sigma)
       stats::rnbinom(n, size = mu^(2 - sigma) / alpha, mu = mu)),
@@ -306,6 +307,38 @@ get_probFunc <- function(family) {
          call. = FALSE)
   }
   r(n, mu, alpha, sigma)
+}
+
+# ---- Underreporting (binomial thinning) -------------------------------------
+#
+# Observed counts are Y_obs | Y_true ~ Binomial(Y_true, p). For Poisson, NB2,
+# PIG2, PIG and the mixed-Poisson families whose mixing distribution does not
+# depend on the mean (PLN, PL, PLG, PLL, PGE, PW, SI), Y_obs has the same
+# family with mean p * mu and the same distribution parameters. For NB1 and
+# PIG1 (dispersion proportional to the mean) the observed dispersion is
+# p * alpha, and for NBP it is alpha * p^(2 - P). GP1, GP2, COM and GW are not
+# closed under thinning, so underreporting models are not available for them.
+.fcr_thinning_families <- c("POISSON", "NB1", "NB2", "NBP", "PLN", "PGE",
+                            "PIG1", "PIG2", "PIG", "PL", "PLG", "PLL", "PW",
+                            "SI")
+
+.fcr_check_thinning <- function(family) {
+  if (!family %in% .fcr_thinning_families) {
+    stop("Underreporting models are not available for family \"", family,
+         "\": the distribution of the reported counts (binomial thinning of ",
+         "the true counts) is not of the same family. Available families: ",
+         toString(.fcr_thinning_families), ".", call. = FALSE)
+  }
+  invisible(NULL)
+}
+
+# Distribution parameters of the reported counts, given those of the true
+# counts and the reporting probability p.
+.fcr_thin_params <- function(family, alpha, sigma, p) {
+  if (is.null(p) || all(p == 1)) return(list(alpha = alpha, sigma = sigma))
+  if (family %in% c("NB1", "PIG1")) alpha <- alpha * p
+  if (family == "NBP") alpha <- alpha * p^(2 - sigma)
+  list(alpha = alpha, sigma = sigma)
 }
 
 # Mean of the family at mean parameter mu: E[Y] (mu times the mean

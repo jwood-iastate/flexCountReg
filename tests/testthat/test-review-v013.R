@@ -76,3 +76,67 @@ test_that("F02: random-parameter GP predictions average the exact mean", {
   expect_equal(ex, sim_p)
   expect_equal(mean(predict(rp, newdata = sim)), mean(sim$y), tolerance = 0.05)
 })
+
+test_that("F03: underreporting uses the distribution of thinned counts", {
+  set.seed(21)
+  n <- 4e5
+  mu <- 4
+  p <- 0.4
+  h <- randtoolbox::halton(2000)
+  check <- function(fam, y_true, alpha, sigma = NULL) {
+    y_obs <- rbinom(n, y_true, p)
+    emp <- tabulate(y_obs + 1, nbins = 13) / n
+    thin <- .fcr_thin_params(fam, alpha, sigma, p)
+    fit <- get_probFunc(fam)(y = 0:12, predicted = rep(p * mu, 13),
+                             alpha = thin$alpha, sigma = thin$sigma,
+                             haltons = h, normed_haltons = qnorm(h),
+                             engine = "halton")
+    expect_lt(max(abs(emp - fit)), 0.003, label = fam)
+    # The old observation model (dispersion unchanged) is visibly different
+    old <- get_probFunc(fam)(y = 0:12, predicted = rep(p * mu, 13),
+                             alpha = alpha, sigma = sigma, haltons = h,
+                             normed_haltons = qnorm(h), engine = "halton")
+    expect_gt(max(abs(emp - old)), 0.01, label = paste(fam, "old"))
+  }
+  check("NB1", rnbinom(n, size = mu / 1.5, mu = mu), 1.5)
+  check("NBP", rnbinom(n, size = mu^(2 - 1.5) / 0.8, mu = mu), 0.8, 1.5)
+  check("PIG1", rpinvgaus(n, mu = mu, eta = 1.5), 1.5)
+  # p = 1 recovers the original family
+  expect_equal(.fcr_thin_params("NBP", 0.8, 1.5, 1)$alpha, 0.8)
+})
+
+test_that("F03: families not closed under thinning reject underreporting", {
+  d <- washington_roads
+  for (fam in c("GP1", "GP2", "COM", "GW")) {
+    expect_error(countreg(Total_crashes ~ lnaadt, d, family = fam,
+                          underreport_formula = ~ speed50),
+                 "not of the same family")
+  }
+})
+
+test_that("F03/F04: NB1 underreporting: thinned dispersion, identification", {
+  set.seed(22)
+  n <- 6000
+  x <- rnorm(n)
+  z <- rbinom(n, 1, 0.5)
+  mu <- exp(1 + 0.4 * x)
+  y_true <- rnbinom(n, size = mu / 1.5, mu = mu)
+  y <- rbinom(n, y_true, plogis(-0.5 + 1.5 * z))
+  d <- data.frame(y, x, z)
+  # The count intercept and reporting intercept are nearly collinear (only
+  # the logit curvature separates them): a warning, and the truth lies
+  # within the (wide) uncertainty
+  expect_warning(
+    m <- countreg(y ~ x, d, family = "NB1", underreport_formula = ~ z,
+                  method = "BFGS"),
+    "weakly identified")
+  se <- sqrt(diag(vcov(m)))
+  truth <- c(1, 0.4, log(1.5), -0.5, 1.5)
+  expect_true(all(abs(coef(m) - truth) < 3 * se))
+  expect_equal(unname(coef(m)["x"]), 0.4, tolerance = 0.1)
+  # Pearson residuals use the thinned variance
+  expect_equal(var(residuals(m, type = "pearson")), 1, tolerance = 0.1)
+  # A constant reporting probability is not identified at all
+  expect_error(countreg(y ~ x, d, family = "NB1", underreport_formula = ~ 1),
+               "intercept-only `underreport_formula` is not identified")
+})

@@ -95,9 +95,15 @@ test_that("probit and logit underreporting share the same sign convention", {
   p_rep <- plogis(-0.5 + 2 * z)
   y <- rbinom(n, rnbinom(n, size = 2, mu = mu), p_rep)
   sim <- data.frame(y, x, z)
-  lg <- countreg(y ~ x, sim, underreport_formula = ~z, method = "BFGS")
-  pr <- countreg(y ~ x, sim, underreport_formula = ~z,
-                 underreport_family = "probit", method = "BFGS")
+  # The binary reporting variable separates reporting from the count mean
+  # only through the link's curvature, so both fits warn
+  expect_warning(
+    lg <- countreg(y ~ x, sim, underreport_formula = ~z, method = "BFGS"),
+    "weakly identified")
+  expect_warning(
+    pr <- countreg(y ~ x, sim, underreport_formula = ~z,
+                   underreport_family = "probit", method = "BFGS"),
+    "weakly identified")
   b_lg <- lg$model$estimate["Underreporting:z"]
   b_pr <- pr$model$estimate["Underreporting:z"]
   expect_gt(b_lg, 0)

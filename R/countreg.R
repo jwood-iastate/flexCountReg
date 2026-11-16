@@ -24,11 +24,17 @@
 #' @param dis_param_formula_2 a symbolic description of the model for the second
 #'   parameter of the count distribution used. Further details are provided
 #'   below.
-#' @param underreport_formula an optional formula to estimate the underreporting
-#'   for any of the count model options. The underreporting is estimated as a
-#'   function (logit or probit) of the predictors in the model. For the model to
-#'   be tractable, the independent variables cannot be the exact same as the
-#'   count model. The default is `NULL`.
+#' @param underreport_formula an optional formula for the probability that a
+#'   true count is reported (binomial thinning of the true counts), as a logit
+#'   or probit function of its predictors. Available for the Poisson, NB1,
+#'   NB2, NBP, PLN, PGE, PIG1, PIG2, PIG, PL, PLG, PLL, PW and SI families,
+#'   whose reported counts follow the same family (for NB1 and PIG1 with
+#'   dispersion \eqn{p\alpha}, and for NBP with \eqn{\alpha p^{2-P}}). It
+#'   is identified only by variables that affect reporting but not the true
+#'   counts (and, weakly, by the shape of the link function): an
+#'   intercept-only formula is an error, and a warning is given when the
+#'   reporting and count coefficients are nearly collinear. Cannot be combined
+#'   with `zero_formula`. The default is `NULL`.
 #' @param underreport_family the name of the distribution/model type to estimate
 #'   the underreporting portion of the model when `underreport_formula` is
 #'   specified. The default is "logit" for a binary logistic regression model.
@@ -799,6 +805,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                                   c("logit", "probit"))
   stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
   zero_type <- match.arg(zero_type)
+  if (!is.null(underreport_formula)) .fcr_check_thinning(family)
   if (!is.null(zero_formula) && !is.null(underreport_formula)) {
     stop("`zero_formula` and `underreport_formula` cannot be combined: both ",
          "act on the zeros, so they are not separately identified.",
@@ -845,6 +852,15 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   mod_alpha_frame <- prep$aux$dis1
   mod_sigma_frame <- prep$aux$dis2
   X_underreport <- prep$aux$underreport
+  if (!is.null(X_underreport) &&
+      all(colnames(X_underreport) == "(Intercept)") &&
+      "(Intercept)" %in% colnames(prep$X)) {
+    stop("An intercept-only `underreport_formula` is not identified: a ",
+         "constant reporting probability p and the count-model intercept ",
+         "b0 enter the likelihood only through exp(b0) * p. Add variables ",
+         "that affect reporting but not the true counts, or analyze the ",
+         "reported counts without an underreporting model.", call. = FALSE)
+  }
   X_zero <- prep$aux$zero
   
   # ---- Parameter bookkeeping -------------------------------------------------
@@ -957,6 +973,12 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     
     predicted <- exp(as.vector(X %*% fixed_coefs) + X_offset) *
       underreport_prob
+    if (N_underreport > 0) {
+      # Distribution of the reported counts (binomial thinning)
+      thin <- .fcr_thin_params(family, alpha, sigma, underreport_prob)
+      alpha <- thin$alpha
+      sigma <- thin$sigma
+    }
     
     # Parameter values outside a distribution's support make the C++ code
     # stop(); return NA instead so the optimizer can step back.
@@ -1044,6 +1066,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   }
   dimnames(V) <- list(x_names, x_names)
   
+  if (N_underreport > 0) .fcr_check_report_identification(V)
+  
   fit$vcov <- V
   fit$vcov_type <- vcov_type
   fit$stderr <- stderr
@@ -1085,3 +1109,31 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                              formula = formula)
   return(obj)
 }
+
+# Warn when underreporting coefficients are nearly collinear with the count
+# model's coefficients (a flat likelihood ridge): the split between the true
+# count mean and the reporting probability is then not identified by the
+# data, even when the optimizer converges and the standard errors are finite.
+.fcr_check_report_identification <- function(V, threshold = 0.99) {
+  # Only for a positive-definite covariance matrix (a singular Hessian is
+  # reported separately)
+  if (!all(is.finite(V))) return(invisible(NULL))
+  ev <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
+  if (min(ev) <= 0) return(invisible(NULL))
+  R <- stats::cov2cor(V)
+  und <- grepl("^Underreporting:", rownames(R))
+  r <- abs(R[und, !und, drop = FALSE])
+  if (any(r > threshold, na.rm = TRUE)) {
+    k <- which(r == max(r, na.rm = TRUE), arr.ind = TRUE)[1, ]
+    warning("The underreporting model is weakly identified: the estimates of ",
+            rownames(r)[k[1]], " and ", colnames(r)[k[2]],
+            " have correlation ", format(round(R[und, !und, drop = FALSE][
+              k[1], k[2]], 3)), ". The data barely separate the true count ",
+            "mean from the reporting probability; interpret the true-count ",
+            "estimates with caution, and consider reporting variables that ",
+            "do not affect the true counts or external validation data.",
+            call. = FALSE)
+  }
+  invisible(NULL)
+}
+

@@ -439,8 +439,13 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, n)
   vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, n)
   mu_link <- exp(link)
+  # alpha and sigma are the parameters of the reported counts' distribution
+  # (equal to the true counts' parameters without underreporting)
+  thin <- .fcr_thin_params(family, vec_1, vec_2,
+                           if (!is.null(X_und)) p_report)
   parts <- list(link = link, mu_link = mu_link, p_report = p_report,
-                alpha = vec_1, sigma = vec_2, family = family,
+                alpha = thin$alpha, sigma = thin$sigma,
+                alpha_true = vec_1, sigma_true = vec_2, family = family,
                 mu_true = .fcr_family_mean(family, mu_link, vec_1, vec_2),
                 zero_type = model$zero_type)
   parts$response <- parts$mu_true * p_report

@@ -182,6 +182,19 @@
   fall back to Simulated for these models, because the mean is not
   proportional to exp(X beta). The GP normalizing constants are computed
   vectorized, which makes GP random-parameter models much faster.
+* Underreporting is binomial thinning of the true counts, and the model of
+  the reported counts now matches it: for NB1 and PIG1 the reported counts'
+  dispersion is p * alpha, and for NBP alpha * p^(2 - P) (before, the
+  true-count dispersion was used unchanged, which is not the distribution of
+  thinned counts). Poisson, NB2, PIG2, PIG and the mixed-Poisson families
+  (PLN, PL, PLG, PLL, PGE, PW, SI) were already exact. GP1, GP2, COM and GW
+  are not closed under thinning, so underreporting is now an error for them.
+  This changes NB1, NBP and PIG1 underreporting estimates.
+* Underreporting identification: an intercept-only `underreport_formula` is
+  an error (only exp(b0) * p is identified), and `countreg()` warns when the
+  reporting and count coefficients are nearly collinear (correlation above
+  0.99), which happens when reporting is separated from the count mean only
+  by the curvature of the link function.
 * `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
   instead of a strongly underdispersed value that gave larger counts zero
   probability, so default GP fits no longer fail with "NA in the initial

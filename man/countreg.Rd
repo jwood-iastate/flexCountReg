@@ -57,11 +57,17 @@ distribution used. Further details are provided below.}
 parameter of the count distribution used. Further details are provided
 below.}
 
-\item{underreport_formula}{an optional formula to estimate the underreporting
-for any of the count model options. The underreporting is estimated as a
-function (logit or probit) of the predictors in the model. For the model to
-be tractable, the independent variables cannot be the exact same as the
-count model. The default is \code{NULL}.}
+\item{underreport_formula}{an optional formula for the probability that a
+true count is reported (binomial thinning of the true counts), as a logit
+or probit function of its predictors. Available for the Poisson, NB1,
+NB2, NBP, PLN, PGE, PIG1, PIG2, PIG, PL, PLG, PLL, PW and SI families,
+whose reported counts follow the same family (for NB1 and PIG1 with
+dispersion \eqn{p\alpha}, and for NBP with \eqn{\alpha p^{2-P}}). It
+is identified only by variables that affect reporting but not the true
+counts (and, weakly, by the shape of the link function): an
+intercept-only formula is an error, and a warning is given when the
+reporting and count coefficients are nearly collinear. Cannot be combined
+with \code{zero_formula}. The default is \code{NULL}.}
 
 \item{underreport_family}{the name of the distribution/model type to estimate
 the underreporting portion of the model when \code{underreport_formula} is

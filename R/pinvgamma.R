@@ -63,155 +63,69 @@
 #' @name PoissonInverseGamma
 #' @rdname PoissonInverseGamma
 #' @export
-dpinvgamma <- Vectorize(function(x, mu=1, eta = 1,  log=FALSE){
+dpinvgamma <- function(x, mu = 1, eta = 1, log = FALSE) {
+  r <- .fcr_recycle(x, mu, eta)
+  x <- r[[1]]; mu <- r[[2]]; eta <- r[[3]]
   
-  # Test to make sure the value of x is an integer
-  # Improved integer check
-  if(abs(x - round(x)) > .Machine$double.eps^0.5 || x < 0)
-    warning("The value of `x` must be a non-negative whole number")
+  is_count <- .fcr_is_count(x)
+  if (any(!is_count & !is.na(x))) {
+    warning("The value of `x` must be a non-negative whole number.")
+  }
+  bad_par <- !is.na(mu) & !is.na(eta) & (mu <= 0 | eta <= 0)
+  if (any(bad_par)) {
+    warning("The values of `mu` and `eta` must be greater than 0.")
+  }
   
-  if(eta <= 0) warning("The value of `eta` must be greater than 0.")
-  
-  # Calculation
-  term1 <- 2 * (mu * (1/eta + 1))^((x + 1/eta + 2)/2)
-  term2 <- besselK(2 * sqrt(mu * (1/eta + 1)), x - 1/eta - 2)
-  denom <- factorial(x) * gamma(1/eta + 2)
-  
-  p <- (term1 * term2) / denom
-  
-  if (log) return(log(p))
-  else return(p)
-})
+  xx <- ifelse(is_count, round(x), 0)
+  lp <- suppressWarnings(.ldpinvgamma(xx, mu, eta))
+  lp[!is_count] <- -Inf
+  lp[bad_par] <- NaN
+  lp[is.na(x) | is.na(mu) | is.na(eta)] <- NA
+  if (log) lp else exp(lp)
+}
+
+# Log PMF of the Poisson-inverse-gamma:
+#   f(x) = 2 B^((x + c)/2) K_{x - c}(2 sqrt(B)) / (x! Gamma(c)),
+# with c = 1/eta + 2 and B = mu (1/eta + 1). Uses lgamma() and a log Bessel
+# function that stays finite for large orders.
+.ldpinvgamma <- function(x, mu, eta) {
+  inv_eta <- 1 / eta
+  cc <- inv_eta + 2
+  B <- mu * (inv_eta + 1)
+  log(2) + (x + cc) / 2 * log(B) +
+    .fcr_log_besselK(2 * sqrt(B), x - cc) -
+    lgamma(x + 1) - lgamma(cc)
+}
 
 #' @rdname PoissonInverseGamma
 #' @export
 ppinvgamma <- function(q, mu = 1, eta = 1, lower.tail = TRUE,
                        log.p = FALSE) {
-  
-  # --- Input Validation ---
-  
   if (any(eta <= 0, na.rm = TRUE)) warning("'eta' must be positive")
   if (any(mu <= 0, na.rm = TRUE)) warning("'mu' must be positive")
   
-  
-  # --- Vectorization Setup ---
-  
-  n <- max(length(q), length(mu), length(eta))
-  q <- rep_len(as.integer(floor(q)), n)
-  mu <- rep_len(mu, n)
-  eta <- rep_len(eta, n)
-  
-  
-  # --- Initialize Result ---
-  
-  cdf <- rep(NA_real_, n)
-  
-  
-  # --- Handle Special Cases ---
-  
-  invalid_q <- is.na(q) | q < 0
-  cdf[invalid_q] <- 0
-  
-  
-  # --- Helper: Safe log-Bessel-K ---
-  
-  log_besselK_safe <- function(x, nu) {
-    if (!is.finite(x) || x <= 0) return(-Inf)
-    
-    if (x > 700) {
-      # Use scaled version: besselK(x, nu, expon.scaled=TRUE) = exp(x) *
-      # K_nu(x)
-      k_scaled <- tryCatch(
-        besselK(x, nu, expon.scaled = TRUE),
-        warning = function(w) NA_real_,
-        error = function(e) NA_real_
-      )
-      if (is.na(k_scaled) || k_scaled <= 0) return(-Inf)
-      return(log(k_scaled) - x)
-    } else {
-      k_val <- tryCatch(
-        besselK(x, nu),
-        warning = function(w) NA_real_,
-        error = function(e) NA_real_
-      )
-      if (is.na(k_val) || k_val <= 0) return(-Inf)
-      return(log(k_val))
-    }
+  r <- .fcr_recycle(q, mu, eta)
+  q <- floor(r[[1]]); mu <- r[[2]]; eta <- r[[3]]
+  cdf <- rep(NA_real_, length(q))
+  cdf[!is.na(q) & q < 0] <- 0
+  for (i in which(!is.na(q) & q >= 0)) {
+    lp <- suppressWarnings(.ldpinvgamma(0:q[i], mu[i], eta[i]))
+    m <- max(lp)
+    cdf[i] <- if (is.finite(m)) min(1, exp(m + log(sum(exp(lp - m))))) else NA
   }
-  
-  
-  # --- Compute CDF for Valid Cases ---
-  
-  valid <- !invalid_q
-  
-  if (any(valid)) {
-    for (i in which(valid)) {
-      mu_i <- mu[i]
-      eta_i <- eta[i]
-      q_i <- q[i]
-      
-      # Pre-compute constants
-      # PMF: p(x) = 2 * (mu*(1/eta + 1))^((x + 1/eta + 2)/2) *
-      #             K_{x - 1/eta - 2}(2*sqrt(mu*(1/eta + 1))) /
-      #             (x! * Gamma(1/eta + 2))
-      
-      inv_eta <- 1 / eta_i
-      base_term <- mu_i * (inv_eta + 1)
-      sqrt_base <- 2 * sqrt(base_term)
-      log_denom_const <- lgamma(inv_eta + 2)
-      
-      # Compute log-PMF for 0:q_i
-      log_pmf <- numeric(q_i + 1)
-      
-      for (y in 0:q_i) {
-        # Bessel order
-        nu_bessel <- y - inv_eta - 2
-        
-        # log(K_{nu}(sqrt_base))
-        log_K <- log_besselK_safe(sqrt_base, nu_bessel)
-        
-        # Exponent: (y + 1/eta + 2) / 2
-        exponent <- (y + inv_eta + 2) / 2
-        
-        # log(PMF) = log(2) + exponent * log(base_term) + log_K -
-        # lgamma(y+1) - log_denom_const
-        log_pmf[y + 1] <- log(2) + exponent * log(base_term) + log_K -
-          lgamma(y + 1) - log_denom_const
-      }
-      
-      # Log-sum-exp for CDF
-      finite_mask <- is.finite(log_pmf)
-      if (!any(finite_mask)) {
-        cdf[i] <- NA_real_
-      } else {
-        max_log <- max(log_pmf[finite_mask])
-        log_cdf <- max_log + log(sum(exp(log_pmf[finite_mask] -
-                                           max_log)))
-        cdf[i] <- exp(log_cdf)
-      }
-    }
-  }
-  
-  
-  # --- Apply Tail and Log Options ---
   
   if (!lower.tail) cdf <- 1 - cdf
   if (log.p) cdf <- log(cdf)
-  
-  return(cdf)
+  cdf
 }
 
 #' @rdname PoissonInverseGamma
 #' @export
-qpinvgamma <- Vectorize(function(p, mu=1, eta = 1) {
-  y <- 0
-  p_value <- ppinvgamma(y, mu, eta)
-  while(p_value < p){
-    y <- y + 1
-    p_value <- ppinvgamma(y, mu, eta)
-  }
-  return(y)
-})
+qpinvgamma <- function(p, mu = 1, eta = 1) {
+  .fcr_qcount(p, function(y, mu, eta) {
+    cumsum(exp(.ldpinvgamma(y, mu, eta)))
+  }, mu, eta)
+}
 
 #' @rdname PoissonInverseGamma
 #' @export

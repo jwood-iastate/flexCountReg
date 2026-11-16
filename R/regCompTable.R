@@ -15,8 +15,16 @@
 #' @param BIC A logical. The default value `TRUE` indicates that BIC values for
 #'   the models should be included.
 #' @param RSquare A logical. The default value `TRUE` indicates that the
-#'   McFadden's Pseudo-R-Squared statistic (comparing against a Poisson
-#'   regression model) should be included.
+#'   McFadden's Pseudo-R-Squared statistic should be included. By default it
+#'   compares every model against the same intercept-only Poisson model (the
+#'   base count model), so the values are comparable across models; see
+#'   \code{basemodel} and \code{variables}.
+#' @param basemodel the family of the baseline model for McFadden's
+#'   Pseudo-R-Squared: "Poisson" (default) or a family of
+#'   \code{\link{countreg}}.
+#' @param variables logical; if \code{TRUE}, the baseline model includes the
+#'   mean-model covariates of each model; if \code{FALSE} (default), it is an
+#'   intercept-only model (with the model's offset).
 #' @param tableType The type of table format to return. Options include "tibble"
 #'   for returning the table as a tibble, "gt" for a \link[gt]{gt} table object,
 #'   or "latex" for a latex table. The default is "tibble".
@@ -24,8 +32,8 @@
 #'   table values to.
 #'
 #' @include regCompTest.R
-#' @import tibble knitr  
-#' @importFrom dplyr %>% mutate sym
+#' @importFrom knitr kable
+#' @importFrom tibble tibble
 #' @importFrom stats as.formula model.frame model.response dpois glm
 #' @importFrom gt gt tab_header fmt_number
 #' 
@@ -59,7 +67,8 @@
 #' print(comptable)
 #' @export
 regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE, 
-                         tableType="tibble", digits=3){
+                         tableType="tibble", digits=3,
+                         basemodel = "Poisson", variables = FALSE){
   
   Nmodels <- length(models)
   if(Nmodels < 2) {
@@ -74,8 +83,8 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
   vars <- c() # names of estimated coefficients
   modNames <- names(models)
   for (i in seq_along(models)){
-    variables <- names(models[[i]]$model$estimate) # Get the variable names
-    for (item in variables) { # Add any new, unique, variables/coefficient names
+    coef_names_i <- names(models[[i]]$model$estimate) # Coefficient names
+    for (item in coef_names_i) { # Add any new, unique, variables/coefficient names
       if (!(item %in% vars)) {
         vars <- append(vars, item)
       }
@@ -97,27 +106,20 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
   summaryTibble <- tibble(`Parameter` = vars) # Initial tibble
   
   for (i in seq_along(modNames)){ 
-    formula <- as.formula(models[[i]]$formula) # not including random parameters
-    data <- models[[i]]$data
-    mod_df <- model.frame(formula, data)
-    y <- as.numeric(model.response(mod_df))
-    # The log-likelihood of the original model
-    LL <- as.numeric(models[[i]]$model$maximum) 
-    base_mod <- glm(y ~ 1, data, family = poisson(link = "log"))
-    LLbase <- sum(dpois(base_mod$y, base_mod$fitted.values, log=TRUE))
-    n.coef <- length(models[[i]]$model$estimate)
-    aic <- round(myAIC(LL, n.coef), digits)
-    bic <- round(myBIC(LL, n.coef, length(y)), digits)
-    rsq <- round(1 - LL / LLbase, digits)
-    Nobs <- length(y)
+    m_i <- models[[i]]
+    # Log-likelihood, AIC and BIC from the model's methods; McFadden's R^2
+    # against the same null model as regCompTest()
+    LL <- as.numeric(stats::logLik(m_i))
+    LLbase <- .fit_null_ll(m_i, .fcr_fit_pieces(m_i), basemodel = basemodel,
+                           variables = variables)
+    aic <- round(stats::AIC(m_i), digits)
+    bic <- round(stats::BIC(m_i), digits)
+    rsq <- round(.mcfadden_r2(LL, LLbase), digits)
+    Nobs <- stats::nobs(m_i)
     
-    coefNames <- names(models[[i]]$model$estimate)
-    coefs <- models[[i]]$model$estimate
-    if (!is.null(models[[i]]$model$bootstraps)){
-      se <- models[[i]]$model$bootstrapped_se
-    } else {
-      se <- sqrt(diag(stats::vcov(models[[i]]$model)))
-    }
+    coefs <- stats::coef(m_i)
+    coefNames <- names(coefs)
+    se <- .fcr_se(stats::vcov(m_i))
     t <- abs(coefs / se)
     coefsRounded <- round(coefs, digits)
     seRounded <- round(se, digits)
@@ -127,18 +129,10 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
       if (vars[j] %in% coefNames){
         for (k in seq_along(coefNames)){
           if (coefNames[k] == vars[j]){
-            if(t[k] >= 3.29){
-              coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")***")
-            }
-            else if (t[k] >= 2.5758) {
-              coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")**")
-            }
-            else if (t[k] >= 1.96){
-              coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")*")
-            }
-            else{
-              coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")")
-            }
+            # Standard errors are NA when the estimated variance is
+            # negative (weakly identified parameters): no stars then
+            coefval <- paste0(coefsRounded[k], " (", seRounded[k], ")",
+                              .fcr_stars(t[k]))
             tablecoefs <- append(tablecoefs, coefval)
           }
         }
@@ -156,8 +150,7 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
         tablecoefs <- append(tablecoefs, "---")
       }
     }
-    summaryTibble <- summaryTibble %>%
-      mutate(!!sym(modNames[i]) := tablecoefs)
+    summaryTibble[[modNames[i]]] <- tablecoefs
   }
   
   # Adding a row with the notation
@@ -173,11 +166,11 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     return(summaryTibble)
   } 
   else if (tableType == "gt"){
-    gtTable <- gt(summaryTibble) %>%
+    gtTable <- gt(summaryTibble) |>
       tab_header(
         title = "Model Comparisons",
         subtitle = "Mean (Standard Error)"
-      ) %>%
+      ) |>
       gt::tab_source_note(
         source_note = "p-value codes: *=(p<=0.05), **=(p<=0.01), ***=(p<=0.001)"
       )
@@ -190,4 +183,10 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
                                caption = "Model Comparison Statistics")
     return(latexTable)
   }
+}
+
+# Significance stars for an absolute z statistic ("" when NA).
+.fcr_stars <- function(t) {
+  if (is.na(t)) return("")
+  if (t >= 3.29) "***" else if (t >= 2.5758) "**" else if (t >= 1.96) "*" else ""
 }

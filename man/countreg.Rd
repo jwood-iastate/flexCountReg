@@ -21,7 +21,10 @@ countreg(
   start.vals = NULL,
   stderr = "normal",
   bootstraps = NULL,
-  engine = "halton"
+  engine = "halton",
+  keep_data = TRUE,
+  zero_formula = NULL,
+  zero_type = c("inflated", "hurdle")
 )
 }
 \arguments{
@@ -35,11 +38,13 @@ log link. other options are listed below.}
 
 \item{offset}{the name of a variable, or vector of variable names, in the
 data frame that should be used as an offset (i.e., included but forced to
-have a coefficient of 1). The normal method of setting an offset in the
-equation can also be used (overrides the offset option).}
+have a coefficient of 1). When several names are given, the offsets are
+summed. Alternatively, an offset can be given in the formula with
+\code{offset()}. Use only one of the two approaches: supplying both is an
+error.}
 
-\item{weights}{the name of a variable in the data frame that should be used
-as a frequency weight.}
+\item{weights}{the name of a variable in the data frame, or a numeric vector
+with one value per row of \code{data}, to be used as frequency weights.}
 
 \item{verbose}{an optional parameter. If \code{TRUE}, the function will print out
 the progress of the model fitting. Default is \code{FALSE}.}
@@ -71,27 +76,48 @@ or has minimal change as the number of draws changes within a reasonable
 range).}
 
 \item{method}{Optimization method to be used for maximum likelihood
-estimation. See \code{maxLik} documentation for options. The default is "NM" for
-the Nelder-Mead method.}
+estimation. One of "NM" (Nelder-Mead, the default), "BFGS", "BFGSR", "CG",
+"NR", "BHHH", or "SANN". See \code{maxLik} documentation for details.}
 
 \item{max.iters}{Maximum number of iterations for the optimization method.}
 
-\item{start.vals}{Optional vector of starting values for the optimization.}
+\item{start.vals}{Optional vector of starting values for the optimization.
+It must have one value per parameter. If the vector is named, the values
+are matched to the parameters by name.}
 
-\item{stderr}{Type of standard errors to use. The default is "normal". Other
-options include "boot" for bootstrapped standard errors, or "robust" for
-robust standard errors.}
+\item{stderr}{Type of standard errors to use. The default is "normal"
+(based on the Hessian). Other options include "boot" for bootstrapped
+standard errors, or "robust" for robust (sandwich) standard errors.}
 
 \item{bootstraps}{Optional integer specifying the number of bootstrap samples
-to be used for estimating standard errors when \code{stderr}= "boot". Note that
-this currently does not work when an offset variable is used.}
+to be used for estimating standard errors when \code{stderr}= "boot". Defaults
+to 200 when \code{stderr = "boot"} and \code{bootstraps} is not given.}
 
 \item{engine}{the engine to use for the integration if the Poisson Lognormal
 (PLN) distribution is used. Options include "halton" which uses Halton
 draws or "poilog" which uses the poilog package. The default is "halton".}
+
+\item{keep_data}{logical; if \code{FALSE}, the training data are not stored
+in the fitted object (saving memory). \code{predict()} then needs
+\code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
+
+\item{zero_formula}{an optional one-sided formula for a zero model
+(\code{~ 1} for a constant), turning the model into a zero-inflated or
+hurdle model (see \code{zero_type}) for any \code{family}. The zero model
+is a logit model. Its coefficients are named \code{Zero:<variable>}.
+Cannot be combined with \code{underreport_formula}.}
+
+\item{zero_type}{\code{"inflated"} (default) or \code{"hurdle"}. In a
+zero-inflated model, a structural zero occurs with probability
+\eqn{\pi = logit^{-1}(z\gamma)} and otherwise the count follows the
+family: \eqn{P(0) = \pi + (1 - \pi) f(0)} and
+\eqn{P(y) = (1 - \pi) f(y)} for \eqn{y > 0}. In a hurdle model,
+\eqn{q = logit^{-1}(z\gamma)} is the probability of a positive count and
+positive counts follow the zero-truncated family:
+\eqn{P(0) = 1 - q} and \eqn{P(y) = q f(y) / (1 - f(0))}.}
 }
 \value{
-An object of class \code{countreg} which is a list with the following components:
+An object of class \code{flexCountReg} which is a list with the following components:
 \itemize{
 \item model: the fitted model object.
 \item data: the data frame used to fit the model.
@@ -169,20 +195,22 @@ The parameters for the different models are as follows:
 
 For \code{dis_param_formula_1}, the models are for the parameters:
 \itemize{
-\item \eqn{ln(\phi+1)} for the Generlized Poisson Version 1.
-\item \eqn{ln(\alpha+1)} for the Generlized Poisson Version 2.
+\item \eqn{ln(\phi+1)} for the Generalized Poisson Version 1.
+\item \eqn{ln(\alpha+1)} for the Generalized Poisson Version 2.
 \item \eqn{ln(\alpha)} for the Negative Binomial 1 model.
 \item \eqn{ln(\alpha)} for the Negative Binomial 2 model.
 \item \eqn{ln(\alpha)} for the Negative Binomial P model.
 \item \eqn{ln(\sigma)} for the Poisson-Lognormal model.
-\item shape parameter for the Poisson-Generalized-Exponential model.
+\item \eqn{ln(shape)} for the Poisson-Generalized-Exponential model.
 \item \eqn{ln(\eta)} for the Poisson-Inverse-Gaussian model.
 \item \eqn{ln(\eta)} for the Poisson-Inverse-Gamma model.
 \item \eqn{ln(\theta)} for the Poisson-Lindley model.
 \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
 \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
 \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
-\item \eqn{\gamma} for the Sichel model.
+\item \eqn{\gamma} for the Sichel model. This parameter can be negative,
+so it is modeled directly (identity link), \eqn{\gamma = W\delta}, rather
+than through \eqn{\exp()}.
 \item \eqn{ln(k)} for the Generalized Waring model.
 \item \eqn{ln(\nu)} for the Conway-Maxwell-Poisson model.
 }
@@ -190,11 +218,12 @@ For \code{dis_param_formula_1}, the models are for the parameters:
 For \code{dis_param_formula_2}, the models are for the parameters:
 \itemize{
 \item Not Applicable for the Generalized Poisson Version 1 model.
+\item Not Applicable for the Generalized Poisson Version 2 model.
 \item Not Applicable for the Negative Binomial 1 model.
 \item Not Applicable for the Negative Binomial 2 model.
 \item \eqn{ln(p)} for the Negative Binomial P model.
 \item Not Applicable for the Poisson-Lognormal model.
-\item scale parameter for the Poisson-Generalized-Exponential model.
+\item \eqn{ln(scale)} for the Poisson-Generalized-Exponential model.
 \item Not Applicable for the Poisson-Inverse-Gaussian model.
 \item Not Applicable for the Poisson-Inverse-Gamma model.
 \item Not Applicable for the Poisson-Lindley model.
@@ -249,8 +278,8 @@ f(y|\phi,\mu)=\frac{\mu(\mu+\phi y)^{y-1} exp\left(-\frac{\mu+\phi y}
 {1+\phi}\right)}{(1+\phi)^y y!}
 }
 
-Where \eqn{\phi} is a scale parameter with the restriction that
-\eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
+Where \eqn{\phi} is a dispersion parameter with the restriction that
+\eqn{\phi>-1}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
 integer. The mean is modeled as:
 \deqn{\mu = exp(X\beta)}
 
@@ -262,7 +291,7 @@ distribution is equidispersed. If \eqn{\phi<0}, the distribution is
 underdispersed.
 
 Furthermore, \eqn{\phi>-1} is required for this distribution. When
-\eqn{\phi<0}, there is also a maximum value of support for the integar value
+\eqn{\phi<0}, there is also a maximum value of support for the integer value
 \eqn{y}. This is \eqn{y_max=\left\lfloor -\frac{\mu}{\phi} \right\rfloor}.
 To account for the range of possible values, this is modeled as
 \deqn{ln(\phi+1)}.
@@ -280,9 +309,9 @@ f(y|\mu,\alpha)=
 {(1+\alpha\mu)^y y!}
 }
 
-Where \eqn{\phi} is a scale parameter with the restriction that
-\eqn{\eta>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a non-negative
-integer. The mean is modeled as:
+Where \eqn{\alpha} is a dispersion parameter with the restriction that
+\eqn{1+\alpha\mu>0}, \eqn{\mu>0} is the mean value, and \eqn{y} is a
+non-negative integer. The mean is modeled as:
 \deqn{\mu = exp(X\beta)}
 
 The variance of the GP-2 distribution is:
@@ -383,10 +412,9 @@ The t-statistics and p-values for the coefficients related to ln(sigma) are,
 by default, testing if the coefficients are different from a value of 0. This
 has little practical meaning given that they are coefficients for ln(sigma).
 They are not testing if the coefficients have statistical significance in
-terms of improvement over a Poisson model. The Likelihood-Ratio test results
-provided in the output provide a test comparing if the Poisson-Lognormal
-model provides a statistically significant improvement in model fit over the
-Poisson model.
+terms of improvement over a Poisson model. To test whether the
+Poisson-Lognormal model fits significantly better than the Poisson model,
+use a likelihood-ratio test with \code{\link{regCompTest}}.
 }
 
 \subsection{Poisson Generalized-Exponential (PGE) Model}{
@@ -557,18 +585,18 @@ Poisson-Weibull distribution is given by:
 \deqn{P(y|\lambda,\alpha,\sigma) = \int_0^\infty \frac{e^{-\lambda x} 
 \lambda^y x^y }{y!} \left(\frac{\alpha}{\sigma}\right)\left(\frac{x}{\sigma}
 \right)^{\alpha-1}e^{-\left(\frac{x}{\sigma}\right)^\alpha} dx}
-where d\eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and
-\deqn{\lambda} is the mean of the Poisson distribution.
+where \eqn{f(x| \alpha, \sigma)} is the PDF of the Weibull distribution and
+\eqn{\lambda} is the mean of the Poisson distribution.
 
 For the Poisson-Weibull Regression model, the expected values is:
 \deqn{E[Y]=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
-Where \deqn{\lambda} is the mean of the Poisson distribution, \deqn{\alpha} is
-the shape parameter, and \deqn{\sigma} is the scale parameter.
+Where \eqn{\lambda} is the mean of the Poisson distribution, \eqn{\alpha} is
+the shape parameter, and \eqn{\sigma} is the scale parameter.
 
 To ensure that the regression model predicts the mean value, the regression
 utilizes:
 \deqn{\mu=\exp{X\gamma}=\lambda\sigma\Gamma\left(1+\frac{1}{\alpha}\right)}
-Where \deqn{X} is a matrix of independent variables and \deqn{\gamma} is a
+Where \eqn{X} is a matrix of independent variables and \eqn{\gamma} is a
 vector of coefficients.
 
 This leads to:
@@ -582,15 +610,15 @@ The variance for the Poisson-Weibull regression is:
 \subsection{Sichel (SI) Model}{
 
 The compound Probability Mass Function (PMF) for the Sichel distribution uses
-the formulation from Zhou et al. (2011) and Rigby et al. (2008):
+the formulation from Zou, Lord and Zhang (2012) and Rigby et al. (2008):
 \deqn{f(y|\mu, \sigma, \gamma)=\frac{\left(\frac{\mu}{c}\right)^y 
 K_{y+\gamma}(\alpha)}{K_\gamma(1/\sigma)y!(\alpha\sigma)^{y+\gamma}}}
 
-Where \deqn{\sigma} and \deqn{\gamma} are distribution parameters with
-\deqn{\sigma>0},
+Where \eqn{\sigma} and \eqn{\gamma} are distribution parameters with
+\eqn{\sigma>0},
 \deqn{c=\frac{K_{\gamma+1}(1/\sigma)}{K_\gamma(1/\sigma)}},
 \deqn{\alpha^2=\sigma^{-2}+2\mu(c\sigma)^{-1}},
-a mean value of \deqn{\mu}, \deqn{y} is a non-negative integer, and
+a mean value of \eqn{\mu}, \eqn{y} is a non-negative integer, and
 \deqn{K_j(x)} is a modified Bessel function of the third kind with order
 \deqn{j} and argument \deqn{x}.
 
@@ -725,10 +753,12 @@ nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
 summary(nb2)
 
 
-# Estimate a Poisson-Lognormal model 
-pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
-              data = washington_roads, family = "PLN", engine="poilog")
-summary(pln)  
+# Estimate a Poisson-Lognormal model (integration with the poilog package)
+if (requireNamespace("poilog", quietly = TRUE)) {
+  pln <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+                  data = washington_roads, family = "PLN", engine="poilog")
+  summary(pln)
+}
 
 # Estimate a Negative Binomial with underreporting (probit)
 plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
@@ -744,13 +774,13 @@ com_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
                       data = washington_roads, family = "COM", method="BHHH")
 summary(com_model)
 
-# Estimate a CGenerlized-Poisson Version 1 model
+# Estimate a Generalized-Poisson Version 1 model
 gp1_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
                       AADT10kplus,
                       data = washington_roads, family = "GP1", method="BHHH")
 summary(gp1_model)
 
-#' # Estimate a CGenerlized-Poisson Version 2 model
+# Estimate a Generalized-Poisson Version 2 model
 gp2_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + 
                       AADT10kplus,
                       data = washington_roads, family = "GP2", method="BHHH")

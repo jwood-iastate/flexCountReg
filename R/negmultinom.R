@@ -61,6 +61,9 @@
 #' @param bootstraps integer number of cluster bootstrap replications used when
 #'   \code{stderr = "boot"}.
 #' @param verbose logical. If \code{TRUE}, optimizer progress is printed.
+#' @param keep_data logical; if \code{FALSE}, the training data are not stored
+#'   in the fitted object (saving memory). \code{predict()} then needs
+#'   \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.
 #'
 #' @details
 #' ## Model structure
@@ -235,7 +238,8 @@ negmultinom <- function(formula,
                         start.vals = NULL,
                         stderr = "normal",
                         bootstraps = NULL,
-                        verbose = FALSE) {
+                        verbose = FALSE,
+                        keep_data = TRUE) {
 
   call <- match.call()
 
@@ -293,7 +297,7 @@ negmultinom <- function(formula,
                              family = family, method = method,
                              max.iters = max.iters, B = bootstraps)
   }
-  se <- sqrt(pmax(diag(vc), 0))
+  se <- .fcr_se(vc)
   names(se) <- prep$par_names
 
   # ---- Fitted quantities ---------------------------------------------------
@@ -340,7 +344,8 @@ negmultinom <- function(formula,
   fit$rows_used <- prep$rows_used
   fit$call <- call
 
-  .createFlexCountReg(model = fit, data = data, call = call, formula = formula)
+  .createFlexCountReg(model = fit, data = data, call = call, formula = formula,
+                      keep_data = keep_data)
 }
 
 

@@ -51,8 +51,10 @@
 #' dlindley(x, theta=0.5, log=TRUE)
 #' plindley(q, theta = 1.5)
 #' plindley(q, theta = 0.5, lower.tail = FALSE)
-#' qlindley(p, theta = 1.5)
-#' qlindley(p, theta = 0.5)
+#' if (requireNamespace("lamW", quietly = TRUE)) {
+#'   qlindley(p, theta = 1.5)
+#'   qlindley(p, theta = 0.5)
+#' }
 #' 
 #' set.seed(123154)
 #' rlindley(5, theta = 1.5)
@@ -174,6 +176,7 @@ qlindley <- function(p, theta = 1, lower.tail = TRUE, log.p = FALSE) {
   w_arg <- (1 + theta) * (p - 1) * exp(-(1 + theta))
   
   # Lambert W (negative branch)
+  rlang::check_installed("lamW", reason = "for `qlindley()`.")
   w_val <- lamW::lambertWm1(w_arg)
   
   # Quantile
@@ -189,15 +192,15 @@ qlindley <- function(p, theta = 1, lower.tail = TRUE, log.p = FALSE) {
 #' @rdname Lindley
 #' @export
 rlindley <- function(n, theta = 1) {
-  
-  if (length(n) != 1 || n < 0 || n != floor(n) || n==round(n)) {
+  if (length(n) == 1L && (is.na(n) || n < 0 || n != floor(n))) {
     warning("'n' must be a non-negative integer")
   }
-  
-  # Recycle theta if needed
+  n <- .fcr_rn(n)
   theta <- rep_len(theta, n)
-  
-  # Generate via inverse CDF (fully vectorized)
-  u <- runif(n)
-  qlindley(u, theta = theta)
+  bad <- !(is.finite(theta) & theta > 0)
+  .fcr_warn_na(bad, "`theta` must be greater than 0.")
+  out <- rep(NA_real_, n)
+  # Lindley(theta) is a mixture of Gamma(1, theta) and Gamma(2, theta)
+  out[!bad] <- .fcr_rlindley_mix(sum(!bad), theta[!bad])
+  out
 }

@@ -300,18 +300,20 @@ qcom <- function(p, mu = NULL, lambda = 1, nu = 1) {
 #' @rdname COMDistribution
 #' @export
 rcom <- function(n, mu = NULL, lambda = 1, nu = 1) {
-  if (length(n) != 1 || !is.numeric(n) || n <= 0 || floor(n) != n)
-    warning("`n` must be a single positive integer.")
-  
-  if ((lambda <= 0) | (nu <= 0) | (mu <=0)) {
-    msg <- "The values of `mu`, lambda`, and `nu` must all be greater than 0."
-    warning(msg)
-  }
-  
+  n <- .fcr_rn(n)
+  nu <- rep_len(nu, n)
   if (!is.null(mu)) {
-    lambda <- find_lambda_cpp(mu, nu)
+    mu <- rep_len(mu, n)
+    bad <- !(is.finite(mu) & mu > 0 & is.finite(nu) & nu > 0)
+    .fcr_warn_na(bad, "`mu` and `nu` must be greater than 0.")
+    return(.fcr_r_grouped(n, list(mu = mu, nu = nu), !bad,
+                          function(k, mu, nu) {
+                            rcom_cpp(k, find_lambda_cpp(mu, nu), nu)
+                          }))
   }
-  
-  random_numbers <- rcom_cpp(n, lambda, nu)
-  return(random_numbers)
+  lambda <- rep_len(lambda, n)
+  bad <- !(is.finite(lambda) & lambda > 0 & is.finite(nu) & nu > 0)
+  .fcr_warn_na(bad, "`lambda` and `nu` must be greater than 0.")
+  .fcr_r_grouped(n, list(lambda = lambda, nu = nu), !bad,
+                 function(k, lambda, nu) rcom_cpp(k, lambda, nu))
 }

@@ -65,7 +65,8 @@ test_that("poisLind.re handles bootstrapping and offsets", {
   
   # Check summary method works on this object
   summ <- summary(mod)
-  expect_true("x1" %in% summ$parameter)
+  expect_true("x1" %in% rownames(summ$coefficients))
+  expect_true("x1" %in% tibble::as_tibble(summ)$parameter)
 })
 
 test_that("poisLind.re handles composite grouping variables", {
@@ -155,7 +156,7 @@ test_that("predict function works for poisLindRE models", {
     poisLind.re(y ~ x1, group_var = "id", data = test_data, max.iters = 20)
   )
   
-  preds <- predict(mod, data = test_data)
+  preds <- predict(mod, newdata = test_data)
   
   expect_equal(length(preds), nrow(test_data))
   expect_true(all(preds > 0))
@@ -167,7 +168,7 @@ test_that("predict function works for renb models", {
     renb(y ~ x1, group_var = "id", data = test_data, max.iters = 20)
   )
   
-  preds <- predict(mod, data = test_data)
+  preds <- predict(mod, newdata = test_data)
   
   expect_equal(length(preds), nrow(test_data))
   expect_true(all(preds > 0))
@@ -179,7 +180,7 @@ test_that(
     # Estimate a quick Random Parameter model
     # Suppress warnings for cleaner test output
     rp_mod <- suppressWarnings(
-      countreg.rp(y ~ x1, 
+      countreg.rp(y ~ x1 - 1, 
                   rpar_formula = ~ 1, 
                   data = test_data,
                   family = "NB2",

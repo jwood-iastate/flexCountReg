@@ -12,8 +12,11 @@
 #' @param object A fitted `flexCountReg` object.
 #' @param data Optional data frame. Defaults to the data used to fit the model.
 #' @param vars Optional character vector of variable names to evaluate. If
-#'   `NULL`, the function uses the non-response variables appearing in the
-#'   model formula that are present in `data`.
+#'   `NULL`, the function uses the non-response variables of the model formula
+#'   and of the formulas that also change the expected value: the
+#'   underreporting, random-parameter and heterogeneity formulas, and the
+#'   distribution-parameter formulas of the PLN and PLL families. Offsets and
+#'   panel identifiers are excluded.
 #' @param measure Character scalar. One of:
 #'   \describe{
 #'     \item{"auto"}{Continuous variables receive AMEs; indicator variables
@@ -268,12 +271,23 @@ print.flexEffectTable <- function(x, ...) {
   
   term_vars <- all.vars(stats::delete.response(stats::terms(form)))
   
+  # Variables that enter only through auxiliary formulas also change E[y]:
+  # underreporting, random parameters and their heterogeneity, and the
+  # distribution parameters of families whose mean depends on them.
+  m <- object$model
+  aux <- list(m$underreport_formula, m$zero_formula, m$rpar_formula,
+              m$het_mean_formula, m$het_var_formula)
+  if (isTRUE(m$family %in% c("PLN", "PLL"))) {
+    aux <- c(aux, list(m$dis_param_formula_1, m$dis_param_formula_2))
+  }
+  term_vars <- unique(c(term_vars, do.call(.fcr_vars, aux)))
+  
   special_vars <- character(0)
   if (!is.null(object$model)) {
-    if (!is.null(object$model$offset)) {
-      special_vars <- c(special_vars, object$model$offset)
+    if (!is.null(object$model[["offset"]])) {
+      special_vars <- c(special_vars, object$model[["offset"]])
     }
-    if (!is.null(object$model$panel_id)) {
+    if (is.character(object$model$panel_id)) {
       special_vars <- c(special_vars, object$model$panel_id)
     }
     if (!is.null(object$model$group_var)) {

@@ -94,23 +94,21 @@
 
 #' @rdname Generalized-Waring
 #' @export
-dgwar <- Vectorize(function(y, mu, k, rho, log = FALSE) {
-  
+dgwar <- function(y, mu, k, rho, log = FALSE) {
   if (any(!is.finite(mu) | mu <= 0)) {
     stop("mu must be finite and greater than 0")
   }
-  
   if (any(!is.finite(k) | k <= 0)) {
     stop("k must be finite and greater than 0")
   }
-  
   if (any(!is.finite(rho) | rho <= 1)) {
     stop("rho must be finite and greater than 1")
   }
-  
-  genWaring_cpp(y, mu, k, rho, log_prob = log)
-  
-}, vectorize.args = c("y", "mu", "k", "rho"))
+  r <- .fcr_recycle(y, mu, k, rho)
+  if (length(r[[1]]) == 0L) return(numeric(0))
+  # The C++ kernel is vectorized over all arguments
+  genWaring_cpp(as.numeric(r[[1]]), r[[2]], r[[3]], r[[4]], log_prob = log)
+}
 
 #' @rdname Generalized-Waring
 #' @export
@@ -218,20 +216,14 @@ pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
 
 #' @rdname Generalized-Waring
 #' @export
-qgwar <- Vectorize(function(p, mu, k, rho) {
+qgwar <- function(p, mu, k, rho) {
   if (any(!is.finite(p) | p < 0 | p > 1)) {
     stop("p must be finite and in the interval [0, 1]")
   }
-  
-  
-  y <- 0
-  p_value <- pgwar(y, mu, k, rho)
-  while (p_value < p) {
-    y <- y + 1
-    p_value <- pgwar(y, mu, k, rho)
-  }
-  return(y)
-})
+  .fcr_qcount(p, function(y, mu, k, rho) {
+    cumsum(dgwar(y, mu, k, rho))
+  }, mu, k, rho)
+}
 
 
 #' @rdname Generalized-Waring

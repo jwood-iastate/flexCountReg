@@ -107,7 +107,9 @@ used to solve the integral if the engine is set to "poilog".
 }
 \examples{
 dpLnorm(0, mean=0.75, sigma=2, ndraws=10)
-dpLnorm(0, mean=0.75, sigma=2, engine="poilog")
+if (requireNamespace("poilog", quietly = TRUE)) {
+  dpLnorm(0, mean=0.75, sigma=2, engine="poilog")
+}
 ppLnorm(c(0,1,2,3,5,7,9,10), mean=0.75, sigma=2, ndraws=10)
 qpLnorm(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, sigma=2, ndraws=10)
 rpLnorm(30, mean=0.75,  sigma=2)

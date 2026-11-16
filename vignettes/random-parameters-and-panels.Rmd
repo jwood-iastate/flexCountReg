@@ -1,0 +1,161 @@
+---
+title: "Random parameters and panel models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Random parameters and panel models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Road segments, intersections or individuals observed repeatedly are not
+independent, and the effect of a variable often differs from one unit to
+another. flexCountReg handles both with random-parameter models
+(`countreg.rp()`, also available as `countreg_rp()`) and random-effects
+models (`renb()`, `poisLind.re()`, `repois()` and `negmultinom()`).
+
+```{r setup}
+library(flexCountReg)
+data("washington_roads")
+length(unique(washington_roads$ID))   # road segments
+nrow(washington_roads)                # segment-years
+```
+
+## Random-parameter models
+
+In a random-parameter model, a coefficient varies across units:
+\eqn{\beta_i = \mu + \sigma \upsilon_i}. With `group_var`, all observations
+of a segment share one draw of the random parameter, which accounts for the
+panel structure. The model is estimated by maximum simulated likelihood
+with Halton draws; real analyses should use more draws (`ndraws`) than this
+example, and check that the estimates are stable as the number grows.
+
+```{r rp}
+rp <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+                  data = washington_roads, family = "NB2",
+                  rpardists = c(speed50 = "n"), offset = "lnlength",
+                  group_var = "ID", ndraws = 100, method = "BFGS")
+summary(rp)
+```
+
+`speed50:Mean` and `speed50:St.Dev` are the mean and standard deviation of
+the speed-limit effect across segments. Distributions other than the normal
+are available through `rpardists`: lognormal (`"ln"`), gamma (`"g"`),
+triangular (`"t"`) and uniform (`"u"`). For the triangular and uniform, the
+`St.Dev` parameter is a half-width: the coefficient lies in
+\eqn{[\mu - \sigma, \mu + \sigma]}.
+
+### Heterogeneity in means
+
+The mean of a random parameter can depend on covariates, following Wood and
+Gayah (2025, Eq. 2): \eqn{\beta_i = \mu + z_i'\delta + \sigma\upsilon_i}.
+Each random parameter gets its own coefficient for each heterogeneity
+variable:
+
+```{r het}
+rp_het <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+                      het_mean_formula = ~ ShouldWidth04,
+                      data = washington_roads, offset = "lnlength",
+                      group_var = "ID", ndraws = 100, method = "BFGS")
+tidy(rp_het)
+```
+
+### Predictions
+
+There are three prediction methods for random-parameter models (Wood and
+Gayah, 2025):
+
+* `"Exact"` integrates over the random-parameter distributions analytically
+  (with their moment generating functions), so it has no simulation error.
+* `"Simulated"` averages over Halton draws.
+* `"Individual"` (Empirical Bayes) uses each segment's observed crashes to
+  estimate its own coefficients. It needs the outcome, so it is for data with
+  observed outcomes.
+
+```{r predict}
+nd <- washington_roads[washington_roads$ID %in% unique(washington_roads$ID)[1:2], ]
+cbind(observed = nd$Total_crashes,
+      exact = predict(rp, newdata = nd, method = "Exact"),
+      simulated = predict(rp, newdata = nd, method = "Simulated"),
+      individual = predict(rp, newdata = nd, method = "Individual"))
+```
+
+The segment-specific coefficients from the Empirical Bayes method are
+returned as an attribute:
+
+```{r eb}
+eb <- predict(rp, newdata = washington_roads, method = "Individual")
+summary(attr(eb, "eb_coefficients")[, "speed50"])
+```
+
+A caution for lognormal random parameters: the expected value of
+\eqn{\exp(x\beta)} does not exist when \eqn{\beta} is lognormal and
+\eqn{x > 0}, so `"Exact"` returns `Inf` with a warning there, and
+`"Simulated"` predictions depend on the number of draws. Use the negative of
+the variable, a gamma random parameter, or the Empirical Bayes predictions.
+
+## Random-effects models
+
+Random-effects models add a panel-level effect to every observation of a
+unit. The negative binomial random-effects model of Hausman, Hall and
+Griliches (`renb()`), the Poisson-Lindley random-effects model
+(`poisLind.re()`) and the negative multinomial models (`negmultinom()`) are
+available:
+
+```{r re}
+re_models <- list(
+  RENB = renb(Total_crashes ~ lnaadt + speed50, group_var = "ID",
+              data = washington_roads, offset = "lnlength", method = "BFGS"),
+  PoisLindRE = poisLind.re(Total_crashes ~ lnaadt + speed50, group_var = "ID",
+                           data = washington_roads, offset = "lnlength",
+                           method = "BFGS"),
+  NM2 = negmultinom(Total_crashes ~ lnaadt + speed50, group_var = "ID",
+                    data = washington_roads, offset = "lnlength")
+)
+do.call(rbind, lapply(names(re_models), function(nm) {
+  cbind(model = nm,
+        glance(re_models[[nm]])[, c("logLik", "AIC", "BIC", "nobs",
+                                    "n_groups")])
+}))
+```
+
+For panel models, `BIC()` uses the number of panels (`n_groups`) as the
+sample size, because the panels are the independent units.
+
+### Standard errors
+
+The likelihood of a panel model has one contribution per panel, so robust
+(sandwich) standard errors are clustered by panel. Bootstrap standard errors
+resample whole panels:
+
+```{r se}
+re_robust <- poisLind.re(Total_crashes ~ lnaadt + speed50, group_var = "ID",
+                         data = washington_roads, offset = "lnlength",
+                         method = "BFGS", stderr = "robust")
+tidy(re_robust)
+```
+
+Cross-sectional models can also be fitted with `stderr = "robust"` or
+`"boot"`; for repeated observations of the same units, prefer a panel model
+or clustered resampling.
+
+## Cross-validation
+
+When tuning or comparing these models by cross-validation (for example with
+the tidymodels `count_reg()` specification), resample whole panels, for
+example with `rsample::group_vfold_cv(data, group = ID)`. Splitting the
+observations of one segment between the training and test sets leaks
+information and makes the models look better than they are.
+
+## References
+
+Wood, J.S., & Gayah, V. (2025). Out-of-sample prediction and interpretation
+for random parameter generalized linear models. *Accident Analysis and
+Prevention*, 220, 108147.
+
+Hausman, J. A., Hall, B. H., & Griliches, Z. (1984). Econometric models for
+count data with an application to the patents-R&D relationship.
+*Econometrica*, 52(4), 909-938.

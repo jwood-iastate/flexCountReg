@@ -2,6 +2,7 @@
 % Please edit documentation in R/countregrp.R
 \name{countreg.rp}
 \alias{countreg.rp}
+\alias{countreg_rp}
 \title{Random Parameters Count Regression Models}
 \usage{
 countreg.rp(
@@ -17,14 +18,18 @@ countreg.rp(
   ndraws = 500,
   scrambled = FALSE,
   correlated = FALSE,
-  panel_id = NULL,
+  group_var = NULL,
   weights = NULL,
   offset = NULL,
   method = "BHHH",
   max.iters = 1000,
   start.vals = NULL,
   verbose = FALSE,
-  engine = "halton"
+  stderr = "normal",
+  bootstraps = NULL,
+  engine = "halton",
+  keep_data = TRUE,
+  panel_id = NULL
 )
 }
 \arguments{
@@ -46,7 +51,10 @@ etc. (See \code{\link{countreg}} for full list).}
 \item{rpardists}{an optional named vector whose names are the random
 parameters and values the distribution. The distribution options include
 normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma
-("g"). If not provided, normal is used.}
+("g"). Values are matched to the random parameters by name; every random
+parameter must be named. A single unnamed value applies to all random
+parameters. If not provided, normal is used. See Details for how each
+distribution's \code{St.Dev} parameter is defined.}
 
 \item{dis_param_formula_1}{a symbolic description of the model for the
 first parameter of the count distribution (e.g., ln(alpha) for NB2).}
@@ -54,11 +62,19 @@ first parameter of the count distribution (e.g., ln(alpha) for NB2).}
 \item{dis_param_formula_2}{a symbolic description of the model for the
 second parameter of the count distribution (if applicable).}
 
-\item{het_mean_formula}{an optional symbolic description of the model
-for heterogeneity in the means of the random parameters.}
+\item{het_mean_formula}{an optional one-sided formula for heterogeneity in
+the means of the random parameters. Each random parameter gets its own
+coefficient for each variable (named \code{HetMean:<parameter>:<variable>}),
+and the effect is additive: \eqn{\beta_{ik} = \mu_k + z_i'\delta_k}
+(Wood and Gayah, 2025, Eq. 2). For lognormal parameters the shift is on the
+log scale, and for gamma parameters it is multiplicative,
+\eqn{\mu_k \exp(z_i'\delta_k)}, so the mean stays positive. The
+intercept is dropped.}
 
-\item{het_var_formula}{an optional symbolic description of the model
-for heterogeneity in the variances of the random parameters.}
+\item{het_var_formula}{an optional one-sided formula for heterogeneity in
+the scales of the random parameters:
+\eqn{\sigma_{ik} = \sigma_k \exp(s_i'\phi)}, with \eqn{\phi} shared by
+all random parameters. The intercept is dropped.}
 
 \item{ndraws}{the number of Halton draws to use for estimating the random
 parameters.}
@@ -68,28 +84,47 @@ parameters.}
 \item{correlated}{if the random parameters should be correlated.
 If TRUE, only normal distributions are used.}
 
-\item{panel_id}{an optional variable name (string) or vector defining the
-panel structure (repeated measures). If provided, the standard errors and
-likelihood are estimated accounting for the panel structure.}
+\item{group_var}{an optional variable name (string), or a vector with one
+value per row, defining the panel structure (repeated measures). If
+provided, each panel shares one draw of the random parameters, and the
+likelihood and standard errors account for the panel structure.}
 
-\item{weights}{variable name to be used as frequency weights.}
+\item{weights}{the name of a variable, or a numeric vector, of frequency
+weights. With \code{panel_id}, weights apply to whole panels (the panel
+log-likelihood is weighted), so they should be constant within a panel.}
 
-\item{offset}{variable name to be used as an offset.}
+\item{offset}{the name of a variable, or vector of variable names, to be
+used as an offset (summed when several are given). An offset can instead
+be given with \code{offset()} in \code{formula}; use only one of the two.}
 
 \item{method}{optimization method (e.g., "BHHH", "BFGS", "NM").}
 
 \item{max.iters}{maximum number of iterations.}
 
-\item{start.vals}{optional vector of starting values.}
+\item{start.vals}{optional vector of starting values, one per parameter.
+Named values are matched to the parameters by name.}
 
 \item{verbose}{logical.}
+
+\item{stderr}{the type of standard errors: \code{"normal"} (Hessian-based,
+the default), \code{"robust"} (sandwich; clustered by panel when
+\code{group_var} is given), or \code{"boot"} (bootstrap that resamples
+whole panels and refits the model).}
+
+\item{bootstraps}{the number of bootstrap samples when
+\code{stderr = "boot"} (default 200).}
 
 \item{engine}{the engine to use for the integration if the Poisson Lognormal
 (PLN) distribution is used. Options include "halton" which uses Halton
 draws or "poilog" which uses the poilog package. The default is "halton".}
+
+\item{keep_data}{logical; if \code{FALSE}, the training data are not stored
+in the fitted object. \code{predict()} then needs \code{newdata}.}
+
+\item{panel_id}{deprecated; use \code{group_var}.}
 }
 \value{
-An object of class \code{countreg} which is a list with the following components:
+An object of class \code{flexCountReg} which is a list with the following components:
 \itemize{
 \item model: the fitted model object.
 \item data: the data frame used to fit the model.
@@ -99,6 +134,36 @@ An object of class \code{countreg} which is a list with the following components
 }
 \description{
 Random Parameters Count Regression Models
+}
+\details{
+\code{countreg_rp()} is the same function as \code{countreg.rp()}, under a
+name that tools do not mistake for an S3 method.
+
+\strong{Random parameter distributions.} Each random parameter is
+\eqn{\beta = \mu + \sigma \upsilon}, where the \code{:Mean} and
+\code{:St.Dev} estimates are \eqn{\mu} and \eqn{\sigma}:
+\itemize{
+\item normal ("n"): \eqn{\upsilon \sim N(0, 1)}, so \eqn{\sigma} is the
+standard deviation.
+\item uniform ("u") and triangular ("t"): \eqn{\upsilon} is uniform or
+symmetric triangular on \eqn{[-1, 1]}, so \eqn{\beta} lies in
+\eqn{[\mu - \sigma, \mu + \sigma]}. Here \eqn{\sigma} is a half-width;
+the standard deviation is \eqn{\sigma/\sqrt{3}} (uniform) or
+\eqn{\sigma/\sqrt{6}} (triangular). Models fitted before version 0.1.3
+used \eqn{[\mu - \sigma/2, \mu + \sigma/2]} for the uniform; their
+\eqn{\sigma} is converted automatically in \code{predict()}.
+\item lognormal ("ln"): \eqn{\beta = \exp(\mu + \sigma \upsilon)},
+always positive. The expected value of \eqn{\exp(x\beta)} is infinite
+for \eqn{x > 0}, so marginal (Exact or Simulated) predictions do not exist
+for observations with a positive value of a lognormal random parameter's
+variable. Use the variable's negative (so \eqn{x \le 0}), a gamma random
+parameter, or \code{method = "Individual"} predictions instead.
+\item gamma ("g"): mean \eqn{\mu > 0} and standard deviation
+\eqn{\sigma}, so the coefficient is always positive.
+}
+
+The mixing distribution of the PLN, PGE, PLL and PW families uses its own
+Halton dimension, independent of the random parameters' draws.
 }
 \examples{
 \donttest{
@@ -120,7 +185,7 @@ summary(rp_nb2)
 # rp_panel <- countreg.rp(Total_crashes ~ -1 + lnaadt,
 #                        rpar_formula = ~ speed50,
 #                        data = washington_roads,
-#                        panel_id = "site_id",
+#                        group_var = "site_id",
 #                        family = "NB2",
 #                        ndraws = 100)
 
@@ -138,14 +203,18 @@ summary(rp_gen)
 # 4. Random Parameters Poisson Model with panel specification
 rp_poisson <- countreg.rp(Total_crashes ~ lnaadt,
                       rpar_formula = ~ -1 + speed50,
-                      dis_param_formula_1 = ~ lnlength, 
                       het_mean_formula = ~ AADT10kplus,
                       data = washington_roads,
                       family = "POISSON",
                       rpardists = c(speed50 = "n"),
                       ndraws = 100,
-                      panel_id = "ID")
+                      group_var = "ID")
 summary(rp_poisson)
 }
 
+}
+\references{
+Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and interpretation for
+random parameter generalized linear models. \emph{Accident Analysis and
+Prevention}, 220, 108147.
 }

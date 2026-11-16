@@ -37,8 +37,8 @@ test_that("NM2 log-likelihood equals the repois log-likelihood", {
   mod <- negmultinom(y ~ x1 + z, group_var = "id", data = nm_data,
                      offset = "lnL")
   pr <- ns$.repois_prepare_inputs(y ~ x1 + z, "id", nm_data, "lnL")
-  ll_re <- ns$.repois_loglik(mod$model$estimate, pr$y, pr$X,
-                             pr$offset_vec, pr$cluster_list)
+  ll_re <- sum(ns$.repois_loglik(mod$model$estimate, pr$y, pr$X,
+                             pr$offset_vec, pr$cluster_list))
   expect_equal(mod$model$maximum, ll_re, tolerance = 1e-8,
                ignore_attr = TRUE)
 })
@@ -64,8 +64,9 @@ test_that("NM2 fit returns a well-formed flexCountReg object", {
   expect_true(all(is.finite(mod$model$se)))
   expect_equal(mod$model$n_groups, 300)
   expect_equal(length(mod$model$eb.fitted), nrow(nm_data))
-  out <- capture.output(s <- summary(mod))
-  expect_equal(nrow(s), 5) # 4 parameters + offset row
+  s <- summary(mod)
+  expect_equal(nrow(s$coefficients), 4)
+  expect_equal(s$offset, "lnL")
 })
 
 test_that("family names are cleaned and invalid names rejected", {

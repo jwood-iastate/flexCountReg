@@ -2,45 +2,65 @@
 % Please edit documentation in R/summary_flexCountReg.R
 \name{summary.flexCountReg}
 \alias{summary.flexCountReg}
-\title{Custom summary method for flexCountReg models}
+\alias{print.summary.flexCountReg}
+\alias{as_tibble.summary.flexCountReg}
+\title{Summarize a flexCountReg model}
 \usage{
-\method{summary}{flexCountReg}(object, ...)
+\method{summary}{flexCountReg}(object, level = 0.95, ...)
+
+\method{print}{summary.flexCountReg}(x, digits = x$digits, ...)
+
+\method{as_tibble}{summary.flexCountReg}(x, ...)
 }
 \arguments{
 \item{object}{A flexCountReg model object.}
 
-\item{...}{Optional parameters that include \code{confint_level} and \code{digits}.}
+\item{level}{the confidence level for the confidence intervals. Default is
+0.95.}
+
+\item{...}{Optional arguments. The arguments \code{confint_level} and
+\code{digits} of earlier versions are still accepted.}
+
+\item{x}{a \code{summary.flexCountReg} object.}
+
+\item{digits}{the number of digits (decimal places) to round to when
+printing. Default is 3.}
 }
 \value{
-Prints the model formula, method used for estimation, number of
-iterations used, if the model converged, and the log-likelihood. Then, it
-prints a table containing parameter estimates, standard errors,
-t-statistics, p-values, and confidence intervals. Also quietly returns a
-tibble with these values.
+An object of class \code{summary.flexCountReg}, a list with
+\code{coefficients} (a matrix with the estimate, standard error, z value,
+p-value and confidence limits of every parameter), \code{vcov_type},
+\code{logLik}, \code{AIC}, \code{BIC}, \code{nobs}, \code{n_groups},
+\code{n_dropped}, \code{converged}, \code{offset} and \code{lr_test}.
+Printing it shows the results. Use \code{tibble::as_tibble()} on it for
+the coefficient table as a tibble (the value returned by
+\code{summary()} in earlier versions), or \code{\link{tidy.flexCountReg}}.
 }
 \description{
-Custom summary method for flexCountReg models
+Summarize a flexCountReg model
 }
 \details{
-This summary method accounts for bootstrapped or robust standard errors (when
-used).
-}
-\note{
-Optional parameter \code{confint_level}: A numeric value between 0 and 1
-indicating the confidence level for confidence intervals. Default is 0.95.
+The standard errors are those chosen when the model was fit: Hessian-based,
+robust (sandwich), or bootstrapped. The z statistics and p-values use the
+normal distribution.
 
-Optional parameter \code{digits}: Number of digits (decimal places) to round
-to. Default is 3.
+For \code{countreg()} models of families that nest the Poisson model, a
+likelihood-ratio test against a Poisson model with the same mean
+specification, rows, offset and weights is reported. For one-parameter
+mixtures where the Poisson model lies on the boundary of the parameter
+space (NB1, NB2, PLN, PIG1, PIG2, PIG, PL), the p-value is halved (a
+50:50 mixture of chi-square distributions with 0 and 1 degrees of freedom).
 }
 \examples{
 \donttest{
-# NB2 Model
 data("washington_roads")
-washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
-nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
+nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50,
                 data = washington_roads, family = "NB2",
-                dis_param_formula_1 = ~ speed50, method='BFGS')
-summary(nb2)
+                dis_param_formula_1 = ~ speed50, method = "BFGS")
+s <- summary(nb2)
+s
+s$coefficients
+tibble::as_tibble(s)
 }
 
 }

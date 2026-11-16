@@ -8,7 +8,10 @@
 Data frame compiled from roadway, traffic, and police-reported crash data
 that has 1,501 rows (507 unique road segments) and 13 columns:
 \describe{
-\item{ID}{Anonymized road ID. Factor.}
+\item{ID}{Anonymized road ID. Factor. The data are a panel: 507 road
+segments, each observed in up to 3 years (2016-2018), so \code{ID} is the
+natural \code{group_var} or \code{panel_id} for the random-effects and
+random-parameters models.}
 \item{Year}{Year. Integer.}
 \item{AADT}{Annual Average Daily Traffic (AADT). Double.}
 \item{Length}{Segment length in miles. Double.}

@@ -16,7 +16,7 @@
 //
 // The log integrand h(t) is maximized by a safeguarded Newton method with
 // analytic derivatives; the integral is then computed on the log scale with
-// a sinh-sinh (double exponential) rule centred at the mode and scaled by
+// a sinh-sinh (double exponential) rule centered at the mode and scaled by
 // the curvature there. The rule is deterministic and resolves the region
 // where the integrand has its mass for every count, including counts far in
 // the tail where fixed simulation draws carry no information.

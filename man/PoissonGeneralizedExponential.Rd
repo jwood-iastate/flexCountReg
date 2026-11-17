@@ -130,7 +130,7 @@ geometric with mean \eqn{\mu}.
 
 The integral has no closed form. By default (\code{engine =
 "quadrature"}) it is computed on the log scale by adaptive quadrature over
-\eqn{\log X}, centred at the mode of the integrand, which is accurate for
+\eqn{\log X}, centered at the mode of the integrand, which is accurate for
 every count. \code{engine = "halton"} averages the Poisson probabilities
 over Halton draws of \eqn{X}, as flexCountReg 0.1.2 and earlier did.
 }

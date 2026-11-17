@@ -5,7 +5,7 @@
 #
 # The log PMF is computed directly on the log scale: the log integrand is
 # maximized over the (log) mixing variable and integrated with a
-# double-exponential rule centred at its mode, so counts far in the tail
+# double-exponential rule centered at its mode, so counts far in the tail
 # keep their relative accuracy. The rule is deterministic, so the
 # log-likelihood is a smooth function of the parameters.
 #

@@ -248,14 +248,14 @@ Changed results are marked **(changed)**.
   element. `plindley()` computes both tails directly. Zero-truncated
   simulation reports invalid probabilities and its count limit as `NA`
   draws with a warning, instead of returning a count.
-* **COM controls.** `find_lambda_cpp()` honours its tolerance (relative
+* **COM controls.** `find_lambda_cpp()` honors its tolerance (relative
   error of the mean) and iteration limit and reports non-convergence
   instead of accepting a collapsed bracket; `find_lambda_diag_cpp()` gives
   the residual, iterations and status. Unused controls of the internal
   moment functions were removed.
 * **`renb()`**: the log-likelihood is computed as three stable differences
   of log-gamma functions. For large `a` and `b`, terms of size ~1e200
-  cancelled and the optimizer could report a positive log-likelihood of
+  canceled and the optimizer could report a positive log-likelihood of
   ~1e203 **(changed**, fits that hit this region**)**.
 * `rpardists` values are checked before a single value is expanded.
 * Documentation: the PGE equations use one rate convention and explain why

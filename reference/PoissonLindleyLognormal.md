@@ -13,7 +13,8 @@ dplindLnorm(
   sigma = 1,
   ndraws = 1500,
   log = FALSE,
-  hdraws = NULL
+  hdraws = NULL,
+  engine = c("quadrature", "halton")
 )
 
 pplindLnorm(
@@ -24,10 +25,19 @@ pplindLnorm(
   sigma = 1,
   ndraws = 1500,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  engine = c("quadrature", "halton")
 )
 
-qplindLnorm(p, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
+qplindLnorm(
+  p,
+  mean = 1,
+  theta = 1,
+  sigma = 1,
+  ndraws = 1500,
+  lambda = NULL,
+  engine = c("quadrature", "halton")
+)
 
 rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 ```
@@ -54,7 +64,7 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 - ndraws:
 
-  number of Halton draws.
+  the number of Halton draws (only with `engine = "halton"`).
 
 - log:
 
@@ -62,7 +72,16 @@ rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 
 - hdraws:
 
-  optional Halton draws.
+  optional Halton draws (only with `engine = "halton"`).
+
+- engine:
+
+  the numerical method: `"quadrature"` (default) computes the
+  log-probability by adaptive quadrature over the log of the mixing
+  variable, accurate for every count including far tails; `"halton"`
+  averages the Poisson probabilities over Halton draws (the method of
+  flexCountReg 0.1.2 and earlier, kept for reproducibility; badly biased
+  far in the tail; the default when `hdraws` are given).
 
 - q:
 
@@ -126,10 +145,10 @@ Halton draws are used to evaluate the integral.
 
 ``` r
 dplindLnorm(0, mean=0.75, theta=7, sigma=2, ndraws=10)
-#> [1] 0.6072274
+#> [1] 0.5424503
 pplindLnorm(0:10, mean=0.75, theta=7, sigma=2, ndraws=10)
-#>  [1] 0.6072274 0.7717043 0.8450268 0.8859278 0.9117652 0.9294614 0.9422986
-#>  [8] 0.9520167 0.9596144 0.9657016 0.9706706
+#>  [1] 0.5424503 0.6931577 0.7653293 0.8086522 0.8379407 0.8592379 0.8755060
+#>  [8] 0.8883823 0.8988519 0.9075462 0.9148902
 qplindLnorm(c(0.1,0.5,0.9), lambda=4.67, theta=7, sigma=2)
 #> [1] 0 0 9
 rplindLnorm(5, mean=0.75, theta=7, sigma=2)

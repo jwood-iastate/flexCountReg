@@ -16,6 +16,7 @@ rootogram(
   newdata = NULL,
   max_count = NULL,
   style = c("hanging", "standing"),
+  overflow = FALSE,
   plot = TRUE,
   main = NULL,
   xlab = "Count",
@@ -40,12 +41,22 @@ rootogram(
 
 - max_count:
 
-  the largest count shown. Defaults to the largest observed count.
+  the largest count shown. Defaults to the largest observed count. The
+  cutoff only limits the display: the expected frequency of each shown
+  count sums the fitted probabilities of every row, including rows whose
+  outcome is above `max_count`.
 
 - style:
 
   `"hanging"` (bars hang from the expected curve) or `"standing"` (bars
   stand on zero).
+
+- overflow:
+
+  logical; add a last bin for `Y > max_count`, so the observed and
+  expected frequencies both sum to the total. Without it, the tail is
+  reported in the `"tail"` attribute and, when it is not negligible,
+  under the plot.
 
 - plot:
 
@@ -63,7 +74,11 @@ rootogram(
 ## Value
 
 Invisibly, a data frame with columns `count`, `observed` and `expected`
-(frequencies), of class `flexCountReg_rootogram`.
+(frequencies), of class `flexCountReg_rootogram`; with `overflow = TRUE`
+its last row (count `max_count + 1`) is the bin `Y > max_count`.
+Attribute `"tail"` holds the observed and expected frequencies of
+`Y > max_count`. Rows with non-finite fitted means or probabilities are
+left out of both frequencies, with a warning.
 
 ## References
 

@@ -27,7 +27,7 @@ countreg.rp(
   verbose = FALSE,
   stderr = "normal",
   bootstraps = NULL,
-  engine = "halton",
+  engine = "quadrature",
   keep_data = TRUE,
   panel_id = NULL,
   mix_draws = NULL
@@ -59,7 +59,11 @@ countreg.rp(
   Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel", etc.
   (See
   [`countreg`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-  for full list).
+  for full list). With `"GP2"`, the dispersion must be nonnegative: the
+  underdispersed GP2 requires \\1 + a\mu \> 0\\, which random parameters
+  with unbounded support violate for some draws of every observation.
+  Use `"GP1"`, whose parameter space does not depend on \\\mu\\, for
+  underdispersed random-parameter models.
 
 - rpardists:
 
@@ -166,9 +170,12 @@ countreg.rp(
 
 - engine:
 
-  the engine to use for the integration if the Poisson Lognormal (PLN)
-  distribution is used. Options include "halton" which uses Halton draws
-  or "poilog" which uses the poilog package. The default is "halton".
+  the numerical method for the mixed Poisson families PLN, PGE, PW and
+  PLL: `"quadrature"` (default; adaptive quadrature on the log scale,
+  accurate for every count), `"halton"` (the average over Halton draws
+  used by flexCountReg 0.1.2 and earlier, kept to reproduce earlier
+  fits; it is badly biased for counts far in the tail) or, for PLN only,
+  `"poilog"` (the poilog package).
 
 - keep_data:
 
@@ -182,11 +189,11 @@ countreg.rp(
 
 - mix_draws:
 
-  the number of Halton draws for integrating over the mixing
-  distribution of the PLN, PGE, PLL and PW families (inside each
-  random-parameter draw). The default is `min(ndraws, 200)`. The cost of
-  these families grows with `ndraws * mix_draws`, so increasing `ndraws`
-  no longer also increases the inner integration.
+  with `engine = "halton"`, the number of Halton draws for integrating
+  over the mixing distribution of the PLN, PGE, PLL and PW families
+  (inside each random-parameter draw). The default is
+  `min(ndraws, 200)`. Not used by the default `engine = "quadrature"`,
+  which integrates adaptively.
 
 ## Value
 

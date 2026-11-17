@@ -42,7 +42,8 @@ negmultinom(
   stderr = "normal",
   bootstraps = NULL,
   verbose = FALSE,
-  keep_data = TRUE
+  keep_data = TRUE,
+  weights = NULL
 )
 ```
 
@@ -131,6 +132,15 @@ negmultinom(
   `newdata`, and
   [`fitted()`](https://rdrr.io/r/stats/fitted.values.html)/[`residuals()`](https://rdrr.io/r/stats/residuals.html)
   are unavailable.
+
+- weights:
+
+  the name of a column of \`data\`, or a numeric vector with one value
+  per row of \`data\`, of frequency weights of the panels: a panel with
+  weight w counts as w independent panels in the log-likelihood, the
+  robust covariance, BIC and the bootstrap. Weights must be constant
+  within each panel. Bootstrap standard errors need whole-number
+  weights.
 
 ## Value
 

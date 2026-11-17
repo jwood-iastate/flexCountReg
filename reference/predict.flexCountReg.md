@@ -24,10 +24,16 @@ available:
   parameter distributions (Wood and Gayah, 2025, Appendix A), including
   heterogeneity in means and variances. This is exact for normal,
   uniform, triangular and gamma parameters and has no simulation error.
-  For lognormal parameters it uses a Laplace (saddlepoint)
-  approximation, which is accurate for \\x \< 0\\; for \\x \> 0\\ (and
-  for gamma parameters with \\x\sigma^2/\mu \ge 1\\) the expected value
-  is infinite and `Inf` is returned with a warning.
+  For lognormal parameters with \\x \< 0\\ the lognormal MGF has no
+  closed form, and the Laplace approximation of Asmussen, Jensen and
+  Rojas-Nandayapa (2016) is used: accurate, but approximate despite the
+  method's name (it needs the lamW package). For \\x \> 0\\ with a
+  lognormal parameter (and for gamma parameters with \\x\sigma^2/\mu \ge
+  1\\) the expected value is infinite, and `Inf` is returned with a
+  warning, for both `Exact` and `Simulated` predictions. Whether the
+  expected value exists is decided from the parameters alone, so
+  `Simulated` predictions do not need lamW. A finite expected value too
+  large to represent is reported as an overflow.
 
 For **countreg**, **poisLindRE**, and **RENB** models, the function
 calculates the expected value \\\mu = \exp(X\beta)\\ (with appropriate

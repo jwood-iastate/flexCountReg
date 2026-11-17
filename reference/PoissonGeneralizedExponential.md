@@ -14,7 +14,8 @@ dpge(
   scale = 1,
   ndraws = 1500,
   log = FALSE,
-  haltons = NULL
+  haltons = NULL,
+  engine = c("quadrature", "halton")
 )
 
 ppge(
@@ -25,10 +26,18 @@ ppge(
   ndraws = 1500,
   lower.tail = TRUE,
   log.p = FALSE,
-  haltons = NULL
+  haltons = NULL,
+  engine = c("quadrature", "halton")
 )
 
-qpge(p, mean = 1, shape = 1, scale = 1, ndraws = 1500)
+qpge(
+  p,
+  mean = 1,
+  shape = 1,
+  scale = 1,
+  ndraws = 1500,
+  engine = c("quadrature", "halton")
+)
 
 rpge(n, mean = 1, shape = 1, scale = 1, ndraws = 1500)
 ```
@@ -53,13 +62,15 @@ rpge(n, mean = 1, shape = 1, scale = 1, ndraws = 1500)
 
 - scale:
 
-  single value or vector of values for the scale parameter of the
-  generalized exponential distribution (the values have to be greater
-  than 0).
+  single value or vector of values for the rate \\b\\ of the generalized
+  exponential mixing distribution (greater than 0; despite its name, the
+  mixing variable is generated as \\X/b\\ with \\X \sim GE(a, 1)\\).
+  Because the distribution is parameterized by its mean, \\b\\ cancels
+  and does not change any result; it is only checked for validity.
 
 - ndraws:
 
-  the number of Halton draws to use for the integration.
+  the number of Halton draws (only with `engine = "halton"`).
 
 - log:
 
@@ -67,7 +78,17 @@ rpge(n, mean = 1, shape = 1, scale = 1, ndraws = 1500)
 
 - haltons:
 
-  an optional vector of Halton draws to use instead of ndraws.
+  an optional vector of Halton draws to use instead of ndraws (only with
+  `engine = "halton"`).
+
+- engine:
+
+  the numerical method: `"quadrature"` (default) computes the
+  log-probability by adaptive quadrature over the log of the mixing
+  variable, accurate for every count including far tails; `"halton"`
+  averages the Poisson probabilities over Halton draws (the method of
+  flexCountReg 0.1.2 and earlier, kept for reproducibility; badly biased
+  far in the tail; the default when `haltons` are given).
 
 - q:
 
@@ -108,41 +129,28 @@ of the lengths of the numerical arguments for the other functions.
 
 `rpge` generates random numbers from the PGE Distribution.
 
-The Generalized Exponential distribution can be written as a function
-with a shape parameter \\\alpha\>0\\ and scale parameter \\\gamma\>0\\.
-The distribution has strictly positive continuous values. The PDF of the
-distribution is: \$\$f(x\|\alpha,\gamma) = \frac{\alpha}{\gamma}
-\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}
-e^{-\frac{x}{\gamma}}\$\$
+The mixing variable \\X\\ has a generalized exponential distribution
+(Gupta and Kundu, 2007) with shape \\a \> 0\\ and rate \\b \> 0\\:
+\$\$f(x \mid a, b) = a b \left(1 - e^{-bx}\right)^{a-1} e^{-bx}, \quad x
+\> 0,\$\$ with \$\$E\[X\] = \frac{A}{b}, \quad Var\[X\] = \frac{B}{b^2},
+\quad A = \psi(a+1) - \psi(1), \quad B = \psi'(1) - \psi'(a+1),\$\$
+where \\\psi\\ and \\\psi'\\ are the digamma and trigamma functions.
+Given \\X\\, \\Y \sim Poisson(\lambda X)\\, so \$\$P(Y = y) =
+\int_0^\infty \frac{(\lambda x)^y e^{-\lambda x}}{y!} f(x \mid a, b)\\
+dx.\$\$ To make \\E\[Y\] = \mu\\ (`mean`, \\e^{X\beta}\\ in a
+regression), \\\lambda = \mu b / A\\. Then \$\$E\[Y\] = \mu, \qquad
+Var\[Y\] = \mu + \frac{B}{A^2}\mu^2.\$\$ Since \\\lambda X = \mu (bX) /
+A\\ and \\bX \sim GE(a, 1)\\, the distribution of \\Y\\ depends on
+\\\mu\\ and \\a\\ only: the rate (or scale) cancels. This is why PGE
+regression models estimate only the shape (`ln(shape)`); a scale
+parameter would not be identified. With \\a = 1\\ the mixing
+distribution is exponential and \\Y\\ is geometric with mean \\\mu\\.
 
-Thus, the compound Probability Mass Function(PMF) for the PGE
-distribution is: \$\$f(y\|\lambda,\alpha,\beta) = \int_0^\infty
-\frac{\lambda^y x^y e^{-\lambda x}}{y!} \frac{\alpha}{\gamma}
-\left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}}
-dx\$\$
-
-The expected value of the distribution is: \$\$E\[y\]=\mu=\lambda
-\left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right)\$\$
-
-Where \\\psi(\cdot)\\ is the digamma function.
-
-The variance is: \$\$\sigma^2 = \lambda
-\left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) +
-\left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2\$\$
-
-Where \\\psi'(\cdot)\\ is the trigamma function.
-
-To ensure that \\\mu=e^{X\beta}\\, \\\lambda\\ is replaced with:
-\$\$\lambda=\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}\$\$
-
-This results in: \$\$ f(y\|\mu,\alpha,\beta) = \int_0^\infty \frac{
-\left( \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)} \right)^y x^y
-e^{ -\left( \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)} \right) x }
-}{ y! } \frac{\alpha}{\gamma} \left( 1-e^{-\frac{x}{\gamma}}
-\right)^{\alpha-1} e^{-\frac{x}{\gamma}} dx \$\$
-
-Halton draws are used to perform simulation over the lognormal
-distribution to solve the integral.
+The integral has no closed form. By default (`engine = "quadrature"`) it
+is computed on the log scale by adaptive quadrature over \\\log X\\,
+centered at the mode of the integrand, which is accurate for every
+count. `engine = "halton"` averages the Poisson probabilities over
+Halton draws of \\X\\, as flexCountReg 0.1.2 and earlier did.
 
 ## References
 
@@ -154,9 +162,9 @@ planning and inference, 137(11), 3537-3547.
 
 ``` r
 dpge(0, mean=0.75, shape=2, scale=1, ndraws=2000)
-#> [1] 0.5338754
+#> [1] 0.5333333
 ppge(c(0,1,2,3,4,5,6), mean=0.75, shape=2, scale=1, ndraws=500)
-#> [1] 0.5351826 0.8199568 0.9357904 0.9782831 0.9929808 0.9978338 0.9993641
+#> [1] 0.5333333 0.8177778 0.9339259 0.9769086 0.9920895 0.9973205 0.9990983
 qpge(c(0.1,0.3,0.5,0.9,0.95), mean=0.75, shape=2, scale=1, ndraws=500)
 #> [1] 0 0 0 2 3
 rpge(30, mean=0.75,  shape=2, scale=1, ndraws=500)

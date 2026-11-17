@@ -49,7 +49,8 @@ generation for the Poisson-Lindley-Lognormal (PLL) Distribution.</p>
 <span>  sigma <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
 <span>  log <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  hdraws <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  hdraws <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">pplindLnorm</span><span class="op">(</span></span>
@@ -60,10 +61,19 @@ generation for the Poisson-Lindley-Lognormal (PLL) Distribution.</p>
 <span>  sigma <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
 <span>  lower.tail <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  log.p <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  log.p <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">qplindLnorm</span><span class="op">(</span><span class="va">p</span>, mean <span class="op">=</span> <span class="fl">1</span>, theta <span class="op">=</span> <span class="fl">1</span>, sigma <span class="op">=</span> <span class="fl">1</span>, ndraws <span class="op">=</span> <span class="fl">1500</span>, lambda <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="fu">qplindLnorm</span><span class="op">(</span></span>
+<span>  <span class="va">p</span>,</span>
+<span>  mean <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  theta <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sigma <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
+<span>  lambda <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">rplindLnorm</span><span class="op">(</span><span class="va">n</span>, mean <span class="op">=</span> <span class="fl">1</span>, theta <span class="op">=</span> <span class="fl">1</span>, sigma <span class="op">=</span> <span class="fl">1</span>, ndraws <span class="op">=</span> <span class="fl">1500</span>, lambda <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -91,7 +101,7 @@ Poisson-Lindley distribution).</p></dd>
 
 
 <dt id="arg-ndraws">ndraws<a class="anchor" aria-label="anchor" href="#arg-ndraws"></a></dt>
-<dd><p>number of Halton draws.</p></dd>
+<dd><p>the number of Halton draws (only with <code>engine = "halton"</code>).</p></dd>
 
 
 <dt id="arg-log">log<a class="anchor" aria-label="anchor" href="#arg-log"></a></dt>
@@ -99,7 +109,17 @@ Poisson-Lindley distribution).</p></dd>
 
 
 <dt id="arg-hdraws">hdraws<a class="anchor" aria-label="anchor" href="#arg-hdraws"></a></dt>
-<dd><p>optional Halton draws.</p></dd>
+<dd><p>optional Halton draws (only with <code>engine = "halton"</code>).</p></dd>
+
+
+<dt id="arg-engine">engine<a class="anchor" aria-label="anchor" href="#arg-engine"></a></dt>
+<dd><p>the numerical method: <code>"quadrature"</code> (default) computes
+the log-probability by adaptive quadrature over the log of the mixing
+variable, accurate for every count including far tails;
+<code>"halton"</code> averages the Poisson probabilities over Halton draws
+(the method of flexCountReg 0.1.2 and earlier, kept for
+reproducibility; badly biased far in the tail; the default when
+<code>hdraws</code> are given).</p></dd>
 
 
 <dt id="arg-q">q<a class="anchor" aria-label="anchor" href="#arg-q"></a></dt>
@@ -164,10 +184,10 @@ $$</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">dplindLnorm</span><span class="op">(</span><span class="fl">0</span>, mean<span class="op">=</span><span class="fl">0.75</span>, theta<span class="op">=</span><span class="fl">7</span>, sigma<span class="op">=</span><span class="fl">2</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.6072274</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5424503</span>
 <span class="r-in"><span><span class="fu">pplindLnorm</span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="fl">10</span>, mean<span class="op">=</span><span class="fl">0.75</span>, theta<span class="op">=</span><span class="fl">7</span>, sigma<span class="op">=</span><span class="fl">2</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.6072274 0.7717043 0.8450268 0.8859278 0.9117652 0.9294614 0.9422986</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] 0.9520167 0.9596144 0.9657016 0.9706706</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 0.5424503 0.6931577 0.7653293 0.8086522 0.8379407 0.8592379 0.8755060</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  [8] 0.8883823 0.8988519 0.9075462 0.9148902</span>
 <span class="r-in"><span><span class="fu">qplindLnorm</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.5</span>,<span class="fl">0.9</span><span class="op">)</span>, lambda<span class="op">=</span><span class="fl">4.67</span>, theta<span class="op">=</span><span class="fl">7</span>, sigma<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0 0 9</span>
 <span class="r-in"><span><span class="fu">rplindLnorm</span><span class="op">(</span><span class="fl">5</span>, mean<span class="op">=</span><span class="fl">0.75</span>, theta<span class="op">=</span><span class="fl">7</span>, sigma<span class="op">=</span><span class="fl">2</span><span class="op">)</span></span></span>

@@ -62,7 +62,7 @@ countreg(
   start.vals = NULL,
   stderr = "normal",
   bootstraps = NULL,
-  engine = "halton",
+  engine = "quadrature",
   keep_data = TRUE,
   zero_formula = NULL,
   zero_type = c("inflated", "hurdle")
@@ -175,9 +175,12 @@ countreg(
 
 - engine:
 
-  the engine to use for the integration if the Poisson Lognormal (PLN)
-  distribution is used. Options include "halton" which uses Halton draws
-  or "poilog" which uses the poilog package. The default is "halton".
+  the numerical method for the mixed Poisson families PLN, PGE, PW and
+  PLL: `"quadrature"` (default; adaptive quadrature on the log scale,
+  accurate for every count), `"halton"` (the average over Halton draws
+  used by flexCountReg 0.1.2 and earlier, kept to reproduce earlier
+  fits; it is badly biased for counts far in the tail) or, for PLN only,
+  `"poilog"` (the poilog package).
 
 - keep_data:
 

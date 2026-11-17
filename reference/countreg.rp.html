@@ -61,7 +61,7 @@
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  stderr <span class="op">=</span> <span class="st">"normal"</span>,</span>
 <span>  bootstraps <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  engine <span class="op">=</span> <span class="st">"halton"</span>,</span>
+<span>  engine <span class="op">=</span> <span class="st">"quadrature"</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  panel_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mix_draws <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -92,7 +92,12 @@ and <code>rpar_formula</code>.</p></dd>
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
 <dd><p>the name of the distribution/model type to estimate. Default is
 "NB2". Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel",
-etc. (See <code><a href="countreg.html">countreg</a></code> for full list).</p></dd>
+etc. (See <code><a href="countreg.html">countreg</a></code> for full list).
+With <code>"GP2"</code>, the dispersion must be nonnegative: the
+underdispersed GP2 requires \(1 + a\mu &gt; 0\), which random
+parameters with unbounded support violate for some draws of every
+observation. Use <code>"GP1"</code>, whose parameter space does not depend
+on \(\mu\), for underdispersed random-parameter models.</p></dd>
 
 
 <dt id="arg-rpardists">rpardists<a class="anchor" aria-label="anchor" href="#arg-rpardists"></a></dt>
@@ -199,9 +204,12 @@ whole panels and refits the model).</p></dd>
 
 
 <dt id="arg-engine">engine<a class="anchor" aria-label="anchor" href="#arg-engine"></a></dt>
-<dd><p>the engine to use for the integration if the Poisson Lognormal
-(PLN) distribution is used. Options include "halton" which uses Halton
-draws or "poilog" which uses the poilog package. The default is "halton".</p></dd>
+<dd><p>the numerical method for the mixed Poisson families PLN, PGE, PW
+and PLL: <code>"quadrature"</code> (default; adaptive quadrature on the log
+scale, accurate for every count), <code>"halton"</code> (the average over
+Halton draws used by flexCountReg 0.1.2 and earlier, kept to reproduce
+earlier fits; it is badly biased for counts far in the tail) or, for PLN
+only, <code>"poilog"</code> (the poilog package).</p></dd>
 
 
 <dt id="arg-keep-data">keep_data<a class="anchor" aria-label="anchor" href="#arg-keep-data"></a></dt>
@@ -214,12 +222,11 @@ in the fitted object. <code><a href="https://rdrr.io/r/stats/predict.html" class
 
 
 <dt id="arg-mix-draws">mix_draws<a class="anchor" aria-label="anchor" href="#arg-mix-draws"></a></dt>
-<dd><p>the number of Halton draws for integrating over the
-mixing distribution of the PLN, PGE, PLL and PW families (inside each
-random-parameter draw). The default is <code>min(ndraws, 200)</code>. The
-cost of these families grows with <code>ndraws * mix_draws</code>, so
-increasing <code>ndraws</code> no longer also increases the inner
-integration.</p></dd>
+<dd><p>with <code>engine = "halton"</code>, the number of Halton
+draws for integrating over the mixing distribution of the PLN, PGE, PLL
+and PW families (inside each random-parameter draw). The default is
+<code>min(ndraws, 200)</code>. Not used by the default
+<code>engine = "quadrature"</code>, which integrates adaptively.</p></dd>
 
 </dl></div>
     <div class="section level2">

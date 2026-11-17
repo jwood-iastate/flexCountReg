@@ -126,16 +126,23 @@ failures:</p>
 <span><span class="co">#&gt; [1] 50</span></span>
 <span><span class="va">nb_b</span><span class="op">$</span><span class="va">model</span><span class="op">$</span><span class="va">boot_failures</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;                error        not converged non-finite estimates </span></span>
-<span><span class="co">#&gt;                    0                    0                    0</span></span></code></pre></div>
+<span><span class="co">#&gt;                error        not converged   wrong coefficients </span></span>
+<span><span class="co">#&gt;                    0                    0                    0 </span></span>
+<span><span class="co">#&gt; non-finite estimates </span></span>
+<span><span class="co">#&gt;                    0</span></span></code></pre></div>
 <p>If many replicates fail, increase <code>max.iters</code>, try another
 <code>method</code>, or simplify the model. If fewer than two succeed,
 the standard errors are <code>NA</code>.</p>
-<p><strong>Weights.</strong> <code>weights</code> are frequency weights:
-a row with weight 3 counts as three independent observations. The
-estimates, log-likelihood, robust covariance and BIC are those of the
-expanded data. In panel models the weights belong to the panels, so they
-must be constant within a panel.</p>
+<p><strong>Weights.</strong> Every estimator takes <code>weights</code>,
+which are frequency weights: a row with weight 3 counts as three
+independent observations. The estimates, log-likelihood, robust
+covariance and BIC are those of the expanded data. In panel models the
+weights belong to the panels (a panel with weight 3 counts as three
+independent panels), so they must be constant within a panel. The
+bootstrap resamples the expanded observations: it draws new frequencies
+from a multinomial distribution and refits with them in place of the
+weights, so it needs whole-number weights (use
+<code>stderr = "robust"</code> for other weights).</p>
 </div>
 <div class="section level2">
 <h2 id="marginal-effects">Marginal effects<a class="anchor" aria-label="anchor" href="#marginal-effects"></a>
@@ -328,7 +335,12 @@ under the restriction, and the restriction is not reached only in a
 limit.</li>
 <li>
 <strong>The data are the same.</strong> The same observations,
-outcome, offsets and weights.</li>
+outcome, offsets, weights and panels, and the same values of the
+variables both models use.</li>
+<li>
+<strong>Both fits reached their maximum.</strong> Both report
+convergence, and the larger model’s log-likelihood is not below the
+restricted model’s.</li>
 </ol>
 <p>The families nest as follows:</p>
 <table class="table">
@@ -450,6 +462,10 @@ valid:</p>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pl</span><span class="op">)</span><span class="op">$</span><span class="va">lr_test</span><span class="op">)</span>   <span class="co"># no test: PL does not nest Poisson</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>When a condition fails, <code><a href="../reference/regCompTest.html">regCompTest()</a></code> reports no LR test
+and gives the reason in <code>LR_reason</code>. Nesting of the mean
+model is checked on the design matrices, so <code>y ~ x</code> is nested
+in <code>y ~ I(2 * x) + z</code>.</p>
 <p><code><a href="../reference/regCompTest.html">regCompTest()</a></code> applies the same rules to two fitted
 models (the one with fewer parameters is the restricted model) or to a
 model and a base model it fits on the same rows:</p>

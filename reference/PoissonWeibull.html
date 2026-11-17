@@ -56,7 +56,8 @@ standard deviation.</p>
 <span>  mean_value <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sd_value <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
-<span>  log <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  log <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">ppoisweibull</span><span class="op">(</span></span>
@@ -68,7 +69,8 @@ standard deviation.</p>
 <span>  sd_value <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
 <span>  lower.tail <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  log.p <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  log.p <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">qpoisweibull</span><span class="op">(</span></span>
@@ -78,7 +80,8 @@ standard deviation.</p>
 <span>  sigma <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  mean_value <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sd_value <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  ndraws <span class="op">=</span> <span class="fl">1500</span></span>
+<span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">rpoisweibull</span><span class="op">(</span></span>
@@ -126,11 +129,20 @@ alpha and sigma are provided).</p></dd>
 
 
 <dt id="arg-ndraws">ndraws<a class="anchor" aria-label="anchor" href="#arg-ndraws"></a></dt>
-<dd><p>the number of Halton draws to use for the integration.</p></dd>
+<dd><p>the number of Halton draws (only with <code>engine = "halton"</code>).</p></dd>
 
 
 <dt id="arg-log">log<a class="anchor" aria-label="anchor" href="#arg-log"></a></dt>
 <dd><p>Logical; if TRUE, probabilities p are given as log(p).</p></dd>
+
+
+<dt id="arg-engine">engine<a class="anchor" aria-label="anchor" href="#arg-engine"></a></dt>
+<dd><p>the numerical method: <code>"quadrature"</code> (default) computes
+the log-probability by adaptive quadrature over the log of the mixing
+variable, accurate for every count including far tails;
+<code>"halton"</code> averages the Poisson probabilities over Halton draws
+(the method of flexCountReg 0.1.2 and earlier, kept for
+reproducibility; badly biased far in the tail).</p></dd>
 
 
 <dt id="arg-q">q<a class="anchor" aria-label="anchor" href="#arg-q"></a></dt>
@@ -191,11 +203,11 @@ indirectly.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">dpoisweibull</span><span class="op">(</span><span class="fl">4</span>, lambda<span class="op">=</span><span class="fl">1.5</span>, mean_value<span class="op">=</span><span class="fl">1.5</span>, sd_value<span class="op">=</span><span class="fl">0.5</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.09862894</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.1082605</span>
 <span class="r-in"><span><span class="fu">ppoisweibull</span><span class="op">(</span><span class="fl">4</span>, lambda<span class="op">=</span><span class="fl">1.5</span>, mean_value<span class="op">=</span><span class="fl">1.5</span>, sd_value<span class="op">=</span><span class="fl">2</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.9198189</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.8392135</span>
 <span class="r-in"><span><span class="fu">qpoisweibull</span><span class="op">(</span><span class="fl">0.95</span>, lambda<span class="op">=</span><span class="fl">1.5</span>, mean_value<span class="op">=</span><span class="fl">1.5</span>, sd_value<span class="op">=</span><span class="fl">2</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 9</span>
 <span class="r-in"><span><span class="fu">rpoisweibull</span><span class="op">(</span><span class="fl">10</span>, lambda<span class="op">=</span><span class="fl">1.5</span>, mean_value<span class="op">=</span><span class="fl">1.5</span>, sd_value<span class="op">=</span><span class="fl">2</span>, ndraws<span class="op">=</span><span class="fl">10</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1] 8 2 1 0 3 1 1 2 9 1</span>
 <span class="r-in"><span></span></span>

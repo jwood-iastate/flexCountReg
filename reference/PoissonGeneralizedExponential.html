@@ -52,7 +52,8 @@ Distribution</p>
 <span>  scale <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
 <span>  log <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  haltons <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  haltons <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">ppge</span><span class="op">(</span></span>
@@ -63,10 +64,18 @@ Distribution</p>
 <span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
 <span>  lower.tail <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  log.p <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  haltons <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  haltons <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">qpge</span><span class="op">(</span><span class="va">p</span>, mean <span class="op">=</span> <span class="fl">1</span>, shape <span class="op">=</span> <span class="fl">1</span>, scale <span class="op">=</span> <span class="fl">1</span>, ndraws <span class="op">=</span> <span class="fl">1500</span><span class="op">)</span></span>
+<span><span class="fu">qpge</span><span class="op">(</span></span>
+<span>  <span class="va">p</span>,</span>
+<span>  mean <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  shape <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  scale <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
+<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"quadrature"</span>, <span class="st">"halton"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">rpge</span><span class="op">(</span><span class="va">n</span>, mean <span class="op">=</span> <span class="fl">1</span>, shape <span class="op">=</span> <span class="fl">1</span>, scale <span class="op">=</span> <span class="fl">1</span>, ndraws <span class="op">=</span> <span class="fl">1500</span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -91,13 +100,16 @@ than 0).</p></dd>
 
 
 <dt id="arg-scale">scale<a class="anchor" aria-label="anchor" href="#arg-scale"></a></dt>
-<dd><p>single value or vector of values for the scale parameter of the
-generalized exponential distribution (the values have to be greater than
-0).</p></dd>
+<dd><p>single value or vector of values for the rate \(b\) of the
+generalized exponential mixing distribution (greater than 0; despite
+its name, the mixing variable is generated as \(X/b\) with
+\(X \sim GE(a, 1)\)). Because the distribution is parameterized by
+its mean, \(b\) cancels and does not change any result; it is only
+checked for validity.</p></dd>
 
 
 <dt id="arg-ndraws">ndraws<a class="anchor" aria-label="anchor" href="#arg-ndraws"></a></dt>
-<dd><p>the number of Halton draws to use for the integration.</p></dd>
+<dd><p>the number of Halton draws (only with <code>engine = "halton"</code>).</p></dd>
 
 
 <dt id="arg-log">log<a class="anchor" aria-label="anchor" href="#arg-log"></a></dt>
@@ -105,7 +117,18 @@ generalized exponential distribution (the values have to be greater than
 
 
 <dt id="arg-haltons">haltons<a class="anchor" aria-label="anchor" href="#arg-haltons"></a></dt>
-<dd><p>an optional vector of Halton draws to use instead of ndraws.</p></dd>
+<dd><p>an optional vector of Halton draws to use instead of ndraws
+(only with <code>engine = "halton"</code>).</p></dd>
+
+
+<dt id="arg-engine">engine<a class="anchor" aria-label="anchor" href="#arg-engine"></a></dt>
+<dd><p>the numerical method: <code>"quadrature"</code> (default) computes
+the log-probability by adaptive quadrature over the log of the mixing
+variable, accurate for every count including far tails;
+<code>"halton"</code> averages the Poisson probabilities over Halton draws
+(the method of flexCountReg 0.1.2 and earlier, kept for
+reproducibility; badly biased far in the tail; the default when
+<code>haltons</code> are given).</p></dd>
 
 
 <dt id="arg-q">q<a class="anchor" aria-label="anchor" href="#arg-q"></a></dt>
@@ -143,57 +166,31 @@ maximum of the lengths of the numerical arguments for the other functions.</p>
 <p><code>ppge</code> computes the CDF of the PGE Distribution.</p>
 <p><code>qpge</code> computes the quantile function of the PGE Distribution.</p>
 <p><code>rpge</code> generates random numbers from the PGE Distribution.</p>
-<p>The Generalized Exponential distribution can be written as a function with a
-shape parameter \(\alpha&gt;0\) and scale parameter \(\gamma&gt;0\). The
-distribution has strictly positive continuous values. The PDF of the
-distribution is:
-$$f(x|\alpha,\gamma) =
-  \frac{\alpha}{\gamma}
-  \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}
-  e^{-\frac{x}{\gamma}}$$</p>
-<p>Thus, the compound Probability Mass Function(PMF) for the PGE distribution
-is:
-$$f(y|\lambda,\alpha,\beta) =
-  \int_0^\infty
-     \frac{\lambda^y x^y e^{-\lambda x}}{y!}
-     \frac{\alpha}{\gamma}
-     \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx$$</p>
-<p>The expected value of the distribution is:
-$$E[y]=\mu=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right)$$</p>
-<p>Where \(\psi(\cdot)\) is the digamma function.</p>
-<p>The variance is:
-$$\sigma^2 =
-  \lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) +
-          \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2$$</p>
-<p>Where \(\psi'(\cdot)\) is the trigamma function.</p>
-<p>To ensure that \(\mu=e^{X\beta}\), \(\lambda\) is replaced with:
-$$\lambda=\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}$$</p>
-<p>This results in:
-$$
-  f(y|\mu,\alpha,\beta) =
-  \int_0^\infty
-    \frac{
-      \left(
-        \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}
-      \right)^y
-      x^y
-      e^{
-        -\left(
-          \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}
-        \right) x
-      }
-    }{
-      y!
-    }
-    \frac{\alpha}{\gamma}
-    \left(
-      1-e^{-\frac{x}{\gamma}}
-    \right)^{\alpha-1}
-    e^{-\frac{x}{\gamma}}
-    dx
-$$</p>
-<p>Halton draws are used to perform simulation over the lognormal distribution
-to solve the integral.</p>
+<p>The mixing variable \(X\) has a generalized exponential distribution
+(Gupta and Kundu, 2007) with shape \(a &gt; 0\) and rate \(b &gt; 0\):
+$$f(x \mid a, b) = a b \left(1 - e^{-bx}\right)^{a-1} e^{-bx},
+  \quad x &gt; 0,$$
+with
+$$E[X] = \frac{A}{b}, \quad Var[X] = \frac{B}{b^2}, \quad
+  A = \psi(a+1) - \psi(1), \quad B = \psi'(1) - \psi'(a+1),$$
+where \(\psi\) and \(\psi'\) are the digamma and trigamma
+functions. Given \(X\), \(Y \sim Poisson(\lambda X)\), so
+$$P(Y = y) = \int_0^\infty \frac{(\lambda x)^y e^{-\lambda x}}{y!}
+  f(x \mid a, b)\, dx.$$
+To make \(E[Y] = \mu\) (<code>mean</code>, \(e^{X\beta}\) in a regression),
+\(\lambda = \mu b / A\). Then
+$$E[Y] = \mu, \qquad Var[Y] = \mu + \frac{B}{A^2}\mu^2.$$
+Since \(\lambda X = \mu (bX) / A\) and \(bX \sim GE(a, 1)\), the
+distribution of \(Y\) depends on \(\mu\) and \(a\) only: the rate
+(or scale) cancels. This is why PGE regression models estimate only the
+shape (<code>ln(shape)</code>); a scale parameter would not be identified.
+With \(a = 1\) the mixing distribution is exponential and \(Y\) is
+geometric with mean \(\mu\).</p>
+<p>The integral has no closed form. By default (<code>engine =
+"quadrature"</code>) it is computed on the log scale by adaptive quadrature over
+\(\log X\), centered at the mode of the integrand, which is accurate for
+every count. <code>engine = "halton"</code> averages the Poisson probabilities
+over Halton draws of \(X\), as flexCountReg 0.1.2 and earlier did.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -205,9 +202,9 @@ planning and inference, 137(11), 3537-3547.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">dpge</span><span class="op">(</span><span class="fl">0</span>, mean<span class="op">=</span><span class="fl">0.75</span>, shape<span class="op">=</span><span class="fl">2</span>, scale<span class="op">=</span><span class="fl">1</span>, ndraws<span class="op">=</span><span class="fl">2000</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5338754</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5333333</span>
 <span class="r-in"><span><span class="fu">ppge</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">3</span>,<span class="fl">4</span>,<span class="fl">5</span>,<span class="fl">6</span><span class="op">)</span>, mean<span class="op">=</span><span class="fl">0.75</span>, shape<span class="op">=</span><span class="fl">2</span>, scale<span class="op">=</span><span class="fl">1</span>, ndraws<span class="op">=</span><span class="fl">500</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5351826 0.8199568 0.9357904 0.9782831 0.9929808 0.9978338 0.9993641</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.5333333 0.8177778 0.9339259 0.9769086 0.9920895 0.9973205 0.9990983</span>
 <span class="r-in"><span><span class="fu">qpge</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.1</span>,<span class="fl">0.3</span>,<span class="fl">0.5</span>,<span class="fl">0.9</span>,<span class="fl">0.95</span><span class="op">)</span>, mean<span class="op">=</span><span class="fl">0.75</span>, shape<span class="op">=</span><span class="fl">2</span>, scale<span class="op">=</span><span class="fl">1</span>, ndraws<span class="op">=</span><span class="fl">500</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0 0 0 2 3</span>
 <span class="r-in"><span><span class="fu">rpge</span><span class="op">(</span><span class="fl">30</span>, mean<span class="op">=</span><span class="fl">0.75</span>,  shape<span class="op">=</span><span class="fl">2</span>, scale<span class="op">=</span><span class="fl">1</span>, ndraws<span class="op">=</span><span class="fl">500</span><span class="op">)</span></span></span>

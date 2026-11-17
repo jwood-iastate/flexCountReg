@@ -16,7 +16,8 @@ dpoisweibull(
   mean_value = NULL,
   sd_value = NULL,
   ndraws = 1500,
-  log = FALSE
+  log = FALSE,
+  engine = c("quadrature", "halton")
 )
 
 ppoisweibull(
@@ -28,7 +29,8 @@ ppoisweibull(
   sd_value = NULL,
   ndraws = 1500,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  engine = c("quadrature", "halton")
 )
 
 qpoisweibull(
@@ -38,7 +40,8 @@ qpoisweibull(
   sigma = NULL,
   mean_value = NULL,
   sd_value = NULL,
-  ndraws = 1500
+  ndraws = 1500,
+  engine = c("quadrature", "halton")
 )
 
 rpoisweibull(
@@ -85,11 +88,20 @@ rpoisweibull(
 
 - ndraws:
 
-  the number of Halton draws to use for the integration.
+  the number of Halton draws (only with `engine = "halton"`).
 
 - log:
 
   Logical; if TRUE, probabilities p are given as log(p).
+
+- engine:
+
+  the numerical method: `"quadrature"` (default) computes the
+  log-probability by adaptive quadrature over the log of the mixing
+  variable, accurate for every count including far tails; `"halton"`
+  averages the Poisson probabilities over Halton draws (the method of
+  flexCountReg 0.1.2 and earlier, kept for reproducibility; badly biased
+  far in the tail).
 
 - q:
 
@@ -154,11 +166,11 @@ parameters indirectly.
 
 ``` r
 dpoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=0.5, ndraws=10)
-#> [1] 0.09862894
+#> [1] 0.1082605
 ppoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
-#> [1] 0.9198189
+#> [1] 0.8392135
 qpoisweibull(0.95, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
-#> [1] 5
+#> [1] 9
 rpoisweibull(10, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 #>  [1] 8 2 1 0 3 1 1 2 9 1
 ```

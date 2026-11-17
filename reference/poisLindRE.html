@@ -49,6 +49,7 @@
 <span>  stderr <span class="op">=</span> <span class="st">"normal"</span>,</span>
 <span>  bootstraps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  print.level <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -110,6 +111,14 @@ performed.</p></dd>
 <dd><p>an optional character vector of offset column names (summed
 when several are given; on the log scale). An offset can instead be given
 with <code><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset()</a></code> in <code>formula</code>; use only one of the two.</p></dd>
+
+
+<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dd><p>the name of a column of `data`, or a numeric vector with one
+value per row of `data`, of frequency weights of the panels: a panel with
+weight w counts as w independent panels in the log-likelihood, the robust
+covariance, BIC and the bootstrap. Weights must be constant within each
+panel. Bootstrap standard errors need whole-number weights.</p></dd>
 
 
 <dt id="arg-keep-data">keep_data<a class="anchor" aria-label="anchor" href="#arg-keep-data"></a></dt>

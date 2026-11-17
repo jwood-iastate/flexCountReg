@@ -59,6 +59,7 @@ standard way to compare the count distributions this package offers.</p>
 <span>  newdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  style <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hanging"</span>, <span class="st">"standing"</span><span class="op">)</span>,</span>
+<span>  overflow <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  plot <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  xlab <span class="op">=</span> <span class="st">"Count"</span>,</span>
@@ -84,12 +85,21 @@ row with its frequency weight.</p></dd>
 
 <dt id="arg-max-count">max_count<a class="anchor" aria-label="anchor" href="#arg-max-count"></a></dt>
 <dd><p>the largest count shown. Defaults to the largest observed
-count.</p></dd>
+count. The cutoff only limits the display: the expected frequency of
+each shown count sums the fitted probabilities of every row, including
+rows whose outcome is above <code>max_count</code>.</p></dd>
 
 
 <dt id="arg-style">style<a class="anchor" aria-label="anchor" href="#arg-style"></a></dt>
 <dd><p><code>"hanging"</code> (bars hang from the expected curve) or
 <code>"standing"</code> (bars stand on zero).</p></dd>
+
+
+<dt id="arg-overflow">overflow<a class="anchor" aria-label="anchor" href="#arg-overflow"></a></dt>
+<dd><p>logical; add a last bin for <code>Y &gt; max_count</code>, so the
+observed and expected frequencies both sum to the total. Without it,
+the tail is reported in the <code>"tail"</code> attribute and, when it is not
+negligible, under the plot.</p></dd>
 
 
 <dt id="arg-plot">plot<a class="anchor" aria-label="anchor" href="#arg-plot"></a></dt>
@@ -108,7 +118,11 @@ count.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>Invisibly, a data frame with columns <code>count</code>,
 <code>observed</code> and <code>expected</code> (frequencies), of class
-<code>flexCountReg_rootogram</code>.</p>
+<code>flexCountReg_rootogram</code>; with <code>overflow = TRUE</code> its last row
+(count <code>max_count + 1</code>) is the bin <code>Y &gt; max_count</code>.
+Attribute <code>"tail"</code> holds the observed and expected frequencies of
+<code>Y &gt; max_count</code>. Rows with non-finite fitted means or probabilities are
+left out of both frequencies, with a warning.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

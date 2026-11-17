@@ -904,9 +904,9 @@ if (requireNamespace("poilog", quietly = TRUE)) {
 #>             Estimate Std. Error z value Pr(>|z|)    
 #> (Intercept)   -7.507         NA      NA       NA    
 #> lnaadt         0.910         NA      NA       NA    
-#> lnlength       0.847      0.112    7.58  3.5e-14 ***
-#> speed50       -0.459      0.106   -4.34  1.4e-05 ***
-#> AADT10kplus    0.809      0.133    6.07  1.3e-09 ***
+#> lnlength       0.847      0.110    7.70  1.4e-14 ***
+#> speed50       -0.459      0.105   -4.37  1.2e-05 ***
+#> AADT10kplus    0.809      0.133    6.09  1.1e-09 ***
 #> ln(sigma)     -0.734         NA      NA       NA    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -922,6 +922,7 @@ plogn_underreport <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
               underreport_formula = ~ speed50 + AADT10kplus, 
               underreport_family = "probit")
 #> Warning: The optimizer did not report convergence (iteration limit exceeded). Consider a different `method` or more `max.iters`.
+#> Warning: The underreporting model is weakly identified: the estimates of Underreporting:(Intercept) and AADT10kplus have correlation 0.993. The data barely separate the true count mean from the reporting probability; interpret the true-count estimates with caution, and consider reporting variables that do not affect the true counts or external validation data.
 summary(plogn_underreport)
 #> Call:
 #> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
@@ -935,15 +936,15 @@ summary(plogn_underreport)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                            Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)                 -6.6903     0.8511   -7.86  3.8e-15 ***
-#> lnaadt                       0.9189     0.0551   16.66  < 2e-16 ***
-#> lnlength                     0.8470     0.0700   12.10  < 2e-16 ***
-#> speed50                      0.0534     0.3886    0.14     0.89    
-#> AADT10kplus                 -0.0274     0.7596   -0.04     0.97    
-#> ln(alpha)                   -1.4959     0.3403   -4.40  1.1e-05 ***
-#> Underreporting:(Intercept)  -0.0898     0.8950   -0.10     0.92    
-#> Underreporting:speed50      -0.5394     0.3936   -1.37     0.17    
-#> Underreporting:AADT10kplus   2.5350     2.6263    0.97     0.33    
+#> (Intercept)                 -6.6903     1.2945   -5.17  2.4e-07 ***
+#> lnaadt                       0.9189     0.0562   16.34  < 2e-16 ***
+#> lnlength                     0.8470     0.0700   12.11  < 2e-16 ***
+#> speed50                      0.0534     0.4555    0.12     0.91    
+#> AADT10kplus                 -0.0274     1.2208   -0.02     0.98    
+#> ln(alpha)                   -1.4959     0.3468   -4.31  1.6e-05 ***
+#> Underreporting:(Intercept)  -0.0898     1.3666   -0.07     0.95    
+#> Underreporting:speed50      -0.5394     0.6725   -0.80     0.42    
+#> Underreporting:AADT10kplus   2.5350     4.8914    0.52     0.60    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

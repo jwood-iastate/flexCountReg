@@ -132,7 +132,7 @@ summary(fit)
 #>     family = "NB2", method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 46 
+#> Iterations: 45 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):

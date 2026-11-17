@@ -961,9 +961,9 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)   -7.507         NA      NA       NA    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt         0.910         NA      NA       NA    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength       0.847      0.112    7.58  3.5e-14 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50       -0.459      0.106   -4.34  1.4e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus    0.809      0.133    6.07  1.3e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength       0.847      0.110    7.70  1.4e-14 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50       -0.459      0.105   -4.37  1.2e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus    0.809      0.133    6.09  1.1e-09 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ln(sigma)     -0.734         NA      NA       NA    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
@@ -979,6 +979,7 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-in"><span>              underreport_formula <span class="op">=</span> <span class="op">~</span> <span class="va">speed50</span> <span class="op">+</span> <span class="va">AADT10kplus</span>, </span></span>
 <span class="r-in"><span>              underreport_family <span class="op">=</span> <span class="st">"probit"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The optimizer did not report convergence (iteration limit exceeded). Consider a different `method` or more `max.iters`.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The underreporting model is weakly identified: the estimates of Underreporting:(Intercept) and AADT10kplus have correlation 0.993. The data barely separate the true count mean from the reporting probability; interpret the true-count estimates with caution, and consider reporting variables that do not affect the true counts or external validation data.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">plogn_underreport</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + </span>
@@ -992,15 +993,15 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                            Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                 -6.6903     0.8511   -7.86  3.8e-15 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt                       0.9189     0.0551   16.66  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength                     0.8470     0.0700   12.10  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50                      0.0534     0.3886    0.14     0.89    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus                 -0.0274     0.7596   -0.04     0.97    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha)                   -1.4959     0.3403   -4.40  1.1e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:(Intercept)  -0.0898     0.8950   -0.10     0.92    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:speed50      -0.5394     0.3936   -1.37     0.17    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:AADT10kplus   2.5350     2.6263    0.97     0.33    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                 -6.6903     1.2945   -5.17  2.4e-07 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt                       0.9189     0.0562   16.34  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength                     0.8470     0.0700   12.11  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50                      0.0534     0.4555    0.12     0.91    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus                 -0.0274     1.2208   -0.02     0.98    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha)                   -1.4959     0.3468   -4.31  1.6e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:(Intercept)  -0.0898     1.3666   -0.07     0.95    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:speed50      -0.5394     0.6725   -0.80     0.42    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:AADT10kplus   2.5350     4.8914    0.52     0.60    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

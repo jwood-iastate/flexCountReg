@@ -22,16 +22,16 @@ the random parameter distributions (Wood and Gayah, 2025, Appendix A),
 including heterogeneity in means and variances. This is exact for normal,
 uniform, triangular and gamma parameters and has no simulation error. For
 lognormal parameters with \(x &amp;lt; 0\) the lognormal MGF has no closed
-  form, and the Laplace approximation of Asmussen, Jensen and
-  Rojas-Nandayapa (2016) is used: accurate, but approximate despite the
-  method's name (it needs the lamW package). For \(x &amp;gt; 0\) with a
-  lognormal parameter (and for gamma parameters with
-  \(x\sigma^2/\mu \ge 1\)) the expected value is infinite, and
-  Inf is returned with a warning, for both Exact and
-  Simulated predictions. Whether the expected value exists is
-  decided from the parameters alone, so Simulated predictions do
-  not need lamW. A finite expected value too large to represent is
-  reported as an overflow.
+form, and the Laplace approximation of Asmussen, Jensen and
+Rojas-Nandayapa (2016) is used: accurate, but approximate despite the
+method's name (it needs the lamW package). For \(x &amp;gt; 0\) with a
+lognormal parameter (and for gamma parameters with
+\(x\sigma^2/\mu \ge 1\)) the expected value is infinite, and
+Inf is returned with a warning, for both Exact and
+Simulated predictions. Whether the expected value exists is
+decided from the parameters alone, so Simulated predictions do
+not need lamW. A finite expected value too large to represent is
+reported as an overflow.
 
 
 For countreg, poisLindRE, and RENB models, the
@@ -60,16 +60,16 @@ the random parameter distributions (Wood and Gayah, 2025, Appendix A),
 including heterogeneity in means and variances. This is exact for normal,
 uniform, triangular and gamma parameters and has no simulation error. For
 lognormal parameters with \(x &amp;lt; 0\) the lognormal MGF has no closed
-  form, and the Laplace approximation of Asmussen, Jensen and
-  Rojas-Nandayapa (2016) is used: accurate, but approximate despite the
-  method's name (it needs the lamW package). For \(x &amp;gt; 0\) with a
-  lognormal parameter (and for gamma parameters with
-  \(x\sigma^2/\mu \ge 1\)) the expected value is infinite, and
-  Inf is returned with a warning, for both Exact and
-  Simulated predictions. Whether the expected value exists is
-  decided from the parameters alone, so Simulated predictions do
-  not need lamW. A finite expected value too large to represent is
-  reported as an overflow.
+form, and the Laplace approximation of Asmussen, Jensen and
+Rojas-Nandayapa (2016) is used: accurate, but approximate despite the
+method's name (it needs the lamW package). For \(x &amp;gt; 0\) with a
+lognormal parameter (and for gamma parameters with
+\(x\sigma^2/\mu \ge 1\)) the expected value is infinite, and
+Inf is returned with a warning, for both Exact and
+Simulated predictions. Whether the expected value exists is
+decided from the parameters alone, so Simulated predictions do
+not need lamW. A finite expected value too large to represent is
+reported as an overflow.
 
 
 For countreg, poisLindRE, and RENB models, the
@@ -132,16 +132,16 @@ the random parameter distributions (Wood and Gayah, 2025, Appendix A),
 including heterogeneity in means and variances. This is exact for normal,
 uniform, triangular and gamma parameters and has no simulation error. For
 lognormal parameters with \(x &lt; 0\) the lognormal MGF has no closed
-  form, and the Laplace approximation of Asmussen, Jensen and
-  Rojas-Nandayapa (2016) is used: accurate, but approximate despite the
-  method's name (it needs the lamW package). For \(x &gt; 0\) with a
-  lognormal parameter (and for gamma parameters with
-  \(x\sigma^2/\mu \ge 1\)) the expected value is infinite, and
-  <code>Inf</code> is returned with a warning, for both <code>Exact</code> and
-  <code>Simulated</code> predictions. Whether the expected value exists is
-  decided from the parameters alone, so <code>Simulated</code> predictions do
-  not need lamW. A finite expected value too large to represent is
-  reported as an overflow.</p></li>
+form, and the Laplace approximation of Asmussen, Jensen and
+Rojas-Nandayapa (2016) is used: accurate, but approximate despite the
+method's name (it needs the lamW package). For \(x &gt; 0\) with a
+lognormal parameter (and for gamma parameters with
+\(x\sigma^2/\mu \ge 1\)) the expected value is infinite, and
+<code>Inf</code> is returned with a warning, for both <code>Exact</code> and
+<code>Simulated</code> predictions. Whether the expected value exists is
+decided from the parameters alone, so <code>Simulated</code> predictions do
+not need lamW. A finite expected value too large to represent is
+reported as an overflow.</p></li>
 </ul><p>For <strong>countreg</strong>, <strong>poisLindRE</strong>, and <strong>RENB</strong> models, the
 function calculates the expected value \(\mu = \exp(X\beta)\) (with
 appropriate adjustments for specific families like PLN, PLL or

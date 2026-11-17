@@ -156,14 +156,14 @@ As noted in the list of functions, the probability distributions below are inclu
 - Delaporte Distribution
 - Hermite Distribution (orders 2, 3 and 4; bounded overdispersion)
 - Polya-Aeppli (Poisson-Tweedie, power 1.5) Distribution
-- Negative Binomial-Generalized Exponential (NBGE) Distribution
 
-*Distributions that Handle Excess Zeros*
+*Distributions that Handle Higher Densities of Zeros and Overdispersion*
 
 - Poisson-Generalized-Exponential Distribution
 - Poisson-Lindley Distribution
 - Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
 - Poisson-Lindley-Lognormal Distribution
+- Negative Binomial-Generalized Exponential (NBGE) Distribution
 
 ## Example
 

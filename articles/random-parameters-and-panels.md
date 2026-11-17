@@ -169,7 +169,7 @@ do.call(rbind, lapply(names(re_models), function(nm) {
                                     "n_groups")])
 }))
 #>        model    logLik      AIC      BIC nobs n_groups
-#> 1       RENB -1070.459 2150.918 2172.061 1501      507
+#> 1       RENB -1070.458 2150.916 2172.059 1501      507
 #> 2 PoisLindRE -1070.830 2149.660 2166.574 1501      507
 #> 3        NM2 -1070.454 2148.908 2165.822 1501      507
 ```

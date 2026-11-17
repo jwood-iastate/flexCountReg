@@ -138,6 +138,8 @@
 <li>
 <strong><code><a href="../reference/renb.html">renb()</a></code></strong>: the log-likelihood is computed as three stable differences of log-gamma functions. For large <code>a</code> and <code>b</code>, terms of size ~1e200 canceled and the optimizer could report a positive log-likelihood of ~1e203 <strong>(changed</strong>, fits that hit this region<strong>)</strong>.</li>
 <li>
+<strong><code><a href="../reference/renb.html">renb()</a></code> standard errors (changed).</strong> <code><a href="../reference/renb.html">renb()</a></code> now has analytic scores, so its Hessian is the derivative of an exact gradient. Before, it was a second finite difference of the log-likelihood, which was inaccurate (it could be indefinite and give <code>NaN</code> standard errors or delta-method marginal-effect standard errors, notably for <code>ln(a-1)</code> and <code>ln(b)</code>). Estimates are unchanged; standard errors can change.</li>
+<li>
 <code>rpardists</code> values are checked before a single value is expanded.</li>
 <li>Documentation: the PGE equations use one rate convention and explain why the rate cancels; fitted objects carry a schema version (<code>model$fcr_schema</code>).</li>
 </ul></div>

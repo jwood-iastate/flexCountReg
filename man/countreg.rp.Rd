@@ -47,7 +47,10 @@ and \code{rpar_formula}.}
 
 \item{family}{the name of the distribution/model type to estimate. Default is
 "NB2". Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel",
-etc. (See \code{\link{countreg}} for full list).
+etc. (see \code{\link{count_families}} for the full list). DW, DPO,
+HYPERPOIS and GAMMACOUNT solve their mean equation for every
+observation and draw, so they are much slower here than closed-form
+families; consider fewer \code{ndraws} while exploring.
 With \code{"GP2"}, the dispersion must be nonnegative: the
 underdispersed GP2 requires \eqn{1 + a\mu > 0}, which random
 parameters with unbounded support violate for some draws of every

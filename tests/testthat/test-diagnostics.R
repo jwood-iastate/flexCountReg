@@ -58,7 +58,11 @@ test_that("every family's density sums to 1 with the stated mean and variance", 
                PLN = c(0.5, NA), PGE = c(2, NA), PIG1 = c(0.5, NA),
                PIG2 = c(0.5, NA), PIG = c(0.3, NA), PL = c(1.5, NA),
                PLG = c(1.5, 0.4), PLL = c(1.5, 0.5), PW = c(2, NA),
-               SI = c(exp(0.5), 1), GW = c(2, 3), COM = c(0.7, NA))
+               SI = c(exp(0.5), 1), GW = c(2, 3), COM = c(0.7, NA),
+               DW = c(1.3, NA), DPO = c(2.5, NA), DELAPORTE = c(1.5, 2),
+               HERMITE = c(0.4, NA), HERMITE3 = c(0.4, NA),
+               HERMITE4 = c(0.4, NA), HYPERPOIS = c(0.4, NA),
+               GAMMACOUNT = c(2, NA), PA = c(0.6, NA), NBGE = c(1.5, 0.4))
   expect_setequal(names(pars), .fcr_families)
   y <- 0:2000
   mu <- 2

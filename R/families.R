@@ -18,14 +18,24 @@
 #   mean_adj  function(alpha, sigma): E[Y] / mu (1 except PLN and PLL).
 #   mean      optional function(mu, alpha, sigma): E[Y], for families whose
 #             mean is not proportional to mu (default mu * mean_adj).
+#   cdf       optional function(q, predicted, alpha, sigma, lower.tail):
+#             log P(Y <= q) or log P(Y > q), computed directly.
+#   start_rp  optional starting value(s) of the distribution parameters in
+#             countreg.rp() (default: -2, near the Poisson limit of most
+#             families).
+#
+# A complete family also needs public distribution functions, moments,
+# simulation and tests; the families added in 0.1.2 have their helpers in
+# families_mp.R.
 #
 # Adding a family means adding one entry below.
 
 .fcr_family <- function(params, dens, variance = NULL, rand = NULL,
                         mean_adj = function(alpha, sigma) 1, start = 0,
-                        mean = NULL, cdf = NULL) {
+                        mean = NULL, cdf = NULL, start_rp = NULL) {
   list(params = params, dens = dens, variance = variance, rand = rand,
-       mean_adj = mean_adj, start = start, mean = mean, cdf = cdf)
+       mean_adj = mean_adj, start = start, mean = mean, cdf = cdf,
+       start_rp = start_rp)
 }
 
 # Density values for the likelihood: parameter values outside the valid
@@ -63,6 +73,24 @@
     v[idx] <- colSums(y^2 * w) - m1^2
   }
   list(mean = m, var = v)
+}
+
+# Generalized Hermite family of order m (HERMITE is order 2)
+.fcr_hermite_family <- function(m) {
+  .fcr_family(
+    params = list("logit(rho)", NULL),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      .fcr_quiet_dens(dghermite(y, mu = predicted,
+                                rho = .fcr_logit_par(alpha), m = m,
+                                log = log), log),
+    variance = function(mu, alpha, sigma)
+      mu * (1 + (m - 1) * .fcr_logit_par(alpha)),
+    rand = function(n, mu, alpha, sigma)
+      rghermite(n, mu = mu, rho = .fcr_logit_par(alpha), m = m),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      pghermite(q, mu = predicted, rho = .fcr_logit_par(alpha), m = m,
+                lower.tail = lower.tail, log.p = TRUE),
+    start = 0, start_rp = 0)
 }
 
 .fcr_family_registry <- list(
@@ -278,7 +306,111 @@
       lambda <- find_lambda_vec_cpp(r[[1]], r[[2]])
       com_moments_vec_cpp(lambda, r[[2]])[, 2]
     },
-    rand = function(n, mu, alpha, sigma) rcom(n, mu = mu, nu = alpha))
+    rand = function(n, mu, alpha, sigma) rcom(n, mu = mu, nu = alpha)),
+
+  # ---- Families added in 0.1.2 (helpers in families_mp.R) ----
+  # All are parameterized by the mean mu; see ?countreg.
+
+  DW = .fcr_family(
+    params = list("ln(shape)", NULL),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE) {
+      lp <- .fcr_quiet_dens(.dw_mp_logpmf(y, predicted, alpha), log = TRUE)
+      if (log) lp else exp(lp)
+    },
+    variance = function(mu, alpha, sigma) .dw_mp_var(mu, alpha),
+    rand = function(n, mu, alpha, sigma) .dw_mp_rand(n, mu, alpha),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      .dw_mp_logcdf(q, predicted, alpha, lower.tail),
+    start = 0, start_rp = 0),
+
+  DPO = .fcr_family(
+    params = list("ln(phi)", NULL),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE) {
+      lp <- .fcr_quiet_dens(.tab_mp(y, predicted, alpha, 0L, 0L), log = TRUE)
+      if (log) lp else exp(lp)
+    },
+    variance = function(mu, alpha, sigma) .tab_mp(0, mu, alpha, 0L, 3L),
+    rand = function(n, mu, alpha, sigma) .dpo_mp_rand(n, mu, alpha),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      .tab_mp(floor(q), predicted, alpha, 0L, if (lower.tail) 1L else 2L),
+    start = 0, start_rp = 0),
+
+  DELAPORTE = .fcr_family(
+    params = list("logit(rho)", "ln(k)"),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      .fcr_quiet_dens(ddelaporte(y, mu = predicted,
+                                 rho = .fcr_logit_par(alpha), k = sigma,
+                                 log = log), log),
+    variance = function(mu, alpha, sigma)
+      mu + (.fcr_logit_par(alpha) * mu)^2 / sigma,
+    rand = function(n, mu, alpha, sigma)
+      rdelaporte(n, mu = mu, rho = .fcr_logit_par(alpha), k = sigma),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      pdelaporte(q, mu = predicted, rho = .fcr_logit_par(alpha), k = sigma,
+                 lower.tail = lower.tail, log.p = TRUE),
+    start = 0, start_rp = 0),
+
+  HERMITE = .fcr_hermite_family(2),
+  HERMITE3 = .fcr_hermite_family(3),
+  HERMITE4 = .fcr_hermite_family(4),
+
+  HYPERPOIS = .fcr_family(
+    params = list("ln(gamma)", NULL),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE) {
+      lp <- .fcr_quiet_dens(.tab_mp(y, predicted, alpha, 1L, 0L), log = TRUE)
+      if (log) lp else exp(lp)
+    },
+    variance = function(mu, alpha, sigma) .tab_mp(0, mu, alpha, 1L, 3L),
+    rand = function(n, mu, alpha, sigma) .hp_mp_rand(n, mu, alpha),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      .tab_mp(floor(q), predicted, alpha, 1L, if (lower.tail) 1L else 2L),
+    start = 0, start_rp = 0),
+
+  GAMMACOUNT = .fcr_family(
+    params = list("ln(shape)", NULL),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE) {
+      lp <- .fcr_quiet_dens(.gc_mp_logpmf(y, predicted, alpha), log = TRUE)
+      if (log) lp else exp(lp)
+    },
+    variance = function(mu, alpha, sigma) .gc_mp_var(mu, alpha),
+    rand = function(n, mu, alpha, sigma) .gc_mp_rand(n, mu, alpha),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      .gc_mp_logcdf(q, predicted, alpha, lower.tail),
+    start = 0, start_rp = 0),
+
+  # Polya-Aeppli = Poisson-Tweedie with power 1.5: Var = mu + phi mu^1.5
+  PA = .fcr_family(
+    params = list("ln(phi)", NULL),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE) {
+      pa <- .pa_mp(predicted, alpha)
+      .fcr_quiet_dens(dpaeppli(y, lambda = pa$lambda, prob = pa$prob,
+                               log = log), log)
+    },
+    variance = function(mu, alpha, sigma) mu + alpha * mu^1.5,
+    rand = function(n, mu, alpha, sigma) {
+      pa <- .pa_mp(mu, alpha)
+      rpaeppli(n, lambda = pa$lambda, prob = pa$prob)
+    },
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE) {
+      pa <- .pa_mp(predicted, alpha)
+      ppaeppli(q, lambda = pa$lambda, prob = pa$prob,
+               lower.tail = lower.tail, log.p = TRUE)
+    },
+    start = 0, start_rp = 0),
+
+  NBGE = .fcr_family(
+    params = list("ln(shape)", "ln(alpha)"),
+    dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
+      .fcr_quiet_dens(dnbge(y, mu = predicted, shape = alpha, alpha = sigma,
+                            log = log), log),
+    variance = function(mu, alpha, sigma)
+      .nbge_moments(mu, alpha, sigma)$var,
+    rand = function(n, mu, alpha, sigma)
+      rnbge(n, mu = mu, shape = alpha, alpha = sigma),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      pnbge(q, mu = predicted, shape = alpha, alpha = sigma,
+            lower.tail = lower.tail, log.p = TRUE),
+    start = 0, start_rp = 0)
 )
 
 # ---- Accessors used throughout the package ----------------------------------
@@ -349,9 +481,17 @@ get_probFunc <- function(family) {
 # PIG1 (dispersion proportional to the mean) the observed dispersion is
 # p * alpha, and for NBP it is alpha * p^(2 - P). GP1, GP2, COM and GW are not
 # closed under thinning, so underreporting models are not available for them.
+# Added in 0.1.2: DELAPORTE (both components thin to the same family with
+# the same rho and k) and NBGE (the NB2 kernel thins with the same mixing
+# distribution and alpha) keep their parameters; for HERMITE (order 2) a
+# pair of events survives as a pair with probability p^2 and as a single
+# event with probability 2 p (1 - p), so rho becomes p * rho; for PA
+# (Poisson-Tweedie, power 1.5) the intensity is scaled by p, so phi becomes
+# sqrt(p) * phi. DW, DPO, HYPERPOIS, GAMMACOUNT and HERMITE3/4 are not
+# closed under thinning.
 .fcr_thinning_families <- c("POISSON", "NB1", "NB2", "NBP", "PLN", "PGE",
                             "PIG1", "PIG2", "PIG", "PL", "PLG", "PLL", "PW",
-                            "SI")
+                            "SI", "DELAPORTE", "NBGE", "HERMITE", "PA")
 
 .fcr_check_thinning <- function(family) {
   if (!family %in% .fcr_thinning_families) {
@@ -369,6 +509,12 @@ get_probFunc <- function(family) {
   if (is.null(p) || all(p == 1)) return(list(alpha = alpha, sigma = sigma))
   if (family %in% c("NB1", "PIG1")) alpha <- alpha * p
   if (family == "NBP") alpha <- alpha * p^(2 - sigma)
+  if (family == "PA") alpha <- alpha * sqrt(p)
+  if (family == "HERMITE") {
+    # logit(rho) parameter: alpha = rho / (1 - rho)
+    rho <- p * .fcr_logit_par(alpha)
+    alpha <- rho / (1 - rho)
+  }
   list(alpha = alpha, sigma = sigma)
 }
 

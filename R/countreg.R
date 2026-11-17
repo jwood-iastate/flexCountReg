@@ -7,7 +7,8 @@
 #' @param data a data frame containing the variables in the model.
 #' @param family the name of the distribution/model type to estimate. The 
 #'        default "NB2" is the standard negative binomial distribution with a 
-#'        log link. other options are listed below. 
+#'        log link. See [count_families] for all families, their parameters
+#'        and the features available for each.
 #' @param offset the name of a variable, or vector of variable names, in the
 #'   data frame that should be used as an offset (i.e., included but forced to
 #'   have a coefficient of 1). When several names are given, the offsets are
@@ -26,10 +27,11 @@
 #'   below.
 #' @param underreport_formula an optional formula for the probability that a
 #'   true count is reported (binomial thinning of the true counts), as a logit
-#'   or probit function of its predictors. Available for the Poisson, NB1,
-#'   NB2, NBP, PLN, PGE, PIG1, PIG2, PIG, PL, PLG, PLL, PW and SI families,
-#'   whose reported counts follow the same family (for NB1 and PIG1 with
-#'   dispersion \eqn{p\alpha}, and for NBP with \eqn{\alpha p^{2-P}}). It
+#'   or probit function of its predictors. Available for the families whose
+#'   reported counts follow the same family (see [count_families]; for NB1
+#'   and PIG1 the dispersion becomes \eqn{p\alpha}, for NBP
+#'   \eqn{\alpha p^{2-P}}, for HERMITE \eqn{\rho} becomes \eqn{p\rho} and for
+#'   PA \eqn{\phi} becomes \eqn{\sqrt{p}\phi}). It
 #'   is identified only by variables that affect reporting but not the true
 #'   counts (and, weakly, by the shape of the link function): an
 #'   intercept-only formula is an error, and a warning is given when the
@@ -106,35 +108,23 @@
 #'  \item Sichel (SI)
 #'  \item Generalized Waring (GW)
 #'  \item Conway-Maxwell-Poisson (COM)
+#'  \item Discrete Weibull (DW)
+#'  \item Double Poisson (DPO)
+#'  \item Delaporte (DELAPORTE)
+#'  \item Hermite of order 2, 3 or 4 (HERMITE, HERMITE3, HERMITE4)
+#'  \item Hyper-Poisson (HYPERPOIS)
+#'  \item Gamma renewal count (GAMMACOUNT)
+#'  \item Polya-Aeppli, i.e. Poisson-Tweedie with power 1.5 (PA)
+#'  \item Negative binomial-generalized exponential (NBGE)
 #' }
-#' 
+#' See [count_families] for a table of all families with their `family`
+#' codes, distribution parameters, variances, distribution functions and
+#' available model features.
+#'
 #' @details
-#' For the `family` argument, the following options are available:
-#' \itemize{
-#' \item "POISSON" for Poisson distribution with a log link.
-#' \item "GP1" for Generalized Poisson Version 1 Distribution with a log link
-#' \item "GP2" for Generalized Poisson Version 2 Distribution with a log link
-#'  \item "NB1" for Negative Binomial 1 distribution with a log link.
-#'  \item "NB2" for Negative Binomial 2 distribution with a log link (i.e., the 
-#'        standard negative binomial model).
-#'  \item "NBP" for Negative Binomial P distribution with a log link.
-#'  \item "PLN" for Poisson-Lognormal distribution with a log link.
-#'  \item "PGE" for Poisson-Generalized-Exponential distribution with a log 
-#'        link.
-#'  \item "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log
-#'  link.
-#'  \item "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log
-#'  link.
-#'  \item "PIG" for Poisson-Inverse-Gamma distribution with a log link.
-#'  \item "PL" for Poisson-Lindley distribution with a log link.
-#'  \item "PLG" for Poisson-Lindley-Gamma distribution with a log link.
-#'  \item "PLL" for Poisson-Lindley-Lognormal distribution with a log link.
-#'  \item "PW" for Poisson-Weibull distribution with a log link.
-#'  \item "SI" for Sichel distribution with a log link.
-#'  \item "GW" for Generalized Waring distribution with a log link.
-#'  \item "COM" for Conway-Maxwell-Poisson (COM) distribution with a log link.
-#'  }
-#'  
+#' The `family` codes are listed in [count_families]. Family names are not
+#' case-sensitive.
+#'
 #'  The `dis_param_formula_1` and `dis_param_formula_2` parameters are used to
 #'  estimate the dispersion parameter or other parameters of the count
 #'  distribution used. This leads to the distributions parameters being
@@ -147,51 +137,10 @@
 #'  
 #'  The function linking the distribution parameters to the predictors is:
 #'  \deqn{Param = \exp((Intercept) + \sum \beta X)}
-#'  
-#'  The parameters for the different models are as follows:
-#'  
-#'  For `dis_param_formula_1`, the models are for the parameters:
-#'  \itemize{
-#'  \item \eqn{ln(\phi+1)} for the Generalized Poisson Version 1.
-#'  \item \eqn{ln(\alpha+1)} for the Generalized Poisson Version 2.
-#'  \item \eqn{ln(\alpha)} for the Negative Binomial 1 model.
-#'  \item \eqn{ln(\alpha)} for the Negative Binomial 2 model.
-#'  \item \eqn{ln(\alpha)} for the Negative Binomial P model.
-#'  \item \eqn{ln(\sigma)} for the Poisson-Lognormal model.
-#'  \item \eqn{ln(shape)} for the Poisson-Generalized-Exponential model.
-#'  \item \eqn{ln(\eta)} for the Poisson-Inverse-Gaussian model.
-#'  \item \eqn{ln(\eta)} for the Poisson-Inverse-Gamma model.
-#'  \item \eqn{ln(\theta)} for the Poisson-Lindley model.
-#'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Gamma model.
-#'  \item \eqn{ln(\theta)} for the Poisson-Lindley-Lognormal model.
-#'  \item \eqn{ln(\alpha)} for the Poisson-Weibull model.
-#'  \item \eqn{\gamma} for the Sichel model. This parameter can be negative,
-#'  so it is modeled directly (identity link), \eqn{\gamma = W\delta}, rather
-#'  than through \eqn{\exp()}.
-#'  \item \eqn{ln(k)} for the Generalized Waring model.
-#'  \item \eqn{ln(\nu)} for the Conway-Maxwell-Poisson model.
-#'  }
-#'  
-#'  For `dis_param_formula_2`, the models are for the parameters:
-#'  \itemize{
-#'  \item Not Applicable for the Generalized Poisson Version 1 model.
-#'  \item Not Applicable for the Generalized Poisson Version 2 model.
-#'  \item Not Applicable for the Negative Binomial 1 model.
-#'  \item Not Applicable for the Negative Binomial 2 model.
-#'  \item \eqn{ln(p)} for the Negative Binomial P model.
-#'  \item Not Applicable for the Poisson-Lognormal model.
-#'  \item Not Applicable for the Poisson-Generalized-Exponential model.
-#'  \item Not Applicable for the Poisson-Inverse-Gaussian model.
-#'  \item Not Applicable for the Poisson-Inverse-Gamma model.
-#'  \item Not Applicable for the Poisson-Lindley model.
-#'  \item \eqn{ln(\alpha)} for the Poisson-Lindley-Gamma model.
-#'  \item \eqn{ln(\sigma)} for the Poisson-Lindley-Lognormal model.
-#'  \item Not Applicable for the Poisson-Weibull model.
-#'  \item \eqn{ln(\sigma)} for the Sichel model.
-#'  \item \eqn{ln(\rho-1)} for the Generalized Waring model.
-#'  \item Not Applicable for the Conway-Maxwell-Poisson model.
-#'  }
-#'  
+#'  except for the shares \eqn{\rho} of the Delaporte and Hermite families
+#'  (logit link) and the Sichel \eqn{\gamma} (identity link). The parameter
+#'  modeled by each formula in each family is listed in [count_families].
+#'
 #'  The `ndraws` parameter is used to estimate the distribution when there is 
 #'  not a closed-form solution. This uses Halton draws to integrate the 
 #'  distribution being compounded with the Poisson distribution. The default is 
@@ -660,6 +609,59 @@
 #' \eqn{\mu} and \eqn{\nu}, so the regression model provides direct predictions 
 #' for the mean.
 #' 
+#' ## Families added in version 0.1.2
+#' All of these families are parameterized by their mean,
+#' \eqn{E[Y] = \mu = \exp(X\beta)}, so the coefficients are effects on the
+#' expected count for every family, and an offset multiplies the mean.
+#' Their distribution functions are documented separately (see the links).
+#' \itemize{
+#' \item \strong{DW} (\code{\link{ddweib}}): discrete Weibull with shape
+#'   \eqn{\beta}; \eqn{\theta} is found from \eqn{\mu} and \eqn{\beta}.
+#'   It can be under- or overdispersed; \eqn{\beta = 1} is geometric.
+#' \item \strong{DPO} (\code{\link{ddpo}}): double Poisson, exactly
+#'   normalized, with precision \eqn{\phi}; its location \eqn{\lambda} is
+#'   found from \eqn{\mu} and \eqn{\phi}. \eqn{\phi = 1} is Poisson,
+#'   \eqn{\phi > 1} underdispersed, \eqn{\phi < 1} overdispersed.
+#' \item \strong{DELAPORTE} (\code{\link{ddelaporte}}):
+#'   \eqn{Var(Y) = \mu + (\rho\mu)^2 / k}. \eqn{\rho} and \eqn{k} are
+#'   weakly identified when \eqn{\rho} is near 0, where Poisson is a limit.
+#' \item \strong{HERMITE}, \strong{HERMITE3}, \strong{HERMITE4}
+#'   (\code{\link{dghermite}}): events occurring singly or in batches of
+#'   \eqn{m = 2, 3, 4}; \eqn{Var(Y) = \mu(1 + (m - 1)\rho)}, so the
+#'   variance-to-mean ratio is between 1 and \eqn{m}.
+#' \item \strong{HYPERPOIS} (\code{\link{dhpois}}): hyper-Poisson with
+#'   dispersion \eqn{\gamma}; its rate \eqn{\lambda} is found from \eqn{\mu}
+#'   and \eqn{\gamma}. \eqn{\gamma = 1} is Poisson, \eqn{\gamma > 1}
+#'   overdispersed, \eqn{\gamma < 1} underdispersed.
+#' \item \strong{GAMMACOUNT} (\code{\link{dgcount}}): the number of events
+#'   in a unit window of a renewal process with gamma inter-arrival times of
+#'   shape \eqn{a}; the rate is found from \eqn{\mu} and \eqn{a}.
+#'   \eqn{a = 1} is Poisson, \eqn{a > 1} underdispersed, \eqn{a < 1}
+#'   overdispersed. An offset scales the mean (a regression convention); it
+#'   does not lengthen the window of one renewal process, whose expected
+#'   count is not proportional to the window length.
+#' \item \strong{PA} (\code{\link{dpaeppli}}): the Poisson-Tweedie
+#'   distribution with power 1.5, \eqn{Var(Y) = \mu + \phi\mu^{1.5}}.
+#' \item \strong{NBGE} (\code{\link{dnbge}}): NB2 with a mean-one
+#'   generalized exponential random effect,
+#'   \eqn{Var(Y) = \mu + ((1 + \alpha)M_2 - 1)\mu^2}. Its two dispersion
+#'   parameters have confounded effects on the variance; expect weak
+#'   identification (large or missing standard errors) in small samples.
+#' }
+#' For DW, DPO, HYPERPOIS and GAMMACOUNT the natural parameter of every
+#' observation is found by solving the mean equation numerically (Newton
+#' iterations in compiled code), so these fits are slower than closed-form
+#' families, especially in \code{\link{countreg.rp}}. Their shape
+#' parameter is restricted to \eqn{[10^{-6}, 10^6]} and the mean to at most
+#' \eqn{10^9}; outside this numerical domain the likelihood is treated as 0.
+#'
+#' Likelihood-ratio tests against the Poisson model are reported for DPO,
+#' HYPERPOIS and GAMMACOUNT (Poisson is an interior special case). Binomial
+#' thinning (\code{underreport_formula}) is available for DELAPORTE and NBGE
+#' (same distribution parameters), HERMITE (\eqn{\rho} becomes
+#' \eqn{p\rho}) and PA (\eqn{\phi} becomes \eqn{\sqrt{p}\phi}); the other
+#' new families are not closed under thinning.
+#'
 #' ## Underreporting
 #' Models for underreporting combine a binary probability model (logit or 
 #' probit) with a count model. This is accomplished using a model for the 

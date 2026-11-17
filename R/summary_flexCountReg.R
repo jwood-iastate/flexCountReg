@@ -20,11 +20,12 @@
 #' For NB1, NB2, PLN, PIG1, PIG2 and PIG with a scalar dispersion parameter
 #' the Poisson model is on the boundary of the parameter space, and the
 #' p-value uses a 50:50 mixture of chi-square distributions with 0 and 1
-#' degrees of freedom; for GP1, GP2 and COM the restriction is interior. No
-#' test is reported for PL, PLG and PLL (which do not reduce to Poisson), for
-#' NBP, SI, PW, PGE and GW (nonregular restrictions), for boundary families
-#' with a dispersion formula, or for models with zero or underreporting
-#' components.
+#' degrees of freedom; for GP1, GP2, COM, DPO, HYPERPOIS and GAMMACOUNT the
+#' restriction is interior. No test is reported for PL, PLG and PLL (which do
+#' not reduce to Poisson), for NBP, SI, PW, PGE, GW, DELAPORTE, HERMITE*, PA
+#' and NBGE (Poisson is only a limit at the edge of the parameter space, or
+#' not a special case), for DW, for boundary families with a dispersion
+#' formula, or for models with zero or underreporting components.
 #'
 #' @returns An object of class \code{summary.flexCountReg}, a list with
 #'   \code{coefficients} (a matrix with the estimate, standard error, z value,

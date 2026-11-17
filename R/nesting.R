@@ -16,14 +16,21 @@
 # mu + mu^2 / 2), NBP and SI have a parameter that is not identified at the
 # Poisson limit, and PW, PGE and GW reach Poisson only as a parameter goes to
 # infinity, so none of these comparisons is listed.
+# DPO, HYPERPOIS and GAMMACOUNT (all mean-parameterized) are Poisson at
+# ln(phi) = 0, ln(gamma) = 0 and ln(shape) = 0, interior points at which the
+# models are identified. DELAPORTE, HERMITE, PA and NBGE reach Poisson (or
+# PGE) only as a parameter goes to the edge of its space and are not
+# listed.
 .fcr_family_nesting <- data.frame(
-  restricted = c(rep("POISSON", 9), "NB1", "NB2", "PL", "PL"),
+  restricted = c(rep("POISSON", 9), "NB1", "NB2", "PL", "PL",
+                 rep("POISSON", 3)),
   full = c("NB1", "NB2", "PLN", "PIG1", "PIG2", "PIG", "GP1", "GP2", "COM",
-           "NBP", "NBP", "PLG", "PLL"),
-  type = c(rep("boundary", 6), rep("interior", 5), "boundary", "boundary"),
+           "NBP", "NBP", "PLG", "PLL", "DPO", "HYPERPOIS", "GAMMACOUNT"),
+  type = c(rep("boundary", 6), rep("interior", 5), "boundary", "boundary",
+           rep("interior", 3)),
   param = c("ln(alpha)", "ln(alpha)", "ln(sigma)", "ln(eta)", "ln(eta)",
             "ln(eta)", "ln(phi+1)", "ln(alpha+1)", "ln(nu)", "ln(p)", "ln(p)",
-            "ln(alpha)", "ln(sigma)"),
+            "ln(alpha)", "ln(sigma)", "ln(phi)", "ln(gamma)", "ln(shape)"),
   stringsAsFactors = FALSE)
 
 # Coefficient names with the "(Intercept)" of a distribution-parameter formula

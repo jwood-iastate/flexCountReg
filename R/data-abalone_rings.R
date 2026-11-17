@@ -1,0 +1,87 @@
+#' Abalone Shell-Ring Counts
+#'
+#' Counts of shell growth rings and physical measurements of 4,177 blacklip
+#' abalone (\emph{Haliotis rubra}) from Tasmania, Australia, from the UCI
+#' Machine Learning Repository Abalone dataset. The number of rings is an
+#' integer count that is roughly equidispersed overall but conditionally
+#' underdispersed given the size measurements, which makes it a useful
+#' example for the dispersion-flexible count distributions in this package.
+#'
+#' @format A data frame with 4,177 rows (one per abalone) and 9 columns:
+#' \describe{
+#'   \item{sex}{Factor with levels \code{F} (female), \code{I} (infant) and
+#'     \code{M} (male). Source name \code{Sex}.}
+#'   \item{length}{Longest shell measurement, in millimeters divided by 200.
+#'     Source name \code{Length}.}
+#'   \item{diameter}{Shell diameter perpendicular to the length, in
+#'     millimeters divided by 200. Source name \code{Diameter}.}
+#'   \item{height}{Height with meat in the shell, in millimeters divided by
+#'     200. Source name \code{Height}.}
+#'   \item{whole_weight}{Weight of the whole abalone, in grams divided by
+#'     200. Source name \code{Whole weight}.}
+#'   \item{shucked_weight}{Weight of the meat, in grams divided by 200.
+#'     Source name \code{Shucked weight}.}
+#'   \item{viscera_weight}{Gut weight after bleeding, in grams divided by 200.
+#'     Source name \code{Viscera weight}.}
+#'   \item{shell_weight}{Shell weight after drying, in grams divided by 200.
+#'     Source name \code{Shell weight}.}
+#'   \item{rings}{Number of shell rings (integer, 1 to 29). The count
+#'     response. Source name \code{Rings}.}
+#' }
+#'
+#' @details
+#' The observation unit is one abalone. In the source, examples with missing
+#' values were removed (most of them missing the ring count) and the
+#' continuous measurements were divided by 200; the stored values keep that
+#' scaling. The data were collected for a 1994 population-biology study and
+#' should not be treated as representative of current populations.
+#'
+#' Preparation for this package (script \code{data-raw/abalone_rings.R} in
+#' the source repository, which checks the SHA-256 hashes of the publisher's
+#' archive and data file): columns renamed to lower-case snake_case,
+#' \code{sex} stored as a factor and \code{rings} as an integer. No rows were
+#' removed and no values were changed.
+#'
+#' Data-quality notes: two abalone have \code{height} equal to 0 and one has
+#' \code{height} 1.13 (226 mm), far above all others; check these before
+#' using logarithms of the measurements. The age in years is often
+#' approximated as \code{rings + 1.5}; that derived age is not a count and
+#' should not be used as a predictor of \code{rings}. The absence of zero
+#' counts reflects the biology (every abalone has at least one ring), not a
+#' zero-truncated sampling design.
+#'
+#' The data are licensed under the Creative Commons Attribution 4.0
+#' International license (CC BY 4.0,
+#' \url{https://creativecommons.org/licenses/by/4.0/}); the MIT license of
+#' the package code does not apply to them. Credit the creators when using
+#' or redistributing them. See also the file \code{DATA-LICENSES.md}
+#' installed with the package.
+#'
+#' @source Nash, W., Sellers, T., Talbot, S., Cawthorn, A. and Ford, W.
+#'   (1994). Abalone (dataset). UCI Machine Learning Repository.
+#'   \doi{10.24432/C55C7W}. Archive
+#'   \url{https://archive.ics.uci.edu/static/public/1/abalone.zip}
+#'   (retrieved 2026-11-17).
+#'
+#' @references
+#' Nash, W. J., Sellers, T. L., Talbot, S. R., Cawthorn, A. J. and Ford, W.
+#' B. (1994). The population biology of abalone (\emph{Haliotis} species) in
+#' Tasmania. I. Blacklip abalone (\emph{H. rubra}) from the north coast and
+#' islands of Bass Strait. Sea Fisheries Division, Technical Report No. 48.
+#'
+#' @examples
+#' data("abalone_rings", package = "flexCountReg")
+#' str(abalone_rings)
+#' c(mean = mean(abalone_rings$rings), var = var(abalone_rings$rings))
+#'
+#' \donttest{
+#' fit <- countreg(rings ~ sex + length + diameter + shell_weight,
+#'                 data = abalone_rings, family = "POISSON", method = "BFGS")
+#' summary(fit)
+#' # Conditional dispersion: the Pearson statistic per degree of freedom is
+#' # well below 1, i.e. the counts are underdispersed given the predictors
+#' mu <- predict(fit, type = "response")
+#' sum((abalone_rings$rings - mu)^2 / mu) / (nrow(abalone_rings) - 6)
+#' }
+#' @keywords datasets
+"abalone_rings"

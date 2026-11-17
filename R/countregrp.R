@@ -12,7 +12,10 @@
 #'   and \code{rpar_formula}.
 #' @param family the name of the distribution/model type to estimate. Default is
 #'   "NB2". Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel",
-#'   etc. (See \code{\link{countreg}} for full list).
+#'   etc. (see \code{\link{count_families}} for the full list). DW, DPO,
+#'   HYPERPOIS and GAMMACOUNT solve their mean equation for every
+#'   observation and draw, so they are much slower here than closed-form
+#'   families; consider fewer \code{ndraws} while exploring.
 #'   With \code{"GP2"}, the dispersion must be nonnegative: the
 #'   underdispersed GP2 requires \eqn{1 + a\mu > 0}, which random
 #'   parameters with unbounded support violate for some draws of every
@@ -401,12 +404,16 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     # overdispersion); GP1/GP2 start exactly at it (dispersion 0), because a
     # strongly underdispersed start gives zero probability to larger counts
     # GP2 starts slightly inside its allowed region a >= 0 (see below)
+    # Families with their own starting values (e.g. at their Poisson or
+    # geometric limit, ln(shape) = 0) declare them in the registry
+    fam_start <- .fcr_get_family(family)$start_rp
     dis_start <- if (family == "GP1") 0 else if (family == "GP2") 0.05 else
-      -2
+      if (!is.null(fam_start)) fam_start[1] else -2
+    dis_start_2 <- if (!is.null(fam_start)) rep_len(fam_start, 2)[2] else -2
     start <- c(s_fixed, s_rand, s_var, rep(0, N_het_mean + N_het_var),
                rep(dis_start, N_dis_1 > 0 && is.null(X_dis_1)),
                rep(0, if (!is.null(X_dis_1)) N_dis_1 else 0),
-               rep(-2, N_dis_2 > 0 && is.null(X_dis_2)),
+               rep(dis_start_2, N_dis_2 > 0 && is.null(X_dis_2)),
                rep(0, if (!is.null(X_dis_2)) N_dis_2 else 0))
     names(start) <- x_names
   }

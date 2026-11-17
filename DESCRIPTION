@@ -46,6 +46,8 @@ Imports:
 Depends: R (>= 4.5.0)
 LinkingTo: Rcpp
 License: MIT + file LICENSE
+Copyright: Bundled third-party datasets keep their own terms (abalone_rings:
+    CC BY 4.0; stream_salamanders: CC0); see file inst/DATA-LICENSES.md.
 Encoding: UTF-8
 LazyData: true
 Config/roxygen2/markdown: TRUE

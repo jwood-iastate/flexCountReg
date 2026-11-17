@@ -1,5 +1,60 @@
 # flexCountReg 0.1.2 (development)
 
+## New count distributions
+
+* Eight new count distributions, each with density, distribution, quantile
+  and random-generation functions following base R conventions (recycling,
+  `NA`/`NaN`, `NaN` with a warning for invalid parameters, `lower.tail`,
+  `log`/`log.p`):
+  * discrete Weibull (`ddweib()`, `pdweib()`, `qdweib()`, `rdweib()`);
+  * double Poisson, exactly normalized (`ddpo()`, ...);
+  * Delaporte in a mean parameterization (`ddelaporte()`, ...);
+  * generalized Hermite of order `m` (`dghermite()`, ...);
+  * hyper-Poisson (`dhpois()`, ...);
+  * gamma renewal count (`dgcount()`, ...);
+  * Polya-Aeppli, the Poisson-Tweedie distribution with power 1.5
+    (`dpaeppli()`, ...).
+* Probabilities are computed on the log scale, and upper tails
+  (`lower.tail = FALSE`) are computed directly rather than as one minus the
+  distribution function, so tiny tail probabilities keep their relative
+  accuracy. Quantiles are the smallest count whose distribution function
+  reaches the requested probability.
+* Negative binomial-generalized exponential mixture (`dnbge()`, `pnbge()`,
+  `qnbge()`, `rnbge()`): NB2 with a mean-one generalized exponential random
+  effect, computed by the adaptive quadrature used for PGE.
+
+## New regression families
+
+* `countreg()` and `countreg.rp()` gain the families `"DW"`, `"DPO"`,
+  `"DELAPORTE"`, `"HERMITE"` (order 2), `"HERMITE3"`, `"HERMITE4"`,
+  `"HYPERPOIS"`, `"GAMMACOUNT"`, `"PA"` (Poisson-Tweedie with power 1.5) and
+  `"NBGE"`. All are parameterized by the mean, so coefficients are effects on
+  the expected count. For DW, DPO, HYPERPOIS and GAMMACOUNT, whose means have
+  no closed form, the natural parameter of each observation is found by
+  solving the mean equation in compiled code; these families are slower to
+  fit and have a numerical domain (shape in [1e-6, 1e6], mean up to 1e9).
+* Shares in [0, 1] (Delaporte and Hermite `rho`) use a logit link, labeled
+  `logit(rho)`.
+* Prediction, Pearson and quantile residuals, simulation, rootograms and
+  summaries work for all new families. Likelihood-ratio tests against
+  Poisson are reported for DPO, HYPERPOIS and GAMMACOUNT (interior
+  restriction). Underreporting (binomial thinning) is available for
+  DELAPORTE, NBGE, HERMITE and PA.
+* `countreg.rp()` uses family-specific starting values for the distribution
+  parameters when the registry provides them (the new families start at
+  their Poisson or geometric limit rather than at log-scale -2).
+
+## New data
+
+* `abalone_rings`: shell-ring counts and measurements of 4,177 abalone from
+  the UCI Machine Learning Repository (CC BY 4.0), a non-transportation
+  example with conditionally underdispersed counts. The preparation script
+  and source hashes are in `data-raw/` of the source repository; data terms
+  are in the installed `DATA-LICENSES.md`.
+* `stream_salamanders`: repeated counts of seven stream salamander groups at
+  23 sites (Price et al., 2016; Dryad, CC0), prepared from the original
+  deposit. Zero-heavy, overdispersed and grouped by site.
+
 ## tidymodels and broom
 
 * `tidy()`, `glance()` and `augment()` methods, using the generics package

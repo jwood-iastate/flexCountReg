@@ -16,6 +16,7 @@ reference:
   contents:
   - countreg
   - countreg.rp
+  - count_families
   - renb
   - poisLindRE
   - repois
@@ -52,6 +53,14 @@ reference:
 - title: Count distributions
   contents:
   - COMDistribution
+  - Delaporte
+  - DiscreteWeibull
+  - DoublePoisson
+  - GammaCount
+  - GeneralizedHermite
+  - HyperPoisson
+  - NBGE
+  - PolyaAeppli
   - Generalized-Waring
   - GeneralizedPoisson
   - GeneralizedPoisson2
@@ -79,3 +88,5 @@ reference:
 - title: Data
   contents:
   - washington_roads
+  - abalone_rings
+  - stream_salamanders

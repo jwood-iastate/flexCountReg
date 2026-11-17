@@ -13,6 +13,9 @@
 //   3  PLL  Poisson-Lindley-lognormal: kernel Poisson-Lindley with rate
 //           lambda, t ~ N(0, 1), c = mean theta (theta + 1) / (theta + 2),
 //           s = sigma
+//   4  NBGE negative binomial-generalized exponential: kernel NB2 with
+//           mean lambda and size r = 1 / alpha, x = exp(t) ~ GE(a, 1),
+//           c = mean / A (as PGE), s = 1
 //
 // The log integrand h(t) is maximized by a safeguarded Newton method with
 // analytic derivatives; the integral is then computed on the log scale with
@@ -33,7 +36,17 @@ const double LOG_2PI = 1.8378770664093454836;
 struct MixSpec {
   int kind;
   double y, logc, s, a, theta, lgy1;
+  double r, lgr;   // NBGE: NB size 1 / alpha and lgamma(y + r) - lgamma(r)
 };
+
+// lgamma(y + r) - lgamma(r) for whole y >= 0: summed exactly for large r
+// (where the difference of two large lgamma values loses precision)
+double lgamma_ratio(double y, double r) {
+  if (r < 1e6 || y > 1000) return std::lgamma(y + r) - std::lgamma(r);
+  double out = 0.0;
+  for (double j = 0; j < y; j += 1.0) out += std::log(r + j);
+  return out;
+}
 
 // a * b with 0 * (+-Inf) = 0 (a term whose coefficient is zero is absent)
 inline double mul0(double a, double b) { return a == 0.0 ? 0.0 : a * b; }
@@ -56,6 +69,17 @@ double mix_h(const MixSpec &m, double t, double *d1 = nullptr,
       k2 = m.s * m.s * lam * ((th + m.y + 1.0) / (B * B) -
         (m.y + 2.0) * th / (C * C));
     }
+  } else if (m.kind == 4) {
+    // NB2 kernel with mean lam and size r:
+    // lgamma(y + r) - lgamma(r) - lgamma(y + 1) + r log(r / (r + lam))
+    //   + y log(lam / (r + lam))
+    double rl = m.r + lam;
+    k = m.lgr - m.lgy1 - m.r * std::log1p(lam / m.r) +
+      mul0(m.y, L - std::log(rl));
+    if (d1) {
+      k1 = m.s * (m.y - (m.y + m.r) * lam / rl);
+      k2 = -m.s * m.s * (m.y + m.r) * m.r * lam / (rl * rl);
+    }
   } else {
     k = mul0(m.y, L) - lam - m.lgy1;
     if (d1) {
@@ -68,7 +92,7 @@ double mix_h(const MixSpec &m, double t, double *d1 = nullptr,
     g = -0.5 * t * t - 0.5 * LOG_2PI;
     g1 = -t;
     g2 = -1.0;
-  } else if (m.kind == 1) {
+  } else if (m.kind == 1 || m.kind == 4) {
     // GE(a, 1) in t = log(x): log a + t - x + (a - 1) log(1 - exp(-x))
     double x = std::exp(t);
     double om = -std::expm1(-x);          // 1 - exp(-x)
@@ -177,7 +201,8 @@ double mix_logpmf_one(MixSpec m) {
 }  // namespace
 
 // Log P(Y = x) for vectors of equal length (recycled in R). par1 is sigma
-// (PLN), shape (PGE), alpha (PW) or theta (PLL); par2 is sigma (PLL).
+// (PLN), shape (PGE, NBGE), alpha (PW) or theta (PLL); par2 is sigma (PLL)
+// or the NB dispersion alpha > 0 (NBGE).
 // Invalid parameters give NaN; x that is not a nonnegative whole number
 // gives -Inf; NA gives NA.
 // [[Rcpp::export]]
@@ -188,7 +213,8 @@ NumericVector mix_logpmf_cpp(NumericVector x, NumericVector mean,
   NumericVector out(n);
   for (int i = 0; i < n; ++i) {
     double xi = x[i], mu = mean[i], p1 = par1[i], p2 = par2[i];
-    if (ISNAN(xi) || ISNAN(mu) || ISNAN(p1) || (kind == 3 && ISNAN(p2))) {
+    if (ISNAN(xi) || ISNAN(mu) || ISNAN(p1) ||
+        ((kind == 3 || kind == 4) && ISNAN(p2))) {
       out[i] = NA_REAL;
       continue;
     }
@@ -196,6 +222,7 @@ NumericVector mix_logpmf_cpp(NumericVector x, NumericVector mean,
     if (kind == 0) ok = ok && p1 >= 0;
     else ok = ok && p1 > 0;
     if (kind == 3) ok = ok && R_FINITE(p2) && p2 >= 0;
+    if (kind == 4) ok = ok && R_FINITE(p2) && p2 > 0;
     if (!ok) {
       out[i] = R_NaN;
       continue;
@@ -206,6 +233,8 @@ NumericVector mix_logpmf_cpp(NumericVector x, NumericVector mean,
     }
     MixSpec m;
     m.kind = kind;
+    m.r = (kind == 4) ? 1.0 / p2 : 0.0;
+    m.lgr = (kind == 4) ? lgamma_ratio(xi, m.r) : 0.0;
     m.y = xi;
     m.lgy1 = std::lgamma(xi + 1.0);
     m.a = p1;
@@ -214,6 +243,7 @@ NumericVector mix_logpmf_cpp(NumericVector x, NumericVector mean,
     case 0:
       m.logc = std::log(mu); m.s = p1; break;
     case 1:
+    case 4:
       m.logc = std::log(mu) -
         std::log(R::digamma(p1 + 1.0) - R::digamma(1.0));
       m.s = 1.0; break;

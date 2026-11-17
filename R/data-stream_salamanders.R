@@ -1,0 +1,82 @@
+#' Stream Salamander Counts
+#'
+#' Repeated counts of stream salamanders in 23 headwater streams in
+#' south-eastern Kentucky, USA, 11 of them affected by mountaintop removal
+#' mining and valley filling, from Price et al. (2016). Counts are zero-heavy
+#' and strongly overdispersed, and the repeated samples of each site form
+#' groups, which makes the data a useful example for zero-inflated, hurdle
+#' and grouped count models.
+#'
+#' @format A data frame with 644 rows (23 sites x 4 samples x 7 species
+#'   groups) and 9 columns:
+#' \describe{
+#'   \item{site}{Factor: stream site, \code{R-1} to \code{R-12} (reference
+#'     streams) and \code{VF-1} to \code{VF-11} (valley-filled streams).
+#'     Each site was sampled four times; use it as the grouping variable.}
+#'   \item{mined}{Factor with levels \code{no} and \code{yes}: whether the
+#'     stream is affected by mountaintop removal mining and valley filling.}
+#'   \item{cover}{Amount of cover objects in the stream reach (site level;
+#'     centred and scaled in the source).}
+#'   \item{sample}{Sample (visit) number, 1 to 4. Integer.}
+#'   \item{DOP}{Days since the last precipitation (centred and scaled).}
+#'   \item{Wtemp}{Water temperature (centred and scaled).}
+#'   \item{DOY}{Day of the year of the sample (centred and scaled).}
+#'   \item{spp}{Factor: species and life stage. \code{GP}:
+#'     \emph{Gyrinophilus porphyriticus}; \code{PR}: \emph{Pseudotriton
+#'     ruber}; \code{DM}: \emph{Desmognathus monticola}; \code{EC-A}:
+#'     \emph{Eurycea cirrigera} adults; \code{EC-L}: \emph{E. cirrigera}
+#'     larvae; \code{DES-L}: \emph{Desmognathus} spp. larvae; \code{DF}:
+#'     \emph{D. fuscus}.}
+#'   \item{count}{Number of salamanders of the group counted in the sample.
+#'     Integer. The count response.}
+#' }
+#'
+#' @details
+#' Salamanders were counted in a 10-m reach of each stream on four visits.
+#' The counts are observed numbers of animals, not detection-corrected
+#' abundance: the original study modeled occupancy and abundance with an
+#' explicit detection model, which ordinary zero-inflated or hurdle count
+#' models do not reproduce. Results from the samples of one site are not
+#' independent.
+#'
+#' Preparation for this package (script \code{data-raw/stream_salamanders.R}
+#' in the source repository) started from the original Dryad file
+#' (\code{Price et al. JAPPL-2015-count-data.csv}, one row per site), checked
+#' its published MD5 digest, and reshaped it to one row per site, sample and
+#' group. Site labels were normalized (e.g. \code{"VF - 4"} to \code{"VF-4"}),
+#' the 0/1 \code{Mined} indicator was stored as the factor \code{mined} and
+#' the count columns were mapped to the group codes above. The covariates
+#' were already centred and scaled in the source and are unchanged. The
+#' result matches the \code{Salamanders} data of the \pkg{glmmTMB} package
+#' (version 1.1.14) on every site, sample and group, except that here
+#' \code{mined} has \code{no} as its first (reference) level and \code{site}
+#' is an unordered factor.
+#'
+#' The Dryad deposit is released under the Creative Commons CC0 1.0
+#' public-domain dedication. Please cite the study and the data deposit.
+#'
+#' @source Price, S. J., Muncy, B. L., Bonner, S. J., Drayer, A. N. and
+#'   Barton, C. D. (2016). Data from: Effects of mountaintop removal mining
+#'   and valley filling on the occupancy and abundance of stream
+#'   salamanders. Dryad. \doi{10.5061/dryad.5m8f6} (CC0 1.0; downloaded
+#'   2026-11-17).
+#'
+#' @references
+#' Price, S. J., Muncy, B. L., Bonner, S. J., Drayer, A. N. and Barton, C. D.
+#' (2016). Effects of mountaintop removal mining and valley filling on the
+#' occupancy and abundance of stream salamanders. \emph{Journal of Applied
+#' Ecology}, 53(2), 459-468. \doi{10.1111/1365-2664.12585}
+#'
+#' @examples
+#' data("stream_salamanders", package = "flexCountReg")
+#' str(stream_salamanders)
+#' mean(stream_salamanders$count == 0)          # share of zeros
+#' with(stream_salamanders, tapply(count, mined, mean))
+#'
+#' \donttest{
+#' fit <- countreg(count ~ spp + mined, data = stream_salamanders,
+#'                 family = "NB2", method = "BFGS")
+#' summary(fit)
+#' }
+#' @keywords datasets
+"stream_salamanders"

@@ -57,8 +57,36 @@ dpWeib_cpp <- function(x, mean, alpha, sigma, h) {
     .Call('_flexCountReg_dpWeib_cpp', PACKAGE = 'flexCountReg', x, mean, alpha, sigma, h)
 }
 
+delap_log_cpp <- function(y, lam, size, nbmu, what) {
+    .Call('_flexCountReg_delap_log_cpp', PACKAGE = 'flexCountReg', y, lam, size, nbmu, what)
+}
+
+herm_log_cpp <- function(y, lam1, lamm, m, what) {
+    .Call('_flexCountReg_herm_log_cpp', PACKAGE = 'flexCountReg', y, lam1, lamm, m, what)
+}
+
+pa_log_cpp <- function(y, lam, q, what) {
+    .Call('_flexCountReg_pa_log_cpp', PACKAGE = 'flexCountReg', y, lam, q, what)
+}
+
+cumlogsumexp_cpp <- function(x) {
+    .Call('_flexCountReg_cumlogsumexp_cpp', PACKAGE = 'flexCountReg', x)
+}
+
 genWaring_cpp <- function(x, mean, k, p, log_prob = FALSE) {
     .Call('_flexCountReg_genWaring_cpp', PACKAGE = 'flexCountReg', x, mean, k, p, log_prob)
+}
+
+tab_mp_cpp <- function(y, mu, par, fam, what) {
+    .Call('_flexCountReg_tab_mp_cpp', PACKAGE = 'flexCountReg', y, mu, par, fam, what)
+}
+
+dw_mp_cpp <- function(mu, b, what) {
+    .Call('_flexCountReg_dw_mp_cpp', PACKAGE = 'flexCountReg', mu, b, what)
+}
+
+gc_mp_cpp <- function(mu, a, what) {
+    .Call('_flexCountReg_gc_mp_cpp', PACKAGE = 'flexCountReg', mu, a, what)
 }
 
 mix_logpmf_cpp <- function(x, mean, par1, par2, kind) {

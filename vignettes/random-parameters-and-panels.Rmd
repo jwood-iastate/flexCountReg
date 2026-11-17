@@ -19,6 +19,73 @@ models (`renb()`, `poisLind.re()`, `repois()` and `negmultinom()`).
 
 ```{r setup}
 library(flexCountReg)
+```
+
+## Why the panel structure matters: repeated seizure counts
+
+`MASS::epil` records epileptic seizure counts for
+`r length(unique(MASS::epil$subject))` patients in a clinical trial of
+progabide (Thall and Vail, 1990). Each patient was observed in four
+consecutive two-week periods, so there are four rows per patient. The
+independent unit is the patient, not the row.
+
+```{r epil}
+epil <- MASS::epil
+c(rows = nrow(epil), patients = length(unique(epil$subject)))
+table(table(epil$subject))      # rows per patient
+# treatment does not change within a patient
+all(tapply(epil$trt, epil$subject, function(v) length(unique(v))) == 1)
+```
+
+The response `y` is the count in a two-week follow-up period. The count in
+the eight-week *baseline* period before treatment (`base`) is a predictor,
+not a response: MASS provides it as `lbase`, the centred logarithm of the
+baseline count divided by 4 (a two-week equivalent), and the age as `lage`,
+the centred log age. `V4` marks the fourth visit. (The data in MASS 7.3-65
+and later include a documented correction to one count.)
+
+A pooled model treats the 236 rows as independent; a random-effects model
+(`renb()`, the negative binomial model of Hausman, Hall and Griliches,
+1984) gives each patient a shared effect:
+
+```{r epil-fits}
+f_epil <- y ~ trt + lbase + lage + V4
+pooled <- countreg(f_epil, data = epil, family = "NB2", method = "BFGS")
+pooled_robust <- countreg(f_epil, data = epil, family = "NB2",
+                          method = "BFGS", stderr = "robust")
+panel <- renb(f_epil, group_var = "subject", data = epil, method = "BFGS")
+se_trt <- function(m) sqrt(diag(vcov(m)))[["trtprogabide"]]
+data.frame(
+  model = c("pooled NB2", "pooled NB2, robust SE", "RENB (panel)"),
+  treatment_effect = c(coef(pooled)[["trtprogabide"]],
+                       coef(pooled_robust)[["trtprogabide"]],
+                       coef(panel)[["trtprogabide"]]),
+  std_error = c(se_trt(pooled), se_trt(pooled_robust), se_trt(panel)))
+```
+
+The pooled model's standard error for the treatment effect is
+`r round(se_trt(pooled), 3)`, against `r round(se_trt(panel), 3)` in the
+panel model. Rows from the same patient share that patient's seizure
+tendency, so the pooled model counts four rows as four independent pieces of
+evidence and overstates its precision. Robust standard errors computed row
+by row (`r round(se_trt(pooled_robust), 3)`) do not fix this: they do not
+group the rows by patient.
+
+```{r epil-glance}
+do.call(rbind, lapply(list(pooled = pooled, RENB = panel), function(m)
+  glance(m)[, c("logLik", "AIC", "BIC", "nobs", "n_groups")]))
+```
+
+For panel models, `BIC()` uses the number of panels (`n_groups`,
+`r glance(panel)$n_groups` patients) as the sample size, because the panels
+are the independent units. The same unit applies to every form of
+inference: the likelihood has one contribution per panel, robust standard
+errors are clustered by panel, bootstrap standard errors resample whole
+panels, and validation splits should keep each panel in one fold.
+
+The rest of this vignette uses the `washington_roads` data:
+
+```{r roads}
 data("washington_roads")
 length(unique(washington_roads$ID))   # road segments
 nrow(washington_roads)                # segment-years
@@ -27,7 +94,7 @@ nrow(washington_roads)                # segment-years
 ## Random-parameter models
 
 In a random-parameter model, a coefficient varies across units:
-\eqn{\beta_i = \mu + \sigma \upsilon_i}. With `group_var`, all observations
+$\beta_i = \mu + \sigma \upsilon_i$. With `group_var`, all observations
 of a segment share one draw of the random parameter, which accounts for the
 panel structure. The model is estimated by maximum simulated likelihood
 with Halton draws; real analyses should use more draws (`ndraws`) than this
@@ -43,15 +110,27 @@ summary(rp)
 
 `speed50:Mean` and `speed50:St.Dev` are the mean and standard deviation of
 the speed-limit effect across segments. Distributions other than the normal
-are available through `rpardists`: lognormal (`"ln"`), gamma (`"g"`),
-triangular (`"t"`) and uniform (`"u"`). For the triangular and uniform, the
-`St.Dev` parameter is a half-width: the coefficient lies in
-\eqn{[\mu - \sigma, \mu + \sigma]}.
+are available through `rpardists`. The two estimated parameters, labelled
+`Mean` and `St.Dev`, do not always equal the actual mean and standard
+deviation of the coefficient:
+
+| `rpardists` | Coefficient | Actual mean | Actual SD |
+|---|---|---|---|
+| `"n"` normal | $\beta = \mu + \sigma z$ | $\mu$ | $\sigma$ |
+| `"ln"` lognormal | $\beta = \exp(\mu + \sigma z)$ | $\exp(\mu + \sigma^2/2)$ | $\exp(\mu + \sigma^2/2)\sqrt{\exp(\sigma^2) - 1}$ |
+| `"g"` gamma | gamma with mean $\mu$ and SD $\sigma$ | $\mu$ | $\sigma$ |
+| `"t"` triangular | $\mu + \sigma T$, $T$ triangular on $[-1, 1]$ | $\mu$ | $\sigma/\sqrt{6}$ |
+| `"u"` uniform | $\mu + \sigma U$, $U$ uniform on $[-1, 1]$ | $\mu$ | $\sigma/\sqrt{3}$ |
+
+For the lognormal, $\mu$ and $\sigma$ are the mean and SD of $\log\beta$,
+and the coefficient is positive; for a negative effect, enter the negative
+of the variable. For the triangular and uniform, `St.Dev` is a half-width:
+the coefficient lies in $[\mu - \sigma, \mu + \sigma]$.
 
 ### Heterogeneity in means
 
 The mean of a random parameter can depend on covariates, following Wood and
-Gayah (2025, Eq. 2): \eqn{\beta_i = \mu + z_i'\delta + \sigma\upsilon_i}.
+Gayah (2025, Eq. 2): $\beta_i = \mu + z_i'\delta + \sigma\upsilon_i$.
 Each random parameter gets its own coefficient for each heterogeneity
 variable:
 
@@ -91,11 +170,16 @@ eb <- predict(rp, newdata = washington_roads, method = "Individual")
 summary(attr(eb, "eb_coefficients")[, "speed50"])
 ```
 
-A caution for lognormal random parameters: the expected value of
-\eqn{\exp(x\beta)} does not exist when \eqn{\beta} is lognormal and
-\eqn{x > 0}, so `"Exact"` returns `Inf` with a warning there, and
-`"Simulated"` predictions depend on the number of draws. Use the negative of
-the variable, a gamma random parameter, or the Empirical Bayes predictions.
+A caution about the expected count: with a random parameter the expected
+value of $\exp(x\beta)$ must exist. It is infinite when $\beta$ is
+lognormal and $x > 0$, and when $\beta$ is gamma and
+$x\sigma^2/\mu \ge 1$. In those cases `"Exact"` and `"Simulated"`
+predictions return `Inf` with a warning (a simulated average would
+otherwise depend on the number of draws without converging). This is a
+property of the model, not a numerical failure: changing the distribution
+only helps if the new distribution's expectation exists for the covariate
+values used. Normal, triangular and uniform parameters always have a finite
+expectation.
 
 ## Random-effects models
 
@@ -125,6 +209,20 @@ do.call(rbind, lapply(names(re_models), function(nm) {
 For panel models, `BIC()` uses the number of panels (`n_groups`) as the
 sample size, because the panels are the independent units.
 
+The warning above comes from the Poisson-Lindley random-effects model: its
+random-effect parameter is driven toward the edge of its parameter space,
+where the likelihood is flat, so its standard error is not identified and
+is reported as `NA`:
+
+```{r re-flat}
+tidy(re_models$PoisLindRE)
+```
+
+Its fit statistics are close to those of the other two models, but with one
+parameter not identified its reported uncertainty is incomplete. When models
+fit about equally well, prefer one whose parameters are all identified, such
+as RENB or the negative multinomial model here.
+
 ### Standard errors
 
 The likelihood of a panel model has one contribution per panel, so robust
@@ -151,6 +249,9 @@ observations of one segment between the training and test sets leaks
 information and makes the models look better than they are.
 
 ## References
+
+Thall, P. F. and Vail, S. C. (1990). Some covariance models for longitudinal
+count data with overdispersion. *Biometrics*, 46(3), 657-671.
 
 Wood, J.S., & Gayah, V. (2025). Out-of-sample prediction and interpretation
 for random parameter generalized linear models. *Accident Analysis and

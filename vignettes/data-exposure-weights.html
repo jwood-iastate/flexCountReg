@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Preparing count data: exposure, offsets, weights and missing values</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Preparing count data: exposure, offsets,
+weights and missing values</h1>
+
+
+
+<p>Before fitting a count model, each column needs a clear role: the
+count is the response; covariates enter the mean model; the length of
+time or space over which the count was observed is an <em>exposure</em>;
+a column saying how many identical observations a row stands for is a
+<em>frequency weight</em>. Mixing up these roles changes the model being
+fitted, often without an error. This vignette shows each role with
+simulated data whose true values are known.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="question-and-data" class="section level2">
+<h2>Question and data</h2>
+<p>The question is how a covariate <code>x</code> changes the rate of
+events per unit of exposure. Each row is one independent unit (for
+example a road segment, a patient-year or a plot) observed for a known
+<code>exposure</code>, and <code>y</code> is the number of events during
+that exposure. The data are simulated from</p>
+<p><span class="math display">\[Y_i \sim \text{Poisson}(\mu_i), \qquad
+  \mu_i = \text{exposure}_i \times \exp(-0.5 + 0.6\,x_i),\]</span></p>
+<p>so the true rate per unit of exposure is <span class="math inline">\(\exp(-0.5 + 0.6x)\)</span>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">400</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">id =</span> <span class="fu">seq_len</span>(n), <span class="at">x =</span> <span class="fu">rnorm</span>(n),</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>                <span class="at">exposure =</span> <span class="fu">round</span>(<span class="fu">runif</span>(n, <span class="fl">0.2</span>, <span class="dv">5</span>), <span class="dv">2</span>))</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>d<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rpois</span>(n, d<span class="sc">$</span>exposure <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.5</span> <span class="sc">+</span> <span class="fl">0.6</span> <span class="sc">*</span> d<span class="sc">$</span>x))</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>d<span class="sc">$</span>log_exposure <span class="ot">&lt;-</span> <span class="fu">log</span>(d<span class="sc">$</span>exposure)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">head</span>(d)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;   id          x exposure y log_exposure</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; 1  1  1.3709584     4.56 6   1.51732262</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; 2  2 -0.5646982     4.52 2   1.50851199</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; 3  3  0.3631284     1.12 1   0.11332869</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; 4  4  0.6328626     2.75 1   1.01160091</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; 5  5  0.4042683     2.71 3   0.99694863</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; 6  6 -0.1061245     0.97 2  -0.03045921</span></span></code></pre></div>
+</div>
+<div id="exposure-belongs-in-an-offset" class="section level2">
+<h2>Exposure belongs in an offset</h2>
+<p>Taking logs of the mean model gives</p>
+<p><span class="math display">\[\log\mu_i = \log(\text{exposure}_i) +
+\beta_0 + \beta_1 x_i,\]</span></p>
+<p>so the log exposure enters the linear predictor with a coefficient
+fixed at 1: an <em>offset</em>. There are two equivalent ways to supply
+it. Use one or the other in a fit, not both:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># 1. offset() in the formula, with the exposure on its original scale</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>m_formula <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(exposure)), <span class="at">data =</span> d,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                      <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co"># 2. the `offset` argument, naming a column that is already logged</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>m_column <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>                     <span class="at">offset =</span> <span class="st">&quot;log_exposure&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">formula =</span> <span class="fu">coef</span>(m_formula), <span class="at">column =</span> <span class="fu">coef</span>(m_column))</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;         (Intercept)         x</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; formula   -0.542581 0.6455173</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; column    -0.542581 0.6455173</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">coef</span>(m_formula), <span class="fu">coef</span>(m_column))</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>Both agree with <code>glm()</code>:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">coef</span>(<span class="fu">glm</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(exposure)), <span class="at">data =</span> d, <span class="at">family =</span> <span class="fu">poisson</span>()))</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; (Intercept)           x </span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;  -0.5425810   0.6455173</span></span></code></pre></div>
+<p>The estimates are close to the true values (-0.5 and 0.6). Giving
+both forms at once is an error, because it is ambiguous whether the
+exposure should count once or twice:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">tryCatch</span>(<span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(exposure)), <span class="at">data =</span> d,</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                  <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">offset =</span> <span class="st">&quot;log_exposure&quot;</span>),</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>         <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Specify the offset either with offset() in the formula or with the `offset` argument, not both.&quot;</span></span></code></pre></div>
+<div id="is-the-rate-proportional-to-exposure" class="section level3">
+<h3>Is the rate proportional to exposure?</h3>
+<p>An offset assumes that doubling the exposure doubles the expected
+count. That assumption can be checked by estimating the coefficient of
+the log exposure instead of fixing it at 1:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>m_free <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> log_exposure, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                   <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">summary</span>(m_free)<span class="sc">$</span>coefficients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;                Estimate Std. Error</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; (Intercept)  -0.6065579 0.09442651</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; x             0.6453294 0.03897123</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; log_exposure  1.0579697 0.07500960</span></span></code></pre></div>
+<p>The estimate, 1.06 with standard error 0.08, is within two standard
+errors of 1, so the offset is appropriate here. A coefficient clearly
+different from 1 means the rate itself changes with exposure (for
+example when longer road segments differ systematically from shorter
+ones).</p>
+</div>
+<div id="pitfall-dividing-the-count-by-the-exposure" class="section level3">
+<h3>Pitfall: dividing the count by the exposure</h3>
+<p>A rate <code>y / exposure</code> is not a count, and a count model
+cannot be fitted to it; flexCountReg refuses:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">tryCatch</span>(<span class="fu">countreg</span>(<span class="fu">I</span>(y <span class="sc">/</span> exposure) <span class="sc">~</span> x, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>                  <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>         <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;The response must be whole numbers (counts); 263 value(s) are not.&quot;</span></span></code></pre></div>
+<p>Keep the count as the response and put the exposure in the offset.
+The fitted model still describes the rate: <span class="math inline">\(\exp(\beta_0 + \beta_1 x)\)</span> is the expected
+count per unit of exposure.</p>
+</div>
+<div id="pitfall-logging-the-exposure-twice" class="section level3">
+<h3>Pitfall: logging the exposure twice</h3>
+<p><code>log_exposure</code> is already logged, so
+<code>offset(log(log_exposure))</code> logs it a second time. Here some
+exposures are below 1, their logs are negative, the second log is
+undefined, and the fit stops:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">tryCatch</span>(<span class="fu">suppressWarnings</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(log_exposure)), <span class="at">data =</span> d,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>           <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)),</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Offsets must be finite (use the log of the exposure, e.g. log(length)).&quot;</span></span></code></pre></div>
+<p>If every exposure were above 1, the doubly logged offset would be
+finite and the model would fit without complaint, but with the wrong
+offset. The check in the previous section (an estimated log-exposure
+coefficient near 1) catches this kind of mistake. Exposures of zero or
+below are caught the same way: their logarithm is not finite.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>d_bad <span class="ot">&lt;-</span> d</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>d_bad<span class="sc">$</span>exposure[<span class="dv">3</span>] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">tryCatch</span>(<span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(exposure)), <span class="at">data =</span> d_bad,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                  <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>         <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Offsets must be finite (use the log of the exposure, e.g. log(length)).&quot;</span></span></code></pre></div>
+</div>
+<div id="predictions-need-the-exposure-too" class="section level3">
+<h3>Predictions need the exposure too</h3>
+<p>Predictions for new data use the same offset, so <code>newdata</code>
+must contain the exposure column. Expected counts scale with the
+exposure:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">predict</span>(m_formula, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">exposure =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">10</span>)))</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; [1] 0.5812461 1.1624923 5.8124613</span></span></code></pre></div>
+</div>
+</div>
+<div id="frequency-weights-rows-that-stand-for-several-observations" class="section level2">
+<h2>Frequency weights: rows that stand for several observations</h2>
+<p>Data are sometimes stored compactly, with one row per distinct
+combination of values and a column counting how many observations share
+it. The <code>weights</code> argument treats each row as that many
+independent observations:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>compact <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">each =</span> <span class="dv">4</span>), <span class="at">y =</span> <span class="fu">rep</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">2</span>),</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>                      <span class="at">freq =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">8</span>, <span class="dv">4</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">6</span>, <span class="dv">6</span>, <span class="dv">3</span>))</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>compact</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;   x y freq</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1 0 0    5</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 2 0 1    8</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; 3 0 2    4</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; 4 0 3    1</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; 5 1 0    2</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; 6 1 1    6</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; 7 1 2    6</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; 8 1 3    3</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>expanded <span class="ot">&lt;-</span> compact[<span class="fu">rep</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(compact)), compact<span class="sc">$</span>freq),</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>                    <span class="fu">c</span>(<span class="st">&quot;x&quot;</span>, <span class="st">&quot;y&quot;</span>)]</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="fu">nrow</span>(expanded)</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; [1] 35</span></span></code></pre></div>
+<p>The compact fit with frequency weights and the fit to the expanded
+data are the same model:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>f_compact <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> compact, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>                      <span class="at">weights =</span> <span class="st">&quot;freq&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>f_expanded <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> expanded, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>                       <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">compact =</span> <span class="fu">c</span>(<span class="fu">coef</span>(f_compact), <span class="at">logLik =</span> <span class="fu">logLik</span>(f_compact),</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>                  <span class="at">BIC =</span> <span class="fu">BIC</span>(f_compact)),</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>      <span class="at">expanded =</span> <span class="fu">c</span>(<span class="fu">coef</span>(f_expanded), <span class="at">logLik =</span> <span class="fu">logLik</span>(f_expanded),</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>                   <span class="at">BIC =</span> <span class="fu">BIC</span>(f_expanded)))</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;          (Intercept)         x   logLik      BIC</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; compact   0.05406722 0.4085563 -46.5804 100.2715</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; expanded  0.05406722 0.4085563 -46.5804 100.2715</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">compact =</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(f_compact))),</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>      <span class="at">expanded =</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(f_expanded))))</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt;          (Intercept)         x</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; compact    0.2294157 0.2994472</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; expanded   0.2294157 0.2994472</span></span></code></pre></div>
+<p>Estimates, log-likelihood, standard errors and BIC agree. Note that
+<code>nobs()</code> counts rows, not represented observations: 8 for the
+compact data and 35 for the expanded data. BIC uses the represented
+observations (35), which is why it agrees.</p>
+<div id="what-weights-are-not" class="section level3">
+<h3>What weights are not</h3>
+<ul>
+<li><strong>Not an exposure.</strong> A row observed for twice as long
+is one observation with a larger expected count; it belongs in the
+offset. A weight of 2 claims two independent observations with the same
+outcome.</li>
+<li><strong>Not survey weights.</strong> Sampling weights reweight the
+population, but the rows are not repeated observations.
+<code>stderr = &quot;robust&quot;</code> gives sandwich standard errors that are
+valid for non-integer weights under the model’s independence
+assumptions; it is not a full design-based survey analysis (strata,
+clusters and finite-population corrections are not modelled). Bootstrap
+standard errors require whole-number frequency weights and refuse other
+weights.</li>
+<li><strong>Not numbers of trials.</strong> “3 events out of 10 animals”
+is a bounded count with a known number of trials, which needs a
+binomial-type model; neither a weight of 10 nor an exposure of 10
+represents it.</li>
+</ul>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">tryCatch</span>(<span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> <span class="fu">transform</span>(compact, <span class="at">freq =</span> freq <span class="sc">/</span> <span class="dv">2</span>),</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>                  <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">weights =</span> <span class="st">&quot;freq&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>                  <span class="at">stderr =</span> <span class="st">&quot;boot&quot;</span>, <span class="at">bootstraps =</span> <span class="dv">20</span>),</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>         <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bootstrap standard errors with `weights` need frequency weights: nonnegative whole numbers (each row stands for that many independent observations) with a positive total. Use stderr = \&quot;robust\&quot; for other weights.&quot;</span></span></code></pre></div>
+</div>
+</div>
+<div id="missing-values-and-the-analysis-sample" class="section level2">
+<h2>Missing values and the analysis sample</h2>
+<p><code>countreg()</code> uses the rows that are complete for
+<em>every</em> variable the model needs: the response, the mean
+covariates, the offset, the weights and the variables of any
+distribution-parameter, zero or underreporting formula. All model
+components therefore use the same rows. To illustrate, simulate an
+overdispersed count <code>y_nb</code> (negative binomial, NB2 dispersion
+0.5) and make <code>x</code> missing in two rows and a second covariate
+<code>z</code>, used only in the model for the dispersion parameter,
+missing in three:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>dm <span class="ot">&lt;-</span> d</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>dm<span class="sc">$</span>y_nb <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n, <span class="at">size =</span> <span class="dv">2</span>, <span class="at">mu =</span> dm<span class="sc">$</span>exposure <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.5</span> <span class="sc">+</span> <span class="fl">0.6</span> <span class="sc">*</span> dm<span class="sc">$</span>x))</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>dm<span class="sc">$</span>z <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n)</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>dm<span class="sc">$</span>x[<span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">9</span>)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>dm<span class="sc">$</span>z[<span class="fu">c</span>(<span class="dv">9</span>, <span class="dv">15</span>, <span class="dv">22</span>)] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>m_mean <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y_nb <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(exposure)), <span class="at">data =</span> dm, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>                   <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; 2 row(s) with missing values were removed.</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>m_disp <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y_nb <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(exposure)), <span class="at">data =</span> dm, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>                   <span class="at">dis_param_formula_1 =</span> <span class="sc">~</span> z, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; 4 row(s) with missing values were removed.</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean_model =</span> <span class="fu">nobs</span>(m_mean), <span class="at">dispersion_model =</span> <span class="fu">nobs</span>(m_disp))</span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt;       mean_model dispersion_model </span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt;              398              396</span></span></code></pre></div>
+<p>The rows each fit used are stored with the model, so the dropped rows
+can be listed (by position in the data; the <code>id</code> column is
+used only to report them, not as a predictor):</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>dm<span class="sc">$</span>id[<span class="fu">setdiff</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(dm)), m_mean<span class="sc">$</span>model<span class="sc">$</span>rows_used)]</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt; [1] 4 9</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>dm<span class="sc">$</span>id[<span class="fu">setdiff</span>(<span class="fu">seq_len</span>(<span class="fu">nrow</span>(dm)), m_disp<span class="sc">$</span>model<span class="sc">$</span>rows_used)]</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; [1]  4  9 15 22</span></span></code></pre></div>
+<div id="pitfall-comparing-models-fitted-to-different-rows" class="section level3">
+<h3>Pitfall: comparing models fitted to different rows</h3>
+<p>The two models dropped different rows, so their log-likelihoods are
+sums over different observations and cannot be compared.
+<code>regCompTest()</code> checks this and refuses:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">tryCatch</span>(<span class="fu">regCompTest</span>(m_disp, <span class="at">model2 =</span> m_mean),</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>         <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;The two models were fit to different numbers of observations (396 and 398); an LR test is not valid.&quot;</span></span></code></pre></div>
+<p>Define the common analysis sample explicitly and refit both models to
+it:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>vars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;y_nb&quot;</span>, <span class="st">&quot;x&quot;</span>, <span class="st">&quot;z&quot;</span>, <span class="st">&quot;exposure&quot;</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>common <span class="ot">&lt;-</span> dm[<span class="fu">complete.cases</span>(dm[vars]), ]</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>m_mean2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y_nb <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(exposure)), <span class="at">data =</span> common,</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>                    <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>m_disp2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y_nb <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(exposure)), <span class="at">data =</span> common,</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>                    <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">dis_param_formula_1 =</span> <span class="sc">~</span> z,</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>                    <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="fu">c</span>(<span class="fu">nobs</span>(m_mean2), <span class="fu">nobs</span>(m_disp2))</span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt; [1] 396 396</span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="fu">regCompTest</span>(m_disp2, <span class="at">model2 =</span> m_mean2)<span class="sc">$</span>statistics</span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt; # A tibble: 8 × 3</span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt;   Statistic                Model BaseModel</span></span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                    &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a><span class="co">#&gt; 1 Log-likelihood        -657.     -657.   </span></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a><span class="co">#&gt; 2 Number of parameters     4         3    </span></span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="co">#&gt; 3 AIC                   1323.     1321.   </span></span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a><span class="co">#&gt; 4 BIC                   1339.     1333.   </span></span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a><span class="co">#&gt; 5 LR Test Statistic        0.272    NA    </span></span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a><span class="co">#&gt; 6 LR degrees of freedom    1        NA    </span></span>
+<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a><span class="co">#&gt; 7 LR p-value               0.602    NA    </span></span>
+<span id="cb17-21"><a href="#cb17-21" tabindex="-1"></a><span class="co">#&gt; 8 McFadden&#39;s Pseudo R^2    0.208     0.208</span></span></code></pre></div>
+<p>Both models now use the same 396 rows, and the test is valid. In
+these simulated data the dispersion does not depend on <code>z</code>,
+so the larger model is not expected to fit better.</p>
+</div>
+<div id="pitfall-rows-that-are-not-independent" class="section level3">
+<h3>Pitfall: rows that are not independent</h3>
+<p>All of the above assumes that rows are independent. When several rows
+belong to the same unit (a road segment observed in several years, a
+patient measured at several visits) the independent unit is the panel,
+not the row. Ordinary standard errors and row-level bootstrap resampling
+then overstate the information in the data. Use an estimator with a
+grouping variable (<code>group_var</code>), described in
+<code>vignette(&quot;random-parameters-and-panels&quot;, package = &quot;flexCountReg&quot;)</code>.</p>
+</div>
+</div>
+<div id="reproducibility-and-next-steps" class="section level2">
+<h2>Reproducibility and next steps</h2>
+<p>All data in this vignette are simulated with
+<code>set.seed(42)</code>, so every result can be reproduced. The checks
+shown here are worth repeating with real data: confirm the analysis
+sample (<code>nobs()</code> and <code>$model$rows_used</code>), check
+the proportional-exposure assumption, and keep the roles of offsets and
+weights distinct.</p>
+<ul>
+<li><code>vignette(&quot;getting-started&quot;, package = &quot;flexCountReg&quot;)</code>
+walks through a complete first analysis.</li>
+<li><code>vignette(&quot;inference-prediction-and-comparison&quot;, package = &quot;flexCountReg&quot;)</code>
+covers standard errors and the conditions for likelihood-ratio
+tests.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

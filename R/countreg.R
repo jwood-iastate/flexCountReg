@@ -918,6 +918,17 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     start[is.na(start)] <- 0
     extra <- N_alpha + N_sigma + N_underreport
     start <- c(start, rep_len(.fcr_get_family(family)$start, extra))
+    # Dispersion intercept from the moments of the Poisson fit: a start far
+    # from the estimate (e.g. alpha = 1 for data close to Poisson) can send a
+    # quasi-Newton optimizer onto the flat region alpha -> 0, where it stops
+    # with a falsely "converged" Poisson fit
+    a0 <- .fcr_moment_disp_start(family, y, p_model$fitted.values,
+                                 weights.df)
+    if (!is.null(a0) && N_alpha > 0) {
+      pos <- if (is.null(mod_alpha_frame)) 1L else
+        match("(Intercept)", colnames(mod_alpha_frame))
+      if (!is.na(pos)) start[N_predictors + pos] <- a0
+    }
     if (N_zero > 0) {
       # Zero model: intercept at a structural-zero share of about 0.2
       # (inflated) or at the observed share of positive counts (hurdle)

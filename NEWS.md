@@ -65,6 +65,27 @@
   components are included. A reproducible coverage study is in
   `inst/validation/intervals/`.
 
+## Starting values for the dispersion
+
+* `countreg()` now starts the dispersion parameter of NB1, NB2, PIG1, PIG2
+  and PIG at a moment estimate from the Poisson starting fit (the
+  auxiliary regression of Cameron and Trivedi) instead of `alpha = 1`. With
+  the old start, quasi-Newton optimizers could step onto the flat region
+  `alpha -> 0` and stop there with a falsely "converged" Poisson fit: NB2
+  with `method = "BFGS"` gave log-likelihood -228.48 instead of -195.56 on
+  `warpbreaks`, and -182.29 instead of -180.11 on `InsectSprays`. Results
+  now match `MASS::glm.nb()`. Fits that already reached the maximum are
+  unchanged.
+
+## Standard errors at flat likelihood directions
+
+* When the Hessian is singular, standard errors still use a generalized
+  inverse, but parameters involved in a direction where the likelihood is
+  flat now get `NA` variances and standard errors instead of zero (a zero
+  standard error read as perfect precision, e.g. the random-effect
+  parameter of a Poisson-Lindley random-effects model at its boundary). The
+  warning names those parameters.
+
 ## New data
 
 * `abalone_rings`: shell-ring counts and measurements of 4,177 abalone from

@@ -34,10 +34,15 @@ it.
   including the count distribution.
 * `"robust"`: the sandwich estimator. It remains valid for the mean
   coefficients when the distribution is misspecified but the mean model is
-  right (quasi-likelihood). For panel models (`countreg.rp()` with
-  `group_var`, `renb()`, `poisLind.re()`, `repois()`, `negmultinom()`) the
-  log-likelihood has one contribution per panel, so these standard errors
-  are cluster-robust.
+  right (quasi-likelihood). It does not rescue estimates from a wrong mean
+  model (they are then estimates of something else, whatever their standard
+  errors), and with sampling weights it is not a full survey-design analysis
+  (strata, clusters and finite-population corrections are not modelled). For
+  panel models (`countreg.rp()` with `group_var`, `renb()`, `poisLind.re()`,
+  `repois()`, `negmultinom()`) the log-likelihood has one contribution per
+  panel, so these standard errors are cluster-robust; for `countreg()` they
+  are computed row by row and do not account for repeated observations of
+  the same unit.
 * `"boot"`: a nonparametric bootstrap with `bootstraps` replicates. Rows are
   resampled for `countreg()`, and whole panels for panel models. Use it
   when the sample is small, when the Hessian is close to singular, or as a
@@ -139,6 +144,37 @@ are handled:
 Negative multinomial models have `method = "Standard"` and `"EB"` in the
 same sense.
 
+## Three different intervals
+
+Three intervals answer three different questions, and are easily confused:
+
+| Interval | Question | How |
+|---|---|---|
+| Confidence interval for a coefficient | How uncertain is an estimated effect? | `confint()`, `tidy(conf.int = TRUE)` |
+| Confidence interval for the expected count | How uncertain is the estimated mean at given covariates? | `predict(interval = "confidence")` |
+| Prediction interval for a new count | Where is one new observation at given covariates likely to fall? | `predict(interval = "prediction")` |
+
+```{r intervals}
+confint(nb_h)["speed50", ]
+nd2 <- data.frame(lnaadt = log(c(3000, 15000)), lnlength = 0, speed50 = 1)
+predict(nb_h, newdata = nd2, interval = "confidence")
+predict(nb_h, newdata = nd2, interval = "prediction", level = 0.9)
+```
+
+The confidence interval for the mean narrows as the sample grows; the
+prediction interval does not, because a new count varies around its mean
+whatever the sample size. Prediction-interval limits are whole counts and,
+because counts are discrete, usually cover a little more than the stated
+level. Both intervals for `countreg()` models account for estimation
+uncertainty using the asymptotic normal distribution of the estimates,
+evaluated at deterministic Halton points (or a parametric bootstrap with
+`uncertainty = "bootstrap"`); see `?predict.flexCountReg`.
+
+A fourth kind, a *tolerance interval*, is meant to contain at least a stated
+share of all counts at given covariates (for example 90% of road segments
+with these characteristics) with a stated confidence; see
+`?tolerance_interval`.
+
 ## Fitted values, residuals and simulation
 
 `fitted()` gives the predictions for the rows used in estimation, and
@@ -158,7 +194,10 @@ c(mean = mean(r), sd = sd(r))
 
 `simulate()` draws new responses from the fitted distribution for the same
 rows (with `seed`, reproducible and without changing the random-number
-stream of the session). It is the basis of parametric-bootstrap checks:
+stream of the session). The parameters are held at their estimates (a
+plug-in simulation), so the spread of simulated statistics reflects the
+randomness of the counts, not the uncertainty of the estimates. It is the
+basis of parametric-bootstrap checks:
 
 ```{r simulate}
 sims <- simulate(nb_h, nsim = 200, seed = 1)
@@ -213,6 +252,7 @@ The families nest as follows:
 | Poisson | NB1, NB2, PLN, PIG1, PIG2, PIG | dispersion = 0 | 50:50 mixture of \(\chi^2_{df-1}\) and \(\chi^2_{df}\) |
 | Poisson | GP1, GP2 | dispersion = 0 | \(\chi^2_{df}\) |
 | Poisson | COM | \(\nu = 1\) | \(\chi^2_{df}\) |
+| Poisson | DPO, HYPERPOIS, GAMMACOUNT | \(\phi = 1\), \(\gamma = 1\), shape \(= 1\) | \(\chi^2_{df}\) |
 | NB1, NB2 | NBP | \(P = 1\) or \(P = 2\) | \(\chi^2_{df}\) |
 | PL | PLG, PLL | \(\alpha = 0\), \(\sigma = 0\) | 50:50 mixture |
 
@@ -230,6 +270,9 @@ These comparisons are **not** valid, and no p-value is reported:
   Sichel \(\gamma\) are not identified, so the usual asymptotics fail.
 * **Poisson vs PW, PGE or GW.** Their distributions approach Poisson only as
   a parameter goes to infinity.
+* **Poisson vs DELAPORTE, HERMITE, PA or NBGE.** Poisson is reached only at
+  the edge of the parameter space (a share of 0 on the logit scale, or a
+  dispersion going to zero), where other parameters are not identified.
 * **A boundary family with a dispersion formula.** The restriction sends an
   intercept to minus infinity while the slopes become unidentified.
 * **Models with and without a zero model or underreporting.** No zero
@@ -278,6 +321,17 @@ rows by default, so it is comparable across families. `basemodel` and
 ```{r table}
 regCompTable(list(Poisson = po, NB2 = nb_h))
 ```
+
+## Next steps
+
+* `vignette("getting-started", package = "flexCountReg")` applies these
+  tools in a complete analysis.
+* `vignette("diagnosing-count-models", package = "flexCountReg")` covers
+  residuals, rootograms and held-out comparisons.
+* `vignette("random-parameters-and-panels", package = "flexCountReg")`
+  explains the independent unit for repeated observations: the
+  `washington_roads` rows used here are segment-years, so the row-level
+  standard errors above treat repeated years of a segment as independent.
 
 ## References
 

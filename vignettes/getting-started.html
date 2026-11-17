@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Getting started with flexCountReg</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Getting started with flexCountReg</h1>
+
+
+
+<p>This tutorial walks through a complete first analysis: describing
+count data, fitting a Poisson regression, checking whether its variance
+assumption holds, comparing alternatives fitted to the same rows, and
+turning the chosen model into predictions with uncertainty.</p>
+<div id="the-question-and-the-data" class="section level2">
+<h2>The question and the data</h2>
+<p><code>InsectSprays</code> (in base R’s datasets package) records the
+number of insects counted in agricultural experimental units treated
+with one of six insecticides, labelled A to F (Beall, 1942). The
+questions are:</p>
+<ul>
+<li>How does the expected insect count differ between sprays?</li>
+<li>How much do counts vary between units treated with the same
+spray?</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>d <span class="ot">&lt;-</span> datasets<span class="sc">::</span>InsectSprays</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">str</span>(d)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt; &#39;data.frame&#39;:    72 obs. of  2 variables:</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt;  $ count: num  10 7 20 14 14 12 10 23 17 20 ...</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt;  $ spray: Factor w/ 6 levels &quot;A&quot;,&quot;B&quot;,&quot;C&quot;,&quot;D&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</span></span></code></pre></div>
+<p>The observational unit is one experimental unit. The outcome
+<code>count</code> is a non-negative whole number; <code>spray</code> is
+a factor with six levels. There is no exposure variable (all units are
+treated as comparable), no grouping beyond the spray, and no missing
+values:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">anyNA</span>(d)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co">#&gt; [1] FALSE</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">table</span>(d<span class="sc">$</span>spray)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;  A  B  C  D  E  F </span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; 12 12 12 12 12 12</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">range</span>(d<span class="sc">$</span>count)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; [1]  0 26</span></span></code></pre></div>
+</div>
+<div id="describe-the-counts" class="section level2">
+<h2>Describe the counts</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)   <span class="co"># the horizontal jitter is random</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">stripchart</span>(count <span class="sc">~</span> spray, <span class="at">data =</span> d, <span class="at">vertical =</span> <span class="cn">TRUE</span>, <span class="at">method =</span> <span class="st">&quot;jitter&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>           <span class="at">pch =</span> <span class="dv">1</span>, <span class="at">xlab =</span> <span class="st">&quot;Spray&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Insect count&quot;</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>means <span class="ot">&lt;-</span> <span class="fu">tapply</span>(d<span class="sc">$</span>count, d<span class="sc">$</span>spray, mean)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">segments</span>(<span class="fu">seq_along</span>(means) <span class="sc">-</span> <span class="fl">0.25</span>, means, <span class="fu">seq_along</span>(means) <span class="sc">+</span> <span class="fl">0.25</span>, means,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>         <span class="at">lwd =</span> <span class="dv">3</span>)</span></code></pre></div>
+<div class="float">
+<img role="img" aria-label="Insect counts by spray (each point is one unit; the bar marks the mean)." src="data:image/png;base64,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" alt="Insect counts by spray (each point is one unit; the bar marks the mean)." />
+<div class="figcaption">Insect counts by spray (each point is one unit;
+the bar marks the mean).</div>
+</div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>grp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">mean =</span> <span class="fu">tapply</span>(d<span class="sc">$</span>count, d<span class="sc">$</span>spray, mean),</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>                  <span class="at">variance =</span> <span class="fu">tapply</span>(d<span class="sc">$</span>count, d<span class="sc">$</span>spray, var))</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>grp<span class="sc">$</span>ratio <span class="ot">&lt;-</span> grp<span class="sc">$</span>variance <span class="sc">/</span> grp<span class="sc">$</span>mean</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">round</span>(grp, <span class="dv">2</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;    mean variance ratio</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; A 14.50    22.27  1.54</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; B 15.33    18.24  1.19</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; C  2.08     3.90  1.87</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; D  4.92     6.27  1.27</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; E  3.50     3.00  0.86</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; F 16.67    38.61  2.32</span></span></code></pre></div>
+<p>Over all units the variance-to-mean ratio is 5.5, far above the value
+of 1 implied by a Poisson distribution. That number is only descriptive:
+most of it comes from the large differences in means between sprays,
+which a regression on <code>spray</code> explains. Within sprays the
+ratios are much closer to 1 (between 0.86 and 2.32). Whether that is
+real overdispersion is a question for the fitted models below.</p>
+</div>
+<div id="a-poisson-regression" class="section level2">
+<h2>A Poisson regression</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>pois <span class="ot">&lt;-</span> <span class="fu">countreg</span>(count <span class="sc">~</span> spray, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                 <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">summary</span>(pois)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; countreg(formula = count ~ spray, data = d, family = &quot;POISSON&quot;, </span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;     method = &quot;BFGS&quot;)</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; Model: countreg | family: POISSON | optimizer: BFGS</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; Iterations: 2 </span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; Convergence: successful convergence </span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; (Intercept)   2.6741     0.0758   35.27   &lt;2e-16 ***</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; sprayB        0.0559     0.1057    0.53     0.60    </span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; sprayC       -1.9402     0.2139   -9.07   &lt;2e-16 ***</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; sprayD       -1.0815     0.1507   -7.18    7e-13 ***</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; sprayE       -1.4214     0.1719   -8.27   &lt;2e-16 ***</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; sprayF        0.1393     0.1037    1.34     0.18    </span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -182.295 | AIC: 376.589 | BIC: 390.249 </span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; N: 72</span></span></code></pre></div>
+<p>The Poisson model has a log link, so <code>exp(coefficient)</code> is
+a rate ratio: the expected count for a spray relative to spray A (the
+reference level).</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">tidy</span>(pois, <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">exponentiate =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 8</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;   term       component estimate std.error statistic   p.value conf.low conf.high</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;      &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 1 (Intercep… mean        14.5      1.10      35.3   1.45e-272  12.5       16.8  </span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; 2 sprayB     mean         1.06     0.112      0.528 5.97e-  1   0.860      1.30 </span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; 3 sprayC     mean         0.144    0.0307    -9.07  1.18e- 19   0.0945     0.218</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; 4 sprayD     mean         0.339    0.0511    -7.18  7.03e- 13   0.252      0.456</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; 5 sprayE     mean         0.241    0.0415    -8.27  1.37e- 16   0.172      0.338</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; 6 sprayF     mean         1.15     0.119      1.34  1.79e-  1   0.938      1.41</span></span></code></pre></div>
+<p>For the Poisson family, <code>countreg()</code> maximizes the same
+likelihood as <code>glm()</code>, and the results agree:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>ref <span class="ot">&lt;-</span> <span class="fu">glm</span>(count <span class="sc">~</span> spray, <span class="at">data =</span> d, <span class="at">family =</span> <span class="fu">poisson</span>())</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">unname</span>(<span class="fu">coef</span>(pois)), <span class="fu">unname</span>(<span class="fu">coef</span>(ref)), <span class="at">tolerance =</span> <span class="fl">1e-6</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">as.numeric</span>(<span class="fu">predict</span>(pois)), <span class="fu">as.numeric</span>(<span class="fu">fitted</span>(ref)),</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>          <span class="at">tolerance =</span> <span class="fl">1e-6</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+</div>
+<div id="is-the-poisson-variance-adequate" class="section level2">
+<h2>Is the Poisson variance adequate?</h2>
+<p>With only a factor in the model, each spray’s expected count is its
+sample mean. What remains to check is the variance. The Pearson
+statistic divided by its residual degrees of freedom should be close to
+1 for a Poisson model:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>pearson <span class="ot">&lt;-</span> <span class="cf">function</span>(fit, k) <span class="fu">sum</span>(<span class="fu">residuals</span>(fit, <span class="at">type =</span> <span class="st">&quot;pearson&quot;</span>)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  (<span class="fu">nobs</span>(fit) <span class="sc">-</span> k)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">pearson</span>(pois, <span class="fu">length</span>(<span class="fu">coef</span>(pois)))</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] 1.507713</span></span></code></pre></div>
+<p>A rootogram compares the observed frequency of each count with the
+frequency expected under the fitted model (hanging bars that end above
+or below zero mark counts that are under- or over-predicted):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">rootogram</span>(pois, <span class="at">main =</span> <span class="st">&quot;Poisson&quot;</span>)</span></code></pre></div>
+<div class="float">
+<img role="img" aria-label="Hanging rootogram of the Poisson model." src="data:image/png;base64,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" alt="Hanging rootogram of the Poisson model." />
+<div class="figcaption">Hanging rootogram of the Poisson model.</div>
+</div>
+<p>Randomized quantile residuals are approximately standard normal when
+the model is correct. They involve random numbers (counts are discrete),
+so set a seed to make them reproducible:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>qr_pois <span class="ot">&lt;-</span> <span class="fu">residuals</span>(pois, <span class="at">type =</span> <span class="st">&quot;quantile&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">predict</span>(pois), qr_pois, <span class="at">xlab =</span> <span class="st">&quot;Fitted mean&quot;</span>,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;Quantile residual&quot;</span>, <span class="at">main =</span> <span class="st">&quot;Poisson&quot;</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">0</span>, <span class="dv">2</span>), <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">1</span>, <span class="dv">2</span>))</span></code></pre></div>
+<div class="float">
+<img role="img" aria-label="Randomized quantile residuals of the Poisson model against the fitted means." src="data:image/png;base64,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" alt="Randomized quantile residuals of the Poisson model against the fitted means." />
+<div class="figcaption">Randomized quantile residuals of the Poisson
+model against the fitted means.</div>
+</div>
+<p>A Pearson ratio of 1.51 suggests some extra variation within sprays
+beyond the Poisson variance.</p>
+</div>
+<div id="alternatives-fitted-to-the-same-rows" class="section level2">
+<h2>Alternatives fitted to the same rows</h2>
+<p>Two common extensions of the Poisson model add a dispersion parameter
+<span class="math inline">\(\alpha\)</span>:</p>
+<ul>
+<li>NB2: <span class="math inline">\(Var(Y) = \mu + \alpha\mu^2\)</span>
+(extra variance grows with the square of the mean);</li>
+<li>NB1: <span class="math inline">\(Var(Y) = \mu(1 + \alpha)\)</span>
+(extra variance proportional to the mean).</li>
+</ul>
+<p>Both keep the same mean model, so their coefficients have the same
+rate-ratio interpretation.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>nb2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(count <span class="sc">~</span> spray, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>nb1 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(count <span class="sc">~</span> spray, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB1&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">c</span>(<span class="at">poisson =</span> <span class="fu">nobs</span>(pois), <span class="at">nb2 =</span> <span class="fu">nobs</span>(nb2), <span class="at">nb1 =</span> <span class="fu">nobs</span>(nb1))</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; poisson     nb2     nb1 </span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt;      72      72      72</span></span></code></pre></div>
+<p>All three models use the same 72 rows, so their likelihoods are
+comparable. Each summary reports a likelihood-ratio test against the
+Poisson model; because a dispersion of zero is on the boundary of the
+parameter space, the p-value uses a 50:50 mixture of chi-square
+distributions:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">summary</span>(nb2)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; countreg(formula = count ~ spray, data = d, family = &quot;NB2&quot;, method = &quot;BFGS&quot;)</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; Model: countreg | family: NB2 | optimizer: BFGS</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; Iterations: 18 </span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; Convergence: successful convergence </span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; (Intercept)   2.6741     0.0933   28.65  &lt; 2e-16 ***</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; sprayB        0.0559     0.1308    0.43     0.67    </span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; sprayC       -1.9402     0.2273   -8.53  &lt; 2e-16 ***</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; sprayD       -1.0815     0.1692   -6.39  1.6e-10 ***</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; sprayE       -1.4214     0.1884   -7.55  4.5e-14 ***</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; sprayF        0.1393     0.1291    1.08     0.28    </span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; ln(alpha)    -3.3358     0.6299   -5.30  1.2e-07 ***</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -180.109 | AIC: 374.218 | BIC: 390.155 </span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; N: 72</span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; LR test vs Poisson: chi-sq = 4.371 on 1 df, p-value = 0.0183 (boundary-corrected)</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>cmp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;Poisson&quot;</span>, <span class="st">&quot;NB2&quot;</span>, <span class="st">&quot;NB1&quot;</span>),</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">logLik =</span> <span class="fu">c</span>(<span class="fu">logLik</span>(pois), <span class="fu">logLik</span>(nb2), <span class="fu">logLik</span>(nb1)),</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">parameters =</span> <span class="fu">c</span>(<span class="fu">length</span>(<span class="fu">coef</span>(pois)), <span class="fu">length</span>(<span class="fu">coef</span>(nb2)), <span class="fu">length</span>(<span class="fu">coef</span>(nb1))),</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">AIC =</span> <span class="fu">c</span>(<span class="fu">AIC</span>(pois), <span class="fu">AIC</span>(nb2), <span class="fu">AIC</span>(nb1)),</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">BIC =</span> <span class="fu">c</span>(<span class="fu">BIC</span>(pois), <span class="fu">BIC</span>(nb2), <span class="fu">BIC</span>(nb1)),</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">LR_p_vs_Poisson =</span> <span class="fu">c</span>(<span class="cn">NA</span>, <span class="fu">summary</span>(nb2)<span class="sc">$</span>lr_test<span class="sc">$</span>p.value,</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>                      <span class="fu">summary</span>(nb1)<span class="sc">$</span>lr_test<span class="sc">$</span>p.value))</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>cmp[, <span class="sc">-</span><span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="fu">round</span>(cmp[, <span class="sc">-</span><span class="dv">1</span>], <span class="dv">3</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>cmp</span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt;     model   logLik parameters     AIC     BIC LR_p_vs_Poisson</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; 1 Poisson -182.295          6 376.589 390.249              NA</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; 2     NB2 -180.109          7 374.218 390.155           0.018</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a><span class="co">#&gt; 3     NB1 -180.327          7 374.654 390.590           0.024</span></span></code></pre></div>
+<p>Both negative binomial models improve on the Poisson model
+(likelihood-ratio p = 0.018 for NB2 and 0.024 for NB1), and AIC prefers
+either of them; BIC, which penalizes the extra parameter more, is about
+the same for all three. The evidence for extra variation is modest but
+consistent.</p>
+<div id="a-limitation-to-recognize-two-models-that-the-data-cannot-separate" class="section level3">
+<h3>A limitation to recognize: two models that the data cannot
+separate</h3>
+<p>NB1 and NB2 differ only in how the extra variance grows with the
+mean, and their log-likelihoods differ by 0.22. Neither model is a
+special case of the other, so a likelihood-ratio test between them is
+not valid, and flexCountReg does not report one:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">regCompTest</span>(nb1, <span class="at">model2 =</span> nb2)<span class="sc">$</span>statistics</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; Warning: The models have the same number of parameters, so they are not nested;</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; the LR test is not reported.</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; # A tibble: 8 × 3</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt;   Statistic                Model BaseModel</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                    &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; 1 Log-likelihood        -180.     -180.   </span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; 2 Number of parameters     7         7    </span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; 3 AIC                    374.      375.   </span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; 4 BIC                    390.      391.   </span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; 5 LR Test Statistic       NA        NA    </span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt; 6 LR degrees of freedom   NA        NA    </span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; 7 LR p-value              NA        NA    </span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt; 8 McFadden&#39;s Pseudo R^2    0.467     0.466</span></span></code></pre></div>
+<p>With only 12 units per spray, the data cannot tell the two variance
+forms apart. What matters for the question is that the spray effects are
+almost the same under all three models:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cbind</span>(<span class="at">Poisson =</span> <span class="fu">coef</span>(pois)[<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>], <span class="at">NB2 =</span> <span class="fu">coef</span>(nb2)[<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>],</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>            <span class="at">NB1 =</span> <span class="fu">coef</span>(nb1)[<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>]), <span class="dv">3</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt;             Poisson    NB2    NB1</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; (Intercept)   2.674  2.674  2.674</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; sprayB        0.056  0.056  0.058</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; sprayC       -1.940 -1.940 -1.958</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; sprayD       -1.082 -1.082 -1.073</span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; sprayE       -1.421 -1.421 -1.401</span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt; sprayF        0.139  0.139  0.134</span></span></code></pre></div>
+<p>The rest of the tutorial uses NB2, the more common choice; using NB1
+instead would not change the conclusions.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">rootogram</span>(nb2, <span class="at">main =</span> <span class="st">&quot;NB2&quot;</span>)</span></code></pre></div>
+<div class="float">
+<img role="img" aria-label="Hanging rootogram of the NB2 model." src="data:image/png;base64,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" alt="Hanging rootogram of the NB2 model." />
+<div class="figcaption">Hanging rootogram of the NB2 model.</div>
+</div>
+</div>
+</div>
+<div id="predictions-by-spray" class="section level2">
+<h2>Predictions by spray</h2>
+<p>A prediction grid with one row per spray makes the comparison
+explicit. A confidence interval describes the uncertainty about the
+expected count; a prediction interval describes where a single new
+unit’s count is likely to fall, so it is much wider:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>new_spray <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">spray =</span> <span class="fu">factor</span>(<span class="fu">levels</span>(d<span class="sc">$</span>spray),</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>                                       <span class="at">levels =</span> <span class="fu">levels</span>(d<span class="sc">$</span>spray)))</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>ci <span class="ot">&lt;-</span> <span class="fu">predict</span>(nb2, <span class="at">newdata =</span> new_spray, <span class="at">interval =</span> <span class="st">&quot;confidence&quot;</span>)</span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>pr <span class="ot">&lt;-</span> <span class="fu">predict</span>(nb2, <span class="at">newdata =</span> new_spray, <span class="at">interval =</span> <span class="st">&quot;prediction&quot;</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>              <span class="at">level =</span> <span class="fl">0.90</span>)</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">spray =</span> new_spray<span class="sc">$</span>spray, <span class="at">expected =</span> ci<span class="sc">$</span>fit,</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>                   <span class="at">ci_lower =</span> ci<span class="sc">$</span>lwr, <span class="at">ci_upper =</span> ci<span class="sc">$</span>upr,</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>                   <span class="at">pi90_lower =</span> pr<span class="sc">$</span>lwr, <span class="at">pi90_upper =</span> pr<span class="sc">$</span>upr)</span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a>pred[, <span class="dv">2</span><span class="sc">:</span><span class="dv">4</span>] <span class="ot">&lt;-</span> <span class="fu">round</span>(pred[, <span class="dv">2</span><span class="sc">:</span><span class="dv">4</span>], <span class="dv">2</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a>pred</span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt;   spray expected ci_lower ci_upper pi90_lower pi90_upper</span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt; 1     A    14.50    12.10    17.33          7         23</span></span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a><span class="co">#&gt; 2     B    15.33    12.82    18.27          8         25</span></span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a><span class="co">#&gt; 3     C     2.08     1.39     3.10          0          5</span></span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a><span class="co">#&gt; 4     D     4.92     3.71     6.40          1         10</span></span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a><span class="co">#&gt; 5     E     3.50     2.51     4.75          1          7</span></span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a><span class="co">#&gt; 6     F    16.67    13.98    19.73          8         26</span></span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a><span class="co"># Sprays below the overall mean, and whether their confidence intervals</span></span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a><span class="co"># are separated from those of the other sprays</span></span>
+<span id="cb17-20"><a href="#cb17-20" tabindex="-1"></a>low <span class="ot">&lt;-</span> ci<span class="sc">$</span>fit <span class="sc">&lt;</span> <span class="fu">mean</span>(d<span class="sc">$</span>count)</span>
+<span id="cb17-21"><a href="#cb17-21" tabindex="-1"></a>separated <span class="ot">&lt;-</span> <span class="fu">max</span>(ci<span class="sc">$</span>upr[low]) <span class="sc">&lt;</span> <span class="fu">min</span>(ci<span class="sc">$</span>lwr[<span class="sc">!</span>low])</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq_len</span>(<span class="fu">nrow</span>(pred))</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="fu">plot</span>(x, pred<span class="sc">$</span>expected, <span class="at">ylim =</span> <span class="fu">range</span>(<span class="dv">0</span>, pr<span class="sc">$</span>upr), <span class="at">xaxt =</span> <span class="st">&quot;n&quot;</span>, <span class="at">pch =</span> <span class="dv">19</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Spray&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Insect count&quot;</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">1</span>, <span class="at">at =</span> x, <span class="at">labels =</span> pred<span class="sc">$</span>spray)</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="fu">segments</span>(x, pr<span class="sc">$</span>lwr, x, pr<span class="sc">$</span>upr, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="fu">segments</span>(x, ci<span class="sc">$</span>lwr, x, ci<span class="sc">$</span>upr, <span class="at">lwd =</span> <span class="dv">4</span>)</span></code></pre></div>
+<div class="float">
+<img role="img" aria-label="Expected counts with 95% confidence intervals (thick) and 90% prediction intervals for a new unit (thin)." src="data:image/png;base64,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BAppBAppBAppBApp6QNtxm40ZjlE6+k99TjdDaZH70tlpF+Z1c/7jzQYxWtt4lcneaCHt3+M3jDcStO9zNvUhfb39GsSD9OvzH794jBKeovHSR7o9sd/14m3BsOrcHhNu6ne9+tx3KR9b4e3dJf294BAB8fNy/n/Eg9yCTTtL8Llpr3/S/uBMLyliV81Ah20G4Lkn73DR3za34P0v2e9y1uaNiECHbRPMPVn72VPPO1rnnwtBpe3dJt01/1y8JJ6ndQD7d/VJvFhUv8q7FZJN3GFBeq1BV16TiJxoNulZxlmGV7ttL8HfMRnGSdtoMObenh1OfBNu825HiTt0v66cZD0m7SBXs6VJD5MumxB077onGbKMU7aQC9Pb79Ouv922QdNfL61O1F/3DidqE+7x0ugrf31FH3a3UOvrzq7WXjK+qrT5wzgAlwsAmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkECmkEaqy7f1PyeU3qQaC2+lvspZ6qpiIEaqvpbjvrdTfmChCoqV/K3P/x73U3ScHh7V/tZ37T31OxKzjxhCQlIVBbnzM57NfnHttP/P4G6G2Y7Y2md+dWj5vUU5uVg0CNnbvsj5H6eyRvnz+66UEOb+/9DX3b6cb2f7CLOheB2jtu2hsX97eX3j29X2fA210+47dO998uAYEm0fz4q99MXgPdnjes3ayl58/4xmfGpSIQqKnLXfnPXf4eaPcfun8c3v7zxif8bARq6nIUf95M9vugTbsP2m83h5Okx83f+ISfj0Bt7bpZQNoJa/br9ph91R8WDcdH3dSY2+QTZJaEQI11X3U+dYfs/1x3R0XXfdCn9+4bJo7hQxBoKp+TRH39D3/nE34+Ak1lNNAtn/ABCDSVkUD3aw6RQhAopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopBEopP0fA1x344JQ4hoAAAAASUVORK5CYII=" alt="Expected counts with 95% confidence intervals (thick) and 90% prediction intervals for a new unit (thin)." />
+<div class="figcaption">Expected counts with 95% confidence intervals
+(thick) and 90% prediction intervals for a new unit (thin).</div>
+</div>
+<p>The intervals are computed from the fitted model’s estimation
+uncertainty using deterministic Halton draws, so rerunning gives the
+same values; the prediction-interval limits are whole counts. See
+<code>?predict.flexCountReg</code> for the method, and
+<code>?tolerance_interval</code> for intervals intended to contain a
+stated share of all units’ counts.</p>
+<p>These are model-based comparisons of the sprays in this experiment.
+Sprays C, D, E have expected counts below the overall mean, and their
+95% confidence intervals are entirely below those of sprays A, B, F.
+Interpreting the differences as effects of the insecticides relies on
+the design of the original experiment, not on the model.</p>
+<div id="another-pitfall-levels-not-seen-in-the-data" class="section level3">
+<h3>Another pitfall: levels not seen in the data</h3>
+<p>Predictions use the factor levels of the training data. A level that
+was never observed has no coefficient, and <code>predict()</code> stops
+with an informative error rather than guessing:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">tryCatch</span>(<span class="fu">predict</span>(nb2, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">spray =</span> <span class="st">&quot;G&quot;</span>)),</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>         <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;factor spray has new level G&quot;</span></span></code></pre></div>
+</div>
+</div>
+<div id="the-analysis-in-one-script" class="section level2">
+<h2>The analysis in one script</h2>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>d <span class="ot">&lt;-</span> datasets<span class="sc">::</span>InsectSprays</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>pois <span class="ot">&lt;-</span> <span class="fu">countreg</span>(count <span class="sc">~</span> spray, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>                 <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>nb2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(count <span class="sc">~</span> spray, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a><span class="fu">summary</span>(nb2)</span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a><span class="fu">rootogram</span>(nb2)</span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>new_spray <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">spray =</span> <span class="fu">factor</span>(<span class="fu">levels</span>(d<span class="sc">$</span>spray),</span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a>                                       <span class="at">levels =</span> <span class="fu">levels</span>(d<span class="sc">$</span>spray)))</span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="fu">predict</span>(nb2, <span class="at">newdata =</span> new_spray, <span class="at">interval =</span> <span class="st">&quot;confidence&quot;</span>)</span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a><span class="fu">predict</span>(nb2, <span class="at">newdata =</span> new_spray, <span class="at">interval =</span> <span class="st">&quot;prediction&quot;</span>, <span class="at">level =</span> <span class="fl">0.90</span>)</span></code></pre></div>
+</div>
+<div id="next-steps" class="section level2">
+<h2>Next steps</h2>
+<ul>
+<li><code>vignette(&quot;choosing-a-count-distribution&quot;, package = &quot;flexCountReg&quot;)</code>
+compares many more distributions and models for the dispersion and the
+zeros.</li>
+<li><code>vignette(&quot;inference-prediction-and-comparison&quot;, package = &quot;flexCountReg&quot;)</code>
+covers standard errors, marginal effects and the conditions under which
+likelihood-ratio tests are valid.</li>
+<li><code>?count_families</code> lists every distribution available in
+<code>countreg()</code>.</li>
+</ul>
+</div>
+<div id="reference" class="section level2">
+<h2>Reference</h2>
+<p>Beall, G. (1942). The transformation of data from entomological field
+experiments so that the analysis of variance becomes applicable.
+<em>Biometrika</em>, 32(3/4), 243-262.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

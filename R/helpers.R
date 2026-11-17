@@ -66,17 +66,62 @@ NULL
   }
 }
 
-# Covariance from the Hessian, with a generalized-inverse fallback.
+# Moment-based starting value of the log dispersion from a Poisson fit with
+# means mu, by the auxiliary regression of Cameron and Trivedi (2013, Sec.
+# 3.4) through the origin: for Var(Y) = mu + a mu^2 (NB2, PIG2, PIG),
+# a = sum((y - mu)^2 - y) / sum(mu^2); for Var(Y) = mu (1 + a) (NB1, PIG1),
+# a = sum((y - mu)^2 - y) / sum(mu). (A mean of the ratios is unstable when
+# many fitted means are small.) Clipped to [1e-3, 100]; NULL for other
+# families.
+.fcr_moment_disp_start <- function(family, y, mu, w = NULL) {
+  if (!family %in% c("NB2", "PIG2", "PIG", "NB1", "PIG1")) return(NULL)
+  w <- if (is.null(w)) rep(1, length(y)) else w
+  ok <- is.finite(mu) & mu > 0 & w > 0
+  if (!any(ok)) return(NULL)
+  r <- (y[ok] - mu[ok])^2 - y[ok]
+  den <- if (family %in% c("NB1", "PIG1")) mu[ok] else mu[ok]^2
+  a <- sum(w[ok] * r) / sum(w[ok] * den)
+  if (!is.finite(a)) return(NULL)
+  log(min(max(a, 1e-3), 100))
+}
+
+# Covariance from the Hessian, with a generalized-inverse fallback. The
+# generalized inverse gives zero variance in directions where the likelihood
+# is flat (the null space of the Hessian), which would read as perfect
+# precision; the variances and covariances of the parameters involved in
+# those directions are set to NA instead.
 .fcr_hessian_vcov <- function(fit) {
   H <- fit$hessian
   V <- tryCatch(solve(-H), error = function(e) NULL)
   if (is.null(V)) {
+    V <- MASS::ginv(-H)
+    flat <- .fcr_flat_params(-H)
+    if (any(flat)) {
+      V[flat, ] <- NA_real_
+      V[, flat] <- NA_real_
+    }
+    nm <- colnames(H) %||% names(fit$estimate)
     warning("The Hessian is singular; standard errors use a generalized ",
             "inverse and may be unreliable. The model may not be identified.",
+            if (any(flat)) paste0(
+              " The likelihood is flat in a direction involving ",
+              toString(if (!is.null(nm)) nm[flat] else which(flat)),
+              "; their standard errors are NA."),
             call. = FALSE)
-    V <- MASS::ginv(-H)
   }
   V
+}
+
+# Parameters with a non-negligible loading on the null space of a symmetric
+# matrix (eigenvalues below the tolerance used by MASS::ginv)
+.fcr_flat_params <- function(M) {
+  e <- tryCatch(eigen((M + t(M)) / 2, symmetric = TRUE),
+                error = function(err) NULL)
+  if (is.null(e) || any(!is.finite(e$values))) return(rep(FALSE, nrow(M)))
+  tol <- sqrt(.Machine$double.eps) * max(abs(e$values))
+  null <- abs(e$values) <= tol
+  if (!any(null)) return(rep(FALSE, nrow(M)))
+  rowSums(abs(e$vectors[, null, drop = FALSE])) > 1e-6
 }
 
 # Nonparametric bootstrap of a fit.

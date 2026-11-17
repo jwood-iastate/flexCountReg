@@ -14,7 +14,12 @@
 # Monte Carlo standard errors are reported. Run from the package root with
 # the development version installed or loaded:
 #   Rscript inst/validation/intervals/coverage-study.R
-# Environment variables: REPS (default 500), OUT (results directory).
+# Environment variables: REPS (default 500), OUT (results directory),
+# SETTINGS (optional subset, e.g. "NB2:50,POISSON:200").
+# Per-replicate results are written to coverage-replicates.csv; intervals
+# that are unavailable (status other than "ok") are counted separately and
+# excluded from the coverage fractions, which are therefore conditional on
+# availability.
 
 if (requireNamespace("pkgload", quietly = TRUE) && file.exists("DESCRIPTION")) {
   pkgload::load_all(".", quiet = TRUE)
@@ -57,6 +62,7 @@ one_rep <- function(fam, n, x) {
     data.frame(
       x0 = x0s, status = "ok",
       uncertainty = attr(tj, "tolerance")$uncertainty,
+      ti_status = tj$status,
       ti_joint_ok = cont(tj$lower, tj$upper) >= content,
       ti_joint_width = tj$upper - tj$lower,
       ti_env_ok = cont(te$lower, te$upper) >= content,
@@ -71,6 +77,12 @@ one_rep <- function(fam, n, x) {
 set.seed(20261117)
 settings <- expand.grid(fam = c("POISSON", "NB2"), n = c(50, 200),
                         stringsAsFactors = FALSE)
+sel <- Sys.getenv("SETTINGS", "")
+if (nzchar(sel)) {
+  keep <- paste(settings$fam, settings$n, sep = ":") %in%
+    strsplit(sel, ",")[[1]]
+  settings <- settings[keep, , drop = FALSE]
+}
 all <- list()
 for (i in seq_len(nrow(settings))) {
   s <- settings[i, ]
@@ -82,7 +94,8 @@ for (i in seq_len(nrow(settings))) {
     out
   })
   r <- do.call(rbind, lapply(r, function(d) {
-    cols <- c("x0", "status", "uncertainty", "ti_joint_ok", "ti_joint_width",
+    cols <- c("x0", "status", "uncertainty", "ti_status", "ti_joint_ok",
+              "ti_joint_width",
               "ti_env_ok", "ti_env_width", "pi_cover", "pi_width",
               "ci_cover", "rep")
     d[setdiff(cols, names(d))] <- NA
@@ -99,14 +112,17 @@ mcse <- function(p, m) sqrt(p * (1 - p) / m)
 summ <- do.call(rbind, lapply(split(ok, list(ok$fam, ok$n, ok$x0),
                                     drop = TRUE), function(d) {
   m <- nrow(d)
+  av <- d$ti_status == "ok"
+  ma <- sum(av)
   data.frame(
     family = d$fam[1], n = d$n[1], x0 = d$x0[1], samples = m,
     bootstrap_used = sum(d$uncertainty == "bootstrap"),
-    ti_joint_conf = mean(d$ti_joint_ok),
-    ti_joint_se = mcse(mean(d$ti_joint_ok), m),
-    ti_joint_width = mean(d$ti_joint_width),
-    ti_env_conf = mean(d$ti_env_ok),
-    ti_env_width = mean(d$ti_env_width),
+    ti_unavailable = m - ma,
+    ti_joint_conf = mean(d$ti_joint_ok[av]),
+    ti_joint_se = mcse(mean(d$ti_joint_ok[av]), ma),
+    ti_joint_width = mean(d$ti_joint_width[av]),
+    ti_env_conf = mean(d$ti_env_ok[av], na.rm = TRUE),
+    ti_env_width = mean(d$ti_env_width[av], na.rm = TRUE),
     pi_coverage = mean(d$pi_cover), pi_width = mean(d$pi_width),
     ci_coverage = mean(d$ci_cover),
     ci_se = mcse(mean(d$ci_cover), m))
@@ -114,14 +130,23 @@ summ <- do.call(rbind, lapply(split(ok, list(ok$fam, ok$n, ok$x0),
 summ <- summ[order(summ$family, summ$n, summ$x0), ]
 failures <- table(res$status[res$status != "ok"])
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
-utils::write.csv(summ, file.path(out_dir, "coverage-summary.csv"),
+tag <- if (nzchar(sel)) paste0("-", gsub("[:,]", "_", sel)) else ""
+utils::write.csv(summ, file.path(out_dir, paste0("coverage-summary", tag,
+                                                 ".csv")),
                  row.names = FALSE)
+utils::write.csv(res, file.path(out_dir, paste0("coverage-replicates", tag,
+                                                ".csv")),
+                 row.names = FALSE)
+ti_bad <- table(ok$ti_status[ok$ti_status != "ok"])
 writeLines(c(
   paste("flexCountReg", as.character(utils::packageVersion("flexCountReg"))),
   paste(R.version.string), paste("replications per setting:", reps),
   paste("date:", format(Sys.Date())),
-  "failures:", if (length(failures)) paste(names(failures), failures) else
-    "none"),
-  file.path(out_dir, "coverage-info.txt"))
+  "fit failures:", if (length(failures)) paste(names(failures), failures)
+  else "none",
+  "unavailable tolerance intervals:",
+  if (length(ti_bad)) paste(names(ti_bad), ti_bad) else "none"),
+  file.path(out_dir, paste0("coverage-info", tag, ".txt")))
 print(summ, row.names = FALSE, digits = 3)
 print(failures)
+print(ti_bad)

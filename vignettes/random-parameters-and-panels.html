@@ -348,75 +348,197 @@ unit to another. flexCountReg handles both with random-parameter models
 <code>countreg_rp()</code>) and random-effects models
 (<code>renb()</code>, <code>poisLind.re()</code>, <code>repois()</code>
 and <code>negmultinom()</code>).</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(washington_roads<span class="sc">$</span>ID))   <span class="co"># road segments</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt; [1] 507</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">nrow</span>(washington_roads)                <span class="co"># segment-years</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt; [1] 1501</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="why-the-panel-structure-matters-repeated-seizure-counts" class="section level2">
+<h2>Why the panel structure matters: repeated seizure counts</h2>
+<p><code>MASS::epil</code> records epileptic seizure counts for 59
+patients in a clinical trial of progabide (Thall and Vail, 1990). Each
+patient was observed in four consecutive two-week periods, so there are
+four rows per patient. The independent unit is the patient, not the
+row.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>epil <span class="ot">&lt;-</span> MASS<span class="sc">::</span>epil</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">c</span>(<span class="at">rows =</span> <span class="fu">nrow</span>(epil), <span class="at">patients =</span> <span class="fu">length</span>(<span class="fu">unique</span>(epil<span class="sc">$</span>subject)))</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt;     rows patients </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;      236       59</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">table</span>(epil<span class="sc">$</span>subject))      <span class="co"># rows per patient</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;  4 </span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; 59</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># treatment does not change within a patient</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">all</span>(<span class="fu">tapply</span>(epil<span class="sc">$</span>trt, epil<span class="sc">$</span>subject, <span class="cf">function</span>(v) <span class="fu">length</span>(<span class="fu">unique</span>(v))) <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>The response <code>y</code> is the count in a two-week follow-up
+period. The count in the eight-week <em>baseline</em> period before
+treatment (<code>base</code>) is a predictor, not a response: MASS
+provides it as <code>lbase</code>, the centred logarithm of the baseline
+count divided by 4 (a two-week equivalent), and the age as
+<code>lage</code>, the centred log age. <code>V4</code> marks the fourth
+visit. (The data in MASS 7.3-65 and later include a documented
+correction to one count.)</p>
+<p>A pooled model treats the 236 rows as independent; a random-effects
+model (<code>renb()</code>, the negative binomial model of Hausman, Hall
+and Griliches, 1984) gives each patient a shared effect:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>f_epil <span class="ot">&lt;-</span> y <span class="sc">~</span> trt <span class="sc">+</span> lbase <span class="sc">+</span> lage <span class="sc">+</span> V4</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>pooled <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f_epil, <span class="at">data =</span> epil, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>pooled_robust <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f_epil, <span class="at">data =</span> epil, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                          <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">stderr =</span> <span class="st">&quot;robust&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>panel <span class="ot">&lt;-</span> <span class="fu">renb</span>(f_epil, <span class="at">group_var =</span> <span class="st">&quot;subject&quot;</span>, <span class="at">data =</span> epil, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>se_trt <span class="ot">&lt;-</span> <span class="cf">function</span>(m) <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(m)))[[<span class="st">&quot;trtprogabide&quot;</span>]]</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;pooled NB2&quot;</span>, <span class="st">&quot;pooled NB2, robust SE&quot;</span>, <span class="st">&quot;RENB (panel)&quot;</span>),</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">treatment_effect =</span> <span class="fu">c</span>(<span class="fu">coef</span>(pooled)[[<span class="st">&quot;trtprogabide&quot;</span>]],</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>                       <span class="fu">coef</span>(pooled_robust)[[<span class="st">&quot;trtprogabide&quot;</span>]],</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>                       <span class="fu">coef</span>(panel)[[<span class="st">&quot;trtprogabide&quot;</span>]]),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">std_error =</span> <span class="fu">c</span>(<span class="fu">se_trt</span>(pooled), <span class="fu">se_trt</span>(pooled_robust), <span class="fu">se_trt</span>(panel)))</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;                   model treatment_effect std_error</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; 1            pooled NB2       -0.2342385 0.1008920</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; 2 pooled NB2, robust SE       -0.2342385 0.1059424</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; 3          RENB (panel)       -0.2324608 0.1431267</span></span></code></pre></div>
+<p>The pooled model’s standard error for the treatment effect is 0.101,
+against 0.143 in the panel model. Rows from the same patient share that
+patient’s seizure tendency, so the pooled model counts four rows as four
+independent pieces of evidence and overstates its precision. Robust
+standard errors computed row by row (0.106) do not fix this: they do not
+group the rows by patient.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">list</span>(<span class="at">pooled =</span> pooled, <span class="at">RENB =</span> panel), <span class="cf">function</span>(m)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="fu">glance</span>(m)[, <span class="fu">c</span>(<span class="st">&quot;logLik&quot;</span>, <span class="st">&quot;AIC&quot;</span>, <span class="st">&quot;BIC&quot;</span>, <span class="st">&quot;nobs&quot;</span>, <span class="st">&quot;n_groups&quot;</span>)]))</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; # A tibble: 2 × 5</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;   logLik   AIC   BIC  nobs n_groups</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; *  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;int&gt;    &lt;int&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 1  -651. 1314. 1335.   236       NA</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; 2  -632. 1277. 1292.   236       59</span></span></code></pre></div>
+<p>For panel models, <code>BIC()</code> uses the number of panels
+(<code>n_groups</code>, 59 patients) as the sample size, because the
+panels are the independent units. The same unit applies to every form of
+inference: the likelihood has one contribution per panel, robust
+standard errors are clustered by panel, bootstrap standard errors
+resample whole panels, and validation splits should keep each panel in
+one fold.</p>
+<p>The rest of this vignette uses the <code>washington_roads</code>
+data:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(washington_roads<span class="sc">$</span>ID))   <span class="co"># road segments</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; [1] 507</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">nrow</span>(washington_roads)                <span class="co"># segment-years</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; [1] 1501</span></span></code></pre></div>
+</div>
 <div id="random-parameter-models" class="section level2">
 <h2>Random-parameter models</h2>
-<p>In a random-parameter model, a coefficient varies across units: .
-With <code>group_var</code>, all observations of a segment share one
-draw of the random parameter, which accounts for the panel structure.
-The model is estimated by maximum simulated likelihood with Halton
-draws; real analyses should use more draws (<code>ndraws</code>) than
-this example, and check that the estimates are stable as the number
-grows.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>rp <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> lnaadt, <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50,</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>                  <span class="at">data =</span> washington_roads, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>                  <span class="at">rpardists =</span> <span class="fu">c</span>(<span class="at">speed50 =</span> <span class="st">&quot;n&quot;</span>), <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>,</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>                  <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">summary</span>(rp)</span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; countreg_rp(formula = Total_crashes ~ lnaadt, rpar_formula = ~-1 + </span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;     speed50, data = washington_roads, family = &quot;NB2&quot;, rpardists = c(speed50 = &quot;n&quot;), </span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;     ndraws = 100, group_var = &quot;ID&quot;, offset = &quot;lnlength&quot;, method = &quot;BFGS&quot;)</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; Model: countreg_rp | family: NB2 | optimizer: BFGS</span></span>
-<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Iterations: 35 </span></span>
-<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; Convergence: successful convergence </span></span>
-<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
-<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt;                Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; (Intercept)     -8.9052     0.4054  -21.96  &lt; 2e-16 ***</span></span>
-<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; lnaadt           1.1251     0.0467   24.07  &lt; 2e-16 ***</span></span>
-<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; speed50:Mean    -0.6991     0.1467   -4.77  1.9e-06 ***</span></span>
-<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; speed50:St.Dev   0.6413     0.1703    3.76  0.00017 ***</span></span>
-<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; ln(alpha)       -1.1395     0.2573   -4.43  9.4e-06 ***</span></span>
-<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
-<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
-<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; Offset: lnlength (coefficient fixed at 1)</span></span>
-<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1087.279 | AIC: 2184.559 | BIC: 2205.701 </span></span>
-<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; N: 1501 | panels: 507</span></span></code></pre></div>
+<p>In a random-parameter model, a coefficient varies across units: <span class="math inline">\(\beta_i = \mu + \sigma \upsilon_i\)</span>. With
+<code>group_var</code>, all observations of a segment share one draw of
+the random parameter, which accounts for the panel structure. The model
+is estimated by maximum simulated likelihood with Halton draws; real
+analyses should use more draws (<code>ndraws</code>) than this example,
+and check that the estimates are stable as the number grows.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>rp <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> lnaadt, <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                  <span class="at">data =</span> washington_roads, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                  <span class="at">rpardists =</span> <span class="fu">c</span>(<span class="at">speed50 =</span> <span class="st">&quot;n&quot;</span>), <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>                  <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="fu">summary</span>(rp)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; countreg_rp(formula = Total_crashes ~ lnaadt, rpar_formula = ~-1 + </span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt;     speed50, data = washington_roads, family = &quot;NB2&quot;, rpardists = c(speed50 = &quot;n&quot;), </span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;     ndraws = 100, group_var = &quot;ID&quot;, offset = &quot;lnlength&quot;, method = &quot;BFGS&quot;)</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; Model: countreg_rp | family: NB2 | optimizer: BFGS</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; Iterations: 35 </span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; Convergence: successful convergence </span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;                Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; (Intercept)     -8.9052     0.4595  -19.38  &lt; 2e-16 ***</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; lnaadt           1.1251     0.0528   21.30  &lt; 2e-16 ***</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; speed50:Mean    -0.6991     0.1467   -4.77  1.9e-06 ***</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; speed50:St.Dev   0.6413     0.1701    3.77  0.00016 ***</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; ln(alpha)       -1.1395     0.2794   -4.08  4.5e-05 ***</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; Offset: lnlength (coefficient fixed at 1)</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1087.279 | AIC: 2184.559 | BIC: 2205.701 </span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; N: 1501 | panels: 507</span></span></code></pre></div>
 <p><code>speed50:Mean</code> and <code>speed50:St.Dev</code> are the
 mean and standard deviation of the speed-limit effect across segments.
 Distributions other than the normal are available through
-<code>rpardists</code>: lognormal (<code>&quot;ln&quot;</code>), gamma
-(<code>&quot;g&quot;</code>), triangular (<code>&quot;t&quot;</code>) and uniform
-(<code>&quot;u&quot;</code>). For the triangular and uniform, the
-<code>St.Dev</code> parameter is a half-width: the coefficient lies in
-.</p>
+<code>rpardists</code>. The two estimated parameters, labelled
+<code>Mean</code> and <code>St.Dev</code>, do not always equal the
+actual mean and standard deviation of the coefficient:</p>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>rpardists</code></th>
+<th>Coefficient</th>
+<th>Actual mean</th>
+<th>Actual SD</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>&quot;n&quot;</code> normal</td>
+<td><span class="math inline">\(\beta = \mu + \sigma z\)</span></td>
+<td><span class="math inline">\(\mu\)</span></td>
+<td><span class="math inline">\(\sigma\)</span></td>
+</tr>
+<tr class="even">
+<td><code>&quot;ln&quot;</code> lognormal</td>
+<td><span class="math inline">\(\beta = \exp(\mu + \sigma
+z)\)</span></td>
+<td><span class="math inline">\(\exp(\mu + \sigma^2/2)\)</span></td>
+<td><span class="math inline">\(\exp(\mu +
+\sigma^2/2)\sqrt{\exp(\sigma^2) - 1}\)</span></td>
+</tr>
+<tr class="odd">
+<td><code>&quot;g&quot;</code> gamma</td>
+<td>gamma with mean <span class="math inline">\(\mu\)</span> and SD
+<span class="math inline">\(\sigma\)</span></td>
+<td><span class="math inline">\(\mu\)</span></td>
+<td><span class="math inline">\(\sigma\)</span></td>
+</tr>
+<tr class="even">
+<td><code>&quot;t&quot;</code> triangular</td>
+<td><span class="math inline">\(\mu + \sigma T\)</span>, <span class="math inline">\(T\)</span> triangular on <span class="math inline">\([-1, 1]\)</span></td>
+<td><span class="math inline">\(\mu\)</span></td>
+<td><span class="math inline">\(\sigma/\sqrt{6}\)</span></td>
+</tr>
+<tr class="odd">
+<td><code>&quot;u&quot;</code> uniform</td>
+<td><span class="math inline">\(\mu + \sigma U\)</span>, <span class="math inline">\(U\)</span> uniform on <span class="math inline">\([-1, 1]\)</span></td>
+<td><span class="math inline">\(\mu\)</span></td>
+<td><span class="math inline">\(\sigma/\sqrt{3}\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>For the lognormal, <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> are the mean and SD of <span class="math inline">\(\log\beta\)</span>, and the coefficient is
+positive; for a negative effect, enter the negative of the variable. For
+the triangular and uniform, <code>St.Dev</code> is a half-width: the
+coefficient lies in <span class="math inline">\([\mu - \sigma, \mu +
+\sigma]\)</span>.</p>
 <div id="heterogeneity-in-means" class="section level3">
 <h3>Heterogeneity in means</h3>
 <p>The mean of a random parameter can depend on covariates, following
-Wood and Gayah (2025, Eq. 2): . Each random parameter gets its own
-coefficient for each heterogeneity variable:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>rp_het <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> lnaadt, <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50,</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>                      <span class="at">het_mean_formula =</span> <span class="sc">~</span> ShouldWidth04,</span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                      <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>,</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                      <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">tidy</span>(rp_het)</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 6</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;   term                          component estimate std.error statistic   p.value</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                         &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; 1 (Intercept)                   mean        -8.98     0.394     -22.8  9.85e-115</span></span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; 2 lnaadt                        mean         1.13     0.0455     24.9  6.32e-137</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; 3 speed50:Mean                  random_m…   -0.859    0.159      -5.41 6.16e-  8</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; 4 speed50:St.Dev                random_s…    0.551    0.169       3.27 1.09e-  3</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; 5 HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.242       2.90 3.75e-  3</span></span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; 6 ln(alpha)                     distribu…   -1.13     0.270      -4.18 2.85e-  5</span></span></code></pre></div>
+Wood and Gayah (2025, Eq. 2): <span class="math inline">\(\beta_i = \mu
++ z_i&#39;\delta + \sigma\upsilon_i\)</span>. Each random parameter gets
+its own coefficient for each heterogeneity variable:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>rp_het <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> lnaadt, <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50,</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>                      <span class="at">het_mean_formula =</span> <span class="sc">~</span> ShouldWidth04,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>                      <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>                      <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">tidy</span>(rp_het)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 6</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;   term                          component estimate std.error statistic   p.value</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                         &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 1 (Intercept)                   mean        -8.98     0.465     -19.3  5.18e- 83</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; 2 lnaadt                        mean         1.13     0.0534     21.2  5.51e-100</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; 3 speed50:Mean                  random_m…   -0.859    0.160      -5.37 7.83e-  8</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; 4 speed50:St.Dev                random_s…    0.551    0.170       3.24 1.21e-  3</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; 5 HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.241       2.90 3.73e-  3</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; 6 ln(alpha)                     distribu…   -1.13     0.274      -4.13 3.67e-  5</span></span></code></pre></div>
 </div>
 <div id="predictions" class="section level3">
 <h3>Predictions</h3>
@@ -431,30 +553,36 @@ it has no simulation error.</li>
 observed crashes to estimate its own coefficients. It needs the outcome,
 so it is for data with observed outcomes.</li>
 </ul>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> washington_roads[washington_roads<span class="sc">$</span>ID <span class="sc">%in%</span> <span class="fu">unique</span>(washington_roads<span class="sc">$</span>ID)[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], ]</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">observed =</span> nd<span class="sc">$</span>Total_crashes,</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>      <span class="at">exact =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> nd, <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>),</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>      <span class="at">simulated =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> nd, <span class="at">method =</span> <span class="st">&quot;Simulated&quot;</span>),</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>      <span class="at">individual =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> nd, <span class="at">method =</span> <span class="st">&quot;Individual&quot;</span>))</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;      observed     exact simulated individual</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; [1,]        0 0.8546141 0.8422646  0.5316823</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; [2,]        2 0.7552404 0.7443269  1.0291883</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; [3,]        0 0.8495740 0.8372973  0.5285467</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; [4,]        0 0.7507863 0.7399372  1.0231186</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; [5,]        1 0.8957947 0.8828501  0.5573020</span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; [6,]        3 0.7916325 0.7801931  1.0787808</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> washington_roads[washington_roads<span class="sc">$</span>ID <span class="sc">%in%</span> <span class="fu">unique</span>(washington_roads<span class="sc">$</span>ID)[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], ]</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">observed =</span> nd<span class="sc">$</span>Total_crashes,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>      <span class="at">exact =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> nd, <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>),</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>      <span class="at">simulated =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> nd, <span class="at">method =</span> <span class="st">&quot;Simulated&quot;</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>      <span class="at">individual =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> nd, <span class="at">method =</span> <span class="st">&quot;Individual&quot;</span>))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;      observed     exact simulated individual</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; [1,]        0 0.8546141 0.8422646  0.5316823</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; [2,]        2 0.7552404 0.7443269  1.0291883</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; [3,]        0 0.8495740 0.8372973  0.5285467</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; [4,]        0 0.7507863 0.7399372  1.0231186</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; [5,]        1 0.8957947 0.8828501  0.5573020</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; [6,]        3 0.7916325 0.7801931  1.0787808</span></span></code></pre></div>
 <p>The segment-specific coefficients from the Empirical Bayes method are
 returned as an attribute:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>eb <span class="ot">&lt;-</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> washington_roads, <span class="at">method =</span> <span class="st">&quot;Individual&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">attr</span>(eb, <span class="st">&quot;eb_coefficients&quot;</span>)[, <span class="st">&quot;speed50&quot;</span>])</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; -1.3126 -0.7051 -0.7051 -0.7080 -0.7051  0.1780</span></span></code></pre></div>
-<p>A caution for lognormal random parameters: the expected value of does
-not exist when is lognormal and , so <code>&quot;Exact&quot;</code> returns
-<code>Inf</code> with a warning there, and <code>&quot;Simulated&quot;</code>
-predictions depend on the number of draws. Use the negative of the
-variable, a gamma random parameter, or the Empirical Bayes
-predictions.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>eb <span class="ot">&lt;-</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> washington_roads, <span class="at">method =</span> <span class="st">&quot;Individual&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">attr</span>(eb, <span class="st">&quot;eb_coefficients&quot;</span>)[, <span class="st">&quot;speed50&quot;</span>])</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; -1.3126 -0.7051 -0.7051 -0.7080 -0.7051  0.1780</span></span></code></pre></div>
+<p>A caution about the expected count: with a random parameter the
+expected value of <span class="math inline">\(\exp(x\beta)\)</span> must
+exist. It is infinite when <span class="math inline">\(\beta\)</span> is
+lognormal and <span class="math inline">\(x &gt; 0\)</span>, and when
+<span class="math inline">\(\beta\)</span> is gamma and <span class="math inline">\(x\sigma^2/\mu \ge 1\)</span>. In those cases
+<code>&quot;Exact&quot;</code> and <code>&quot;Simulated&quot;</code> predictions return
+<code>Inf</code> with a warning (a simulated average would otherwise
+depend on the number of draws without converging). This is a property of
+the model, not a numerical failure: changing the distribution only helps
+if the new distribution’s expectation exists for the covariate values
+used. Normal, triangular and uniform parameters always have a finite
+expectation.</p>
 </div>
 </div>
 <div id="random-effects-models" class="section level2">
@@ -464,43 +592,66 @@ of a unit. The negative binomial random-effects model of Hausman, Hall
 and Griliches (<code>renb()</code>), the Poisson-Lindley random-effects
 model (<code>poisLind.re()</code>) and the negative multinomial models
 (<code>negmultinom()</code>) are available:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>re_models <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">RENB =</span> <span class="fu">renb</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>              <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">PoisLindRE =</span> <span class="fu">poisLind.re</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>                           <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>,</span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>                           <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">NM2 =</span> <span class="fu">negmultinom</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>                    <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>)</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>)</span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">names</span>(re_models), <span class="cf">function</span>(nm) {</span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">model =</span> nm,</span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>        <span class="fu">glance</span>(re_models[[nm]])[, <span class="fu">c</span>(<span class="st">&quot;logLik&quot;</span>, <span class="st">&quot;AIC&quot;</span>, <span class="st">&quot;BIC&quot;</span>, <span class="st">&quot;nobs&quot;</span>,</span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>                                    <span class="st">&quot;n_groups&quot;</span>)])</span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>}))</span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;        model    logLik      AIC      BIC nobs n_groups</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; 1       RENB -1070.459 2150.917 2172.060 1501      507</span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; 2 PoisLindRE -1070.830 2149.660 2166.574 1501      507</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; 3        NM2 -1070.454 2148.908 2165.822 1501      507</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>re_models <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">RENB =</span> <span class="fu">renb</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>              <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">PoisLindRE =</span> <span class="fu">poisLind.re</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>                           <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>                           <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">NM2 =</span> <span class="fu">negmultinom</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>                    <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>)</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; Warning: The Hessian is singular; standard errors use a generalized inverse and</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; may be unreliable. The model may not be identified. The likelihood is flat in a</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; direction involving ln(theta); their standard errors are NA.</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">names</span>(re_models), <span class="cf">function</span>(nm) {</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  <span class="fu">cbind</span>(<span class="at">model =</span> nm,</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>        <span class="fu">glance</span>(re_models[[nm]])[, <span class="fu">c</span>(<span class="st">&quot;logLik&quot;</span>, <span class="st">&quot;AIC&quot;</span>, <span class="st">&quot;BIC&quot;</span>, <span class="st">&quot;nobs&quot;</span>,</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>                                    <span class="st">&quot;n_groups&quot;</span>)])</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>}))</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt;        model    logLik      AIC      BIC nobs n_groups</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; 1       RENB -1070.458 2150.916 2172.059 1501      507</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; 2 PoisLindRE -1070.830 2149.660 2166.574 1501      507</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; 3        NM2 -1070.454 2148.908 2165.822 1501      507</span></span></code></pre></div>
 <p>For panel models, <code>BIC()</code> uses the number of panels
 (<code>n_groups</code>) as the sample size, because the panels are the
 independent units.</p>
+<p>The warning above comes from the Poisson-Lindley random-effects
+model: its random-effect parameter is driven toward the edge of its
+parameter space, where the likelihood is flat, so its standard error is
+not identified and is reported as <code>NA</code>:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">tidy</span>(re_models<span class="sc">$</span>PoisLindRE)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 × 6</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;   term        component    estimate std.error statistic   p.value</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1 (Intercept) mean           -8.77     0.502     -17.5   2.89e-68</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 2 lnaadt      mean            1.11     0.0590     18.8   3.22e-79</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; 3 speed50     mean           -0.561    0.132      -4.24  2.21e- 5</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; 4 ln(theta)   distribution   -7.13    NA          NA    NA</span></span></code></pre></div>
+<p>Its fit statistics are close to those of the other two models, but
+with one parameter not identified its reported uncertainty is
+incomplete. When models fit about equally well, prefer one whose
+parameters are all identified, such as RENB or the negative multinomial
+model here.</p>
 <div id="standard-errors" class="section level3">
 <h3>Standard errors</h3>
 <p>The likelihood of a panel model has one contribution per panel, so
 robust (sandwich) standard errors are clustered by panel. Bootstrap
 standard errors resample whole panels:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>re_robust <span class="ot">&lt;-</span> <span class="fu">poisLind.re</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>                         <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>,</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>                         <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">stderr =</span> <span class="st">&quot;robust&quot;</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">tidy</span>(re_robust)</span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 × 6</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;   term        component    estimate std.error statistic  p.value</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 1 (Intercept) mean           -8.77    1.12        -7.85 4.07e-15</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 2 lnaadt      mean            1.11    0.130        8.53 1.42e-17</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; 3 speed50     mean           -0.561   0.136       -4.11 3.91e- 5</span></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; 4 ln(theta)   distribution   -7.13    0.00709  -1007.   0</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>re_robust <span class="ot">&lt;-</span> <span class="fu">poisLind.re</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>                         <span class="at">data =</span> washington_roads, <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>                         <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">stderr =</span> <span class="st">&quot;robust&quot;</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; Warning: The Hessian is singular; standard errors use a generalized inverse and</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; may be unreliable. The model may not be identified. The likelihood is flat in a</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; direction involving ln(theta); their standard errors are NA.</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="fu">tidy</span>(re_robust)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 × 6</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;   term        component    estimate std.error statistic p.value</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;chr&gt;           &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; 1 (Intercept) mean           -8.77         NA        NA      NA</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; 2 lnaadt      mean            1.11         NA        NA      NA</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; 3 speed50     mean           -0.561        NA        NA      NA</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; 4 ln(theta)   distribution   -7.13         NA        NA      NA</span></span></code></pre></div>
 <p>Cross-sectional models can also be fitted with
 <code>stderr = &quot;robust&quot;</code> or <code>&quot;boot&quot;</code>; for repeated
 observations of the same units, prefer a panel model or clustered
@@ -518,6 +669,9 @@ information and makes the models look better than they are.</p>
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>
+<p>Thall, P. F. and Vail, S. C. (1990). Some covariance models for
+longitudinal count data with overdispersion. <em>Biometrics</em>, 46(3),
+657-671.</p>
 <p>Wood, J.S., &amp; Gayah, V. (2025). Out-of-sample prediction and
 interpretation for random parameter generalized linear models.
 <em>Accident Analysis and Prevention</em>, 220, 108147.</p>

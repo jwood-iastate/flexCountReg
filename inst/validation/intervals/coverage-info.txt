@@ -1,0 +1,8 @@
+flexCountReg 0.1.2
+R version 4.6.1 (2026-06-24 ucrt)
+replications per setting: 500
+date: 2026-11-17
+fit failures:
+none
+unavailable tolerance intervals:
+upper tail not resolved within max_count = 1e+05 8

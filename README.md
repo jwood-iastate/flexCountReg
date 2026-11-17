@@ -198,7 +198,7 @@ summary(gen.nb2)
 #>     method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 51 
+#> Iterations: 46 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -214,7 +214,6 @@ summary(gen.nb2)
 #> 
 #> Log-likelihood: -1082.176 | AIC: 2176.352 | BIC: 2208.235 
 #> N: 1501
-#> LR test vs Poisson: chi-sq = 36.843 on 2 df, p-value = 9.99e-09
 ```
 
 The results are also available as tibbles, and the model can be compared
@@ -237,6 +236,7 @@ glance(gen.nb2)
 #>   <chr>    <chr>   <dbl> <dbl> <dbl> <int> <int>    <int> <lgl>     <chr>    
 #> 1 countreg NB2    -1082. 2176. 2208.     6  1501       NA TRUE      hessian
 regCompTest(gen.nb2, basemodel = "Poisson", variables = TRUE)$statistics
+#> No LR test: the POISSON base model is not nested in the fitted model with a regular restriction (the restriction sets ln(alpha) to its boundary, which is not regular when ln(alpha) has a formula). Compare the models with AIC and BIC.
 #> # A tibble: 8 × 3
 #>   Statistic                  Model BaseModel
 #>   <chr>                      <dbl>     <dbl>
@@ -244,9 +244,9 @@ regCompTest(gen.nb2, basemodel = "Poisson", variables = TRUE)$statistics
 #> 2 Number of parameters      6             4 
 #> 3 AIC                    2176.         2209.
 #> 4 BIC                    2208.         2230.
-#> 5 LR Test Statistic        36.8          NA 
-#> 6 LR degrees of freedom     2            NA 
-#> 7 LR p-value                0            NA 
+#> 5 LR Test Statistic        NA            NA 
+#> 6 LR degrees of freedom    NA            NA 
+#> 7 LR p-value               NA            NA 
 #> 8 McFadden's Pseudo R^2     0.0167       NA
 ```
 
@@ -273,10 +273,6 @@ Checking the CURE plot:
 cureplot(gen.nb2, indvar = "lnaadt")
 #> Covariate: indvar_values
 #> CURE data frame was provided. Its first column, lnaadt, will be used.
-#> Warning: Removed 1 row containing missing values or values outside the scale range
-#> (`geom_line()`).
-#> Removed 1 row containing missing values or values outside the scale range
-#> (`geom_line()`).
 ```
 
 <img src="man/figures/README-cureplot-initial-1.png" alt="" width="100%" />
@@ -314,7 +310,6 @@ summary(gen.nb2)
 #> 
 #> Log-likelihood: -1061.914 | AIC: 2141.828 | BIC: 2189.653 
 #> N: 1501
-#> LR test vs Poisson: chi-sq = 16.247 on 2 df, p-value = 0.000297
 cureplot(gen.nb2, indvar = "lnaadt")
 #> Covariate: indvar_values
 #> CURE data frame was provided. Its first column, lnaadt, will be used.
@@ -341,21 +336,20 @@ summary(gen.nbp)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                       Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)            -7.7637     0.4407  -17.62  < 2e-16 ***
-#> lnaadt                  0.9382     0.0518   18.12  < 2e-16 ***
-#> lnlength                0.8362     0.0695   12.04  < 2e-16 ***
-#> speed50                -0.3843     0.1086   -3.54   0.0004 ***
-#> ShouldWidth04           0.2578     0.0915    2.82   0.0048 ** 
-#> AADT10kplus             0.6893     0.1257    5.48  4.2e-08 ***
-#> ln(alpha):(Intercept)  -1.4960     0.1212  -12.34  < 2e-16 ***
-#> ln(alpha):lnlength     -0.1673     0.2548   -0.66   0.5114    
-#> ln(p)                   0.5247     0.1879    2.79   0.0052 ** 
+#> (Intercept)            -7.7637     0.4850  -16.01  < 2e-16 ***
+#> lnaadt                  0.9382     0.0567   16.53  < 2e-16 ***
+#> lnlength                0.8362     0.0696   12.02  < 2e-16 ***
+#> speed50                -0.3843     0.1107   -3.47  0.00052 ***
+#> ShouldWidth04           0.2578     0.0922    2.80  0.00517 ** 
+#> AADT10kplus             0.6893     0.1317    5.23  1.7e-07 ***
+#> ln(alpha):(Intercept)  -1.4960     0.5350   -2.80  0.00517 ** 
+#> ln(alpha):lnlength     -0.1673     0.4450   -0.38  0.70689    
+#> ln(p)                   0.5247     0.1837    2.86  0.00429 ** 
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> Log-likelihood: -1062.195 | AIC: 2142.389 | BIC: 2190.214 
 #> N: 1501
-#> LR test vs Poisson: chi-sq = 18.145 on 3 df, p-value = 0.000411
 ```
 
 Checking the CURE plot (notice that the CURE plot is better in this case
@@ -377,16 +371,16 @@ regCompTable(list("Generalized NB-2" = gen.nb2, "Generalized NB-P" = gen.nbp))
 #> # A tibble: 15 × 3
 #>    Parameter             `Generalized NB-2` `Generalized NB-P`
 #>    <chr>                 <chr>              <chr>             
-#>  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.441)*** 
-#>  2 lnaadt                0.93 (0.057)***    0.938 (0.052)***  
-#>  3 lnlength              0.853 (0.07)***    0.836 (0.069)***  
-#>  4 speed50               -0.4 (0.109)***    -0.384 (0.109)*** 
+#>  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.485)*** 
+#>  2 lnaadt                0.93 (0.057)***    0.938 (0.057)***  
+#>  3 lnlength              0.853 (0.07)***    0.836 (0.07)***   
+#>  4 speed50               -0.4 (0.109)***    -0.384 (0.111)*** 
 #>  5 ShouldWidth04         0.261 (0.092)**    0.258 (0.092)**   
-#>  6 AADT10kplus           5.961 (4.512)      0.689 (0.126)***  
+#>  6 AADT10kplus           5.961 (4.512)      0.689 (0.132)***  
 #>  7 I(AADT10kplus/lnaadt) -50.133 (43.002)   ---               
-#>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.121)*** 
-#>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.255)    
-#> 10 ln(p)                 ---                0.525 (0.188)**   
+#>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.535)**  
+#>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.445)    
+#> 10 ln(p)                 ---                0.525 (0.184)**   
 #> 11 N Obs.                1501               1501              
 #> 12 LL                    -1061.914          -1062.195         
 #> 13 AIC                   2141.828           2142.389          
@@ -405,7 +399,7 @@ each count is also available:
 ``` r
 nd <- washington_roads[1:3, ]
 predict(gen.nbp, newdata = nd)
-#> [1] 0.6417932 0.5787699 0.8832648
+#> [1] 0.6417932 0.5787698 0.8832648
 round(predict(gen.nbp, newdata = nd, type = "prob", max_count = 4), 3)
 #>          0     1     2     3     4
 #> [1,] 0.556 0.300 0.105 0.030 0.008
@@ -416,7 +410,10 @@ round(predict(gen.nbp, newdata = nd, type = "prob", max_count = 4), 3)
 Zero-inflated and hurdle versions of any distribution are fitted with
 `zero_formula`. For example, animal-related crashes are zero on most
 segment-years, and a zero-inflated Poisson model with the zero
-probability depending on the speed limit improves on the Poisson model:
+probability depending on the speed limit can be compared with the
+Poisson model by AIC and BIC (not by a likelihood-ratio test: no zero
+inflation puts the zero model’s intercept at minus infinity, so the
+restriction is not regular):
 
 ``` r
 mean(washington_roads$Animal == 0)
@@ -425,25 +422,20 @@ zip <- countreg(Animal ~ lnaadt + lnlength, data = washington_roads,
                 family = "Poisson", zero_formula = ~ speed50, method = "NR")
 tidy(zip)
 #> # A tibble: 5 × 6
-#>   term             component estimate std.error statistic   p.value
-#>   <chr>            <chr>        <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 (Intercept)      mean        -8.64     NA        NA     NA       
-#> 2 lnaadt           mean         0.976    NA        NA     NA       
-#> 3 lnlength         mean         1.53      0.195     7.86   3.75e-15
-#> 4 Zero:(Intercept) zero        -0.115     0.320    -0.360  7.19e- 1
-#> 5 Zero:speed50     zero         1.51      0.419     3.60   3.12e- 4
-regCompTest(update(zip, zero_formula = NULL), model2 = zip)$statistics
-#> # A tibble: 8 × 3
-#>   Statistic                Model BaseModel
-#>   <chr>                    <dbl>     <dbl>
-#> 1 Log-likelihood        -266.     -278.   
-#> 2 Number of parameters     5         3    
-#> 3 AIC                    542.      562.   
-#> 4 BIC                    569.      578.   
-#> 5 LR Test Statistic       23.5      NA    
-#> 6 LR degrees of freedom    2        NA    
-#> 7 LR p-value               0        NA    
-#> 8 McFadden's Pseudo R^2    0.222     0.187
+#>   term             component estimate std.error statistic  p.value
+#>   <chr>            <chr>        <dbl>     <dbl>     <dbl>    <dbl>
+#> 1 (Intercept)      mean        -8.64      1.17     -7.41  1.26e-13
+#> 2 lnaadt           mean         0.976     0.134     7.28  3.33e-13
+#> 3 lnlength         mean         1.53      0.212     7.21  5.52e-13
+#> 4 Zero:(Intercept) zero        -0.116     0.482    -0.241 8.10e- 1
+#> 5 Zero:speed50     zero         1.51      0.478     3.16  1.59e- 3
+rbind(Poisson = glance(update(zip, zero_formula = NULL)),
+      ZIP = glance(zip))[, c("logLik", "AIC", "BIC")]
+#> # A tibble: 2 × 3
+#>   logLik   AIC   BIC
+#>    <dbl> <dbl> <dbl>
+#> 1  -278.  562.  578.
+#> 2  -266.  542.  569.
 ```
 
 With tidymodels (requires the parsnip package):

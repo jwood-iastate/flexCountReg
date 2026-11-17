@@ -142,19 +142,29 @@ test_that("Poisson-generalized-exponential", {
   h <- randtoolbox::halton(2000)
   check_count_family(
     "PGE",
+    d = function(x, ...) dpge(x, mean = 2, shape = 2, scale = 1, ...),
+    p = function(q, ...) ppge(q, mean = 2, shape = 2, scale = 1, ...),
+    q = function(pr) qpge(pr, mean = 2, shape = 2, scale = 1),
+    r = function(n) rpge(n, mean = 2, shape = 2, scale = 1))
+  # The draw-based method is internally consistent too
+  check_count_family(
+    "PGE (Halton)",
     d = function(x, ...) dpge(x, mean = 2, shape = 2, scale = 1,
                               haltons = h, ...),
     p = function(q, ...) ppge(q, mean = 2, shape = 2, scale = 1,
                               haltons = h, ...),
-    q = function(pr) qpge(pr, mean = 2, shape = 2, scale = 1, ndraws = 2000),
+    q = function(pr) qpge(pr, mean = 2, shape = 2, scale = 1, ndraws = 2000,
+                          engine = "halton"),
     r = function(n) rpge(n, mean = 2, shape = 2, scale = 1))
-  expect_error(dpge(1, mean = -1), "mean")
-  expect_error(dpge(1, shape = 0), "shape")
-  expect_error(dpge(1, scale = -1), "scale")
+  # Invalid parameters: NaN, with a warning
+  for (args in list(list(mean = -1), list(shape = 0), list(scale = -1))) {
+    expect_warning(v <- do.call(dpge, c(list(1), args)), "NaN")
+    expect_true(is.nan(v))
+  }
   expect_error(dpge(1, haltons = c(0, 0.5)), "haltons")
-  expect_error(dpge(1, ndraws = 0), "ndraws")
+  expect_error(dpge(1, ndraws = 0, engine = "halton"), "ndraws")
   expect_equal(dpge(numeric(0)), numeric(0))
-  expect_warning(v <- ppge(1, mean = -1), "mean")
+  expect_warning(v <- ppge(1, mean = -1), "NaN")
   expect_true(is.nan(v))
   expect_equal(ppge(-1, haltons = h), 0)
 })
@@ -163,20 +173,20 @@ test_that("Poisson-lognormal", {
   h <- randtoolbox::halton(2000)
   check_count_family(
     "PLN",
-    d = function(x, ...) dpLnorm(x, mean = 2, sigma = 0.6, hdraws = h, ...),
-    p = function(q, ...) ppLnorm(q, mean = 2, sigma = 0.6, ndraws = 2000,
-                                 ...),
-    q = function(pr) qpLnorm(pr, mean = 2, sigma = 0.6, ndraws = 2000),
+    d = function(x, ...) dpLnorm(x, mean = 2, sigma = 0.6, ...),
+    p = function(q, ...) ppLnorm(q, mean = 2, sigma = 0.6, ...),
+    q = function(pr) qpLnorm(pr, mean = 2, sigma = 0.6),
     r = function(n) rpLnorm(n, mean = 2, sigma = 0.6), tol_r = 0.03)
-  expect_error(dpLnorm(1, mean = -1), "mean")
-  expect_error(dpLnorm(1, sigma = 0), "sigma")
+  expect_warning(expect_true(is.nan(dpLnorm(1, mean = -1))), "NaN")
+  expect_warning(expect_true(is.nan(dpLnorm(1, sigma = -1))), "NaN")
+  # sigma = 0 is the Poisson limit
+  expect_equal(dpLnorm(1, mean = 2, sigma = 0), dpois(1, 2))
   expect_equal(dpLnorm(numeric(0)), numeric(0))
-  expect_warning(ppLnorm(1, mean = -1), "greater than 0")
+  expect_warning(ppLnorm(1, mean = -1), "NaN")
   expect_equal(ppLnorm(-1), 0)
   skip_if_not_installed("poilog")
   expect_equal(dpLnorm(0:3, mean = 2, sigma = 0.6, engine = "poilog"),
-               dpLnorm(0:3, mean = 2, sigma = 0.6, ndraws = 20000),
-               tolerance = 1e-3)
+               dpLnorm(0:3, mean = 2, sigma = 0.6), tolerance = 1e-6)
 })
 
 test_that("Poisson-inverse-gamma and Poisson-inverse-Gaussian", {
@@ -222,11 +232,10 @@ test_that("Poisson-Lindley family", {
   check_count_family(
     "PLL",
     d = function(x, ...) dplindLnorm(x, mean = 2, theta = 1.5, sigma = 0.4,
-                                     hdraws = h, ...),
+                                     ...),
     p = function(q, ...) pplindLnorm(q, mean = 2, theta = 1.5, sigma = 0.4,
-                                     ndraws = 2000, ...),
-    q = function(pr) qplindLnorm(pr, mean = 2, theta = 1.5, sigma = 0.4,
-                                 ndraws = 2000),
+                                     ...),
+    q = function(pr) qplindLnorm(pr, mean = 2, theta = 1.5, sigma = 0.4),
     r = function(n) rplindLnorm(n, mean = 2, theta = 1.5, sigma = 0.4),
     tol_r = 0.05)
   check_count_family(

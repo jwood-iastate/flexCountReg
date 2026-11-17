@@ -138,8 +138,10 @@
     params = list("ln(sigma)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine, log = FALSE)
-      dpLnorm(x = y, mean = predicted, sigma = alpha, hdraws = haltons,
-              engine = .fcr_mix_engine(engine, poilog = TRUE), log = log),
+      .fcr_quiet_dens(dpLnorm(x = y, mean = predicted, sigma = alpha,
+                              hdraws = haltons,
+                              engine = .fcr_mix_engine(engine, poilog = TRUE),
+                              log = log), log),
     variance = function(mu, alpha, sigma) {
       m <- mu * exp(alpha^2 / 2)
       m + (exp(alpha^2) - 1) * m^2
@@ -154,8 +156,9 @@
     params = list("ln(shape)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine, log = FALSE)
-      dpge(y, mean = predicted, shape = alpha, scale = 1, haltons = haltons,
-           log = log, engine = .fcr_mix_engine_nopl(engine)),
+      .fcr_quiet_dens(dpge(y, mean = predicted, shape = alpha, scale = 1,
+                           haltons = haltons, log = log,
+                           engine = .fcr_mix_engine_nopl(engine)), log),
     variance = function(mu, alpha, sigma) {
       mu + mu^2 * (trigamma(1) - trigamma(alpha + 1)) /
         (digamma(alpha + 1) - digamma(1))^2
@@ -207,9 +210,10 @@
     params = list("ln(theta)", "ln(sigma)"),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine, log = FALSE)
-      dplindLnorm(x = y, mean = predicted, theta = alpha, sigma = sigma,
-                  hdraws = haltons, log = log,
-                  engine = .fcr_mix_engine_nopl(engine)),
+      .fcr_quiet_dens(dplindLnorm(x = y, mean = predicted, theta = alpha,
+                                  sigma = sigma, hdraws = haltons, log = log,
+                                  engine = .fcr_mix_engine_nopl(engine)),
+                      log),
     variance = function(mu, alpha, sigma) {
       m <- mu * exp(sigma^2 / 2)
       m + ((2 - 2 / (alpha + 2)^2) * exp(sigma^2) - 1) * m^2
@@ -223,7 +227,8 @@
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine, log = FALSE) {
       if (.fcr_mix_engine_nopl(engine) == "quadrature") {
-        lp <- .fcr_mix_logpmf(y, predicted, alpha, 0, "PW")
+        lp <- .fcr_quiet_dens(.fcr_mix_logpmf(y, predicted, alpha, 0, "PW"),
+                              log = TRUE)
         return(if (log) lp else exp(lp))
       }
       p <- dpWeib_cpp(y, mean = predicted, alpha = alpha, sigma = 1,

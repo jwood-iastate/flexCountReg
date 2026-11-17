@@ -191,7 +191,8 @@ test_that("F05: two-model LR tests check nesting and the sample", {
   expect_equal(r$LR_type, "boundary")
   expect_equal(r$LR_pvalue, 0.5 * pchisq(r$LR, 1, lower.tail = FALSE))
   # PL and NB1 have the same number of parameters; PL vs NBP is not nested
-  expect_warning(r <- regCompTest(pl, model2 = nbp), "not nested")
+  expect_warning(r <- regCompTest(pl, model2 = nbp),
+                 "not nested|not a subset")
   expect_true(is.na(r$LR_pvalue))
   # Same number of rows but different observations
   d2 <- d
@@ -733,11 +734,12 @@ test_that("F26: diagnostics have bounded cost and explicit contracts", {
   d <- washington_roads
   d$Total_crashes[1] <- 400   # one large count
   m <- countreg(Total_crashes ~ lnaadt, d, method = "BFGS")
-  # Quantile residuals in chunks equal the full-grid computation
+  # Quantile residuals use only F(y - 1) and F(y); with the same uniforms
+  # they equal the public method's
   set.seed(1)
   r1 <- residuals(m, type = "quantile")
   set.seed(1)
-  r2 <- .fcr_quantile_residuals(m, chunk = 100000L)
+  r2 <- .fcr_quantile_residuals(m, u = runif(nrow(d)))
   expect_equal(r1, r2)
   # Probability grids: validated max_count and an optional overflow column
   P <- predict(m, newdata = d[1:5, ], type = "prob", max_count = 4,

@@ -257,6 +257,12 @@ Changed results are marked **(changed)**.
   of log-gamma functions. For large `a` and `b`, terms of size ~1e200
   canceled and the optimizer could report a positive log-likelihood of
   ~1e203 **(changed**, fits that hit this region**)**.
+* **`renb()` standard errors (changed).** `renb()` now has analytic
+  scores, so its Hessian is the derivative of an exact gradient. Before, it
+  was a second finite difference of the log-likelihood, which was
+  inaccurate (it could be indefinite and give `NaN` standard errors or
+  delta-method marginal-effect standard errors, notably for `ln(a-1)` and
+  `ln(b)`). Estimates are unchanged; standard errors can change.
 * `rpardists` values are checked before a single value is expanded.
 * Documentation: the PGE equations use one rate convention and explain why
   the rate cancels; fitted objects carry a schema version

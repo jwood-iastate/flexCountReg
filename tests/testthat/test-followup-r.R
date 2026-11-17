@@ -1077,3 +1077,31 @@ test_that("R12: objects carry a schema; older objects degrade safely", {
   expect_error(margEffTable(rp, vars = "x", se = "bootstrap", bootstraps = 2),
                "refit")
 })
+
+test_that("renb: analytic scores give an accurate, negative definite Hessian", {
+  d <- washington_roads
+  f <- renb(Total_crashes ~ lnaadt + speed50, d, group_var = "ID",
+            method = "BFGS")
+  p0 <- coef(f)
+  X <- cbind(1, d$lnaadt, d$speed50)
+  g <- factor(d$ID)
+  ll_fun <- getFromNamespace("renb_ll", "flexCountReg")
+  ll <- function(p) {
+    a <- 1 + exp(p[4]); b <- exp(p[5])
+    mu <- exp(drop(X %*% p[1:3])) * (a - 1) / b
+    sum(ll_fun(d$Total_crashes, mu, a, b, g))
+  }
+  # Independent central-difference Hessian (the log-likelihood is smooth at
+  # this step)
+  k <- 5; h <- 1e-3; H <- matrix(0, k, k)
+  for (i in 1:k) for (j in 1:k) {
+    ei <- diag(k)[i, ] * h; ej <- diag(k)[j, ] * h
+    H[i, j] <- (ll(p0 + ei + ej) - ll(p0 + ei - ej) - ll(p0 - ei + ej) +
+                  ll(p0 - ei - ej)) / (4 * h^2)
+  }
+  expect_equal(unname(f$model$hessian), H, tolerance = 1e-3)
+  expect_true(all(eigen(f$model$hessian)$values < 0))
+  expect_true(all(diag(vcov(f)) > 0))
+  # The scores vanish at the optimum
+  expect_lt(max(abs(colSums(f$model$gradientObs))), 0.05)
+})

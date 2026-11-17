@@ -39,6 +39,11 @@
 #' @param offset optional character vector naming offset variable(s) in
 #'   \code{data}. Multiple offsets are summed. Do not also use \code{offset()}
 #'   in \code{formula} for the same variable.
+#' @param weights the name of a column of `data`, or a numeric vector with one
+#'   value per row of `data`, of frequency weights of the panels: a panel with
+#'   weight w counts as w independent panels in the log-likelihood, the robust
+#'   covariance, BIC and the bootstrap. Weights must be constant within each
+#'   panel. Bootstrap standard errors need whole-number weights.
 #' @param dis_param_formula_1 optional one-sided formula for
 #'   \eqn{\ln(\alpha)}, e.g. \code{~ x3}. If \code{NULL}, a single constant
 #'   \eqn{\ln(\alpha)} is estimated. See Details on within-cluster variation.
@@ -239,7 +244,8 @@ negmultinom <- function(formula,
                         stderr = "normal",
                         bootstraps = NULL,
                         verbose = FALSE,
-                        keep_data = TRUE) {
+                        keep_data = TRUE,
+                        weights = NULL) {
 
   call <- match.call()
 
@@ -261,7 +267,10 @@ negmultinom <- function(formula,
                       offset = offset,
                       dis_param_formula_1 = dis_param_formula_1,
                       dis_param_formula_2 = dis_param_formula_2,
-                      family = family)
+                      family = family, weights = weights)
+  if (stderr == "boot" && !is.null(prep$w)) {
+    .fcr_check_boot_freq(prep$w, length(prep$w))
+  }
 
   start <- if (is.null(start.vals)) {
     .nm_start_values(prep, family)
@@ -286,14 +295,20 @@ negmultinom <- function(formula,
 
   vc <- vc_hess
   if (stderr == "robust") {
+    # Scores of weighted panels are w * s; the meat is sum(w s s')
     G <- .nm_grad(fit$estimate, prep = prep, family = family)
-    meat <- crossprod(G)
+    w <- prep$w %||% rep(1, nrow(G))
+    keep <- w > 0
+    meat <- crossprod(G[keep, , drop = FALSE] / sqrt(w[keep]))
     vc <- vc_hess %*% meat %*% vc_hess
     dimnames(vc) <- list(prep$par_names, prep$par_names)
   } else if (stderr == "boot") {
     vc <- .nm_bootstrap_vcov(prep = prep, start = fit$estimate,
                              family = family, method = method,
                              max.iters = max.iters, B = bootstraps)
+    fit$boot_failures <- attr(vc, "failures")
+    fit$n_boot_ok <- attr(vc, "successful_bootstraps")
+    attr(vc, "failures") <- attr(vc, "successful_bootstraps") <- NULL
   }
   se <- .fcr_se(vc)
   names(se) <- prep$par_names
@@ -324,9 +339,15 @@ negmultinom <- function(formula,
   fit$logLik <- fit$maximum
   fit$nobs <- length(prep$y)
   fit$n_groups <- prep$G
+  fit$weights <- prep$row_w
+  fit$panel_index <- prep$g
+  fit$lr_sample <- prep$lr_sample
+  fit$panel_weights <- prep$w
+  # The panels, counted with their weights, are the independent units (as
+  # in logLik() and BIC())
+  fit$n_bic <- if (is.null(prep$w)) prep$G else sum(prep$w)
   fit$aic <- -2 * fit$maximum + 2 * k
-  # The panels are the independent units (as in logLik() and BIC())
-  fit$bic <- -2 * fit$maximum + log(prep$G) * k
+  fit$bic <- -2 * fit$maximum + log(fit$n_bic) * k
   fit$converged <- .fcr_converged(fit, method)
   fit$family <- family
   fit$model <- family
@@ -401,7 +422,8 @@ negmultinom <- function(formula,
 # (prepare_model_data()): one complete-case frame, formula or argument
 # offsets (not both), the training blueprint and the rows used.
 .nm_prepare <- function(formula, group_var, data, offset,
-                        dis_param_formula_1, dis_param_formula_2, family) {
+                        dis_param_formula_1, dis_param_formula_2, family,
+                        weights = NULL) {
   if (!inherits(data, "data.frame")) stop("`data` must be a data frame.")
   if (missing(group_var) || length(group_var) < 1L) {
     stop("`group_var` must be supplied.")
@@ -425,7 +447,7 @@ negmultinom <- function(formula,
     formula, data,
     aux_formulas = list(dis1 = dis_param_formula_1,
                         dis2 = if (family == "NMP") dis_param_formula_2),
-    offset = offset, group_var = group_var)
+    offset = offset, group_var = group_var, weights = weights)
 
   y <- as.numeric(pr$y)   # checked counts (prepare_model_data())
   gfac <- pr$group
@@ -466,7 +488,10 @@ negmultinom <- function(formula,
     lgy = as.numeric(rowsum(lgamma(y + 1), g, reorder = TRUE)),
     rows_used = pr$rows_used, n_dropped = pr$n_dropped,
     blueprint = pr$blueprint, formula = pr$formula,
-    aux_formulas = pr$aux_formulas
+    aux_formulas = pr$aux_formulas,
+    # Panel frequency weights (NULL without `weights`) and row weights
+    w = .fcr_panel_weights(pr, weights), row_w = pr$weights,
+    lr_sample = .fcr_lr_sample(pr, data, group_var)
   )
 }
 
@@ -507,6 +532,7 @@ negmultinom <- function(formula,
   # without cancellation for large r (near the Poisson limit)
   ll <- .fcr_lgamma_diff_rel(cp$r, cp$Y) -
     (cp$r + cp$Y) * log1p(cp$M / cp$r) + syeta - prep$lgy
+  ll <- .fcr_weight_ll(ll, prep$w)
   if (any(!is.finite(ll))) return(NA_real_)
   ll
 }
@@ -533,6 +559,7 @@ negmultinom <- function(formula,
     out <- cbind(out, g_p)
   }
   out <- unname(out)
+  if (!is.null(prep$w)) out <- out * prep$w
   colnames(out) <- prep$par_names
   out
 }
@@ -540,7 +567,7 @@ negmultinom <- function(formula,
 .nm_start_values <- function(prep, family) {
   fit0 <- tryCatch(
     stats::glm.fit(prep$X, prep$y, family = stats::poisson(),
-                   offset = prep$offset),
+                   offset = prep$offset, weights = prep$row_w),
     error = function(e) NULL)
   beta0 <- if (is.null(fit0)) rep(0, prep$n_beta) else fit0$coefficients
   beta0[!is.finite(beta0)] <- 0
@@ -549,7 +576,8 @@ negmultinom <- function(formula,
   M0 <- as.numeric(rowsum(mu0, prep$g, reorder = TRUE))
   p0 <- switch(family, NM2 = 2, NM1 = 1, NMP = 2)
   # Moment estimate from cluster totals: Var(Y_R) = M + alpha M^p
-  alpha0 <- sum((prep$Y - M0)^2 - prep$Y) / sum(M0^p0)
+  wg <- prep$w %||% rep(1, prep$G)
+  alpha0 <- sum(wg * ((prep$Y - M0)^2 - prep$Y)) / sum(wg * M0^p0)
   if (!is.finite(alpha0) || alpha0 <= 1e-3) alpha0 <- 0.1
   lnalpha0 <- log(alpha0)
 
@@ -582,7 +610,7 @@ negmultinom <- function(formula,
   )
 }
 
-.nm_subset_prep <- function(prep, clusters) {
+.nm_subset_prep <- function(prep, clusters, w = NULL) {
   rows <- unlist(lapply(clusters, function(cl) which(prep$g == cl)),
                  use.names = FALSE)
   new_g <- rep(seq_along(clusters), times = prep$n_g[clusters])
@@ -597,38 +625,26 @@ negmultinom <- function(formula,
   if (!is.null(prep$Wc)) out$Wc <- prep$Wc[clusters, , drop = FALSE]
   out$Y <- prep$Y[clusters]
   out$lgy <- prep$lgy[clusters]
+  # New panel frequencies (frequency bootstrap), or none
+  out$w <- w
+  out$row_w <- if (!is.null(w)) rep(w, prep$n_g[clusters]) else
+    prep$row_w[rows]
   out
 }
 
 .nm_bootstrap_vcov <- function(prep, start, family, method, max.iters, B) {
-  k <- length(start)
-  est <- matrix(NA_real_, nrow = B, ncol = k)
-  for (b in seq_len(B)) {
-    cl <- sample.int(prep$G, prep$G, replace = TRUE)
-    bp <- .nm_subset_prep(prep, cl)
-    bf <- tryCatch(
-      .nm_fit_engine(bp, start = start, family = family, method = method,
-                     max.iters = max.iters),
-      error = function(e) NULL)
-    # Only converged replicates with finite estimates are used
-    if (!is.null(bf) && !isFALSE(.fcr_converged(bf, method)) &&
-        all(is.finite(bf$estimate))) {
-      est[b, ] <- bf$estimate
-    }
-  }
-  est <- est[stats::complete.cases(est), , drop = FALSE]
-  if (nrow(est) < 2L) {
-    warning("Fewer than 2 bootstrap replications succeeded; ",
-            "standard errors are NA.")
-    return(matrix(NA_real_, k, k,
-                  dimnames = list(prep$par_names, prep$par_names)))
-  }
-  if (nrow(est) < B) {
-    warning(B - nrow(est), " of ", B, " bootstrap replications failed.")
-  }
-  vc <- stats::cov(est)
-  dimnames(vc) <- list(prep$par_names, prep$par_names)
-  attr(vc, "successful_bootstraps") <- nrow(est)
+  # Shared bootstrap (strict acceptance; with weights, new panel
+  # frequencies replace the weights)
+  draws <- .fcr_bootstrap(prep$G, B, prep$par_names, function(idx, w = NULL) {
+    bp <- .nm_subset_prep(prep, idx, w)
+    bf <- .nm_fit_engine(bp, start = start, family = family, method = method,
+                         max.iters = max.iters)
+    .fcr_refit_result(stats::setNames(bf$estimate, prep$par_names),
+                      .fcr_converged(bf, method))
+  }, freq = prep$w)
+  vc <- .fcr_boot_cov(draws)
+  attr(vc, "successful_bootstraps") <- sum(stats::complete.cases(draws))
+  attr(vc, "failures") <- attr(draws, "failures")
   vc
 }
 

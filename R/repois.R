@@ -10,6 +10,11 @@
 #'   individual ID or other panel ID variables).
 #' @param data a dataframe that has all of the variables in the \code{formula}.
 #' @param offset an optional offset term provided as a string.
+#' @param weights the name of a column of `data`, or a numeric vector with one
+#'   value per row of `data`, of frequency weights of the panels: a panel with
+#'   weight w counts as w independent panels in the log-likelihood, the robust
+#'   covariance, BIC and the bootstrap. Weights must be constant within each
+#'   panel. Bootstrap standard errors need whole-number weights.
 #' @param method a method to use for optimization in the maximum likelihood
 #'   estimation. For options, see \code{\link[maxLik]{maxLik}}.
 #' @param max.iters the maximum number of iterations to allow the optimization
@@ -83,6 +88,7 @@ repois <- function(formula,
                    stderr = "normal",
                    bootstraps = NULL,
                    offset = NULL,
+                   weights = NULL,
                    keep_data = TRUE,
                    print.level = NULL) {
   
@@ -105,7 +111,7 @@ repois <- function(formula,
   # Shared data preparation: one complete-case frame (formula, offsets and
   # groups), training blueprint and the rows used
   prep <- prepare_model_data(formula, data, offset = offset,
-                             group_var = group_var)
+                             group_var = group_var, weights = weights)
   formula <- prep$formula   # with `.` expanded
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
@@ -113,6 +119,11 @@ repois <- function(formula,
   y <- as.numeric(prep$y)
   X <- prep$X
   cluster_list <- split(seq_along(y), prep$group, drop = TRUE)
+  # Panel frequency weights (NULL without `weights`)
+  w_panel <- .fcr_panel_weights(prep, weights)
+  if (stderr == "boot" && !is.null(w_panel)) {
+    .fcr_check_boot_freq(w_panel, length(w_panel))
+  }
   x_names <- c(colnames(X), "lnalpha")
   
   fit <- .repois_fit_engine(
@@ -123,7 +134,8 @@ repois <- function(formula,
     method = method,
     max.iters = max.iters,
     print.level = print.level,
-    bootstraps = NULL
+    bootstraps = NULL,
+    w = w_panel
   )
   names(fit$estimate) <- x_names
   
@@ -143,10 +155,15 @@ repois <- function(formula,
   fit$n_dropped <- prep$n_dropped
   fit$nobs <- length(y)
   fit$n_groups <- length(cluster_list)
+  fit$weights <- prep$weights
+  fit$panel_index <- as.integer(prep$group)
+  fit$lr_sample <- .fcr_lr_sample(prep, data, group_var)
+  fit$panel_weights <- w_panel
+  fit$n_bic <- if (is.null(w_panel)) length(cluster_list) else sum(w_panel)
   
   if (stderr == "robust") {
     # One log-likelihood contribution per cluster: cluster-robust sandwich
-    V <- .fcr_robust_vcov(fit$maxLik_object)
+    V <- .fcr_robust_vcov(fit$maxLik_object, w_panel)
   } else if (stderr == "boot") {
     # Resample whole groups and refit from the full-sample estimates
     bs <- .fcr_cluster_bootstrap(prep, as.integer(bootstraps), x_names,
@@ -155,11 +172,12 @@ repois <- function(formula,
         y = as.numeric(sub$y), X = sub$X, offset_vec = sub$offset,
         cluster_list = split(seq_along(sub$y), sub$group, drop = TRUE),
         method = method, max.iters = max.iters, print.level = 0,
-        bootstraps = NULL, compute_vcov = FALSE)
+        bootstraps = NULL, compute_vcov = FALSE, w = sub$panel_w)
       .fcr_refit_result(stats::setNames(f$par, x_names),
                         .fcr_converged(list(code = f$convergence), method))
-    })
+    }, freq = w_panel)
     V <- bs$vcov
+    fit$boot_failures <- bs$failures
     fit$n_boot_ok <- bs$n_ok
     fit$successful_bootstraps <- bs$n_ok
     fit$bootstraps <- as.integer(bootstraps)
@@ -184,11 +202,12 @@ repois <- function(formula,
 }
 
 
-.repois_start_values <- function(y, X, offset_vec) {
+.repois_start_values <- function(y, X, offset_vec, w_obs = NULL) {
   fit0 <- try(
     stats::glm.fit(
       x = X,
       y = y,
+      weights = w_obs,
       family = stats::poisson(),
       offset = offset_vec
     ),
@@ -220,7 +239,7 @@ repois <- function(formula,
   c(beta0, lnalpha0)
 }
 
-.repois_loglik <- function(par, y, X, offset_vec, cluster_list) {
+.repois_loglik <- function(par, y, X, offset_vec, cluster_list, w = NULL) {
   # One log-likelihood value per cluster (maxLik sums them); per-cluster
   # values also give cluster-robust sandwich standard errors.
   n_cl <- length(cluster_list)
@@ -249,8 +268,9 @@ repois <- function(formula,
     .fcr_lgamma_diff_rel(r, ysum) - (ysum + r) * log1p(alpha * s) +
       sum(y_i * eta_i) - sum(lgamma(y_i + 1))
   }, numeric(1))
+  ll <- .fcr_weight_ll(unname(ll), w)
   if (any(!is.finite(ll))) return(rep(-Inf, n_cl))
-  unname(ll)
+  ll
 }
 
 .repois_fit_engine <- function(y,
@@ -261,13 +281,17 @@ repois <- function(formula,
                                max.iters = 1000,
                                print.level = 0,
                                bootstraps = NULL,
-                               compute_vcov = TRUE) {
+                               compute_vcov = TRUE,
+                               w = NULL) {
   if (!requireNamespace("maxLik", quietly = TRUE)) {
     stop("Package `maxLik` is required for `repois()`.")
   }
   
   method_opt <- .fcr_check_method(method)
-  start <- .repois_start_values(y, X, offset_vec)
+  # Row weights for the starting values: each row has its panel's weight
+  w_obs <- if (!is.null(w)) rep(w, lengths(cluster_list))[
+    order(unlist(cluster_list, use.names = FALSE))]
+  start <- .repois_start_values(y, X, offset_vec, w_obs)
   
   control <- maxLik::maxControl(
     iterlim = max.iters,
@@ -282,7 +306,8 @@ repois <- function(formula,
     y = y,
     X = X,
     offset_vec = offset_vec,
-    cluster_list = cluster_list
+    cluster_list = cluster_list,
+    w = w
   )
   
   par <- fit_ml$estimate
@@ -342,7 +367,8 @@ repois <- function(formula,
     p = pval,
     logLik_value = logLik_value,
     aic = -2 * logLik_value + 2 * k,
-    bic = -2 * logLik_value + log(nobs) * k,
+    bic = -2 * logLik_value +
+      log(if (is.null(w)) n_groups else sum(w)) * k,
     fitted.values = mu,
     linear.predictors = eta,
     residuals = y - mu,

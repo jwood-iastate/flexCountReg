@@ -36,7 +36,13 @@
 #' @param log.p Logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail Logical; if TRUE, probabilities are \eqn{P[X <= x]}, otherwise
 #'   \eqn{P[X > x]}.
-#' @param ndraws the number of Halton draws to use for the integration.
+#' @param ndraws the number of Halton draws (only with \code{engine = "halton"}).
+#' @param engine the numerical method: \code{"quadrature"} (default) computes
+#'   the log-probability by adaptive quadrature over the log of the mixing
+#'   variable, accurate for every count including far tails;
+#'   \code{"halton"} averages the Poisson probabilities over Halton draws
+#'   (the method of flexCountReg 0.1.2 and earlier, kept for
+#'   reproducibility; badly biased far in the tail).
 #'
 #' @details
 #' \code{dpoisweibull} computes the density of the Poisson-Weibull distribution.
@@ -78,7 +84,9 @@
 #' @export
 dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL, 
                          mean_value = NULL, sd_value = NULL, 
-                         ndraws = 1500, log = FALSE) {
+                         ndraws = 1500, log = FALSE,
+                         engine = c("quadrature", "halton")) {
+  engine <- match.arg(engine)
   
   # --- Input Parameter Logic ---
   if (!is.null(mean_value) && !is.null(sd_value)) {
@@ -98,6 +106,23 @@ dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL,
     }
   }
   
+  if (engine == "quadrature") {
+    # E[Y] = lambda * sigma * Gamma(1 + 1 / alpha); the Weibull scale
+    # cancels from the mean-parameterized PMF but must be valid
+    r <- .fcr_recycle(x, lambda, alpha, sigma)
+    if (length(r[[1]]) == 0L) return(numeric(0))
+    al <- r[[3]]; sg <- r[[4]]
+    ok_al <- is.finite(al) & al > 0
+    mean_y <- r[[2]] * sg * ifelse(ok_al, gamma(1 + 1 / pmax(al, 1e-300)),
+                                    NaN)
+    lp <- suppressWarnings(.fcr_mix_logpmf(r[[1]], mean_y, al, 0, "PW"))
+    bad <- !is.na(r[[2]]) & !is.na(al) & !is.na(sg) &
+      !(is.finite(r[[2]]) & r[[2]] > 0 & ok_al & is.finite(sg) & sg > 0)
+    lp[bad & !is.na(r[[1]])] <- NaN
+    .fcr_warn_nan(is.nan(lp) & !is.na(r[[1]]))
+    return(if (log) lp else exp(lp))
+  }
+
   # --- Vectorization Setup ---
   # Ensure parameters are vectors of appropriate length matches x
   n <- length(x)
@@ -126,7 +151,35 @@ dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL,
 #' @export
 ppoisweibull <- function(q, lambda = NULL, alpha = NULL, sigma = NULL,
                          mean_value = NULL, sd_value = NULL, ndraws = 1500,
-                         lower.tail = TRUE, log.p = FALSE) {
+                         lower.tail = TRUE, log.p = FALSE,
+                         engine = c("quadrature", "halton")) {
+  engine <- match.arg(engine)
+  if (engine == "quadrature") {
+    if (!is.null(mean_value) && !is.null(sd_value)) {
+      params <- calculate_params(mean_value = mean_value, sd_value = sd_value)
+      alpha <- params[1]
+      sigma <- params[2]
+    }
+    if (is.null(lambda) && !is.null(mean_value)) {
+      lambda <- mean_value / (sigma * gamma(1 + 1 / alpha))
+    }
+    if (is.null(lambda) || is.null(alpha) || is.null(sigma)) {
+      stop("`lambda` (or `mean_value`), `alpha` and `sigma` are required.",
+           call. = FALSE)
+    }
+    core <- function(q, lambda, alpha, sigma, lower.tail, log.p) {
+      r <- .fcr_recycle(q, lambda, alpha, sigma)
+      ok <- is.finite(r[[3]]) & r[[3]] > 0 & is.finite(r[[4]]) & r[[4]] > 0
+      m <- r[[2]] * r[[4]] * ifelse(ok, gamma(1 + 1 / pmax(r[[3]], 1e-300)),
+                                    NaN)
+      .fcr_mix_cdf(r[[1]], m, r[[3]], 0, "PW", lower.tail, log.p)
+    }
+    return(.fcr_p_contract(core, q,
+                           list(lambda = lambda, alpha = alpha,
+                                sigma = sigma), lower.tail, log.p,
+                           logdens = function(x, ...)
+                             dpoisweibull(x, ..., log = TRUE)))
+  }
   .fcr_p_contract(.ppoisweibull_core, q,
                   list(lambda = lambda, alpha = alpha, sigma = sigma,
                        mean_value = mean_value, sd_value = sd_value),
@@ -155,7 +208,8 @@ ppoisweibull <- function(q, lambda = NULL, alpha = NULL, sigma = NULL,
   
   # Note: dpoisweibull now handles the heavy lifting
   probs <- 
-    dpoisweibull(y, lambda=lambda, alpha=alpha, sigma=sigma, ndraws=ndraws)
+    dpoisweibull(y, lambda=lambda, alpha=alpha, sigma=sigma, ndraws=ndraws,
+                 engine = "halton")
   p <- sum(probs)
   
   if(!lower.tail) p <- 1-p
@@ -166,7 +220,9 @@ ppoisweibull <- function(q, lambda = NULL, alpha = NULL, sigma = NULL,
 #' @rdname PoissonWeibull
 #' @export
 qpoisweibull <- function(p, lambda = NULL, alpha = NULL, sigma = NULL,
-                         mean_value = NULL, sd_value = NULL, ndraws = 1500) {
+                         mean_value = NULL, sd_value = NULL, ndraws = 1500,
+                         engine = c("quadrature", "halton")) {
+  engine <- match.arg(engine)
   if (!is.null(mean_value) && !is.null(sd_value)) {
     params <- calculate_params(mean_value = mean_value, sd_value = sd_value)
     alpha <- params[1]
@@ -180,8 +236,9 @@ qpoisweibull <- function(p, lambda = NULL, alpha = NULL, sigma = NULL,
     stop("Parameter lambda or mean_value is required")
   }
   .fcr_qcount(p, function(y, lambda, alpha, sigma) {
-    cumsum(dpoisweibull(y, lambda = lambda, alpha = alpha, sigma = sigma,
-                        ndraws = ndraws))
+    cumsum(suppressWarnings(dpoisweibull(y, lambda = lambda, alpha = alpha,
+                                         sigma = sigma, ndraws = ndraws,
+                                         engine = engine)))
   }, lambda, alpha, sigma)
 }
 

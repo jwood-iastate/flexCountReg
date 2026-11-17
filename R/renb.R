@@ -9,6 +9,11 @@
 #' @param offset an optional character vector of offset column names (summed
 #'   when several are given; on the log scale). An offset can instead be given
 #'   with \code{offset()} in \code{formula}; use only one of the two.
+#' @param weights the name of a column of `data`, or a numeric vector with one
+#'   value per row of `data`, of frequency weights of the panels: a panel with
+#'   weight w counts as w independent panels in the log-likelihood, the robust
+#'   covariance, BIC and the bootstrap. Weights must be constant within each
+#'   panel. Bootstrap standard errors need whole-number weights.
 #' @param method a method to use for optimization in the maximum likelihood
 #'   estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that "BHHH"
 #'   is not available for this function due to the implementation for the random
@@ -102,7 +107,8 @@
 #' @export
 renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
                  verbose = FALSE, stderr = "normal", bootstraps = NULL,
-                 offset = NULL, keep_data = TRUE, print.level = NULL) {
+                 offset = NULL, weights = NULL, keep_data = TRUE,
+                 print.level = NULL) {
   print.level <- .fcr_print_level("renb", verbose, print.level)
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   
@@ -115,7 +121,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   
   # Data preparation: one complete-case frame; panels from `group_var`
   prep <- prepare_model_data(formula, data, offset = offset,
-                             group_var = group_var)
+                             group_var = group_var, weights = weights)
   formula <- prep$formula   # with `.` expanded
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
@@ -124,10 +130,16 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   y <- as.numeric(prep$y)
   group <- prep$group
   offset_vec <- prep$offset
+  # Panel frequency weights (NULL without `weights`)
+  w_panel <- .fcr_panel_weights(prep, weights)
+  if (stderr == "boot" && !is.null(w_panel)) {
+    .fcr_check_boot_freq(w_panel, length(w_panel))
+  }
   x_names <- c(colnames(X), "ln(a-1)", "ln(b)")
   
   # Starting values: Poisson GLM with the same rows and offset
   p_model <- stats::glm.fit(X, y, offset = offset_vec,
+                            weights = prep$weights,
                             family = stats::poisson())
   start <- p_model$coefficients
   start[is.na(start)] <- 0
@@ -174,13 +186,19 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
     stop("RENB log-likelihood is not finite at the starting values.")
   }
 
+  # Weighted per-panel log-likelihood
+  ll_w <- function(beta, y, X, group, offset_vec, w = NULL) {
+    .fcr_weight_ll(reg.run.RE(beta, y, X, group, offset_vec), w)
+  }
+
   # Main model fit
-  fit <- maxLik::maxLik(reg.run.RE,
+  fit <- maxLik::maxLik(ll_w,
                         start = full_start,
                         y = y,
                         X = X,
                         group = group,
                         offset_vec = offset_vec,
+                        w = w_panel,
                         method = method,
                         control = list(iterlim = max.iters, 
                                        printLevel = print.level))
@@ -194,13 +212,14 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$method <- method
   fit <- .fcr_finish_re(fit, prep, x_names, stderr, bootstraps,
                         refit = function(sub) {
-    m <- maxLik::maxLik(reg.run.RE, start = fit$estimate, y = sub$y,
+    m <- maxLik::maxLik(ll_w, start = fit$estimate, y = sub$y,
                         X = sub$X, group = sub$group,
-                        offset_vec = sub$offset, method = method,
+                        offset_vec = sub$offset, w = sub$panel_w,
+                        method = method,
                         control = list(iterlim = max.iters, printLevel = 0))
     .fcr_refit_result(stats::setNames(m$estimate, x_names),
                       .fcr_converged(m, method))
-  })
+  }, w_panel = w_panel, data = data, group_var = group_var)
   
   # Process results
   beta_est <- fit$estimate

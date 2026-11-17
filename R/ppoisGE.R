@@ -14,15 +14,26 @@
 #' @param shape numeric value or vector of shape values for the shape parameter
 #'   of the generalized exponential distribution (the values have to be greater
 #'   than 0).
-#' @param scale single value or vector of values for the scale parameter of the
-#'   generalized exponential distribution (the values have to be greater than
-#'   0).
-#' @param ndraws the number of Halton draws to use for the integration.
+#' @param scale single value or vector of values for the rate \eqn{b} of the
+#'   generalized exponential mixing distribution (greater than 0; despite
+#'   its name, the mixing variable is generated as \eqn{X/b} with
+#'   \eqn{X \sim GE(a, 1)}). Because the distribution is parameterized by
+#'   its mean, \eqn{b} cancels and does not change any result; it is only
+#'   checked for validity.
+#' @param ndraws the number of Halton draws (only with \code{engine = "halton"}).
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
 #'   otherwise, \eqn{P[X>x]}.
-#' @param haltons an optional vector of Halton draws to use instead of ndraws.
+#' @param haltons an optional vector of Halton draws to use instead of ndraws
+#'   (only with \code{engine = "halton"}).
+#' @param engine the numerical method: \code{"quadrature"} (default) computes
+#'   the log-probability by adaptive quadrature over the log of the mixing
+#'   variable, accurate for every count including far tails;
+#'   \code{"halton"} averages the Poisson probabilities over Halton draws
+#'   (the method of flexCountReg 0.1.2 and earlier, kept for
+#'   reproducibility; badly biased far in the tail; the default when
+#'   \code{haltons} are given).
 #'
 #' @details
 #' \code{dpge} computes the density (PDF) of the PGE Distribution.
@@ -33,65 +44,32 @@
 #'
 #' \code{rpge} generates random numbers from the PGE Distribution.
 #' 
-#' The Generalized Exponential distribution can be written as a function with a
-#' shape parameter \eqn{\alpha>0} and scale parameter \eqn{\gamma>0}. The
-#' distribution has strictly positive continuous values. The PDF of the
-#' distribution is:
-#' \deqn{f(x|\alpha,\gamma) = 
-#'   \frac{\alpha}{\gamma} 
-#'   \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1} 
-#'   e^{-\frac{x}{\gamma}}} 
-#' 
-#' Thus, the compound Probability Mass Function(PMF) for the PGE distribution
-#' is:
-#' \deqn{f(y|\lambda,\alpha,\beta) = 
-#'   \int_0^\infty 
-#'      \frac{\lambda^y x^y e^{-\lambda x}}{y!}
-#'      \frac{\alpha}{\gamma}
-#'      \left(1-e^{-\frac{x}{\gamma}}\right)^{\alpha-1}e^{-\frac{x}{\gamma}} dx}
-#' 
-#' The expected value of the distribution is:
-#' \deqn{E[y]=\mu=\lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right)}
-#' 
-#' Where \eqn{\psi(\cdot)} is the digamma function.
-#' 
-#' The variance is:
-#' \deqn{\sigma^2 = 
-#'   \lambda \left(\frac{\psi(\alpha+1)-\psi(1)}{\gamma}\right) + 
-#'           \left(\frac{-\psi'(\alpha+1)+\psi'(1)}{\gamma^2}\right)\lambda^2}
-#' 
-#' Where \eqn{\psi'(\cdot)} is the trigamma function.
-#' 
-#' To ensure that \eqn{\mu=e^{X\beta}}, \eqn{\lambda} is replaced with:
-#' \deqn{\lambda=\frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}}
-#' 
-#' This results in:
-#' \deqn{
-#'   f(y|\mu,\alpha,\beta) =
-#'   \int_0^\infty
-#'     \frac{
-#'       \left(
-#'         \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}
-#'       \right)^y
-#'       x^y
-#'       e^{
-#'         -\left(
-#'           \frac{\gamma e^{X\beta}}{\psi(\alpha+1)-\psi(1)}
-#'         \right) x
-#'       }
-#'     }{
-#'       y!
-#'     }
-#'     \frac{\alpha}{\gamma}
-#'     \left(
-#'       1-e^{-\frac{x}{\gamma}}
-#'     \right)^{\alpha-1}
-#'     e^{-\frac{x}{\gamma}}
-#'     dx
-#' }
-#' 
-#' Halton draws are used to perform simulation over the lognormal distribution
-#' to solve the integral.
+#' The mixing variable \eqn{X} has a generalized exponential distribution
+#' (Gupta and Kundu, 2007) with shape \eqn{a > 0} and rate \eqn{b > 0}:
+#' \deqn{f(x \mid a, b) = a b \left(1 - e^{-bx}\right)^{a-1} e^{-bx},
+#'   \quad x > 0,}
+#' with
+#' \deqn{E[X] = \frac{A}{b}, \quad Var[X] = \frac{B}{b^2}, \quad
+#'   A = \psi(a+1) - \psi(1), \quad B = \psi'(1) - \psi'(a+1),}
+#' where \eqn{\psi} and \eqn{\psi'} are the digamma and trigamma
+#' functions. Given \eqn{X}, \eqn{Y \sim Poisson(\lambda X)}, so
+#' \deqn{P(Y = y) = \int_0^\infty \frac{(\lambda x)^y e^{-\lambda x}}{y!}
+#'   f(x \mid a, b)\, dx.}
+#' To make \eqn{E[Y] = \mu} (\code{mean}, \eqn{e^{X\beta}} in a regression),
+#' \eqn{\lambda = \mu b / A}. Then
+#' \deqn{E[Y] = \mu, \qquad Var[Y] = \mu + \frac{B}{A^2}\mu^2.}
+#' Since \eqn{\lambda X = \mu (bX) / A} and \eqn{bX \sim GE(a, 1)}, the
+#' distribution of \eqn{Y} depends on \eqn{\mu} and \eqn{a} only: the rate
+#' (or scale) cancels. This is why PGE regression models estimate only the
+#' shape (\code{ln(shape)}); a scale parameter would not be identified.
+#' With \eqn{a = 1} the mixing distribution is exponential and \eqn{Y} is
+#' geometric with mean \eqn{\mu}.
+#'
+#' The integral has no closed form. By default (\code{engine =
+#' "quadrature"}) it is computed on the log scale by adaptive quadrature over
+#' \eqn{\log X}, centered at the mode of the integrand, which is accurate for
+#' every count. \code{engine = "halton"} averages the Poisson probabilities
+#' over Halton draws of \eqn{X}, as flexCountReg 0.1.2 and earlier did.
 #'
 #' @references
 #' Gupta, R. D., & Kundu, D. (2007). Generalized exponential distribution:
@@ -142,8 +120,25 @@ dpge <- function(
     scale = 1,
     ndraws = 1500,
     log = FALSE,
-    haltons = NULL
+    haltons = NULL,
+    engine = c("quadrature", "halton")
 ) {
+  # Draws given without an engine: the draw-based method
+  if (missing(engine) && !is.null(haltons)) engine <- "halton"
+  engine <- match.arg(engine)
+  if (engine == "quadrature") {
+    # The scale cancels from the mean-parameterized PMF; it must still be
+    # valid
+    r <- .fcr_recycle(x, mean, shape, scale)
+    if (length(r[[1]]) == 0L) return(numeric(0))
+    sc <- r[[4]]
+    bad_sc <- !is.na(sc) & !(is.finite(sc) & sc > 0)
+    lp <- suppressWarnings(.fcr_mix_logpmf(r[[1]], r[[2]], r[[3]], 0, "PGE"))
+    lp[is.na(sc) & !is.na(r[[1]])] <- NA
+    lp[bad_sc & !is.na(lp)] <- NaN
+    .fcr_warn_nan(is.nan(lp) & !is.na(r[[1]]))
+    return(if (isTRUE(log)) lp else exp(lp))
+  }
   
   # Validate observation-specific parameters
   if (any(!is.finite(mean) | mean <= 0)) {
@@ -229,13 +224,26 @@ dpge <- function(
 #' @rdname PoissonGeneralizedExponential
 #' @export
 ppge <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
-                 lower.tail = TRUE, log.p = FALSE, haltons = NULL) {
+                 lower.tail = TRUE, log.p = FALSE, haltons = NULL,
+                 engine = c("quadrature", "halton")) {
+  if (missing(engine) && !is.null(haltons)) engine <- "halton"
+  engine <- match.arg(engine)
   .fcr_p_contract(.ppge_core, q, list(mean = mean, shape = shape, scale = scale),
-                  lower.tail, log.p, ndraws = ndraws, haltons = haltons)
+                  lower.tail, log.p, ndraws = ndraws, haltons = haltons,
+                  engine = engine,
+                  logdens = if (engine == "quadrature") function(x, ...)
+                    dpge(x, ..., log = TRUE))
 }
 
 .ppge_core <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
-                 lower.tail = TRUE, log.p = FALSE, haltons = NULL) {
+                 lower.tail = TRUE, log.p = FALSE, haltons = NULL,
+                 engine = "quadrature") {
+  if (engine == "quadrature") {
+    r <- .fcr_recycle(q, mean, shape, scale)
+    out <- .fcr_mix_cdf(r[[1]], r[[2]], r[[3]], 0, "PGE", lower.tail, log.p)
+    out[!is.na(r[[4]]) & !(is.finite(r[[4]]) & r[[4]] > 0)] <- NaN
+    return(out)
+  }
   
   
   # --- Input Validation ---
@@ -343,14 +351,18 @@ ppge <- function(q, mean = 1, shape = 1, scale = 1, ndraws = 1500,
 }
 #' @rdname PoissonGeneralizedExponential
 #' @export
-qpge <- function(p, mean = 1, shape = 1, scale = 1, ndraws = 1500) {
+qpge <- function(p, mean = 1, shape = 1, scale = 1, ndraws = 1500,
+                 engine = c("quadrature", "halton")) {
+  engine <- match.arg(engine)
   if (any(mean <= 0 | scale <= 0 | shape <= 0, na.rm = TRUE)) {
     warning("The values of `mean`, `shape`, and `scale` have to have ",
             "values greater than 0.")
   }
   h <- randtoolbox::halton(ndraws)
   .fcr_qcount(p, function(y, mean, shape, scale) {
-    cumsum(dpge(y, mean = mean, shape = shape, scale = scale, haltons = h))
+    cumsum(suppressWarnings(dpge(y, mean = mean, shape = shape,
+                                 scale = scale, haltons = h,
+                                 engine = engine)))
   }, mean, shape, scale)
 }
 

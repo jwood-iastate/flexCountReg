@@ -8,6 +8,7 @@
 // [[Rcpp::plugins(cpp11)]]
 #include <Rcpp.h>
 #include <cmath>
+#include <cfloat>
 using namespace Rcpp;
 
 static const long COM_MAX_TERMS = 10000000L;
@@ -74,9 +75,11 @@ static void com_moments(double lambda, double nu, double &mean,
   var = m2 - m1 * m1;
 }
 
+// Mean of the COM distribution. Its accuracy is set by the shared support
+// rule above (terms are summed until they are negligible, relative 1e-17),
+// not by a separate tolerance.
 // [[Rcpp::export]]
-double com_expect_cpp(double lambda, double nu, double rel_tol = 1e-10,
-                      int max_iter = 1000) {
+double com_expect_cpp(double lambda, double nu) {
   double m, v;
   com_moments(lambda, nu, m, v);
   return m;
@@ -97,15 +100,24 @@ NumericMatrix com_moments_vec_cpp(NumericVector lambda, NumericVector nu) {
   return out;
 }
 
-// Rate lambda with E[Y] = mu, solved in log(lambda) (the mean increases
-// with lambda) by a bracketed regula falsi (Illinois) method. NaN, with a
-// warning, when the solution is not found.
-// [[Rcpp::export]]
-double find_lambda_cpp(double mu, double nu, double tol = 1e-8,
-                       int max_iter = 1000) {
+// Result of solving E[Y | lambda, nu] = mu for lambda.
+//   status 0: converged, |E[Y] - mu| <= tol * max(1, mu)
+//          1: invalid input (mu or nu not positive and finite)
+//          2: no bracket of the solution was found
+//          3: the iteration limit was reached first
+//          4: the bracket collapsed to machine precision before the
+//             residual met the tolerance
+struct ComSolve {
+  double lambda, residual;
+  int iterations, status;
+};
+
+static ComSolve com_solve_lambda(double mu, double nu, double tol,
+                                 int max_iter) {
+  ComSolve out = {R_NaN, R_NaN, 0, 1};
   if (ISNAN(mu) || ISNAN(nu) || !(mu > 0) || !(nu > 0) || !R_FINITE(mu) ||
       !R_FINITE(nu)) {
-    return R_NaN;
+    return out;
   }
   // A mean that cannot be computed (support too long) is treated as too
   // large, so the bracket moves to smaller rates
@@ -113,6 +125,7 @@ double find_lambda_cpp(double mu, double nu, double tol = 1e-8,
     double m = com_expect_cpp(std::exp(t), nu) - mu;
     return ISNAN(m) ? R_PosInf : m;
   };
+  double tol_f = tol * std::max(1.0, mu);
   // Starting guess from the approximation E[Y] ~ lambda^(1/nu) - (nu-1)/(2nu)
   double g = mu + (nu - 1.0) / (2.0 * nu);
   double t0 = nu * std::log(g > 0 ? g : mu);
@@ -136,22 +149,34 @@ double find_lambda_cpp(double mu, double nu, double tol = 1e-8,
       hi = (lo + hi) / 2;
       fhi = f(hi);
     }
-    if (!(fhi > 0)) { lo = hi; flo = fhi; hi = lo; }
+  }
+  // An end point may already solve the equation
+  if (std::fabs(flo) <= tol_f) {
+    out.lambda = std::exp(lo); out.residual = flo; out.status = 0;
+    return out;
+  }
+  if (std::fabs(fhi) <= tol_f) {
+    out.lambda = std::exp(hi); out.residual = fhi; out.status = 0;
+    return out;
   }
   if (!(flo < 0 && fhi > 0)) {
-    Rcpp::warning("find_lambda_cpp: could not bracket the COM rate; NaN "
-                  "returned.");
-    return R_NaN;
+    out.status = 2;
+    return out;
   }
+  // Regula falsi with the Illinois modification
   int side = 0;
-  double tol_f = 1e-10 * std::max(1.0, mu);
-  for (int it = 0; it < 500; ++it) {
+  double best_t = (std::fabs(flo) < std::fabs(fhi)) ? lo : hi;
+  double best_f = (std::fabs(flo) < std::fabs(fhi)) ? flo : fhi;
+  for (int it = 1; it <= max_iter; ++it) {
+    out.iterations = it;
     double t = (lo * fhi - hi * flo) / (fhi - flo);
     double ft = f(t);
-    if (ISNAN(ft)) break;
-    if (std::fabs(ft) < tol_f || (hi - lo) < 1e-13 * std::max(1.0,
-                                                               std::fabs(t)))
-      return std::exp(t);
+    if (ISNAN(ft) || ft == R_PosInf) break;
+    if (std::fabs(ft) < std::fabs(best_f)) { best_t = t; best_f = ft; }
+    if (std::fabs(ft) <= tol_f) {
+      out.lambda = std::exp(t); out.residual = ft; out.status = 0;
+      return out;
+    }
     if (ft < 0) {
       lo = t; flo = ft;
       if (side == -1) fhi /= 2;
@@ -161,15 +186,48 @@ double find_lambda_cpp(double mu, double nu, double tol = 1e-8,
       if (side == 1) flo /= 2;
       side = 1;
     }
+    if ((hi - lo) <= 4 * DBL_EPSILON * std::max(1.0, std::fabs(t))) {
+      out.residual = best_f;
+      out.status = 4;
+      return out;
+    }
   }
-  Rcpp::warning("find_lambda_cpp: the COM rate did not converge; NaN "
-                "returned.");
+  out.residual = best_f;
+  out.status = 3;
+  return out;
+}
+
+// Rate lambda with E[Y] = mu, solved in log(lambda) (the mean increases
+// with lambda) by a bracketed regula falsi (Illinois) method.
+//   tol       relative tolerance of the mean: |E[Y] - mu| <= tol * max(1, mu)
+//   max_iter  maximum number of regula falsi iterations (after bracketing)
+// NaN, with a warning, when the tolerance is not met.
+// [[Rcpp::export]]
+double find_lambda_cpp(double mu, double nu, double tol = 1e-10,
+                       int max_iter = 500) {
+  if (!(tol > 0) || max_iter < 1) {
+    Rcpp::stop("find_lambda_cpp: `tol` must be positive and `max_iter` at "
+               "least 1.");
+  }
+  ComSolve r = com_solve_lambda(mu, nu, tol, max_iter);
+  if (r.status == 0) return r.lambda;
+  if (r.status == 1) return R_NaN;
+  if (r.status == 2) {
+    Rcpp::warning("find_lambda_cpp: could not bracket the COM rate; NaN "
+                  "returned.");
+  } else {
+    Rcpp::warning("find_lambda_cpp: the COM rate did not reach the mean "
+                  "tolerance (%s after %d iterations; residual %g); NaN "
+                  "returned.",
+                  r.status == 3 ? "iteration limit" : "precision limit",
+                  r.iterations, r.residual);
+  }
   return R_NaN;
 }
 
 // [[Rcpp::export]]
 NumericVector find_lambda_vec_cpp(NumericVector mu, NumericVector nu,
-                                  double tol = 1e-8, int max_iter = 1000) {
+                                  double tol = 1e-10, int max_iter = 500) {
   int n = mu.size();
   NumericVector results(n);
   for (int i = 0; i < n; ++i) {
@@ -178,13 +236,25 @@ NumericVector find_lambda_vec_cpp(NumericVector mu, NumericVector nu,
   return results;
 }
 
-// Normalizing constants Z (kept for compatibility; may overflow to Inf, so
-// the other functions use log Z).
+// Diagnostics of the rate solution: lambda, the mean residual
+// E[Y] - mu at the returned (or best) rate, the iterations used and the
+// termination status (see ComSolve).
+// [[Rcpp::export]]
+List find_lambda_diag_cpp(double mu, double nu, double tol = 1e-10,
+                          int max_iter = 500) {
+  ComSolve r = com_solve_lambda(mu, nu, tol, max_iter);
+  const char *labels[] = {"converged", "invalid input", "no bracket",
+                          "iteration limit", "precision limit"};
+  return List::create(_["lambda"] = r.lambda, _["residual"] = r.residual,
+                      _["iterations"] = r.iterations,
+                      _["status"] = labels[r.status]);
+}
+
+// Normalizing constants Z (may overflow to Inf, so the other functions use
+// log Z). Truncation follows the shared support rule.
 // [[Rcpp::export]]
 NumericVector cmp_normalizer_vec_cpp(NumericVector lambda_vec,
-                                     NumericVector nu_vec,
-                                     double rel_tol = 1e-8,
-                                     int max_iter = 1000) {
+                                     NumericVector nu_vec) {
   int n = lambda_vec.size();
   NumericVector results(n);
   for (int i = 0; i < n; ++i) {

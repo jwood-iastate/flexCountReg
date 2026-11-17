@@ -27,7 +27,7 @@ countreg.rp(
   verbose = FALSE,
   stderr = "normal",
   bootstraps = NULL,
-  engine = "halton",
+  engine = "quadrature",
   keep_data = TRUE,
   panel_id = NULL,
   mix_draws = NULL
@@ -47,7 +47,12 @@ and \code{rpar_formula}.}
 
 \item{family}{the name of the distribution/model type to estimate. Default is
 "NB2". Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel",
-etc. (See \code{\link{countreg}} for full list).}
+etc. (See \code{\link{countreg}} for full list).
+With \code{"GP2"}, the dispersion must be nonnegative: the
+underdispersed GP2 requires \eqn{1 + a\mu > 0}, which random
+parameters with unbounded support violate for some draws of every
+observation. Use \code{"GP1"}, whose parameter space does not depend
+on \eqn{\mu}, for underdispersed random-parameter models.}
 
 \item{rpardists}{an optional named vector whose names are the random
 parameters and values the distribution. The distribution options include
@@ -118,21 +123,23 @@ whole panels and refits the model).}
 \item{bootstraps}{the number of bootstrap samples when
 \code{stderr = "boot"} (default 200).}
 
-\item{engine}{the engine to use for the integration if the Poisson Lognormal
-(PLN) distribution is used. Options include "halton" which uses Halton
-draws or "poilog" which uses the poilog package. The default is "halton".}
+\item{engine}{the numerical method for the mixed Poisson families PLN, PGE, PW
+and PLL: \code{"quadrature"} (default; adaptive quadrature on the log
+scale, accurate for every count), \code{"halton"} (the average over
+Halton draws used by flexCountReg 0.1.2 and earlier, kept to reproduce
+earlier fits; it is badly biased for counts far in the tail) or, for PLN
+only, \code{"poilog"} (the poilog package).}
 
 \item{keep_data}{logical; if \code{FALSE}, the training data are not stored
 in the fitted object. \code{predict()} then needs \code{newdata}.}
 
 \item{panel_id}{deprecated; use \code{group_var}.}
 
-\item{mix_draws}{the number of Halton draws for integrating over the
-mixing distribution of the PLN, PGE, PLL and PW families (inside each
-random-parameter draw). The default is \code{min(ndraws, 200)}. The
-cost of these families grows with \code{ndraws * mix_draws}, so
-increasing \code{ndraws} no longer also increases the inner
-integration.}
+\item{mix_draws}{with \code{engine = "halton"}, the number of Halton
+draws for integrating over the mixing distribution of the PLN, PGE, PLL
+and PW families (inside each random-parameter draw). The default is
+\code{min(ndraws, 200)}. Not used by the default
+\code{engine = "quadrature"}, which integrates adaptively.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

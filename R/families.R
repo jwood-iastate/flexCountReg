@@ -23,9 +23,9 @@
 
 .fcr_family <- function(params, dens, variance = NULL, rand = NULL,
                         mean_adj = function(alpha, sigma) 1, start = 0,
-                        mean = NULL) {
+                        mean = NULL, cdf = NULL) {
   list(params = params, dens = dens, variance = variance, rand = rand,
-       mean_adj = mean_adj, start = start, mean = mean)
+       mean_adj = mean_adj, start = start, mean = mean, cdf = cdf)
 }
 
 # Density values for the likelihood: parameter values outside the valid
@@ -45,6 +45,12 @@
   mu <- r[[1]]; phi <- r[[2]]
   m <- mu
   v <- mu * (1 + phi)^2
+  # Outside the parameter space (mu > 0, phi > -1; for GP2, phi = a * mu, so
+  # 1 + a * mu > 0) there is no distribution: NaN, never textbook moments
+  bad <- !is.na(mu) & !is.na(phi) &
+    !(is.finite(mu) & is.finite(phi) & mu > 0 & phi > -1)
+  m[bad] <- NaN
+  v[bad] <- NaN
   neg <- which(!is.na(mu) & !is.na(phi) & phi < 0 & phi > -1 & mu > 0)
   for (idx in split(neg, ceiling(seq_along(neg) / 5000))) {
     lp <- .gp1_trunc_lraw(mu[idx], phi[idx])
@@ -65,7 +71,10 @@
     dens = function(y, predicted, alpha, sigma, ..., log = FALSE)
       stats::dpois(y, predicted, log = log),
     variance = function(mu, alpha, sigma) mu,
-    rand = function(n, mu, alpha, sigma) stats::rpois(n, mu)),
+    rand = function(n, mu, alpha, sigma) stats::rpois(n, mu),
+    # Closed-form CDF (log scale, either tail) for quantile residuals
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      stats::ppois(q, predicted, lower.tail = lower.tail, log.p = TRUE)),
 
   GP1 = .fcr_family(
     params = list("ln(phi+1)", NULL),
@@ -96,7 +105,10 @@
                                      mu = predicted, log = log), log),
     variance = function(mu, alpha, sigma) mu * (1 + alpha),
     rand = function(n, mu, alpha, sigma)
-      stats::rnbinom(n, size = mu / alpha, mu = mu)),
+      stats::rnbinom(n, size = mu / alpha, mu = mu),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      stats::pnbinom(q, size = predicted / alpha, mu = predicted,
+                     lower.tail = lower.tail, log.p = TRUE)),
 
   NB2 = .fcr_family(
     params = list("ln(alpha)", NULL),
@@ -105,7 +117,10 @@
                                      log = log), log),
     variance = function(mu, alpha, sigma) mu + alpha * mu^2,
     rand = function(n, mu, alpha, sigma)
-      stats::rnbinom(n, size = 1 / alpha, mu = mu)),
+      stats::rnbinom(n, size = 1 / alpha, mu = mu),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      stats::pnbinom(q, size = 1 / alpha, mu = predicted,
+                     lower.tail = lower.tail, log.p = TRUE)),
 
   NBP = .fcr_family(
     params = list("ln(alpha)", "ln(p)"),
@@ -114,14 +129,19 @@
                                      mu = predicted, log = log), log),
     variance = function(mu, alpha, sigma) mu + alpha * mu^sigma,
     rand = function(n, mu, alpha, sigma)
-      stats::rnbinom(n, size = mu^(2 - sigma) / alpha, mu = mu)),
+      stats::rnbinom(n, size = mu^(2 - sigma) / alpha, mu = mu),
+    cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
+      stats::pnbinom(q, size = predicted^(2 - sigma) / alpha, mu = predicted,
+                     lower.tail = lower.tail, log.p = TRUE)),
 
   PLN = .fcr_family(
     params = list("ln(sigma)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine, log = FALSE)
-      dpLnorm(x = y, mean = predicted, sigma = alpha, hdraws = haltons,
-              engine = engine, log = log),
+      .fcr_quiet_dens(dpLnorm(x = y, mean = predicted, sigma = alpha,
+                              hdraws = haltons,
+                              engine = .fcr_mix_engine(engine, poilog = TRUE),
+                              log = log), log),
     variance = function(mu, alpha, sigma) {
       m <- mu * exp(alpha^2 / 2)
       m + (exp(alpha^2) - 1) * m^2
@@ -136,8 +156,9 @@
     params = list("ln(shape)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine, log = FALSE)
-      dpge(y, mean = predicted, shape = alpha, scale = 1, haltons = haltons,
-           log = log),
+      .fcr_quiet_dens(dpge(y, mean = predicted, shape = alpha, scale = 1,
+                           haltons = haltons, log = log,
+                           engine = .fcr_mix_engine_nopl(engine)), log),
     variance = function(mu, alpha, sigma) {
       mu + mu^2 * (trigamma(1) - trigamma(alpha + 1)) /
         (digamma(alpha + 1) - digamma(1))^2
@@ -189,8 +210,10 @@
     params = list("ln(theta)", "ln(sigma)"),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine, log = FALSE)
-      dplindLnorm(x = y, mean = predicted, theta = alpha, sigma = sigma,
-                  hdraws = haltons, log = log),
+      .fcr_quiet_dens(dplindLnorm(x = y, mean = predicted, theta = alpha,
+                                  sigma = sigma, hdraws = haltons, log = log,
+                                  engine = .fcr_mix_engine_nopl(engine)),
+                      log),
     variance = function(mu, alpha, sigma) {
       m <- mu * exp(sigma^2 / 2)
       m + ((2 - 2 / (alpha + 2)^2) * exp(sigma^2) - 1) * m^2
@@ -203,6 +226,11 @@
     params = list("ln(alpha)", NULL),
     dens = function(y, predicted, alpha, sigma, haltons, normed_haltons,
                     engine, log = FALSE) {
+      if (.fcr_mix_engine_nopl(engine) == "quadrature") {
+        lp <- .fcr_quiet_dens(.fcr_mix_logpmf(y, predicted, alpha, 0, "PW"),
+                              log = TRUE)
+        return(if (log) lp else exp(lp))
+      }
       p <- dpWeib_cpp(y, mean = predicted, alpha = alpha, sigma = 1,
                       h = haltons)
       if (log) base::log(p) else p
@@ -348,7 +376,18 @@ get_probFunc <- function(family) {
 # adjustment, or the family's own mean function)
 .fcr_family_mean <- function(family, mu, alpha = NULL, sigma = NULL) {
   f <- .fcr_family_registry[[family]]
-  if (!is.null(f$mean)) return(f$mean(mu, alpha, sigma))
+  if (!is.null(f$mean)) {
+    m <- f$mean(mu, alpha, sigma)
+    bad <- is.nan(m) & !is.na(mu)
+    if (any(bad)) {
+      warning(sum(bad), " row(s) have ", family, " parameters outside the ",
+              "parameter space (", switch(family,
+                GP2 = "mu > 0 and 1 + a * mu > 0, with dispersion a",
+                GP1 = "mu > 0 and phi > -1", "valid parameters"),
+              "); their predictions are NaN.", call. = FALSE)
+    }
+    return(m)
+  }
   mu * .fcr_mean_adjust(family, alpha, sigma)
 }
 

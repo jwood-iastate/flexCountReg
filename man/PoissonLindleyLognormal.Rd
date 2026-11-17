@@ -15,7 +15,8 @@ dplindLnorm(
   sigma = 1,
   ndraws = 1500,
   log = FALSE,
-  hdraws = NULL
+  hdraws = NULL,
+  engine = c("quadrature", "halton")
 )
 
 pplindLnorm(
@@ -26,10 +27,19 @@ pplindLnorm(
   sigma = 1,
   ndraws = 1500,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  engine = c("quadrature", "halton")
 )
 
-qplindLnorm(p, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
+qplindLnorm(
+  p,
+  mean = 1,
+  theta = 1,
+  sigma = 1,
+  ndraws = 1500,
+  lambda = NULL,
+  engine = c("quadrature", "halton")
+)
 
 rplindLnorm(n, mean = 1, theta = 1, sigma = 1, ndraws = 1500, lambda = NULL)
 }
@@ -44,11 +54,19 @@ mean of the distribution is \code{mean * exp(sigma^2 / 2)}.}
 \item{sigma}{lognormal sigma parameter (>= 0; 0 gives the
 Poisson-Lindley distribution).}
 
-\item{ndraws}{number of Halton draws.}
+\item{ndraws}{the number of Halton draws (only with \code{engine = "halton"}).}
 
 \item{log}{return log-density.}
 
-\item{hdraws}{optional Halton draws.}
+\item{hdraws}{optional Halton draws (only with \code{engine = "halton"}).}
+
+\item{engine}{the numerical method: \code{"quadrature"} (default) computes
+the log-probability by adaptive quadrature over the log of the mixing
+variable, accurate for every count including far tails;
+\code{"halton"} averages the Poisson probabilities over Halton draws
+(the method of flexCountReg 0.1.2 and earlier, kept for
+reproducibility; badly biased far in the tail; the default when
+\code{hdraws} are given).}
 
 \item{q}{quantile or vector of quantiles.}
 

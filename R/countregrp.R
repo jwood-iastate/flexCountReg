@@ -13,6 +13,11 @@
 #' @param family the name of the distribution/model type to estimate. Default is
 #'   "NB2". Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel",
 #'   etc. (See \code{\link{countreg}} for full list).
+#'   With \code{"GP2"}, the dispersion must be nonnegative: the
+#'   underdispersed GP2 requires \eqn{1 + a\mu > 0}, which random
+#'   parameters with unbounded support violate for some draws of every
+#'   observation. Use \code{"GP1"}, whose parameter space does not depend
+#'   on \eqn{\mu}, for underdispersed random-parameter models.
 #' @param rpardists an optional named vector whose names are the random
 #'   parameters and values the distribution. The distribution options include
 #'   normal ("n"), lognormal ("ln"), triangular ("t"), uniform ("u"), and gamma
@@ -42,12 +47,11 @@
 #'   draws are generated from a random seed that is stored in the fit, so
 #'   predictions reuse the same draws (and \code{set.seed()} before fitting
 #'   makes the fit reproducible).
-#' @param mix_draws the number of Halton draws for integrating over the
-#'   mixing distribution of the PLN, PGE, PLL and PW families (inside each
-#'   random-parameter draw). The default is \code{min(ndraws, 200)}. The
-#'   cost of these families grows with \code{ndraws * mix_draws}, so
-#'   increasing \code{ndraws} no longer also increases the inner
-#'   integration.
+#' @param mix_draws with \code{engine = "halton"}, the number of Halton
+#'   draws for integrating over the mixing distribution of the PLN, PGE, PLL
+#'   and PW families (inside each random-parameter draw). The default is
+#'   \code{min(ndraws, 200)}. Not used by the default
+#'   \code{engine = "quadrature"}, which integrates adaptively.
 #' @param correlated if the random parameters should be correlated. 
 #'        If TRUE, only normal distributions are used.
 #' @param group_var an optional variable name (string), or a vector with one
@@ -71,9 +75,12 @@
 #'   log-likelihood is weighted), so they should be constant within a panel.
 #' @param method optimization method (e.g., "BHHH", "BFGS", "NM").
 #' @param max.iters maximum number of iterations.
-#' @param engine the engine to use for the integration if the Poisson Lognormal 
-#'   (PLN) distribution is used. Options include "halton" which uses Halton 
-#'   draws or "poilog" which uses the poilog package. The default is "halton".
+#' @param engine the numerical method for the mixed Poisson families PLN, PGE, PW
+#'   and PLL: \code{"quadrature"} (default; adaptive quadrature on the log
+#'   scale, accurate for every count), \code{"halton"} (the average over
+#'   Halton draws used by flexCountReg 0.1.2 and earlier, kept to reproduce
+#'   earlier fits; it is badly biased for counts far in the tail) or, for PLN
+#'   only, \code{"poilog"} (the poilog package).
 #' @param start.vals optional vector of starting values, one per parameter.
 #'   Named values are matched to the parameters by name.
 #' @param verbose logical.
@@ -189,7 +196,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          method = 'BHHH', max.iters = 1000,
                          start.vals = NULL, verbose = FALSE,
                          stderr = "normal", bootstraps = NULL,
-                         engine = "halton", keep_data = TRUE,
+                         engine = "quadrature", keep_data = TRUE,
                          panel_id = NULL, mix_draws = NULL) {
   
   print.level <- if (verbose) 2 else 0
@@ -207,7 +214,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
          toString(.fcr_families), ".", call. = FALSE)
   }
   params <- get_params(family)
-  engine <- match.arg(engine, c("halton", "poilog"))
+  engine <- match.arg(engine, c("quadrature", "halton", "poilog"))
   if (engine == "poilog" && family == "PLN") {
     rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
   }
@@ -282,6 +289,9 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     stop("`weights` vary within panels. Weights are frequency weights of ",
          "the panels (the independent units), so they must be constant ",
          "within each panel.", call. = FALSE)
+  }
+  if (stderr == "boot" && !is.null(weights)) {
+    .fcr_check_boot_freq(w_panel, length(w_panel))
   }
   
   # --- 3. Random parameters ---
@@ -390,7 +400,9 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     # Scalar distribution parameters start near the Poisson limit (small
     # overdispersion); GP1/GP2 start exactly at it (dispersion 0), because a
     # strongly underdispersed start gives zero probability to larger counts
-    dis_start <- if (family %in% c("GP1", "GP2")) 0 else -2
+    # GP2 starts slightly inside its allowed region a >= 0 (see below)
+    dis_start <- if (family == "GP1") 0 else if (family == "GP2") 0.05 else
+      -2
     start <- c(s_fixed, s_rand, s_var, rep(0, N_het_mean + N_het_var),
                rep(dis_start, N_dis_1 > 0 && is.null(X_dis_1)),
                rep(0, if (!is.null(X_dis_1)) N_dis_1 else 0),
@@ -427,6 +439,12 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     vec_2 <- if (N_dis_2 == 0) NULL else if (is.null(X_dis_2))
       rep(exp(p_dis_2), N_obs) else exp(as.vector(X_dis_2 %*% p_dis_2))
     
+    # GP2 with negative dispersion a requires 1 + a * mu > 0, which
+    # unbounded random parameters violate for some draws of every
+    # observation: the model is only defined for a >= 0 (alpha = a + 1)
+    if (family == "GP2" && any(vec_1 < 1)) {
+      return(rep(-Inf, length(w_panel)))
+    }
     mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
     
     draws_info <- generate_random_draws(hdraws = hdraws, 
@@ -513,6 +531,12 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   # Independent units for BIC: the panels, counted with their frequency
   # weights
   fit$n_bic <- sum(w_panel)
+  # Panel of each analysis row (the independent units), for refits
+  fit$panel_index <- if (!is.null(prep$group)) as.integer(panel_group)
+  # Sample evidence for likelihood-ratio comparisons
+  fit$lr_sample <- .fcr_lr_sample(prep, data, group_var)
+  fit$correlated <- correlated
+  fit$weights <- prep$weights
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   
@@ -525,14 +549,20 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     # from the full-sample estimates
     boot_data <- data[prep$rows_used, , drop = FALSE]
     rows_by_panel <- split(seq_len(N_obs), panel_group)
-    boot_w <- if (is.numeric(weights)) prep$weights else weights
+    # Frequency weights are constant within a panel: a panel with weight w
+    # stands for w independent panels, so new panel frequencies are drawn
+    # (see .fcr_bootstrap) and replace the weights of the panel's rows
+    boot_freq <- if (!is.null(weights)) w_panel
     draws <- .fcr_bootstrap(
       n = length(rows_by_panel), B = as.integer(bootstraps),
-      coef_names = x_names, refit = function(idx) {
+      coef_names = x_names, freq = boot_freq,
+      refit = function(idx, w = NULL) {
         sel <- rows_by_panel[idx]
         r <- unlist(sel, use.names = FALSE)
         bd <- boot_data[r, , drop = FALSE]
-        bd$.fcr_boot_panel <- rep(seq_along(sel), lengths(sel))
+        boot_id <- .fcr_unused_name(names(bd), ".fcr_boot_panel")
+        bd[[boot_id]] <- rep(seq_along(sel), lengths(sel))
+        w_r <- if (!is.null(w)) rep(w, lengths(sel))
         m <- countreg.rp(formula = formula, rpar_formula = rpar_formula,
                          data = bd, family = family,
                          rpardists = rpardists,
@@ -543,9 +573,8 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
                          ndraws = ndraws, scrambled = scrambled,
                          mix_draws = mix_draws,
                          correlated = correlated,
-                         group_var = ".fcr_boot_panel",
-                         weights = if (is.numeric(boot_w)) boot_w[r] else
-                           boot_w,
+                         group_var = boot_id,
+                         weights = w_r,
                          offset = offset, method = method,
                          max.iters = max.iters, start.vals = fit$estimate,
                          engine = engine, keep_data = FALSE)
@@ -587,7 +616,21 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
     return(stats::setNames(rep("n", length(rpar)), rpar))
   }
   rpardists <- unlist(rpardists)
+  # Check the values before any expansion, so a scalar is validated too
+  if (!is.character(rpardists) || !length(rpardists) ||
+      anyNA(rpardists)) {
+    stop("`rpardists` must be a character vector of distribution codes (",
+         toString(valid), ") without missing values.", call. = FALSE)
+  }
+  bad <- setdiff(unique(rpardists), valid)
+  if (length(bad)) {
+    stop("Unknown random-parameter distribution(s): ", toString(bad),
+         ". Use one of ", toString(valid), ".", call. = FALSE)
+  }
   nm <- names(rpardists)
+  if (!is.null(nm) && (anyNA(nm) || any(!nzchar(nm)) || anyDuplicated(nm))) {
+    stop("Names of `rpardists` must be non-empty and unique.", call. = FALSE)
+  }
   if (is.null(nm)) {
     if (length(rpardists) == 1L) {
       return(stats::setNames(rep(rpardists, length(rpar)), rpar))
@@ -608,11 +651,6 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
          if (length(miss)) paste0(" Missing: ", toString(miss), "."),
          if (length(extra)) paste0(" Unknown: ", toString(extra), "."),
          call. = FALSE)
-  }
-  bad <- setdiff(unique(rpardists), valid)
-  if (length(bad)) {
-    stop("Unknown random-parameter distribution(s): ", toString(bad),
-         ". Use one of ", toString(valid), ".", call. = FALSE)
   }
   rpardists[rpar]
 }

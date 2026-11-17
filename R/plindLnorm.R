@@ -17,11 +17,18 @@
 #'   Poisson-Lindley distribution).
 #' @param lambda optional Poisson scale parameter (>0), an alternative to
 #'   \code{mean}: \code{mean = lambda * (theta + 2) / (theta * (theta + 1))}.
-#' @param ndraws number of Halton draws.
+#' @param ndraws the number of Halton draws (only with \code{engine = "halton"}).
 #' @param log return log-density.
 #' @param log.p return log-CDF.
 #' @param lower.tail TRUE returns \eqn{P[X \leq x]}.
-#' @param hdraws optional Halton draws.
+#' @param hdraws optional Halton draws (only with \code{engine = "halton"}).
+#' @param engine the numerical method: \code{"quadrature"} (default) computes
+#'   the log-probability by adaptive quadrature over the log of the mixing
+#'   variable, accurate for every count including far tails;
+#'   \code{"halton"} averages the Poisson probabilities over Halton draws
+#'   (the method of flexCountReg 0.1.2 and earlier, kept for
+#'   reproducibility; badly biased far in the tail; the default when
+#'   \code{hdraws} are given).
 #'
 #' @details
 #' \code{dplindLnorm} computes the PLL density.
@@ -68,7 +75,15 @@
 #' @rdname PoissonLindleyLognormal
 #' @export
 dplindLnorm <- function(x, mean=1, theta=1, sigma=1,
-                        ndraws=1500, log=FALSE, hdraws=NULL) {
+                        ndraws=1500, log=FALSE, hdraws=NULL,
+                        engine = c("quadrature", "halton")) {
+  # Draws given without an engine: the draw-based method
+  if (missing(engine) && !is.null(hdraws)) engine <- "halton"
+  engine <- match.arg(engine)
+  if (engine == "quadrature") {
+    lp <- .fcr_mix_logpmf(x, mean, theta, sigma, "PLL")
+    return(if (log) lp else exp(lp))
+  }
   
   if(!is.null(hdraws)) {
     h <- qnorm(hdraws)
@@ -86,17 +101,29 @@ dplindLnorm <- function(x, mean=1, theta=1, sigma=1,
 #' @export
 pplindLnorm <- function(q, mean=1, theta=1, lambda=NULL,
                         sigma=1, ndraws=1500,
-                        lower.tail=TRUE, log.p=FALSE) {
-  .fcr_p_contract(.pplindLnorm_core, q, list(mean = mean, theta = theta, lambda = lambda, sigma = sigma),
-                  lower.tail, log.p, ndraws = ndraws)
+                        lower.tail=TRUE, log.p=FALSE,
+                        engine = c("quadrature", "halton")) {
+  engine <- match.arg(engine)
+  if (!is.null(lambda)) {
+    mean <- lambda * (theta + 2) / (theta * (theta + 1))
+  }
+  .fcr_p_contract(.pplindLnorm_core, q,
+                  list(mean = mean, theta = theta, sigma = sigma),
+                  lower.tail, log.p, ndraws = ndraws, engine = engine,
+                  logdens = if (engine == "quadrature") function(x, ...)
+                    dplindLnorm(x, ..., log = TRUE))
 }
 
 .pplindLnorm_core <- function(q, mean=1, theta=1, lambda=NULL,
                         sigma=1, ndraws=1500,
-                        lower.tail=TRUE, log.p=FALSE) {
+                        lower.tail=TRUE, log.p=FALSE,
+                        engine = "quadrature") {
   
   if(!is.null(lambda)) {
     mean <- lambda * (theta + 2) / (theta * (theta + 1))
+  }
+  if (engine == "quadrature") {
+    return(.fcr_mix_cdf(q, mean, theta, sigma, "PLL", lower.tail, log.p))
   }
   
   # FIX: Set normal=FALSE.
@@ -132,7 +159,8 @@ pplindLnorm <- function(q, mean=1, theta=1, lambda=NULL,
 #' @rdname PoissonLindleyLognormal
 #' @export
 qplindLnorm <- function(p, mean = 1, theta = 1, sigma = 1, ndraws = 1500,
-                        lambda = NULL) {
+                        lambda = NULL, engine = c("quadrature", "halton")) {
+  engine <- match.arg(engine)
   if (!is.null(lambda)) {
     mean <- lambda * (theta + 2) / (theta * (theta + 1))
   }
@@ -147,7 +175,7 @@ qplindLnorm <- function(p, mean = 1, theta = 1, sigma = 1, ndraws = 1500,
     }
     # sigma = 0 is the Poisson-Lindley limit
     if (!(mean > 0 && theta > 0 && sigma >= 0)) return(rep(NaN, length(y)))
-    cumsum(dplindLnorm(y, mean, theta, sigma, hdraws = h))
+    cumsum(dplindLnorm(y, mean, theta, sigma, hdraws = h, engine = engine))
   }, mean, theta, sigma)
 }
 

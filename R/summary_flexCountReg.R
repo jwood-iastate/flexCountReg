@@ -170,7 +170,7 @@ as_tibble.summary.flexCountReg <- function(x, ...) {
   full <- .fcr_model_spec(object)
   bp <- m$blueprint %||% .fcr_blueprint(object)
   nest <- .fcr_nesting(.fcr_base_spec("POISSON", bp$x_names), full)
-  if (!nest$nested) return(NULL)
+  if (!nest$nested || !isTRUE(m$converged)) return(NULL)
   d <- .fcr_training_rows(object)
   fd <- tryCatch(forge_new_data(bp, d), error = function(e) NULL)
   if (is.null(fd)) return(NULL)
@@ -182,7 +182,9 @@ as_tibble.summary.flexCountReg <- function(x, ...) {
                  error = function(e) NULL)
   if (is.null(pf)) return(NULL)
   ll0 <- sum(w * stats::dpois(y, pf$fitted.values, log = TRUE))
+  if (!isTRUE(pf$converged)) return(NULL)
   test <- .fcr_lr_pvalue(m$maximum, ll0, nest)
+  if (is.na(test$LR)) return(NULL)
   list(statistic = test$LR, df = nest$df, p.value = test$p,
        logLik_poisson = ll0, boundary = nest$type == "boundary")
 }

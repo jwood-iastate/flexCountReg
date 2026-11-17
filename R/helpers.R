@@ -79,39 +79,41 @@ NULL
   V
 }
 
-# Nonparametric bootstrap of a set of estimates.
-#   n          number of rows (or clusters) to resample
-#   B          number of replicates
-#   coef_names names of the estimates, in order
-#   refit      function(idx) returning a named numeric vector of estimates,
-#              with attribute "converged" (logical) when known
-# A replicate is accepted only when the refit succeeds, reports convergence
-# (or does not report it) and gives finite estimates for every parameter.
-# Returns a B x length(coef_names) matrix with NA rows for failed replicates
-# and attribute "failures" (counts by reason).
-.fcr_bootstrap <- function(n, B, coef_names, refit) {
+# Nonparametric bootstrap of a fit.
+#
+# Without `freq` the n independent units (rows or panels) are resampled with
+# replacement and the fit is redone with refit(idx), where a unit drawn
+# twice appears twice in `idx`.
+#
+# With integer frequency weights `freq` (one per unit), a unit with weight w
+# stands for w independent units. The bootstrap of those sum(freq) units is
+# done on the compressed data: new frequencies are drawn from
+# Multinomial(sum(freq), freq / sum(freq)) and the fit is redone with
+# refit(idx, w), where `idx` are the units drawn at least once and `w` their
+# new frequencies, which replace (not multiply) the original weights.
+#
+# A replicate is accepted only when the refit returned a result, reported
+# convergence (TRUE; FALSE or unknown is a failure), has exactly the expected
+# unique coefficient names, and finite estimates. Returns a B x p matrix with
+# NA rows for failed replicates and attribute "failures" (counts by reason).
+.fcr_bootstrap <- function(n, B, coef_names, refit, freq = NULL) {
+  if (!is.null(freq)) .fcr_check_boot_freq(freq, n)
   draws <- matrix(NA_real_, nrow = B, ncol = length(coef_names),
                   dimnames = list(NULL, coef_names))
   why <- character(B)
   for (b in seq_len(B)) {
-    idx <- sample.int(n, n, replace = TRUE)
-    est <- tryCatch(suppressWarnings(suppressMessages(refit(idx))),
-                    error = function(e) NULL)
-    why[b] <- if (is.null(est)) {
-      "error"
-    } else if (isFALSE(attr(est, "converged"))) {
-      "not converged"
-    } else if (!all(coef_names %in% names(est)) ||
-               !all(is.finite(est[coef_names]))) {
-      "non-finite estimates"
-    } else {
-      draws[b, ] <- est[coef_names]
-      ""
-    }
+    est <- tryCatch(suppressWarnings(suppressMessages(
+      if (is.null(freq)) {
+        refit(sample.int(n, n, replace = TRUE))
+      } else {
+        counts <- .fcr_boot_frequencies(freq)
+        pos <- which(counts > 0)
+        refit(pos, counts[pos])
+      })), error = function(e) NULL)
+    why[b] <- .fcr_boot_check_replicate(est, coef_names)
+    if (!nzchar(why[b])) draws[b, ] <- est[coef_names]
   }
-  failures <- table(factor(why[nzchar(why)],
-                           levels = c("error", "not converged",
-                                      "non-finite estimates")))
+  failures <- table(factor(why[nzchar(why)], levels = .fcr_boot_reasons))
   n_ok <- sum(!nzchar(why))
   reasons <- failures[failures > 0]
   if (n_ok < 2) {
@@ -129,6 +131,58 @@ NULL
   draws
 }
 
+.fcr_boot_reasons <- c("error", "not converged", "wrong coefficients",
+                       "non-finite estimates")
+
+# "" when a refit result is an acceptable bootstrap replicate, otherwise the
+# reason it is not.
+.fcr_boot_check_replicate <- function(est, coef_names) {
+  if (is.null(est)) return("error")
+  if (!isTRUE(attr(est, "converged"))) return("not converged")
+  nm <- names(est)
+  if (!is.numeric(est) || is.null(nm) || anyNA(nm) || anyDuplicated(nm) ||
+      length(est) != length(coef_names) || !setequal(nm, coef_names)) {
+    return("wrong coefficients")
+  }
+  if (!all(is.finite(est))) return("non-finite estimates")
+  ""
+}
+
+# Bootstrap frequency weights must be nonnegative whole numbers with a
+# positive total: other weights (importance or survey weights) do not
+# describe a sample of independent units that can be resampled.
+.fcr_check_boot_freq <- function(freq, n) {
+  if (length(freq) != n || !is.numeric(freq) || anyNA(freq) ||
+      any(!is.finite(freq)) || any(freq < 0) ||
+      any(abs(freq - round(freq)) > 1e-8) || sum(freq) < 1) {
+    stop("Bootstrap standard errors with `weights` need frequency weights: ",
+         "nonnegative whole numbers (each row stands for that many ",
+         "independent observations) with a positive total. Use ",
+         "stderr = \"robust\" for other weights.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+# A column name based on `base` that is not in `existing` (for internal
+# helper columns added to user data).
+.fcr_unused_name <- function(existing, base) {
+  nm <- base
+  k <- 0L
+  while (nm %in% existing) {
+    k <- k + 1L
+    nm <- paste0(base, "_", k)
+  }
+  nm
+}
+
+# One bootstrap draw of frequencies for units with frequencies `freq`: the
+# number of times each unit is drawn when sum(freq) units are resampled.
+.fcr_boot_frequencies <- function(freq) {
+  freq <- round(freq)
+  N <- sum(freq)
+  as.vector(stats::rmultinom(1L, N, freq / N))
+}
+
 # Covariance of the accepted bootstrap replicates (complete rows only, so
 # every entry uses the same replicates).
 .fcr_boot_cov <- function(draws) {
@@ -144,8 +198,8 @@ NULL
 
 # Estimates of a refit, with its convergence status attached.
 .fcr_refit_result <- function(estimate, converged) {
-  attr(estimate, "converged") <- if (length(converged) == 1L)
-    as.logical(converged) else NA
+  attr(estimate, "converged") <- length(converged) == 1L &&
+    isTRUE(as.logical(converged))
   estimate
 }
 
@@ -270,40 +324,73 @@ generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params,
 #   ln: Laplace (saddlepoint) approximation for t < 0; Inf for t > 0, where
 #       the lognormal MGF does not exist.
 rp_mgf <- function(dist, t, mu, sigma) {
+  exp(rp_log_mgf(dist, t, mu, sigma))
+}
+
+# Does E[exp(t * beta)] exist (is it finite) for a random coefficient beta?
+# Decided from the parameters alone, without evaluating the MGF:
+#   normal, uniform, triangular: always, for finite parameters;
+#   lognormal: for t <= 0, or when sigma = 0 (a fixed coefficient exp(mu));
+#   gamma (mean mu, SD sigma): when mu > 0 and t sigma^2 / mu < 1, or when
+#   sigma = 0 (a fixed coefficient mu).
+# NA for missing inputs. Overflow of a finite value is a different matter.
+.fcr_rp_mean_exists <- function(dist, t, mu, sigma) {
+  n <- length(t)
+  mu <- rep_len(mu, n)
+  sigma <- rep_len(abs(sigma), n)
+  fin <- is.finite(t) & is.finite(mu) & is.finite(sigma)
+  out <- switch(dist,
+    n = , u = , t = fin,
+    ln = fin & (sigma == 0 | t <= 0),
+    g = fin & mu > 0 & (sigma == 0 | t * sigma^2 / mu < 1),
+    stop("Unknown random-parameter distribution: ", dist, call. = FALSE))
+  out[is.na(t) | is.na(mu) | is.na(sigma)] <- NA
+  out
+}
+
+# log E[exp(t * beta)], with Inf where the expected value does not exist.
+# Working on the log scale avoids overflow when the values are combined
+# across random coefficients. For a lognormal coefficient and t < 0 the
+# value is the Laplace approximation of Asmussen, Jensen and
+# Rojas-Nandayapa (2016), which is accurate but not exact (the lognormal
+# MGF has no closed form); it needs the lamW package.
+rp_log_mgf <- function(dist, t, mu, sigma) {
   n <- length(t)
   mu <- rep_len(mu, n)
   sigma <- rep_len(abs(sigma), n)
   ts <- t * sigma
   small <- !is.na(ts) & abs(ts) < 1e-8
   zero <- !is.na(sigma) & sigma == 0
+  exists <- .fcr_rp_mean_exists(dist, t, mu, sigma)
   out <- switch(dist,
-    n = exp(t * mu + 0.5 * t^2 * sigma^2),
-    # Uniform on [mu - sigma, mu + sigma]: exp(t mu) sinh(ts) / ts, on the
-    # log scale (no overflow for large |ts|)
-    u = exp(t * mu + ifelse(small, 0, .fcr_log_sinhc(ts))),
+    n = t * mu + 0.5 * t^2 * sigma^2,
+    # Uniform on [mu - sigma, mu + sigma]: exp(t mu) sinh(ts) / ts
+    u = t * mu + ifelse(small, 0, .fcr_log_sinhc(ts)),
     # Triangular on [mu - sigma, mu + sigma] with mode mu:
     # exp(t (mu - sigma)) (exp(ts) - 1)^2 / ts^2
-    t = exp(ifelse(small, t * mu,
-                   t * (mu - sigma) + 2 * (.fcr_log_abs_expm1(ts) -
-                                             log(abs(ts))))),
+    t = ifelse(small, t * mu,
+               t * (mu - sigma) + 2 * (.fcr_log_abs_expm1(ts) -
+                                         log(abs(ts)))),
     g = {
       b <- 1 - t * sigma^2 / mu
-      o <- ifelse(b > 0, exp(-(mu^2) / sigma^2 * log(b)), Inf)
-      o[zero] <- exp(t[zero] * mu[zero])   # degenerate at mu
-      o[mu <= 0] <- NaN
+      o <- rep(Inf, n)
+      ok <- !is.na(exists) & exists & !zero
+      o[ok] <- -(mu[ok]^2) / sigma[ok]^2 * log(b[ok])
+      o[zero] <- t[zero] * mu[zero]   # degenerate at mu
+      o[!is.na(mu) & mu <= 0 & !zero] <- NaN
       o
     },
     ln = {
       o <- rep(Inf, n)
-      o[t == 0] <- 1
-      o[zero] <- exp(t[zero] * exp(mu[zero]))   # degenerate at exp(mu)
+      o[!is.na(t) & t == 0] <- 0
+      o[zero] <- t[zero] * exp(mu[zero])   # degenerate at exp(mu)
       neg <- !is.na(t) & t < 0 & !zero
       if (any(neg)) {
         a <- -exp(mu[neg]) * t[neg] * sigma[neg]^2
         rlang::check_installed(
-          "lamW", reason = "for lognormal random-parameter predictions.")
+          "lamW", reason = "for Exact lognormal random-parameter predictions.")
         w <- lamW::lambertW0(a)
-        o[neg] <- exp(-(w^2 + 2 * w) / (2 * sigma[neg]^2)) / sqrt(1 + w)
+        o[neg] <- -(w^2 + 2 * w) / (2 * sigma[neg]^2) - 0.5 * log1p(w)
       }
       o
     },
@@ -323,27 +410,59 @@ rp_mgf <- function(dist, t, mu, sigma) {
 
 # Rows of a prepare_model_data() result for a resample of clusters. `idx`
 # indexes the cluster levels; clusters drawn more than once become separate
-# clusters.
-.fcr_cluster_subset <- function(prep, idx) {
+# clusters. `w` (frequency bootstrap) gives the new frequency of each drawn
+# cluster; `panel_w` is then the panel weight vector of the subset (NULL
+# for unweighted models).
+.fcr_cluster_subset <- function(prep, idx, w = NULL) {
   rows <- split(seq_along(prep$y), prep$group)[idx]
   r <- unlist(rows, use.names = FALSE)
   list(y = prep$y[r], X = prep$X[r, , drop = FALSE], offset = prep$offset[r],
-       weights = prep$weights[r],
+       weights = if (!is.null(w)) rep(w, lengths(rows)) else prep$weights[r],
+       panel_w = w,
        group = factor(rep(seq_along(rows), lengths(rows))))
 }
 
-# Cluster bootstrap: resample whole clusters, refit with
-# refit(subset) -> named estimates, and return the covariance of the draws.
-.fcr_cluster_bootstrap <- function(prep, B, coef_names, refit) {
-  draws <- .fcr_bootstrap(nlevels(prep$group), B, coef_names, function(idx) {
-    refit(.fcr_cluster_subset(prep, idx))
-  })
+# Cluster bootstrap: resample whole clusters (with frequency weights `freq`,
+# draw new cluster frequencies), refit with refit(subset) -> named
+# estimates, and return the covariance of the draws.
+.fcr_cluster_bootstrap <- function(prep, B, coef_names, refit, freq = NULL) {
+  draws <- .fcr_bootstrap(nlevels(prep$group), B, coef_names,
+                          function(idx, w = NULL) {
+    refit(.fcr_cluster_subset(prep, idx, w))
+  }, freq = freq)
   list(vcov = .fcr_boot_cov(draws), n_ok = sum(stats::complete.cases(draws)),
        failures = attr(draws, "failures"))
 }
 
+# Panel frequency weights of a panel model: one weight per level of
+# prep$group (the independent units), or NULL without `weights`. A panel
+# with weight w counts as w independent panels, so the weight must be
+# constant within each panel.
+.fcr_panel_weights <- function(prep, weights) {
+  if (is.null(weights)) return(NULL)
+  w <- prep$weights
+  g <- prep$group
+  rng <- tapply(w, g, function(v) diff(range(v)))
+  if (any(rng > 0, na.rm = TRUE)) {
+    stop("`weights` vary within panels. Weights are frequency weights of ",
+         "the panels (the independent units), so they must be constant ",
+         "within each panel.", call. = FALSE)
+  }
+  as.numeric(tapply(w, g, `[`, 1)[levels(g)])
+}
+
+# Per-panel log-likelihood contributions times the panel frequency weights
+# (a weight of 0 removes the panel, even when its contribution is -Inf).
+.fcr_weight_ll <- function(ll, w) {
+  if (is.null(w)) return(ll)
+  out <- ll * w
+  out[w == 0] <- 0
+  out
+}
+
 # Common post-fit bookkeeping for the random-effects estimators.
-.fcr_finish_re <- function(fit, prep, x_names, stderr, bootstraps, refit) {
+.fcr_finish_re <- function(fit, prep, x_names, stderr, bootstraps, refit,
+                           w_panel = NULL, data = NULL, group_var = NULL) {
   names(fit$estimate) <- x_names
   if (stderr == "boot") {
     if (is.null(bootstraps)) {
@@ -355,15 +474,17 @@ rp_mgf <- function(dist, t, mu, sigma) {
       stop("`bootstraps` must be a single number of at least 2.",
            call. = FALSE)
     }
-    bs <- .fcr_cluster_bootstrap(prep, as.integer(bootstraps), x_names, refit)
+    bs <- .fcr_cluster_bootstrap(prep, as.integer(bootstraps), x_names, refit,
+                                 freq = w_panel)
     V <- bs$vcov
+    fit$boot_failures <- bs$failures
     fit$n_boot_ok <- bs$n_ok
     fit$successful_bootstraps <- bs$n_ok
     fit$vcov_type <- "bootstrap"
     fit$bootstraps <- as.integer(bootstraps)
   } else if (stderr == "robust") {
     # One log-likelihood contribution per panel, so this is cluster-robust
-    V <- .fcr_robust_vcov(fit)
+    V <- .fcr_robust_vcov(fit, w_panel)
     fit$vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)
@@ -378,6 +499,12 @@ rp_mgf <- function(dist, t, mu, sigma) {
   fit$blueprint <- prep$blueprint
   fit$nobs <- length(prep$y)
   fit$n_groups <- nlevels(prep$group)
+  fit$panel_index <- as.integer(prep$group)
+  if (!is.null(data)) fit$lr_sample <- .fcr_lr_sample(prep, data, group_var)
+  fit$weights <- prep$weights
+  fit$panel_weights <- w_panel
+  # Independent units for BIC: the panels, counted with their weights
+  fit$n_bic <- if (is.null(w_panel)) nlevels(prep$group) else sum(w_panel)
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   fit$converged <- .fcr_converged(fit, fit$fcr_method)

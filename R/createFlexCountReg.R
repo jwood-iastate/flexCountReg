@@ -19,6 +19,9 @@
   model$fcr_version <- tryCatch(
     as.character(utils::packageVersion("flexCountReg")),
     error = function(e) NA_character_)
+  # Schema of the fitted object: the fields that prediction, comparison and
+  # refitting rely on. See .fcr_schema_version.
+  model$fcr_schema <- .fcr_schema_version
 
   subclass <- switch(model$modelType %||% "countreg",
                      countreg = "countreg",
@@ -78,3 +81,18 @@
   }
   model
 }
+
+# Fitted-object schema.
+#   1 (no `fcr_schema` field): flexCountReg 0.1.1 and earlier, and
+#     development builds of 0.1.2 before the follow-up review.
+#   2: adds `lr_sample` (sample evidence for likelihood-ratio tests),
+#      `panel_index` and row-aligned `weights` (bootstrap refits), and
+#      `engine` "quadrature" for the PLN, PGE, PW and PLL families.
+# Older objects keep working where that is reliable: predictions and
+# probabilities use the engine they were fit with ("halton" when none is
+# stored). LR tests between fitted models and marginal-effect bootstraps of
+# panel models need schema 2 and ask for a refit otherwise.
+.fcr_schema_version <- 2L
+
+# Schema of a fitted object (1 when it predates the field).
+.fcr_schema <- function(object) object$model$fcr_schema %||% 1L

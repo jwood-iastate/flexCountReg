@@ -263,29 +263,48 @@ print.flexCountReg <- function(x, digits = max(3L, getOption("digits") - 3L),
 # .fcr_countreg_parts() result, by inversion: the smallest k >= 1 with
 # P(1 <= Y <= k) >= u * P(Y > 0), where P(Y > 0) = -expm1(log P(Y = 0)) keeps
 # its precision when P(Y = 0) is close to 1.
-.fcr_rtrunc_positive <- function(object, parts, idx, max_count = 1e6) {
+#
+# A row fails, and its draw is NA (with one warning naming the family and the
+# rows), when its positive-count mass is not a positive number (invalid
+# parameters, or no mass above zero), when a probability is not finite, or
+# when the draw is not found within max_count counts. A failure never
+# becomes a count. `dens` is the density function (for testing).
+.fcr_rtrunc_positive <- function(object, parts, idx, max_count = 1e6,
+                                 dens = .fcr_parts_density) {
   if (!length(idx)) return(numeric(0))
-  lf0 <- .fcr_parts_density(object, parts, 0, log = TRUE)[idx]
-  target <- stats::runif(length(idx)) * -expm1(lf0)
+  lf0 <- dens(object, parts, 0, log = TRUE)[idx]
+  pos_mass <- -expm1(lf0)
   out <- rep(NA_real_, length(idx))
+  why <- rep("", length(idx))
+  why[is.na(pos_mass) | !(pos_mass > 0) | pos_mass > 1] <-
+    "no valid positive-count probability"
+  target <- stats::runif(length(idx)) * pos_mass
   cum <- numeric(length(idx))
-  todo <- seq_along(idx)
+  todo <- which(!nzchar(why))
   k <- 1
   while (length(todo) && k <= max_count) {
     sub_parts <- parts
     for (nm in c("mu_link", "p_report", "alpha", "sigma")) {
       if (!is.null(parts[[nm]])) sub_parts[[nm]] <- parts[[nm]][idx[todo]]
     }
-    pk <- exp(.fcr_parts_density(object, sub_parts, k, log = TRUE))
-    cum[todo] <- cum[todo] + pk
-    done <- cum[todo] >= target[todo] | !is.finite(pk)
+    pk <- exp(dens(object, sub_parts, k, log = TRUE))
+    bad <- is.na(pk) | !is.finite(pk) | pk < 0
+    why[todo[bad]] <- "non-finite probability"
+    cum[todo] <- cum[todo] + ifelse(bad, 0, pk)
+    done <- !bad & cum[todo] >= target[todo]
     out[todo[done]] <- k
-    todo <- todo[!done]
+    todo <- todo[!done & !bad]
     k <- k + 1
   }
-  if (length(todo)) {
-    stop("Zero-truncated draws did not finish within ", max_count,
-         " counts.", call. = FALSE)
+  why[todo] <- paste("no draw within", max_count, "counts")
+  failed <- nzchar(why)
+  if (any(failed)) {
+    rows <- idx[failed]
+    warning("Zero-truncated ", object$model$family %||% "count", " draws ",
+            "failed for ", sum(failed), " row(s) (",
+            paste(unique(why[failed]), collapse = "; "), "; rows ",
+            toString(utils::head(rows, 10)),
+            if (length(rows) > 10) ", ...", "); they are NA.", call. = FALSE)
   }
   out
 }

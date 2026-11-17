@@ -95,19 +95,25 @@
 #' @rdname Generalized-Waring
 #' @export
 dgwar <- function(y, mu, k, rho, log = FALSE) {
-  if (any(!is.finite(mu) | mu <= 0)) {
-    stop("mu must be finite and greater than 0")
-  }
-  if (any(!is.finite(k) | k <= 0)) {
-    stop("k must be finite and greater than 0")
-  }
-  if (any(!is.finite(rho) | rho <= 1)) {
-    stop("rho must be finite and greater than 1")
-  }
   r <- .fcr_recycle(y, mu, k, rho)
   if (length(r[[1]]) == 0L) return(numeric(0))
-  # The C++ kernel is vectorized over all arguments
-  genWaring_cpp(as.numeric(r[[1]]), r[[2]], r[[3]], r[[4]], log_prob = log)
+  y <- as.numeric(r[[1]]); mu <- r[[2]]; k <- r[[3]]; rho <- r[[4]]
+  # Invalid parameters (mu, k > 0 and rho > 1, all finite) give NaN for
+  # that element, with a warning; missing values give NA
+  na <- is.na(y) | is.na(mu) | is.na(k) | is.na(rho)
+  ok <- !na & .gwar_valid(mu, k, rho)
+  out <- rep(NA_real_, length(y))
+  out[!na & !ok] <- NaN
+  .fcr_warn_nan(!na & !ok)
+  if (any(ok)) {
+    # The C++ kernel is vectorized over all arguments
+    out[ok] <- genWaring_cpp(y[ok], mu[ok], k[ok], rho[ok], log_prob = log)
+  }
+  out
+}
+
+.gwar_valid <- function(mu, k, rho) {
+  is.finite(mu) & mu > 0 & is.finite(k) & k > 0 & is.finite(rho) & rho > 1
 }
 
 #' @rdname Generalized-Waring
@@ -129,26 +135,15 @@ pgwar <- function(q, mu, k, rho, lower.tail = TRUE, log.p = FALSE) {
   rho <- rep_len(rho, n)
   
   
-  if (any(!is.finite(mu) | mu <= 0)) {
-    stop("mu must be finite and greater than 0")
-  }
-  
-  if (any(!is.finite(k) | k <= 0)) {
-    stop("k must be finite and greater than 0")
-  }
-  
-  if (any(!is.finite(rho) | rho <= 1)) {
-    stop("rho must be finite and greater than 1")
-  }
-  
   # --- 2. Initialize Result ---
   cdf <- rep(NaN, n)
   
   # --- 3. Identify Cases ---
   
   # Valid parameters: mu > 0, k > 0, rho > 1 (rho must be >1 for the mean
-  # formula used)
-  valid_params <- TRUE
+  # formula used); invalid ones give NaN, with a warning
+  valid_params <- .gwar_valid(mu, k, rho)
+  .fcr_warn_nan(!valid_params & !is.na(q))
 
   # Case A: Parameters are valid, but q < 0. CDF is 0.
   # (We treat NA in q as resulting in NA, so we check !is.na(q))

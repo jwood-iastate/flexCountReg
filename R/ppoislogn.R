@@ -13,14 +13,19 @@
 #'  the mean values have to be greater than 0.
 #' @param sigma single value or vector of values for the sigma parameter of the
 #'   lognormal distribution (the values have to be greater than 0).
-#' @param ndraws the number of Halton draws to use for the integration.
+#' @param ndraws the number of Halton draws (only with \code{engine = "halton"}).
 #' @param log logical; if TRUE, probabilities p are given as log(p).
 #' @param log.p logical; if TRUE, probabilities p are given as log(p).
 #' @param lower.tail logical; if TRUE, probabilities p are \eqn{P[X\leq x]}
 #'   otherwise, \eqn{P[X>x]}.
 #' @param hdraws and optional vector of Halton draws to use for the integration.
-#' @param engine the engine to use for the integration. Options include "halton"
-#'  which uses Halton draws or "poilog" which uses the poilog package.
+#' @param engine the numerical method: \code{"quadrature"} (default) computes
+#'   the log-probability by adaptive quadrature over the log of the mixing
+#'   variable, accurate for every count including far tails;
+#'   \code{"halton"} averages the Poisson probabilities over Halton draws
+#'   (the method of flexCountReg 0.1.2 and earlier, kept for
+#'   reproducibility; badly biased far in the tail; the default when
+#'   \code{hdraws} are given), or \code{"poilog"} (the poilog package).
 #'
 #' @details
 #' \code{dpLnorm} computes the density (PDF) of the Poisson-Lognormal
@@ -79,8 +84,15 @@
 #' @rdname PoissonLognormal
 #' @export
 dpLnorm <- function(x, mean = 1, sigma = 1, ndraws = 1500, log = FALSE,
-                    hdraws = NULL, engine = c("halton", "poilog")) {
+                    hdraws = NULL, engine = c("quadrature", "halton",
+                                              "poilog")) {
+  # Draws given without an engine: the draw-based method
+  if (missing(engine) && !is.null(hdraws)) engine <- "halton"
   engine <- match.arg(engine)
+  if (engine == "quadrature") {
+    lp <- .fcr_mix_logpmf(x, mean, sigma, 0, "PLN")
+    return(if (log) lp else exp(lp))
+  }
   
   if (any(mean <= 0, na.rm = TRUE)) {
     stop("The values of `mean` must be greater than 0.")
@@ -113,15 +125,21 @@ dpLnorm <- function(x, mean = 1, sigma = 1, ndraws = 1500, log = FALSE,
 #' @export
 ppLnorm <- function(q, mean = 1, sigma = 1, ndraws = 1500,
                     lower.tail = TRUE, log.p = FALSE,
-                    engine = c("halton", "poilog")) {
+                    engine = c("quadrature", "halton", "poilog")) {
+  engine <- match.arg(engine)
   .fcr_p_contract(.ppLnorm_core, q, list(mean = mean, sigma = sigma),
-                  lower.tail, log.p, ndraws = ndraws, engine = engine)
+                  lower.tail, log.p, ndraws = ndraws, engine = engine,
+                  logdens = if (engine == "quadrature") function(x, ...)
+                    dpLnorm(x, ..., log = TRUE))
 }
 
 .ppLnorm_core <- function(q, mean = 1, sigma = 1, ndraws = 1500,
                     lower.tail = TRUE, log.p = FALSE,
-                    engine = c("halton", "poilog")) {
+                    engine = c("quadrature", "halton", "poilog")) {
   engine <- match.arg(engine)
+  if (engine == "quadrature") {
+    return(.fcr_mix_cdf(q, mean, sigma, 0, "PLN", lower.tail, log.p))
+  }
   if (any(mean <= 0, na.rm = TRUE) || any(sigma <= 0, na.rm = TRUE)) {
     warning("The values of `mean` and `sigma` must be greater than 0.")
   }
@@ -142,7 +160,7 @@ ppLnorm <- function(q, mean = 1, sigma = 1, ndraws = 1500,
 #' @rdname PoissonLognormal
 #' @export
 qpLnorm <- function(p, mean = 1, sigma = 1, ndraws = 1500,
-                    engine = c("halton", "poilog")) {
+                    engine = c("quadrature", "halton", "poilog")) {
   engine <- match.arg(engine)
   if (any(mean <= 0, na.rm = TRUE) || any(sigma <= 0, na.rm = TRUE)) {
     warning("The values of `mean` and `sigma` must be greater than 0.")

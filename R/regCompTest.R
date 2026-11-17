@@ -37,6 +37,7 @@
   f <- stats::glm.fit(X, pc$y, weights = pc$weights, offset = pc$offset,
                       family = stats::poisson())
   list(LL = sum(pc$weights * stats::dpois(pc$y, f$fitted.values, log = TRUE)),
+       converged = isTRUE(f$converged),
        n.coef = ncol(X))
 }
 
@@ -57,7 +58,8 @@
     formula = f, data = d, family = family,
     offset = if (any(pc$offset != 0)) ".fcr_off" else NULL,
     weights = pc$weights, keep_data = FALSE), args)))
-  list(LL = fit$model$maximum, n.coef = length(fit$model$estimate))
+  list(LL = fit$model$maximum, n.coef = length(fit$model$estimate),
+       converged = isTRUE(fit$model$converged))
 }
 
 # Log-likelihood of the baseline model for McFadden's pseudo R^2, fit on the
@@ -237,6 +239,7 @@ regCompTest <- function(
   
   make_single_model_stats <- function(model_res, base_res, nest) {
     test <- .fcr_lr_pvalue(model_res$LL, base_res$LL, nest)
+    reason <- test$reason
     LR <- test$LR
     LRdof <- if (isTRUE(nest$nested)) nest$df else NA_integer_
     LR_pvalue <- test$p
@@ -273,6 +276,7 @@ regCompTest <- function(
       LR = LR,
       LRdof = LRdof,
       LR_pvalue = LR_pvalue,
+      reason = reason,
       statistics = statistics
     )
   }
@@ -339,6 +343,15 @@ regCompTest <- function(
            call. = FALSE)
     }
     .fcr_check_same_sample(res_a$pieces, res_b$pieces)
+    sa <- model$model$lr_sample
+    sb <- model2$model$lr_sample
+    if (!is.null(sa) && !is.null(sb)) {
+      why <- .fcr_same_sample(sa, sb)
+      if (nzchar(why)) {
+        stop("The two models were not fit to the same sample (", why,
+             "); an LR test is not valid.", call. = FALSE)
+      }
+    }
     # The restricted (base) model is the one with fewer parameters
     if (res_a$n.coef <= res_b$n.coef) {
       res1 <- res_a; res2 <- res_b; restricted_is_first <- TRUE
@@ -364,6 +377,23 @@ regCompTest <- function(
     base_spec <- .fcr_base_spec(
       basemodel, if (variables) mean_cols else "(Intercept)")
     nest <- .fcr_nesting(base_spec, .fcr_model_spec(model))
+    # The base model's mean (intercept only, or the model's design) must be
+    # in the column space of the model's mean design
+    if (nest$nested && !variables &&
+        !.fcr_in_span(matrix(1, nrow(pc$X), 1), pc$X)) {
+      nest <- list(nested = FALSE, reason = paste(
+        "the model's mean design does not contain an intercept, so the",
+        "intercept-only base model is not nested in it"))
+    }
+    if (nest$nested && !isTRUE(model$model$converged)) {
+      nest <- list(nested = FALSE, reason = paste(
+        "the model did not report convergence (or its convergence is",
+        "unknown)"))
+    }
+    if (nest$nested && !isTRUE(base_fit$converged %||% TRUE)) {
+      nest <- list(nested = FALSE,
+                   reason = "the base model did not converge")
+    }
     if (!nest$nested && res1$n.coef > n.coef.base) {
       message("No LR test: the ", toupper(basemodel), " base model is not ",
               "nested in the fitted model with a regular restriction (",
@@ -380,6 +410,9 @@ regCompTest <- function(
     )
     
     summary_res <- make_single_model_stats(res1, base_res, nest)
+    if (nest$nested && is.na(summary_res$LR)) {
+      warning("No LR test: ", summary_res$reason, ".", call. = FALSE)
+    }
     
     gtTable <- gt::gt(summary_res$statistics) |>
       tab_header(title = "Model Comparison Statistics") |>
@@ -397,7 +430,10 @@ regCompTest <- function(
       BIC = res1$BIC,
       BICbase = BICbase,
       LR_pvalue = summary_res$LR_pvalue,
-      LR_type = if (nest$nested) nest$type else NA_character_,
+      LR_type = if (nest$nested && !is.na(summary_res$LR)) nest$type else
+        NA_character_,
+      LR_reason = if (nest$nested && !is.na(summary_res$LR)) NA_character_
+        else nest$reason %||% summary_res$reason %||% NA_character_,
       PseudoR2 = res1$PseudoR2,
       statistics = summary_res$statistics,
       gtTable = gtTable,
@@ -415,21 +451,20 @@ regCompTest <- function(
       )
     )
   } else {
-    nest <- .fcr_nesting(.fcr_model_spec(res1$object),
-                         .fcr_model_spec(res2$object))
+    nest <- .fcr_lr_eligibility(res1$object, res2$object)
     if (res1$n.coef == res2$n.coef) {
       warning("The models have the same number of parameters, so they are ",
               "not nested; the LR test is not reported.", call. = FALSE)
     } else if (!nest$nested) {
-      warning("The models are not nested with a regular restriction (",
-              nest$reason, "); the LR test is not reported. Compare them ",
-              "with AIC and BIC.", call. = FALSE)
-    } else if (res1$LL > res2$LL + 1e-6) {
-      warning("The restricted model (fewer parameters) has the higher ",
-              "log-likelihood, so the larger model did not reach its ",
-              "maximum (check its convergence); the LR test is not ",
-              "reported.", call. = FALSE)
-      nest <- list(nested = FALSE)
+      warning("The LR test is not reported: ", nest$reason, ". Compare the ",
+              "models with AIC and BIC.", call. = FALSE)
+    } else {
+      chk <- .fcr_lr_pvalue(res2$LL, res1$LL, nest)
+      if (is.na(chk$LR)) {
+        warning("The LR test is not reported: ", chk$reason, " (check its ",
+                "convergence).", call. = FALSE)
+        nest <- list(nested = FALSE, reason = chk$reason)
+      }
     }
     pair_res <- make_pairwise_stats(res2, res1, base_index = 2L, nest)
     pair_res$base_index <- if (restricted_is_first) 1L else 2L
@@ -450,6 +485,8 @@ regCompTest <- function(
       LRdof = pair_res$LRdof,
       LR_pvalue = pair_res$LR_pvalue,
       LR_type = if (isTRUE(nest$nested)) nest$type else NA_character_,
+      LR_reason = if (isTRUE(nest$nested)) NA_character_ else
+        nest$reason %||% NA_character_,
       PseudoR2_base = pair_res$base_model$PseudoR2,
       PseudoR2_comparison = pair_res$comparison_model$PseudoR2,
       statistics = pair_res$statistics,

@@ -139,6 +139,7 @@ test_that("regCompTest calculates LR statistics correctly", {
     Total_crashes ~ lnaadt + lnlength, 
     data = small_data, 
     family = "NB2", 
+    method = "BFGS",
     max.iters = 100)
   
   res_def <- regCompTest(m_full, small_data)

@@ -36,7 +36,7 @@ test_that("the bootstrap helper drops failed replicates", {
   refit <- function(idx) {
     calls <<- calls + 1
     if (calls %% 2 == 0) stop("no convergence")
-    c(a = mean(idx), b = 1)
+    structure(c(a = mean(idx), b = 1), converged = TRUE)
   }
   expect_warning(dr <- .fcr_bootstrap(10, 10, c("a", "b"), refit),
                  "5 of 10 bootstrap replicates failed")
@@ -47,8 +47,8 @@ test_that("the bootstrap helper drops failed replicates", {
                  "Fewer than 2 bootstrap replicates succeeded \\(error: 5\\)")
   expect_true(all(is.na(.fcr_boot_cov(dr))))
   # Replicates missing an estimate count as failures
-  expect_warning(.fcr_bootstrap(10, 5, c("a", "b"), function(idx) c(a = 1)),
-                 "non-finite estimates: 5")
+  expect_warning(.fcr_bootstrap(10, 5, c("a", "b"), function(idx)
+    structure(c(a = 1), converged = TRUE)), "wrong coefficients: 5")
 })
 
 test_that("verbose = TRUE prints the optimizer trace", {

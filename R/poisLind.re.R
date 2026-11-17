@@ -11,6 +11,11 @@
 #' @param offset an optional character vector of offset column names (summed
 #'   when several are given; on the log scale). An offset can instead be given
 #'   with \code{offset()} in \code{formula}; use only one of the two.
+#' @param weights the name of a column of `data`, or a numeric vector with one
+#'   value per row of `data`, of frequency weights of the panels: a panel with
+#'   weight w counts as w independent panels in the log-likelihood, the robust
+#'   covariance, BIC and the bootstrap. Weights must be constant within each
+#'   panel. Bootstrap standard errors need whole-number weights.
 #' @param method a method to use for optimization in the maximum likelihood
 #'   estimation. For options, see \code{\link[maxLik]{maxLik}}. Note that
 #'   "BHHH" is not available for this function due to the implementation
@@ -130,7 +135,8 @@ poisLind.re <- function(formula, group_var, data,
                         method = "NM", max.iters = 1000,
                         verbose = FALSE, stderr = "normal",
                         bootstraps = NULL, offset = NULL,
-                        keep_data = TRUE, print.level = NULL) {
+                        weights = NULL, keep_data = TRUE,
+                        print.level = NULL) {
   print.level <- .fcr_print_level("poisLind.re", verbose, print.level)
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   
@@ -143,7 +149,7 @@ poisLind.re <- function(formula, group_var, data,
   
   # Data preparation: one complete-case frame; panels from `group_var`
   prep <- prepare_model_data(formula, data, offset = offset,
-                             group_var = group_var)
+                             group_var = group_var, weights = weights)
   formula <- prep$formula   # with `.` expanded
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
@@ -152,17 +158,24 @@ poisLind.re <- function(formula, group_var, data,
   y <- as.numeric(prep$y)
   group <- prep$group
   offset_vec <- prep$offset
+  # Panel frequency weights (NULL without `weights`)
+  w_panel <- .fcr_panel_weights(prep, weights)
+  if (stderr == "boot" && !is.null(w_panel)) {
+    .fcr_check_boot_freq(w_panel, length(w_panel))
+  }
   x_names <- c(colnames(X), "ln(theta)")
   
   # Starting values: Poisson GLM with the same rows and offset, and a moment
   # estimate of theta. For the mean-parameterized Poisson-Lindley,
   # Var(Y) = mu + phi mu^2 with phi = 1 - 2 / (theta + 2)^2 in (1/2, 1).
   p_model <- stats::glm.fit(X, y, offset = offset_vec,
+                            weights = prep$weights,
                             family = stats::poisson())
   start <- p_model$coefficients
   start[is.na(start)] <- 0
   mu0 <- p_model$fitted.values
-  phi <- sum((y - mu0)^2 - y) / sum(mu0^2)
+  phi <- sum(prep$weights * ((y - mu0)^2 - y)) /
+    sum(prep$weights * mu0^2)
   phi <- min(max(phi, 0.51), 0.99)
   theta <- sqrt(2 / (1 - phi)) - 2
   full_start <- c(start, log(theta))
@@ -219,9 +232,15 @@ poisLind.re <- function(formula, group_var, data,
     }, numeric(1))
   }
 
+  # Weighted per-panel log-likelihood
+  ll_w <- function(beta, y, X, group, offset_vec, w = NULL) {
+    .fcr_weight_ll(reg.run.RE(beta, y, X, group, offset_vec), w)
+  }
+
   fit <- maxLik::maxLik(
-    reg.run.RE,
+    ll_w,
     start  = full_start,
+    w      = w_panel,
     y      = y,
     X      = X,
     group  = group,
@@ -237,13 +256,14 @@ poisLind.re <- function(formula, group_var, data,
   fit$method <- method
   fit <- .fcr_finish_re(fit, prep, x_names, stderr, bootstraps,
                         refit = function(sub) {
-    m <- maxLik::maxLik(reg.run.RE, start = fit$estimate, y = sub$y,
+    m <- maxLik::maxLik(ll_w, start = fit$estimate, y = sub$y,
                         X = sub$X, group = sub$group,
-                        offset_vec = sub$offset, method = method,
+                        offset_vec = sub$offset, w = sub$panel_w,
+                        method = method,
                         control = list(iterlim = max.iters, printLevel = 0))
     .fcr_refit_result(stats::setNames(m$estimate, x_names),
                       .fcr_converged(m, method))
-  })
+  }, w_panel = w_panel, data = data, group_var = group_var)
   
   beta_est <- fit$estimate
   npars <- length(beta_est) - 1

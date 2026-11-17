@@ -165,6 +165,103 @@
 * `predict(method = "Exact")` for `countreg.rp()` includes heterogeneity in
   means and variances.
 
+## Corrections from the follow-up review
+
+Changed results are marked **(changed)**.
+
+* **Weights for every estimator.** `renb()`, `repois()`, `poisLind.re()` and
+  `negmultinom()` accept `weights`, as `countreg()` and `countreg.rp()` do.
+  In panel models these are frequency weights of the panels (constant
+  within a panel): a panel with weight w counts as w independent panels in
+  the log-likelihood, the robust covariance, BIC and the bootstrap. Fits
+  with weights equal fits to the expanded panels.
+* **Frequency-weight bootstrap (changed).** With `weights`, bootstrap
+  standard errors (coefficients and `margEffTable()`) now draw new
+  frequencies from Multinomial(sum(w), w / sum(w)) and refit with them in
+  place of the weights. This equals the bootstrap of the expanded
+  observations (or panels). Before, rows were resampled with their original
+  weights, which is a different and much more variable sampling scheme.
+  Bootstrap standard errors need whole-number weights; use
+  `stderr = "robust"` for other weights.
+* **Bootstrap acceptance.** A replicate counts only if its refit reports
+  convergence (unknown convergence is a failure), has exactly the expected
+  coefficients and finite estimates. `negmultinom()` uses the shared
+  bootstrap. Failures are stored by reason in `model$boot_failures`.
+* **Marginal-effect bootstraps** refit with the frozen, expanded formulas
+  (a `y ~ .` formula no longer picks up helper columns), stored argument
+  values (not objects that changed since the fit), a collision-safe panel
+  column and panel keys of (sampled cluster occurrence, original panel), so
+  a `cluster_var` cluster drawn twice keeps its panels distinct. They
+  resample the analysis rows with the stored weights and panels.
+  `cluster_var` with weights, and panels split across clusters, are
+  rejected. Without `data`, effects average over the rows used in
+  estimation, counting each with its frequency weight **(changed** for
+  weighted models**)**.
+* **Likelihood-ratio tests.** Fits store evidence of their analysis sample
+  (rows, response, weights, offsets, panels and the variables they use).
+  An LR test between two models requires the same sample (shared variables
+  must agree row by row), reported convergence for both, nested designs
+  (checked by column space, so equivalent bases such as `x` and `2 * x` are
+  accepted) and matching random-parameter distributions and correlation. A
+  larger model whose log-likelihood is materially below the restricted
+  one's (LR below -max(0.01, 2e-6 |logLik|)) gives no test, with a reason
+  in `LR_reason`, instead of LR = 0. The intercept-only base model of
+  `regCompTest()` is not nested in a model without an intercept. Objects
+  from older versions get no LR test between fitted models (refit them).
+* **Mixture families (changed).** The PLN, PGE, PW and PLL probabilities
+  are computed on the log scale by deterministic adaptive quadrature over the
+  log of the mixing variable (`engine = "quadrature"`, the new default of
+  the d/p/q functions, `countreg()` and `countreg.rp()`). Averaging over
+  1500 Halton draws was badly biased in the tails: for PGE with shape 1
+  (geometric with mean 1) and y = 1000 it gave log P = -3847 instead of
+  -693.8. The new values agree with exact special cases (PGE with shape 1
+  and PW with alpha 1 are geometric; P(Y = 0) of PGE is a beta function) and
+  with independent quadrature to about 1e-9, for counts up to 1e5. Fits are
+  faster too. `engine = "halton"` keeps the earlier method, and objects
+  without a stored engine predict as before.
+* **GP domains.** Generalized Poisson moments and predictions are `NaN`, with
+  a warning, outside the parameter space (for GP2, 1 + a mu > 0), instead
+  of textbook moments. In `countreg.rp()` the GP2 dispersion must be
+  nonnegative, since random parameters with unbounded support violate the
+  bound for some draws; use GP1 for underdispersed random-parameter models.
+* **Moment existence.** Random-parameter predictions decide whether
+  E[exp(x beta)] exists from the parameters alone, so `Simulated`
+  predictions with lognormal parameters no longer need lamW. `Exact` uses
+  log-scale MGFs and reports an overflow of a finite expectation as such.
+  For lognormal parameters with x < 0, `Exact` uses a Laplace approximation
+  (documented as approximate).
+* **Quantile residuals** evaluate only F(y - 1) and F(y): directly for
+  Poisson and the negative binomial families (no cost growth with the
+  counts), and by one streaming pass with a work budget (an error before
+  any work when it would be exceeded) for the others. Zero-inflated and
+  hurdle CDFs are computed stably.
+* **Rootograms (changed).** Expected frequencies sum the fitted
+  probabilities of every row, including rows whose outcome is above
+  `max_count`; before, those rows were dropped. New `overflow` argument for a
+  `Y > max_count` bin; the tail is also returned in attribute `"tail"`. Rows
+  with non-finite fitted means are left out of both frequencies, with a
+  warning.
+* **Distribution contracts.** Invalid parameters give `NaN` for that
+  element, with one warning (base R's convention), and missing parameters
+  `NA`, at every `q` including `q < 0` and `q = Inf` (before, those endpoints
+  returned 0 or 1). `dgwar()`/`pgwar()` no longer stop for an invalid
+  element. `plindley()` computes both tails directly. Zero-truncated
+  simulation reports invalid probabilities and its count limit as `NA`
+  draws with a warning, instead of returning a count.
+* **COM controls.** `find_lambda_cpp()` honors its tolerance (relative
+  error of the mean) and iteration limit and reports non-convergence
+  instead of accepting a collapsed bracket; `find_lambda_diag_cpp()` gives
+  the residual, iterations and status. Unused controls of the internal
+  moment functions were removed.
+* **`renb()`**: the log-likelihood is computed as three stable differences
+  of log-gamma functions. For large `a` and `b`, terms of size ~1e200
+  canceled and the optimizer could report a positive log-likelihood of
+  ~1e203 **(changed**, fits that hit this region**)**.
+* `rpardists` values are checked before a single value is expanded.
+* Documentation: the PGE equations use one rate convention and explain why
+  the rate cancels; fitted objects carry a schema version
+  (`model$fcr_schema`).
+
 ## Corrections from the development review
 
 * PGE and PW: with the mean parameterization, the scale of the mixing

@@ -157,7 +157,7 @@ c(mean = mean(r), sd = sd(r))
 ```
 
 `simulate()` draws new responses from the fitted distribution for the same
-rows (with `seed`, reproducibly and without changing the random-number
+rows (with `seed`, reproducible and without changing the random-number
 stream of the session). It is the basis of parametric-bootstrap checks:
 
 ```{r simulate}

@@ -531,7 +531,7 @@ them for residual plots and normality checks.</li>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;         mean           sd </span></span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; -0.005664601  0.978277239</span></span></code></pre></div>
 <p><code>simulate()</code> draws new responses from the fitted
-distribution for the same rows (with <code>seed</code>, reproducibly and
+distribution for the same rows (with <code>seed</code>, reproducible and
 without changing the random-number stream of the session). It is the
 basis of parametric-bootstrap checks:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>sims <span class="ot">&lt;-</span> <span class="fu">simulate</span>(nb_h, <span class="at">nsim =</span> <span class="dv">200</span>, <span class="at">seed =</span> <span class="dv">1</span>)</span>

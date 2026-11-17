@@ -180,10 +180,11 @@ test_that("Poisson is nested in DPO, HYPERPOIS and GAMMACOUNT", {
     expect_gte(lr$p.value, 0)
   }
   # Not registered as nested: Delaporte reaches Poisson only at rho = 0,
-  # where k is not identified (hence the singular-Hessian warning)
-  expect_warning(
-    fit <- countreg(y ~ x, data = d, family = "DELAPORTE", method = "BFGS"),
-    "singular")
+  # where k is not identified. The Hessian is then nearly singular; whether
+  # it is singular in floating point (and so warns) depends on the platform,
+  # so only the missing LR test is checked.
+  fit <- suppressWarnings(
+    countreg(y ~ x, data = d, family = "DELAPORTE", method = "BFGS"))
   expect_null(flexCountReg:::.fcr_lr_vs_poisson(fit))
 })
 

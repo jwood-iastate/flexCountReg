@@ -191,8 +191,40 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
     .fcr_weight_ll(reg.run.RE(beta, y, X, group, offset_vec), w)
   }
 
+  # Analytic per-panel scores (rows: panels, as the log-likelihood). With
+  # lambda_i = mu_i (a - 1) / b, M = sum(lambda), Y = sum(y), the panel
+  # log-likelihood is lbeta(a + M, b + Y) - lbeta(a, b) +
+  # sum(lgamma(lambda + y) - lgamma(lambda) - lgamma(y + 1)). maxLik then
+  # differentiates the scores once for the Hessian, which is far more
+  # accurate than a second finite difference of the log-likelihood.
+  gr_w <- function(beta, y, X, group, offset_vec, w = NULL) {
+    k <- ncol(X)
+    a <- 1 + exp(beta[k + 1L])
+    b <- exp(beta[k + 2L])
+    lam <- exp(drop(X %*% beta[seq_len(k)]) + offset_vec +
+                 log(a - 1) - log(b))
+    g <- as.integer(factor(group))
+    M <- as.numeric(rowsum(lam, g, reorder = TRUE))
+    Y <- as.numeric(rowsum(y, g, reorder = TRUE))
+    psi_aM <- digamma(a + M) - digamma(a + b + M + Y)
+    d_a <- psi_aM - digamma(a) + digamma(a + b)
+    d_b <- digamma(b + Y) - digamma(a + b + M + Y) - digamma(b) +
+      digamma(a + b)
+    # d logP / d lambda_i, and d lambda_i / d(beta, ln(a - 1), ln(b)) =
+    # lambda_i (x_i, 1, -1)
+    d_lam <- psi_aM[g] + .fcr_digamma_diff(lam, y)
+    s_lam <- d_lam * lam
+    G <- cbind(rowsum(X * s_lam, g, reorder = TRUE),
+               as.numeric(rowsum(s_lam, g, reorder = TRUE)) +
+                 d_a * (a - 1),
+               -as.numeric(rowsum(s_lam, g, reorder = TRUE)) + d_b * b)
+    G <- unname(G)
+    if (!is.null(w)) G <- G * w
+    G
+  }
+
   # Main model fit
-  fit <- maxLik::maxLik(ll_w,
+  fit <- maxLik::maxLik(ll_w, grad = gr_w,
                         start = full_start,
                         y = y,
                         X = X,
@@ -212,7 +244,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$method <- method
   fit <- .fcr_finish_re(fit, prep, x_names, stderr, bootstraps,
                         refit = function(sub) {
-    m <- maxLik::maxLik(ll_w, start = fit$estimate, y = sub$y,
+    m <- maxLik::maxLik(ll_w, grad = gr_w, start = fit$estimate, y = sub$y,
                         X = sub$X, group = sub$group,
                         offset_vec = sub$offset, w = sub$panel_w,
                         method = method,

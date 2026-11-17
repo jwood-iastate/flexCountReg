@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Inference, prediction and model comparison</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Inference, prediction and model
+comparison</h1>
+
+
+
+<p>This vignette covers what to do with a fitted model: which standard
+errors to use, how to predict and simulate, which residuals and
+diagnostics are available, and how to compare models, including when a
+likelihood-ratio (LR) test is valid and when it is not.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>d <span class="ot">&lt;-</span> washington_roads</span></code></pre></div>
+<div id="standard-errors" class="section level2">
+<h2>Standard errors</h2>
+<p>Every estimator has a <code>stderr</code> argument with three
+choices. The choice is made when the model is fit, and
+<code>vcov()</code>, <code>summary()</code>, <code>confint()</code>,
+<code>tidy()</code> and the delta-method standard errors of
+<code>margEffTable()</code> all use it.</p>
+<ul>
+<li><code>&quot;normal&quot;</code> (default): the inverse of the negative Hessian
+of the log-likelihood. It is valid when the model is correctly
+specified, including the count distribution.</li>
+<li><code>&quot;robust&quot;</code>: the sandwich estimator. It remains valid for
+the mean coefficients when the distribution is misspecified but the mean
+model is right (quasi-likelihood). For panel models
+(<code>countreg.rp()</code> with <code>group_var</code>,
+<code>renb()</code>, <code>poisLind.re()</code>, <code>repois()</code>,
+<code>negmultinom()</code>) the log-likelihood has one contribution per
+panel, so these standard errors are cluster-robust.</li>
+<li><code>&quot;boot&quot;</code>: a nonparametric bootstrap with
+<code>bootstraps</code> replicates. Rows are resampled for
+<code>countreg()</code>, and whole panels for panel models. Use it when
+the sample is small, when the Hessian is close to singular, or as a
+check of the other two.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>f <span class="ot">&lt;-</span> Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> lnlength <span class="sc">+</span> speed50</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>nb_h <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>nb_r <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">stderr =</span> <span class="st">&quot;robust&quot;</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>nb_b <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">stderr =</span> <span class="st">&quot;boot&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>                 <span class="at">bootstraps =</span> <span class="dv">50</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cbind</span>(<span class="at">Hessian =</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(nb_h))),</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>            <span class="at">robust =</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(nb_r))),</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>            <span class="at">bootstrap =</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(nb_b)))), <span class="dv">4</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;             Hessian robust bootstrap</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.4393 0.4855    0.4755</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; lnaadt       0.0518 0.0558    0.0541</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; lnlength     0.0694 0.0695    0.0674</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; speed50      0.1078 0.1142    0.1061</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; ln(alpha)    0.2487 0.2483    0.2304</span></span></code></pre></div>
+<p>Similar standard errors, as here, are reassuring. A robust standard
+error that is much larger than the Hessian one points to a misspecified
+distribution or dependence between observations.</p>
+<p>The bootstrap uses only replicates whose refit converged and gave
+finite estimates. The number used is stored, with the reasons for any
+failures:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>nb_b<span class="sc">$</span>model<span class="sc">$</span>n_boot_ok</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; [1] 50</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>nb_b<span class="sc">$</span>model<span class="sc">$</span>boot_failures</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;                error        not converged   wrong coefficients </span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;                    0                    0                    0 </span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; non-finite estimates </span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;                    0</span></span></code></pre></div>
+<p>If many replicates fail, increase <code>max.iters</code>, try another
+<code>method</code>, or simplify the model. If fewer than two succeed,
+the standard errors are <code>NA</code>.</p>
+<p><strong>Weights.</strong> Every estimator takes <code>weights</code>,
+which are frequency weights: a row with weight 3 counts as three
+independent observations. The estimates, log-likelihood, robust
+covariance and BIC are those of the expanded data. In panel models the
+weights belong to the panels (a panel with weight 3 counts as three
+independent panels), so they must be constant within a panel. The
+bootstrap resamples the expanded observations: it draws new frequencies
+from a multinomial distribution and refits with them in place of the
+weights, so it needs whole-number weights (use
+<code>stderr = &quot;robust&quot;</code> for other weights).</p>
+</div>
+<div id="marginal-effects" class="section level2">
+<h2>Marginal effects</h2>
+<p><code>margEffTable()</code> reports average marginal effects (or
+elasticities) with delta-method standard errors, or bootstrap standard
+errors with <code>se = &quot;bootstrap&quot;</code>. For an indicator variable the
+default is the pseudo-elasticity, the percentage change in the expected
+count.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">margEffTable</span>(nb_h, <span class="at">digits =</span> <span class="dv">4</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; Marginal Effects / Elasticities</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; Method: delta </span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;      term variable_type           effect_metric estimate std_error t_value</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;    lnaadt    continuous Average marginal effect   0.4989    0.0352 14.1718</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;  lnlength    continuous Average marginal effect   0.3511    0.0373  9.4194</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   speed50     indicator   Pseudo-elasticity (%) -41.5523    6.3016 -6.5939</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;  p_value sig lower_ci upper_ci n_obs successful_bootstraps</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;        0 ***   0.4299   0.5679  1501                    NA</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;        0 ***   0.2780   0.4241  1501                    NA</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;        0 *** -53.9032 -29.2014  1501                    NA</span></span></code></pre></div>
+<p>The bootstrap of <code>margEffTable()</code> resamples the model’s
+independent units (rows, or panels for panel models, or the clusters in
+<code>cluster_var</code>) and refits the model without an inner
+bootstrap.</p>
+</div>
+<div id="prediction" class="section level2">
+<h2>Prediction</h2>
+<p><code>predict()</code> returns one value per row of
+<code>newdata</code>, in order. Rows with missing values give
+<code>NA</code>; factor levels, contrasts and data-dependent bases such
+as <code>poly()</code> and <code>splines::ns()</code> are those of the
+training data; offset columns must be present.</p>
+<p>For <code>countreg()</code> models, <code>type</code> chooses the
+quantity:</p>
+<table>
+<thead>
+<tr class="header">
+<th><code>type</code></th>
+<th>Quantity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>&quot;response&quot;</code> (default)</td>
+<td>expected observed count</td>
+</tr>
+<tr class="even">
+<td><code>&quot;true&quot;</code></td>
+<td>expected true count (with underreporting)</td>
+</tr>
+<tr class="odd">
+<td><code>&quot;prob_reported&quot;</code></td>
+<td>probability that a count is reported</td>
+</tr>
+<tr class="even">
+<td><code>&quot;link&quot;</code></td>
+<td>linear predictor <span class="math inline">\(X\beta\)</span> +
+offset</td>
+</tr>
+<tr class="odd">
+<td><code>&quot;prob&quot;</code></td>
+<td>matrix of <span class="math inline">\(P(Y = k)\)</span>, <span class="math inline">\(k = 0, \dots,\)</span> <code>max_count</code></td>
+</tr>
+<tr class="even">
+<td><code>&quot;zero&quot;</code></td>
+<td>zero-model probability (zero-inflated or hurdle models)</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> d[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">predict</span>(nb_h, <span class="at">newdata =</span> nd)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.7798794 0.7097971 1.0432219</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">predict</span>(nb_h, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>, <span class="at">max_count =</span> <span class="dv">4</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>              <span class="at">overflow =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;          0     1     2     3     4    &gt;4</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; [1,] 0.502 0.307 0.127 0.044 0.014 0.006</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; [2,] 0.531 0.301 0.116 0.037 0.011 0.004</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; [3,] 0.411 0.314 0.162 0.070 0.028 0.015</span></span></code></pre></div>
+<p>With <code>overflow = TRUE</code> the last column holds <span class="math inline">\(P(Y &gt;\)</span> <code>max_count</code><span class="math inline">\()\)</span>, so each row sums to one.</p>
+<p>For random-parameter models, <code>method</code> chooses how the
+random coefficients are handled:</p>
+<ul>
+<li><code>&quot;Simulated&quot;</code> (default): the average over Halton
+draws.</li>
+<li><code>&quot;Exact&quot;</code>: the closed-form expectation (Wood and Gayah,
+2025). It is not available, and the prediction is infinite, when the
+expected value does not exist (a lognormal random parameter with a
+positive variable, or a gamma random parameter beyond its
+moment-generating function’s domain); <code>&quot;Simulated&quot;</code> reports
+the same cases.</li>
+<li><code>&quot;Individual&quot;</code> (or <code>&quot;EB&quot;</code>): Empirical Bayes
+predictions that condition on each panel’s observed outcomes, so
+<code>newdata</code> must contain the outcome and the panel id. These
+are not forecasts for new units.</li>
+</ul>
+<p>Negative multinomial models have <code>method = &quot;Standard&quot;</code> and
+<code>&quot;EB&quot;</code> in the same sense.</p>
+</div>
+<div id="fitted-values-residuals-and-simulation" class="section level2">
+<h2>Fitted values, residuals and simulation</h2>
+<p><code>fitted()</code> gives the predictions for the rows used in
+estimation, and <code>residuals()</code> the residuals of three
+types:</p>
+<ul>
+<li><code>&quot;response&quot;</code>: observed minus fitted.</li>
+<li><code>&quot;pearson&quot;</code>: divided by the standard deviation implied by
+the fitted distribution (<code>countreg()</code> models).</li>
+<li><code>&quot;quantile&quot;</code>: randomized quantile residuals (Dunn and
+Smyth, 1996), which are standard normal when the model is correct; use
+them for residual plots and normality checks.</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>r <span class="ot">&lt;-</span> <span class="fu">residuals</span>(nb_h, <span class="at">type =</span> <span class="st">&quot;quantile&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean =</span> <span class="fu">mean</span>(r), <span class="at">sd =</span> <span class="fu">sd</span>(r))</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;         mean           sd </span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; -0.005664601  0.978277239</span></span></code></pre></div>
+<p><code>simulate()</code> draws new responses from the fitted
+distribution for the same rows (with <code>seed</code>, reproducibly and
+without changing the random-number stream of the session). It is the
+basis of parametric-bootstrap checks:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>sims <span class="ot">&lt;-</span> <span class="fu">simulate</span>(nb_h, <span class="at">nsim =</span> <span class="dv">200</span>, <span class="at">seed =</span> <span class="dv">1</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># Observed share of zeros against its simulated distribution</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">c</span>(<span class="at">observed =</span> <span class="fu">mean</span>(d<span class="sc">$</span>Total_crashes <span class="sc">==</span> <span class="dv">0</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">simulated =</span> <span class="fu">mean</span>(<span class="fu">colMeans</span>(sims <span class="sc">==</span> <span class="dv">0</span>)))</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  observed simulated </span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; 0.7335110 0.7307495</span></span></code></pre></div>
+<p><code>tidy()</code>, <code>glance()</code> and <code>augment()</code>
+return tidy data frames, and <code>rootogram()</code> and
+<code>cureplot()</code> compare the fitted distribution and mean with
+the data (see the vignette on choosing a count distribution).</p>
+</div>
+<div id="comparing-models" class="section level2">
+<h2>Comparing models</h2>
+<div id="aic-and-bic" class="section level3">
+<h3>AIC and BIC</h3>
+<p>AIC and BIC compare any models fit to the same observations, nested
+or not, and are always reported. BIC uses the number of independent
+units: rows, panels for panel models, and the sum of the frequency
+weights when weights are used.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>po <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>nb1 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;NB1&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>pl <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;PL&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">list</span>(<span class="at">Poisson =</span> po, <span class="at">NB1 =</span> nb1, <span class="at">NB2 =</span> nb_h, <span class="at">PL =</span> pl),</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>                      <span class="cf">function</span>(m) <span class="fu">glance</span>(m)[, <span class="fu">c</span>(<span class="st">&quot;logLik&quot;</span>, <span class="st">&quot;AIC&quot;</span>, <span class="st">&quot;BIC&quot;</span>)]))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 × 3</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;   logLik   AIC   BIC</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; *  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 1 -1101. 2209. 2230.</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 2 -1089. 2188. 2215.</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; 3 -1085. 2180. 2206.</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; 4 -1086. 2182. 2209.</span></span></code></pre></div>
+</div>
+<div id="likelihood-ratio-tests" class="section level3">
+<h3>Likelihood-ratio tests</h3>
+<p>An LR test compares a restricted model with a larger one. The
+statistic <span class="math inline">\(2(\ell_\text{full} -
+\ell_\text{restricted})\)</span> has its usual chi-square distribution
+only when:</p>
+<ol style="list-style-type: decimal">
+<li><strong>The models are nested.</strong> The restricted model is the
+larger model with some parameters fixed: the same estimator and model
+components, the restricted model’s parameters a subset of the larger
+model’s, and the same family or a nested family.</li>
+<li><strong>The restriction is regular.</strong> The fixed values are
+inside the parameter space, every remaining parameter is identified
+under the restriction, and the restriction is not reached only in a
+limit.</li>
+<li><strong>The data are the same.</strong> The same observations,
+outcome, offsets, weights and panels, and the same values of the
+variables both models use.</li>
+<li><strong>Both fits reached their maximum.</strong> Both report
+convergence, and the larger model’s log-likelihood is not below the
+restricted model’s.</li>
+</ol>
+<p>The families nest as follows:</p>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Restricted</th>
+<th>Larger</th>
+<th>Restriction</th>
+<th>Null distribution</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Poisson</td>
+<td>NB1, NB2, PLN, PIG1, PIG2, PIG</td>
+<td>dispersion = 0</td>
+<td>50:50 mixture of <span class="math inline">\(\chi^2_{df-1}\)</span>
+and <span class="math inline">\(\chi^2_{df}\)</span></td>
+</tr>
+<tr class="even">
+<td>Poisson</td>
+<td>GP1, GP2</td>
+<td>dispersion = 0</td>
+<td><span class="math inline">\(\chi^2_{df}\)</span></td>
+</tr>
+<tr class="odd">
+<td>Poisson</td>
+<td>COM</td>
+<td><span class="math inline">\(\nu = 1\)</span></td>
+<td><span class="math inline">\(\chi^2_{df}\)</span></td>
+</tr>
+<tr class="even">
+<td>NB1, NB2</td>
+<td>NBP</td>
+<td><span class="math inline">\(P = 1\)</span> or <span class="math inline">\(P = 2\)</span></td>
+<td><span class="math inline">\(\chi^2_{df}\)</span></td>
+</tr>
+<tr class="odd">
+<td>PL</td>
+<td>PLG, PLL</td>
+<td><span class="math inline">\(\alpha = 0\)</span>, <span class="math inline">\(\sigma = 0\)</span></td>
+<td>50:50 mixture</td>
+</tr>
+</tbody>
+</table>
+<p>For NB1, NB2 and the other families in the first row, a dispersion of
+0 is on the boundary of the parameter space (a dispersion cannot be
+negative). The statistic then has a 50:50 mixture distribution, and the
+ordinary chi-square p-value would be twice too large.</p>
+<p>These comparisons are <strong>not</strong> valid, and no p-value is
+reported:</p>
+<ul>
+<li><strong>Poisson vs PL, PLG or PLL.</strong> The Poisson-Lindley
+family does not contain the Poisson distribution: its variance is at
+least <span class="math inline">\(\mu + \mu^2/2\)</span> for every <span class="math inline">\(\theta\)</span>.</li>
+<li><strong>Poisson vs NBP or SI.</strong> At the Poisson limit, NBP’s
+power <span class="math inline">\(P\)</span> and the Sichel <span class="math inline">\(\gamma\)</span> are not identified, so the usual
+asymptotics fail.</li>
+<li><strong>Poisson vs PW, PGE or GW.</strong> Their distributions
+approach Poisson only as a parameter goes to infinity.</li>
+<li><strong>A boundary family with a dispersion formula.</strong> The
+restriction sends an intercept to minus infinity while the slopes become
+unidentified.</li>
+<li><strong>Models with and without a zero model or
+underreporting.</strong> No zero inflation, or full reporting, is
+reached only in a limit (an intercept of minus or plus infinity on the
+logit scale).</li>
+<li><strong>Models with different random parameters.</strong> A
+random-parameter variance of zero is on the boundary, often with other
+parameters unidentified.</li>
+<li><strong>Non-nested models</strong>, such as NB1 vs NB2.</li>
+</ul>
+<p>For these, compare models with AIC and BIC, or with a parametric
+bootstrap of the LR statistic using <code>simulate()</code>.</p>
+<p><code>summary()</code> reports a test against Poisson when it is
+valid:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">summary</span>(nb_h)<span class="sc">$</span>lr_test</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; $statistic</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; [1] 31.31106</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; $df</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; $p.value</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; [1] 1.099119e-08</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; $logLik_poisson</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; [1] -1100.597</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; $boundary</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="fu">is.null</span>(<span class="fu">summary</span>(pl)<span class="sc">$</span>lr_test)   <span class="co"># no test: PL does not nest Poisson</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>When a condition fails, <code>regCompTest()</code> reports no LR test
+and gives the reason in <code>LR_reason</code>. Nesting of the mean
+model is checked on the design matrices, so <code>y ~ x</code> is nested
+in <code>y ~ I(2 * x) + z</code>.</p>
+<p><code>regCompTest()</code> applies the same rules to two fitted
+models (the one with fewer parameters is the restricted model) or to a
+model and a base model it fits on the same rows:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>r <span class="ot">&lt;-</span> <span class="fu">regCompTest</span>(po, <span class="at">model2 =</span> nb_h)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>r[<span class="fu">c</span>(<span class="st">&quot;LR&quot;</span>, <span class="st">&quot;LRdof&quot;</span>, <span class="st">&quot;LR_type&quot;</span>, <span class="st">&quot;LR_pvalue&quot;</span>)]</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; $LR</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; [1] 31.31106</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; $LRdof</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; $LR_type</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;boundary&quot;</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; $LR_pvalue</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; [1] 1.099119e-08</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>r <span class="ot">&lt;-</span> <span class="fu">regCompTest</span>(nb1, <span class="at">model2 =</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;NBP&quot;</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>                                        <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>))</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>r[<span class="fu">c</span>(<span class="st">&quot;LR&quot;</span>, <span class="st">&quot;LRdof&quot;</span>, <span class="st">&quot;LR_type&quot;</span>, <span class="st">&quot;LR_pvalue&quot;</span>)]</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; $LR</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; [1] 9.828608</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; $LRdof</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; $LR_type</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; [1] &quot;interior&quot;</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; $LR_pvalue</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; [1] 0.001718183</span></span></code></pre></div>
+<p>When the larger model has the lower log-likelihood, the larger model
+did not reach its maximum (check its convergence), and no p-value is
+given.</p>
+</div>
+<div id="mcfaddens-pseudo-r²" class="section level3">
+<h3>McFadden’s pseudo-R²</h3>
+<p><code>regCompTest()</code> and <code>regCompTable()</code> report
+McFadden’s pseudo-R², <span class="math inline">\(1 - \ell /
+\ell_0\)</span>, against an intercept-only Poisson model on the same
+rows by default, so it is comparable across families.
+<code>basemodel</code> and <code>variables</code> choose another
+baseline.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">regCompTable</span>(<span class="fu">list</span>(<span class="at">Poisson =</span> po, <span class="at">NB2 =</span> nb_h))</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 10 × 3</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt;    Parameter    Poisson           NB2              </span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;    &lt;chr&gt;        &lt;chr&gt;             &lt;chr&gt;            </span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt;  1 (Intercept)  -9.011 (0.417)*** -8.772 (0.439)***</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt;  2 lnaadt       1.108 (0.048)***  1.082 (0.052)*** </span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt;  3 lnlength     0.739 (0.059)***  0.762 (0.069)*** </span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt;  4 speed50      -0.516 (0.097)*** -0.537 (0.108)***</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;  5 ln(alpha)    ---               -1.045 (0.249)***</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt;  6 N Obs.       1501              1501             </span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt;  7 LL           -1100.597         -1084.942        </span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt;  8 AIC          2209.195          2179.884         </span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt;  9 BIC          2230.45           2206.453         </span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; 10 Pseudo-R-Sq. 0.278             0.288</span></span></code></pre></div>
+</div>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Dunn, P. K., &amp; Smyth, G. K. (1996). Randomized quantile
+residuals. <em>Journal of Computational and Graphical Statistics</em>,
+5(3), 236-244.</p>
+<p>Self, S. G., &amp; Liang, K.-Y. (1987). Asymptotic properties of
+maximum likelihood estimators and likelihood ratio tests under
+nonstandard conditions. <em>Journal of the American Statistical
+Association</em>, 82(398), 605-610.</p>
+<p>Wood, J. S., &amp; Gayah, V. (2025). Out-of-sample prediction and
+interpretation for random parameter generalized linear models.
+<em>Accident Analysis and Prevention</em>, 220, 108147.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

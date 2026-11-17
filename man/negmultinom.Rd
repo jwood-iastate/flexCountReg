@@ -75,8 +75,8 @@ bootstrap; requires \code{bootstraps}).}
 in the fitted object (saving memory). \code{predict()} then needs
 \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
 
-\item{weights}{the name of a column of `data`, or a numeric vector with one
-value per row of `data`, of frequency weights of the panels: a panel with
+\item{weights}{the name of a column of \code{data}, or a numeric vector with one
+value per row of \code{data}, of frequency weights of the panels: a panel with
 weight w counts as w independent panels in the log-likelihood, the robust
 covariance, BIC and the bootstrap. Weights must be constant within each
 panel. Bootstrap standard errors need whole-number weights.}

@@ -52,6 +52,8 @@ random parameters and random effects.
 - [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
   : Marginal Effects, Elasticities, and Pseudo-Elasticities for
   flexCountReg Models
+- [`tolerance_interval()`](https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.md)
+  : Tolerance Intervals for Count Regression Models
 - [`cureplot()`](https://jwood-iastate.github.io/flexCountReg/reference/cureplot.md)
   : Cumulative Residuals (CURE) Plot for Count Models
 - [`rootogram()`](https://jwood-iastate.github.io/flexCountReg/reference/rootogram.md)

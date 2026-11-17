@@ -111,12 +111,12 @@ margEffTable(nb_h, digits = 4)
 #> Method: delta 
 #> 
 #>      term variable_type           effect_metric estimate std_error t_value
-#>    lnaadt    continuous Average marginal effect   0.4989    0.0348 14.3363
-#>  lnlength    continuous Average marginal effect   0.3511    0.0373  9.4208
+#>    lnaadt    continuous Average marginal effect   0.4989    0.0348 14.3360
+#>  lnlength    continuous Average marginal effect   0.3511    0.0373  9.4150
 #>   speed50     indicator   Pseudo-elasticity (%) -41.5523    6.3016 -6.5939
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
 #>        0 ***   0.4307   0.5671  1501                    NA
-#>        0 ***   0.2780   0.4241  1501                    NA
+#>        0 ***   0.2780   0.4242  1501                    NA
 #>        0 *** -53.9032 -29.2014  1501                    NA
 ```
 

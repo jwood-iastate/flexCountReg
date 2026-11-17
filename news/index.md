@@ -69,6 +69,32 @@
   when the registry provides them (the new families start at their
   Poisson or geometric limit rather than at log-scale -2).
 
+### Confidence, prediction and tolerance intervals
+
+- [`predict()`](https://rdrr.io/r/stats/predict.html) gains
+  `interval = "confidence"` (for the expected count) and
+  `interval = "prediction"` (for one new count), with `level`, for
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  models. Estimation uncertainty is represented by parameter vectors
+  from the asymptotic normal distribution of the estimates, evaluated at
+  deterministic Halton points (reproducible), or by a parametric
+  bootstrap (`uncertainty = "bootstrap"`), which is also used when the
+  covariance matrix is not positive definite. Prediction intervals are
+  integer quantiles of the predictive distribution (the count PMF
+  averaged over the parameter vectors).
+- New
+  [`tolerance_interval()`](https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.md):
+  content tolerance intervals (content and confidence levels; two-sided,
+  upper or lower; pointwise or simultaneous) for
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  models. The default joint method returns the narrowest integer
+  interval whose content is at least the requested fraction at every
+  evaluated point of the confidence set; the envelope method uses
+  per-tail worst cases; intercept-only Poisson models use the exact
+  common-rate construction. Zero-inflated, hurdle and underreporting
+  components are included. A reproducible coverage study is in
+  `inst/validation/intervals/`.
+
 ### New data
 
 - `abalone_rings`: shell-ring counts and measurements of 4,177 abalone

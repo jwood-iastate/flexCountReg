@@ -58,6 +58,12 @@
 <code><a href="../reference/countreg.rp.html">countreg.rp()</a></code> uses family-specific starting values for the distribution parameters when the registry provides them (the new families start at their Poisson or geometric limit rather than at log-scale -2).</li>
 </ul></div>
 <div class="section level3">
+<h3 id="confidence-prediction-and-tolerance-intervals-0-1-2">Confidence, prediction and tolerance intervals<a class="anchor" aria-label="anchor" href="#confidence-prediction-and-tolerance-intervals-0-1-2"></a></h3>
+<ul><li>
+<code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> gains <code>interval = "confidence"</code> (for the expected count) and <code>interval = "prediction"</code> (for one new count), with <code>level</code>, for <code><a href="../reference/countreg.html">countreg()</a></code> models. Estimation uncertainty is represented by parameter vectors from the asymptotic normal distribution of the estimates, evaluated at deterministic Halton points (reproducible), or by a parametric bootstrap (<code>uncertainty = "bootstrap"</code>), which is also used when the covariance matrix is not positive definite. Prediction intervals are integer quantiles of the predictive distribution (the count PMF averaged over the parameter vectors).</li>
+<li>New <code><a href="../reference/tolerance_interval.html">tolerance_interval()</a></code>: content tolerance intervals (content and confidence levels; two-sided, upper or lower; pointwise or simultaneous) for <code><a href="../reference/countreg.html">countreg()</a></code> models. The default joint method returns the narrowest integer interval whose content is at least the requested fraction at every evaluated point of the confidence set; the envelope method uses per-tail worst cases; intercept-only Poisson models use the exact common-rate construction. Zero-inflated, hurdle and underreporting components are included. A reproducible coverage study is in <code>inst/validation/intervals/</code>.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="new-data-0-1-2">New data<a class="anchor" aria-label="anchor" href="#new-data-0-1-2"></a></h3>
 <ul><li>
 <code>abalone_rings</code>: shell-ring counts and measurements of 4,177 abalone from the UCI Machine Learning Repository (CC BY 4.0), a non-transportation example with conditionally underdispersed counts. The preparation script and source hashes are in <code>data-raw/</code> of the source repository; data terms are in the installed <code>DATA-LICENSES.md</code>.</li>

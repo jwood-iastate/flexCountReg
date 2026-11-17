@@ -101,7 +101,9 @@
 <li>
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> gives the coefficient table, standard-error type, fit statistics and a likelihood-ratio test against the Poisson model.</li>
 <li>
-<code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> gives expected counts (one per row of <code>newdata</code>, <code>NA</code> for incomplete rows), the probability of each count, and the components of underreporting and zero models. For random parameters models it offers exact, simulated and Empirical Bayes (<code>"Individual"</code>) predictions.</li>
+<code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> gives expected counts (one per row of <code>newdata</code>, <code>NA</code> for incomplete rows), the probability of each count, and the components of underreporting and zero models. For <code><a href="reference/countreg.html">countreg()</a></code> models it also gives confidence intervals for the expected count and prediction intervals for a new count (<code>interval = "confidence"</code> or <code>"prediction"</code>). For random parameters models it offers exact, simulated and Empirical Bayes (<code>"Individual"</code>) predictions.</li>
+<li>
+<code><a href="reference/tolerance_interval.html">tolerance_interval()</a></code> gives content tolerance intervals for <code><a href="reference/countreg.html">countreg()</a></code> models: count ranges intended to contain at least a stated share of the outcome distribution with a stated confidence.</li>
 <li>
 <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code>, <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code>, <code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code>, <code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> (response, Pearson and randomized quantile), <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code> and <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> work as for other R models.</li>
 <li>
@@ -128,17 +130,33 @@
 <p>Density (<code>d</code>), distribution (<code>p</code>), quantile (<code>q</code>) and random generation (<code>r</code>) functions are provided for each distribution:</p>
 <p><em>Count distributions</em></p>
 <ul>
-<li>Conway-Maxwell-Poisson: <code>dcom</code>, <code>pcom</code>, <code>qcom</code>, <code>rcom</code>
+<li>Conway-Maxwell-Poisson (COM): <code>dcom</code>, <code>pcom</code>, <code>qcom</code>, <code>rcom</code>
 </li>
-<li>Generalized Poisson (Types 1 and 2): <code>dgp1</code>, <code>pgp1</code>, <code>qgp1</code>, <code>rgp1</code>, <code>dgp2</code>, <code>pgp2</code>, <code>qgp2</code>, <code>rgp2</code>
+<li>Delaporte: <code>ddelaporte</code>, <code>pdelaporte</code>, <code>qdelaporte</code>, <code>rdelaporte</code>
+</li>
+<li>Discrete Weibull: <code>ddweib</code>, <code>pdweib</code>, <code>qdweib</code>, <code>rdweib</code>
+</li>
+<li>Double Poisson: <code>ddpo</code>, <code>pdpo</code>, <code>qdpo</code>, <code>rdpo</code>
+</li>
+<li>Gamma Count: <code>dgcount</code>, <code>pgcount</code>, <code>qgcount</code>, <code>rgcount</code>
+</li>
+<li>Generalized Hermite: <code>dghermite</code>, <code>pghermite</code>, <code>qghermite</code>, <code>rghermite</code>
+</li>
+<li>Generalized Poisson Version 1: <code>dgp1</code>, <code>pgp1</code>, <code>qgp1</code>, <code>rgp1</code>
+</li>
+<li>Generalized Poisson Version 2: <code>dgp2</code>, <code>pgp2</code>, <code>qgp2</code>, <code>rgp2</code>
 </li>
 <li>Generalized Waring: <code>dgwar</code>, <code>pgwar</code>, <code>qgwar</code>, <code>rgwar</code>
+</li>
+<li>Hyper-Poisson: <code>dhpois</code>, <code>phpois</code>, <code>qhpois</code>, <code>rhpois</code>
+</li>
+<li>Negative Binomial-Generalized Exponential: <code>dnbge</code>, <code>pnbge</code>, <code>qnbge</code>, <code>rnbge</code>
 </li>
 <li>Poisson-Generalized-Exponential: <code>dpge</code>, <code>ppge</code>, <code>qpge</code>, <code>rpge</code>
 </li>
 <li>Poisson-Inverse-Gamma: <code>dpinvgamma</code>, <code>ppinvgamma</code>, <code>qpinvgamma</code>, <code>rpinvgamma</code>
 </li>
-<li>Poisson-Inverse-Gaussian (Types 1 and 2): <code>dpinvgaus</code>, <code>ppinvgaus</code>, <code>qpinvgaus</code>, <code>rpinvgaus</code>
+<li>Poisson-Inverse-Gaussian: <code>dpinvgaus</code>, <code>ppinvgaus</code>, <code>qpinvgaus</code>, <code>rpinvgaus</code>
 </li>
 <li>Poisson-Lindley: <code>dplind</code>, <code>pplind</code>, <code>qplind</code>, <code>rplind</code>
 </li>
@@ -150,9 +168,12 @@
 </li>
 <li>Poisson-Weibull: <code>dpoisweibull</code>, <code>ppoisweibull</code>, <code>qpoisweibull</code>, <code>rpoisweibull</code>
 </li>
+<li>Polya-Aeppli: <code>dpaeppli</code>, <code>ppaeppli</code>, <code>qpaeppli</code>, <code>rpaeppli</code>
+</li>
 <li>Sichel: <code>dsichel</code>, <code>psichel</code>, <code>qsichel</code>, <code>rsichel</code>
 </li>
 </ul>
+<p>See <code><a href="reference/count_families.html">?count_families</a></code> for every distribution available in <code><a href="reference/countreg.html">countreg()</a></code> and <code><a href="reference/countreg.rp.html">countreg.rp()</a></code>, with its parameters, variance and model features.</p>
 <p><em>Continuous distributions</em></p>
 <ul>
 <li>Inverse Gamma: <code>dinvgamma</code>, <code>pinvgamma</code>, <code>qinvgamma</code>, <code>rinvgamma</code>
@@ -166,7 +187,15 @@
 <li>Lognormal: <code>moment_lognormal</code> for the moments of the lognormal distribution</li>
 </ul>
 <p><strong>Data</strong></p>
-<p>A dataset, <code>washington_roads</code>, is included. It is based on a sample of Washington primary 2-lane roads from the years 2016-2018 (507 road segments, each observed in up to three years). Data for the roads, traffic volumes (AADT) and associated crashes were obtained from the <a href="https://highways.dot.gov/research/safety/hsis" class="external-link">Highway Safety Information System (HSIS)</a>.</p>
+<p>Three datasets are included:</p>
+<ul>
+<li>
+<code>washington_roads</code>: a sample of Washington primary 2-lane roads from the years 2016-2018 (507 road segments, each observed in up to three years). Data for the roads, traffic volumes (AADT) and associated crashes were obtained from the <a href="https://highways.dot.gov/research/safety/hsis" class="external-link">Highway Safety Information System (HSIS)</a>.</li>
+<li>
+<code>abalone_rings</code>: shell-ring counts and physical measurements of 4,177 abalone from the <a href="https://doi.org/10.24432/C55C7W" class="external-link">UCI Machine Learning Repository</a> (CC BY 4.0), a non-transportation example with conditionally underdispersed counts.</li>
+<li>
+<code>stream_salamanders</code>: repeated counts of seven stream salamander groups at 23 sites in Kentucky (Price et al., 2016; <a href="https://doi.org/10.5061/dryad.5m8f6" class="external-link">Dryad</a>, CC0), zero-heavy, overdispersed and grouped by site.</li>
+</ul>
 <div class="section level3">
 <h3 id="probability-distributions">Probability Distributions<a class="anchor" aria-label="anchor" href="#probability-distributions"></a>
 </h3>
@@ -180,9 +209,14 @@
 <ul>
 <li>Poisson</li>
 </ul>
-<p><em>Distributions that handle Underdispersion</em></p>
+<p><em>Distributions that handle Underdispersion (and Overdispersion)</em></p>
 <ul>
 <li>Conway-Maxwell-Poisson (COM) Distribution</li>
+<li>Generalized Poisson Distribution (Types 1 and 2)</li>
+<li>Discrete Weibull Distribution</li>
+<li>Double Poisson Distribution</li>
+<li>Hyper-Poisson Distribution</li>
+<li>Gamma Count (Renewal) Distribution</li>
 </ul>
 <p><em>Distributions that Handle Overdispersion</em></p>
 <ul>
@@ -193,6 +227,10 @@
 <li>Poisson-Weibull Distribution</li>
 <li>Sichel Distribution</li>
 <li>Generalized Waring Distribution</li>
+<li>Delaporte Distribution</li>
+<li>Hermite Distribution (orders 2, 3 and 4; bounded overdispersion)</li>
+<li>Polya-Aeppli (Poisson-Tweedie, power 1.5) Distribution</li>
+<li>Negative Binomial-Generalized Exponential (NBGE) Distribution</li>
 </ul>
 <p><em>Distributions that Handle Excess Zeros</em></p>
 <ul>

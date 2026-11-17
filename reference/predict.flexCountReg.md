@@ -48,7 +48,9 @@ predict(
   newdata = NULL,
   ...,
   type = c("response", "true", "prob_reported", "link", "prob", "zero"),
-  new_data = NULL
+  new_data = NULL,
+  interval = c("none", "confidence", "prediction"),
+  level = 0.95
 )
 ```
 
@@ -98,11 +100,22 @@ predict(
   the same as `newdata`, under the name used by tidymodels. Give one or
   the other.
 
+- interval:
+
+  `"none"` (default), `"confidence"` or `"prediction"` (`countreg`
+  models). See the section *Intervals*.
+
+- level:
+
+  the confidence or prediction level of the interval.
+
 ## Value
 
 A numeric vector of predicted expected counts for each observation in
 the provided data. If no data is provided, the predictions for the data
-used in estimating the model are provided.
+used in estimating the model are provided. With
+`interval = "confidence"` or `"prediction"`, a data frame with columns
+`fit`, `lwr` and `upr` (see the section Intervals).
 
 ## Details
 
@@ -120,6 +133,55 @@ optional parameter `method`: Only valid for random parameters models
 
 optional parameter `eb_type`: for `method = "Individual"`, either
 `"coefficients"` (default) or `"mean"`.
+
+## Intervals
+
+For `countreg` models, `interval = "confidence"` gives a confidence
+interval for the expected count (`type = "response"`, the expected
+observed count, or `"true"`), and `interval = "prediction"` a prediction
+interval for one future observed count (`type = "response"`). The result
+is then a data frame with columns `fit`, `lwr` and `upr`, with the
+settings in the attribute `"interval"`. For content tolerance intervals
+see
+[`tolerance_interval`](https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.md).
+
+Estimation uncertainty is represented by parameter vectors chosen by the
+optional argument `uncertainty` (in `...`):
+
+- `"normal"` (default): the asymptotic normal distribution of the
+  estimates, \\\hat\theta + R^\top z\\ with \\R^\top R\\ the covariance
+  matrix and \\z\\ the standard normal quantiles of `ndraws`
+  (default 500) Halton points. Halton sequences are deterministic, so
+  the intervals are reproducible and have less simulation error than
+  pseudo-random draws; for models with many parameters,
+  `scrambled = TRUE` (with a `seed`) uses scrambled Halton points, which
+  avoid the correlation between high dimensions of the standard
+  sequence. When the covariance matrix is not positive definite (e.g. a
+  dispersion parameter at its boundary) the parametric bootstrap is used
+  instead, with a message.
+
+- `"bootstrap"`: a parametric bootstrap. `bootstraps` (default 200)
+  response vectors are simulated from the fitted model on the training
+  rows and the model is refit to each with its frozen specification;
+  refits that fail or do not converge are rejected and counted. Use
+  `seed` for reproducibility. Not available for models with weights.
+
+The confidence interval takes the \\(1 - level)/2\\ and \\(1 +
+level)/2\\ quantiles of the expected count over these parameter vectors.
+The prediction interval uses the predictive distribution of the count,
+the probability mass function of the observed count averaged over the
+parameter vectors, and returns its integer quantiles: the smallest
+counts \\L\\ and \\U\\ with \\P(Y \le L) \ge (1 - level)/2\\ and \\P(Y
+\le U) \ge (1 + level)/2\\. Because counts are discrete, the predictive
+coverage is usually above `level`; the limits are not interpolated. Both
+include zero-inflated, hurdle and underreporting components. `max_count`
+(in `...`, default 1e5) bounds the counts used to resolve the upper
+tail.
+
+In a Monte Carlo study of Poisson and NB2 regressions (n = 30 and 200),
+prediction intervals at level 0.90 covered 0.93 to 0.97 of future
+counts, while plug-in intervals that ignore estimation uncertainty fell
+to 0.88 for the smaller sample.
 
 ## References
 

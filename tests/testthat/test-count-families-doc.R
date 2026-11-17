@@ -49,6 +49,8 @@ count_families_rows <- function() {
   if (!is.na(end)) txt <- txt[seq_len(end - 1)]
   # Table rows start with a quoted family code followed by 2+ spaces
   rows <- grep("^[[:space:]]+'[A-Z0-9]+'[[:space:]]{2,}", txt, value = TRUE)
+  # Rd renders "--" as "-" in released R and as an en dash in R-devel
+  rows <- gsub("\u2013|\u2014", "-", rows)
   cells <- strsplit(trimws(rows), "[[:space:]]{2,}")
   fam <- gsub("'", "", vapply(cells, `[`, "", 1))
   list(fam = fam, cells = cells)

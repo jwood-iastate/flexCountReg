@@ -71,10 +71,17 @@
 #'   the random parameter distributions (Wood and Gayah, 2025, Appendix A),
 #'   including heterogeneity in means and variances. This is exact for normal,
 #'   uniform, triangular and gamma parameters and has no simulation error. For
-#'   lognormal parameters it uses a Laplace (saddlepoint) approximation, which
-#'   is accurate for \eqn{x < 0}; for \eqn{x > 0} (and for gamma parameters
-#'   with \eqn{x\sigma^2/\mu \ge 1}) the expected value is infinite and
-#'   \code{Inf} is returned with a warning.
+#'   lognormal parameters with \eqn{x < 0} the lognormal MGF has no closed
+#'   form, and the Laplace approximation of Asmussen, Jensen and
+#'   Rojas-Nandayapa (2016) is used: accurate, but approximate despite the
+#'   method's name (it needs the lamW package). For \eqn{x > 0} with a
+#'   lognormal parameter (and for gamma parameters with
+#'   \eqn{x\sigma^2/\mu \ge 1}) the expected value is infinite, and
+#'   \code{Inf} is returned with a warning, for both \code{Exact} and
+#'   \code{Simulated} predictions. Whether the expected value exists is
+#'   decided from the parameters alone, so \code{Simulated} predictions do
+#'   not need lamW. A finite expected value too large to represent is
+#'   reported as an overflow.
 #' }
 #' 
 #' For \strong{countreg}, \strong{poisLindRE}, and \strong{RENB} models, the
@@ -299,27 +306,21 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     
     mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
     
+    # --- Does the expected value exist? (no MGF evaluation needed) ---
     # --- Exact: moment generating functions (Wood and Gayah, 2025) ---
-    # E[exp(x beta)] per row; also used to check, for Simulated predictions,
-    # whether the expected value exists
     if (method %in% c("Exact", "Simulated")) {
       loc <- .fcr_rp_locations(random_coefs_means, rpardists, nrow(data),
                                het_mean_coefs, X_het_mean, het_var_coefs,
                                X_het_var, het_form)
-      if (correlated) {
-        L <- .fcr_chol_unpack(rand_var_params, N_rand)
-        W <- X_rand * loc$var_multiplier
-        rp_factor <- exp(rowSums(X_rand * loc$mu_mat) +
-                           0.5 * rowSums((W %*% L)^2))
-      } else {
-        rp_factor <- rep(1, nrow(data))
+      sd_k <- function(k) abs(rand_var_params[k]) * loc$var_multiplier
+      no_mean <- rep(FALSE, nrow(data))
+      if (!correlated) {
         for (k in seq_len(N_rand)) {
-          rp_factor <- rp_factor *
-            rp_mgf(rpardists[[k]], X_rand[, k], loc$mu_mat[, k],
-                   abs(rand_var_params[k]) * loc$var_multiplier)
+          ex <- .fcr_rp_mean_exists(rpardists[[k]], X_rand[, k],
+                                    loc$mu_mat[, k], sd_k(k))
+          no_mean <- no_mean | (!is.na(ex) & !ex)
         }
       }
-      no_mean <- is.infinite(rp_factor)
       if (any(no_mean)) {
         warning(sum(no_mean), " prediction(s) are infinite: the expected ",
                 "value does not exist for a lognormal random parameter with ",
@@ -327,7 +328,26 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                 "x * sigma^2 / mu >= 1. See ?countreg.rp.", call. = FALSE)
       }
       if (method == "Exact") {
-        return(as.vector(mu_fixed * rp_factor * mean_adj))
+        if (correlated) {
+          L <- .fcr_chol_unpack(rand_var_params, N_rand)
+          W <- X_rand * loc$var_multiplier
+          log_rp <- rowSums(X_rand * loc$mu_mat) + 0.5 * rowSums((W %*% L)^2)
+        } else {
+          log_rp <- rep(0, nrow(data))
+          for (k in seq_len(N_rand)) {
+            log_rp <- log_rp + rp_log_mgf(rpardists[[k]], X_rand[, k],
+                                          loc$mu_mat[, k], sd_k(k))
+          }
+        }
+        out <- exp(log(mu_fixed) + log_rp + log(mean_adj))
+        overflow <- is.infinite(out) & !no_mean
+        if (any(overflow)) {
+          warning(sum(overflow), " Exact prediction(s) exist but exceed the ",
+                  "largest representable number (overflow); they are Inf.",
+                  call. = FALSE)
+        }
+        out[no_mean] <- Inf
+        return(as.vector(out))
       }
     }
     

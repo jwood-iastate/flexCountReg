@@ -56,15 +56,25 @@ test_that("Generalized Waring uses one consistent rho domain", {
   expect_true(is.finite(pgwar(0, mu = 1, k = 2, rho = 1.01)))
   
   # rho <= 1 does not define the requested mean parameterization.
-  expect_error(dgwar(0, mu = 1, k = 2, rho = 1))
-  expect_error(pgwar(0, mu = 1, k = 2, rho = 1))
-  expect_error(dgwar(0, mu = 1, k = 2, rho = 0.5))
+  expect_warning(expect_true(is.nan(dgwar(0, mu = 1, k = 2, rho = 1))),
+                 "NaN")
+  expect_warning(expect_true(is.nan(pgwar(0, mu = 1, k = 2, rho = 1))),
+                 "NaN")
+  expect_warning(expect_true(is.nan(dgwar(0, mu = 1, k = 2, rho = 0.5))),
+                 "NaN")
 })
 
-test_that("Generalized Waring rejects invalid k before gamma evaluation", {
-  for (bad_k in c(0, -1, NA_real_, NaN, Inf, -Inf)) {
-    expect_error(dgwar(0, mu = 1, k = bad_k, rho = 3))
-    expect_error(pgwar(0, mu = 1, k = bad_k, rho = 3))
+test_that("Generalized Waring gives NaN for invalid k before gamma evaluation", {
+  for (bad_k in c(0, -1, Inf, -Inf)) {
+    expect_warning(expect_true(is.nan(dgwar(0, mu = 1, k = bad_k, rho = 3))),
+                   "NaN")
+    expect_warning(expect_true(is.nan(pgwar(0, mu = 1, k = bad_k, rho = 3))),
+                   "NaN")
+  }
+  # Missing parameters give NA, without a warning
+  for (bad_k in c(NA_real_, NaN)) {
+    expect_true(is.na(dgwar(0, mu = 1, k = bad_k, rho = 3)))
+    expect_true(is.na(pgwar(0, mu = 1, k = bad_k, rho = 3)))
   }
 })
 

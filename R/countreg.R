@@ -74,9 +74,12 @@
 #'   \eqn{q = logit^{-1}(z\gamma)} is the probability of a positive count and
 #'   positive counts follow the zero-truncated family:
 #'   \eqn{P(0) = 1 - q} and \eqn{P(y) = q f(y) / (1 - f(0))}.
-#' @param engine the engine to use for the integration if the Poisson Lognormal 
-#'   (PLN) distribution is used. Options include "halton" which uses Halton 
-#'   draws or "poilog" which uses the poilog package. The default is "halton".
+#' @param engine the numerical method for the mixed Poisson families PLN, PGE, PW
+#'   and PLL: \code{"quadrature"} (default; adaptive quadrature on the log
+#'   scale, accurate for every count), \code{"halton"} (the average over
+#'   Halton draws used by flexCountReg 0.1.2 and earlier, kept to reproduce
+#'   earlier fits; it is badly biased for counts far in the tail) or, for PLN
+#'   only, \code{"poilog"} (the poilog package).
 #' 
 #' 
 #' @description
@@ -773,7 +776,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      ndraws = 1500, method = "NM", 
                      max.iters = 1000, start.vals = NULL, 
                      stderr = "normal", bootstraps = NULL,
-                     engine = "halton", keep_data = TRUE,
+                     engine = "quadrature", keep_data = TRUE,
                      zero_formula = NULL,
                      zero_type = c("inflated", "hurdle")) {
   
@@ -788,7 +791,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   }
   params <- get_params(family)
   
-  engine <- match.arg(engine, c("halton", "poilog"))
+  engine <- match.arg(engine, c("quadrature", "halton", "poilog"))
   if (engine == "poilog" && family == "PLN") {
     rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
   }
@@ -842,6 +845,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   y <- prep$y
   X_offset <- prep$offset
   weights.df <- prep$weights
+  if (stderr == "boot" && !is.null(weights)) {
+    .fcr_check_boot_freq(weights.df, length(weights.df))
+  }
   mod_alpha_frame <- prep$aux$dis1
   mod_sigma_frame <- prep$aux$dis2
   X_underreport <- prep$aux$underreport
@@ -1032,11 +1038,14 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   # ---- Standard errors: one covariance matrix per fit ------------------------
   if (stderr == "boot") {
     boot_data <- data[prep$rows_used, , drop = FALSE]
-    boot_w <- if (is.numeric(weights)) prep$weights else weights
+    # With frequency weights, the bootstrap draws new frequencies for the
+    # rows (see .fcr_bootstrap); the refit uses them in place of the weights
+    boot_freq <- if (!is.null(weights)) weights.df
     draws <- .fcr_bootstrap(
       n = nrow(boot_data), B = bootstraps, coef_names = x_names,
-      refit = function(idx) {
-        w_i <- if (is.numeric(boot_w)) boot_w[idx] else boot_w
+      freq = boot_freq,
+      refit = function(idx, w = NULL) {
+        w_i <- w
         m <- countreg(formula = formula, data = boot_data[idx, , drop = FALSE],
                       family = family, offset = offset, weights = w_i,
                       verbose = FALSE,
@@ -1101,6 +1110,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$nobs <- length(y)
   # Independent units for BIC: the rows, counted with their frequency weights
   fit$n_bic <- sum(weights.df)
+  # Sample evidence for likelihood-ratio comparisons
+  fit$lr_sample <- .fcr_lr_sample(prep, data)
   fit$rows_used <- prep$rows_used
   fit$n_dropped <- prep$n_dropped
   

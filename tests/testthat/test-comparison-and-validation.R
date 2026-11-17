@@ -26,13 +26,15 @@ test_that("regCompTest() warns for comparisons that are not nested", {
   b <- countreg(Total_crashes ~ lnaadt, d, family = "NB1", method = "BFGS")
   expect_warning(r <- regCompTest(a, model2 = b), "not nested")
   expect_true(is.na(r$LR))
-  # A badly converged larger model has a lower log-likelihood
+  # A badly converged larger model (which also has a lower log-likelihood)
+  # gives no test: its convergence is checked first
   p <- countreg(Total_crashes ~ lnaadt, d, family = "Poisson",
                 method = "BFGS")
   bad <- suppressWarnings(countreg(Total_crashes ~ lnaadt, d, family = "NB2",
                                    method = "NM", max.iters = 1,
                                    start.vals = c(-1, 0, 2)))
-  expect_warning(r2 <- regCompTest(p, model2 = bad), "higher")
+  expect_lt(as.numeric(logLik(bad)), as.numeric(logLik(p)))
+  expect_warning(r2 <- regCompTest(p, model2 = bad), "convergence")
   expect_true(is.na(r2$LR_pvalue))
 })
 

@@ -106,6 +106,16 @@ margEffTable <- function(object,
   se <- match.arg(se)
   tableType <- match.arg(tableType)
   
+  # Without `data`, the effects average over the rows used in estimation,
+  # counting each row with its frequency weight
+  w_rows <- NULL
+  if (is.null(data) && !is.null(object$data)) {
+    data <- .fcr_training_rows(object)
+    if (!is.null(object$call$weights) &&
+        length(object$model$weights) == nrow(data)) {
+      w_rows <- object$model$weights
+    }
+  }
   data <- .margEff_get_data(object, data)
   data <- as.data.frame(data)
   
@@ -155,6 +165,7 @@ margEffTable <- function(object,
       pred_method = pred_method,
       confint_level = confint_level,
       cluster_var = cluster_var,
+      w = w_rows,
       ...
     )
   }
@@ -417,6 +428,7 @@ print.flexEffectTable <- function(x, ...) {
                               pred_method,
                               confint_level,
                               cluster_var,
+                              w = NULL,
                               ...) {
   x <- data[[var]]
   
@@ -439,6 +451,7 @@ print.flexEffectTable <- function(x, ...) {
       measure = measure,
       indicator = indicator,
       pred_method = pred_method,
+      w = w,
       ...
     )$estimate
   }
@@ -450,6 +463,7 @@ print.flexEffectTable <- function(x, ...) {
     measure = measure,
     indicator = indicator,
     pred_method = pred_method,
+    w = w,
     ...
   )
   
@@ -482,6 +496,7 @@ print.flexEffectTable <- function(x, ...) {
       bootstraps = bootstraps,
       pred_method = pred_method,
       cluster_var = cluster_var,
+      data_is_training = !is.null(w) || .margEff_is_training(object, data),
       ...
     )
     se_val <- boot_out$se
@@ -525,7 +540,14 @@ print.flexEffectTable <- function(x, ...) {
                                   measure,
                                   indicator,
                                   pred_method,
+                                  w = NULL,
                                   ...) {
+  # Frequency-weighted average over the rows (unweighted without `w`)
+  avg <- function(v) {
+    if (is.null(w)) return(mean(v, na.rm = TRUE))
+    ok <- !is.na(v)
+    sum(w[ok] * v[ok]) / sum(w[ok])
+  }
   x <- data[[var]]
   mu0 <- .margEff_predict(object, data, pred_method = pred_method, ...)
   
@@ -544,9 +566,9 @@ print.flexEffectTable <- function(x, ...) {
     disc_change <- mu_high - mu_low
     
     if (indicator == "pseudo_elasticity") {
-      est <- mean(100 * disc_change / pmax(mu_low, .Machine$double.eps), na.rm = TRUE)
+      est <- avg(100 * disc_change / pmax(mu_low, .Machine$double.eps))
     } else {
-      est <- mean(disc_change, na.rm = TRUE)
+      est <- avg(disc_change)
     }
     
     return(list(
@@ -570,9 +592,9 @@ print.flexEffectTable <- function(x, ...) {
   
   if (measure == "elasticity") {
     eff_i <- (x_num / pmax(mu0, .Machine$double.eps)) * dmu_dx
-    est <- mean(eff_i, na.rm = TRUE)
+    est <- avg(eff_i)
   } else {
-    est <- mean(dmu_dx, na.rm = TRUE)
+    est <- avg(dmu_dx)
   }
   
   list(
@@ -606,6 +628,17 @@ print.flexEffectTable <- function(x, ...) {
   matrix(grad, nrow = 1)
 }
 
+# Bootstrap standard error of one marginal effect.
+#
+# The bootstrap resamples the model's independent units: rows, or panels
+# for panel models, or the clusters in `cluster_var` (each must contain
+# whole panels). With frequency weights, a row (or panel) with weight w
+# stands for w independent units: new frequencies are drawn as in the
+# coefficient bootstrap (.fcr_boot_frequencies()) and replace the weights.
+# A cluster drawn more than once contributes separate panels, keyed by
+# (occurrence, original panel). Each replicate refits the model with its
+# frozen specification (.margEff_refit()) and recomputes the effect on the
+# replicate's rows. Only converged refits with a finite effect count.
 .margEff_bootstrap_se <- function(object,
                                   data,
                                   var,
@@ -614,67 +647,158 @@ print.flexEffectTable <- function(x, ...) {
                                   bootstraps,
                                   pred_method,
                                   cluster_var,
+                                  data_is_training = FALSE,
                                   ...) {
-  # Resample the model's independent units: panels for panel models (or the
-  # clusters in `cluster_var`), otherwise rows
-  panel <- .margEff_panel_var(object)
-  if (!is.null(cluster_var)) {
-    miss <- setdiff(cluster_var, names(data))
-    if (length(miss)) {
-      stop("`cluster_var` column(s) not found in `data`: ", toString(miss),
-           call. = FALSE)
-    }
-  } else {
-    cluster_var <- panel
-  }
-  weights <- .margEff_call_weights(object, nrow(data))
+  rs_info <- .margEff_boot_units(object, data, cluster_var, data_is_training)
   successful <- 0L
   draws <- numeric(0)
+  failures <- character(0)
 
   for (b in seq_len(bootstraps)) {
-    rs <- .margEff_resample_data(data, cluster_var = cluster_var)
-    boot_data <- rs$data
-
+    rs <- .margEff_resample(rs_info)
     fit <- tryCatch(
-      .margEff_refit(object, boot_data,
-                     panel = if (!is.null(panel)) ".fcr_boot_id",
-                     weights = if (!is.null(weights)) weights[rs$idx]),
-      error = function(e) NULL
-    )
-
-    # Only converged refits count as successful replicates
-    if (is.null(fit) || isFALSE(fit$model$converged)) {
+      suppressWarnings(suppressMessages(
+        .margEff_refit(object, rs$data, panel = rs$panel_col,
+                       weights = rs$weights))),
+      error = function(e) NULL)
+    if (is.null(fit)) {
+      failures <- c(failures, "error")
       next
     }
-
+    # Only converged refits count (unknown convergence is not success)
+    if (!isTRUE(fit$model$converged)) {
+      failures <- c(failures, "not converged")
+      next
+    }
     eff <- tryCatch(
       .margEff_effect_value(
         object = fit,
-        data = boot_data,
+        data = rs$data,
         var = var,
         measure = measure,
         indicator = indicator,
         pred_method = pred_method,
+        w = rs$weights,
         ...
       )$estimate,
       error = function(e) NA_real_
     )
-
-    if (is.finite(eff)) {
+    if (length(eff) == 1L && is.finite(eff)) {
       successful <- successful + 1L
       draws <- c(draws, eff)
+    } else {
+      failures <- c(failures, "non-finite effect")
     }
   }
 
   if (length(draws) < 2L) {
-    warning("Too few successful bootstrap replications to compute a bootstrap standard error.")
-    return(list(se = NA_real_, successful_bootstraps = successful))
+    warning("Too few successful bootstrap replications (", successful,
+            " of ", bootstraps, ") to compute a bootstrap standard error.",
+            call. = FALSE)
+    return(list(se = NA_real_, successful_bootstraps = successful,
+                failures = table(failures)))
   }
 
   list(
-    se = stats::sd(draws, na.rm = TRUE),
-    successful_bootstraps = successful
+    se = stats::sd(draws),
+    successful_bootstraps = successful,
+    failures = table(failures)
   )
+}
+
+# Is `data` the model's analysis data (same rows as those used in
+# estimation)?
+.margEff_is_training <- function(object, data) {
+  if (is.null(object$data)) return(FALSE)
+  td <- tryCatch(.fcr_training_rows(object), error = function(e) NULL)
+  !is.null(td) && nrow(td) == nrow(data) &&
+    isTRUE(all.equal(td, data, check.attributes = FALSE))
+}
+
+# The resampling design of a marginal-effect bootstrap: the rows, their
+# panel of the model (NULL for row models), the frequency weights (NULL
+# without weights) and the resampling clusters.
+.margEff_boot_units <- function(object, data, cluster_var,
+                                data_is_training) {
+  m <- object$model
+  panel_index <- m$panel_index
+  w <- if (!is.null(object$call$weights)) m$weights
+  if (data_is_training || (is.null(panel_index) && is.null(w))) {
+    rows <- data
+  } else {
+    # Weights and panels are aligned with the analysis rows
+    rows <- .fcr_training_rows(object)
+  }
+  n <- nrow(rows)
+  if (!is.null(panel_index) && length(panel_index) != n) panel_index <- NULL
+  if (!is.null(w) && length(w) != n) {
+    stop("The model's weights do not align with its analysis rows; refit ",
+         "the model with this version of flexCountReg.", call. = FALSE)
+  }
+  is_panel <- !is.null(panel_index) && anyDuplicated(panel_index) > 0
+  if (!is.null(m$panel_index) && is.null(panel_index)) {
+    stop("The panels of this model are not available; refit the model ",
+         "with this version of flexCountReg.", call. = FALSE)
+  }
+  if (is.null(m$panel_index) && !is.null(.margEff_panel_var(object))) {
+    stop("The panels of this model are not available; refit the model ",
+         "with this version of flexCountReg.", call. = FALSE)
+  }
+  cluster <- NULL
+  if (!is.null(cluster_var)) {
+    miss <- setdiff(cluster_var, names(rows))
+    if (length(miss)) {
+      stop("`cluster_var` column(s) not found in `data`: ", toString(miss),
+           call. = FALSE)
+    }
+    if (!is.null(w)) {
+      stop("`cluster_var` cannot be combined with frequency weights: the ",
+           "frequency of a cluster is not defined. Use the default ",
+           "resampling of the model's units.", call. = FALSE)
+    }
+    cluster <- as.integer(interaction(rows[cluster_var], drop = TRUE))
+    if (!is.null(panel_index) &&
+        any(tapply(cluster, panel_index, function(v) length(unique(v))) > 1)) {
+      stop("Each panel of the model must lie within one `cluster_var` ",
+           "cluster.", call. = FALSE)
+    }
+  }
+  unit <- if (!is.null(cluster)) cluster else if (is_panel) panel_index else
+    seq_len(n)
+  unit_rows <- split(seq_len(n), factor(unit, levels = unique(unit)))
+  unit_w <- if (!is.null(w)) vapply(unit_rows, function(r) w[r[1]], 1,
+                                     USE.NAMES = FALSE)
+  list(rows = rows, panel_index = if (is_panel) panel_index,
+       unit_rows = unit_rows, unit_w = unit_w,
+       panel_col = if (is_panel) .fcr_unused_name(names(rows),
+                                                  ".fcr_boot_id"))
+}
+
+# One bootstrap sample of a .margEff_boot_units() design: the data, the
+# name of the new panel column (NULL for row models) and the frequency
+# weights of the sample's rows (NULL without weights).
+.margEff_resample <- function(info) {
+  U <- length(info$unit_rows)
+  if (is.null(info$unit_w)) {
+    pick <- sample.int(U, U, replace = TRUE)
+    w_pick <- NULL
+  } else {
+    counts <- .fcr_boot_frequencies(info$unit_w)
+    pick <- which(counts > 0)
+    w_pick <- counts[pick]
+  }
+  sel <- info$unit_rows[pick]
+  idx <- unlist(sel, use.names = FALSE)
+  out <- info$rows[idx, , drop = FALSE]
+  rownames(out) <- NULL
+  if (!is.null(info$panel_col)) {
+    # New panel key: (occurrence of the sampled unit, original panel)
+    occ <- rep(seq_along(sel), lengths(sel))
+    out[[info$panel_col]] <- as.integer(interaction(
+      occ, info$panel_index[idx], drop = TRUE, lex.order = TRUE))
+  }
+  list(data = out, panel_col = info$panel_col,
+       weights = if (!is.null(w_pick)) rep(w_pick, lengths(sel)))
 }
 
 # Name(s) of the panel (independent unit) column(s) of a panel model, or
@@ -689,55 +813,46 @@ print.flexEffectTable <- function(x, ...) {
   if (is.character(g)) g else NULL
 }
 
-# A numeric weights vector given in the model call (one value per row of
-# `data`), or NULL (no weights, or weights given as a column name).
-.margEff_call_weights <- function(object, n) {
-  w_expr <- object$call$weights
-  if (is.null(w_expr)) return(NULL)
-  w <- tryCatch(eval(w_expr, envir = environment(object$formula)),
-                error = function(e) NULL)
-  if (is.numeric(w) && length(w) == n) w else NULL
-}
-
-# Resample rows, or whole clusters. Every sampled cluster gets a fresh id in
-# column .fcr_boot_id, so a cluster drawn twice is two independent panels.
-.margEff_resample_data <- function(data, cluster_var = NULL) {
-  if (!is.null(cluster_var) && length(cluster_var) > 0L) {
-    ids <- if (length(cluster_var) == 1L) data[[cluster_var]] else
-      interaction(data[cluster_var], drop = TRUE, sep = "__")
-    rows <- split(seq_len(nrow(data)), ids, drop = TRUE)
-    pick <- sample.int(length(rows), length(rows), replace = TRUE)
-    idx <- unlist(rows[pick], use.names = FALSE)
-    out <- data[idx, , drop = FALSE]
-    out$.fcr_boot_id <- rep(seq_along(pick), lengths(rows[pick]))
-  } else {
-    idx <- sample.int(nrow(data), size = nrow(data), replace = TRUE)
-    out <- data[idx, , drop = FALSE]
-  }
-  rownames(out) <- NULL
-  list(data = out, idx = idx)
-}
-
-# Refit the model on a bootstrap sample: the panel id is the fresh bootstrap
-# id, numeric weights are the resampled ones, and no inner bootstrap is run.
+# Refit the model on a bootstrap sample with its frozen specification: the
+# expanded mean and auxiliary formulas (so `.` cannot pick up helper
+# columns), the stored values of the other arguments where the call refers
+# to objects that may have changed, the sample's panel column and frequency
+# weights, and no inner bootstrap.
 .margEff_refit <- function(object, boot_data, panel = NULL, weights = NULL) {
   fit_call <- object$call
   if (is.null(fit_call)) {
     stop("No stored call is available for bootstrap refitting.")
   }
-  fun <- eval(fit_call[[1]])
-  fun_args <- names(formals(fun))
-  # Name every argument (e.g. a positional group_var)
-  fit_call <- match.call(fun, fit_call)
+  fun_args <- names(formals(eval(fit_call[[1]])))
+  m <- object$model
+  # Frozen formulas
+  fit_call$formula <- object$formula
+  for (nm in c("dis_param_formula_1", "dis_param_formula_2",
+               "underreport_formula", "zero_formula", "rpar_formula",
+               "het_mean_formula", "het_var_formula")) {
+    if (nm %in% names(fit_call) && !is.null(m[[nm]])) {
+      fit_call[[nm]] <- m[[nm]]
+    }
+  }
+  # Arguments given as expressions: use the stored values where they exist
+  for (nm in setdiff(names(fit_call), c("", "data", "formula", "weights",
+                                        "group_var", "panel_id",
+                                        "offset"))) {
+    if (is.language(fit_call[[nm]]) && !is.null(m[[nm]]) &&
+        !is.list(m[[nm]])) {
+      fit_call[[nm]] <- m[[nm]]
+    }
+  }
   fit_call$data <- boot_data
   if (!is.null(panel)) {
     if ("panel_id" %in% names(fit_call)) fit_call$panel_id <- NULL
     fit_call$group_var <- panel
   }
-  if (!is.null(weights)) fit_call$weights <- weights
+  fit_call$weights <- weights
   if ("stderr" %in% fun_args) fit_call$stderr <- "normal"
   if ("bootstraps" %in% fun_args) fit_call$bootstraps <- NULL
-  # Evaluate where the model was specified, so other objects the call refers
-  # to are found
+  if ("verbose" %in% fun_args) fit_call$verbose <- FALSE
+  # Evaluate where the model was specified, so other objects the call
+  # refers to (for example an offset column name) are found
   eval(fit_call, envir = environment(object$formula))
 }

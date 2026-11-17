@@ -14,6 +14,7 @@ repois(
   stderr = "normal",
   bootstraps = NULL,
   offset = NULL,
+  weights = NULL,
   keep_data = TRUE,
   print.level = NULL
 )
@@ -46,6 +47,12 @@ to be used for estimating standard errors. If not specified, no
 bootstrapping is performed.}
 
 \item{offset}{an optional offset term provided as a string.}
+
+\item{weights}{the name of a column of `data`, or a numeric vector with one
+value per row of `data`, of frequency weights of the panels: a panel with
+weight w counts as w independent panels in the log-likelihood, the robust
+covariance, BIC and the bootstrap. Weights must be constant within each
+panel. Bootstrap standard errors need whole-number weights.}
 
 \item{keep_data}{logical; if \code{FALSE}, the training data are not stored
 in the fitted object.}

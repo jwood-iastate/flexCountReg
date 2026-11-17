@@ -70,10 +70,15 @@ nb_b$model$boot_failures
 If many replicates fail, increase `max.iters`, try another `method`, or
 simplify the model. If fewer than two succeed, the standard errors are `NA`.
 
-**Weights.** `weights` are frequency weights: a row with weight 3 counts as
-three independent observations. The estimates, log-likelihood, robust
-covariance and BIC are those of the expanded data. In panel models the
-weights belong to the panels, so they must be constant within a panel.
+**Weights.** Every estimator takes `weights`, which are frequency weights:
+a row with weight 3 counts as three independent observations. The
+estimates, log-likelihood, robust covariance and BIC are those of the
+expanded data. In panel models the weights belong to the panels (a panel
+with weight 3 counts as three independent panels), so they must be constant
+within a panel. The bootstrap resamples the expanded observations: it draws
+new frequencies from a multinomial distribution and refits with them in
+place of the weights, so it needs whole-number weights (use
+`stderr = "robust"` for other weights).
 
 ## Marginal effects
 
@@ -196,8 +201,10 @@ distribution only when:
 2. **The restriction is regular.** The fixed values are inside the parameter
    space, every remaining parameter is identified under the restriction,
    and the restriction is not reached only in a limit.
-3. **The data are the same.** The same observations, outcome, offsets and
-   weights.
+3. **The data are the same.** The same observations, outcome, offsets,
+   weights and panels, and the same values of the variables both models use.
+4. **Both fits reached their maximum.** Both report convergence, and the
+   larger model's log-likelihood is not below the restricted model's.
 
 The families nest as follows:
 
@@ -241,6 +248,10 @@ of the LR statistic using `simulate()`.
 summary(nb_h)$lr_test
 is.null(summary(pl)$lr_test)   # no test: PL does not nest Poisson
 ```
+
+When a condition fails, `regCompTest()` reports no LR test and gives the
+reason in `LR_reason`. Nesting of the mean model is checked on the design
+matrices, so `y ~ x` is nested in `y ~ I(2 * x) + z`.
 
 `regCompTest()` applies the same rules to two fitted models (the one with
 fewer parameters is the restricted model) or to a model and a base model it

@@ -21,7 +21,7 @@ countreg(
   start.vals = NULL,
   stderr = "normal",
   bootstraps = NULL,
-  engine = "halton",
+  engine = "quadrature",
   keep_data = TRUE,
   zero_formula = NULL,
   zero_type = c("inflated", "hurdle")
@@ -99,9 +99,12 @@ standard errors, or "robust" for robust (sandwich) standard errors.}
 to be used for estimating standard errors when \code{stderr}= "boot". Defaults
 to 200 when \code{stderr = "boot"} and \code{bootstraps} is not given.}
 
-\item{engine}{the engine to use for the integration if the Poisson Lognormal
-(PLN) distribution is used. Options include "halton" which uses Halton
-draws or "poilog" which uses the poilog package. The default is "halton".}
+\item{engine}{the numerical method for the mixed Poisson families PLN, PGE, PW
+and PLL: \code{"quadrature"} (default; adaptive quadrature on the log
+scale, accurate for every count), \code{"halton"} (the average over
+Halton draws used by flexCountReg 0.1.2 and earlier, kept to reproduce
+earlier fits; it is badly biased for counts far in the tail) or, for PLN
+only, \code{"poilog"} (the poilog package).}
 
 \item{keep_data}{logical; if \code{FALSE}, the training data are not stored
 in the fitted object (saving memory). \code{predict()} then needs

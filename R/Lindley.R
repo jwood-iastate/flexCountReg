@@ -102,28 +102,28 @@ dlindley <- function(x, theta = 1, log = FALSE) {
 #' @rdname Lindley
 #' @export
 plindley <- function(q, theta = 1, lower.tail = TRUE, log.p = FALSE) {
-  
-
-  # --- Vectorization Setup ---
   n <- max(length(q), length(theta))
-  q <- rep_len(q, n)
-  theta <- rep_len(theta, n)
-  
-  # --- Compute CDF ---
-  # F(x) = 1 - (1 + theta*x/(1+theta)) * exp(-theta*x)
-  # This is already a closed-form expression - fully vectorizable
-  
-  cdf <- 1 - (1 + theta * q / (1 + theta)) * exp(-theta * q)
-  
-  # Handle boundaries
-  cdf[q <= 0] <- 0
-  cdf[!is.finite(q) & q > 0] <- 1
-  
-  # --- Apply Tail and Log Options ---
-  if (!lower.tail) cdf <- 1 - cdf
-  if (log.p) cdf <- log(cdf)
-  
-  return(cdf)
+  if (min(length(q), length(theta)) == 0L) return(numeric(0))
+  q <- rep_len(as.numeric(q), n)
+  theta <- rep_len(as.numeric(theta), n)
+  out <- rep(NA_real_, n)
+  na <- is.na(q) | is.na(theta)
+  # theta must be positive and finite: otherwise NaN, with a warning
+  bad <- !na & !(is.finite(theta) & theta > 0)
+  out[bad] <- NaN
+  .fcr_warn_nan(bad)
+  ok <- !na & !bad
+  # log P(X > q) = log1p(theta q / (1 + theta)) - theta q for q > 0, so both
+  # tails keep their relative precision: the lower tail is -expm1() of it
+  qq <- pmax(q[ok], 0)
+  th <- theta[ok]
+  log_s <- ifelse(qq == Inf, -Inf, log1p(th * qq / (1 + th)) - th * qq)
+  out[ok] <- if (lower.tail) {
+    if (log.p) .fcr_log1mexp(log_s) else -expm1(log_s)
+  } else {
+    if (log.p) log_s else exp(log_s)
+  }
+  out
 }
 
 

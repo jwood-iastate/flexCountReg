@@ -9,6 +9,7 @@ rootogram(
   newdata = NULL,
   max_count = NULL,
   style = c("hanging", "standing"),
+  overflow = FALSE,
   plot = TRUE,
   main = NULL,
   xlab = "Count",
@@ -25,10 +26,17 @@ Without \code{newdata}, the observed and expected frequencies count each
 row with its frequency weight.}
 
 \item{max_count}{the largest count shown. Defaults to the largest observed
-count.}
+count. The cutoff only limits the display: the expected frequency of
+each shown count sums the fitted probabilities of every row, including
+rows whose outcome is above \code{max_count}.}
 
 \item{style}{\code{"hanging"} (bars hang from the expected curve) or
 \code{"standing"} (bars stand on zero).}
+
+\item{overflow}{logical; add a last bin for \code{Y > max_count}, so the
+observed and expected frequencies both sum to the total. Without it,
+the tail is reported in the \code{"tail"} attribute and, when it is not
+negligible, under the plot.}
 
 \item{plot}{logical; draw the plot?}
 
@@ -39,7 +47,11 @@ count.}
 \value{
 Invisibly, a data frame with columns \code{count},
 \code{observed} and \code{expected} (frequencies), of class
-\code{flexCountReg_rootogram}.
+\code{flexCountReg_rootogram}; with \code{overflow = TRUE} its last row
+(count \code{max_count + 1}) is the bin \code{Y > max_count}.
+Attribute \code{"tail"} holds the observed and expected frequencies of
+\code{Y > max_count}. Rows with non-finite fitted means or probabilities are
+left out of both frequencies, with a warning.
 }
 \description{
 Compares observed and expected count frequencies on a square-root scale

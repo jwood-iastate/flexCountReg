@@ -18,7 +18,8 @@ negmultinom(
   stderr = "normal",
   bootstraps = NULL,
   verbose = FALSE,
-  keep_data = TRUE
+  keep_data = TRUE,
+  weights = NULL
 )
 }
 \arguments{
@@ -73,6 +74,12 @@ bootstrap; requires \code{bootstraps}).}
 \item{keep_data}{logical; if \code{FALSE}, the training data are not stored
 in the fitted object (saving memory). \code{predict()} then needs
 \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
+
+\item{weights}{the name of a column of `data`, or a numeric vector with one
+value per row of `data`, of frequency weights of the panels: a panel with
+weight w counts as w independent panels in the log-likelihood, the robust
+covariance, BIC and the bootstrap. Weights must be constant within each
+panel. Bootstrap standard errors need whole-number weights.}
 }
 \value{
 An object of class \code{flexCountReg}, a list with components:

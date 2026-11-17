@@ -14,13 +14,36 @@ renb_ll <- function(y, mu, a, b, panels) {
   df_model <- list(sum_mu = sums[, 1], sum_y = sums[, 2],
                    log_prod_element = sums[, 3])
   
-  # Calculate log-likelihood using lgamma for numerical stability
-  # lgamma(a + sum_mu) - lgamma(a + b + sum_mu + sum_y), computed without
-  # cancellation when sum_mu is large
-  log_P <- .fcr_lgamma_diff(a, b) + lgamma(b + df_model$sum_y) - lgamma(b) -
-    .fcr_lgamma_diff(a + df_model$sum_mu, b + df_model$sum_y) +
-    df_model$log_prod_element
-  
+  # log P = lbeta(a + M, b + Y) - lbeta(a, b) + sum(log terms), with
+  # M = sum(mu) and Y = sum(y), computed in two parts so that no two huge
+  # terms cancel (single lgamma terms can be ~1e300 when a, b or M is large):
+  #  (1) lbeta(a + M, c) - lbeta(a, c), c = b + Y, which equals both
+  #      D(a, M) - D(a + c, M) and D(a, c) - D(a + M, c), with
+  #      D(x, d) = lgamma(x + d) - lgamma(x); the form with the smaller
+  #      increment min(M, c) is used;
+  #  (2) lbeta(a, b + Y) - lbeta(a, b) = -sum_{k < Y} log1p(a / (b + k)),
+  #      exact for whole Y and accurate for every a and b.
+  M <- df_model$sum_mu
+  Y <- df_model$sum_y
+  # A panel mean that overflows has no finite likelihood
+  if (any(!is.finite(M))) return(rep(-Inf, length(M)))
+  cc <- b + Y
+  small_M <- M <= cc
+  t1 <- numeric(length(M))
+  t1[small_M] <- .fcr_lgamma_diff(a, M[small_M]) -
+    .fcr_lgamma_diff(a + cc[small_M], M[small_M])
+  t1[!small_M] <- .fcr_lgamma_diff(a, cc[!small_M]) -
+    .fcr_lgamma_diff(a + M[!small_M], cc[!small_M])
+  Yi <- round(Y)
+  k <- sequence(Yi) - 1
+  pid <- rep(seq_along(Yi), Yi)
+  t2 <- numeric(length(Yi))
+  if (length(k)) {
+    s2 <- rowsum(log1p(a / (b + k)), pid, reorder = TRUE)
+    t2[as.integer(rownames(s2))] <- -s2[, 1]
+  }
+  log_P <- t1 + t2 + df_model$log_prod_element
+
   # Sum across panels for total log-likelihood
   total_loglik <- log_P
   
@@ -30,6 +53,7 @@ renb_ll <- function(y, mu, a, b, panels) {
 # lgamma(x + d) - lgamma(x) for x > 0, d >= 0, accurate when x is much larger
 # than d (where the direct difference cancels to zero in floating point).
 .fcr_lgamma_diff <- function(x, d) {
+  if (!length(x) || !length(d)) return(numeric(0))
   n <- max(length(x), length(d))
   x <- rep_len(x, n); d <- rep_len(d, n)
   out <- lgamma(x + d) - lgamma(x)
@@ -48,6 +72,7 @@ renb_ll <- function(y, mu, a, b, panels) {
 # it is the finite sum of log1p(k / x), k = 0, ..., d - 1, which is accurate
 # for every x; otherwise a Stirling series is used for large x.
 .fcr_lgamma_diff_rel <- function(x, d) {
+  if (!length(x) || !length(d)) return(numeric(0))
   n <- max(length(x), length(d))
   x <- rep_len(x, n); d <- rep_len(d, n)
   out <- lgamma(x + d) - lgamma(x) - d * log(x)

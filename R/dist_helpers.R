@@ -118,6 +118,12 @@
   stats::rgamma(n, shape = shape, rate = theta)
 }
 
+# The base R convention for invalid distribution parameters: NaN for that
+# element and one warning.
+.fcr_warn_nan <- function(bad) {
+  if (any(bad, na.rm = TRUE)) warning("NaNs produced", call. = FALSE)
+}
+
 .fcr_warn_na <- function(bad, what) {
   if (any(bad)) {
     warning("NAs produced: ", what, call. = FALSE)
@@ -125,8 +131,10 @@
 }
 
 # Shared contract of the count-distribution p-functions: arguments are
-# recycled; NA q (or NaN) gives NA; q < 0 (including -Inf) gives
-# P(Y <= q) = 0; q = Inf gives 1; the upper tail and log scale follow. Only
+# recycled; NA q (or NaN) or a missing parameter gives NA; for valid
+# parameters q < 0 (including -Inf) gives P(Y <= q) = 0 and q = Inf gives 1,
+# while invalid parameters give the core's NA/NaN at every q; the upper tail
+# and log scale follow. Only
 # finite q >= 0 reach `core`, which gets the matching elements of the
 # vector parameters in `pars` (NULL entries are dropped: NULL is each
 # core's default) and the remaining arguments in `...`. With `logdens`
@@ -146,12 +154,30 @@
   q <- rep_len(as.numeric(q), n)
   sub <- function(p, ok) if (length(p) == 1L) p else rep_len(p, n)[ok]
   out <- rep(NA_real_, n)
-  low <- !is.na(q) & q < 0
-  high <- !is.na(q) & q == Inf
+  pars_nn <- Filter(Negate(is.null), pars)
+  # Rows with a missing parameter are NA whatever q is
+  par_na <- Reduce(`|`, lapply(pars_nn, function(p) is.na(rep_len(p, n))),
+                   rep(FALSE, n))
+  low <- !is.na(q) & q < 0 & !par_na
+  high <- !is.na(q) & q == Inf & !par_na
+  # The endpoints are 0 or 1 only for valid parameters: probe the core at
+  # q = 0, which gives NA or NaN for parameters outside its domain
+  ends <- which(low | high)
+  if (length(ends)) {
+    probe <- suppressWarnings(do.call(core, c(
+      list(rep(0, length(ends))),
+      lapply(pars_nn, function(p) if (length(p) == 1L) p else
+        rep_len(p, n)[ends]),
+      list(lower.tail = TRUE, log.p = FALSE), list(...))))
+    bad <- ends[is.na(probe)]
+    out[bad] <- probe[is.na(probe)]
+    low[bad] <- FALSE
+    high[bad] <- FALSE
+  }
   out[low] <- if (lower.tail) 0 else 1
   out[high] <- if (lower.tail) 1 else 0
   if (log.p) out[low | high] <- log(out[low | high])
-  ok <- !is.na(q) & is.finite(q) & q >= 0
+  ok <- !is.na(q) & is.finite(q) & q >= 0 & !par_na
   if (any(ok)) {
     pars <- Filter(Negate(is.null), pars)   # NULL is each core's default
     out[ok] <- do.call(core, c(list(q[ok]), lapply(pars, sub, ok = ok),

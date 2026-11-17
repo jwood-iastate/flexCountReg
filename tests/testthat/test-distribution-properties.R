@@ -278,10 +278,15 @@ test_that("Sichel and generalized Waring", {
     p = function(q, ...) pgwar(q, mu = 2, k = 2, rho = 4, ...),
     q = function(pr) qgwar(pr, mu = 2, k = 2, rho = 4),
     r = function(n) rgwar(n, mu = 2, k = 2, rho = 4), tol_r = 0.06)
-  expect_error(dgwar(1, mu = -1, k = 1, rho = 3), "mu")
-  expect_error(dgwar(1, mu = 1, k = -1, rho = 3), "k")
-  expect_error(dgwar(1, mu = 1, k = 1, rho = 0.5), "rho")
-  expect_error(pgwar(1, mu = -1, k = 1, rho = 3), "mu")
+  # Invalid parameters: NaN for that element, with a warning (base R)
+  expect_warning(v <- dgwar(1, mu = c(-1, 2), k = 1, rho = 3), "NaN")
+  expect_true(is.nan(v[1]) && is.finite(v[2]))
+  expect_warning(v <- dgwar(1, mu = 1, k = c(1, -1), rho = 3), "NaN")
+  expect_true(is.finite(v[1]) && is.nan(v[2]))
+  expect_warning(expect_true(is.nan(dgwar(1, mu = 1, k = 1, rho = 0.5))),
+                 "NaN")
+  expect_warning(v <- pgwar(c(1, -1, Inf), mu = -1, k = 1, rho = 3), "NaN")
+  expect_true(all(is.nan(v)))
   expect_error(qgwar(2, mu = 1, k = 1, rho = 3), "p must")
   expect_equal(dgwar(numeric(0), 1, 1, 3), numeric(0))
 })

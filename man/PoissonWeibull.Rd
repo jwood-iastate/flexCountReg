@@ -16,7 +16,8 @@ dpoisweibull(
   mean_value = NULL,
   sd_value = NULL,
   ndraws = 1500,
-  log = FALSE
+  log = FALSE,
+  engine = c("quadrature", "halton")
 )
 
 ppoisweibull(
@@ -28,7 +29,8 @@ ppoisweibull(
   sd_value = NULL,
   ndraws = 1500,
   lower.tail = TRUE,
-  log.p = FALSE
+  log.p = FALSE,
+  engine = c("quadrature", "halton")
 )
 
 qpoisweibull(
@@ -38,7 +40,8 @@ qpoisweibull(
   sigma = NULL,
   mean_value = NULL,
   sd_value = NULL,
-  ndraws = 1500
+  ndraws = 1500,
+  engine = c("quadrature", "halton")
 )
 
 rpoisweibull(
@@ -69,9 +72,16 @@ sigma are provided).}
 \item{sd_value}{Standard deviation of the Weibull distribution (optional if
 alpha and sigma are provided).}
 
-\item{ndraws}{the number of Halton draws to use for the integration.}
+\item{ndraws}{the number of Halton draws (only with \code{engine = "halton"}).}
 
 \item{log}{Logical; if TRUE, probabilities p are given as log(p).}
+
+\item{engine}{the numerical method: \code{"quadrature"} (default) computes
+the log-probability by adaptive quadrature over the log of the mixing
+variable, accurate for every count including far tails;
+\code{"halton"} averages the Poisson probabilities over Halton draws
+(the method of flexCountReg 0.1.2 and earlier, kept for
+reproducibility; badly biased far in the tail).}
 
 \item{q}{Quantile or a vector of quantiles.}
 

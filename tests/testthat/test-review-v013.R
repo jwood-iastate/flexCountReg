@@ -415,10 +415,15 @@ test_that("F14: the marginal-effect bootstrap resamples independent units", {
   d <- washington_roads
   # A cluster drawn twice becomes two panels with fresh ids
   set.seed(1)
-  rs <- .margEff_resample_data(d[1:40, ], cluster_var = "ID")
+  d40 <- d[1:40, ]
+  pid <- as.integer(factor(d40$ID))
+  info <- list(rows = d40, panel_index = pid,
+               unit_rows = split(seq_len(40), pid), unit_w = NULL,
+               panel_col = ".fcr_boot_id")
+  rs <- .margEff_resample(info)
   ids <- split(rs$data$ID, rs$data$.fcr_boot_id)
   expect_true(all(vapply(ids, function(v) length(unique(v)) == 1, NA)))
-  expect_equal(sum(lengths(ids)), length(rs$idx))
+  expect_equal(sum(lengths(ids)), nrow(rs$data))
   expect_true(any(duplicated(vapply(ids, function(v) as.character(v[1]), ""))))
   # Panel models resample panels by default, and each refit sees one panel
   # per sampled cluster
@@ -446,9 +451,11 @@ test_that("F14: refits resample numeric weights and do not bootstrap again", {
   m <- countreg(Total_crashes ~ lnaadt, d, weights = w, method = "BFGS",
                 stderr = "boot", bootstraps = 5)
   set.seed(2)
-  rs <- .margEff_resample_data(d)
-  r <- .margEff_refit(m, rs$data, weights = w[rs$idx])
-  ref <- countreg(Total_crashes ~ lnaadt, rs$data, weights = w[rs$idx],
+  rs <- .margEff_resample(.margEff_boot_units(m, d, NULL, TRUE))
+  # Frequency weights: new frequencies that replace the weights
+  expect_equal(sum(rs$weights), sum(w))
+  r <- .margEff_refit(m, rs$data, weights = rs$weights)
+  ref <- countreg(Total_crashes ~ lnaadt, rs$data, weights = rs$weights,
                   method = "BFGS")
   expect_equal(coef(r), coef(ref), tolerance = 1e-8)
   expect_equal(r$model$vcov_type, "hessian")
@@ -459,7 +466,7 @@ test_that("F15: bootstrap replicates must converge and be finite", {
   k <- 0
   refit <- function(idx) {
     k <<- k + 1
-    est <- c(a = mean(idx), b = 1)
+    est <- structure(c(a = mean(idx), b = 1), converged = TRUE)
     if (k %% 4 == 1) attr(est, "converged") <- FALSE
     if (k %% 4 == 2) est["b"] <- Inf
     est

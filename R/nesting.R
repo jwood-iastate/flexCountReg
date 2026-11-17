@@ -44,12 +44,18 @@
   if (is.character(family)) family <- toupper(family)
   rp <- m$rpar %||% if (inherits(object, "countreg_rp"))
     sub(":Mean$", "", grep(":Mean$", names(stats::coef(object)), value = TRUE))
+  rp <- as.character(rp)
+  rd <- m$rpardists
   list(class = class(object)[1],
        family = family,
        coefs = .fcr_norm_coef_names(names(stats::coef(object)), family),
+       # Mean coefficients: their nesting is checked on the design matrices
+       mean = (m$blueprint %||% list())$x_names,
        zero = if (!is.null(m$zero_formula)) m$zero_type else "none",
        underreport = !is.null(m$underreport_formula),
-       rpar = sort(as.character(rp)),
+       rpar = sort(rp),
+       rpardists = if (length(rp) && !is.null(rd)) unname(rd[sort(rp)]),
+       correlated = isTRUE(m$correlated),
        converged = m$converged)
 }
 
@@ -59,7 +65,9 @@
   family <- toupper(family)
   list(class = "countreg", family = family,
        coefs = c(mean_coefs, unlist(get_params(family))),
+       mean = mean_coefs,
        zero = "none", underreport = FALSE, rpar = character(0),
+       rpardists = NULL, correlated = FALSE,
        converged = TRUE)
 }
 
@@ -79,8 +87,19 @@
     return(no(paste("the models have different random parameters (a",
                     "variance of zero is on the boundary)")))
   }
-  extra <- setdiff(f$coefs, r$coefs)
-  if (!all(r$coefs %in% f$coefs) || !length(extra)) {
+  if (!identical(r$rpardists, f$rpardists) ||
+      !identical(r$correlated, f$correlated)) {
+    return(no(paste("the random parameters have different distributions",
+                    "or correlation structures")))
+  }
+  # Mean coefficients are compared through their design matrices (see
+  # .fcr_design_nested()), so equivalent bases are recognized; the other
+  # parameters by name
+  r_other <- setdiff(r$coefs, r$mean)
+  f_other <- setdiff(f$coefs, f$mean)
+  df <- length(f$coefs) - length(r$coefs)
+  if (!all(r_other %in% f_other) || df < 1L ||
+      (is.null(r$mean) != is.null(f$mean))) {
     return(no(paste("the parameters of the smaller model are not a subset",
                     "of those of the larger model")))
   }
@@ -101,14 +120,25 @@
       }
     }
   }
-  list(nested = TRUE, type = type, df = length(extra), reason = NA_character_)
+  list(nested = TRUE, type = type, df = df, reason = NA_character_)
 }
 
-# LR statistic and p-value for a nesting result; NA when not nested.
+# LR statistic and p-value for a nesting result; NA (with a reason) when not
+# nested, when a log-likelihood is not finite, or when the larger model has a
+# materially lower log-likelihood than the restricted one (LR below
+# -max(0.01, 2e-6 |logLik|)): the larger fit then did not reach its maximum,
+# and the test is unavailable. Smaller negative values, which arise when an
+# optimizer stops on a flat boundary (e.g. NB2 with ln(alpha) -> -Inf), are
+# rounded to 0; they change no inference (p > 0.9).
 .fcr_lr_pvalue <- function(ll_full, ll_restricted, nest) {
-  if (!isTRUE(nest$nested)) return(list(LR = NA_real_, p = NA_real_))
+  na <- function(reason) list(LR = NA_real_, p = NA_real_, reason = reason)
+  if (!isTRUE(nest$nested)) return(na(nest$reason %||% "not nested"))
   lr <- 2 * (ll_full - ll_restricted)
-  if (!is.finite(lr)) return(list(LR = NA_real_, p = NA_real_))
+  if (!is.finite(lr)) return(na("a log-likelihood is not finite"))
+  if (lr < -max(0.01, 2e-6 * abs(ll_full))) {
+    return(na(paste("the larger model has a lower log-likelihood than the",
+                    "restricted model, so it did not reach its maximum")))
+  }
   lr <- max(lr, 0)
   df <- nest$df
   p <- if (nest$type == "boundary") {
@@ -118,5 +148,139 @@
   } else {
     stats::pchisq(lr, df, lower.tail = FALSE)
   }
-  list(LR = lr, p = p)
+  list(LR = lr, p = p, reason = NA_character_)
+}
+
+# ---- Sample and design evidence for LR tests ---------------------------------
+
+# What an LR comparison needs to know about the analysis sample of a fit:
+# the rows used (of nrow(data)), the response, weights, offset and panel of
+# each row, and the raw values of every variable the model uses on those
+# rows. Stored in the fitted model at estimation.
+.fcr_lr_sample <- function(prep, data, group_var = NULL) {
+  rows <- prep$rows_used
+  bp <- prep$blueprint
+  forms <- c(list(prep$formula), unname(prep$aux_formulas))
+  v <- unique(c(unlist(lapply(forms, all.vars)), bp$offset_cols,
+                if (is.character(group_var)) group_var))
+  v <- intersect(v, names(data))
+  vars <- as.data.frame(data)[rows, v, drop = FALSE]
+  rownames(vars) <- NULL
+  list(version = 1L, n_data = nrow(data), rows_used = rows,
+       y = as.numeric(prep$y), weights = prep$weights, offset = prep$offset,
+       group = if (!is.null(prep$group)) as.integer(prep$group),
+       vars = vars)
+}
+
+# "" when two fits used the same observations with the same data, otherwise
+# the reason they did not. Row numbers alone are not enough (they repeat
+# across unrelated data sets), so the response, weights, offsets, panels and
+# the values of every variable both models use must agree too. Variables
+# only one model uses are not compared.
+.fcr_same_sample <- function(sa, sb) {
+  eq <- function(a, b) isTRUE(all.equal(a, b, check.attributes = FALSE))
+  if (length(sa$y) != length(sb$y) || !identical(sa$rows_used, sb$rows_used))
+    return("the models were fit to different rows")
+  if (!eq(sa$y, sb$y)) return("the models have different outcomes")
+  if (!eq(sa$weights, sb$weights)) return("the models have different weights")
+  if (!eq(sa$offset, sb$offset)) return("the models have different offsets")
+  if (!is.null(sa$group) || !is.null(sb$group)) {
+    ga <- sa$group %||% seq_along(sa$y)
+    gb <- sb$group %||% seq_along(sb$y)
+    pairs <- unique(cbind(ga, gb))
+    if (nrow(pairs) != length(unique(ga)) || nrow(pairs) != length(unique(gb)))
+      return("the models have different panels")
+  }
+  shared <- intersect(names(sa$vars), names(sb$vars))
+  for (v in shared) {
+    if (!eq(sa$vars[[v]], sb$vars[[v]])) {
+      return(paste0("the models use different values of `", v, "`"))
+    }
+  }
+  ""
+}
+
+# Is every column of A in the column space of B (relative tolerance)?
+.fcr_in_span <- function(A, B, tol = 1e-8) {
+  if (is.null(A) || !ncol(A)) return(TRUE)
+  if (is.null(B) || !ncol(B)) return(FALSE)
+  q <- qr(B, tol = 1e-10)
+  res <- qr.resid(q, A)
+  all(abs(res) <= tol * pmax(1, abs(A)) * max(1, sqrt(nrow(A))))
+}
+
+# Design matrices of a fit on its analysis rows: the mean design and each
+# auxiliary design (a column of ones for a scalar distribution parameter).
+.fcr_fit_designs <- function(object) {
+  m <- object$model
+  bp <- m$blueprint
+  fd <- forge_new_data(bp, m$lr_sample$vars)
+  out <- list(mean = fd$X)
+  n <- nrow(fd$X)
+  ones <- matrix(1, n, 1)
+  fam <- m$family
+  par_labels <- if (is.character(fam) && toupper(fam) %in% .fcr_families)
+    get_params(toupper(fam)) else list(NULL, NULL)
+  for (k in 1:2) {
+    nm <- paste0("dis", k)
+    if (!is.null(fd$aux[[nm]])) out[[nm]] <- fd$aux[[nm]]
+    else if (!is.null(par_labels[[k]])) out[[nm]] <- ones
+  }
+  for (nm in setdiff(names(fd$aux), c("dis1", "dis2"))) {
+    out[[nm]] <- fd$aux[[nm]]
+  }
+  out
+}
+
+# "" when every design block of the restricted fit is in the column space of
+# the matching block of the full fit (so the restriction is linear in the
+# parameters), otherwise the reason. A block only the full fit has is the
+# extra parameters.
+.fcr_design_nested <- function(obj_r, obj_f) {
+  dr <- tryCatch(.fcr_fit_designs(obj_r), error = function(e) NULL)
+  df <- tryCatch(.fcr_fit_designs(obj_f), error = function(e) NULL)
+  if (is.null(dr) || is.null(df)) {
+    return("the design matrices of the models could not be rebuilt")
+  }
+  for (nm in names(dr)) {
+    if (is.null(df[[nm]])) {
+      return(paste0("the smaller model has a `", nm, "` component that the ",
+                    "larger model does not have"))
+    }
+    if (!.fcr_in_span(dr[[nm]], df[[nm]])) {
+      return(paste0("the `", nm, "` design of the smaller model is not in ",
+                    "the column space of the larger model's"))
+    }
+  }
+  ""
+}
+
+# Full eligibility of an LR test between two fitted models: stored sample
+# evidence, convergence, finite log-likelihoods, the same sample, nested
+# specifications and nested designs. Returns a nesting result as
+# .fcr_nesting() does, plus `sample_ok` (FALSE when the samples differ).
+.fcr_lr_eligibility <- function(obj_r, obj_f) {
+  no <- function(reason, sample_ok = TRUE)
+    list(nested = FALSE, type = NA_character_, df = NA_integer_,
+         reason = reason, sample_ok = sample_ok)
+  sr <- obj_r$model$lr_sample
+  sf <- obj_f$model$lr_sample
+  if (is.null(sr) || is.null(sf)) {
+    return(no(paste("a model was fit with an older version of flexCountReg",
+                    "and lacks the sample information an LR test needs;",
+                    "refit it")))
+  }
+  why <- .fcr_same_sample(sr, sf)
+  if (nzchar(why)) return(no(why, sample_ok = FALSE))
+  if (!isTRUE(obj_r$model$converged) || !isTRUE(obj_f$model$converged)) {
+    return(no(paste("a model did not report convergence (or its",
+                    "convergence is unknown)")))
+  }
+  ll <- c(as.numeric(stats::logLik(obj_r)), as.numeric(stats::logLik(obj_f)))
+  if (!all(is.finite(ll))) return(no("a log-likelihood is not finite"))
+  nest <- .fcr_nesting(.fcr_model_spec(obj_r), .fcr_model_spec(obj_f))
+  if (!isTRUE(nest$nested)) return(c(nest, sample_ok = TRUE))
+  why <- .fcr_design_nested(obj_r, obj_f)
+  if (nzchar(why)) return(no(why))
+  c(nest, sample_ok = TRUE)
 }

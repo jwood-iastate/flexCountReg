@@ -150,23 +150,23 @@ nbp.base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
 regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
             variables = TRUE, print = TRUE)
 #> No LR test: the POISSON base model is not nested in the fitted model with a regular restriction (the POISSON family is not nested in the NBP family with a regular restriction). Compare the models with AIC and BIC.
-#> <div id="apeqfnqalm" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-#>   <style>#apeqfnqalm table {
+#> <div id="qouggxkkdh" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+#>   <style>#qouggxkkdh table {
 #>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 #>   -webkit-font-smoothing: antialiased;
 #>   -moz-osx-font-smoothing: grayscale;
 #> }
 #> 
-#> #apeqfnqalm thead, #apeqfnqalm tbody, #apeqfnqalm tfoot, #apeqfnqalm tr, #apeqfnqalm td, #apeqfnqalm th {
+#> #qouggxkkdh thead, #qouggxkkdh tbody, #qouggxkkdh tfoot, #qouggxkkdh tr, #qouggxkkdh td, #qouggxkkdh th {
 #>   border-style: none;
 #> }
 #> 
-#> #apeqfnqalm p {
+#> #qouggxkkdh p {
 #>   margin: 0;
 #>   padding: 0;
 #> }
 #> 
-#> #apeqfnqalm .gt_table {
+#> #qouggxkkdh .gt_table {
 #>   display: table;
 #>   border-collapse: collapse;
 #>   line-height: normal;
@@ -192,12 +192,12 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-left-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_caption {
+#> #qouggxkkdh .gt_caption {
 #>   padding-top: 4px;
 #>   padding-bottom: 4px;
 #> }
 #> 
-#> #apeqfnqalm .gt_title {
+#> #qouggxkkdh .gt_title {
 #>   color: #333333;
 #>   font-size: 125%;
 #>   font-weight: initial;
@@ -209,7 +209,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-bottom-width: 0;
 #> }
 #> 
-#> #apeqfnqalm .gt_subtitle {
+#> #qouggxkkdh .gt_subtitle {
 #>   color: #333333;
 #>   font-size: 85%;
 #>   font-weight: initial;
@@ -221,7 +221,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-top-width: 0;
 #> }
 #> 
-#> #apeqfnqalm .gt_heading {
+#> #qouggxkkdh .gt_heading {
 #>   background-color: #FFFFFF;
 #>   text-align: center;
 #>   border-bottom-color: #FFFFFF;
@@ -233,13 +233,13 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_bottom_border {
+#> #qouggxkkdh .gt_bottom_border {
 #>   border-bottom-style: solid;
 #>   border-bottom-width: 2px;
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_col_headings {
+#> #qouggxkkdh .gt_col_headings {
 #>   border-top-style: solid;
 #>   border-top-width: 2px;
 #>   border-top-color: #D3D3D3;
@@ -254,7 +254,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_col_heading {
+#> #qouggxkkdh .gt_col_heading {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -274,7 +274,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   overflow-x: hidden;
 #> }
 #> 
-#> #apeqfnqalm .gt_column_spanner_outer {
+#> #qouggxkkdh .gt_column_spanner_outer {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -286,15 +286,15 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 4px;
 #> }
 #> 
-#> #apeqfnqalm .gt_column_spanner_outer:first-child {
+#> #qouggxkkdh .gt_column_spanner_outer:first-child {
 #>   padding-left: 0;
 #> }
 #> 
-#> #apeqfnqalm .gt_column_spanner_outer:last-child {
+#> #qouggxkkdh .gt_column_spanner_outer:last-child {
 #>   padding-right: 0;
 #> }
 #> 
-#> #apeqfnqalm .gt_column_spanner {
+#> #qouggxkkdh .gt_column_spanner {
 #>   border-bottom-style: solid;
 #>   border-bottom-width: 2px;
 #>   border-bottom-color: #D3D3D3;
@@ -306,11 +306,11 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   width: 100%;
 #> }
 #> 
-#> #apeqfnqalm .gt_spanner_row {
+#> #qouggxkkdh .gt_spanner_row {
 #>   border-bottom-style: hidden;
 #> }
 #> 
-#> #apeqfnqalm .gt_group_heading {
+#> #qouggxkkdh .gt_group_heading {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -336,7 +336,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   text-align: left;
 #> }
 #> 
-#> #apeqfnqalm .gt_empty_group_heading {
+#> #qouggxkkdh .gt_empty_group_heading {
 #>   padding: 0.5px;
 #>   color: #333333;
 #>   background-color: #FFFFFF;
@@ -351,15 +351,15 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   vertical-align: middle;
 #> }
 #> 
-#> #apeqfnqalm .gt_from_md > :first-child {
+#> #qouggxkkdh .gt_from_md > :first-child {
 #>   margin-top: 0;
 #> }
 #> 
-#> #apeqfnqalm .gt_from_md > :last-child {
+#> #qouggxkkdh .gt_from_md > :last-child {
 #>   margin-bottom: 0;
 #> }
 #> 
-#> #apeqfnqalm .gt_row {
+#> #qouggxkkdh .gt_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -378,7 +378,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   overflow-x: hidden;
 #> }
 #> 
-#> #apeqfnqalm .gt_stub {
+#> #qouggxkkdh .gt_stub {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -391,7 +391,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #apeqfnqalm .gt_stub_row_group {
+#> #qouggxkkdh .gt_stub_row_group {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -405,15 +405,15 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   vertical-align: top;
 #> }
 #> 
-#> #apeqfnqalm .gt_row_group_first td {
+#> #qouggxkkdh .gt_row_group_first td {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #apeqfnqalm .gt_row_group_first th {
+#> #qouggxkkdh .gt_row_group_first th {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #apeqfnqalm .gt_summary_row {
+#> #qouggxkkdh .gt_summary_row {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   text-transform: inherit;
@@ -423,16 +423,16 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #apeqfnqalm .gt_first_summary_row {
+#> #qouggxkkdh .gt_first_summary_row {
 #>   border-top-style: solid;
 #>   border-top-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_first_summary_row.thick {
+#> #qouggxkkdh .gt_first_summary_row.thick {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #apeqfnqalm .gt_last_summary_row {
+#> #qouggxkkdh .gt_last_summary_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -442,7 +442,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_grand_summary_row {
+#> #qouggxkkdh .gt_grand_summary_row {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   text-transform: inherit;
@@ -452,7 +452,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #apeqfnqalm .gt_first_grand_summary_row {
+#> #qouggxkkdh .gt_first_grand_summary_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -462,7 +462,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-top-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_last_grand_summary_row_top {
+#> #qouggxkkdh .gt_last_grand_summary_row_top {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -472,11 +472,11 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_striped {
+#> #qouggxkkdh .gt_striped {
 #>   background-color: rgba(128, 128, 128, 0.05);
 #> }
 #> 
-#> #apeqfnqalm .gt_table_body {
+#> #qouggxkkdh .gt_table_body {
 #>   border-top-style: solid;
 #>   border-top-width: 2px;
 #>   border-top-color: #D3D3D3;
@@ -485,7 +485,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_footnotes {
+#> #qouggxkkdh .gt_footnotes {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   border-bottom-style: none;
@@ -499,7 +499,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_footnote {
+#> #qouggxkkdh .gt_footnote {
 #>   margin: 0px;
 #>   font-size: 90%;
 #>   padding-top: 4px;
@@ -508,7 +508,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #apeqfnqalm .gt_sourcenotes {
+#> #qouggxkkdh .gt_sourcenotes {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   border-bottom-style: none;
@@ -522,7 +522,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #apeqfnqalm .gt_sourcenote {
+#> #qouggxkkdh .gt_sourcenote {
 #>   font-size: 90%;
 #>   padding-top: 4px;
 #>   padding-bottom: 4px;
@@ -530,72 +530,72 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #apeqfnqalm .gt_left {
+#> #qouggxkkdh .gt_left {
 #>   text-align: left;
 #> }
 #> 
-#> #apeqfnqalm .gt_center {
+#> #qouggxkkdh .gt_center {
 #>   text-align: center;
 #> }
 #> 
-#> #apeqfnqalm .gt_right {
+#> #qouggxkkdh .gt_right {
 #>   text-align: right;
 #>   font-variant-numeric: tabular-nums;
 #> }
 #> 
-#> #apeqfnqalm .gt_font_normal {
+#> #qouggxkkdh .gt_font_normal {
 #>   font-weight: normal;
 #> }
 #> 
-#> #apeqfnqalm .gt_font_bold {
+#> #qouggxkkdh .gt_font_bold {
 #>   font-weight: bold;
 #> }
 #> 
-#> #apeqfnqalm .gt_font_italic {
+#> #qouggxkkdh .gt_font_italic {
 #>   font-style: italic;
 #> }
 #> 
-#> #apeqfnqalm .gt_super {
+#> #qouggxkkdh .gt_super {
 #>   font-size: 65%;
 #> }
 #> 
-#> #apeqfnqalm .gt_footnote_marks {
+#> #qouggxkkdh .gt_footnote_marks {
 #>   font-size: 75%;
 #>   vertical-align: 0.4em;
 #>   position: initial;
 #> }
 #> 
-#> #apeqfnqalm .gt_asterisk {
+#> #qouggxkkdh .gt_asterisk {
 #>   font-size: 100%;
 #>   vertical-align: 0;
 #> }
 #> 
-#> #apeqfnqalm .gt_indent_1 {
+#> #qouggxkkdh .gt_indent_1 {
 #>   text-indent: 5px;
 #> }
 #> 
-#> #apeqfnqalm .gt_indent_2 {
+#> #qouggxkkdh .gt_indent_2 {
 #>   text-indent: 10px;
 #> }
 #> 
-#> #apeqfnqalm .gt_indent_3 {
+#> #qouggxkkdh .gt_indent_3 {
 #>   text-indent: 15px;
 #> }
 #> 
-#> #apeqfnqalm .gt_indent_4 {
+#> #qouggxkkdh .gt_indent_4 {
 #>   text-indent: 20px;
 #> }
 #> 
-#> #apeqfnqalm .gt_indent_5 {
+#> #qouggxkkdh .gt_indent_5 {
 #>   text-indent: 25px;
 #> }
 #> 
-#> #apeqfnqalm .katex-display {
+#> #qouggxkkdh .katex-display {
 #>   display: inline-flex !important;
 #>   margin-bottom: 0.75em !important;
 #> }
 #> 
-#> #apeqfnqalm div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#> #qouggxkkdh div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 #>   height: 0px !important;
 #> }
 #> </style>
@@ -762,23 +762,23 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #> 8 McFadden's Pseudo R^2     0.0084       NA 
 #> 
 #> $gtTable
-#> <div id="gqshkgaaeg" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-#>   <style>#gqshkgaaeg table {
+#> <div id="ucrxqanfxa" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+#>   <style>#ucrxqanfxa table {
 #>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 #>   -webkit-font-smoothing: antialiased;
 #>   -moz-osx-font-smoothing: grayscale;
 #> }
 #> 
-#> #gqshkgaaeg thead, #gqshkgaaeg tbody, #gqshkgaaeg tfoot, #gqshkgaaeg tr, #gqshkgaaeg td, #gqshkgaaeg th {
+#> #ucrxqanfxa thead, #ucrxqanfxa tbody, #ucrxqanfxa tfoot, #ucrxqanfxa tr, #ucrxqanfxa td, #ucrxqanfxa th {
 #>   border-style: none;
 #> }
 #> 
-#> #gqshkgaaeg p {
+#> #ucrxqanfxa p {
 #>   margin: 0;
 #>   padding: 0;
 #> }
 #> 
-#> #gqshkgaaeg .gt_table {
+#> #ucrxqanfxa .gt_table {
 #>   display: table;
 #>   border-collapse: collapse;
 #>   line-height: normal;
@@ -804,12 +804,12 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-left-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_caption {
+#> #ucrxqanfxa .gt_caption {
 #>   padding-top: 4px;
 #>   padding-bottom: 4px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_title {
+#> #ucrxqanfxa .gt_title {
 #>   color: #333333;
 #>   font-size: 125%;
 #>   font-weight: initial;
@@ -821,7 +821,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-bottom-width: 0;
 #> }
 #> 
-#> #gqshkgaaeg .gt_subtitle {
+#> #ucrxqanfxa .gt_subtitle {
 #>   color: #333333;
 #>   font-size: 85%;
 #>   font-weight: initial;
@@ -833,7 +833,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-top-width: 0;
 #> }
 #> 
-#> #gqshkgaaeg .gt_heading {
+#> #ucrxqanfxa .gt_heading {
 #>   background-color: #FFFFFF;
 #>   text-align: center;
 #>   border-bottom-color: #FFFFFF;
@@ -845,13 +845,13 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_bottom_border {
+#> #ucrxqanfxa .gt_bottom_border {
 #>   border-bottom-style: solid;
 #>   border-bottom-width: 2px;
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_col_headings {
+#> #ucrxqanfxa .gt_col_headings {
 #>   border-top-style: solid;
 #>   border-top-width: 2px;
 #>   border-top-color: #D3D3D3;
@@ -866,7 +866,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_col_heading {
+#> #ucrxqanfxa .gt_col_heading {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -886,7 +886,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   overflow-x: hidden;
 #> }
 #> 
-#> #gqshkgaaeg .gt_column_spanner_outer {
+#> #ucrxqanfxa .gt_column_spanner_outer {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -898,15 +898,15 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 4px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_column_spanner_outer:first-child {
+#> #ucrxqanfxa .gt_column_spanner_outer:first-child {
 #>   padding-left: 0;
 #> }
 #> 
-#> #gqshkgaaeg .gt_column_spanner_outer:last-child {
+#> #ucrxqanfxa .gt_column_spanner_outer:last-child {
 #>   padding-right: 0;
 #> }
 #> 
-#> #gqshkgaaeg .gt_column_spanner {
+#> #ucrxqanfxa .gt_column_spanner {
 #>   border-bottom-style: solid;
 #>   border-bottom-width: 2px;
 #>   border-bottom-color: #D3D3D3;
@@ -918,11 +918,11 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   width: 100%;
 #> }
 #> 
-#> #gqshkgaaeg .gt_spanner_row {
+#> #ucrxqanfxa .gt_spanner_row {
 #>   border-bottom-style: hidden;
 #> }
 #> 
-#> #gqshkgaaeg .gt_group_heading {
+#> #ucrxqanfxa .gt_group_heading {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -948,7 +948,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   text-align: left;
 #> }
 #> 
-#> #gqshkgaaeg .gt_empty_group_heading {
+#> #ucrxqanfxa .gt_empty_group_heading {
 #>   padding: 0.5px;
 #>   color: #333333;
 #>   background-color: #FFFFFF;
@@ -963,15 +963,15 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   vertical-align: middle;
 #> }
 #> 
-#> #gqshkgaaeg .gt_from_md > :first-child {
+#> #ucrxqanfxa .gt_from_md > :first-child {
 #>   margin-top: 0;
 #> }
 #> 
-#> #gqshkgaaeg .gt_from_md > :last-child {
+#> #ucrxqanfxa .gt_from_md > :last-child {
 #>   margin-bottom: 0;
 #> }
 #> 
-#> #gqshkgaaeg .gt_row {
+#> #ucrxqanfxa .gt_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -990,7 +990,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   overflow-x: hidden;
 #> }
 #> 
-#> #gqshkgaaeg .gt_stub {
+#> #ucrxqanfxa .gt_stub {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -1003,7 +1003,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_stub_row_group {
+#> #ucrxqanfxa .gt_stub_row_group {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -1017,15 +1017,15 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   vertical-align: top;
 #> }
 #> 
-#> #gqshkgaaeg .gt_row_group_first td {
+#> #ucrxqanfxa .gt_row_group_first td {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_row_group_first th {
+#> #ucrxqanfxa .gt_row_group_first th {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_summary_row {
+#> #ucrxqanfxa .gt_summary_row {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   text-transform: inherit;
@@ -1035,16 +1035,16 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_first_summary_row {
+#> #ucrxqanfxa .gt_first_summary_row {
 #>   border-top-style: solid;
 #>   border-top-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_first_summary_row.thick {
+#> #ucrxqanfxa .gt_first_summary_row.thick {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_last_summary_row {
+#> #ucrxqanfxa .gt_last_summary_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -1054,7 +1054,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_grand_summary_row {
+#> #ucrxqanfxa .gt_grand_summary_row {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   text-transform: inherit;
@@ -1064,7 +1064,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_first_grand_summary_row {
+#> #ucrxqanfxa .gt_first_grand_summary_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -1074,7 +1074,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-top-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_last_grand_summary_row_top {
+#> #ucrxqanfxa .gt_last_grand_summary_row_top {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -1084,11 +1084,11 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_striped {
+#> #ucrxqanfxa .gt_striped {
 #>   background-color: rgba(128, 128, 128, 0.05);
 #> }
 #> 
-#> #gqshkgaaeg .gt_table_body {
+#> #ucrxqanfxa .gt_table_body {
 #>   border-top-style: solid;
 #>   border-top-width: 2px;
 #>   border-top-color: #D3D3D3;
@@ -1097,7 +1097,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_footnotes {
+#> #ucrxqanfxa .gt_footnotes {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   border-bottom-style: none;
@@ -1111,7 +1111,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_footnote {
+#> #ucrxqanfxa .gt_footnote {
 #>   margin: 0px;
 #>   font-size: 90%;
 #>   padding-top: 4px;
@@ -1120,7 +1120,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_sourcenotes {
+#> #ucrxqanfxa .gt_sourcenotes {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   border-bottom-style: none;
@@ -1134,7 +1134,7 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #gqshkgaaeg .gt_sourcenote {
+#> #ucrxqanfxa .gt_sourcenote {
 #>   font-size: 90%;
 #>   padding-top: 4px;
 #>   padding-bottom: 4px;
@@ -1142,72 +1142,72 @@ regCompTest(nbp.base, data = washington_roads, basemodel = "Poisson",
 #>   padding-right: 5px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_left {
+#> #ucrxqanfxa .gt_left {
 #>   text-align: left;
 #> }
 #> 
-#> #gqshkgaaeg .gt_center {
+#> #ucrxqanfxa .gt_center {
 #>   text-align: center;
 #> }
 #> 
-#> #gqshkgaaeg .gt_right {
+#> #ucrxqanfxa .gt_right {
 #>   text-align: right;
 #>   font-variant-numeric: tabular-nums;
 #> }
 #> 
-#> #gqshkgaaeg .gt_font_normal {
+#> #ucrxqanfxa .gt_font_normal {
 #>   font-weight: normal;
 #> }
 #> 
-#> #gqshkgaaeg .gt_font_bold {
+#> #ucrxqanfxa .gt_font_bold {
 #>   font-weight: bold;
 #> }
 #> 
-#> #gqshkgaaeg .gt_font_italic {
+#> #ucrxqanfxa .gt_font_italic {
 #>   font-style: italic;
 #> }
 #> 
-#> #gqshkgaaeg .gt_super {
+#> #ucrxqanfxa .gt_super {
 #>   font-size: 65%;
 #> }
 #> 
-#> #gqshkgaaeg .gt_footnote_marks {
+#> #ucrxqanfxa .gt_footnote_marks {
 #>   font-size: 75%;
 #>   vertical-align: 0.4em;
 #>   position: initial;
 #> }
 #> 
-#> #gqshkgaaeg .gt_asterisk {
+#> #ucrxqanfxa .gt_asterisk {
 #>   font-size: 100%;
 #>   vertical-align: 0;
 #> }
 #> 
-#> #gqshkgaaeg .gt_indent_1 {
+#> #ucrxqanfxa .gt_indent_1 {
 #>   text-indent: 5px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_indent_2 {
+#> #ucrxqanfxa .gt_indent_2 {
 #>   text-indent: 10px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_indent_3 {
+#> #ucrxqanfxa .gt_indent_3 {
 #>   text-indent: 15px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_indent_4 {
+#> #ucrxqanfxa .gt_indent_4 {
 #>   text-indent: 20px;
 #> }
 #> 
-#> #gqshkgaaeg .gt_indent_5 {
+#> #ucrxqanfxa .gt_indent_5 {
 #>   text-indent: 25px;
 #> }
 #> 
-#> #gqshkgaaeg .katex-display {
+#> #ucrxqanfxa .katex-display {
 #>   display: inline-flex !important;
 #>   margin-bottom: 0.75em !important;
 #> }
 #> 
-#> #gqshkgaaeg div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#> #ucrxqanfxa div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 #>   height: 0px !important;
 #> }
 #> </style>
@@ -1340,23 +1340,23 @@ nb2.base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
 regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
             print = TRUE)
 #> Warning: The LR test is not reported: a model did not report convergence (or its convergence is unknown). Compare the models with AIC and BIC.
-#> <div id="xxnbvxjcbz" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-#>   <style>#xxnbvxjcbz table {
+#> <div id="zetsscvcny" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+#>   <style>#zetsscvcny table {
 #>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 #>   -webkit-font-smoothing: antialiased;
 #>   -moz-osx-font-smoothing: grayscale;
 #> }
 #> 
-#> #xxnbvxjcbz thead, #xxnbvxjcbz tbody, #xxnbvxjcbz tfoot, #xxnbvxjcbz tr, #xxnbvxjcbz td, #xxnbvxjcbz th {
+#> #zetsscvcny thead, #zetsscvcny tbody, #zetsscvcny tfoot, #zetsscvcny tr, #zetsscvcny td, #zetsscvcny th {
 #>   border-style: none;
 #> }
 #> 
-#> #xxnbvxjcbz p {
+#> #zetsscvcny p {
 #>   margin: 0;
 #>   padding: 0;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_table {
+#> #zetsscvcny .gt_table {
 #>   display: table;
 #>   border-collapse: collapse;
 #>   line-height: normal;
@@ -1382,12 +1382,12 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-left-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_caption {
+#> #zetsscvcny .gt_caption {
 #>   padding-top: 4px;
 #>   padding-bottom: 4px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_title {
+#> #zetsscvcny .gt_title {
 #>   color: #333333;
 #>   font-size: 125%;
 #>   font-weight: initial;
@@ -1399,7 +1399,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-bottom-width: 0;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_subtitle {
+#> #zetsscvcny .gt_subtitle {
 #>   color: #333333;
 #>   font-size: 85%;
 #>   font-weight: initial;
@@ -1411,7 +1411,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-top-width: 0;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_heading {
+#> #zetsscvcny .gt_heading {
 #>   background-color: #FFFFFF;
 #>   text-align: center;
 #>   border-bottom-color: #FFFFFF;
@@ -1423,13 +1423,13 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_bottom_border {
+#> #zetsscvcny .gt_bottom_border {
 #>   border-bottom-style: solid;
 #>   border-bottom-width: 2px;
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_col_headings {
+#> #zetsscvcny .gt_col_headings {
 #>   border-top-style: solid;
 #>   border-top-width: 2px;
 #>   border-top-color: #D3D3D3;
@@ -1444,7 +1444,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_col_heading {
+#> #zetsscvcny .gt_col_heading {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -1464,7 +1464,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   overflow-x: hidden;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_column_spanner_outer {
+#> #zetsscvcny .gt_column_spanner_outer {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -1476,15 +1476,15 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 4px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_column_spanner_outer:first-child {
+#> #zetsscvcny .gt_column_spanner_outer:first-child {
 #>   padding-left: 0;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_column_spanner_outer:last-child {
+#> #zetsscvcny .gt_column_spanner_outer:last-child {
 #>   padding-right: 0;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_column_spanner {
+#> #zetsscvcny .gt_column_spanner {
 #>   border-bottom-style: solid;
 #>   border-bottom-width: 2px;
 #>   border-bottom-color: #D3D3D3;
@@ -1496,11 +1496,11 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   width: 100%;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_spanner_row {
+#> #zetsscvcny .gt_spanner_row {
 #>   border-bottom-style: hidden;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_group_heading {
+#> #zetsscvcny .gt_group_heading {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -1526,7 +1526,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   text-align: left;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_empty_group_heading {
+#> #zetsscvcny .gt_empty_group_heading {
 #>   padding: 0.5px;
 #>   color: #333333;
 #>   background-color: #FFFFFF;
@@ -1541,15 +1541,15 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   vertical-align: middle;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_from_md > :first-child {
+#> #zetsscvcny .gt_from_md > :first-child {
 #>   margin-top: 0;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_from_md > :last-child {
+#> #zetsscvcny .gt_from_md > :last-child {
 #>   margin-bottom: 0;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_row {
+#> #zetsscvcny .gt_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -1568,7 +1568,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   overflow-x: hidden;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_stub {
+#> #zetsscvcny .gt_stub {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -1581,7 +1581,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_stub_row_group {
+#> #zetsscvcny .gt_stub_row_group {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -1595,15 +1595,15 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   vertical-align: top;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_row_group_first td {
+#> #zetsscvcny .gt_row_group_first td {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_row_group_first th {
+#> #zetsscvcny .gt_row_group_first th {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_summary_row {
+#> #zetsscvcny .gt_summary_row {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   text-transform: inherit;
@@ -1613,16 +1613,16 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_first_summary_row {
+#> #zetsscvcny .gt_first_summary_row {
 #>   border-top-style: solid;
 #>   border-top-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_first_summary_row.thick {
+#> #zetsscvcny .gt_first_summary_row.thick {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_last_summary_row {
+#> #zetsscvcny .gt_last_summary_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -1632,7 +1632,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_grand_summary_row {
+#> #zetsscvcny .gt_grand_summary_row {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   text-transform: inherit;
@@ -1642,7 +1642,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_first_grand_summary_row {
+#> #zetsscvcny .gt_first_grand_summary_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -1652,7 +1652,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-top-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_last_grand_summary_row_top {
+#> #zetsscvcny .gt_last_grand_summary_row_top {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -1662,11 +1662,11 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_striped {
+#> #zetsscvcny .gt_striped {
 #>   background-color: rgba(128, 128, 128, 0.05);
 #> }
 #> 
-#> #xxnbvxjcbz .gt_table_body {
+#> #zetsscvcny .gt_table_body {
 #>   border-top-style: solid;
 #>   border-top-width: 2px;
 #>   border-top-color: #D3D3D3;
@@ -1675,7 +1675,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_footnotes {
+#> #zetsscvcny .gt_footnotes {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   border-bottom-style: none;
@@ -1689,7 +1689,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_footnote {
+#> #zetsscvcny .gt_footnote {
 #>   margin: 0px;
 #>   font-size: 90%;
 #>   padding-top: 4px;
@@ -1698,7 +1698,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_sourcenotes {
+#> #zetsscvcny .gt_sourcenotes {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   border-bottom-style: none;
@@ -1712,7 +1712,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_sourcenote {
+#> #zetsscvcny .gt_sourcenote {
 #>   font-size: 90%;
 #>   padding-top: 4px;
 #>   padding-bottom: 4px;
@@ -1720,72 +1720,72 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_left {
+#> #zetsscvcny .gt_left {
 #>   text-align: left;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_center {
+#> #zetsscvcny .gt_center {
 #>   text-align: center;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_right {
+#> #zetsscvcny .gt_right {
 #>   text-align: right;
 #>   font-variant-numeric: tabular-nums;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_font_normal {
+#> #zetsscvcny .gt_font_normal {
 #>   font-weight: normal;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_font_bold {
+#> #zetsscvcny .gt_font_bold {
 #>   font-weight: bold;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_font_italic {
+#> #zetsscvcny .gt_font_italic {
 #>   font-style: italic;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_super {
+#> #zetsscvcny .gt_super {
 #>   font-size: 65%;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_footnote_marks {
+#> #zetsscvcny .gt_footnote_marks {
 #>   font-size: 75%;
 #>   vertical-align: 0.4em;
 #>   position: initial;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_asterisk {
+#> #zetsscvcny .gt_asterisk {
 #>   font-size: 100%;
 #>   vertical-align: 0;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_indent_1 {
+#> #zetsscvcny .gt_indent_1 {
 #>   text-indent: 5px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_indent_2 {
+#> #zetsscvcny .gt_indent_2 {
 #>   text-indent: 10px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_indent_3 {
+#> #zetsscvcny .gt_indent_3 {
 #>   text-indent: 15px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_indent_4 {
+#> #zetsscvcny .gt_indent_4 {
 #>   text-indent: 20px;
 #> }
 #> 
-#> #xxnbvxjcbz .gt_indent_5 {
+#> #zetsscvcny .gt_indent_5 {
 #>   text-indent: 25px;
 #> }
 #> 
-#> #xxnbvxjcbz .katex-display {
+#> #zetsscvcny .katex-display {
 #>   display: inline-flex !important;
 #>   margin-bottom: 0.75em !important;
 #> }
 #> 
-#> #xxnbvxjcbz div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#> #zetsscvcny div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 #>   height: 0px !important;
 #> }
 #> </style>
@@ -1891,23 +1891,23 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #> 8 McFadden's Pseudo R^2     0.303     0.302
 #> 
 #> $gtTable
-#> <div id="utvaysqzap" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-#>   <style>#utvaysqzap table {
+#> <div id="eswwonzbpt" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+#>   <style>#eswwonzbpt table {
 #>   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 #>   -webkit-font-smoothing: antialiased;
 #>   -moz-osx-font-smoothing: grayscale;
 #> }
 #> 
-#> #utvaysqzap thead, #utvaysqzap tbody, #utvaysqzap tfoot, #utvaysqzap tr, #utvaysqzap td, #utvaysqzap th {
+#> #eswwonzbpt thead, #eswwonzbpt tbody, #eswwonzbpt tfoot, #eswwonzbpt tr, #eswwonzbpt td, #eswwonzbpt th {
 #>   border-style: none;
 #> }
 #> 
-#> #utvaysqzap p {
+#> #eswwonzbpt p {
 #>   margin: 0;
 #>   padding: 0;
 #> }
 #> 
-#> #utvaysqzap .gt_table {
+#> #eswwonzbpt .gt_table {
 #>   display: table;
 #>   border-collapse: collapse;
 #>   line-height: normal;
@@ -1933,12 +1933,12 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-left-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_caption {
+#> #eswwonzbpt .gt_caption {
 #>   padding-top: 4px;
 #>   padding-bottom: 4px;
 #> }
 #> 
-#> #utvaysqzap .gt_title {
+#> #eswwonzbpt .gt_title {
 #>   color: #333333;
 #>   font-size: 125%;
 #>   font-weight: initial;
@@ -1950,7 +1950,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-bottom-width: 0;
 #> }
 #> 
-#> #utvaysqzap .gt_subtitle {
+#> #eswwonzbpt .gt_subtitle {
 #>   color: #333333;
 #>   font-size: 85%;
 #>   font-weight: initial;
@@ -1962,7 +1962,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-top-width: 0;
 #> }
 #> 
-#> #utvaysqzap .gt_heading {
+#> #eswwonzbpt .gt_heading {
 #>   background-color: #FFFFFF;
 #>   text-align: center;
 #>   border-bottom-color: #FFFFFF;
@@ -1974,13 +1974,13 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_bottom_border {
+#> #eswwonzbpt .gt_bottom_border {
 #>   border-bottom-style: solid;
 #>   border-bottom-width: 2px;
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_col_headings {
+#> #eswwonzbpt .gt_col_headings {
 #>   border-top-style: solid;
 #>   border-top-width: 2px;
 #>   border-top-color: #D3D3D3;
@@ -1995,7 +1995,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_col_heading {
+#> #eswwonzbpt .gt_col_heading {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -2015,7 +2015,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   overflow-x: hidden;
 #> }
 #> 
-#> #utvaysqzap .gt_column_spanner_outer {
+#> #eswwonzbpt .gt_column_spanner_outer {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -2027,15 +2027,15 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 4px;
 #> }
 #> 
-#> #utvaysqzap .gt_column_spanner_outer:first-child {
+#> #eswwonzbpt .gt_column_spanner_outer:first-child {
 #>   padding-left: 0;
 #> }
 #> 
-#> #utvaysqzap .gt_column_spanner_outer:last-child {
+#> #eswwonzbpt .gt_column_spanner_outer:last-child {
 #>   padding-right: 0;
 #> }
 #> 
-#> #utvaysqzap .gt_column_spanner {
+#> #eswwonzbpt .gt_column_spanner {
 #>   border-bottom-style: solid;
 #>   border-bottom-width: 2px;
 #>   border-bottom-color: #D3D3D3;
@@ -2047,11 +2047,11 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   width: 100%;
 #> }
 #> 
-#> #utvaysqzap .gt_spanner_row {
+#> #eswwonzbpt .gt_spanner_row {
 #>   border-bottom-style: hidden;
 #> }
 #> 
-#> #utvaysqzap .gt_group_heading {
+#> #eswwonzbpt .gt_group_heading {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -2077,7 +2077,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   text-align: left;
 #> }
 #> 
-#> #utvaysqzap .gt_empty_group_heading {
+#> #eswwonzbpt .gt_empty_group_heading {
 #>   padding: 0.5px;
 #>   color: #333333;
 #>   background-color: #FFFFFF;
@@ -2092,15 +2092,15 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   vertical-align: middle;
 #> }
 #> 
-#> #utvaysqzap .gt_from_md > :first-child {
+#> #eswwonzbpt .gt_from_md > :first-child {
 #>   margin-top: 0;
 #> }
 #> 
-#> #utvaysqzap .gt_from_md > :last-child {
+#> #eswwonzbpt .gt_from_md > :last-child {
 #>   margin-bottom: 0;
 #> }
 #> 
-#> #utvaysqzap .gt_row {
+#> #eswwonzbpt .gt_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -2119,7 +2119,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   overflow-x: hidden;
 #> }
 #> 
-#> #utvaysqzap .gt_stub {
+#> #eswwonzbpt .gt_stub {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -2132,7 +2132,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #utvaysqzap .gt_stub_row_group {
+#> #eswwonzbpt .gt_stub_row_group {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   font-size: 100%;
@@ -2146,15 +2146,15 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   vertical-align: top;
 #> }
 #> 
-#> #utvaysqzap .gt_row_group_first td {
+#> #eswwonzbpt .gt_row_group_first td {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #utvaysqzap .gt_row_group_first th {
+#> #eswwonzbpt .gt_row_group_first th {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #utvaysqzap .gt_summary_row {
+#> #eswwonzbpt .gt_summary_row {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   text-transform: inherit;
@@ -2164,16 +2164,16 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #utvaysqzap .gt_first_summary_row {
+#> #eswwonzbpt .gt_first_summary_row {
 #>   border-top-style: solid;
 #>   border-top-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_first_summary_row.thick {
+#> #eswwonzbpt .gt_first_summary_row.thick {
 #>   border-top-width: 2px;
 #> }
 #> 
-#> #utvaysqzap .gt_last_summary_row {
+#> #eswwonzbpt .gt_last_summary_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -2183,7 +2183,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_grand_summary_row {
+#> #eswwonzbpt .gt_grand_summary_row {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   text-transform: inherit;
@@ -2193,7 +2193,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #utvaysqzap .gt_first_grand_summary_row {
+#> #eswwonzbpt .gt_first_grand_summary_row {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -2203,7 +2203,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-top-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_last_grand_summary_row_top {
+#> #eswwonzbpt .gt_last_grand_summary_row_top {
 #>   padding-top: 8px;
 #>   padding-bottom: 8px;
 #>   padding-left: 5px;
@@ -2213,11 +2213,11 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_striped {
+#> #eswwonzbpt .gt_striped {
 #>   background-color: rgba(128, 128, 128, 0.05);
 #> }
 #> 
-#> #utvaysqzap .gt_table_body {
+#> #eswwonzbpt .gt_table_body {
 #>   border-top-style: solid;
 #>   border-top-width: 2px;
 #>   border-top-color: #D3D3D3;
@@ -2226,7 +2226,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-bottom-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_footnotes {
+#> #eswwonzbpt .gt_footnotes {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   border-bottom-style: none;
@@ -2240,7 +2240,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_footnote {
+#> #eswwonzbpt .gt_footnote {
 #>   margin: 0px;
 #>   font-size: 90%;
 #>   padding-top: 4px;
@@ -2249,7 +2249,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #utvaysqzap .gt_sourcenotes {
+#> #eswwonzbpt .gt_sourcenotes {
 #>   color: #333333;
 #>   background-color: #FFFFFF;
 #>   border-bottom-style: none;
@@ -2263,7 +2263,7 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   border-right-color: #D3D3D3;
 #> }
 #> 
-#> #utvaysqzap .gt_sourcenote {
+#> #eswwonzbpt .gt_sourcenote {
 #>   font-size: 90%;
 #>   padding-top: 4px;
 #>   padding-bottom: 4px;
@@ -2271,72 +2271,72 @@ regCompTest(nbp.base, data = washington_roads, model2 = nb2.base,
 #>   padding-right: 5px;
 #> }
 #> 
-#> #utvaysqzap .gt_left {
+#> #eswwonzbpt .gt_left {
 #>   text-align: left;
 #> }
 #> 
-#> #utvaysqzap .gt_center {
+#> #eswwonzbpt .gt_center {
 #>   text-align: center;
 #> }
 #> 
-#> #utvaysqzap .gt_right {
+#> #eswwonzbpt .gt_right {
 #>   text-align: right;
 #>   font-variant-numeric: tabular-nums;
 #> }
 #> 
-#> #utvaysqzap .gt_font_normal {
+#> #eswwonzbpt .gt_font_normal {
 #>   font-weight: normal;
 #> }
 #> 
-#> #utvaysqzap .gt_font_bold {
+#> #eswwonzbpt .gt_font_bold {
 #>   font-weight: bold;
 #> }
 #> 
-#> #utvaysqzap .gt_font_italic {
+#> #eswwonzbpt .gt_font_italic {
 #>   font-style: italic;
 #> }
 #> 
-#> #utvaysqzap .gt_super {
+#> #eswwonzbpt .gt_super {
 #>   font-size: 65%;
 #> }
 #> 
-#> #utvaysqzap .gt_footnote_marks {
+#> #eswwonzbpt .gt_footnote_marks {
 #>   font-size: 75%;
 #>   vertical-align: 0.4em;
 #>   position: initial;
 #> }
 #> 
-#> #utvaysqzap .gt_asterisk {
+#> #eswwonzbpt .gt_asterisk {
 #>   font-size: 100%;
 #>   vertical-align: 0;
 #> }
 #> 
-#> #utvaysqzap .gt_indent_1 {
+#> #eswwonzbpt .gt_indent_1 {
 #>   text-indent: 5px;
 #> }
 #> 
-#> #utvaysqzap .gt_indent_2 {
+#> #eswwonzbpt .gt_indent_2 {
 #>   text-indent: 10px;
 #> }
 #> 
-#> #utvaysqzap .gt_indent_3 {
+#> #eswwonzbpt .gt_indent_3 {
 #>   text-indent: 15px;
 #> }
 #> 
-#> #utvaysqzap .gt_indent_4 {
+#> #eswwonzbpt .gt_indent_4 {
 #>   text-indent: 20px;
 #> }
 #> 
-#> #utvaysqzap .gt_indent_5 {
+#> #eswwonzbpt .gt_indent_5 {
 #>   text-indent: 25px;
 #> }
 #> 
-#> #utvaysqzap .katex-display {
+#> #eswwonzbpt .katex-display {
 #>   display: inline-flex !important;
 #>   margin-bottom: 0.75em !important;
 #> }
 #> 
-#> #utvaysqzap div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#> #eswwonzbpt div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 #>   height: 0px !important;
 #> }
 #> </style>

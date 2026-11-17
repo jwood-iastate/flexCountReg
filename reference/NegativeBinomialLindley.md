@@ -281,5 +281,5 @@ dplindGamma(0:3, mean = 0.75, theta = 2, alpha = 0)
 qplindGamma(c(0, 0.5, 0.9, 1), mean = 1.67, theta = 0.5, alpha = 0.5)
 #> [1]   0   1   4 Inf
 rplindGamma(5, mean = 0.5, theta = 0.5, alpha = 2)
-#> [1] 0 9 0 1 0
+#> [1] 1 0 0 1 0
 ```

@@ -9,6 +9,9 @@ random parameters and random effects.
   : Count regression models
 - [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
   : Random Parameters Count Regression Models
+- [`count_families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
+  [`count-families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
+  : Count Families for countreg() and countreg.rp()
 - [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
   : Estimate a Random Effects Negative Binomial regression model
 - [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
@@ -86,6 +89,46 @@ A parsnip model specification with the flexCountReg engine.
   [`qcom()`](https://jwood-iastate.github.io/flexCountReg/reference/COMDistribution.md)
   [`rcom()`](https://jwood-iastate.github.io/flexCountReg/reference/COMDistribution.md)
   : Conway-Maxwell-Poisson (COM) Distribution
+- [`ddelaporte()`](https://jwood-iastate.github.io/flexCountReg/reference/Delaporte.md)
+  [`pdelaporte()`](https://jwood-iastate.github.io/flexCountReg/reference/Delaporte.md)
+  [`qdelaporte()`](https://jwood-iastate.github.io/flexCountReg/reference/Delaporte.md)
+  [`rdelaporte()`](https://jwood-iastate.github.io/flexCountReg/reference/Delaporte.md)
+  : Delaporte Distribution
+- [`ddweib()`](https://jwood-iastate.github.io/flexCountReg/reference/DiscreteWeibull.md)
+  [`pdweib()`](https://jwood-iastate.github.io/flexCountReg/reference/DiscreteWeibull.md)
+  [`qdweib()`](https://jwood-iastate.github.io/flexCountReg/reference/DiscreteWeibull.md)
+  [`rdweib()`](https://jwood-iastate.github.io/flexCountReg/reference/DiscreteWeibull.md)
+  : Discrete Weibull Distribution
+- [`ddpo()`](https://jwood-iastate.github.io/flexCountReg/reference/DoublePoisson.md)
+  [`pdpo()`](https://jwood-iastate.github.io/flexCountReg/reference/DoublePoisson.md)
+  [`qdpo()`](https://jwood-iastate.github.io/flexCountReg/reference/DoublePoisson.md)
+  [`rdpo()`](https://jwood-iastate.github.io/flexCountReg/reference/DoublePoisson.md)
+  : Double Poisson Distribution
+- [`dgcount()`](https://jwood-iastate.github.io/flexCountReg/reference/GammaCount.md)
+  [`pgcount()`](https://jwood-iastate.github.io/flexCountReg/reference/GammaCount.md)
+  [`qgcount()`](https://jwood-iastate.github.io/flexCountReg/reference/GammaCount.md)
+  [`rgcount()`](https://jwood-iastate.github.io/flexCountReg/reference/GammaCount.md)
+  : Gamma Count Distribution
+- [`dghermite()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedHermite.md)
+  [`pghermite()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedHermite.md)
+  [`qghermite()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedHermite.md)
+  [`rghermite()`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedHermite.md)
+  : Generalized Hermite Distribution
+- [`dhpois()`](https://jwood-iastate.github.io/flexCountReg/reference/HyperPoisson.md)
+  [`phpois()`](https://jwood-iastate.github.io/flexCountReg/reference/HyperPoisson.md)
+  [`qhpois()`](https://jwood-iastate.github.io/flexCountReg/reference/HyperPoisson.md)
+  [`rhpois()`](https://jwood-iastate.github.io/flexCountReg/reference/HyperPoisson.md)
+  : Hyper-Poisson Distribution
+- [`dnbge()`](https://jwood-iastate.github.io/flexCountReg/reference/NBGE.md)
+  [`pnbge()`](https://jwood-iastate.github.io/flexCountReg/reference/NBGE.md)
+  [`qnbge()`](https://jwood-iastate.github.io/flexCountReg/reference/NBGE.md)
+  [`rnbge()`](https://jwood-iastate.github.io/flexCountReg/reference/NBGE.md)
+  : Negative Binomial-Generalized Exponential Distribution
+- [`dpaeppli()`](https://jwood-iastate.github.io/flexCountReg/reference/PolyaAeppli.md)
+  [`ppaeppli()`](https://jwood-iastate.github.io/flexCountReg/reference/PolyaAeppli.md)
+  [`qpaeppli()`](https://jwood-iastate.github.io/flexCountReg/reference/PolyaAeppli.md)
+  [`rpaeppli()`](https://jwood-iastate.github.io/flexCountReg/reference/PolyaAeppli.md)
+  : Polya-Aeppli Distribution
 - [`dgwar()`](https://jwood-iastate.github.io/flexCountReg/reference/Generalized-Waring.md)
   [`pgwar()`](https://jwood-iastate.github.io/flexCountReg/reference/Generalized-Waring.md)
   [`qgwar()`](https://jwood-iastate.github.io/flexCountReg/reference/Generalized-Waring.md)
@@ -182,3 +225,7 @@ A parsnip model specification with the flexCountReg engine.
 
 - [`washington_roads`](https://jwood-iastate.github.io/flexCountReg/reference/washington_roads.md)
   : Washington Road Crashes
+- [`abalone_rings`](https://jwood-iastate.github.io/flexCountReg/reference/abalone_rings.md)
+  : Abalone Shell-Ring Counts
+- [`stream_salamanders`](https://jwood-iastate.github.io/flexCountReg/reference/stream_salamanders.md)
+  : Stream Salamander Counts

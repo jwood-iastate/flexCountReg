@@ -152,5 +152,5 @@ pplindLnorm(0:10, mean=0.75, theta=7, sigma=2, ndraws=10)
 qplindLnorm(c(0.1,0.5,0.9), lambda=4.67, theta=7, sigma=2)
 #> [1] 0 0 9
 rplindLnorm(5, mean=0.75, theta=7, sigma=2)
-#> [1] 0 0 1 4 0
+#> [1] 0 0 0 0 5
 ```

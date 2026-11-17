@@ -57,13 +57,16 @@ countreg.rp(
 
   the name of the distribution/model type to estimate. Default is "NB2".
   Options include "Poisson", "NB1", "NB2", "NBP", "PIG", "Sichel", etc.
-  (See
-  [`countreg`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-  for full list). With `"GP2"`, the dispersion must be nonnegative: the
-  underdispersed GP2 requires \\1 + a\mu \> 0\\, which random parameters
-  with unbounded support violate for some draws of every observation.
-  Use `"GP1"`, whose parameter space does not depend on \\\mu\\, for
-  underdispersed random-parameter models.
+  (see
+  [`count_families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
+  for the full list). DW, DPO, HYPERPOIS and GAMMACOUNT solve their mean
+  equation for every observation and draw, so they are much slower here
+  than closed-form families; consider fewer `ndraws` while exploring.
+  With `"GP2"`, the dispersion must be nonnegative: the underdispersed
+  GP2 requires \\1 + a\mu \> 0\\, which random parameters with unbounded
+  support violate for some draws of every observation. Use `"GP1"`,
+  whose parameter space does not depend on \\\mu\\, for underdispersed
+  random-parameter models.
 
 - rpardists:
 

@@ -35,6 +35,36 @@
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.2" id="flexcountreg-012-development">flexCountReg 0.1.2 (development)<a class="anchor" aria-label="anchor" href="#flexcountreg-012-development"></a></h2>
 <div class="section level3">
+<h3 id="new-count-distributions-0-1-2">New count distributions<a class="anchor" aria-label="anchor" href="#new-count-distributions-0-1-2"></a></h3>
+<ul><li>Eight new count distributions, each with density, distribution, quantile and random-generation functions following base R conventions (recycling, <code>NA</code>/<code>NaN</code>, <code>NaN</code> with a warning for invalid parameters, <code>lower.tail</code>, <code>log</code>/<code>log.p</code>):
+<ul><li>discrete Weibull (<code><a href="../reference/DiscreteWeibull.html">ddweib()</a></code>, <code><a href="../reference/DiscreteWeibull.html">pdweib()</a></code>, <code><a href="../reference/DiscreteWeibull.html">qdweib()</a></code>, <code><a href="../reference/DiscreteWeibull.html">rdweib()</a></code>);</li>
+<li>double Poisson, exactly normalized (<code><a href="../reference/DoublePoisson.html">ddpo()</a></code>, …);</li>
+<li>Delaporte in a mean parameterization (<code><a href="../reference/Delaporte.html">ddelaporte()</a></code>, …);</li>
+<li>generalized Hermite of order <code>m</code> (<code><a href="../reference/GeneralizedHermite.html">dghermite()</a></code>, …);</li>
+<li>hyper-Poisson (<code><a href="../reference/HyperPoisson.html">dhpois()</a></code>, …);</li>
+<li>gamma renewal count (<code><a href="../reference/GammaCount.html">dgcount()</a></code>, …);</li>
+<li>Polya-Aeppli, the Poisson-Tweedie distribution with power 1.5 (<code><a href="../reference/PolyaAeppli.html">dpaeppli()</a></code>, …).</li>
+</ul></li>
+<li>Probabilities are computed on the log scale, and upper tails (<code>lower.tail = FALSE</code>) are computed directly rather than as one minus the distribution function, so tiny tail probabilities keep their relative accuracy. Quantiles are the smallest count whose distribution function reaches the requested probability.</li>
+<li>Negative binomial-generalized exponential mixture (<code><a href="../reference/NBGE.html">dnbge()</a></code>, <code><a href="../reference/NBGE.html">pnbge()</a></code>, <code><a href="../reference/NBGE.html">qnbge()</a></code>, <code><a href="../reference/NBGE.html">rnbge()</a></code>): NB2 with a mean-one generalized exponential random effect, computed by the adaptive quadrature used for PGE.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-regression-families-0-1-2">New regression families<a class="anchor" aria-label="anchor" href="#new-regression-families-0-1-2"></a></h3>
+<ul><li>
+<code><a href="../reference/countreg.html">countreg()</a></code> and <code><a href="../reference/countreg.rp.html">countreg.rp()</a></code> gain the families <code>"DW"</code>, <code>"DPO"</code>, <code>"DELAPORTE"</code>, <code>"HERMITE"</code> (order 2), <code>"HERMITE3"</code>, <code>"HERMITE4"</code>, <code>"HYPERPOIS"</code>, <code>"GAMMACOUNT"</code>, <code>"PA"</code> (Poisson-Tweedie with power 1.5) and <code>"NBGE"</code>. All are parameterized by the mean, so coefficients are effects on the expected count. For DW, DPO, HYPERPOIS and GAMMACOUNT, whose means have no closed form, the natural parameter of each observation is found by solving the mean equation in compiled code; these families are slower to fit and have a numerical domain (shape in [1e-6, 1e6], mean up to 1e9).</li>
+<li>Shares in [0, 1] (Delaporte and Hermite <code>rho</code>) use a logit link, labeled <code>logit(rho)</code>.</li>
+<li>Prediction, Pearson and quantile residuals, simulation, rootograms and summaries work for all new families. Likelihood-ratio tests against Poisson are reported for DPO, HYPERPOIS and GAMMACOUNT (interior restriction). Underreporting (binomial thinning) is available for DELAPORTE, NBGE, HERMITE and PA.</li>
+<li>
+<code><a href="../reference/countreg.rp.html">countreg.rp()</a></code> uses family-specific starting values for the distribution parameters when the registry provides them (the new families start at their Poisson or geometric limit rather than at log-scale -2).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-data-0-1-2">New data<a class="anchor" aria-label="anchor" href="#new-data-0-1-2"></a></h3>
+<ul><li>
+<code>abalone_rings</code>: shell-ring counts and measurements of 4,177 abalone from the UCI Machine Learning Repository (CC BY 4.0), a non-transportation example with conditionally underdispersed counts. The preparation script and source hashes are in <code>data-raw/</code> of the source repository; data terms are in the installed <code>DATA-LICENSES.md</code>.</li>
+<li>
+<code>stream_salamanders</code>: repeated counts of seven stream salamander groups at 23 sites (Price et al., 2016; Dryad, CC0), prepared from the original deposit. Zero-heavy, overdispersed and grouped by site.</li>
+</ul></div>
+<div class="section level3">
 <h3 id="tidymodels-and-broom-0-1-2">tidymodels and broom<a class="anchor" aria-label="anchor" href="#tidymodels-and-broom-0-1-2"></a></h3>
 <ul><li>
 <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> and <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code> methods, using the generics package (re-exported, so <code><a href="https://jwood-iastate.github.io/flexCountReg/">library(flexCountReg)</a></code> provides them). <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> returns the standard broom columns plus a <code>component</code> column (mean, distribution, underreporting, random-parameter and heterogeneity parameters), with <code>conf.int</code> and <code>exponentiate</code> (incidence rate ratios for the mean model). <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> now works for every estimator. broom is no longer a dependency.</li>

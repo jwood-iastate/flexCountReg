@@ -42,6 +42,28 @@ models:
 
 - Conway-Maxwell-Poisson (COM)
 
+- Discrete Weibull (DW)
+
+- Double Poisson (DPO)
+
+- Delaporte (DELAPORTE)
+
+- Hermite of order 2, 3 or 4 (HERMITE, HERMITE3, HERMITE4)
+
+- Hyper-Poisson (HYPERPOIS)
+
+- Gamma renewal count (GAMMACOUNT)
+
+- Polya-Aeppli, i.e. Poisson-Tweedie with power 1.5 (PA)
+
+- Negative binomial-generalized exponential (NBGE)
+
+See
+[count_families](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
+for a table of all families with their `family` codes, distribution
+parameters, variances, distribution functions and available model
+features.
+
 ## Usage
 
 ``` r
@@ -82,8 +104,10 @@ countreg(
 - family:
 
   the name of the distribution/model type to estimate. The default "NB2"
-  is the standard negative binomial distribution with a log link. other
-  options are listed below.
+  is the standard negative binomial distribution with a log link. See
+  [count_families](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
+  for all families, their parameters and the features available for
+  each.
 
 - offset:
 
@@ -119,15 +143,17 @@ countreg(
 
   an optional formula for the probability that a true count is reported
   (binomial thinning of the true counts), as a logit or probit function
-  of its predictors. Available for the Poisson, NB1, NB2, NBP, PLN, PGE,
-  PIG1, PIG2, PIG, PL, PLG, PLL, PW and SI families, whose reported
-  counts follow the same family (for NB1 and PIG1 with dispersion
-  \\p\alpha\\, and for NBP with \\\alpha p^{2-P}\\). It is identified
-  only by variables that affect reporting but not the true counts (and,
-  weakly, by the shape of the link function): an intercept-only formula
-  is an error, and a warning is given when the reporting and count
-  coefficients are nearly collinear. Cannot be combined with
-  `zero_formula`. The default is `NULL`.
+  of its predictors. Available for the families whose reported counts
+  follow the same family (see
+  [count_families](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md);
+  for NB1 and PIG1 the dispersion becomes \\p\alpha\\, for NBP \\\alpha
+  p^{2-P}\\, for HERMITE \\\rho\\ becomes \\p\rho\\ and for PA \\\phi\\
+  becomes \\\sqrt{p}\phi\\). It is identified only by variables that
+  affect reporting but not the true counts (and, weakly, by the shape of
+  the link function): an intercept-only formula is an error, and a
+  warning is given when the reporting and count coefficients are nearly
+  collinear. Cannot be combined with `zero_formula`. The default is
+  `NULL`.
 
 - underreport_family:
 
@@ -224,47 +250,9 @@ components:
 
 ## Details
 
-For the `family` argument, the following options are available:
-
-- "POISSON" for Poisson distribution with a log link.
-
-- "GP1" for Generalized Poisson Version 1 Distribution with a log link
-
-- "GP2" for Generalized Poisson Version 2 Distribution with a log link
-
-- "NB1" for Negative Binomial 1 distribution with a log link.
-
-- "NB2" for Negative Binomial 2 distribution with a log link (i.e., the
-  standard negative binomial model).
-
-- "NBP" for Negative Binomial P distribution with a log link.
-
-- "PLN" for Poisson-Lognormal distribution with a log link.
-
-- "PGE" for Poisson-Generalized-Exponential distribution with a log
-  link.
-
-- "PIG1" for Poisson-Inverse-Gaussian Type-1 distribution with a log
-  link.
-
-- "PIG2" for Poisson-Inverse-Gaussian Type-2 distribution with a log
-  link.
-
-- "PIG" for Poisson-Inverse-Gamma distribution with a log link.
-
-- "PL" for Poisson-Lindley distribution with a log link.
-
-- "PLG" for Poisson-Lindley-Gamma distribution with a log link.
-
-- "PLL" for Poisson-Lindley-Lognormal distribution with a log link.
-
-- "PW" for Poisson-Weibull distribution with a log link.
-
-- "SI" for Sichel distribution with a log link.
-
-- "GW" for Generalized Waring distribution with a log link.
-
-- "COM" for Conway-Maxwell-Poisson (COM) distribution with a log link.
+The `family` codes are listed in
+[count_families](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md).
+Family names are not case-sensitive.
 
 The `dis_param_formula_1` and `dis_param_formula_2` parameters are used
 to estimate the dispersion parameter or other parameters of the count
@@ -278,79 +266,11 @@ Negative Binomial model when the overdispersion parameter is specified
 as a function.
 
 The function linking the distribution parameters to the predictors is:
-\$\$Param = \exp((Intercept) + \sum \beta X)\$\$
-
-The parameters for the different models are as follows:
-
-For `dis_param_formula_1`, the models are for the parameters:
-
-- \\ln(\phi+1)\\ for the Generalized Poisson Version 1.
-
-- \\ln(\alpha+1)\\ for the Generalized Poisson Version 2.
-
-- \\ln(\alpha)\\ for the Negative Binomial 1 model.
-
-- \\ln(\alpha)\\ for the Negative Binomial 2 model.
-
-- \\ln(\alpha)\\ for the Negative Binomial P model.
-
-- \\ln(\sigma)\\ for the Poisson-Lognormal model.
-
-- \\ln(shape)\\ for the Poisson-Generalized-Exponential model.
-
-- \\ln(\eta)\\ for the Poisson-Inverse-Gaussian model.
-
-- \\ln(\eta)\\ for the Poisson-Inverse-Gamma model.
-
-- \\ln(\theta)\\ for the Poisson-Lindley model.
-
-- \\ln(\theta)\\ for the Poisson-Lindley-Gamma model.
-
-- \\ln(\theta)\\ for the Poisson-Lindley-Lognormal model.
-
-- \\ln(\alpha)\\ for the Poisson-Weibull model.
-
-- \\\gamma\\ for the Sichel model. This parameter can be negative, so it
-  is modeled directly (identity link), \\\gamma = W\delta\\, rather than
-  through \\\exp()\\.
-
-- \\ln(k)\\ for the Generalized Waring model.
-
-- \\ln(\nu)\\ for the Conway-Maxwell-Poisson model.
-
-For `dis_param_formula_2`, the models are for the parameters:
-
-- Not Applicable for the Generalized Poisson Version 1 model.
-
-- Not Applicable for the Generalized Poisson Version 2 model.
-
-- Not Applicable for the Negative Binomial 1 model.
-
-- Not Applicable for the Negative Binomial 2 model.
-
-- \\ln(p)\\ for the Negative Binomial P model.
-
-- Not Applicable for the Poisson-Lognormal model.
-
-- Not Applicable for the Poisson-Generalized-Exponential model.
-
-- Not Applicable for the Poisson-Inverse-Gaussian model.
-
-- Not Applicable for the Poisson-Inverse-Gamma model.
-
-- Not Applicable for the Poisson-Lindley model.
-
-- \\ln(\alpha)\\ for the Poisson-Lindley-Gamma model.
-
-- \\ln(\sigma)\\ for the Poisson-Lindley-Lognormal model.
-
-- Not Applicable for the Poisson-Weibull model.
-
-- \\ln(\sigma)\\ for the Sichel model.
-
-- \\ln(\rho-1)\\ for the Generalized Waring model.
-
-- Not Applicable for the Conway-Maxwell-Poisson model.
+\$\$Param = \exp((Intercept) + \sum \beta X)\$\$ except for the shares
+\\\rho\\ of the Delaporte and Hermite families (logit link) and the
+Sichel \\\gamma\\ (identity link). The parameter modeled by each formula
+in each family is listed in
+[count_families](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md).
 
 The `ndraws` parameter is used to estimate the distribution when there
 is not a closed-form solution. This uses Halton draws to integrate the
@@ -793,6 +713,79 @@ The mean and variance are: \$\$\mu=e^{X\beta}=\lambda
 Note that the COM distribution parameter \\\lambda\\ is solved for using
 \\\mu\\ and \\\nu\\, so the regression model provides direct predictions
 for the mean.
+
+### Families added in version 0.1.2
+
+All of these families are parameterized by their mean, \\E\[Y\] = \mu =
+\exp(X\beta)\\, so the coefficients are effects on the expected count
+for every family, and an offset multiplies the mean. Their distribution
+functions are documented separately (see the links).
+
+- **DW**
+  ([`ddweib`](https://jwood-iastate.github.io/flexCountReg/reference/DiscreteWeibull.md)):
+  discrete Weibull with shape \\\beta\\; \\\theta\\ is found from
+  \\\mu\\ and \\\beta\\. It can be under- or overdispersed; \\\beta =
+  1\\ is geometric.
+
+- **DPO**
+  ([`ddpo`](https://jwood-iastate.github.io/flexCountReg/reference/DoublePoisson.md)):
+  double Poisson, exactly normalized, with precision \\\phi\\; its
+  location \\\lambda\\ is found from \\\mu\\ and \\\phi\\. \\\phi = 1\\
+  is Poisson, \\\phi \> 1\\ underdispersed, \\\phi \< 1\\ overdispersed.
+
+- **DELAPORTE**
+  ([`ddelaporte`](https://jwood-iastate.github.io/flexCountReg/reference/Delaporte.md)):
+  \\Var(Y) = \mu + (\rho\mu)^2 / k\\. \\\rho\\ and \\k\\ are weakly
+  identified when \\\rho\\ is near 0, where Poisson is a limit.
+
+- **HERMITE**, **HERMITE3**, **HERMITE4**
+  ([`dghermite`](https://jwood-iastate.github.io/flexCountReg/reference/GeneralizedHermite.md)):
+  events occurring singly or in batches of \\m = 2, 3, 4\\; \\Var(Y) =
+  \mu(1 + (m - 1)\rho)\\, so the variance-to-mean ratio is between 1 and
+  \\m\\.
+
+- **HYPERPOIS**
+  ([`dhpois`](https://jwood-iastate.github.io/flexCountReg/reference/HyperPoisson.md)):
+  hyper-Poisson with dispersion \\\gamma\\; its rate \\\lambda\\ is
+  found from \\\mu\\ and \\\gamma\\. \\\gamma = 1\\ is Poisson, \\\gamma
+  \> 1\\ overdispersed, \\\gamma \< 1\\ underdispersed.
+
+- **GAMMACOUNT**
+  ([`dgcount`](https://jwood-iastate.github.io/flexCountReg/reference/GammaCount.md)):
+  the number of events in a unit window of a renewal process with gamma
+  inter-arrival times of shape \\a\\; the rate is found from \\\mu\\ and
+  \\a\\. \\a = 1\\ is Poisson, \\a \> 1\\ underdispersed, \\a \< 1\\
+  overdispersed. An offset scales the mean (a regression convention); it
+  does not lengthen the window of one renewal process, whose expected
+  count is not proportional to the window length.
+
+- **PA**
+  ([`dpaeppli`](https://jwood-iastate.github.io/flexCountReg/reference/PolyaAeppli.md)):
+  the Poisson-Tweedie distribution with power 1.5, \\Var(Y) = \mu +
+  \phi\mu^{1.5}\\.
+
+- **NBGE**
+  ([`dnbge`](https://jwood-iastate.github.io/flexCountReg/reference/NBGE.md)):
+  NB2 with a mean-one generalized exponential random effect, \\Var(Y) =
+  \mu + ((1 + \alpha)M_2 - 1)\mu^2\\. Its two dispersion parameters have
+  confounded effects on the variance; expect weak identification (large
+  or missing standard errors) in small samples.
+
+For DW, DPO, HYPERPOIS and GAMMACOUNT the natural parameter of every
+observation is found by solving the mean equation numerically (Newton
+iterations in compiled code), so these fits are slower than closed-form
+families, especially in
+[`countreg.rp`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md).
+Their shape parameter is restricted to \\\[10^{-6}, 10^6\]\\ and the
+mean to at most \\10^9\\; outside this numerical domain the likelihood
+is treated as 0.
+
+Likelihood-ratio tests against the Poisson model are reported for DPO,
+HYPERPOIS and GAMMACOUNT (Poisson is an interior special case). Binomial
+thinning (`underreport_formula`) is available for DELAPORTE and NBGE
+(same distribution parameters), HERMITE (\\\rho\\ becomes \\p\rho\\) and
+PA (\\\phi\\ becomes \\\sqrt{p}\phi\\); the other new families are not
+closed under thinning.
 
 ### Underreporting
 

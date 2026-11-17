@@ -32,6 +32,7 @@ reference:
 - title: Prediction, effects and diagnostics
   contents:
   - margEffTable
+  - tolerance_interval
   - cureplot
   - rootogram
 

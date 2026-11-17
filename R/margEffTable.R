@@ -818,7 +818,8 @@ print.flexEffectTable <- function(x, ...) {
 # columns), the stored values of the other arguments where the call refers
 # to objects that may have changed, the sample's panel column and frequency
 # weights, and no inner bootstrap.
-.margEff_refit <- function(object, boot_data, panel = NULL, weights = NULL) {
+.margEff_refit <- function(object, boot_data, panel = NULL, weights = NULL,
+                           start = NULL) {
   fit_call <- object$call
   if (is.null(fit_call)) {
     stop("No stored call is available for bootstrap refitting.")
@@ -852,6 +853,10 @@ print.flexEffectTable <- function(x, ...) {
   if ("stderr" %in% fun_args) fit_call$stderr <- "normal"
   if ("bootstraps" %in% fun_args) fit_call$bootstraps <- NULL
   if ("verbose" %in% fun_args) fit_call$verbose <- FALSE
+  # Optional starting values (e.g. the original estimates)
+  if (!is.null(start) && "start.vals" %in% fun_args) {
+    fit_call$start.vals <- start
+  }
   # Evaluate where the model was specified, so other objects the call
   # refers to (for example an offset column name) are found
   eval(fit_call, envir = environment(object$formula))

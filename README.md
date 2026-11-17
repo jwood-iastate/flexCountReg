@@ -70,8 +70,14 @@ devtools::install_github("jwood-iastate/flexCountReg")
   statistics and a likelihood-ratio test against the Poisson model.
 - `predict()` gives expected counts (one per row of `newdata`, `NA` for
   incomplete rows), the probability of each count, and the components of
-  underreporting and zero models. For random parameters models it offers
-  exact, simulated and Empirical Bayes (`"Individual"`) predictions.
+  underreporting and zero models. For `countreg()` models it also gives
+  confidence intervals for the expected count and prediction intervals
+  for a new count (`interval = "confidence"` or `"prediction"`). For
+  random parameters models it offers exact, simulated and Empirical
+  Bayes (`"Individual"`) predictions.
+- `tolerance_interval()` gives content tolerance intervals for
+  `countreg()` models: count ranges intended to contain at least a
+  stated share of the outcome distribution with a stated confidence.
 - `coef()`, `vcov()`, `confint()`, `logLik()`, `AIC()`, `BIC()`,
   `nobs()`, `fitted()`, `residuals()` (response, Pearson and randomized
   quantile), `simulate()` and `update()` work as for other R models.
@@ -104,15 +110,24 @@ Density (`d`), distribution (`p`), quantile (`q`) and random generation
 
 *Count distributions*
 
-- Conway-Maxwell-Poisson: `dcom`, `pcom`, `qcom`, `rcom`
-- Generalized Poisson (Types 1 and 2): `dgp1`, `pgp1`, `qgp1`, `rgp1`,
-  `dgp2`, `pgp2`, `qgp2`, `rgp2`
+- Conway-Maxwell-Poisson (COM): `dcom`, `pcom`, `qcom`, `rcom`
+- Delaporte: `ddelaporte`, `pdelaporte`, `qdelaporte`, `rdelaporte`
+- Discrete Weibull: `ddweib`, `pdweib`, `qdweib`, `rdweib`
+- Double Poisson: `ddpo`, `pdpo`, `qdpo`, `rdpo`
+- Gamma Count: `dgcount`, `pgcount`, `qgcount`, `rgcount`
+- Generalized Hermite: `dghermite`, `pghermite`, `qghermite`,
+  `rghermite`
+- Generalized Poisson Version 1: `dgp1`, `pgp1`, `qgp1`, `rgp1`
+- Generalized Poisson Version 2: `dgp2`, `pgp2`, `qgp2`, `rgp2`
 - Generalized Waring: `dgwar`, `pgwar`, `qgwar`, `rgwar`
+- Hyper-Poisson: `dhpois`, `phpois`, `qhpois`, `rhpois`
+- Negative Binomial-Generalized Exponential: `dnbge`, `pnbge`, `qnbge`,
+  `rnbge`
 - Poisson-Generalized-Exponential: `dpge`, `ppge`, `qpge`, `rpge`
 - Poisson-Inverse-Gamma: `dpinvgamma`, `ppinvgamma`, `qpinvgamma`,
   `rpinvgamma`
-- Poisson-Inverse-Gaussian (Types 1 and 2): `dpinvgaus`, `ppinvgaus`,
-  `qpinvgaus`, `rpinvgaus`
+- Poisson-Inverse-Gaussian: `dpinvgaus`, `ppinvgaus`, `qpinvgaus`,
+  `rpinvgaus`
 - Poisson-Lindley: `dplind`, `pplind`, `qplind`, `rplind`
 - Poisson-Lindley-Gamma (Negative Binomial-Lindley): `dplindGamma`,
   `pplindGamma`, `qplindGamma`, `rplindGamma`
@@ -121,7 +136,11 @@ Density (`d`), distribution (`p`), quantile (`q`) and random generation
 - Poisson-Lognormal: `dpLnorm`, `ppLnorm`, `qpLnorm`, `rpLnorm`
 - Poisson-Weibull: `dpoisweibull`, `ppoisweibull`, `qpoisweibull`,
   `rpoisweibull`
+- Polya-Aeppli: `dpaeppli`, `ppaeppli`, `qpaeppli`, `rpaeppli`
 - Sichel: `dsichel`, `psichel`, `qsichel`, `rsichel`
+
+See `?count_families` for every distribution available in `countreg()`
+and `countreg.rp()`, with its parameters, variance and model features.
 
 *Continuous distributions*
 
@@ -134,12 +153,21 @@ Density (`d`), distribution (`p`), quantile (`q`) and random generation
 
 **Data**
 
-A dataset, `washington_roads`, is included. It is based on a sample of
-Washington primary 2-lane roads from the years 2016-2018 (507 road
-segments, each observed in up to three years). Data for the roads,
-traffic volumes (AADT) and associated crashes were obtained from the
-[Highway Safety Information System
-(HSIS)](https://highways.dot.gov/research/safety/hsis).
+Three datasets are included:
+
+- `washington_roads`: a sample of Washington primary 2-lane roads from
+  the years 2016-2018 (507 road segments, each observed in up to three
+  years). Data for the roads, traffic volumes (AADT) and associated
+  crashes were obtained from the [Highway Safety Information System
+  (HSIS)](https://highways.dot.gov/research/safety/hsis).
+- `abalone_rings`: shell-ring counts and physical measurements of 4,177
+  abalone from the [UCI Machine Learning
+  Repository](https://doi.org/10.24432/C55C7W) (CC BY 4.0), a
+  non-transportation example with conditionally underdispersed counts.
+- `stream_salamanders`: repeated counts of seven stream salamander
+  groups at 23 sites in Kentucky (Price et al., 2016;
+  [Dryad](https://doi.org/10.5061/dryad.5m8f6), CC0), zero-heavy,
+  overdispersed and grouped by site.
 
 ### Probability Distributions
 
@@ -156,9 +184,14 @@ are provided in the documentation (help files).
 
 - Poisson
 
-*Distributions that handle Underdispersion*
+*Distributions that handle Underdispersion (and Overdispersion)*
 
 - Conway-Maxwell-Poisson (COM) Distribution
+- Generalized Poisson Distribution (Types 1 and 2)
+- Discrete Weibull Distribution
+- Double Poisson Distribution
+- Hyper-Poisson Distribution
+- Gamma Count (Renewal) Distribution
 
 *Distributions that Handle Overdispersion*
 
@@ -169,6 +202,10 @@ are provided in the documentation (help files).
 - Poisson-Weibull Distribution
 - Sichel Distribution
 - Generalized Waring Distribution
+- Delaporte Distribution
+- Hermite Distribution (orders 2, 3 and 4; bounded overdispersion)
+- Polya-Aeppli (Poisson-Tweedie, power 1.5) Distribution
+- Negative Binomial-Generalized Exponential (NBGE) Distribution
 
 *Distributions that Handle Excess Zeros*
 

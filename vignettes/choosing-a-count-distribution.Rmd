@@ -291,3 +291,9 @@ margEffTable(models$NB2)
   zero-inflated and hurdle models.
 * `vignette("distribution-parameter-regression", package = "flexCountReg")`:
   models for the dispersion and shape parameters.
+* `vignette("finite-mixture-getting-started", package = "flexCountReg")`
+  and `vignette("latent-class-regression", package = "flexCountReg")`:
+  when no single family fits, a finite mixture of families (with constant
+  or covariate-dependent proportions) is another option. Compare it with
+  the single-family fits on the same rows with AIC, BIC and held-out
+  scores, not with a likelihood-ratio test.

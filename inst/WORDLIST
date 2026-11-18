@@ -17,6 +17,7 @@ Blacklip
 Bonat
 Boshnakov
 Bronwyn
+Bult
 CBO
 CMD
 CMRG
@@ -26,6 +27,7 @@ Countr
 DELAPORTE
 DPO
 DW
+DeSarbo
 Delaporte
 Demetrio
 Deprecations
@@ -43,12 +45,14 @@ Equidispersion
 Eurycea
 Famoye
 Fariss
+FlexMix
 GAMMACOUNT
 GSL
 GW
 Gayah
 Gourieroux
 Griliches
+Grün
 Gyrinophilus
 HSIS
 HYPERPOIS
@@ -61,6 +65,7 @@ Higueras
 Hilbe
 Hinde
 Hossein
+ICL
 ICTCT
 IG
 IRLS
@@ -75,6 +80,7 @@ Krishnamoorthy
 Kummer's
 Kundu
 L'Ecuyer
+Leisch
 Liang
 Lindley
 Lund
@@ -84,6 +90,7 @@ MGF
 MGFs
 MSLE
 McHale
+McLachlan
 Modelling
 Monfort
 Morina
@@ -115,6 +122,7 @@ Pseudotriton
 Puig
 README
 RENB
+Ramaswamy
 Raphson
 Rigby
 Rootogram
@@ -139,6 +147,7 @@ Underreporting
 Vail
 Vinciotti
 Vose
+Wedel
 Weizhen
 Willmot
 Winkelmann
@@ -184,6 +193,7 @@ econlet
 elasticities
 equidispersed
 estimand
+estimands
 et
 expm
 exponentiate
@@ -192,13 +202,16 @@ favour
 flexCountReg's
 fuscus
 ge
+grey
 gsl
 halton
 headwater
 hermite
+indvar
 infty
 integrand
 invertible
+jae
 labelled
 lage
 lamW
@@ -207,7 +220,6 @@ le
 lgamma
 ln
 logLik
-lpha
 mathrm
 maxLik
 misalign

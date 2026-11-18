@@ -1,5 +1,76 @@
 # flexCountReg 0.1.2 (development)
 
+## Finite mixtures and latent classes
+
+* New `countreg_mix()` estimates finite mixtures of count distributions and
+  finite-mixture count regressions; `countreg_lc()` is the same model under
+  the latent-class vocabulary (`classes`, `membership_formula`). Both
+  normalize their arguments into one specification and call one engine, so
+  equivalent calls give identical fits. Supported specifications:
+  * distribution-only mixtures (`y ~ 1`), including fits to exact-count
+    frequency tables through `weights`;
+  * mixture regressions with component-specific coefficients, or with whole
+    terms shared by all components (`shared = list(mean = "x")`) and shared
+    distribution-parameter blocks (`shared = list(dis1 = TRUE)`);
+  * constant mixing proportions, covariate-dependent membership
+    probabilities (a multinomial logit, `mixing_formula = ~ z`, last
+    component as reference), or known fixed proportions (`fixed_mixing`),
+    which add no parameters;
+  * any count family of `countreg()` in the components, the same in all of
+    them or different ones (e.g. `family = c(base = "POISSON",
+    tail = "NB2")`), with distribution-parameter formulas;
+  * panel mixtures (`group_var`): one class per panel, with the class
+    probability entering once per panel (product of the rows' probabilities
+    before the sum over classes);
+  * offsets and frequency weights (outside the logarithm of the mixture;
+    constant within panels).
+* Estimation uses several reproducible starts (`n_starts`, `seed`), EM
+  iterations with weighted M-steps (analytic scores for Poisson, NB1 and
+  NB2 components), and direct maximization of the observed-data
+  log-likelihood to polish the best solutions (`mixture_control()`,
+  `lc_control()`). Every start is recorded (`fit$model$starts`), including
+  whether several starts reached the selected solution. Components of the
+  same family are numbered by increasing average expected count.
+* Standard errors come from the observed information of the full parameter
+  vector (`stderr = "normal"`), unit-level sandwich scores (`"robust"`), or
+  a bootstrap of independent units that refits the full mixture with
+  several starts and aligns component labels within families (`"boot"`).
+  The fit records the gradient, the definiteness and conditioning of the
+  observed information, and ambiguous bootstrap label matches.
+* Methods: `summary()` (coefficients grouped by component, shared
+  parameters and mixing model; prior and posterior class sizes; entropy,
+  relative entropy and ICL; start stability; numerical checks), `print()`,
+  `coef()`, `vcov()`, `logLik()` (free parameters only, independent units
+  for BIC), `predict()` with explicit targets (`type = "response"`,
+  `"component"`, `"variance"`, `"prob"`, `"link"`; `conditioning =
+  "prior"`, `"history"` for panel forecasts from earlier outcomes only, or
+  the retrospective `"posterior"`), `fitted()`, `residuals()` (response,
+  Pearson with the full mixture variance, and randomized quantile residuals
+  from the mixture distribution function), `simulate()` (one class per row
+  or panel), `tidy()`, `glance()` and `augment()`. New
+  `component_probs()` / `class_probs()` return prior, history-conditioned
+  or posterior class probabilities.
+* `rootogram()` and `cureplot()` accept mixture models (prior mixture
+  probabilities and means), and `margEffTable()` includes variables that
+  enter only the membership model (delta-method standard errors with the
+  full covariance matrix).
+* Not available yet, with explanatory errors: confidence, prediction and
+  tolerance intervals for mixture predictions; bootstrap standard errors
+  of marginal effects; likelihood-ratio tests involving mixtures
+  (`regCompTest()` refuses them, because the chi-square reference
+  distribution does not hold when the number of components changes).
+  Zero-inflated, hurdle and underreporting components inside mixtures and
+  component-specific formulas are not implemented. Mixtures of families
+  other than Poisson, NB1 and NB2 are labeled experimental: their
+  component distributions are those of `countreg()` (one-component fits
+  agree with it), but recovery of such mixtures has not been studied.
+* New vignettes: "Finite mixtures of count distributions" and
+  "Latent-class and finite-mixture count regression", and a recovery and
+  coverage study script, `inst/validation/finite-mixtures/`.
+* A warning (and a note in `summary()`) flags components of the same
+  family with nearly identical parameters: the fit is then effectively
+  one component fewer and its shares are arbitrary.
+
 ## New count distributions
 
 * Eight new count distributions, each with density, distribution, quantile
@@ -107,6 +178,8 @@
   and of the interval coverage study are kept in the source repository but
   left out of the package build.
 * The vignettes use `countreg_rp()`.
+* A control character in the negative-multinomial paragraph of the
+  simulation-studies vignette is replaced by the intended `\alpha`.
 
 ## New data
 
@@ -220,6 +293,18 @@
   0 with a warning, and invalid parameters give `NaN` with a warning.
 
 ## Bug fixes
+
+* `margEffTable()` no longer reports an effect for a variable that enters
+  the model only through `offset()` in the formula (for example the
+  exposure in `offset(log(exposure))`); such variables were treated as
+  predictors, while offsets given with the `offset` argument were already
+  excluded. A variable that is also a predictor is still evaluated, and
+  offset variables can still be named in `vars`.
+* `cureplot()` no longer prints the cureplots messages "Covariate:
+  indvar_values" and "CURE data frame was provided...", which named the
+  wrapper's internal objects; other messages are kept. The documentation
+  of `n_resamples` now says that the red reference limits are drawn
+  whatever its value (they were described as "no bands" at 0).
 
 * `countreg()`: offsets given with `offset()` in the formula are now used in
   estimation and prediction.
@@ -622,6 +707,12 @@ Changed results are marked **(changed)**.
 
 ## Documentation
 
+* The package description (DESCRIPTION) now summarizes the current
+  scope: the 28 count families and their distribution functions,
+  distribution-parameter, zero, underreporting, random-parameter,
+  random-effects and finite-mixture models, the prediction, interval,
+  effect and diagnostic tools, and references for latent-class
+  regression, randomized quantile residuals and rootograms.
 * Corrected the Generalized Poisson parameter restrictions, the parameter
   table in `?countreg` (PGE, Sichel), the Poisson-Lindley-Lognormal mean and
   parameter descriptions, the RENB density, the Sichel reference (Zou, Lord

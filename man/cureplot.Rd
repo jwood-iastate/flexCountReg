@@ -30,8 +30,12 @@ negative multinomial models ("Standard" or "EB"). The default
 (\code{NULL}) uses the estimator's default. For further details, see
 \code{\link{predict.flexCountReg}}.}
 
-\item{n_resamples}{Number of resamples for potential resampling in the CURE
-plot confidence bands. Default is 0 (no bands).}
+\item{n_resamples}{Number of curves of randomly reordered residuals drawn
+in grey for comparison. Default is 0 (none). The red limits
+(\eqn{\pm 1.96} times the standard deviation of the cumulative residuals
+computed by \pkg{cureplots}) are drawn whatever the value of
+\code{n_resamples}; they are a descriptive reference, not a calibrated
+simultaneous band.}
 
 \item{...}{Additional arguments passed to \code{\link[cureplots]{cure_plot}}.}
 }

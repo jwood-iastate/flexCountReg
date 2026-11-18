@@ -165,6 +165,9 @@ residuals.flexCountReg <- function(object,
 # exp(X beta + offset) * p, where p is the reporting probability (p = 1
 # without underreporting), as in the likelihood of countreg().
 .fcr_fitted_variance <- function(object, data = NULL) {
+  if (inherits(object, "countreg_mix")) {
+    return(.fcr_fm_variance(object, data %||% .fcr_training_rows(object)))
+  }
   if (!inherits(object, "countreg")) {
     stop("Pearson residuals are available for countreg() models.",
          call. = FALSE)

@@ -7,6 +7,8 @@
 #   countreg     -> "countreg"       countreg.rp -> "countreg_rp"
 #   RENB         -> "renb"           poisLindRE  -> "poislind_re"
 #   REPoisson    -> "repois"         NegMultinom -> "negmultinom"
+#   countreg_mix -> "countreg_mix"   countreg_lc -> c("countreg_lc",
+#                                                     "countreg_mix")
 # The constructor also fills in the fields that the S3 methods use, so the
 # methods work the same way for every estimator: a named `estimate`, a
 # covariance matrix `vcov` with `vcov_type`, `nobs`, `y`, and `converged`.
@@ -30,6 +32,8 @@
                      poisLindRE = "poislind_re",
                      REPoisson = "repois",
                      NegMultinom = "negmultinom",
+                     countreg_mix = "countreg_mix",
+                     countreg_lc = c("countreg_lc", "countreg_mix"),
                      "countreg")
 
   structure(list(

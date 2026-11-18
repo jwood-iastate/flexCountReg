@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Finite mixtures of count distributions</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Finite mixtures of count distributions</h1>
+
+
+
+<p>This article introduces finite mixtures of count distributions
+without covariates: what they are, how to fit them with
+<code>countreg_mix()</code>, how to read the fitted object, and what a
+fitted mixture does and does not tell you. The regression and
+latent-class version is in
+<code>vignette(&quot;latent-class-regression&quot;, package = &quot;flexCountReg&quot;)</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="what-a-finite-mixture-is" class="section level2">
+<h2>What a finite mixture is</h2>
+<p>A finite mixture with <span class="math inline">\(K\)</span>
+components draws an unobserved component <span class="math inline">\(C\)</span> with probabilities <span class="math inline">\(\pi_1, \dots, \pi_K\)</span> and then draws
+<strong>one</strong> count from that component’s distribution:</p>
+<p><span class="math display">\[
+P(Y = y) = \sum_{k=1}^K \pi_k f_k(y).
+\]</span></p>
+<p>Four ideas are easily confused:</p>
+<ul>
+<li><strong>Finite mixture.</strong> A probability-weighted <em>sum of
+distributions</em>, as above. It can be used purely as a flexible
+description of a skewed, multimodal or heavy-tailed count
+distribution.</li>
+<li><strong>Latent-class interpretation.</strong> The same model, read
+as saying that the population consists of <span class="math inline">\(K\)</span> unobserved groups. That reading is an
+extra substantive assumption; the likelihood is identical, and a good
+fit with two components does not prove that two real groups exist.</li>
+<li><strong>Convolution (a sum of counts).</strong> Adding independent
+counts from two distributions, e.g. <span class="math inline">\(Y = Y_1
++ Y_2\)</span>, gives a different distribution. A mixture
+<em>selects</em> one component; a convolution <em>adds</em> them.</li>
+<li><strong>Within-family (continuous) mixing.</strong> Families such as
+PLN, PGE and NBGE are themselves Poisson distributions mixed over a
+<em>continuous</em> random effect (see <a href="../reference/count_families.html">count_families</a>). A
+two-component PLN mixture has two outer components, each of which
+already contains continuous mixing. Stacking both kinds of heterogeneity
+can make the parameters weakly identified.</li>
+</ul>
+</div>
+<div id="simulated-data" class="section level2">
+<h2>Simulated data</h2>
+<p>We simulate 500 counts: 60% from a Poisson distribution with mean 1
+and 40% from a Poisson distribution with mean 5, using only base R.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2026</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">500</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>true_class <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">runif</span>(n) <span class="sc">&lt;</span> <span class="fl">0.6</span>, <span class="dv">1</span>, <span class="dv">2</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">rpois</span>(n, <span class="at">lambda =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>)[true_class])</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> y)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">table</span>(y)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; y</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;   0   1   2   3   4   5   6   7   8   9  10  11  13 </span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; 114 114  79  51  35  31  35  23   8   3   5   1   1</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean =</span> <span class="fu">mean</span>(y), <span class="at">variance =</span> <span class="fu">var</span>(y))</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt;     mean variance </span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; 2.512000 6.013884</span></span></code></pre></div>
+<p>The generating classes are kept aside (<code>true_class</code>); they
+are not used in fitting. The variance is well above the mean, as it must
+be for a mixture of Poisson distributions with different means.</p>
+</div>
+<div id="mean-and-variance-of-a-mixture" class="section level2">
+<h2>Mean and variance of a mixture</h2>
+<p>For a mixture, the mean and variance are</p>
+<p><span class="math display">\[
+m = \sum_k \pi_k m_k, \qquad
+V = \sum_k \pi_k (V_k + m_k^2) - m^2
+  = \sum_k \pi_k V_k + \sum_k \pi_k (m_k - m)^2 .
+\]</span></p>
+<p>For the generating model (<span class="math inline">\(\pi = (0.6,
+0.4)\)</span>, means 1 and 5, Poisson variances equal to the means) this
+gives:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.4</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>m_k <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">5</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">sum</span>(p <span class="sc">*</span> m_k)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>V <span class="ot">&lt;-</span> <span class="fu">sum</span>(p <span class="sc">*</span> (m_k <span class="sc">+</span> m_k<span class="sc">^</span><span class="dv">2</span>)) <span class="sc">-</span> m<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean =</span> m, <span class="at">variance =</span> V)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;     mean variance </span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;     2.60     6.44</span></span></code></pre></div>
+<p>The variance <span class="math inline">\(6.44\)</span> is the
+within-component variance <span class="math inline">\(2.6\)</span> plus
+the between-component variance <span class="math inline">\(3.84\)</span>. A mixture of Poisson distributions
+is therefore always at least equidispersed; mixtures of
+<em>underdispersed</em> families need not be.</p>
+</div>
+<div id="fitting-a-two-component-poisson-mixture" class="section level2">
+<h2>Fitting a two-component Poisson mixture</h2>
+<p><code>countreg_mix()</code> uses the formula interface of
+<code>countreg()</code>. For a mixture without covariates the formula is
+<code>y ~ 1</code>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>fit2 <span class="ot">&lt;-</span> <span class="fu">countreg_mix</span>(y <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">components =</span> <span class="dv">2</span>,</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>                     <span class="at">n_starts =</span> <span class="dv">5</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">summary</span>(fit2)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; countreg_mix(formula = y ~ 1, data = d, family = &quot;POISSON&quot;, components = 2, </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;     n_starts = 5, seed = 42)</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; Finite-mixture count model with 2 components</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;   Component 1: POISSON</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;   Component 2: POISSON</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; Mixing: constant proportions (reference: Component 2)</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; Optimizer: BFGS + Newton-Raphson refinement | gradient close to zero (gradtol) </span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; Coefficients (standard errors: observed information (Hessian)):</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; Component 1 (POISSON):</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt;                             Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; Component1:Mean:(Intercept)   0.0278     0.0920     0.3     0.76</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; Component 2 (POISSON):</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt;                             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; Component2:Mean:(Intercept)   1.5833     0.0512    30.9   &lt;2e-16 ***</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; Mixing (multinomial logit):</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt;                               Estimate Std. Error z value Pr(&gt;|z|)   </span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; Mixing:Component1:(Intercept)    0.464      0.157    2.96   0.0031 **</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt; Component sizes:</span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt;       label  family  prior posterior effective_n modal_n mean_count</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt;  Component1 POISSON 0.6139    0.6139       306.9     307      1.028</span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt;  Component2 POISSON 0.3861    0.3861       193.1     193      4.871</span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt; (prior: mean membership probability; posterior: mean posterior probability;</span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt;  effective_n: sum of posterior probabilities; modal_n: units whose most</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt;  probable component it is; mean_count: average expected count)</span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1032.167 | AIC: 2070.334 | BIC: 2082.978 | ICL: 2344.071 </span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt; N: 500</span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt; Entropy: 130.547 | relative entropy: 0.623 </span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; Starts: 5 | 5 reached the selected log-likelihood</span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt; Observed information: positive definite (condition number 19.9 ) | max |gradient|: 7.72e-07 </span></span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt; No likelihood-ratio test of the number of components is reported (non-standard distribution).</span></span></code></pre></div>
+<p>The component intercepts are on the log scale, so the estimated
+component means are <code>exp()</code> of them; the mixing coefficient
+is the log odds of component 1 against the reference (the last)
+component. Same-family components are exchangeable, so after fitting
+they are numbered in increasing order of their mean (a display
+convention).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">coef</span>(fit2)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">exp</span>(cf[<span class="fu">c</span>(<span class="st">&quot;Component1:Mean:(Intercept)&quot;</span>, <span class="st">&quot;Component2:Mean:(Intercept)&quot;</span>)])</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; Component1:Mean:(Intercept) Component2:Mean:(Intercept) </span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;                    1.028158                    4.870993</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">plogis</span>(cf[<span class="st">&quot;Mixing:Component1:(Intercept)&quot;</span>])</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; Mixing:Component1:(Intercept) </span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;                     0.6138679</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>fit2<span class="sc">$</span>model<span class="sc">$</span>classes[, <span class="fu">c</span>(<span class="st">&quot;label&quot;</span>, <span class="st">&quot;prior_share&quot;</span>, <span class="st">&quot;effective_size&quot;</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>                       <span class="st">&quot;mean_count&quot;</span>)]</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt;                 label prior_share effective_size mean_count</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Component1 Component1   0.6138679       306.9339   1.028158</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; Component2 Component2   0.3861321       193.0661   4.870993</span></span></code></pre></div>
+<p>The same fitted model gives the mean and variance of the mixture
+directly, and they can be checked against the formulas above using the
+estimates:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> <span class="dv">0</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean =</span> <span class="fu">unname</span>(<span class="fu">predict</span>(fit2, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;response&quot;</span>)),</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">variance =</span> <span class="fu">unname</span>(<span class="fu">predict</span>(fit2, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;variance&quot;</span>)))</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;     mean variance </span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 2.512000 6.012373</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>p_hat <span class="ot">&lt;-</span> fit2<span class="sc">$</span>model<span class="sc">$</span>classes<span class="sc">$</span>prior_share</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>m_hat <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit2, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;component&quot;</span>)[<span class="dv">1</span>, ]</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean =</span> <span class="fu">sum</span>(p_hat <span class="sc">*</span> m_hat),</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  <span class="at">variance =</span> <span class="fu">sum</span>(p_hat <span class="sc">*</span> (m_hat <span class="sc">+</span> m_hat<span class="sc">^</span><span class="dv">2</span>)) <span class="sc">-</span> <span class="fu">sum</span>(p_hat <span class="sc">*</span> m_hat)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;     mean variance </span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; 2.512000 6.012373</span></span></code></pre></div>
+<div id="starts" class="section level3">
+<h3>Starts</h3>
+<p>Mixture likelihoods often have several local maxima, so
+<code>countreg_mix()</code> starts from several preliminary partitions
+of the data (reproducible from <code>seed</code>), improves each by the
+EM algorithm and polishes the best distinct solutions by maximizing the
+observed-data likelihood directly. The start table records every
+attempt:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>fit2<span class="sc">$</span>model<span class="sc">$</span>starts[, <span class="fu">c</span>(<span class="st">&quot;start&quot;</span>, <span class="st">&quot;strategy&quot;</span>, <span class="st">&quot;em_iterations&quot;</span>, <span class="st">&quot;em_status&quot;</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>                      <span class="st">&quot;loglik_start&quot;</span>, <span class="st">&quot;polished&quot;</span>, <span class="st">&quot;loglik&quot;</span>, <span class="st">&quot;reached_best&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>                      <span class="st">&quot;selected&quot;</span>)]</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;   start strategy em_iterations em_status loglik_start polished    loglik</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; 1     1 quantile            24 converged    -1032.167    FALSE        NA</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt; 2     2   jitter            23 converged    -1032.167    FALSE        NA</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; 3     3   random            26 converged    -1032.167    FALSE        NA</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 4     4   jitter            24 converged    -1032.167     TRUE -1032.167</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 5     5   random            28 converged    -1032.167    FALSE        NA</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt;   reached_best selected</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; 1         TRUE    FALSE</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; 2         TRUE    FALSE</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; 3         TRUE    FALSE</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; 4         TRUE     TRUE</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 5         TRUE    FALSE</span></span></code></pre></div>
+<p>A solution reached from several different starts is more trustworthy
+than one found once. It is still not a proof that the maximum is
+global.</p>
+</div>
+</div>
+<div id="raw-counts-and-a-frequency-table-give-the-same-fit" class="section level2">
+<h2>Raw counts and a frequency table give the same fit</h2>
+<p>Without covariates, the data are fully described by the frequency of
+each count. Fitting the frequency table with <code>weights</code> gives
+exactly the same likelihood, because the frequency multiplies the
+log-likelihood of each distinct count <em>outside</em> the logarithm of
+the mixture.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>tab <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">table</span>(y), <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>tab<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(tab<span class="sc">$</span>y)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">head</span>(tab)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;   y Freq</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; 1 0  114</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; 2 1  114</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; 3 2   79</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 4 3   51</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 5 4   35</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 6 5   31</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>fit2_tab <span class="ot">&lt;-</span> <span class="fu">countreg_mix</span>(y <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> tab, <span class="at">weights =</span> <span class="st">&quot;Freq&quot;</span>,</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>                         <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">components =</span> <span class="dv">2</span>,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>                         <span class="at">n_starts =</span> <span class="dv">5</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="fu">c</span>(<span class="at">raw =</span> <span class="fu">logLik</span>(fit2), <span class="at">table =</span> <span class="fu">logLik</span>(fit2_tab))</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt;       raw     table </span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; -1032.167 -1032.167</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">coef</span>(fit2), <span class="fu">coef</span>(fit2_tab), <span class="at">tolerance =</span> <span class="fl">1e-5</span>)</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="fu">c</span>(<span class="at">raw =</span> <span class="fu">BIC</span>(fit2), <span class="at">table =</span> <span class="fu">BIC</span>(fit2_tab))</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt;      raw    table </span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; 2082.978 2082.978</span></span></code></pre></div>
+<p>BIC also agrees, because the number of independent units is the sum
+of the frequencies. This compression is valid only because nothing but
+the count differs between the compressed rows. With covariates or
+different exposures, rows can be combined only when all of their model
+inputs agree.</p>
+</div>
+<div id="plotting-the-fitted-distribution" class="section level2">
+<h2>Plotting the fitted distribution</h2>
+<p><code>predict(type = &quot;prob&quot;)</code> returns the mixture probabilities
+<span class="math inline">\(P(Y = y)\)</span> on a finite grid;
+<code>overflow = TRUE</code> adds the probability of the tail beyond the
+grid, so nothing is silently dropped. The weighted contributions <span class="math inline">\(\pi_k f_k(y)\)</span> of the components add up to
+the total. (Each <span class="math inline">\(f_k\)</span> alone sums to
+one; the weighted contributions sum to <span class="math inline">\(\pi_k\)</span>.)</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>max_count <span class="ot">&lt;-</span> <span class="dv">12</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>P <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit2, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>, <span class="at">max_count =</span> max_count,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>             <span class="at">overflow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="fu">round</span>(P, <span class="dv">4</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;           0      1      2      3      4      5      6      7      8      9</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; [1,] 0.2225 0.2402 0.1512 0.0968 0.0797 0.0697 0.0553 0.0383 0.0233 0.0126</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;          10     11     12   &gt;12</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; [1,] 0.0061 0.0027 0.0011 6e-04</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="dv">0</span><span class="sc">:</span>max_count</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>contrib <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="cf">function</span>(k) p_hat[k] <span class="sc">*</span> <span class="fu">dpois</span>(grid, m_hat[k]))</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">rowSums</span>(contrib), <span class="fu">unname</span>(P[<span class="dv">1</span>, <span class="fu">seq_along</span>(grid)]))</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>obs <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(<span class="fu">table</span>(<span class="fu">factor</span>(<span class="fu">pmin</span>(y, max_count <span class="sc">+</span> <span class="dv">1</span>),</span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>                              <span class="at">levels =</span> <span class="dv">0</span><span class="sc">:</span>(max_count <span class="sc">+</span> <span class="dv">1</span>)))) <span class="sc">/</span> n</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">c</span>(grid, max_count <span class="sc">+</span> <span class="dv">1</span>), P[<span class="dv">1</span>, ], <span class="at">type =</span> <span class="st">&quot;h&quot;</span>, <span class="at">lwd =</span> <span class="dv">6</span>, <span class="at">col =</span> <span class="st">&quot;grey70&quot;</span>,</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>     <span class="at">xaxt =</span> <span class="st">&quot;n&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Count&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Probability&quot;</span>,</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>     <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fu">max</span>(P, obs, contrib)),</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Fitted mixture (bars), components (lines), data (points)&quot;</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">1</span>, <span class="at">at =</span> <span class="fu">c</span>(grid, max_count <span class="sc">+</span> <span class="dv">1</span>),</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>     <span class="at">labels =</span> <span class="fu">c</span>(grid, <span class="fu">paste0</span>(<span class="st">&quot;&gt;&quot;</span>, max_count)))</span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="fu">lines</span>(grid, contrib[, <span class="dv">1</span>], <span class="at">type =</span> <span class="st">&quot;b&quot;</span>, <span class="at">pch =</span> <span class="dv">1</span>, <span class="at">lty =</span> <span class="dv">1</span>)</span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="fu">lines</span>(grid, contrib[, <span class="dv">2</span>], <span class="at">type =</span> <span class="st">&quot;b&quot;</span>, <span class="at">pch =</span> <span class="dv">2</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="fu">points</span>(<span class="fu">c</span>(grid, max_count <span class="sc">+</span> <span class="dv">1</span>), obs, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">col =</span> <span class="st">&quot;firebrick&quot;</span>)</span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;mixture&quot;</span>, <span class="st">&quot;pi_1 f_1&quot;</span>, <span class="st">&quot;pi_2 f_2&quot;</span>, <span class="st">&quot;observed&quot;</span>),</span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a>       <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="cn">NA</span>), <span class="at">lwd =</span> <span class="fu">c</span>(<span class="dv">6</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="cn">NA</span>), <span class="at">pch =</span> <span class="fu">c</span>(<span class="cn">NA</span>, <span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">19</span>),</span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a>       <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;grey70&quot;</span>, <span class="st">&quot;black&quot;</span>, <span class="st">&quot;black&quot;</span>, <span class="st">&quot;firebrick&quot;</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>The last bar is the tail bin <span class="math inline">\(Y &gt;
+12\)</span>. Note that the component curves are weighted contributions;
+they are not the probabilities of class membership given a count. Those
+posterior probabilities are a different quantity:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>post <span class="ot">&lt;-</span> <span class="fu">component_probs</span>(fit2, <span class="at">conditioning =</span> <span class="st">&quot;posterior&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cbind</span>(<span class="at">y =</span> y, post)[<span class="fu">order</span>(y)[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">250</span>, <span class="dv">350</span>, <span class="dv">450</span>, <span class="dv">500</span>)], ], <span class="dv">3</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt;       y Component1 Component2</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; [1,]  0      0.987      0.013</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; [2,]  2      0.768      0.232</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; [3,]  3      0.411      0.589</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; [4,]  6      0.007      0.993</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; [5,] 13      0.000      1.000</span></span></code></pre></div>
+<p>A rootogram compares observed and expected frequencies over all
+rows:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">rootogram</span>(fit2, <span class="at">main =</span> <span class="st">&quot;Two-component Poisson mixture&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+</div>
+<div id="comparing-numbers-of-components" class="section level2">
+<h2>Comparing numbers of components</h2>
+<p>A one-component Poisson model, an NB2 model and the two-component
+mixture are compared on the same rows with information criteria:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">countreg_mix</span>(y <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">components =</span> <span class="dv">1</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>nb2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>fit3 <span class="ot">&lt;-</span> <span class="fu">countreg_mix</span>(y <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">components =</span> <span class="dv">3</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>                     <span class="at">n_starts =</span> <span class="dv">5</span>, <span class="at">seed =</span> <span class="dv">42</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;Poisson&quot;</span>, <span class="st">&quot;NB2&quot;</span>, <span class="st">&quot;2 Poisson components&quot;</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>                     <span class="st">&quot;3 Poisson components&quot;</span>),</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>           <span class="at">logLik =</span> <span class="fu">sapply</span>(<span class="fu">list</span>(fit1, nb2, fit2, fit3), logLik),</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>           <span class="at">df =</span> <span class="fu">sapply</span>(<span class="fu">list</span>(fit1, nb2, fit2, fit3),</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>                       <span class="cf">function</span>(m) <span class="fu">length</span>(<span class="fu">coef</span>(m))),</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>           <span class="at">AIC =</span> <span class="fu">sapply</span>(<span class="fu">list</span>(fit1, nb2, fit2, fit3), AIC),</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>           <span class="at">BIC =</span> <span class="fu">sapply</span>(<span class="fu">list</span>(fit1, nb2, fit2, fit3), BIC))</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt;                  model    logLik df      AIC      BIC</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; 1              Poisson -1170.078  1 2342.157 2346.371</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; 2                  NB2 -1040.967  2 2085.934 2094.363</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; 3 2 Poisson components -1032.167  3 2070.334 2082.978</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; 4 3 Poisson components -1031.950  5 2073.901 2094.974</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a>fit3<span class="sc">$</span>model<span class="sc">$</span>classes[, <span class="fu">c</span>(<span class="st">&quot;label&quot;</span>, <span class="st">&quot;prior_share&quot;</span>, <span class="st">&quot;mean_count&quot;</span>)]</span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt;                 label prior_share   mean_count</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; Component1 Component1  0.03284513 3.147581e-05</span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt; Component2 Component2  0.59408925 1.127026e+00</span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; Component3 Component3  0.37306562 4.938665e+00</span></span></code></pre></div>
+<p>No likelihood-ratio p-value is given for the number of components.
+The usual chi-square reference distribution does not apply when
+comparing <span class="math inline">\(K\)</span> with <span class="math inline">\(K + 1\)</span> components: under the smaller
+model, the extra component’s proportion is at the boundary (zero) or its
+parameters are not identified, which breaks the regularity conditions of
+the test. <code>regCompTest()</code> refuses mixture models for this
+reason. Use information criteria on the same sample, the stability of
+the solution across starts and, preferably, held-out log scores (see
+<code>vignette(&quot;predictive-validation&quot;, package = &quot;flexCountReg&quot;)</code>).
+Also look at what an extra component does. Here the third component has
+a share of about 3% and an expected count of practically zero: it is a
+boundary solution (a mean parameter heading to zero) that adds a little
+probability at zero, improves the log-likelihood by a fraction of a unit
+and is rejected by both AIC and BIC. Such a component is a symptom of
+overfitting, not a discovered group.</p>
+</div>
+<div id="known-mixing-proportions" class="section level2">
+<h2>Known mixing proportions</h2>
+<p>Sometimes the proportions are known from outside the data, for
+example from a design (a sample deliberately drawn as 60% from one
+source and 40% from another) or from a census of the population being
+sampled. They can then be fixed with <code>fixed_mixing</code>; they are
+not estimated and add no parameters:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>fit_fixed <span class="ot">&lt;-</span> <span class="fu">countreg_mix</span>(y <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>                          <span class="at">components =</span> <span class="dv">2</span>, <span class="at">fixed_mixing =</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="fl">0.4</span>),</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>                          <span class="at">n_starts =</span> <span class="dv">3</span>, <span class="at">seed =</span> <span class="dv">1</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="fu">coef</span>(fit_fixed)</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; Component1:Mean:(Intercept) Component2:Mean:(Intercept) </span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt;                 0.006919071                 1.571634562</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>fit_fixed<span class="sc">$</span>model<span class="sc">$</span>classes[, <span class="fu">c</span>(<span class="st">&quot;label&quot;</span>, <span class="st">&quot;prior_share&quot;</span>, <span class="st">&quot;posterior_share&quot;</span>)]</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt;                 label prior_share posterior_share</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; Component1 Component1         0.6       0.6047197</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; Component2 Component2         0.4       0.3952803</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="fu">c</span>(<span class="at">df_estimated =</span> <span class="fu">length</span>(<span class="fu">coef</span>(fit2)), <span class="at">df_fixed =</span> <span class="fu">length</span>(<span class="fu">coef</span>(fit_fixed)))</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt; df_estimated     df_fixed </span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt;            3            2</span></span></code></pre></div>
+<p>Known proportions are not frequency weights (which say how many
+independent copies a row represents) and not starting values. They
+should never be taken from a previous fit’s posterior classification of
+the same data: that would use the data twice and understate
+uncertainty.</p>
+</div>
+<div id="limitations" class="section level2">
+<h2>Limitations</h2>
+<ul>
+<li>A mixture with <span class="math inline">\(K\)</span> components can
+describe a skewed or heavy-tailed distribution without the components
+corresponding to real groups. Interpreting components as subpopulations
+needs external evidence.</li>
+<li>Components with similar means and small shares are weakly
+identified; their standard errors (from the observed information) may be
+unreliable. Check <code>fit$model$numerical</code>, the start table and,
+if needed, bootstrap standard errors
+(<code>stderr = &quot;boot&quot;</code>).</li>
+<li>Only the Poisson, NB1 and NB2 families are marked as validated
+mixture components. Other families can be used as components, but
+recovery of such mixtures has not been studied
+(<code>countreg_mix()</code> says so with a message).</li>
+</ul>
+</div>
+<div id="reproducibility" class="section level2">
+<h2>Reproducibility</h2>
+<p>Every random step uses the <code>seed</code> argument, and the seed
+of every start is stored in <code>fit$model$starts</code>, so the fits
+above are reproduced exactly by re-running the code. The settings used
+are stored in <code>fit$model$settings</code> and
+<code>fit$model$control</code>.</p>
+<p>Next steps:</p>
+<ul>
+<li><code>vignette(&quot;latent-class-regression&quot;, package = &quot;flexCountReg&quot;)</code>
+for covariates, class-membership models and panels.</li>
+<li><code>vignette(&quot;choosing-a-count-distribution&quot;, package = &quot;flexCountReg&quot;)</code>
+for single-component alternatives.</li>
+<li><code>vignette(&quot;numerical-reliability&quot;, package = &quot;flexCountReg&quot;)</code>
+for reading convergence and information diagnostics.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

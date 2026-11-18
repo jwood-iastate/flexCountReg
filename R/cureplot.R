@@ -17,8 +17,12 @@
 #'   negative multinomial models ("Standard" or "EB"). The default
 #'   (\code{NULL}) uses the estimator's default. For further details, see
 #'   \code{\link{predict.flexCountReg}}.
-#' @param n_resamples Number of resamples for potential resampling in the CURE
-#'   plot confidence bands. Default is 0 (no bands).
+#' @param n_resamples Number of curves of randomly reordered residuals drawn
+#'   in grey for comparison. Default is 0 (none). The red limits
+#'   (\eqn{\pm 1.96} times the standard deviation of the cumulative residuals
+#'   computed by \pkg{cureplots}) are drawn whatever the value of
+#'   `n_resamples`; they are a descriptive reference, not a calibrated
+#'   simultaneous band.
 #' @param ... Additional arguments passed to \code{\link[cureplots]{cure_plot}}.
 #' 
 #' @importFrom cureplots calculate_cure_dataframe cure_plot
@@ -88,10 +92,24 @@ cureplot <- function(model, data = NULL, indvar = NULL,
   resids <- y[ok] - predictions[ok]
   indvar_values <- indvar_values[ok]
   
-  # 4. CURE data frame and plot (cureplots names the covariate column after
-  # the argument expression, so plain variables are passed)
-  cure.df <- cureplots::calculate_cure_dataframe(
-    covariate = indvar_values, residuals = resids)
+  # 4. CURE data frame and plot. cureplots names the covariate column after
+  # the argument expression and reports it in a message, and cure_plot()
+  # reports that a data frame was supplied; both messages describe this
+  # wrapper's internal objects, so they are muffled (other messages pass).
+  cure.df <- .fcr_muffle_cure_messages(cureplots::calculate_cure_dataframe(
+    indvar_values, resids))
   names(cure.df)[1] <- x_name
-  cureplots::cure_plot(cure.df, n_resamples = n_resamples, ...)
+  .fcr_muffle_cure_messages(
+    cureplots::cure_plot(cure.df, n_resamples = n_resamples, ...))
+}
+
+# Evaluate a cureplots call without its informational messages about the
+# covariate column and the supplied data frame.
+.fcr_muffle_cure_messages <- function(expr) {
+  withCallingHandlers(expr, message = function(m) {
+    if (grepl("^(Covariate: |CURE data frame was provided)",
+              conditionMessage(m))) {
+      invokeRestart("muffleMessage")
+    }
+  })
 }

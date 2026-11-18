@@ -229,6 +229,15 @@ get_model_components <- function(trained_model, data, basemodel = "Poisson",
 regCompTest <- function(
     model, data = NULL, basemodel = "Poisson",
     variables = FALSE, print = FALSE, ..., model2 = NULL) {
+  if (inherits(model, "countreg_mix") || inherits(model2, "countreg_mix")) {
+    stop("regCompTest() does not test finite-mixture or latent-class ",
+         "models: the chi-square reference distribution of the ",
+         "likelihood-ratio statistic does not hold when the number of ",
+         "components changes or a component can vanish (a boundary of the ",
+         "parameter space). Compare such models with AIC/BIC on the same ",
+         "sample (regCompTable()), start stability and held-out log ",
+         "scores.", call. = FALSE)
+  }
   
   safe_round <- function(x, digits = 4) {
     if (length(x) == 0L || all(is.na(x))) {

@@ -116,6 +116,25 @@
 #' family in [countreg()], and every family can be used with random
 #' parameters in [countreg.rp()] (GP2 only with a nonnegative dispersion).
 #'
+#' ## Finite mixtures and latent classes
+#'
+#' Every family can be a component of a finite mixture or latent-class model
+#' ([countreg_mix()], [countreg_lc()]), with the same component density,
+#' mean, variance, distribution function and random generator as in
+#' [countreg()] (one-component mixtures reproduce `countreg()`). Mixtures
+#' of `POISSON`, `NB1` and `NB2` components are validated (analytic scores,
+#' independent likelihood checks and simulation recovery in the tests).
+#' Mixtures of the other families are experimental: they are computed
+#' correctly, but how well their components and mixing proportions can be
+#' recovered has not been studied, and adding outer components to a family
+#' that already mixes over a continuous random effect (PLN, PGE, PLL, NBGE,
+#' and others) can make the model weakly identified. A finite mixture
+#' selects one component and draws one count from it; it is not a
+#' convolution (a sum of counts) and not the within-family mixing of these
+#' families. A Generalized Waring component with \eqn{\rho \le 2} has an
+#' infinite variance, so the mixture variance is infinite and Pearson
+#' residuals are not available.
+#'
 #' ## Underreporting and the variance of the reported counts
 #'
 #' In an underreporting model the true count \eqn{Y} has mean
@@ -192,7 +211,8 @@
 #' function of the covariates: extra variation in reporting between
 #' observations with the same covariates is not part of the model.
 #'
-#' @seealso [countreg()], [countreg.rp()], [summary.flexCountReg()]
+#' @seealso [countreg()], [countreg.rp()], [countreg_mix()],
+#'   [summary.flexCountReg()]
 #'
 #' @examples
 #' # The same mean model with two dispersion-flexible families

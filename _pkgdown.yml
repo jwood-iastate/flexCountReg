@@ -19,6 +19,10 @@ articles:
   - zeros-hurdles-and-sampling
   - underreporting-and-identification
   - random-parameters-and-panels
+- title: Finite mixtures and latent classes
+  contents:
+  - finite-mixture-getting-started
+  - latent-class-regression
 - title: Predict and validate
   contents:
   - predictive-validation
@@ -41,6 +45,15 @@ reference:
   - poisLindRE
   - repois
   - negmultinom
+
+- title: Finite mixtures and latent classes
+  desc: Mixtures of count distributions and latent-class count regression.
+  contents:
+  - countreg_mix
+  - mixture_control
+  - predict.countreg_mix
+  - summary.countreg_mix
+  - component_probs
 
 - title: Working with fitted models
   contents:
@@ -111,3 +124,8 @@ reference:
   - washington_roads
   - abalone_rings
   - stream_salamanders
+
+# Do not look up CRAN release dates for the news page: the lookup contacts
+# crandb.r-pkg.org, and a timeout there fails the whole site build.
+news:
+  cran_dates: false

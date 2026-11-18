@@ -9,23 +9,42 @@ Authors@R: c(person("Jonathan", "Wood", role = c("aut", "cre"),
                   email = "basulto@iastate.edu", 
                   comment = c(ORCID = "0000-0002-5205-2190")))
 Maintainer: Jonathan Wood <jwood2@iastate.edu>
-Description: An implementation of multiple regression models for 
-    count data. These include various forms of the negative binomial (NB-1, 
-    NB-2, NB-P, generalized negative binomial, etc.), Poisson-Lognormal, other
-    compound Poisson distributions, the Generalized Waring model, etc.
-    Information on the different forms of the negative binomial are
-    described by Greene (2008) <doi:10.1016/j.econlet.2007.10.015>. For
-    treatises on count models, see Cameron and Trivedi (2013) 
+Description: Maximum likelihood and maximum simulated likelihood
+    estimation of regression models for count data with flexible
+    distributions. Twenty-eight count families are available, including
+    the negative binomial (NB-1, NB-2, NB-P), generalized Poisson,
+    Conway-Maxwell-Poisson, Poisson-lognormal, Poisson-inverse-Gaussian,
+    Poisson-Lindley, Sichel, generalized Waring, Delaporte, Hermite,
+    double Poisson, hyper-Poisson, discrete Weibull, gamma count and
+    Polya-Aeppli distributions, with density, distribution, quantile and
+    random-generation functions. Any distribution parameter can be modeled
+    as a function of covariates, and models can include zero-inflated or
+    hurdle components, underreporting of counts, random parameters (with
+    heterogeneity in their means and variances), random-effects panel
+    models (negative binomial, Poisson-Lindley and negative multinomial),
+    and finite mixtures and latent classes of any of the families, with
+    covariate-dependent class membership and one class per panel. Fitted
+    models support predictions of expected counts and count
+    probabilities, confidence, prediction and tolerance intervals,
+    marginal effects and elasticities, likelihood-ratio tests and
+    comparison tables, rootograms, randomized quantile residuals,
+    cumulative residual (CURE) plots, and the 'broom' and 'tidymodels'
+    interfaces. The forms of the negative binomial are described by
+    Greene (2008) <doi:10.1016/j.econlet.2007.10.015>. For treatises on
+    count models, see Cameron and Trivedi (2013)
     <doi:10.1017/CBO9781139013567> and Hilbe (2012)
-    <doi:10.1017/CBO9780511973420>. For the implementation of
-    under-reporting in count models, see Wood et al. (2016)
-    <doi:10.1016/j.aap.2016.06.013>. For prediction methods in random
-    parameter models, see Wood and Gayah (2025)
-    <doi:10.1016/j.aap.2025.108147>. For estimating random parameters using
-    maximum simulated likelihood, see Greene and Hill (2010)
-    <doi:10.1108/S0731-9053(2010)26>; Gourieroux and Monfort (1996)
-    <doi:10.1093/0198774753.001.0001>; or Hensher et al. (2015)
-    <doi:10.1017/CBO9781316136232>.
+    <doi:10.1017/CBO9780511973420>. For underreporting in count models,
+    see Wood et al. (2016) <doi:10.1016/j.aap.2016.06.013>. For
+    prediction methods in random parameter models, see Wood and Gayah
+    (2025) <doi:10.1016/j.aap.2025.108147>. For estimating random
+    parameters by maximum simulated likelihood, see Greene and Hill (2010)
+    <doi:10.1108/S0731-9053(2010)26>, Gourieroux and Monfort (1996)
+    <doi:10.1093/0198774753.001.0001> and Hensher et al. (2015)
+    <doi:10.1017/CBO9781316136232>. For latent-class count regression, see
+    Wedel et al. (1993) <doi:10.1002/jae.3950080404>; for randomized
+    quantile residuals, Dunn and Smyth (1996)
+    <doi:10.1080/10618600.1996.10474708>; and for rootograms, Kleiber and
+    Zeileis (2016) <doi:10.1080/00031305.2016.1173590>.
 Imports: 
     cureplots,
     generics,
@@ -68,4 +87,4 @@ Language: en-US
 URL: https://jwood-iastate.github.io/flexCountReg/,
     https://github.com/jwood-iastate/flexCountReg
 BugReports: https://github.com/jwood-iastate/flexCountReg/issues
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1

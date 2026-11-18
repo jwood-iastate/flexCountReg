@@ -14,9 +14,12 @@
 #' @param vars Optional character vector of variable names to evaluate. If
 #'   `NULL`, the function uses the non-response variables of the model formula
 #'   and of the formulas that also change the expected value: the
-#'   underreporting, random-parameter and heterogeneity formulas, and the
-#'   distribution-parameter formulas of the PLN and PLL families. Offsets and
-#'   panel identifiers are excluded.
+#'   underreporting, random-parameter, heterogeneity and mixing (class
+#'   membership) formulas, and the distribution-parameter formulas of the
+#'   PLN and PLL families. Offsets (columns given in `offset`, and variables
+#'   that appear only inside `offset()` in the formula, such as an exposure
+#'   in `offset(log(exposure))`) and panel identifiers are excluded; name
+#'   them in `vars` to evaluate them anyway.
 #' @param measure Character scalar. One of:
 #'   \describe{
 #'     \item{"auto"}{Continuous variables receive AMEs; indicator variables
@@ -105,6 +108,12 @@ margEffTable <- function(object,
   indicator <- match.arg(indicator)
   se <- match.arg(se)
   tableType <- match.arg(tableType)
+  if (inherits(object, "countreg_mix") && se == "bootstrap") {
+    stop("Bootstrap standard errors of marginal effects are not yet ",
+         "available for mixture models (each refit needs several starts ",
+         "and label alignment); use se = \"delta\", which uses the full ",
+         "covariance matrix of the fit.", call. = FALSE)
+  }
   
   # Without `data`, the effects average over the rows used in estimation,
   # counting each row with its frequency weight
@@ -279,15 +288,20 @@ print.flexEffectTable <- function(x, ...) {
     stop("The fitted object does not contain a formula.")
   }
   
-  term_vars <- all.vars(stats::delete.response(stats::terms(form)))
+  # Variables of the formula's terms; variables used only inside offset()
+  # (an exposure) are not candidates, as for an `offset` column
+  tt <- stats::delete.response(stats::terms(form))
+  labels <- attr(tt, "term.labels")
+  term_vars <- unique(unlist(lapply(labels, function(l)
+    all.vars(str2lang(l)))))
   
   # Variables that enter only through auxiliary formulas also change E[y]:
   # underreporting, random parameters and their heterogeneity, and the
   # distribution parameters of families whose mean depends on them.
   m <- object$model
   aux <- list(m$underreport_formula, m$zero_formula, m$rpar_formula,
-              m$het_mean_formula, m$het_var_formula)
-  if (isTRUE(m$family %in% c("PLN", "PLL"))) {
+              m$het_mean_formula, m$het_var_formula, m$mixing_formula)
+  if (any(m$family %in% c("PLN", "PLL"))) {
     aux <- c(aux, list(m$dis_param_formula_1, m$dis_param_formula_2))
   }
   term_vars <- unique(c(term_vars, do.call(.fcr_vars, aux)))

@@ -6,6 +6,9 @@
 # exp(X beta + offset) * p, the same distribution parameters and the same
 # Halton draws). Returns an n x (max_count + 1) matrix.
 .fcr_prob_matrix <- function(object, data, max_count) {
+  if (inherits(object, "countreg_mix")) {
+    return(.fcr_fm_prob_matrix(object, data, max_count))
+  }
   if (!inherits(object, "countreg")) {
     stop("Probability predictions are available for countreg() models.",
          call. = FALSE)
@@ -252,7 +255,9 @@ rootogram <- function(object, newdata = NULL, max_count = NULL,
       top <- so; bottom <- rep(0, length(so))
     }
     if (is.null(main)) {
-      main <- paste("Rootogram:", object$model$family %||% class(object)[1])
+      main <- paste("Rootogram:", paste(unique(object$model$family %||%
+                                                  class(object)[1]),
+                                           collapse = " + "))
     }
     graphics::plot(range(counts) + c(-0.5, 0.5),
                    range(c(0, top, bottom, se)), type = "n", main = main,

@@ -92,7 +92,18 @@
   agree with it), but recovery of such mixtures has not been studied.
 * New vignettes: "Finite mixtures of count distributions" and
   "Latent-class and finite-mixture count regression", and a recovery and
-  coverage study script, `inst/validation/finite-mixtures/`.
+  coverage study, `inst/validation/finite-mixtures/` (its `CORES` setting
+  runs the replicates in parallel with the same results). In 200
+  replicates of each of seven designs (well and weakly separated Poisson
+  mixtures, a latent-class NB2 regression with membership covariates and a
+  shared dispersion, a panel latent-class model, and a Poisson + NB2
+  mixture), every fit converged; Wald intervals covered 0.89 to 0.985
+  (Monte Carlo standard errors about 0.015), and the label-invariant
+  mixture mean was nearly unbiased in every design. With weakly separated
+  components and n = 300 the low component's intercept was biased
+  (-0.18) and its standard errors unstable, and 40% of the fits were
+  reached by only one of five starts: use more starts and treat
+  component-specific inference with caution in such data.
 * A warning (and a note in `summary()`) flags components of the same
   family with nearly identical parameters: the fit is then effectively
   one component fewer and its shares are arbitrary.

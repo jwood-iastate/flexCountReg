@@ -1,0 +1,19 @@
+flexCountReg 0.1.2
+R version 4.5.1 (2025-06-13 ucrt)
+RNG: L'Ecuyer-CMRG, Inversion, Rejection
+seed: 2027
+replications per scenario: 200
+starts per fit: 5
+processes: 16
+date: 2026-11-18
+time: 778 s
+statuses (one row per fit and term):
+                 
+                    ok
+  nb2_lc 600      1600
+  panel_lc 120    1200
+  pois_nb2 800    1400
+  pois2_sep 1000   800
+  pois2_sep 300    800
+  pois2_weak 1000  800
+  pois2_weak 300   800

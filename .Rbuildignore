@@ -11,3 +11,5 @@
 ^CRAN-SUBMISSION$
 ^Documentation audit\.pdf$
 ^data-raw$
+^inst/validation/intervals/coverage-replicates\.csv$
+^inst/validation/simulation-studies/study-replicates\.csv$

@@ -102,8 +102,10 @@
   distribution (for contributors). The three earlier vignettes are revised.
 * `inst/validation/simulation-studies/count-regression-study.R` is a
   parameterized simulation study (Poisson, NB2 and a negative multinomial
-  panel) with one random-number stream per replicate; its results are
-  saved alongside it.
+  panel) with one random-number stream per replicate; its summary and
+  settings are saved alongside it. The per-replicate results of this study
+  and of the interval coverage study are kept in the source repository but
+  left out of the package build.
 * The vignettes use `countreg_rp()`.
 
 ## New data

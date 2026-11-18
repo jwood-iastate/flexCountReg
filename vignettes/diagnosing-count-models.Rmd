@@ -290,6 +290,10 @@ randomized residuals but not the conclusions.
   compares many distributions on a real dataset.
 * `?rootogram`, `?cureplot` and `?residuals.flexCountReg` document the
   diagnostics used here.
+* `vignette("predictive-validation", package = "flexCountReg")`
+  extends the held-out comparison to cross-validation.
+* `vignette("zeros-hurdles-and-sampling", package = "flexCountReg")`
+  examines zero-inflated and hurdle models.
 
 ## References
 

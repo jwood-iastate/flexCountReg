@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Interpreting predictions, marginal effects and elasticities</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Interpreting predictions, marginal effects
+and elasticities</h1>
+
+
+
+<p>A count model’s coefficients are on the log scale, but questions are
+usually about counts: <em>how many more absences would we expect if
+…?</em> This vignette shows how to turn a fitted model into answers on
+the count scale, for a single profile or averaged over a population, and
+how to get their uncertainty.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="four-quantities" class="section level2">
+<h2>Four quantities</h2>
+<p>For a fitted mean <span class="math inline">\(\mu(x)\)</span> and a
+covariate <span class="math inline">\(x_j\)</span>:</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Quantity</th>
+<th>Definition</th>
+<th>Units</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Prediction</td>
+<td><span class="math inline">\(\mu(x)\)</span> at a stated profile
+<span class="math inline">\(x\)</span></td>
+<td>counts</td>
+</tr>
+<tr class="even">
+<td>Contrast</td>
+<td><span class="math inline">\(\mu(x^{(1)}) - \mu(x^{(0)})\)</span> for
+two profiles (e.g. two levels of a factor)</td>
+<td>counts</td>
+</tr>
+<tr class="odd">
+<td>Marginal effect</td>
+<td><span class="math inline">\(\partial\mu/\partial x_j\)</span> for a
+continuous <span class="math inline">\(x_j\)</span></td>
+<td>counts per unit of <span class="math inline">\(x_j\)</span></td>
+</tr>
+<tr class="even">
+<td>Elasticity</td>
+<td><span class="math inline">\((\partial\mu/\partial
+x_j)(x_j/\mu)\)</span></td>
+<td>% change in the count per % change in <span class="math inline">\(x_j\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>Each can be evaluated at one <em>profile</em> (a stated set of
+covariate values) or <em>averaged</em> over the units of a population.
+The two generally differ: with a log link, the average of the
+predictions is not the prediction at average covariate values. State
+which one is reported.</p>
+</div>
+<div id="categorical-predictors-school-absences" class="section level2">
+<h2>Categorical predictors: school absences</h2>
+<p><code>MASS::quine</code> records the number of days absent from
+school (<code>Days</code>) in a school year for 146 children in an
+Australian town, with four categorical predictors: ethnic background
+<code>Eth</code> (A = Aboriginal, N = not), <code>Sex</code>, age group
+<code>Age</code> (F0 primary, F1 to F3 forms 1 to 3) and learner status
+<code>Lrn</code> (AL average, SL slow) (Quine, 1975). The categories are
+those of the original study. The associations below describe these data;
+they are not causal effects.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>q <span class="ot">&lt;-</span> MASS<span class="sc">::</span>quine</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>nb <span class="ot">&lt;-</span> <span class="fu">countreg</span>(Days <span class="sc">~</span> Eth <span class="sc">+</span> Sex <span class="sc">+</span> Age <span class="sc">+</span> Lrn, <span class="at">data =</span> q, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>               <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">summary</span>(nb)<span class="sc">$</span>coefficients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;                Estimate Std. Error</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; (Intercept)  2.89457803  0.2279260</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; EthN        -0.56937207  0.1576087</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; SexM         0.08232043  0.1646847</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; AgeF1       -0.44842604  0.2376017</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; AgeF2        0.08808263  0.2415475</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; AgeF3        0.35690340  0.2466199</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; LrnSL        0.29210918  0.1829368</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; ln(alpha)   -0.24286194  0.1263215</span></span></code></pre></div>
+<p>The reference levels are the first level of each factor (A, F, F0,
+AL).</p>
+<div id="a-profile-prediction-and-an-average-prediction" class="section level3">
+<h3>A profile prediction and an average prediction</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>ref <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Eth =</span> <span class="st">&quot;A&quot;</span>, <span class="at">Sex =</span> <span class="st">&quot;F&quot;</span>, <span class="at">Age =</span> <span class="st">&quot;F0&quot;</span>, <span class="at">Lrn =</span> <span class="st">&quot;AL&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>ref[] <span class="ot">&lt;-</span> <span class="fu">Map</span>(<span class="cf">function</span>(v, nm) <span class="fu">factor</span>(v, <span class="at">levels =</span> <span class="fu">levels</span>(q[[nm]])), ref,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>             <span class="fu">names</span>(ref))</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">c</span>(<span class="at">reference_profile =</span> <span class="fu">predict</span>(nb, <span class="at">newdata =</span> ref),</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">average_over_children =</span> <span class="fu">mean</span>(<span class="fu">predict</span>(nb)))</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;     reference_profile average_over_children </span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;              18.07587              16.47124</span></span></code></pre></div>
+<p>The first number is the expected absence of one hypothetical child in
+the reference categories; the second averages the predictions over the
+146 children in the data. They answer different questions.</p>
+</div>
+<div id="rate-ratios-and-differences" class="section level3">
+<h3>Rate ratios and differences</h3>
+<p>With a log link, <span class="math inline">\(\exp(\beta)\)</span> is
+a rate ratio, the same for every profile. For <code>Eth</code>, <span class="math inline">\(\exp(\beta)\)</span> = 0.566: children of
+non-Aboriginal background are expected to have 43.4% fewer absent days,
+other categories held fixed. The <em>difference</em> in days depends on
+the profile:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>d_A <span class="ot">&lt;-</span> d_N <span class="ot">&lt;-</span> q</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>d_A<span class="sc">$</span>Eth <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="st">&quot;A&quot;</span>, <span class="at">levels =</span> <span class="fu">levels</span>(q<span class="sc">$</span>Eth))</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>d_N<span class="sc">$</span>Eth <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="st">&quot;N&quot;</span>, <span class="at">levels =</span> <span class="fu">levels</span>(q<span class="sc">$</span>Eth))</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>diff_by_child <span class="ot">&lt;-</span> <span class="fu">predict</span>(nb, <span class="at">newdata =</span> d_N) <span class="sc">-</span> <span class="fu">predict</span>(nb, <span class="at">newdata =</span> d_A)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="fu">c</span>(<span class="at">average_difference =</span> <span class="fu">mean</span>(diff_by_child),</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">smallest =</span> <span class="fu">min</span>(diff_by_child), <span class="at">largest =</span> <span class="fu">max</span>(diff_by_child))</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; average_difference           smallest            largest </span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;          -9.246071         -12.461632          -5.011404</span></span></code></pre></div>
+<p><code>margEffTable()</code> computes such average discrete changes
+(and their delta-method standard errors) for two-level factors and
+continuous variables. Its result agrees with the hand calculation:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>me <span class="ot">&lt;-</span> <span class="fu">margEffTable</span>(nb, <span class="at">vars =</span> <span class="fu">c</span>(<span class="st">&quot;Eth&quot;</span>, <span class="st">&quot;Sex&quot;</span>, <span class="st">&quot;Lrn&quot;</span>),</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                   <span class="at">indicator =</span> <span class="st">&quot;discrete_change&quot;</span>, <span class="at">tableType =</span> <span class="st">&quot;tibble&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>me[, <span class="fu">c</span>(<span class="st">&quot;term&quot;</span>, <span class="st">&quot;effect_metric&quot;</span>, <span class="st">&quot;estimate&quot;</span>, <span class="st">&quot;std_error&quot;</span>, <span class="st">&quot;lower_ci&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>       <span class="st">&quot;upper_ci&quot;</span>)]</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; Marginal Effects / Elasticities</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; Method: delta </span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt;  term   effect_metric estimate std_error lower_ci upper_ci</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt;   Eth Discrete change   -9.246     2.751  -14.638   -3.854</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt;   Sex Discrete change    1.360     2.729   -3.989    6.709</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt;   Lrn Discrete change    4.976     3.278   -1.448   11.400</span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="fu">all.equal</span>(me<span class="sc">$</span>estimate[me<span class="sc">$</span>term <span class="sc">==</span> <span class="st">&quot;Eth&quot;</span>], <span class="fu">round</span>(<span class="fu">mean</span>(diff_by_child), <span class="dv">3</span>))</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>With the default <code>indicator = &quot;pseudo_elasticity&quot;</code> the
+same changes are reported as percentages; for a model without other
+components the pseudo-elasticity of a dummy variable is exactly the rate
+ratio minus one.</p>
+</div>
+<div id="a-factor-with-more-than-two-levels" class="section level3">
+<h3>A factor with more than two levels</h3>
+<p>A derivative makes no sense for a factor, and a single “effect” of a
+four-level factor needs a choice of contrast.
+<code>margEffTable()</code> therefore refuses <code>Age</code> with an
+explanation:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">tryCatch</span>(<span class="fu">margEffTable</span>(nb, <span class="at">vars =</span> <span class="st">&quot;Age&quot;</span>),</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>         <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Variable `Age` is a factor with more than two levels. Create binary indicators or supply a specific contrast before calling `margEffTable()`.&quot;</span></span></code></pre></div>
+<p>Construct the contrasts explicitly instead: here, the expected
+absences if every child in the data were in each age group, all else as
+observed:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>by_age <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="fu">levels</span>(q<span class="sc">$</span>Age), <span class="cf">function</span>(a) {</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  d <span class="ot">&lt;-</span> q</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  d<span class="sc">$</span>Age <span class="ot">&lt;-</span> <span class="fu">factor</span>(a, <span class="at">levels =</span> <span class="fu">levels</span>(q<span class="sc">$</span>Age))</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="fu">mean</span>(<span class="fu">predict</span>(nb, <span class="at">newdata =</span> d))</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>})</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">round</span>(by_age, <span class="dv">2</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;    F0    F1    F2    F3 </span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 16.57 10.58 18.09 23.67</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="fu">round</span>(by_age <span class="sc">-</span> by_age[[<span class="st">&quot;F0&quot;</span>]], <span class="dv">2</span>)   <span class="co"># differences from F0, in days</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt;    F0    F1    F2    F3 </span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;  0.00 -5.99  1.53  7.11</span></span></code></pre></div>
+</div>
+</div>
+<div id="an-interaction-yarn-breaks" class="section level2">
+<h2>An interaction: yarn breaks</h2>
+<p><code>warpbreaks</code> records the number of breaks in 54 looms of
+yarn (each a fixed length), for two wools and three tension levels, 9
+looms per combination. With an interaction, the effect of wool depends
+on the tension, so a single wool effect is not meaningful:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>w <span class="ot">&lt;-</span> datasets<span class="sc">::</span>warpbreaks</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>wb <span class="ot">&lt;-</span> <span class="fu">countreg</span>(breaks <span class="sc">~</span> wool <span class="sc">*</span> tension, <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>               <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">wool =</span> <span class="fu">levels</span>(w<span class="sc">$</span>wool), <span class="at">tension =</span> <span class="fu">levels</span>(w<span class="sc">$</span>tension))</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">cbind</span>(grid, <span class="fu">round</span>(<span class="fu">predict</span>(wb, <span class="at">newdata =</span> grid, <span class="at">interval =</span> <span class="st">&quot;confidence&quot;</span>), <span class="dv">2</span>))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;   wool tension   fit   lwr   upr</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; 1    A       L 44.55 36.13 54.76</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; 2    B       L 28.22 22.56 35.13</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 3    A       M 24.00 19.05 30.05</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; 4    B       M 28.78 22.83 35.61</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; 5    A       H 24.55 19.46 30.58</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; 6    B       H 18.78 14.74 23.69</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>ci <span class="ot">&lt;-</span> <span class="fu">predict</span>(wb, <span class="at">newdata =</span> grid, <span class="at">interval =</span> <span class="st">&quot;confidence&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(grid<span class="sc">$</span>tension) <span class="sc">+</span> <span class="fu">ifelse</span>(grid<span class="sc">$</span>wool <span class="sc">==</span> <span class="st">&quot;A&quot;</span>, <span class="sc">-</span><span class="fl">0.08</span>, <span class="fl">0.08</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">plot</span>(x, ci<span class="sc">$</span>fit, <span class="at">pch =</span> <span class="fu">ifelse</span>(grid<span class="sc">$</span>wool <span class="sc">==</span> <span class="st">&quot;A&quot;</span>, <span class="dv">1</span>, <span class="dv">19</span>), <span class="at">xaxt =</span> <span class="st">&quot;n&quot;</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>     <span class="at">ylim =</span> <span class="fu">range</span>(ci<span class="sc">$</span>lwr, ci<span class="sc">$</span>upr), <span class="at">xlab =</span> <span class="st">&quot;Tension&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;Expected breaks&quot;</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">axis</span>(<span class="dv">1</span>, <span class="at">at =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">labels =</span> <span class="fu">levels</span>(w<span class="sc">$</span>tension))</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="fu">segments</span>(x, ci<span class="sc">$</span>lwr, x, ci<span class="sc">$</span>upr)</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;wool A&quot;</span>, <span class="st">&quot;wool B&quot;</span>), <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">19</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>)</span></code></pre></div>
+<div class="float">
+<img role="img" aria-label="Expected breaks by tension for each wool, with 95% confidence intervals." src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAGACAMAAABFpiBcAAAAilBMVEUAAAAAADoAAGYAOjoAOpAAZmYAZrY6AAA6ADo6AGY6OpA6kLY6kNtmAABmADpmAGZmOpBmZgBmZjpmZmZmkJBmtrZmtttmtv+QOgCQOjqQOmaQZgCQkNuQtpCQ2/+2ZgC2kDq2tv+225C2/9u2///bkDrb2//b/7bb////tmb/25D//7b//9v///96WIYjAAAACXBIWXMAAA7DAAAOwwHHb6hkAAANbElEQVR4nO3di2KjxgFGYXbrandTyW16s5q2Im1Na93e//XKAJIwAmkYZuCHOV+arBMbYaRTBCMuyRkQlkz9CwCPECikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikeQ40AaxMFajfh8NSESikESikESikESikESikESikSQVKtWgiUEgjUEgjUEgjUEgjUEgjUEgjUCg4bt4uX6bJuvYNAkUoPQ7mrAV6fP3j1/fag1jPzXpe7g9HoEuSnHu8ordAs6///vZ2+waBIoyk9k/jtF2dz/skby99+ci/SMp38uqLa6D5jxU/+flhrOfnDYEuXTPQc5Z3mSWrPMF1EepxUxVrvrgGuv+yO2f5358fxnp+3hDo0t0FatJL//Tycfi+M40W/+H6xTVQs3o9btaNh7GenzcEunjNbdC8wePrP3+877++H4qtzPyf1y8ugZZtprfdJAJFKM29+HR9+Ol/r7t0dS67zKO8fnEJNKvO5bzuJgUK9LQt51MfMHj+cAS6aNnLr6tz+rvt27lzDVrtHx03+Rt9KUyg2WWsdf9p0PXZwxHooh1+/Lw+Z7/5vjt3boPuq92j225SkEDL2ZZzuv5fweLhCHTRjps8u31iiujai0+rXA7fLgUFCbT2udW+402eQCNk9n2q9NrH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fiGiegbUAg16v/iFiOoZkAt07IeboaiegdkE6uN+8QsR1TMgF2iWVBfH6bonclQvT6uongG1QM09ao6b1ZlAu0X1DIgFWg4znbYP7iof1cvTimegqXXDL+hAffryQaBdeAYa2ndNwg7UpysChZ2OnedA26BVlsdN1/FMBIrPRg30+lHSaUugsDJuoGM/HOZvxG3Q8R8OCzDeXvz4D4clEPioM9TDYQkIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFNIIFLNDoJBGoJBGoJBGoJBGoJBGoJA2WaCAlYkCFZ/tNFhYocfTnu00WFihx9Oe7TRYWKHH057tNFhYocfTnu00WFihx9Oe7TRYWKHH057tNFhYocfTnu00WFihx9Oe7TRYWKHHA7wiUEgjUEgjUEgjUEgjUEgjUEgjUEgjUEgjUEgjUEgjUEgjUEibIND05WP8mU7itE3WxRf7JIJlPm1XxZ9+X18CDSgPtFzWlEBdEWhAp+1vX3f5n8ff/xzBMhPo7OQvWWre4/cvf49gmQl0dvKXbG8WNl3HsMwEOjv5S3b48X4+vu5iWOZ8i7tEoHORB3ravuXv8B8xLDNr0NkxL1m2yt/ho1hmAp0d85Idfvznb7solplAZ8e8ZKftn/PN0BiWmUBnp3jJ0mQVxzIvJ9ByX289/pzHVrxk++SNQN1xsAikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikESikEagXx011deGv790/8jbmb7QUBOrN4ftu6l9hgQjUGwINgUC9uQSaldeWPG7+kr/v52/rh2+J+bN8i983voknCNSbKtDsyy5vcp03mH+R/8vh21txkdAi0H1R6ur6zal/Z30E6k0Z6HFT3Lrr63vxRV7nvtpvMoGetsU3v+wu35zy950HAvWmDHRfrBbz9oo1Zv6P46Ys1Px7mWTtm5P+wrNAoN5UgVbjTbcGixtcvdUCLaolUDsE6k19DXqu8rs0mJp3ddagDgjUm8s2aFXdpwarlWZtG5RA7RCoN7W9+Msa0zRYrFIvTd724gnUDoF6Ux8HzfeLrg2ardI80sY4KIHaIVBII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BII1BI+z9mF++yE1KmIgAAAABJRU5ErkJggg==" alt="Expected breaks by tension for each wool, with 95% confidence intervals." />
+<div class="figcaption">Expected breaks by tension for each wool, with
+95% confidence intervals.</div>
+</div>
+<p>The difference between wools within each tension, with delta-method
+standard errors, comes from <code>margEffTable()</code> applied to the
+rows of that tension (the model is the same; only the population over
+which the change is averaged differs):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>wool_eff <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">levels</span>(w<span class="sc">$</span>tension), <span class="cf">function</span>(tn) {</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  r <span class="ot">&lt;-</span> <span class="fu">margEffTable</span>(wb, <span class="at">data =</span> w[w<span class="sc">$</span>tension <span class="sc">==</span> tn, ], <span class="at">vars =</span> <span class="st">&quot;wool&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>                    <span class="at">indicator =</span> <span class="st">&quot;discrete_change&quot;</span>, <span class="at">tableType =</span> <span class="st">&quot;tibble&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">tension =</span> tn, <span class="at">wool_B_minus_A =</span> r<span class="sc">$</span>estimate,</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>             <span class="at">std_error =</span> r<span class="sc">$</span>std_error)</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>}))</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>wool_eff</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt;   tension wool_B_minus_A std_error</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; 1       L        -16.333     5.802</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; 2       M          4.777     4.333</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; 3       H         -5.778     3.688</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>clear <span class="ot">&lt;-</span> <span class="fu">abs</span>(wool_eff<span class="sc">$</span>wool_B_minus_A) <span class="sc">&gt;</span> <span class="fl">1.96</span> <span class="sc">*</span> wool_eff<span class="sc">$</span>std_error</span></code></pre></div>
+<p>The difference between the wools is clearly different from zero (more
+than 1.96 standard errors) only at L tension, where wool B has fewer
+breaks than wool A; at the other tension levels the estimates are small
+relative to their standard errors.</p>
+</div>
+<div id="continuous-predictors-and-elasticities-doctor-visits" class="section level2">
+<h2>Continuous predictors and elasticities: doctor visits</h2>
+<p><code>AER::DoctorVisits</code> (Cameron and Trivedi, 1986) records
+the number of doctor visits in the past two weeks for 5,190 adults in
+the 1977-78 Australian Health Survey. <code>age</code> is age in years
+divided by 100 and <code>income</code> is annual income in tens of
+thousands of dollars, so a change of 0.01 in <code>age</code> is one
+year.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">new.env</span>()</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">data</span>(<span class="st">&quot;DoctorVisits&quot;</span>, <span class="at">package =</span> <span class="st">&quot;AER&quot;</span>, <span class="at">envir =</span> e)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>dv <span class="ot">&lt;-</span> e<span class="sc">$</span>DoctorVisits</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>dvm <span class="ot">&lt;-</span> <span class="fu">countreg</span>(visits <span class="sc">~</span> gender <span class="sc">+</span> age <span class="sc">+</span> <span class="fu">I</span>(age<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span> income <span class="sc">+</span> illness <span class="sc">+</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>                  health <span class="sc">+</span> private, <span class="at">data =</span> dv, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>                <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span></code></pre></div>
+<p>Age enters through two terms, so its effect is not a single
+coefficient. The average marginal effect differentiates the expected
+count with respect to <code>age</code> (changing both terms) for each
+person and averages. A central finite difference by hand gives the same
+value:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>me_dv <span class="ot">&lt;-</span> <span class="fu">margEffTable</span>(dvm, <span class="at">vars =</span> <span class="fu">c</span>(<span class="st">&quot;age&quot;</span>, <span class="st">&quot;income&quot;</span>), <span class="at">tableType =</span> <span class="st">&quot;tibble&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>me_dv[, <span class="fu">c</span>(<span class="st">&quot;term&quot;</span>, <span class="st">&quot;effect_metric&quot;</span>, <span class="st">&quot;estimate&quot;</span>, <span class="st">&quot;std_error&quot;</span>)]</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; Marginal Effects / Elasticities</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; Method: delta </span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt;    term           effect_metric estimate std_error</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt;     age Average marginal effect    0.264     0.059</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt;  income Average marginal effect   -0.040     0.034</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fl">1e-4</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>d_up <span class="ot">&lt;-</span> d_dn <span class="ot">&lt;-</span> dv</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>d_up<span class="sc">$</span>age <span class="ot">&lt;-</span> dv<span class="sc">$</span>age <span class="sc">+</span> h</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>d_dn<span class="sc">$</span>age <span class="ot">&lt;-</span> dv<span class="sc">$</span>age <span class="sc">-</span> h</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="fu">mean</span>((<span class="fu">predict</span>(dvm, <span class="at">newdata =</span> d_up) <span class="sc">-</span> <span class="fu">predict</span>(dvm, <span class="at">newdata =</span> d_dn)) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> h))</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; [1] 0.2641004</span></span></code></pre></div>
+<p>The effect is per unit of <code>age</code>, i.e. per 100 years: per
+year of age the expected number of visits changes by 0.0026 on average.
+An elasticity is free of units:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>el <span class="ot">&lt;-</span> <span class="fu">margEffTable</span>(dvm, <span class="at">vars =</span> <span class="st">&quot;income&quot;</span>, <span class="at">measure =</span> <span class="st">&quot;elasticity&quot;</span>,</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>                   <span class="at">tableType =</span> <span class="st">&quot;tibble&quot;</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>el[, <span class="fu">c</span>(<span class="st">&quot;term&quot;</span>, <span class="st">&quot;effect_metric&quot;</span>, <span class="st">&quot;estimate&quot;</span>, <span class="st">&quot;std_error&quot;</span>, <span class="st">&quot;lower_ci&quot;</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>       <span class="st">&quot;upper_ci&quot;</span>)]</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; Marginal Effects / Elasticities</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; Method: delta </span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt;    term effect_metric estimate std_error lower_ci upper_ci</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt;  income    Elasticity   -0.076     0.064   -0.201    0.049</span></span></code></pre></div>
+<p>A 1% higher income is associated with an expected number of visits
+about 0.08% lower; the 95% confidence interval includes zero.</p>
+<p>For a nonlinear term, a curve is clearer than a single number. Here
+the expected visits are averaged over the 5,190 people with everyone’s
+age set to each value in turn:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>ages <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fl">0.2</span>, <span class="fl">0.7</span>, <span class="at">by =</span> <span class="fl">0.05</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>avg_visits <span class="ot">&lt;-</span> <span class="fu">sapply</span>(ages, <span class="cf">function</span>(a) {</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  d <span class="ot">&lt;-</span> dv</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  d<span class="sc">$</span>age <span class="ot">&lt;-</span> a</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>  <span class="fu">mean</span>(<span class="fu">predict</span>(dvm, <span class="at">newdata =</span> d))</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>})</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">100</span> <span class="sc">*</span> ages, avg_visits, <span class="at">type =</span> <span class="st">&quot;b&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Age (years)&quot;</span>,</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;Average expected visits&quot;</span>)</span></code></pre></div>
+<div class="float">
+<img role="img" aria-label="Average expected doctor visits in two weeks by age." src="data:image/png;base64,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" alt="Average expected doctor visits in two weeks by age." />
+<div class="figcaption">Average expected doctor visits in two weeks by
+age.</div>
+</div>
+</div>
+<div id="uncertainty-of-effects" class="section level2">
+<h2>Uncertainty of effects</h2>
+<ul>
+<li><strong>Delta method</strong> (<code>se = &quot;delta&quot;</code>, the
+default): uses the model’s covariance matrix, the one chosen with
+<code>stderr</code> when it was fit (Hessian-based, robust or
+bootstrap). It is fast and is valid when the effect is a smooth function
+of the estimates and the sample is not small.</li>
+<li><strong>Bootstrap</strong> (<code>se = &quot;bootstrap&quot;</code>): refits
+the model to resampled units (rows, panels, or the clusters in
+<code>cluster_var</code>) and recomputes the effect. Use it with a seed
+and enough replicates; the number of successful replicates is
+reported.</li>
+</ul>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">11</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">margEffTable</span>(nb, <span class="at">vars =</span> <span class="st">&quot;Eth&quot;</span>, <span class="at">indicator =</span> <span class="st">&quot;discrete_change&quot;</span>,</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>             <span class="at">se =</span> <span class="st">&quot;bootstrap&quot;</span>, <span class="at">bootstraps =</span> <span class="dv">100</span>,</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>             <span class="at">tableType =</span> <span class="st">&quot;tibble&quot;</span>)[, <span class="fu">c</span>(<span class="st">&quot;estimate&quot;</span>, <span class="st">&quot;std_error&quot;</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>                                       <span class="st">&quot;successful_bootstraps&quot;</span>)]</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; Marginal Effects / Elasticities</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; Method: bootstrap </span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="co">#&gt;  estimate std_error successful_bootstraps</span></span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="co">#&gt;    -9.246     2.891                   100</span></span></code></pre></div>
+<div id="averaging-over-a-different-population" class="section level3">
+<h3>Averaging over a different population</h3>
+<p>Effects can be averaged over a population other than the estimation
+sample by passing it as <code>data</code>. With the delta method the
+model is the one already estimated, and only the averaging population
+changes; here, the effects among the slow learners only:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>slow <span class="ot">&lt;-</span> q[q<span class="sc">$</span>Lrn <span class="sc">==</span> <span class="st">&quot;SL&quot;</span>, ]</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="fu">margEffTable</span>(nb, <span class="at">data =</span> slow, <span class="at">vars =</span> <span class="fu">c</span>(<span class="st">&quot;Eth&quot;</span>, <span class="st">&quot;Sex&quot;</span>),</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>             <span class="at">indicator =</span> <span class="st">&quot;discrete_change&quot;</span>,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>             <span class="at">tableType =</span> <span class="st">&quot;tibble&quot;</span>)[, <span class="fu">c</span>(<span class="st">&quot;term&quot;</span>, <span class="st">&quot;estimate&quot;</span>, <span class="st">&quot;std_error&quot;</span>)]</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; Marginal Effects / Elasticities</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; Method: delta </span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt;  term estimate std_error</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt;   Eth   -9.296     2.796</span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt;   Sex    1.371     2.770</span></span></code></pre></div>
+<p>The bootstrap does not yet separate the population used to
+re-estimate the model from the population over which the effect is
+averaged: with <code>data</code> given, it resamples those rows as if
+they were the estimation sample. Use delta-method standard errors for
+effects averaged over a different population.</p>
+</div>
+</div>
+<div id="pitfalls" class="section level2">
+<h2>Pitfalls</h2>
+<ul>
+<li><strong>A derivative for a factor.</strong>
+<code>margEffTable()</code> uses discrete changes for two-level factors
+and refuses factors with more levels; construct explicit contrasts for
+those.</li>
+<li><strong>Coefficients of model components.</strong> In a
+zero-inflated, hurdle or underreporting model, the count-model
+coefficients describe one component. The change in the <em>overall</em>
+expected count also involves the zero or reporting model, so compute
+effects from predictions (as <code>margEffTable()</code> does), not from
+the coefficients alone.</li>
+<li><strong>Associations, not causal effects.</strong> All effects here
+are comparisons of model-based expected counts between profiles. A
+causal interpretation needs a separate argument about how the data were
+generated.</li>
+</ul>
+</div>
+<div id="next-steps" class="section level2">
+<h2>Next steps</h2>
+<ul>
+<li><code>vignette(&quot;getting-started&quot;, package = &quot;flexCountReg&quot;)</code>
+shows predictions with confidence and prediction intervals.</li>
+<li><code>vignette(&quot;inference-prediction-and-comparison&quot;, package = &quot;flexCountReg&quot;)</code>
+covers the choice of standard errors.</li>
+<li><code>vignette(&quot;distribution-parameter-regression&quot;, package = &quot;flexCountReg&quot;)</code>
+shows covariates that change the spread, not only the mean.</li>
+</ul>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Cameron, A. C. and Trivedi, P. K. (1986). Econometric models based on
+count data: comparisons and applications of some estimators and tests.
+<em>Journal of Applied Econometrics</em>, 1(1), 29-53.</p>
+<p>Quine, S. (1975). <em>Achievement Orientation of Aboriginal and White
+Adolescents</em>. Doctoral dissertation, Australian National
+University.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

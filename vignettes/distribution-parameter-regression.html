@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Modeling dispersion and other distribution parameters</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Modeling dispersion and other distribution
+parameters</h1>
+
+
+
+<p>A regression model for counts usually describes how the <em>mean</em>
+changes with covariates. The shape of the distribution around the mean
+(how variable the counts are, how many zeros and large counts there are)
+can also change with covariates. This vignette shows how to model a
+distribution parameter, how to read its coefficients, how to see its
+effect on the distribution, and how to avoid mistaking a wrong mean
+model for a changing dispersion.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="question-and-data" class="section level2">
+<h2>Question and data</h2>
+<p><strong>Question:</strong> given the mean, does the variability of
+the counts differ between groups of units?</p>
+<p>To know the right answer, the data are simulated. A covariate
+<code>x</code> changes the mean; a binary covariate <code>z</code>
+changes only the NB2 dispersion <span class="math inline">\(\alpha\)</span>:</p>
+<p><span class="math display">\[\mu = \exp(1 + 0.5x), \qquad \alpha =
+\exp(-1 + 1.2z), \qquad
+  \text{Var}(Y) = \mu + \alpha\mu^2.\]</span></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">800</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>sim <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">runif</span>(n, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">z =</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.5</span>))</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>sim<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n, <span class="at">size =</span> <span class="dv">1</span> <span class="sc">/</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> <span class="fl">1.2</span> <span class="sc">*</span> sim<span class="sc">$</span>z),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>                 <span class="at">mu =</span> <span class="fu">exp</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> sim<span class="sc">$</span>x))</span></code></pre></div>
+</div>
+<div id="a-constant-dispersion-then-a-dispersion-model" class="section level2">
+<h2>A constant dispersion, then a dispersion model</h2>
+<p><code>dis_param_formula_1</code> gives a formula for the first
+distribution parameter; for NB2 that is <span class="math inline">\(\alpha\)</span>, modelled on the log scale: <span class="math inline">\(\ln\alpha = W\delta\)</span>.
+(<code>?count_families</code> lists the parameter and its link for every
+family.)</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>nb_const <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> sim, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>nb_disp <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> sim, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                    <span class="at">dis_param_formula_1 =</span> <span class="sc">~</span> z, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">summary</span>(nb_disp)<span class="sc">$</span>coefficients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;                         Estimate Std. Error</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; (Intercept)            1.0111952 0.03401397</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; x                      0.6343732 0.05730818</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; ln(alpha):(Intercept) -1.2542710 0.16552628</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; ln(alpha):z            1.3284606 0.19510925</span></span></code></pre></div>
+<p>The mean coefficients are those of the log mean, as before. The
+dispersion coefficients are labelled <code>ln(alpha):</code>; on the
+natural scale:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">coef</span>(nb_disp)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>alpha <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">c</span>(<span class="at">z0 =</span> d[[<span class="st">&quot;ln(alpha):(Intercept)&quot;</span>]],</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>               <span class="at">z1 =</span> d[[<span class="st">&quot;ln(alpha):(Intercept)&quot;</span>]] <span class="sc">+</span> d[[<span class="st">&quot;ln(alpha):z&quot;</span>]]))</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">rbind</span>(<span class="at">estimate =</span> alpha, <span class="at">truth =</span> <span class="fu">exp</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> <span class="fl">1.2</span>))), <span class="dv">3</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;             z0    z1</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; estimate 0.285 1.077</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; truth    0.368 1.221</span></span></code></pre></div>
+<p>Both models are fit to the same rows, and the constant-dispersion
+model is the dispersion model with the <code>z</code> coefficient set to
+zero (an interior restriction), so the likelihood-ratio test is
+valid:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">regCompTest</span>(nb_disp, <span class="at">model2 =</span> nb_const)<span class="sc">$</span>statistics</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 8 × 3</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;   Statistic                 Model BaseModel</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   &lt;chr&gt;                     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; 1 Log-likelihood        -1716.    -1743.   </span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 2 Number of parameters      4         3    </span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 3 AIC                    3439.     3492.   </span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 4 BIC                    3458.     3506.   </span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 5 LR Test Statistic        54.9      NA    </span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 6 LR degrees of freedom     1        NA    </span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; 7 LR p-value                0        NA    </span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; 8 McFadden&#39;s Pseudo R^2     0.238     0.226</span></span></code></pre></div>
+</div>
+<div id="what-a-dispersion-difference-does-to-the-distribution" class="section level2">
+<h2>What a dispersion difference does to the distribution</h2>
+<p>The coefficients of a dispersion model are hard to interpret
+directly. Look at the distribution instead.
+<code>predict(type = &quot;prob&quot;)</code> gives the probability of each count
+(with <code>overflow = TRUE</code>, the last column is the probability
+beyond <code>max_count</code>, so each row sums to one); the mean,
+variance, zero probability and tail probability follow from it. Hold the
+mean fixed (same <code>x</code>) and change only <code>z</code>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>profiles <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">z =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>P <span class="ot">&lt;-</span> <span class="fu">predict</span>(nb_disp, <span class="at">newdata =</span> profiles, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>, <span class="at">max_count =</span> <span class="dv">200</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>             <span class="at">overflow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">200</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>mean_k <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(P[, <span class="dv">1</span><span class="sc">:</span><span class="dv">201</span>] <span class="sc">%*%</span> k)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>var_k <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(P[, <span class="dv">1</span><span class="sc">:</span><span class="dv">201</span>] <span class="sc">%*%</span> k<span class="sc">^</span><span class="dv">2</span>) <span class="sc">-</span> mean_k<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="fu">cbind</span>(profiles, <span class="at">mean =</span> mean_k, <span class="at">variance =</span> var_k, <span class="at">P_zero =</span> P[, <span class="dv">1</span>],</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>      <span class="at">P_above_10 =</span> <span class="fu">rowSums</span>(P[, <span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">11</span>)]))</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;   x z     mean  variance    P_zero P_above_10</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; 1 0 0 2.748884  4.904593 0.1314042 0.00573700</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; 2 0 1 2.748884 10.887173 0.2786017 0.03553032</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="fu">all.equal</span>(mean_k, <span class="fu">as.numeric</span>(<span class="fu">predict</span>(nb_disp, <span class="at">newdata =</span> profiles)))</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>The two profiles have the same expected count, but units with
+<code>z = 1</code> are more than 2 times as variable, with 2.1 times the
+probability of a zero and a much heavier upper tail.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">barplot</span>(P[, <span class="dv">1</span><span class="sc">:</span><span class="dv">13</span>], <span class="at">beside =</span> <span class="cn">TRUE</span>, <span class="at">names.arg =</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">12</span>,</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>        <span class="at">legend.text =</span> <span class="fu">c</span>(<span class="st">&quot;z = 0&quot;</span>, <span class="st">&quot;z = 1&quot;</span>), <span class="at">xlab =</span> <span class="st">&quot;Count&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>        <span class="at">ylab =</span> <span class="st">&quot;Probability&quot;</span>, <span class="at">args.legend =</span> <span class="fu">list</span>(<span class="at">bty =</span> <span class="st">&quot;n&quot;</span>))</span></code></pre></div>
+<div class="float">
+<img role="img" aria-label="Fitted probabilities for the two profiles: same mean, different dispersion." src="data:image/png;base64,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" alt="Fitted probabilities for the two profiles: same mean, different dispersion." />
+<div class="figcaption">Fitted probabilities for the two profiles: same
+mean, different dispersion.</div>
+</div>
+</div>
+<div id="pitfall-a-wrong-mean-looks-like-a-changing-dispersion" class="section level2">
+<h2>Pitfall: a wrong mean looks like a changing dispersion</h2>
+<p>A dispersion model should not stand in for a sensible mean model.
+Here a binary covariate <code>g</code> raises the mean and the
+dispersion is constant (<span class="math inline">\(\ln\alpha =
+-1\)</span>, <span class="math inline">\(\alpha = 0.37\)</span>). The
+first model leaves <code>g</code> out of the mean but lets the
+dispersion depend on it; the second puts <code>g</code> in the mean:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">4</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>n2 <span class="ot">&lt;-</span> <span class="dv">800</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>sim2 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">runif</span>(n2, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>), <span class="at">g =</span> <span class="fu">rbinom</span>(n2, <span class="dv">1</span>, <span class="fl">0.5</span>))</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>sim2<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n2, <span class="at">size =</span> <span class="dv">1</span> <span class="sc">/</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="dv">1</span>),</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>                  <span class="at">mu =</span> <span class="fu">exp</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> sim2<span class="sc">$</span>x <span class="sc">+</span> <span class="fl">0.8</span> <span class="sc">*</span> sim2<span class="sc">$</span>g))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>wrong_mean <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> sim2, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>                       <span class="at">dis_param_formula_1 =</span> <span class="sc">~</span> g, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>right_mean <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> g, <span class="at">data =</span> sim2, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>                       <span class="at">dis_param_formula_1 =</span> <span class="sc">~</span> g, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>disp_rows <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;ln(alpha):(Intercept)&quot;</span>, <span class="st">&quot;ln(alpha):g&quot;</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>cw <span class="ot">&lt;-</span> <span class="fu">summary</span>(wrong_mean)<span class="sc">$</span>coefficients[disp_rows, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>cr <span class="ot">&lt;-</span> <span class="fu">summary</span>(right_mean)<span class="sc">$</span>coefficients[disp_rows, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cbind</span>(<span class="at">wrong_mean =</span> cw, <span class="at">right_mean =</span> cr), <span class="dv">3</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt;                       Estimate Std. Error Estimate Std. Error</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; ln(alpha):(Intercept)   -0.252      0.119   -1.030      0.156</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; ln(alpha):g             -0.616      0.185   -0.023      0.191</span></span></code></pre></div>
+<p>With <code>g</code> missing from the mean, the counts in each
+<code>g</code> group are systematically above or below the fitted mean,
+and that misfit is read as extra variation: the estimated <span class="math inline">\(\alpha\)</span> for <code>g = 0</code> is 0.78
+instead of 0.37, and the <code>g</code> coefficient of the dispersion is
+3.3 standard errors from zero although the true dispersion does not
+depend on <code>g</code>. With <code>g</code> in the mean, <span class="math inline">\(\alpha\)</span> is estimated at 0.36 and the
+<code>g</code> dispersion effect is 0.1 standard errors from zero. Check
+the mean model first (residuals against covariates; see
+<code>vignette(&quot;diagnosing-count-models&quot;, package = &quot;flexCountReg&quot;)</code>),
+then model the dispersion.</p>
+</div>
+<div id="underdispersion-counts-less-variable-than-poisson" class="section level2">
+<h2>Underdispersion: counts less variable than Poisson</h2>
+<p>Negative binomial models allow only overdispersion. Counts can also
+be <em>less</em> variable than Poisson counts with the same mean, for
+example when events are regularly spaced. The shell-ring counts of
+<code>abalone_rings</code> are such a case (a random subsample of 600
+animals keeps the example fast):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;abalone_rings&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">3</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>ab <span class="ot">&lt;-</span> abalone_rings[<span class="fu">sample</span>(<span class="fu">nrow</span>(abalone_rings), <span class="dv">600</span>), ]</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>f_ab <span class="ot">&lt;-</span> rings <span class="sc">~</span> sex <span class="sc">+</span> length <span class="sc">+</span> shell_weight</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>ab_pois <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f_ab, <span class="at">data =</span> ab, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">residuals</span>(ab_pois, <span class="at">type =</span> <span class="st">&quot;pearson&quot;</span>)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> (<span class="fu">nobs</span>(ab_pois) <span class="sc">-</span> <span class="dv">5</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.6188365</span></span></code></pre></div>
+<p>The Pearson dispersion is well below 1. Several families allow
+underdispersion; two of them:</p>
+<ul>
+<li><code>DPO</code>, the double Poisson, with precision <span class="math inline">\(\phi\)</span>: <span class="math inline">\(\phi
+&gt; 1\)</span> is underdispersed, <span class="math inline">\(\phi =
+1\)</span> Poisson.</li>
+<li><code>GAMMACOUNT</code>, the number of events of a renewal process
+with gamma waiting times of shape <span class="math inline">\(a\)</span>: <span class="math inline">\(a &gt;
+1\)</span> (more regular than random arrivals) is underdispersed, <span class="math inline">\(a = 1\)</span> Poisson.</li>
+</ul>
+<p>In flexCountReg both are parameterized by their exact mean, <span class="math inline">\(E[Y] = \exp(X\beta)\)</span>, so their
+coefficients mean the same as Poisson coefficients. Neither family has a
+closed-form mean, so the natural parameter is found for each observation
+by solving the mean equation numerically; these fits are slower than
+closed-form families.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>ab_dpo <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f_ab, <span class="at">data =</span> ab, <span class="at">family =</span> <span class="st">&quot;DPO&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>ab_gc <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f_ab, <span class="at">data =</span> ab, <span class="at">family =</span> <span class="st">&quot;GAMMACOUNT&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">model =</span> <span class="fu">c</span>(<span class="st">&quot;Poisson&quot;</span>, <span class="st">&quot;DPO&quot;</span>, <span class="st">&quot;GAMMACOUNT&quot;</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">logLik =</span> <span class="fu">c</span>(<span class="fu">logLik</span>(ab_pois), <span class="fu">logLik</span>(ab_dpo), <span class="fu">logLik</span>(ab_gc)),</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">AIC =</span> <span class="fu">c</span>(<span class="fu">AIC</span>(ab_pois), <span class="fu">AIC</span>(ab_dpo), <span class="fu">AIC</span>(ab_gc)),</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">shape =</span> <span class="fu">c</span>(<span class="cn">NA</span>, <span class="fu">exp</span>(<span class="fu">coef</span>(ab_dpo)[[<span class="st">&quot;ln(phi)&quot;</span>]]),</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>            <span class="fu">exp</span>(<span class="fu">coef</span>(ab_gc)[[<span class="st">&quot;ln(shape)&quot;</span>]])))</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt;        model    logLik      AIC    shape</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; 1    Poisson -1399.920 2809.841       NA</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; 2        DPO -1355.688 2723.377 1.800480</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; 3 GAMMACOUNT -1357.233 2726.467 1.842923</span></span></code></pre></div>
+<p>Both estimate a shape parameter above 1 (underdispersion) and fit far
+better than the Poisson model. Poisson is a special case of both (at
+<span class="math inline">\(\phi = 1\)</span> and <span class="math inline">\(a = 1\)</span>, interior points), so their
+summaries report a likelihood-ratio test against it:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">summary</span>(ab_dpo)<span class="sc">$</span>lr_test[<span class="fu">c</span>(<span class="st">&quot;statistic&quot;</span>, <span class="st">&quot;df&quot;</span>, <span class="st">&quot;p.value&quot;</span>)]</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; $statistic</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; [1] 88.46401</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; $df</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; [1] 1</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; $p.value</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; [1] 5.176817e-21</span></span></code></pre></div>
+<p>Because the families are parameterized by their mean, the predicted
+mean is the mean of the fitted distribution, and its variance is below
+the mean:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>one <span class="ot">&lt;-</span> ab[<span class="dv">1</span>, ]</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>P1 <span class="ot">&lt;-</span> <span class="fu">predict</span>(ab_dpo, <span class="at">newdata =</span> one, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>, <span class="at">max_count =</span> <span class="dv">60</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>              <span class="at">overflow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>k1 <span class="ot">&lt;-</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">60</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">sum</span>(P1[<span class="dv">1</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">61</span>] <span class="sc">*</span> k1)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="fu">c</span>(<span class="at">predicted_mean =</span> <span class="fu">predict</span>(ab_dpo, <span class="at">newdata =</span> one), <span class="at">mean_from_pmf =</span> m1,</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  <span class="at">variance_from_pmf =</span> <span class="fu">sum</span>(P1[<span class="dv">1</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">61</span>] <span class="sc">*</span> k1<span class="sc">^</span><span class="dv">2</span>) <span class="sc">-</span> m1<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt;    predicted_mean     mean_from_pmf variance_from_pmf </span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;          7.438462          7.438462          4.127312</span></span></code></pre></div>
+<p>The two families fit about equally well here; the data do not
+distinguish “regular spacing” (gamma count) from the double Poisson’s
+form of underdispersion.</p>
+</div>
+<div id="supported-combinations" class="section level2">
+<h2>Supported combinations</h2>
+<p>Distribution-parameter formulas work for every family with a
+distribution parameter (<code>?count_families</code> lists them),
+alongside offsets, weights and zero models. Underreporting is available
+only for families whose reported counts stay in the same family (not for
+DPO or GAMMACOUNT), and random-parameter models with the numerically
+solved families are slow.</p>
+</div>
+<div id="reproducibility-and-next-steps" class="section level2">
+<h2>Reproducibility and next steps</h2>
+<p>All random steps use explicit seeds.</p>
+<ul>
+<li><code>vignette(&quot;choosing-a-count-distribution&quot;, package = &quot;flexCountReg&quot;)</code>
+compares many families on one dataset.</li>
+<li><code>?count_families</code> gives each family’s parameters, links
+and variance.</li>
+<li><code>vignette(&quot;predictions-and-effects&quot;, package = &quot;flexCountReg&quot;)</code>
+interprets effects on the expected count.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

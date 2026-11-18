@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Predicting new units and known units in panel data</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Predicting new units and known units in
+panel data</h1>
+
+
+
+<p>With repeated measurements of the same units, “the prediction” can
+mean several things: the expected count for a new unit, a summary for a
+unit whose outcomes have been seen, or a forecast of a known unit’s next
+observation. They condition on different information and must be
+evaluated differently. This vignette fits a random-intercept model to a
+clinical trial and shows which of these targets flexCountReg
+supports.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="data-seizure-counts" class="section level2">
+<h2>Data: seizure counts</h2>
+<p><code>MASS::epil</code> records the number of epileptic seizures of
+59 patients in a trial of the drug progabide (Thall and Vail, 1990), in
+the corrected version of the MASS package (<code>?MASS::epil</code>
+describes the correction). Each patient has four rows, one per two-week
+follow-up period; the count in the eight-week baseline period before
+treatment is a covariate (<code>base</code>, and <code>lbase</code>, the
+log of a quarter of it, centred), not a response, so it is not
+duplicated as an observation.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>epil <span class="ot">&lt;-</span> MASS<span class="sc">::</span>epil</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">table</span>(epil<span class="sc">$</span>subject))     <span class="co"># rows per patient</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;  4 </span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; 59</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co"># the periods are 1 to 4 in order for every patient</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">all</span>(<span class="fu">tapply</span>(epil<span class="sc">$</span>period, epil<span class="sc">$</span>subject, <span class="cf">function</span>(p) <span class="fu">identical</span>(p, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>)))</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>epil<span class="sc">$</span>progabide <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(epil<span class="sc">$</span>trt <span class="sc">==</span> <span class="st">&quot;progabide&quot;</span>)</span></code></pre></div>
+</div>
+<div id="the-model" class="section level2">
+<h2>The model</h2>
+<p>Each patient <span class="math inline">\(i\)</span> has a random
+intercept <span class="math inline">\(b_i \sim N(\mu_b,
+\sigma_b^2)\)</span> shared by their four periods <span class="math inline">\(t\)</span>, and given <span class="math inline">\(b_i\)</span> the counts are NB2 with mean</p>
+<p><span class="math display">\[\mu_{it} = \exp(b_i +
+\beta_1\,\text{progabide}_i +
+\beta_2\,\text{lbase}_i + \beta_3\,\text{lage}_i +
+\beta_4\,\text{V4}_t).\]</span></p>
+<p>The intercept is in <code>rpar_formula</code> and removed from
+<code>formula</code>, so the treatment enters as a 0/1 variable rather
+than a factor with both levels. <code>group_var = &quot;subject&quot;</code> makes
+the four rows of a patient share one draw:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>fe <span class="ot">&lt;-</span> y <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> progabide <span class="sc">+</span> lbase <span class="sc">+</span> lage <span class="sc">+</span> V4</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>rp <span class="ot">&lt;-</span> <span class="fu">countreg.rp</span>(fe, <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> epil, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                  <span class="at">group_var =</span> <span class="st">&quot;subject&quot;</span>, <span class="at">ndraws =</span> <span class="dv">200</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>rp<span class="sc">$</span>model<span class="sc">$</span>converged</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">summary</span>(rp)<span class="sc">$</span>coefficients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="dv">3</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;                    Estimate Std. Error</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; progabide            -0.315      0.150</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; lbase                 1.028      0.101</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; lage                  0.328      0.346</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; V4                   -0.118      0.087</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; (Intercept):Mean      1.850      0.109</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; (Intercept):St.Dev    0.491      0.061</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; ln(alpha)            -2.008      0.237</span></span></code></pre></div>
+<p>The coefficients are effects on the log of the expected count
+<em>given</em> the patient’s intercept. The standard deviation of the
+intercept (<code>(Intercept):St.Dev</code>) measures how much patients
+with the same covariates differ in their seizure rates.</p>
+</div>
+<div id="prediction-targets" class="section level2">
+<h2>Prediction targets</h2>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Target</th>
+<th>Conditions on</th>
+<th>flexCountReg</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Expected count of a new patient</td>
+<td>covariates only</td>
+<td><code>predict(method = &quot;Exact&quot;)</code> or
+<code>&quot;Simulated&quot;</code></td>
+</tr>
+<tr class="even">
+<td>Summary of a patient whose counts were observed</td>
+<td>covariates and that patient’s observed counts</td>
+<td><code>predict(method = &quot;Individual&quot;)</code> (Empirical Bayes)</td>
+</tr>
+<tr class="odd">
+<td>Forecast of a known patient’s later period</td>
+<td>covariates and that patient’s <em>earlier</em> counts only</td>
+<td>not available for random-parameter models (see below)</td>
+</tr>
+</tbody>
+</table>
+<p>For one patient:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> epil[epil<span class="sc">$</span>subject <span class="sc">==</span> <span class="dv">1</span>, ]</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">period =</span> p1<span class="sc">$</span>period, <span class="at">y =</span> p1<span class="sc">$</span>y,</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>           <span class="at">new_patient =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> p1, <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>           <span class="at">simulated =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> p1, <span class="at">method =</span> <span class="st">&quot;Simulated&quot;</span>),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>           <span class="at">empirical_bayes =</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> p1, <span class="at">method =</span> <span class="st">&quot;Individual&quot;</span>))</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;   period y new_patient simulated empirical_bayes</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; 1      1 5    3.420274  3.389338        3.380582</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; 2      2 3    3.420274  3.389338        3.380582</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 3      3 3    3.420274  3.389338        3.380582</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 4      4 3    3.038680  3.011195        3.003416</span></span></code></pre></div>
+<p><code>Exact</code> integrates over the random intercept with its
+moment-generating function; <code>Simulated</code> averages over the
+Halton draws and differs from it by the simulation error. Both describe
+a <em>new</em> patient with these covariates. <code>Individual</code>
+weights each draw of the intercept by the likelihood of the patient’s
+four observed counts; it describes this patient, and it uses their
+outcomes.</p>
+<p>A patient identifier that was not in the training data does not
+matter for the population prediction, which uses the covariates
+only:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>p_new <span class="ot">&lt;-</span> p1</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>p_new<span class="sc">$</span>subject <span class="ot">&lt;-</span> <span class="dv">999</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">predict</span>(rp, <span class="at">newdata =</span> p_new, <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>),</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>          <span class="fu">predict</span>(rp, <span class="at">newdata =</span> p1, <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>))</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<div id="profiles" class="section level3">
+<h3>Profiles</h3>
+<p>Observed counts of four patients with the population prediction
+(dashed) and the Empirical Bayes prediction (solid):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>show <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">10</span>, <span class="dv">25</span>, <span class="dv">49</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span>), <span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">2</span>, <span class="dv">1</span>))</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="cf">for</span> (s <span class="cf">in</span> show) {</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  d <span class="ot">&lt;-</span> epil[epil<span class="sc">$</span>subject <span class="sc">==</span> s, ]</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  pop <span class="ot">&lt;-</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> d, <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  eb <span class="ot">&lt;-</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> d, <span class="at">method =</span> <span class="st">&quot;Individual&quot;</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="fu">plot</span>(d<span class="sc">$</span>period, d<span class="sc">$</span>y, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">ylim =</span> <span class="fu">range</span>(<span class="dv">0</span>, d<span class="sc">$</span>y, pop, eb),</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>       <span class="at">xlab =</span> <span class="st">&quot;Period&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Seizures&quot;</span>, <span class="at">main =</span> <span class="fu">paste</span>(<span class="st">&quot;Patient&quot;</span>, s),</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>       <span class="at">xaxt =</span> <span class="st">&quot;n&quot;</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>  <span class="fu">axis</span>(<span class="dv">1</span>, <span class="at">at =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>  <span class="fu">lines</span>(d<span class="sc">$</span>period, pop, <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>  <span class="fu">lines</span>(d<span class="sc">$</span>period, eb, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="dv">4</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>}</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAqAAAAHgCAMAAABNUi8GAAAAwFBMVEUAAAAAADoAAGYAOjoAOmYAOpAAZmYAZrYil+Y6AAA6ADo6AGY6OgA6Ojo6OmY6OpA6ZmY6ZpA6ZrY6kJA6kNtmAABmADpmAGZmOgBmOjpmOpBmZjpmkLZmkNtmtttmtv+QOgCQOjqQOmaQZgCQZjqQtpCQttuQ2/+2ZgC2Zjq2kDq2tpC225C227a22/+2/9u2///bkDrbkGbbtmbbtrbb25Db29vb/7bb/9vb////tmb/25D/29v//7b//9v///8eUHTxAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAYKUlEQVR4nO2dDXfjtplGac+4U6fZtknsNNumkdKma+WjUzNpu2uqlv7/v1qComRZAiARfCS9MO49J7FlDWHNM5f4IghWSwDDVJf+AAAxEBRMg6BgGgQF0yAomAZBwTQICqZBUDANgoJpEBRMY1zQ5/vKcfX509YP//P9ZDm/vX70HeDeW/HzbVW9OqxwRkS5XM6qO/fll9vq6puTfso98hC0qj68/GwxrYKpdu91zHYPK530KFsxq07Qpjt+4vnDp8O+oJM2qx+qq4fNz7aT22XzXnvgXZvr1mGlkxzlcvF91Qna/uRuWVc3Z22WshB09aXL6bOnNqaquv6pO+3bZvzqz93b33z38p6rD+aftl/6o8GRHGX73btPnaDz29btUIfgVGQh6Oq07xvtrVRXP7nbtF4fXlLt6BKFFclRLr79+v+mK0G7k/68mdoXdN1xer6//rj8uc1s03Fq//vYfdP+qZuPi9n6vTXtC/qgG8ZE2TXubRf0Aq1SHoK++9r1exY//qnaTrXpE5+sQmv2Uz1va2SbkVEiqJetOLp+06tU62iq7bc08FuMiLIXlCZ+n61Um+rq63837RhyK9V+QOlL1dWfHy/wic2SHuWLoAySdtlKta7ePy7+ukr1ru84Vd8sf6m6jtNkk+rd6o/PqD9fkx7lWlCmmfZ5ddr37ZIbcV79bWfoOem7SO49J2ab+AVmlS2THOVyLSgT9ftsd8l/vq3e/931gOZfVdc/ulQXP2wm7yZ9qu4917JvOlWX+uTmSI5yuRGUS50AOyAomAZBwTQICqZBUDANgoJpEBRMg6BgmrGCVsUj+Wcgzw27gYwNdOTx2aMWVFtcfiCoGATVkoug6qbzZJxK0GwCEJMg6POXD6uFLHeeN08Uo6czYpQTCZpPAGISBW3czT21x9DTpOjtLtvkNIJmFICYNEEX00n7zfw3L2upQ4MuDRn9+4g+5U6eGQUgRiXogONTyOefhyZeS4qg99ePddfEe27iZZB0ouKyCUBM0ij++b672993M0qhMb7ANJOWXKaZsgFBtSCoGATVgqBiMhE0my4tgorJQ9B8JgUQVEwWgmY0rYqgYhBUC4KKyUJQmvhyyUNQBknFkomg2YCgYhICcLtru4VhZ1zbkA8IKiYhgNmHZXfdGEE9IKiY4QF0C8CXzfUjgnpAUDGpgi6bm38h6D4IKiaxiV+6LUw9m2mT54HXY8srjqRBUm8ogu6DoGJOc8tHuSCoGOZBtSCoGATVgqBiEkbx62cSMkjygKBiUgKYhR8hSp4HXoepvQ9wItCEYxZT3yYtycW9KZJuO6ZJCkMfVEtKDTq/dSf86xqUaZEeBNWS1sTXVw808X4QVEtiH3Qx/YCgXhBUS/IgqfE/5ZZATReXH0wziUFQLQgqBkG1IKgYBNWCoGIQVAuCikFQLQgqBkG1IKgYBNWCoGIQVAuCiuGWDy0IKoYaVAuCikFQLQgqBkG1nFDQX5tm5N/zmAAMFpcfAUGb68faPQtpRHmXNvBI0qM7FMA2gjwLxS/oYjp5vp803gV1w8qzyslE9Qbw9vM8GX5Bn798COy2NrQ868hF9QZQTp5ygjVoffPkXzM/rLxckIkaqkELy1NGqA/adpjmnxTYZxrtaaAPWmqeo2GayU+yqIzitSBolOEtP4JqCQi6mFbeDX+PL8/2VeShn+6AqFvF+Qsen2ephAZJd024U/9836Z9W1W+HYXW5dle55D86fyibhcXGCTF8ox+0qSP+YYITzPdPIWmRWZ3y9rZWXsM7cuzvRJn/KfbE3VTXHCaKZxn9KOO+ZRvgVgNOvOf8W7T/27j/+3Ad5aHvXVB1xwpaDTPKGYzPBfhPmjl35khIOhueZb9lH+6g018NM940ckf6o2QMopfb2cZaeLf2iDp+OISCm779Nf/mMb79MUS7INGjum3s/S2WATq+2E8z9lk2VSTAyd8qQRq0DYzTXnF4Q8glucxffpyCdSg96ENaoeWVxz+GjSWZyfoHx55mKwXriSJSQiAJj4CgophkKSFJl7M8CZ+eHElEatBU0ZKBBp+izwTiAnKpbkEIgGQZwIxQRuapOFEAiDPBKJ90Mn48ooj1gediIorCUbxYliwrAVBxSCollAT7+bk6NQnEGjiyTORYB+07dATaAKhPih5phFczVRXEwJNILSaaXyee6v4TZEc2PEBbL126xfmt+8QdDjB5XZj87y0gceTHl40gO3X3eqvxZR5u+GE14O+6TxPJiujeDFljuKrI7oiiSUfeD22vOJIWs1013YAcl7NFFxZPd5Vj6Bte8Tqm2T2AziUp7uDphs/Zbse9Ki1/4muUoOKGR6A66DWu/OkWd3yMfSTDukEIKiY4QEsvn1YNqGJ/DzyTD+TDroaEDS6l5C7ydvd15lvoCckeF98OM/m6mExnaxvlj2mOHNIavoBgsb3EnL3xbt7jhHUgzeAA3szrbqo3i3sydP7OrqX0Oom750trbPqM52S0DwoezOlEatBI3sztTTeNotAfT9kb6Zkwn3Q8F5C/dY3tW/ahEC9P2VvplRSRvGLaW8ogu5T5pWk08E0kxgE1eIV1HWWav+lt6HlFYcvAPJMxyeomw5xdyDOEhIl0P0fkecIPIK6KxtdmEyLJLAfAHmOwb9YZHVVg0AT8C4WIc9kAoJ2T0Xj4acJ+AUlz1R8fdC2OXLdJrdMcXR5xeEJgDxH4BN0MXXXhZsqIU8C9QRAniNgHlQM86BaEFRMcgD+tU7keeD12PKKI2FF/f16JRiXjvdBUDEJAcxvXe/0dQ3K8sUeBBWTFEDdDqJo4r0gqJi0ABbTDwjqBUHFpAbQ+JeLkueB12PLKw6mmbQgqBgE1YKgYhBUC4KKQVAtCCoGQbUgqBgE1YKgYk4m6Pq6kv2vJwrA/3psecVBDbqMCzy0sAOvPXgXN3DtuAdBDzBQ3KQaNHJ74tsLdCAImkhA2CRBvRsFDjj+LYOgWuiDikFQLQgqBkG1IKiYhADYsToCgopJCIAdqyMgqJjhAbBjdQwEFZMqKDtW+0FQMYlN/JIdq/0gqJikQRI7VgdBUDFMM2lBUDEIqgVBxSCoFgQVg6BaEFQMgmpBUDEIqgVBxSCoFgQVg6BaEFQMgmpBUDEIqgVBxSCoFgQVg6BaEFQMggrYWgabdtvxai2t79bOMgPdIiUA8nzN9kLtFEFn/V7Avtvjiwx0m5T1oOT5ile3EiQI2q8Af32TF7co9CSvqCfPNScRdMDxbxuRoOnFvQFGN/F9UzTzbPtfZKDbpN/yQZ4bxg6Sajr1QVICIM8wTDOJYZpJC4KKQVAtckGLZ2SA5LnDbiC6aGUllVfcGX5FrsUhqIXizvArci0OQS0Ud4ZfkWtxCGqhuDP8ilyLQ1ALxZ3hV+RaHIJaKO4MvyLX4hDUQnFn+BW5FoegFoo7w6/Itbjir1yAbRAUTIOgYBoEBdMgKJgGQcE0CAqmQVAwDYKCaRAUTCMT1HeTd3pht1U10RXXVNXVg6448V/2DL8i4zxVgj7fex6bll7YZNnoIph/8uCe3aoqrmUmLc0HefaIBK2r3wvP+ObmabmYTmTlLbe281DQvDt1DUqea0SC/vNJ3eq5s15I7dnFI5XFX346taDkucZmH3SpTaDtgyn7TPVdbn3QZb55WhXU9yTgMQj7TM9/lFdvHshzhVFBa+0oUdpnmk2yG8VnnKdNQdXnuzLQ5/tuA4yJqLgQ5LnCpKBuHkOIa47mvxN2wXKrQXPO06SgM3EdVVeVtgrJTNCc8+RSJ5gGQcE0CAqmQVAwDYKCaRAUTIOgYBoEBdMgKJgGQcE0CAqmQVAwDYKCaRAUTIOgYBoEBdMgKJgGQcE0CAqmQVAwDYKCaRAUTJOVoG6by92tKV/fsSrddO3Nk0OeeQnahRfb6fLygeZEDnlmKGhsp8vLB5oTOeSZqaDP925vi/lvv7p2W0u2TZWrBZqq+tXFA82JHPLMUNDm+tFlWt88zW+7jdG6Ha6vuy/yXdzeNDnkmZeg6069S7ZtfdymWO23/Su30fXlm6ScyCHPvARdjzC7ZK8e3Ov2v34L9tpEoDmRQ56ZCrr6pg/U1BmfEznkmaegrs/UJ2mtz5QTOeSZp6Bu1Nl3neYvo872yxcXP+NzIoc8sxIUygNBwTQICqZBUDANgoJpEBRMg6BgGgQF0yAomAZBwTQICqZBUDANgoJpEBRMY1fQ/kH3V59vP5j8P99PlvNb/7Og3Xsrfr6tKnfYYupK0D45OltG5OkOduvvFt9X1fszr78zL2hVfXj5WWtcMNDuvY7Z+rBVEQjakZ7n0kXaCro638+8hNm0oJM2ph+2E3kV2g6b99oD75a/dAtwb2+eQn+8OJLzXHY3ILdHNe3/2uPPm6l1QVdfXNtSffbUncLXP3VnfNuMX/25e/ub717ec1XB/NP2S3dYvV1blE5ynquuUito7dx8vj9vi2Rd0NUZ3zfaW4GufnK3abg+bAe6dLcrdIe9W3VGYVSedfXF/Yug523jTQu67jO1Z+3H5c+V22Cg7zO1/33svmn/1M3HxWz93pr2xYe+z3TmJsks6Xm2PaX/vV818f/TWhruFZwC84K++9r5tfjxT9V2oE0f9mRVLzQ7grbfu2b+v9tAfzlzoGZJztN909Wb/QmPoCv6PpOj6zK9CrSOCtp+u2mH2u/vzv3RTZKcZ9PVuetpps++oolfsRVo27Z8/e+mbau3Au0bbp+grv782H6d/1dbjcYGqkWRnOfs1fQUg6Q1W4HW1fvHxV9Xgd71fabqm7b17vpMk02gfVU56+vPl/kmGJHnRtD5V91I6bwzI1kI2veQVoPNq7/tjDonq0C795yLqy2xqm6ayfH55f4OlkjOc3UwE/W7bAXqJune/91lNP+quv7RBbr4YTNvN+kDde+5ln3Tn9pM7sFyRJ6rg7s+6HdV9f6jt/STYVdQgCWCgnEQFEyDoGAaBAXTICiYBkHBNAgKphkraFU8kn8G8tywG8jYQEcenz1qQbXF5QeCikFQLYUKqm6Jt0o+UXGn+8S2KVNQT99GVvRpijvhJ7ZNkYJ6e9+qsk9S3Ck/sW0QVF32SYpD0NDrseXZhCY+G8oU1P4gaW8asFA/SxX0dDDNpAVBxSCoFgQVg6BaEFQMgmpBUDEIqgVBxSCoFgQVg6BaEFQMgmpBUDEIqgVBxSCoFgQVg6BaEFQMgmpBUDEIqgVBxSCoFgQVg6BaEFQMgmpBUDEIqgVBxSCoFgQVg6BakgTtH0TieyAWgZouLj9SBJ31D3maeZ6QQ6AJx3DCh0kQ9PnL/sk489/sP2OMQIcfwgkfAUHFDA+APGMkNfH9mT7zPNiaQAcfgaAxkgZJNX2mIClNPCd8GNU0U2hD3OJICYATPkyKoM/3d90TWn2PuSVQUTGc8CsSBF1M71bdpZpR5z4JATzfV9f/mHLCe0kcxXdu0qn3kNIHnSwb90xhTngPKTXotw/LBkEDpI3iu5E8eXpI6YM2Vw+L6aRr6g+WVxyJgv7hEUG9JI3i205Ty9XDEeUVB028FlYziWGQpAVBxZS5mul8O1Yj6EiKFPSMe/4j6EhKFPScT01B0JEgqLjsA6/HllccJQpKE58RRQrKICkfTifor02j/Wt7A9h+3Vw/1v6Z+IHlFYc/AEGelzbwSFJzOxzA9uvFdPJ8P2k8C2iHllcc3gDefp4nE9Uv6POXD+0577s2PLS84vAGYC/PU3Ua5aIGa9D65ql+w2f8yQjVoLbyPPlSaJmooT5o22Gaf0IfdDiBPqitPM+3WH+0p4zixWQxzXT+u0mGibr12RBUTEoA599Z5FJ3Ox3X8r96DPnue6svi2l186+EPj2C+gOI5nmJnUUufDdeVNRX9XtokHTXmOrU50NgkBTJs+SNG7yiHiGomxa5ebI0LZINwWmmYJ4lC7pmT9QDTfzqjPftdHGIQgINE6lBQ3mys8iG/SY/3AetqgQ/Swt0n2AfNJInO4uEYRQvRhQAO4v0BPugovKKI9QHjRzCVkIRAjXobBI7iB2Bw/gDiOXJVkIxAjVod+N7de0fxbMjcAR/DRrLk62EYiT0QZkWiTE8ALYSioGgYhICYCuhCElNPPN2YYY38WwlFCNWgwZ79szbhYkEEB95Di6uDGKCDrnUybxdTyQALh0nEBO0CTVJHf6lDwQafiue5+DiyiDaB514D+nf9PepCNT3w2iew4sriZRLnfNb1/ukBvWSxYr6jEi7Fl+3I04E9YKgWkJNfGjiuGcx/YCgXgJN/IE8hxVXEsE+aNu/jAba+FePEajvh0fkOaS4kgiuZqqrCYEmEFrNRJ5phJfbzW/fEehwgsvtyDOJyHrQxZR5u+GE14OSZwqsqBfDKF4LgopBUC0eQdv26MDqm+PK27uV1BTjYjsqgJ7DeXKHQpjT1aCXNnAII//S/gCOhjsUIpTaxJ/M1uEBsAA8Rvi++IL2ZlLaGrwvPpgngsbwC1ry3kwjuwLeAOJ5codChOA8KHszOYbbGpoHjeXJHQphYjUoezPtcIytkRp0SJ7codAT7oOyN1OcIYIekyerw7yUOoo/GQmjeO5QiICgYhIC4A6FCF5BXWep9m9mNbS84vAFcDBP7lAI4hPUReXuQPRd2RhaXhlEnkqxPCpP7lAI4RHU7RXUhck005HEnkpxbJ7coeDHv1hk2e0TZElQy/Mt0U3/jeaZDQFBu6eiGXr4qekZwSMEtZZnPvj6oG1z5DpEbuPf0eVpMD5nHW/iRXmuI7D+VYxP0MXU7bTWeC+9DS1Pg3FBDwyS7OV5SsTCJs2DlvPovuGwon6HkcKmCFrgo/uOB0EPMFDYBEFZvxgDQQdyQFgEFYOgI9kRNamJZ4FtGATVkjRIYoFtGATVolrNtF4xRqCmi8uPFEHd6ltXe0b7oKWqiqBaUvugrv8ZE7TYyhRBtSSP4pvrx4ig5Tb3KX9pdhYJkz7N1Hhv9H4lqIlrwxe+dnwE7CwSYcQ0Ux27hyafCnRf3HHFDT6CeeUYaYOk3tDYTV65+OlhVE2LoFpU00yq4+1yZE2b0sRz4SMMgqbjrWFTAuDCRxgEFSMKgAsfPQgqJiGAoy58lAqCiknsgx668FEsCComdRQfv/BRLggqJnmaKXrho1wQVEz6NFP0wkexIKiYpEHSERc+SgVBxbCaSQuCikFQLQgqBkG1IKgYBNWCoGIQVAuCikFQLQgqBkG1IKgYBNWCoGIQVAuCikFQLQgqBkG1IKgYBNWCoGIQVAuCikFQLQgqBkG1IKgYBNWCoGIQVEuSoOzGFiYlAPIMkyIou7FFSLkniTzDJAjq3eyKnTB6ku/qJE8vKkEHHP+2EQmaXtwbI6mJZze2MOm3HZOnj6RBEruxhUkJgDzDMM0khmkmLQgqBkG1yAUtnpEBkucOu4HoopWVVF5xZ/gVuRaHoBaKO8OvyLU4BLVQ3Bl+Ra7FIaiF4s7wK3ItDkEtFHeGX5FrcQhqobgz/Ipci0NQC8Wd4VfkWhyCWijuDL8i1+KKv3IBtkFQMA2CgmkQFEyDoGAaBAXTICiYBkHBNAgKpkFQMI1MUN9N3umF3VbVRFdcU1VXD7rixH/ZM/yKjPNUCfp873l0b3phk2Wji2D+ycOyEX685XImLc0HefaIBK2r3wvP+ObmabmYTmTlLbe281DQvDt1DUqea0SC/vNJ3eq5s15I7dnFI5XFX346taDkucZmH3SpTaDtgyn7TPVdbn3QZb55WhW0FvfyhH2m5z/KqzcP5LnCqKC1dpQo7TPNJtmN4jPO06ag6vNdGejzfbcBxkRUXAjyXGFSUDePIcQ1R/PfCbtgudWgOedpUtCZuI6qq0pbhWQmaM55cqkTTIOgYBoEBdMgKJgGQcE0CAqmQVAwDYKCaRAUTIOgYBoEBdMgKJgGQcE0CAqmQVAwDYKCaRAUTIOgYBoEBdMgKJgGQcE0CAqmyUpQt83l7taUr+9YlW669ubJIc+8BO3Ci+10eflAcyKHPDMUNLbT5eUDzYkc8sxU0Od7t7fF/LdfXbutJdumytUCTVX96uKB5kQOeWYoaHP96DKtb57mt93GaN0O19fdF/kubm+aHPLMS9B1p94l27Y+blOs9tv+ldvo+vJNUk7kkGdegq5HmF2yVw/udftfvwV7bSLQnMghz0wFXX3TB2rqjM+JHPLMU1DXZ+qTtNZnyokc8sxTUDfq7LtO85dRZ/vli4uf8TmRQ55ZCQrlgaBgGgQF0/w/BPoWcTt1wusAAAAASUVORK5CYII=" /><!-- --></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">par</span>(op)</span></code></pre></div>
+<p>The Empirical Bayes predictions move from the population prediction
+toward each patient’s own counts: they condition on the counts plotted
+in the same panel.</p>
+</div>
+</div>
+<div id="new-patients-hold-out-whole-patients" class="section level2">
+<h2>New patients: hold out whole patients</h2>
+<p>To estimate how well the model predicts a <em>new</em> patient, all
+four rows of a patient must be held out together and the prediction must
+not use their counts. Five folds of patients, with a pooled NB2 model as
+the comparison:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>ids <span class="ot">&lt;-</span> <span class="fu">unique</span>(epil<span class="sc">$</span>subject)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">7</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>fold_of <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">sample</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="at">length.out =</span> <span class="fu">length</span>(ids))), ids)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>epil<span class="sc">$</span>fold <span class="ot">&lt;-</span> fold_of[<span class="fu">as.character</span>(epil<span class="sc">$</span>subject)]</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>held_out <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="cf">function</span>(k) {</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  train <span class="ot">&lt;-</span> epil[epil<span class="sc">$</span>fold <span class="sc">!=</span> k, ]</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  test <span class="ot">&lt;-</span> epil[epil<span class="sc">$</span>fold <span class="sc">==</span> k, ]</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  m_rp <span class="ot">&lt;-</span> <span class="fu">countreg.rp</span>(fe, <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> train, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>                      <span class="at">group_var =</span> <span class="st">&quot;subject&quot;</span>, <span class="at">ndraws =</span> <span class="dv">200</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  m_pool <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> progabide <span class="sc">+</span> lbase <span class="sc">+</span> lage <span class="sc">+</span> V4, <span class="at">data =</span> train,</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>                     <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">fold =</span> k, <span class="at">subject =</span> test<span class="sc">$</span>subject, <span class="at">y =</span> test<span class="sc">$</span>y,</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>             <span class="at">random_intercept =</span> <span class="fu">predict</span>(m_rp, <span class="at">newdata =</span> test,</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>                                        <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>),</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>             <span class="at">pooled =</span> <span class="fu">predict</span>(m_pool, <span class="at">newdata =</span> test),</span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>             <span class="at">converged =</span> m_rp<span class="sc">$</span>model<span class="sc">$</span>converged)</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>}))</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="fu">all</span>(held_out<span class="sc">$</span>converged)</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="fu">sapply</span>(held_out[<span class="fu">c</span>(<span class="st">&quot;random_intercept&quot;</span>, <span class="st">&quot;pooled&quot;</span>)], <span class="cf">function</span>(p)</span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">MAE =</span> <span class="fu">mean</span>(<span class="fu">abs</span>(held_out<span class="sc">$</span>y <span class="sc">-</span> p)), <span class="at">RMSE =</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>((held_out<span class="sc">$</span>y <span class="sc">-</span> p)<span class="sc">^</span><span class="dv">2</span>))))</span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt;      random_intercept   pooled</span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; MAE          4.697688 4.693061</span></span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt; RMSE         9.259691 9.193978</span></span></code></pre></div>
+<p>For a new patient, the random-intercept model has no information
+beyond the covariates, and its mean predictions are close to those of
+the pooled model. Its advantages lie elsewhere: valid standard errors
+for the covariate effects, and the ability to describe or (with history)
+forecast individual patients.</p>
+<div id="empirical-bayes-is-not-a-held-out-prediction" class="section level3">
+<h3>Empirical Bayes is not a held-out prediction</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">c</span>(<span class="at">empirical_bayes_in_sample =</span> <span class="fu">mean</span>(<span class="fu">abs</span>(epil<span class="sc">$</span>y <span class="sc">-</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> epil,</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>                                                         <span class="at">method =</span> <span class="st">&quot;Individual&quot;</span>))),</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">population_in_sample =</span> <span class="fu">mean</span>(<span class="fu">abs</span>(epil<span class="sc">$</span>y <span class="sc">-</span> <span class="fu">predict</span>(rp, <span class="at">newdata =</span> epil,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                                                    <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>))))</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; empirical_bayes_in_sample      population_in_sample </span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;                  2.634991                  4.345251</span></span></code></pre></div>
+<p>The Empirical Bayes error is much smaller because each prediction
+used the count it is compared with. It is a description of the observed
+patients, not an estimate of predictive accuracy.</p>
+</div>
+</div>
+<div id="forecasting-a-known-patients-later-period" class="section level2">
+<h2>Forecasting a known patient’s later period</h2>
+<p>A forecast of period 4 for a patient seen in periods 1 to 3 should
+condition on those three counts only. The model should be fitted without
+the period-4 counts of the patients being forecast, and the conditioning
+must integrate over the patient’s intercept given their history.</p>
+<p>For random-parameter models, flexCountReg does not yet provide this
+forecast. <code>method = &quot;Individual&quot;</code> uses the observed counts of
+all the rows it is given; a row whose count is missing gets
+<code>NA</code> rather than a forecast:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>p1_hist <span class="ot">&lt;-</span> p1</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>p1_hist<span class="sc">$</span>y[<span class="dv">4</span>] <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="fu">predict</span>(rp, <span class="at">newdata =</span> p1_hist, <span class="at">method =</span> <span class="st">&quot;Individual&quot;</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; [1] 3.385678 3.385678 3.385678       NA</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;eb_coefficients&quot;)</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt;      (Intercept)</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; [1,]    1.959762</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; [2,]    1.959762</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; [3,]    1.959762</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; [4,]          NA</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; attr(,&quot;eb_sd&quot;)</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt;      (Intercept)</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; [1,]   0.2990761</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; [2,]   0.2990761</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; [3,]   0.2990761</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; [4,]          NA</span></span></code></pre></div>
+<p>Computing the Empirical Bayes prediction with the period-4 count
+included and calling it a forecast would leak the answer into the
+prediction.</p>
+</div>
+<div id="totals-over-a-patients-periods" class="section level2">
+<h2>Totals over a patient’s periods</h2>
+<p>The expected total over the four periods of a new patient is the sum
+of the four expected counts. A <em>distribution</em> for the total, for
+example the probability of more than 40 seizures in eight weeks, needs
+joint simulation: the four periods share one intercept, so they are
+positively correlated, and simulating them independently understates the
+spread.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>co <span class="ot">&lt;-</span> <span class="fu">coef</span>(rp)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>patient <span class="ot">&lt;-</span> epil[epil<span class="sc">$</span>subject <span class="sc">==</span> <span class="dv">1</span>, ]</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>x_fixed <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(<span class="fu">model.matrix</span>(<span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> progabide <span class="sc">+</span> lbase <span class="sc">+</span> lage <span class="sc">+</span> V4,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>                                  patient) <span class="sc">%*%</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>                       co[<span class="fu">c</span>(<span class="st">&quot;progabide&quot;</span>, <span class="st">&quot;lbase&quot;</span>, <span class="st">&quot;lage&quot;</span>, <span class="st">&quot;V4&quot;</span>)])</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>size <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> <span class="fu">exp</span>(co[[<span class="st">&quot;ln(alpha)&quot;</span>]])           <span class="co"># NB2: Var = mu + alpha mu^2</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>mu_b <span class="ot">&lt;-</span> co[[<span class="st">&quot;(Intercept):Mean&quot;</span>]]</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>sd_b <span class="ot">&lt;-</span> <span class="fu">abs</span>(co[[<span class="st">&quot;(Intercept):St.Dev&quot;</span>]])</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>R <span class="ot">&lt;-</span> <span class="dv">20000</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co"># joint: one intercept per simulated patient, shared by the four periods</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>b <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(R, mu_b, sd_b)</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>joint <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(<span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="cf">function</span>(t)</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>  <span class="fu">rnbinom</span>(R, <span class="at">size =</span> size, <span class="at">mu =</span> <span class="fu">exp</span>(b <span class="sc">+</span> x_fixed[t]))))</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co"># independent: a new intercept for every period (wrong for one patient)</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>indep <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(<span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="cf">function</span>(t)</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>  <span class="fu">rnbinom</span>(R, <span class="at">size =</span> size, <span class="at">mu =</span> <span class="fu">exp</span>(<span class="fu">rnorm</span>(R, mu_b, sd_b) <span class="sc">+</span> x_fixed[t]))))</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">joint =</span> <span class="fu">c</span>(<span class="at">mean =</span> <span class="fu">mean</span>(joint), <span class="at">sd =</span> <span class="fu">sd</span>(joint),</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>                <span class="fu">quantile</span>(joint, <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>)), <span class="at">P_over_40 =</span> <span class="fu">mean</span>(joint <span class="sc">&gt;</span> <span class="dv">40</span>)),</span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>      <span class="at">independent =</span> <span class="fu">c</span>(<span class="at">mean =</span> <span class="fu">mean</span>(indep), <span class="at">sd =</span> <span class="fu">sd</span>(indep),</span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>                      <span class="fu">quantile</span>(indep, <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.95</span>)),</span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>                      <span class="at">P_over_40 =</span> <span class="fu">mean</span>(indep <span class="sc">&gt;</span> <span class="dv">40</span>)))</span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt;                 mean       sd 5% 95% P_over_40</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt; joint       13.29395 8.383284  3  29    0.0114</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt; independent 13.26105 5.678857  5  24    0.0008</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="fu">sum</span>(<span class="fu">predict</span>(rp, <span class="at">newdata =</span> patient, <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>))</span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt; [1] 13.2995</span></span></code></pre></div>
+<p>Both simulations have the same mean, which matches the sum of the
+expected counts, but only the joint simulation gives the spread of one
+patient’s total. These simulations use the estimated parameters as if
+they were known; they do not include estimation uncertainty.</p>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<ul>
+<li>Decide whether the target is a new unit, a described known unit, or
+a forecast of a known unit, before choosing the prediction method.</li>
+<li>Population predictions (<code>&quot;Exact&quot;</code>,
+<code>&quot;Simulated&quot;</code>) are for new units; evaluate them with whole
+units held out.</li>
+<li>Empirical Bayes predictions (<code>&quot;Individual&quot;</code>) use the
+unit’s observed outcomes; do not score them on those outcomes.</li>
+<li>Totals and exceedance probabilities for one unit need simulation
+with a shared effect per unit.</li>
+</ul>
+</div>
+<div id="reproducibility-and-next-steps" class="section level2">
+<h2>Reproducibility and next steps</h2>
+<p>The folds use <code>set.seed(7)</code> and the total simulation
+<code>set.seed(42)</code>; the model uses 200 Halton draws.</p>
+<ul>
+<li><code>vignette(&quot;random-parameters-and-panels&quot;, package = &quot;flexCountReg&quot;)</code>
+covers the model types and their assumptions.</li>
+<li><code>vignette(&quot;predictive-validation&quot;, package = &quot;flexCountReg&quot;)</code>
+builds grouped cross-validation step by step.</li>
+</ul>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Thall, P. F. and Vail, S. C. (1990). Some covariance models for
+longitudinal count data with overdispersion. <em>Biometrics</em>, 46(3),
+657-671.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -267,9 +267,21 @@ predict(fit, new_data = washington_roads[1:5, ])
 
 ## Learning more
 
-The vignettes cover the main workflows:
+The vignettes cover the main workflows. Start with
+`vignette("getting-started", package = "flexCountReg")`.
 
-- `vignette("choosing-a-count-distribution", package = "flexCountReg")`
-- `vignette("random-parameters-and-panels", package = "flexCountReg")`
-- `vignette("inference-prediction-and-comparison", package = "flexCountReg")`
+```{r vignette-list, echo = FALSE, results = "asis"}
+# Generated from the "articles" section of _pkgdown.yml and the vignette
+# titles: a new vignette appears here once it is listed in that section.
+yml <- yaml::read_yaml("_pkgdown.yml")
+for (group in yml$articles) {
+  cat("\n*", group$title, "*\n\n", sep = "")
+  for (v in group$contents) {
+    title <- rmarkdown::yaml_front_matter(
+      file.path("vignettes", paste0(v, ".Rmd")))$title
+    cat("- ", title, ": `vignette(\"", v,
+        "\", package = \"flexCountReg\")`\n", sep = "")
+  }
+}
+```
 

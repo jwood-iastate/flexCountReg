@@ -3,11 +3,26 @@ template:
   bootstrap: 5
 
 articles:
-- title: Articles
+- title: Start here
+  contents:
+  - getting-started
+  - data-exposure-weights
+- title: Diagnose and interpret
+  contents:
+  - diagnosing-count-models
+  - predictions-and-effects
+  - inference-prediction-and-comparison
+- title: Model structure
   contents:
   - choosing-a-count-distribution
+  - distribution-parameter-regression
+  - zeros-hurdles-and-sampling
+  - underreporting-and-identification
   - random-parameters-and-panels
-  - inference-prediction-and-comparison
+- title: Predict and validate
+  contents:
+  - predictive-validation
+  - prediction-for-panel-data
 
 reference:
 - title: Count regression models

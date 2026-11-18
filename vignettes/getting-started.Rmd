@@ -287,6 +287,12 @@ predict(nb2, newdata = new_spray, interval = "prediction", level = 0.90)
   covers standard errors, marginal effects and the conditions under which
   likelihood-ratio tests are valid.
 * `?count_families` lists every distribution available in `countreg()`.
+* `vignette("predictions-and-effects", package = "flexCountReg")`
+  interprets predictions, contrasts and marginal effects.
+* `vignette("data-exposure-weights", package = "flexCountReg")`
+  covers offsets, weights and the analysis sample.
+* `vignette("diagnosing-count-models", package = "flexCountReg")`
+  checks a fitted model with residuals and rootograms.
 
 ## Reference
 

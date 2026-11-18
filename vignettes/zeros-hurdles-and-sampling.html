@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Understanding zeros, hurdles and the sampling process</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Understanding zeros, hurdles and the
+sampling process</h1>
+
+
+
+<p>Many count datasets have many zeros. That alone says little: a count
+distribution with a small mean or a large variance produces many zeros
+by itself. This vignette shows how to tell whether a model needs a
+separate zero process, what zero-inflated and hurdle models assume, how
+flexCountReg labels their components, and why a zero-heavy sample is not
+the same thing as a zero-truncated sampling design.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="three-ways-to-produce-zeros" class="section level2">
+<h2>Three ways to produce zeros</h2>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Process</th>
+<th>Zeros come from</th>
+<th>Model in flexCountReg</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Ordinary count</td>
+<td>the count distribution only</td>
+<td>any family</td>
+</tr>
+<tr class="even">
+<td>Zero-inflated</td>
+<td>a separate “always zero” group <em>and</em> the count
+distribution</td>
+<td><code>zero_formula</code>, <code>zero_type = &quot;inflated&quot;</code></td>
+</tr>
+<tr class="odd">
+<td>Hurdle</td>
+<td>a binary process for zero vs positive; positive counts from a
+zero-truncated count distribution</td>
+<td><code>zero_formula</code>, <code>zero_type = &quot;hurdle&quot;</code></td>
+</tr>
+</tbody>
+</table>
+<p>The component labels differ between the two zero models, and so do
+the meanings of their coefficients:</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>Zero-inflated</th>
+<th>Hurdle</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Zero:</code> coefficients model (logit)</td>
+<td><span class="math inline">\(\pi\)</span> = probability of a
+structural zero</td>
+<td><span class="math inline">\(q\)</span> = probability of a
+<em>positive</em> count</td>
+</tr>
+<tr class="even">
+<td>A positive <code>Zero:</code> coefficient means</td>
+<td>more structural zeros</td>
+<td>fewer zeros</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(P(Y = 0)\)</span></td>
+<td><span class="math inline">\(\pi + (1 - \pi) f(0)\)</span></td>
+<td><span class="math inline">\(1 - q\)</span></td>
+</tr>
+<tr class="even">
+<td><code>predict(type = &quot;zero&quot;)</code> returns</td>
+<td><span class="math inline">\(\pi\)</span></td>
+<td><span class="math inline">\(P(Y = 0) = 1 - q\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>These are the conventions of the pscl package (Zeileis et al.,
+2008).</p>
+</div>
+<div id="a-simulation-what-each-model-finds" class="section level2">
+<h2>A simulation: what each model finds</h2>
+<p>Three datasets of 1,000 counts with the same covariate <code>x</code>
+are simulated: an ordinary NB2 count, a zero-inflated NB2 count (25%
+structural zeros) and a hurdle count. All three have many zeros:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fl">0.3</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> x)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>y_nb <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">mu =</span> mu)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>y_zi <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">runif</span>(n) <span class="sc">&lt;</span> <span class="fl">0.25</span>, <span class="dv">0</span>, <span class="fu">rnbinom</span>(n, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">mu =</span> mu))</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co"># hurdle: positive with probability 0.55, then a zero-truncated NB2 count</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>draw_pos <span class="ot">&lt;-</span> <span class="cf">function</span>(m) { <span class="cf">repeat</span> { v <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(<span class="dv">1</span>, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">mu =</span> m)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="cf">if</span> (v <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="fu">return</span>(v) } }</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>y_h <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">runif</span>(n) <span class="sc">&lt;</span> <span class="fl">0.55</span>, <span class="fu">vapply</span>(mu, draw_pos, <span class="dv">0</span>), <span class="dv">0</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>sims <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(x, y_nb, y_zi, y_h)</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="fu">sapply</span>(sims[<span class="sc">-</span><span class="dv">1</span>], <span class="cf">function</span>(y) <span class="fu">mean</span>(y <span class="sc">==</span> <span class="dv">0</span>))</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt;  y_nb  y_zi   y_h </span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; 0.417 0.585 0.445</span></span></code></pre></div>
+<p>For each dataset, fit NB2, a zero-inflated NB2 and a hurdle NB2 with
+a constant zero model, and compare AIC:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>fit_three <span class="ot">&lt;-</span> <span class="cf">function</span>(resp) {</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  f <span class="ot">&lt;-</span> <span class="fu">reformulate</span>(<span class="st">&quot;x&quot;</span>, resp)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">NB2 =</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> sims, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>       <span class="at">ZINB =</span> <span class="fu">suppressWarnings</span>(</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>         <span class="fu">countreg</span>(f, <span class="at">data =</span> sims, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">zero_formula =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>                  <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)),</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>       <span class="at">hurdle =</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> sims, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">zero_formula =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>                         <span class="at">zero_type =</span> <span class="st">&quot;hurdle&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>))</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>}</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>sim_fits <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">c</span>(<span class="at">ordinary =</span> <span class="st">&quot;y_nb&quot;</span>, <span class="at">zero_inflated =</span> <span class="st">&quot;y_zi&quot;</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>                     <span class="at">hurdle =</span> <span class="st">&quot;y_h&quot;</span>), fit_three)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>aic <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">sapply</span>(sim_fits, <span class="cf">function</span>(m) <span class="fu">sapply</span>(m, AIC)))</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="fu">round</span>(aic, <span class="dv">1</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt;                  NB2   ZINB hurdle</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; ordinary      3303.8 3305.7 3352.6</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; zero_inflated 2704.1 2700.5 2727.1</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; hurdle        3205.6 3205.0 3192.8</span></span></code></pre></div>
+<p>The lowest AIC in each row belongs to NB2, ZINB, hurdle (ordinary,
+zero-inflated and hurdle data in turn). For the ordinary count, the
+estimated structural-zero probability is small (0.032) and the extra
+parameter only costs AIC. For the zero-inflated data, with 25%
+structural zeros and 1,000 rows, the zero-inflated model improves the
+AIC of NB2 by only 3.7: an NB2 distribution with a larger dispersion can
+reproduce much of the same zero share. Real zero processes are rarely as
+clean as these, so expect small differences.</p>
+</div>
+<div id="real-data-articles-by-phd-biochemists" class="section level2">
+<h2>Real data: articles by PhD biochemists</h2>
+<p><code>pscl::bioChemists</code> (Long, 1990) records the number of
+articles <code>art</code> published in the last three years of the PhD
+by 915 biochemists, with gender <code>fem</code>, marital status
+<code>mar</code>, the number of children under six <code>kid5</code>,
+the prestige of the PhD department <code>phd</code> and the number of
+articles of the mentor <code>ment</code> (not of the student).</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">new.env</span>()</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>utils<span class="sc">::</span><span class="fu">data</span>(<span class="st">&quot;bioChemists&quot;</span>, <span class="at">package =</span> <span class="st">&quot;pscl&quot;</span>, <span class="at">envir =</span> e)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>b <span class="ot">&lt;-</span> e<span class="sc">$</span>bioChemists</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">c</span>(<span class="at">n =</span> <span class="fu">nrow</span>(b), <span class="at">share_zero =</span> <span class="fu">mean</span>(b<span class="sc">$</span>art <span class="sc">==</span> <span class="dv">0</span>), <span class="at">mean =</span> <span class="fu">mean</span>(b<span class="sc">$</span>art),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">variance =</span> <span class="fu">var</span>(b<span class="sc">$</span>art))</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;           n  share_zero        mean    variance </span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; 915.0000000   0.3005464   1.6928962   3.7097416</span></span></code></pre></div>
+<div id="baselines-how-many-zeros-does-an-ordinary-model-expect" class="section level3">
+<h3>Baselines: how many zeros does an ordinary model expect?</h3>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>f <span class="ot">&lt;-</span> art <span class="sc">~</span> fem <span class="sc">+</span> mar <span class="sc">+</span> kid5 <span class="sc">+</span> phd <span class="sc">+</span> ment</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>pois <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> b, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>nb2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> b, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>zeros <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">observed =</span> <span class="fu">mean</span>(b<span class="sc">$</span>art <span class="sc">==</span> <span class="dv">0</span>),</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>           <span class="at">poisson =</span> <span class="fu">mean</span>(<span class="fu">predict</span>(pois, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>, <span class="at">max_count =</span> <span class="dv">0</span>)[, <span class="dv">1</span>]),</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>           <span class="at">nb2 =</span> <span class="fu">mean</span>(<span class="fu">predict</span>(nb2, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>, <span class="at">max_count =</span> <span class="dv">0</span>)[, <span class="dv">1</span>]))</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="fu">round</span>(zeros, <span class="dv">3</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; observed  poisson      nb2 </span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt;    0.301    0.209    0.304</span></span></code></pre></div>
+<p>The Poisson model expects too few zeros, but the NB2 model, which
+allows for overdispersion, already expects about as many zeros as
+observed. The “excess” zeros relative to Poisson are explained by
+overdispersion; they do not by themselves call for a separate zero
+process.</p>
+</div>
+<div id="zero-inflated-and-hurdle-models" class="section level3">
+<h3>Zero-inflated and hurdle models</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>zinb_const <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> b, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">zero_formula =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                       <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; Warning: The Hessian is singular; standard errors use a generalized inverse and</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; may be unreliable. The model may not be identified. The likelihood is flat in a</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; direction involving Zero:(Intercept); their standard errors are NA.</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>zinb <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> b, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>                 <span class="at">zero_formula =</span> <span class="sc">~</span> ment <span class="sc">+</span> kid5, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>hnb <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> b, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>                <span class="at">zero_formula =</span> <span class="sc">~</span> fem <span class="sc">+</span> mar <span class="sc">+</span> kid5 <span class="sc">+</span> phd <span class="sc">+</span> ment,</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>                <span class="at">zero_type =</span> <span class="st">&quot;hurdle&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span></code></pre></div>
+<p>With a constant zero model, the structural-zero probability is driven
+to the boundary: the warning above says that its likelihood is flat, and
+its standard error is <code>NA</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">summary</span>(zinb_const)<span class="sc">$</span>coefficients[<span class="st">&quot;Zero:(Intercept)&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;   Estimate Std. Error </span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;  -12.32352         NA</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">plogis</span>(<span class="fu">coef</span>(zinb_const)[[<span class="st">&quot;Zero:(Intercept)&quot;</span>]])</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [1] 4.445914e-06</span></span></code></pre></div>
+<p>With covariates, the zero model can describe <em>which</em> students
+have more zeros. In the zero-inflated model a negative
+<code>Zero:ment</code> coefficient means fewer structural zeros among
+students of productive mentors; in the hurdle model the
+<code>Zero:</code> coefficients describe the probability of publishing
+at least one article:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>zc <span class="ot">&lt;-</span> <span class="cf">function</span>(m) {</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  co <span class="ot">&lt;-</span> <span class="fu">summary</span>(m)<span class="sc">$</span>coefficients</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  co[<span class="fu">grep</span>(<span class="st">&quot;^Zero:&quot;</span>, <span class="fu">rownames</span>(co)), <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>}</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">zc</span>(zinb)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;                    Estimate Std. Error</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; Zero:(Intercept) -0.8786574  0.4021847</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; Zero:ment        -0.6113860  0.2454908</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; Zero:kid5         0.1564024  0.3609537</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="fu">zc</span>(hnb)</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;                     Estimate Std. Error</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Zero:(Intercept)  0.23680759 0.29622868</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; Zero:femWomen    -0.25115053 0.15917830</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; Zero:marMarried   0.32623627 0.18084065</span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; Zero:kid5        -0.28525097 0.11107256</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; Zero:phd          0.02221526 0.07977240</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; Zero:ment         0.08012173 0.01302009</span></span></code></pre></div>
+<p>flexCountReg’s likelihoods and zero-model coefficients agree with
+those of pscl:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>z_ref <span class="ot">&lt;-</span> pscl<span class="sc">::</span><span class="fu">zeroinfl</span>(art <span class="sc">~</span> fem <span class="sc">+</span> mar <span class="sc">+</span> kid5 <span class="sc">+</span> phd <span class="sc">+</span> ment <span class="sc">|</span> ment <span class="sc">+</span> kid5,</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>                        <span class="at">data =</span> b, <span class="at">dist =</span> <span class="st">&quot;negbin&quot;</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>h_ref <span class="ot">&lt;-</span> pscl<span class="sc">::</span><span class="fu">hurdle</span>(art <span class="sc">~</span> fem <span class="sc">+</span> mar <span class="sc">+</span> kid5 <span class="sc">+</span> phd <span class="sc">+</span> ment, <span class="at">data =</span> b,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                      <span class="at">dist =</span> <span class="st">&quot;negbin&quot;</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">c</span>(<span class="at">zinb =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(zinb)), <span class="at">pscl_zinb =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(z_ref)),</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">hurdle =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(hnb)), <span class="at">pscl_hurdle =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(h_ref)))</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;        zinb   pscl_zinb      hurdle pscl_hurdle </span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt;   -1553.194   -1553.194   -1552.597   -1552.597</span></span></code></pre></div>
+</div>
+<div id="probability-accounting" class="section level3">
+<h3>Probability accounting</h3>
+<p>Each model’s fitted probabilities can be compared with the observed
+frequencies, count by count, on the same rows. The overall expected
+count (including the zero component) is the mean prediction:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">Poisson =</span> pois, <span class="at">NB2 =</span> nb2, <span class="at">ZINB =</span> zinb, <span class="at">hurdle =</span> hnb)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>probs <span class="ot">&lt;-</span> <span class="fu">sapply</span>(models, <span class="cf">function</span>(m)</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="fu">colMeans</span>(<span class="fu">predict</span>(m, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>, <span class="at">max_count =</span> <span class="dv">5</span>)))</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>acct <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">round</span>(<span class="fu">cbind</span>(<span class="at">observed =</span> <span class="fu">tabulate</span>(b<span class="sc">$</span>art <span class="sc">+</span> <span class="dv">1</span>, <span class="dv">6</span>) <span class="sc">/</span> <span class="fu">nrow</span>(b),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>                          probs), <span class="dv">3</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>              <span class="at">mean_count =</span> <span class="fu">round</span>(<span class="fu">c</span>(<span class="fu">mean</span>(b<span class="sc">$</span>art),</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>                                   <span class="fu">sapply</span>(models, <span class="cf">function</span>(m)</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>                                     <span class="fu">mean</span>(<span class="fu">predict</span>(m)))), <span class="dv">3</span>))</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>acct</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;            observed Poisson   NB2  ZINB hurdle</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; 0             0.301   0.209 0.304 0.313  0.301</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; 1             0.269   0.310 0.272 0.255  0.277</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; 2             0.195   0.242 0.180 0.181  0.178</span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; 3             0.092   0.135 0.106 0.111  0.105</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; 4             0.073   0.061 0.060 0.063  0.060</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; 5             0.030   0.025 0.033 0.035  0.034</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; mean_count    1.693   1.693 1.705 1.696  1.698</span></span></code></pre></div>
+<p>The mean predictions of all four models are close to the observed
+mean, so the mean alone cannot separate them. The NB2, zero-inflated and
+hurdle models reproduce the zeros and small counts about equally well;
+the Poisson model does not.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="at">model =</span> <span class="fu">names</span>(models),</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>           <span class="at">logLik =</span> <span class="fu">sapply</span>(models, <span class="cf">function</span>(m) <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(m))),</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>           <span class="at">AIC =</span> <span class="fu">sapply</span>(models, AIC), <span class="at">row.names =</span> <span class="cn">NULL</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;     model    logLik      AIC</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1 Poisson -1651.056 3314.113</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; 2     NB2 -1560.958 3135.917</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; 3    ZINB -1553.194 3126.388</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; 4  hurdle -1552.597 3131.193</span></span></code></pre></div>
+<p>The zero-inflated and hurdle models with covariates have lower AIC
+than NB2. That shows that the probability of a zero varies with the
+covariates in a way that the NB2 mean model does not capture; it does
+not establish that some students are “structural non-publishers”. A
+large share of zeros, or a better fit of a zero model, is evidence about
+the fit, not proof of a particular mechanism.</p>
+</div>
+<div id="which-comparisons-are-valid" class="section level3">
+<h3>Which comparisons are valid</h3>
+<p>The NB2 model is the zero-inflated NB2 model with <span class="math inline">\(\pi = 0\)</span>, which is on the boundary of the
+parameter space (an intercept of <span class="math inline">\(-\infty\)</span> on the logit scale), so the usual
+likelihood-ratio test does not apply and flexCountReg does not report
+one. Compare such models with AIC or BIC on the same rows, or on
+held-out data
+(<code>vignette(&quot;predictive-validation&quot;, package = &quot;flexCountReg&quot;)</code>).
+When a zero-model probability is estimated near 0 or 1, its Wald
+standard errors are unreliable, as the <code>NA</code> above shows.</p>
+</div>
+</div>
+<div id="a-zero-truncated-sample-is-a-different-problem" class="section level2">
+<h2>A zero-truncated sample is a different problem</h2>
+<p>A hurdle model says that zeros happen and come from a separate
+process. A <em>zero-truncated sampling design</em> says that zeros
+cannot be observed at all: for example, counts of visits recorded only
+for people who visited at least once. Having no zeros in the data, or
+few zeros by chance, is not the same as truncation. Under truncation the
+likelihood of each observation is <span class="math inline">\(f(y) / (1
+- f(0))\)</span> for <span class="math inline">\(y \ge 1\)</span>; this
+is the positive part of a hurdle model, but fitting a hurdle model to
+truncated data (where no zeros exist to estimate the binary part) is not
+a substitute. flexCountReg does not yet provide a zero-truncated
+estimator.</p>
+</div>
+<div id="reproducibility-and-next-steps" class="section level2">
+<h2>Reproducibility and next steps</h2>
+<p>The simulation uses <code>set.seed(12)</code>; the bioChemists data
+come from the pscl package.</p>
+<ul>
+<li><code>vignette(&quot;diagnosing-count-models&quot;, package = &quot;flexCountReg&quot;)</code>
+shows calibration checks for zeros and large counts.</li>
+<li><code>vignette(&quot;choosing-a-count-distribution&quot;, package = &quot;flexCountReg&quot;)</code>
+compares observed and expected zeros on road-crash data.</li>
+</ul>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Long, J. S. (1990). The origins of sex differences in science.
+<em>Social Forces</em>, 68(4), 1297-1316.</p>
+<p>Zeileis, A., Kleiber, C. and Jackman, S. (2008). Regression models
+for count data in R. <em>Journal of Statistical Software</em>, 27(8),
+1-25.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -248,6 +248,13 @@ example with `rsample::group_vfold_cv(data, group = ID)`. Splitting the
 observations of one segment between the training and test sets leaks
 information and makes the models look better than they are.
 
+## Next steps
+
+* `vignette("prediction-for-panel-data", package = "flexCountReg")`
+  separates predictions for new patients from those for known patients.
+* `vignette("predictive-validation", package = "flexCountReg")` builds
+  grouped cross-validation step by step.
+
 ## References
 
 Thall, P. F. and Vail, S. C. (1990). Some covariance models for longitudinal

@@ -287,3 +287,7 @@ margEffTable(models$NB2)
   weights and analysis samples.
 * `vignette("inference-prediction-and-comparison", package = "flexCountReg")`:
   standard errors and the conditions for likelihood-ratio tests.
+* `vignette("zeros-hurdles-and-sampling", package = "flexCountReg")`:
+  zero-inflated and hurdle models.
+* `vignette("distribution-parameter-regression", package = "flexCountReg")`:
+  models for the dispersion and shape parameters.

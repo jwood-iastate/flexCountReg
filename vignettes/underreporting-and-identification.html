@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Underreporting: observed counts, true counts and identification</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Underreporting: observed counts, true
+counts and identification</h1>
+
+
+
+<p>Many recorded counts miss events: crashes without injuries are not
+all reported to the police, and not every case of a disease reaches a
+surveillance system. An underreporting model separates the expected
+<em>true</em> count from the probability that an event is
+<em>reported</em>. This vignette shows what such a model estimates, what
+information lets the data separate the two parts, and what happens when
+that information is weak. All data here are simulated, so the truth is
+known; with real data, the true counts and reporting rates are not
+observed, and their estimates rest on the assumptions described
+below.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="the-model" class="section level2">
+<h2>The model</h2>
+<p>The true count <span class="math inline">\(Y\)</span> follows a count
+distribution with mean <span class="math inline">\(\mu =
+\exp(X\beta)\)</span>. Each event is reported independently with
+probability <span class="math inline">\(p = F(Z\gamma)\)</span>, where
+<span class="math inline">\(F\)</span> is the logistic
+(<code>underreport_family = &quot;logit&quot;</code>, the default) or normal
+(<code>&quot;probit&quot;</code>) distribution function. The reported count is a
+binomial thinning of the true count:</p>
+<p><span class="math display">\[Y^* \mid Y \sim \mathrm{Binomial}(Y, p),
+\qquad E[Y^*] = p\,\mu.\]</span></p>
+<p>For the families that allow it (<code>?count_families</code> lists
+them and the variance of the reported counts), the reported counts
+follow the same family with mean <span class="math inline">\(p\mu\)</span>. The fitted model reports three
+quantities:</p>
+<table>
+<thead>
+<tr class="header">
+<th><code>predict(type = )</code></th>
+<th>Quantity</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>&quot;response&quot;</code></td>
+<td>expected reported count <span class="math inline">\(p\mu\)</span></td>
+</tr>
+<tr class="even">
+<td><code>&quot;true&quot;</code></td>
+<td>expected true count <span class="math inline">\(\mu\)</span></td>
+</tr>
+<tr class="odd">
+<td><code>&quot;prob_reported&quot;</code></td>
+<td>reporting probability <span class="math inline">\(p\)</span></td>
+</tr>
+</tbody>
+</table>
+<p><code>zero_formula</code> and <code>underreport_formula</code> cannot
+be combined: both act on the zeros.</p>
+</div>
+<div id="what-the-reported-counts-cannot-tell-apart" class="section level2">
+<h2>What the reported counts cannot tell apart</h2>
+<p>The reported counts depend on the two parts only through the product
+<span class="math inline">\(p\mu\)</span>. With a constant reporting
+probability, <span class="math inline">\(p\,\exp(\beta_0)\)</span> is
+all the data can identify: a lower true rate with complete reporting and
+a higher true rate with incomplete reporting give exactly the same
+reported counts. flexCountReg refuses this model:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>toy <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">rnorm</span>(<span class="dv">200</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>toy<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rpois</span>(<span class="dv">200</span>, <span class="fu">exp</span>(<span class="fl">0.5</span> <span class="sc">+</span> <span class="fl">0.3</span> <span class="sc">*</span> toy<span class="sc">$</span>x))</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> toy, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">underreport_formula =</span> <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">strwrap</span>(res), <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; An intercept-only `underreport_formula` is not identified: a constant</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; reporting probability p and the count-model intercept b0 enter the</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; likelihood only through exp(b0) * p. Add variables that affect</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; reporting but not the true counts, or analyze the reported counts</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; without an underreporting model.</span></span></code></pre></div>
+<p>Separating the two parts needs information about reporting that does
+not also act on the true counts. In practice that information comes
+from:</p>
+<ul>
+<li><strong>an exclusion restriction</strong>: a variable that changes
+the reporting probability but not the true count (for example, the
+reporting practice of the agency that records the events), justified by
+subject knowledge;</li>
+<li><strong>the functional form</strong> of the link: with a logit or
+probit link, the reported mean is not log-linear in the reporting
+variables, and the curvature carries some information about the
+<em>level</em> of <span class="math inline">\(p\)</span>;</li>
+<li><strong>external information</strong>, such as known reporting
+probabilities or a validation study of true counts.</li>
+</ul>
+<p>A different predictor list in the two formulas is necessary, but it
+does not by itself make the model identified, as the simulations below
+show.</p>
+</div>
+<div id="a-simulation-with-known-truth" class="section level2">
+<h2>A simulation with known truth</h2>
+<p>The true count is NB2 with mean <span class="math inline">\(\exp(1 +
+0.5x)\)</span> and dispersion <span class="math inline">\(\alpha =
+0.5\)</span>. A reporting variable <span class="math inline">\(w \sim
+U(0, 1)\)</span> affects only the reporting probability, <span class="math inline">\(p = \mathrm{logit}^{-1}(\gamma_0 + \gamma_1
+w)\)</span>. Two designs differ in how much the reporting probability
+varies:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>simulate_reports <span class="ot">&lt;-</span> <span class="cf">function</span>(n, seed, gamma) {</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(seed)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n)</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  w <span class="ot">&lt;-</span> <span class="fu">runif</span>(n)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="dv">1</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> x)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">plogis</span>(gamma[<span class="dv">1</span>] <span class="sc">+</span> gamma[<span class="dv">2</span>] <span class="sc">*</span> w)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  y_true <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n, <span class="at">size =</span> <span class="dv">2</span>, <span class="at">mu =</span> mu)</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="fu">data.frame</span>(x, w, y_true, <span class="at">y =</span> <span class="fu">rbinom</span>(n, y_true, p), mu, p)</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>}</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>designs <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">weak =</span> <span class="fu">c</span>(<span class="fl">1.5</span>, <span class="sc">-</span><span class="dv">2</span>), <span class="at">strong =</span> <span class="fu">c</span>(<span class="dv">3</span>, <span class="sc">-</span><span class="dv">5</span>))</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="fu">sapply</span>(designs, <span class="cf">function</span>(g) <span class="fu">round</span>(<span class="fu">plogis</span>(g[<span class="dv">1</span>] <span class="sc">+</span> g[<span class="dv">2</span>] <span class="sc">*</span> <span class="fu">c</span>(<span class="at">w0 =</span> <span class="dv">0</span>, <span class="at">w1 =</span> <span class="dv">1</span>)), <span class="dv">2</span>))</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;    weak strong</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; w0 0.82   0.95</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; w1 0.38   0.12</span></span></code></pre></div>
+<p>In the <em>weak</em> design the reporting probability runs from 0.82
+down to 0.38; in the <em>strong</em> design it runs from 0.95, nearly
+complete reporting, down to 0.12.</p>
+<div id="one-sample-from-each-design" class="section level3">
+<h3>One sample from each design</h3>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>fits <span class="ot">&lt;-</span> <span class="fu">lapply</span>(designs, <span class="cf">function</span>(g) {</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  d <span class="ot">&lt;-</span> <span class="fu">simulate_reports</span>(<span class="dv">2000</span>, <span class="at">seed =</span> <span class="dv">8</span>, <span class="at">gamma =</span> g)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">underreport_formula =</span> <span class="sc">~</span> w,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>           <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>})</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; Warning: The underreporting model is weakly identified: the estimates of</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; Underreporting:(Intercept) and (Intercept) have correlation -0.991. The data</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; barely separate the true count mean from the reporting probability; interpret</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; the true-count estimates with caution, and consider reporting variables that do</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; not affect the true counts or external validation data.</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="fu">lapply</span>(fits, <span class="cf">function</span>(m) <span class="fu">round</span>(<span class="fu">summary</span>(m)<span class="sc">$</span>coefficients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="dv">3</span>))</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; $weak</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;                            Estimate Std. Error</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; (Intercept)                   1.089      0.286</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; x                             0.541      0.024</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; ln(alpha)                    -0.711      0.075</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; Underreporting:(Intercept)    1.201      1.043</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; Underreporting:w             -1.936      0.706</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; $strong</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt;                            Estimate Std. Error</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; (Intercept)                   0.988      0.061</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; x                             0.517      0.025</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; ln(alpha)                    -0.694      0.076</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; Underreporting:(Intercept)    3.182      0.467</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; Underreporting:w             -5.234      0.505</span></span></code></pre></div>
+<p>The truth is <span class="math inline">\(\beta_0 = 1\)</span>, <span class="math inline">\(\beta_x = 0.5\)</span> and <span class="math inline">\((\gamma_0, \gamma_1)\)</span> = (1.5, -2) or (3,
+-5). In both designs, the effect of <span class="math inline">\(x\)</span> on the true count is estimated
+precisely: it is identified whether or not the reporting model is right,
+because <span class="math inline">\(x\)</span> does not enter the
+reporting model. The split between the true-count level and the
+reporting level is the hard part. In the weak design the standard errors
+of the two intercepts are large: the logit curve over the range of <span class="math inline">\(w\)</span> is close to log-linear, so a log-linear
+effect of <span class="math inline">\(w\)</span> on the reported mean
+fits almost as well. In the strong design, the reporting probability
+approaches 1 for small <span class="math inline">\(w\)</span>, and the
+flattening of the curve there pins down its level.</p>
+</div>
+<div id="recovery-over-replicates" class="section level3">
+<h3>Recovery over replicates</h3>
+<p>One sample can be lucky or unlucky. Twenty replicate samples of 2,000
+rows from each design give the following estimates (an illustration, not
+a full simulation study):</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>recover_one <span class="ot">&lt;-</span> <span class="cf">function</span>(seed, gamma) {</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  d <span class="ot">&lt;-</span> <span class="fu">simulate_reports</span>(<span class="dv">2000</span>, seed, gamma)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  warned <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(<span class="fu">withCallingHandlers</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">underreport_formula =</span> <span class="sc">~</span> w,</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>             <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>    <span class="at">warning =</span> <span class="cf">function</span>(w) {</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>      warned <span class="ot">&lt;&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>      <span class="fu">invokeRestart</span>(<span class="st">&quot;muffleWarning&quot;</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>    }), <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(m) <span class="sc">||</span> <span class="sc">!</span><span class="fu">isTRUE</span>(m<span class="sc">$</span>model<span class="sc">$</span>converged)) {</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">c</span>(<span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="at">converged =</span> <span class="dv">0</span>, <span class="at">warned =</span> warned))</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  }</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>  co <span class="ot">&lt;-</span> <span class="fu">coef</span>(m)[<span class="fu">c</span>(<span class="st">&quot;(Intercept)&quot;</span>, <span class="st">&quot;x&quot;</span>, <span class="st">&quot;Underreporting:(Intercept)&quot;</span>,</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>                  <span class="st">&quot;Underreporting:w&quot;</span>)]</span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  <span class="fu">c</span>(co, <span class="at">converged =</span> <span class="dv">1</span>, <span class="at">warned =</span> warned)</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>}</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>recovery <span class="ot">&lt;-</span> <span class="fu">lapply</span>(designs, <span class="cf">function</span>(g)</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>  <span class="fu">t</span>(<span class="fu">sapply</span>(<span class="dv">101</span><span class="sc">:</span><span class="dv">120</span>, recover_one, <span class="at">gamma =</span> g)))</span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a>truth <span class="ot">&lt;-</span> <span class="cf">function</span>(g) <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.5</span>, g)</span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a>recovery_table <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">names</span>(designs), <span class="cf">function</span>(k) {</span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>  r <span class="ot">&lt;-</span> recovery[[k]]</span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>  ok <span class="ot">&lt;-</span> r[, <span class="st">&quot;converged&quot;</span>] <span class="sc">==</span> <span class="dv">1</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">design =</span> k,</span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a>             <span class="at">parameter =</span> <span class="fu">c</span>(<span class="st">&quot;(Intercept)&quot;</span>, <span class="st">&quot;x&quot;</span>, <span class="st">&quot;Rep:(Intercept)&quot;</span>, <span class="st">&quot;Rep:w&quot;</span>),</span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a>             <span class="at">truth =</span> <span class="fu">truth</span>(designs[[k]]),</span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a>             <span class="at">mean =</span> <span class="fu">colMeans</span>(r[ok, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]),</span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a>             <span class="at">median =</span> <span class="fu">apply</span>(r[ok, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], <span class="dv">2</span>, median),</span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a>             <span class="at">sd =</span> <span class="fu">apply</span>(r[ok, <span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], <span class="dv">2</span>, sd),</span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a>             <span class="at">converged =</span> <span class="fu">sum</span>(ok), <span class="at">warned =</span> <span class="fu">sum</span>(r[, <span class="st">&quot;warned&quot;</span>]),</span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a>             <span class="at">row.names =</span> <span class="cn">NULL</span>)</span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a>}))</span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a>recovery_table[, <span class="dv">4</span><span class="sc">:</span><span class="dv">6</span>] <span class="ot">&lt;-</span> <span class="fu">round</span>(recovery_table[, <span class="dv">4</span><span class="sc">:</span><span class="dv">6</span>], <span class="dv">3</span>)</span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a>recovery_table</span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt;   design       parameter truth   mean median    sd converged warned</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="co">#&gt; 1   weak     (Intercept)   1.0  1.167  1.019 0.525        20     10</span></span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a><span class="co">#&gt; 2   weak               x   0.5  0.501  0.505 0.024        20     10</span></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a><span class="co">#&gt; 3   weak Rep:(Intercept)   1.5  1.501  1.295 1.573        20     10</span></span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a><span class="co">#&gt; 4   weak           Rep:w  -2.0 -2.217 -1.820 1.063        20     10</span></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a><span class="co">#&gt; 5 strong     (Intercept)   1.0  0.990  0.974 0.084        20      0</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a><span class="co">#&gt; 6 strong               x   0.5  0.504  0.508 0.024        20      0</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a><span class="co">#&gt; 7 strong Rep:(Intercept)   3.0  3.102  2.977 0.671        20      0</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a><span class="co">#&gt; 8 strong           Rep:w  -5.0 -5.097 -4.907 0.705        20      0</span></span></code></pre></div>
+<p>The summaries use all converged fits; <code>warned</code> counts the
+fits for which flexCountReg warned that the underreporting model is
+weakly identified. In the strong design, 0 of 20 fits gave that warning
+and the estimates centre on the truth. In the weak design 10 of 20 fits
+gave it, and the reporting intercept has a standard deviation of 1.6
+logit units across replicates: the estimates are unstable even though
+<span class="math inline">\(w\)</span> is a valid exclusion restriction.
+(Discarding the warned fits would not help: the remaining ones would be
+a selected, biased subset.)</p>
+</div>
+</div>
+<div id="predictions-reported-counts-true-counts-and-reporting" class="section level2">
+<h2>Predictions: reported counts, true counts and reporting</h2>
+<p>For the strong-design fit, the three predictions at <span class="math inline">\(x = 0\)</span> across <span class="math inline">\(w\)</span>, with the simulated truth as dashed
+lines:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>m <span class="ot">&lt;-</span> fits<span class="sc">$</span>strong</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">w =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">50</span>))</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(grid,</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>                   <span class="at">reported =</span> <span class="fu">predict</span>(m, <span class="at">newdata =</span> grid),</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>                   <span class="at">true =</span> <span class="fu">predict</span>(m, <span class="at">newdata =</span> grid, <span class="at">type =</span> <span class="st">&quot;true&quot;</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>                   <span class="at">p =</span> <span class="fu">predict</span>(m, <span class="at">newdata =</span> grid, <span class="at">type =</span> <span class="st">&quot;prob_reported&quot;</span>))</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">4</span>, <span class="dv">2</span>, <span class="dv">1</span>))</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="fu">plot</span>(pred<span class="sc">$</span>w, pred<span class="sc">$</span>true, <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">3.2</span>),</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;w&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Expected count at x = 0&quot;</span>, <span class="at">main =</span> <span class="st">&quot;Counts&quot;</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="fu">lines</span>(pred<span class="sc">$</span>w, pred<span class="sc">$</span>reported, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="dv">2</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> <span class="fu">exp</span>(<span class="dv">1</span>), <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="fu">lines</span>(pred<span class="sc">$</span>w, <span class="fu">exp</span>(<span class="dv">1</span>) <span class="sc">*</span> <span class="fu">plogis</span>(<span class="dv">3</span> <span class="sc">-</span> <span class="dv">5</span> <span class="sc">*</span> pred<span class="sc">$</span>w), <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="dv">2</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;bottomleft&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;true&quot;</span>, <span class="st">&quot;reported&quot;</span>), <span class="at">col =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>)</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="fu">plot</span>(pred<span class="sc">$</span>w, pred<span class="sc">$</span>p, <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="dv">4</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;w&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Probability&quot;</span>, <span class="at">main =</span> <span class="st">&quot;Reporting probability&quot;</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="fu">lines</span>(pred<span class="sc">$</span>w, <span class="fu">plogis</span>(<span class="dv">3</span> <span class="sc">-</span> <span class="dv">5</span> <span class="sc">*</span> pred<span class="sc">$</span>w), <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="dv">4</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">par</span>(op)</span></code></pre></div>
+<p>The reported count is what a new observation is expected to show; the
+true count is what the model says happened. Their ratio is the reporting
+probability. The true count depends on the identifying assumptions
+above, the reported count much less so: it can be checked against new
+reported data, while the true count cannot.</p>
+</div>
+<div id="sensitivity-to-the-reporting-assumptions" class="section level2">
+<h2>Sensitivity to the reporting assumptions</h2>
+<p>Under the strong design, compare four analyses of the same sample:
+the logit and probit reporting models, a model that ignores
+underreporting (with <span class="math inline">\(w\)</span> entering the
+mean), and a model that treats the reporting probabilities as known (an
+offset of <span class="math inline">\(\log p\)</span>, as with external
+information):</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">simulate_reports</span>(<span class="dv">2000</span>, <span class="at">seed =</span> <span class="dv">8</span>, <span class="at">gamma =</span> designs<span class="sc">$</span>strong)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>d<span class="sc">$</span>log_p <span class="ot">&lt;-</span> <span class="fu">log</span>(d<span class="sc">$</span>p)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>models <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">logit =</span> fits<span class="sc">$</span>strong,</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  <span class="at">probit =</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>                    <span class="at">underreport_formula =</span> <span class="sc">~</span> w, <span class="at">underreport_family =</span> <span class="st">&quot;probit&quot;</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>                    <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  <span class="at">ignore =</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> w, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  <span class="at">known_p =</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(log_p), <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>                     <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>))</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>at <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">0</span>, <span class="at">w =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">log_p =</span> <span class="dv">0</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>sens <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">sapply</span>(models, <span class="cf">function</span>(m) {</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  has_rep <span class="ot">&lt;-</span> <span class="fu">any</span>(<span class="fu">grepl</span>(<span class="st">&quot;^Underreporting:&quot;</span>, <span class="fu">names</span>(<span class="fu">coef</span>(m))))</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">beta_x =</span> <span class="fu">coef</span>(m)[[<span class="st">&quot;x&quot;</span>]],</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>    <span class="at">true_mean_x0 =</span> <span class="cf">if</span> (has_rep) <span class="fu">predict</span>(m, <span class="at">newdata =</span> at[<span class="dv">1</span>, ], <span class="at">type =</span> <span class="st">&quot;true&quot;</span>)</span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a>                   <span class="cf">else</span> <span class="cn">NA</span>,</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a>    <span class="at">p_w0 =</span> <span class="cf">if</span> (has_rep) <span class="fu">predict</span>(m, <span class="at">newdata =</span> at[<span class="dv">1</span>, ],</span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a>                                <span class="at">type =</span> <span class="st">&quot;prob_reported&quot;</span>) <span class="cf">else</span> <span class="cn">NA</span>,</span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a>    <span class="at">p_w1 =</span> <span class="cf">if</span> (has_rep) <span class="fu">predict</span>(m, <span class="at">newdata =</span> at[<span class="dv">2</span>, ],</span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a>                                <span class="at">type =</span> <span class="st">&quot;prob_reported&quot;</span>) <span class="cf">else</span> <span class="cn">NA</span>,</span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a>    <span class="at">AIC =</span> <span class="fu">AIC</span>(m))</span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a>}))</span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="fu">round</span>(sens, <span class="dv">3</span>)</span>
+<span id="cb8-24"><a href="#cb8-24" tabindex="-1"></a><span class="co">#&gt;         beta_x true_mean_x0 p_w0  p_w1      AIC</span></span>
+<span id="cb8-25"><a href="#cb8-25" tabindex="-1"></a><span class="co">#&gt; logit    0.517        2.685 0.96 0.114 6537.581</span></span>
+<span id="cb8-26"><a href="#cb8-26" tabindex="-1"></a><span class="co">#&gt; probit   0.518        2.687 0.97 0.109 6538.008</span></span>
+<span id="cb8-27"><a href="#cb8-27" tabindex="-1"></a><span class="co">#&gt; ignore   0.519           NA   NA    NA 6586.763</span></span>
+<span id="cb8-28"><a href="#cb8-28" tabindex="-1"></a><span class="co">#&gt; known_p  0.517           NA   NA    NA 6533.877</span></span></code></pre></div>
+<p>The true mean at <span class="math inline">\(x = 0\)</span> is <span class="math inline">\(e^1 \approx 2.718\)</span>, and the true reporting
+probabilities are 0.953 at <span class="math inline">\(w = 0\)</span>
+and 0.119 at <span class="math inline">\(w = 1\)</span>. The known-<span class="math inline">\(p\)</span> model has no reporting parameters (its
+true mean is <span class="math inline">\(\exp(\beta_0)\)</span> = 2.719;
+the offset gives the reporting). Here the logit and probit links give
+similar answers because the reporting probability spans most of (0, 1);
+with less variation, the true-count level depends more on which link is
+assumed. The model that ignores underreporting estimates the effect of
+<span class="math inline">\(x\)</span> just as well but says nothing
+about the true counts: its intercept and <span class="math inline">\(w\)</span> coefficient describe <em>reported</em>
+counts.</p>
+</div>
+<div id="a-failure-the-reporting-variable-also-affects-the-true-counts" class="section level2">
+<h2>A failure: the reporting variable also affects the true counts</h2>
+<p>If <span class="math inline">\(w\)</span> also enters the count
+model, the exclusion restriction is gone, and only the functional form
+of the link remains. Fitted to the same strong-design sample:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>both <span class="ot">&lt;-</span> <span class="fu">withCallingHandlers</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> w, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">underreport_formula =</span> <span class="sc">~</span> w,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>           <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">warning =</span> <span class="cf">function</span>(w) {</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>    <span class="fu">message</span>(<span class="st">&quot;Warning: &quot;</span>, <span class="fu">conditionMessage</span>(w))</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>    <span class="fu">invokeRestart</span>(<span class="st">&quot;muffleWarning&quot;</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  })</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; Warning: The underreporting model is weakly identified: the estimates of Underreporting:(Intercept) and (Intercept) have correlation -0.997. The data barely separate the true count mean from the reporting probability; interpret the true-count estimates with caution, and consider reporting variables that do not affect the true counts or external validation data.</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">summary</span>(both)<span class="sc">$</span>coefficients[, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], <span class="dv">3</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;                            Estimate Std. Error</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; (Intercept)                   5.237      0.819</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; x                             0.518      0.025</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; w                            -6.300      0.846</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; ln(alpha)                    -0.695      0.076</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; Underreporting:(Intercept)   -4.224      0.807</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; Underreporting:w              5.800      0.656</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cov2cor</span>(<span class="fu">vcov</span>(both))[<span class="fu">c</span>(<span class="st">&quot;(Intercept)&quot;</span>, <span class="st">&quot;w&quot;</span>),</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>                          <span class="fu">c</span>(<span class="st">&quot;Underreporting:(Intercept)&quot;</span>,</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>                            <span class="st">&quot;Underreporting:w&quot;</span>)], <span class="dv">3</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt;             Underreporting:(Intercept) Underreporting:w</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; (Intercept)                     -0.997            0.889</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; w                                0.989           -0.942</span></span></code></pre></div>
+<p>The data were generated with no effect of <span class="math inline">\(w\)</span> on the true count and <span class="math inline">\(\beta_0 = 1\)</span>. The estimates are far from
+that, and the near-perfect correlations between the count and reporting
+coefficients show the ridge along which the likelihood barely changes: a
+change in the true-count coefficients is almost exactly offset by a
+change in the reporting coefficients. The standard errors are finite,
+but they describe a curvature that comes only from the assumed link.</p>
+<p>Do not report the true-count estimates of such a model. Either
+justify a variable that affects reporting only, or obtain external
+information on reporting, or analyze the reported counts as they
+are.</p>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<ul>
+<li>The reported counts identify <span class="math inline">\(p\mu\)</span>. Separating <span class="math inline">\(p\)</span> from <span class="math inline">\(\mu\)</span> needs an exclusion restriction, the
+link’s functional form or external information, and the result is only
+as credible as those assumptions.</li>
+<li>Effects of variables that appear only in the count model are
+estimated well even when the split between true and reported counts is
+not.</li>
+<li>Check stability: standard errors of the intercepts, warnings about
+flat ridges, and the sensitivity of the true-count predictions to the
+link.</li>
+<li>A reporting model does not correct other measurement problems, such
+as misclassified events or dependence between events.</li>
+</ul>
+</div>
+<div id="reproducibility-and-next-steps" class="section level2">
+<h2>Reproducibility and next steps</h2>
+<p>The samples use seeds 8 and 101 to 120 with
+<code>simulate_reports()</code> above.</p>
+<ul>
+<li><code>?count_families</code> gives the variance of the reported
+counts for each family that allows underreporting.</li>
+<li><code>?countreg</code> documents <code>underreport_formula</code>
+and <code>underreport_family</code>.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

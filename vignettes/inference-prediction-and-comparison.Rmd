@@ -332,6 +332,10 @@ regCompTable(list(Poisson = po, NB2 = nb_h))
   explains the independent unit for repeated observations: the
   `washington_roads` rows used here are segment-years, so the row-level
   standard errors above treat repeated years of a segment as independent.
+* `vignette("predictions-and-effects", package = "flexCountReg")`
+  interprets predictions and marginal effects in detail.
+* `vignette("prediction-for-panel-data", package = "flexCountReg")`
+  separates predictions for new and for known units in panels.
 
 ## References
 

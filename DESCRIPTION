@@ -58,6 +58,7 @@ Suggests:
     dials,
     parsnip,
     pscl,
+    AER,
     rmarkdown,
     testthat (>= 3.0.0), 
     poilog

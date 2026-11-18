@@ -18,7 +18,7 @@
   as JSON, the coefficients and a manifest with versions and warnings).
   Column names enter the code only as symbols, never as pasted text.
 * Models are estimated in background R processes (callr), so the
-  interface stays responsive and fits can be cancelled; a slow earlier fit
+  interface stays responsive and fits can be canceled; a slow earlier fit
   never replaces a newer one. Data, fits and jobs belong to one browser
   session.
 * The app's packages (shiny, bslib, DT, callr, jsonlite, zip) are

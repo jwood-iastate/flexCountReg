@@ -258,7 +258,7 @@ summary(gen.nb2)
 #>     method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 40 
+#> Iterations: 44 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -268,7 +268,7 @@ summary(gen.nb2)
 #> lnlength                0.7588     0.0691   10.98  < 2e-16 ***
 #> speed50                -0.5407     0.1173   -4.61  4.0e-06 ***
 #> ln(alpha):(Intercept)  -1.3233     0.3150   -4.20  2.7e-05 ***
-#> ln(alpha):speed50       1.2670     0.4849    2.61    0.009 ** 
+#> ln(alpha):speed50       1.2669     0.4849    2.61    0.009 ** 
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -284,12 +284,12 @@ tidy(gen.nb2, conf.int = TRUE)
 #> # A tibble: 6 × 8
 #>   term        component estimate std.error statistic  p.value conf.low conf.high
 #>   <chr>       <chr>        <dbl>     <dbl>     <dbl>    <dbl>    <dbl>     <dbl>
-#> 1 (Intercept) mean        -8.76     0.440     -19.9  5.78e-88   -9.62     -7.89 
+#> 1 (Intercept) mean        -8.76     0.440     -19.9  5.77e-88   -9.62     -7.89 
 #> 2 lnaadt      mean         1.08     0.0518     20.9  1.23e-96    0.979     1.18 
 #> 3 lnlength    mean         0.759    0.0691     11.0  4.63e-28    0.623     0.894
 #> 4 speed50     mean        -0.541    0.117      -4.61 4.02e- 6   -0.771    -0.311
 #> 5 ln(alpha):… distribu…   -1.32     0.315      -4.20 2.66e- 5   -1.94     -0.706
-#> 6 ln(alpha):… distribu…    1.27     0.485       2.61 8.98e- 3    0.317     2.22
+#> 6 ln(alpha):… distribu…    1.27     0.485       2.61 8.99e- 3    0.316     2.22
 glance(gen.nb2)
 #> # A tibble: 1 × 10
 #>   model    family logLik   AIC   BIC    df  nobs n_groups converged vcov_type
@@ -321,7 +321,7 @@ rootogram(pois, main = "Poisson")
 rootogram(gen.nb2, main = "Generalized NB-2")
 ```
 
-<img src="man/figures/README-rootogram-1.png" alt="" width="100%" />
+<img src="man/figures/README-rootogram-1.png" width="100%" />
 
 ``` r
 par(oldpar)
@@ -331,11 +331,9 @@ Checking the CURE plot:
 
 ``` r
 cureplot(gen.nb2, indvar = "lnaadt")
-#> Covariate: indvar_values
-#> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
 
-<img src="man/figures/README-cureplot-initial-1.png" alt="" width="100%" />
+<img src="man/figures/README-cureplot-initial-1.png" width="100%" />
 
 Modifying the model:
 
@@ -371,11 +369,9 @@ summary(gen.nb2)
 #> Log-likelihood: -1061.914 | AIC: 2141.828 | BIC: 2189.653 
 #> N: 1501
 cureplot(gen.nb2, indvar = "lnaadt")
-#> Covariate: indvar_values
-#> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
 
-<img src="man/figures/README-cureplot-updt-1.png" alt="" width="100%" />
+<img src="man/figures/README-cureplot-updt-1.png" width="100%" />
 
 Estimating another model (NB-P), without the interaction:
 
@@ -418,11 +414,9 @@ NB-2):
 
 ``` r
 cureplot(gen.nbp, indvar = "lnaadt")
-#> Covariate: indvar_values
-#> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
 
-<img src="man/figures/README-cureplot-lnaadt-1.png" alt="" width="100%" />
+<img src="man/figures/README-cureplot-lnaadt-1.png" width="100%" />
 
 Creating a table to compare the models:
 

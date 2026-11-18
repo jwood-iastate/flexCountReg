@@ -103,7 +103,7 @@ cancel_fit_job <- function(job) {
   if (identical(job$status, "running")) {
     try(job$proc$kill_tree(), silent = TRUE)
     try(job$proc$kill(), silent = TRUE)
-    job$status <- "cancelled"
+    job$status <- "canceled"
     job$finished <- Sys.time()
   }
   job

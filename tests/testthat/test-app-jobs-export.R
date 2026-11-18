@@ -54,10 +54,10 @@ test_that("failures and cancellations are reported, not hidden", {
   job2 <- start_fit_job(s2, data = big)
   Sys.sleep(1)
   job2 <- cancel_fit_job(job2)
-  expect_identical(job2$status, "cancelled")
+  expect_identical(job2$status, "canceled")
   Sys.sleep(0.5)
   expect_false(job2$proc$is_alive())
-  expect_identical(poll_fit_job(job2)$status, "cancelled")
+  expect_identical(poll_fit_job(job2)$status, "canceled")
 })
 
 test_that("the exported bundle reproduces the fit in a clean R session", {

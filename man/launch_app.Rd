@@ -35,7 +35,7 @@ the code that runs and the script you download are the same, so the
 downloaded \code{analysis.R} reproduces the fit without the app (the
 "R code" panel at the bottom shows the draft and the fitted code).
 Models are estimated in background R processes, so the interface stays
-responsive and long fits can be cancelled. Data, fits and jobs belong to
+responsive and long fits can be canceled. Data, fits and jobs belong to
 one browser session and are removed when it ends; uploaded data are read
 as CSV only and stay on your computer.
 

@@ -77,7 +77,7 @@ mod_fit_server <- function(id, state) {
       jl <- state$jobs
       jl[[id]] <- cancel_fit_job(jl[[id]])
       state$jobs <- jl
-      shiny::showNotification(paste("Cancelled", jl[[id]]$label),
+      shiny::showNotification(paste("Canceled", jl[[id]]$label),
                               type = "warning")
     })
     output$jobs <- shiny::renderTable({

@@ -30,7 +30,9 @@ issues, including:
   and one class per panel;
 - model comparison and diagnostics: likelihood-ratio tests, comparison
   tables, marginal effects, CURE plots, rootograms and randomized
-  quantile residuals.
+  quantile residuals;
+- an interactive app (`launch_app()`) for the whole workflow, from data
+  to a downloadable R script that reproduces the analysis.
 
 Fitted models work with the standard R generics (`coef()`, `vcov()`,
 `AIC()`, `BIC()`, `confint()`, `predict()`, `simulate()`, `update()`,
@@ -45,6 +47,19 @@ You can install the development version of flexCountReg using:
 # install.packages("devtools")
 devtools::install_github("jwood-iastate/flexCountReg")
 ```
+
+## Interactive app
+
+To work without writing code, start the app:
+
+``` r
+flexCountReg::launch_app()
+```
+
+It walks through the data, the model, the fit, diagnostics, comparisons
+and predictions, and downloads an R script that reproduces the analysis
+without the app. The app uses the shiny, bslib, DT, callr, jsonlite and
+zip packages; `launch_app()` offers to install them if needed.
 
 ## Functions and Data
 
@@ -526,6 +541,13 @@ The vignettes cover the main workflows. Start with
   `vignette("underreporting-and-identification", package = "flexCountReg")`
 - Random parameters and panel models:
   `vignette("random-parameters-and-panels", package = "flexCountReg")`
+
+*Finite mixtures and latent classes*
+
+- Finite mixtures of count distributions:
+  `vignette("finite-mixture-getting-started", package = "flexCountReg")`
+- Latent-class and finite-mixture count regression:
+  `vignette("latent-class-regression", package = "flexCountReg")`
 
 *Predict and validate*
 

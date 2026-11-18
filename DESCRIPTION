@@ -72,7 +72,14 @@ LazyData: true
 Config/roxygen2/markdown: TRUE
 Suggests:
     spelling, 
+    bslib (>= 0.9.0),
     callr,
+    chromote,
+    DT,
+    jsonlite,
+    shiny (>= 1.10.0),
+    shinytest2,
+    zip,
     lamW,
     dials,
     parsnip,

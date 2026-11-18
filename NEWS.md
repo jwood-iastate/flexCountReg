@@ -1,5 +1,31 @@
 # flexCountReg 0.1.2 (development)
 
+## Interactive app
+
+* New `launch_app()` opens an interactive interface to flexCountReg in a
+  web browser. Its pages cover the whole workflow: load a bundled example
+  or a CSV file; specify and estimate count regression, finite-mixture and
+  latent-class models (any family, exposure or log offset, frequency
+  weights, distribution-parameter, membership and shared terms, panels);
+  inspect the summary, coefficients, numerical checks, class sizes and
+  starts; diagnose fits (rootogram, randomized quantile residuals, CURE
+  plot); compare them (with the reasons when they are not comparable);
+  predict for an editable table of scenarios (with confidence or
+  prediction intervals for count regressions); and download the analysis.
+* Every fit is compiled from one versioned specification into R code, and
+  the same code runs in the app and in the downloaded `analysis.R`, which
+  reproduces the fit without the app (the bundle also holds the settings
+  as JSON, the coefficients and a manifest with versions and warnings).
+  Column names enter the code only as symbols, never as pasted text.
+* Models are estimated in background R processes (callr), so the
+  interface stays responsive and fits can be cancelled; a slow earlier fit
+  never replaces a newer one. Data, fits and jobs belong to one browser
+  session.
+* The app's packages (shiny, bslib, DT, callr, jsonlite, zip) are
+  suggested, not imported: the statistical functions do not need them, and
+  `launch_app()` offers to install any that are missing. `app_object()`
+  returns the app for deployment or testing.
+
 ## Finite mixtures and latent classes
 
 * New `countreg_mix()` estimates finite mixtures of count distributions and

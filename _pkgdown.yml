@@ -55,6 +55,10 @@ reference:
   - summary.countreg_mix
   - component_probs
 
+- title: Interactive app
+  contents:
+  - launch_app
+
 - title: Working with fitted models
   contents:
   - summary.flexCountReg

@@ -84,7 +84,7 @@
 <li>
 <code><a href="reference/countreg.html">countreg()</a></code> estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models.</li>
 <li>
-<code><a href="reference/countreg.rp.html">countreg.rp()</a></code> (also <code><a href="reference/countreg.rp.html">countreg_rp()</a></code>) estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.</li>
+<code><a href="reference/countreg.rp.html">countreg_rp()</a></code> estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.</li>
 <li>
 <code><a href="reference/renb.html">renb()</a></code> estimates the random effects negative binomial regression model.</li>
 <li>
@@ -173,7 +173,7 @@
 <li>Sichel: <code>dsichel</code>, <code>psichel</code>, <code>qsichel</code>, <code>rsichel</code>
 </li>
 </ul>
-<p>See <code><a href="reference/count_families.html">?count_families</a></code> for every distribution available in <code><a href="reference/countreg.html">countreg()</a></code> and <code><a href="reference/countreg.rp.html">countreg.rp()</a></code>, with its parameters, variance and model features.</p>
+<p>See <code><a href="reference/count_families.html">?count_families</a></code> for every distribution available in <code><a href="reference/countreg.html">countreg()</a></code> and <code><a href="reference/countreg.rp.html">countreg_rp()</a></code>, with its parameters, variance and model features.</p>
 <p><em>Continuous distributions</em></p>
 <ul>
 <li>Inverse Gamma: <code>dinvgamma</code>, <code>pinvgamma</code>, <code>qinvgamma</code>, <code>rinvgamma</code>
@@ -495,6 +495,15 @@
 <li>Evaluating predictive performance without information leakage: <code><a href="articles/predictive-validation.html">vignette("predictive-validation", package = "flexCountReg")</a></code>
 </li>
 <li>Predicting new units and known units in panel data: <code><a href="articles/prediction-for-panel-data.html">vignette("prediction-for-panel-data", package = "flexCountReg")</a></code>
+</li>
+</ul>
+<p><em>Advanced</em></p>
+<ul>
+<li>Numerical reliability: convergence, integration and difficult fits: <code><a href="articles/numerical-reliability.html">vignette("numerical-reliability", package = "flexCountReg")</a></code>
+</li>
+<li>Simulation studies for count models: <code><a href="articles/simulation-studies.html">vignette("simulation-studies", package = "flexCountReg")</a></code>
+</li>
+<li>Adding a count distribution to flexCountReg: <code><a href="articles/extending-count-distributions.html">vignette("extending-count-distributions", package = "flexCountReg")</a></code>
 </li>
 </ul>
 </div>

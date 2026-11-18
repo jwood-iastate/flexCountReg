@@ -55,7 +55,7 @@ one draw:
 ``` r
 
 fe <- y ~ -1 + progabide + lbase + lage + V4
-rp <- countreg.rp(fe, rpar_formula = ~ 1, data = epil, family = "NB2",
+rp <- countreg_rp(fe, rpar_formula = ~ 1, data = epil, family = "NB2",
                   group_var = "subject", ndraws = 200, method = "BFGS")
 rp$model$converged
 #> [1] TRUE
@@ -167,7 +167,7 @@ epil$fold <- fold_of[as.character(epil$subject)]
 held_out <- do.call(rbind, lapply(1:5, function(k) {
   train <- epil[epil$fold != k, ]
   test <- epil[epil$fold == k, ]
-  m_rp <- countreg.rp(fe, rpar_formula = ~ 1, data = train, family = "NB2",
+  m_rp <- countreg_rp(fe, rpar_formula = ~ 1, data = train, family = "NB2",
                       group_var = "subject", ndraws = 200, method = "BFGS")
   m_pool <- countreg(y ~ progabide + lbase + lage + V4, data = train,
                      family = "NB2", method = "BFGS")

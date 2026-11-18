@@ -34,7 +34,7 @@ all use it.
   standard errors), and with sampling weights it is not a full
   survey-design analysis (strata, clusters and finite-population
   corrections are not modelled). For panel models
-  ([`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+  ([`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
   with `group_var`,
   [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
   [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md),
@@ -296,6 +296,9 @@ weights are used.
 po <- countreg(f, d, family = "POISSON", method = "BFGS")
 nb1 <- countreg(f, d, family = "NB1", method = "BFGS")
 pl <- countreg(f, d, family = "PL", method = "BFGS")
+#> Warning: The Hessian is not negative definite at the estimates, so the standard
+#> errors of ln(theta) are NA. The estimate may be on the boundary of the
+#> parameter space or not at a maximum.
 do.call(rbind, lapply(list(Poisson = po, NB1 = nb1, NB2 = nb_h, PL = pl),
                       function(m) glance(m)[, c("logLik", "AIC", "BIC")]))
 #> # A tibble: 4 × 3

@@ -342,6 +342,9 @@ zero-inflated or hurdle version of any family can be fitted with
 
 zinb <- countreg(f, data = washington_roads, family = "NB2",
                  offset = "lnlength", zero_formula = ~ 1, method = "NR")
+#> Warning: The Hessian is not negative definite at the estimates, so the standard
+#> errors of Zero:(Intercept) are NA. The estimate may be on the boundary of the
+#> parameter space or not at a maximum.
 pi_zero <- unname(plogis(coef(zinb)["Zero:(Intercept)"]))
 c(NB2 = as.numeric(logLik(models$NB2)), ZINB = as.numeric(logLik(zinb)),
   zero_probability = pi_zero)

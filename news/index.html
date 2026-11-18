@@ -71,6 +71,14 @@
 <div class="section level3">
 <h3 id="standard-errors-at-flat-likelihood-directions-0-1-2">Standard errors at flat likelihood directions<a class="anchor" aria-label="anchor" href="#standard-errors-at-flat-likelihood-directions-0-1-2"></a></h3>
 <ul><li>When the Hessian is singular, standard errors still use a generalized inverse, but parameters involved in a direction where the likelihood is flat now get <code>NA</code> variances and standard errors instead of zero (a zero standard error read as perfect precision, e.g. the random-effect parameter of a Poisson-Lindley random-effects model at its boundary). The warning names those parameters.</li>
+<li>When the Hessian is invertible but not negative definite (for example an NB2 dispersion drifting toward zero on Poisson-like data), the negative variances already gave <code>NA</code> standard errors; a warning now names those parameters instead of leaving them silently <code>NA</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="vignettes-0-1-2">Vignettes<a class="anchor" aria-label="anchor" href="#vignettes-0-1-2"></a></h3>
+<ul><li>Fifteen vignettes, grouped on the package website as Start here, Diagnose and interpret, Model structure, Predict and validate, and Advanced. New: getting started; data, exposure and weights; diagnosing count models; predictions, marginal effects and elasticities; modeling distribution parameters; zeros, hurdles and sampling; underreporting and identification; predictive validation; prediction for panel data; numerical reliability; simulation studies; and adding a count distribution (for contributors). The three earlier vignettes are revised.</li>
+<li>
+<code>inst/validation/simulation-studies/count-regression-study.R</code> is a parameterized simulation study (Poisson, NB2 and a negative multinomial panel) with one random-number stream per replicate; its summary and settings are saved alongside it. The per-replicate results of this study and of the interval coverage study are kept in the source repository but left out of the package build.</li>
+<li>The vignettes use <code><a href="../reference/countreg.rp.html">countreg_rp()</a></code>.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="new-data-0-1-2">New data<a class="anchor" aria-label="anchor" href="#new-data-0-1-2"></a></h3>

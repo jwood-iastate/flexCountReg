@@ -890,6 +890,7 @@ if (requireNamespace("poilog", quietly = TRUE)) {
                   data = washington_roads, family = "PLN", engine="poilog")
   summary(pln)
 }
+#> Warning: The Hessian is not negative definite at the estimates, so the standard errors of (Intercept), lnaadt, ln(sigma) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.
 #> Call:
 #> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + 
 #>     AADT10kplus, data = washington_roads, family = "PLN", engine = "poilog")

@@ -52,9 +52,7 @@ devtools::install_github("jwood-iastate/flexCountReg")
   estimates cross-sectional count regression models with any of the
   distributions below, optional models for the distribution parameters,
   underreporting, and zero-inflated or hurdle zero models.
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
-  (also
-  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md))
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
   estimates random parameters count models, optionally with panels,
   correlated random parameters, and heterogeneity in the means and
   variances of the random parameters.
@@ -183,7 +181,7 @@ See
 for every distribution available in
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
 and
-[`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md),
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md),
 with its parameters, variance and model features.
 
 *Continuous distributions*
@@ -581,3 +579,12 @@ The vignettes cover the main workflows. Start with
   [`vignette("predictive-validation", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/predictive-validation.md)
 - Predicting new units and known units in panel data:
   [`vignette("prediction-for-panel-data", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/prediction-for-panel-data.md)
+
+*Advanced*
+
+- Numerical reliability: convergence, integration and difficult fits:
+  [`vignette("numerical-reliability", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.md)
+- Simulation studies for count models:
+  [`vignette("simulation-studies", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/simulation-studies.md)
+- Adding a count distribution to flexCountReg:
+  [`vignette("extending-count-distributions", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/extending-count-distributions.md)

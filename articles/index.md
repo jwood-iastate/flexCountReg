@@ -35,3 +35,12 @@
   leakage](https://jwood-iastate.github.io/flexCountReg/articles/predictive-validation.md):
 - [Predicting new units and known units in panel
   data](https://jwood-iastate.github.io/flexCountReg/articles/prediction-for-panel-data.md):
+
+### Advanced
+
+- [Numerical reliability: convergence, integration and difficult
+  fits](https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.md):
+- [Simulation studies for count
+  models](https://jwood-iastate.github.io/flexCountReg/articles/simulation-studies.md):
+- [Adding a count distribution to
+  flexCountReg](https://jwood-iastate.github.io/flexCountReg/articles/extending-count-distributions.md):

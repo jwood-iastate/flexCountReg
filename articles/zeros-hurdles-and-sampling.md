@@ -135,6 +135,9 @@ do not by themselves call for a separate zero process.
 
 zinb_const <- countreg(f, data = b, family = "NB2", zero_formula = ~ 1,
                        method = "BFGS")
+#> Warning: The Hessian is not negative definite at the estimates, so the standard
+#> errors of Zero:(Intercept) are NA. The estimate may be on the boundary of the
+#> parameter space or not at a maximum.
 zinb <- countreg(f, data = b, family = "NB2",
                  zero_formula = ~ ment + kid5, method = "BFGS")
 hnb <- countreg(f, data = b, family = "NB2",

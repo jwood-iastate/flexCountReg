@@ -3,9 +3,7 @@
 Road segments, intersections or individuals observed repeatedly are not
 independent, and the effect of a variable often differs from one unit to
 another. flexCountReg handles both with random-parameter models
-([`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md),
-also available as
-[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md))
+([`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md))
 and random-effects models
 ([`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
 [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md),
@@ -350,6 +348,8 @@ makes the models look better than they are.
   separates predictions for new patients from those for known patients.
 - [`vignette("predictive-validation", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/predictive-validation.md)
   builds grouped cross-validation step by step.
+- [`vignette("numerical-reliability", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.md)
+  shows how to check the number of draws and other numerical settings.
 
 ## References
 

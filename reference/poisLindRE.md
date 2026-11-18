@@ -164,6 +164,7 @@ poislind.mod <- poisLind.re(
   method    = "NM",
   max.iters = 1000
 )
+#> Warning: The Hessian is not negative definite at the estimates, so the standard errors of ln(theta) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.
 summary(poislind.mod)
 #> Call:
 #> poisLind.re(formula = Animal ~ lnaadt + lnlength + speed50 + 

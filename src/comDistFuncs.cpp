@@ -165,14 +165,14 @@ static ComSolve com_solve_lambda(double mu, double nu, double tol,
   }
   // Regula falsi with the Illinois modification
   int side = 0;
-  double best_t = (std::fabs(flo) < std::fabs(fhi)) ? lo : hi;
+  // Smallest residual seen (reported when the tolerance is not met)
   double best_f = (std::fabs(flo) < std::fabs(fhi)) ? flo : fhi;
   for (int it = 1; it <= max_iter; ++it) {
     out.iterations = it;
     double t = (lo * fhi - hi * flo) / (fhi - flo);
     double ft = f(t);
     if (ISNAN(ft) || ft == R_PosInf) break;
-    if (std::fabs(ft) < std::fabs(best_f)) { best_t = t; best_f = ft; }
+    if (std::fabs(ft) < std::fabs(best_f)) best_f = ft;
     if (std::fabs(ft) <= tol_f) {
       out.lambda = std::exp(t); out.residual = ft; out.status = 0;
       return out;

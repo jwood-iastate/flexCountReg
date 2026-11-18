@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Numerical reliability: convergence, integration and difficult fits</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Numerical reliability: convergence,
+integration and difficult fits</h1>
+
+
+
+<p>An optimizer that stops and reports success has found a point where
+its stopping rule was met. That is not the same as a reliable maximum
+likelihood estimate with trustworthy standard errors. This vignette
+shows what to inspect after a fit, how to recognize boundary estimates,
+weak identification and scaling problems, which controls govern the
+numerical integrals of the more complex models, and how to tell apart
+three different reasons why a prediction cannot be computed.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span></code></pre></div>
+<div id="what-a-fit-records" class="section level2">
+<h2>What a fit records</h2>
+<p>The <code>model</code> element of a fitted <code>countreg()</code> or
+<code>countreg_rp()</code> object is the result of the optimizer (from
+the maxLik package) with some additions: <code>converged</code>, the
+return <code>code</code> and <code>message</code>, the number of
+<code>iterations</code>, the log-likelihood <code>maximum</code>, the
+<code>gradient</code> and the <code>hessian</code> at the estimates. A
+small helper collects them:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>fit_status <span class="ot">&lt;-</span> <span class="cf">function</span>(m) {</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  f <span class="ot">&lt;-</span> m<span class="sc">$</span>model</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  ev <span class="ot">&lt;-</span> <span class="fu">eigen</span>(<span class="sc">-</span>f<span class="sc">$</span>hessian, <span class="at">symmetric =</span> <span class="cn">TRUE</span>, <span class="at">only.values =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>values</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">converged =</span> <span class="fu">isTRUE</span>(f<span class="sc">$</span>converged), <span class="at">code =</span> f<span class="sc">$</span>code,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>             <span class="at">iterations =</span> <span class="fu">unname</span>(f<span class="sc">$</span>iterations[<span class="dv">1</span>]),</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>             <span class="at">logLik =</span> <span class="fu">round</span>(f<span class="sc">$</span>maximum, <span class="dv">3</span>),</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>             <span class="at">max_abs_gradient =</span> <span class="fu">signif</span>(<span class="fu">max</span>(<span class="fu">abs</span>(f<span class="sc">$</span>gradient)), <span class="dv">3</span>),</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>             <span class="at">min_eigen =</span> <span class="fu">signif</span>(<span class="fu">min</span>(ev), <span class="dv">3</span>),</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>             <span class="at">condition =</span> <span class="fu">signif</span>(<span class="fu">max</span>(ev) <span class="sc">/</span> <span class="fu">min</span>(ev), <span class="dv">3</span>),</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>             <span class="at">message =</span> <span class="fu">trimws</span>(f<span class="sc">$</span>message))</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>}</span></code></pre></div>
+<ul>
+<li><code>max_abs_gradient</code> should be close to 0 at a maximum.
+What counts as close depends on the scale of the parameters.</li>
+<li><code>min_eigen</code> is the smallest eigenvalue of the negative
+Hessian. It must be positive at a maximum; a value near 0 means a
+direction in which the likelihood is nearly flat.</li>
+<li><code>condition</code> is the ratio of the largest to the smallest
+eigenvalue. A very large value means that the parameters are on very
+different scales or nearly redundant.</li>
+</ul>
+</div>
+<div id="a-fit-status-table" class="section level2">
+<h2>A fit-status table</h2>
+<p>The same NB2 model is fitted with four optimizers, and then with the
+traffic volume entered in vehicles per day instead of on the log scale,
+both as it is and divided by 10,000:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>f <span class="ot">&lt;-</span> Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> lnlength <span class="sc">+</span> speed50</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>fits <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">c</span>(<span class="at">NM =</span> <span class="st">&quot;NM&quot;</span>, <span class="at">BFGS =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">NR =</span> <span class="st">&quot;NR&quot;</span>, <span class="at">BHHH =</span> <span class="st">&quot;BHHH&quot;</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>               <span class="cf">function</span>(meth) <span class="fu">countreg</span>(f, <span class="at">data =</span> washington_roads,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                                       <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> meth))</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>washington_roads<span class="sc">$</span>aadt <span class="ot">&lt;-</span> <span class="fu">exp</span>(washington_roads<span class="sc">$</span>lnaadt)</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>washington_roads<span class="sc">$</span>aadt_10k <span class="ot">&lt;-</span> washington_roads<span class="sc">$</span>aadt <span class="sc">/</span> <span class="fl">1e4</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>fits<span class="sc">$</span>NM_raw_aadt <span class="ot">&lt;-</span> <span class="fu">countreg</span>(Total_crashes <span class="sc">~</span> aadt <span class="sc">+</span> speed50,</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>                             <span class="at">data =</span> washington_roads, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>fits<span class="sc">$</span>NM_aadt_10k <span class="ot">&lt;-</span> <span class="fu">countreg</span>(Total_crashes <span class="sc">~</span> aadt_10k <span class="sc">+</span> speed50,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>                             <span class="at">data =</span> washington_roads, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>status_table <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(fits, fit_status))</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>status_table</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt;             converged code iterations    logLik max_abs_gradient min_eigen</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; NM               TRUE    0        446 -1084.942         7.50e-02      5.09</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; BFGS             TRUE    0         34 -1084.942         3.48e-04      5.09</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; NR               TRUE    1          3 -1084.942         1.06e-08      5.09</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; BHHH             TRUE    8          5 -1084.942         3.42e-02      6.06</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; NM_raw_aadt      TRUE    0        217 -1159.276         7.06e+02     34.60</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; NM_aadt_10k      TRUE    0        119 -1159.277         8.15e-02     33.40</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;             condition</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; NM           7.64e+03</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; BFGS         7.64e+03</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt; NR           7.64e+03</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt; BHHH         6.46e+03</span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt; NM_raw_aadt  7.41e+08</span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt; NM_aadt_10k  1.94e+01</span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt;                                                                         message</span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt; NM                                                       successful convergence</span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt; BFGS                                                     successful convergence</span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt; NR                                             gradient close to zero (gradtol)</span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; BHHH        successive function values within relative tolerance limit (reltol)</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt; NM_raw_aadt                                              successful convergence</span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt; NM_aadt_10k                                              successful convergence</span></span></code></pre></div>
+<p>The four optimizers agree on the log-likelihood and the coefficients
+(<code>round(sapply(fits[1:4], coef), 4)</code> shows them), but they
+stop for different reasons. Nelder-Mead (<code>&quot;NM&quot;</code>, the default)
+does not use derivatives and stops when the simplex is small: its
+gradient is the largest of the four. Newton-Raphson (<code>&quot;NR&quot;</code>)
+stops at a gradient of essentially zero. A <code>code</code> of 0 means
+success for NM and BFGS, while NR and BHHH report success with codes 1,
+2 or 8 (<code>converged</code> already accounts for this).</p>
+<p>With volume in vehicles per day, Nelder-Mead reports convergence with
+a largest gradient of 706: a coefficient per vehicle is tiny, and the
+condition number of 7.41e+08 shows the poor scaling. Dividing the volume
+by 10,000 brings the condition number down to 19.4. Rescaling a variable
+changes only the units of its coefficient, not the model. More
+iterations would not have fixed the scaling problem.</p>
+</div>
+<div id="boundaries-weak-identification-and-rank-deficiency" class="section level2">
+<h2>Boundaries, weak identification and rank deficiency</h2>
+<div id="a-parameter-at-the-edge-of-its-space" class="section level3">
+<h3>A parameter at the edge of its space</h3>
+<p>When the data are close to Poisson, the NB2 dispersion <span class="math inline">\(\alpha\)</span> is close to 0, the edge of its
+space, and <span class="math inline">\(\ln\alpha\)</span> drifts towards
+<span class="math inline">\(-\infty\)</span>. Twenty samples of Poisson
+data, each fitted with NB2:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>boundary_fit <span class="ot">&lt;-</span> <span class="cf">function</span>(seed) {</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(seed)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  d <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">rnorm</span>(<span class="dv">300</span>))</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  d<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rpois</span>(<span class="dv">300</span>, <span class="fu">exp</span>(<span class="fl">0.5</span> <span class="sc">+</span> <span class="fl">0.4</span> <span class="sc">*</span> d<span class="sc">$</span>x))</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  warned <span class="ot">&lt;-</span> <span class="cn">FALSE</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">withCallingHandlers</span>(</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>    <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>    <span class="at">warning =</span> <span class="cf">function</span>(w) {</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>      warned <span class="ot">&lt;&lt;-</span> <span class="cn">TRUE</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>      <span class="fu">invokeRestart</span>(<span class="st">&quot;muffleWarning&quot;</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>    })</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  co <span class="ot">&lt;-</span> <span class="fu">summary</span>(m)<span class="sc">$</span>coefficients</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="fu">c</span>(<span class="at">ln_alpha =</span> co[<span class="st">&quot;ln(alpha)&quot;</span>, <span class="dv">1</span>], <span class="at">se =</span> co[<span class="st">&quot;ln(alpha)&quot;</span>, <span class="dv">2</span>],</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>    <span class="at">converged =</span> m<span class="sc">$</span>model<span class="sc">$</span>converged, <span class="at">warned =</span> warned)</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>}</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a>boundary <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">t</span>(<span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>, boundary_fit)))</span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>boundary<span class="sc">$</span>at_start <span class="ot">&lt;-</span> <span class="fu">abs</span>(boundary<span class="sc">$</span>ln_alpha <span class="sc">-</span> <span class="fu">log</span>(<span class="fl">1e-3</span>)) <span class="sc">&lt;</span> <span class="fl">0.01</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="fu">round</span>(boundary, <span class="dv">3</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt;    ln_alpha     se converged warned at_start</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; 1    -3.451  1.454         1      0        0</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; 2    -3.705  1.809         1      0        0</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; 3    -2.680  0.724         1      0        0</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; 4   -11.233     NA         1      1        0</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; 5    -6.181 20.662         1      0        0</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; 6    -6.908  6.721         1      0        1</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; 7    -3.722  1.703         1      0        0</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt; 8    -6.908 17.415         1      0        1</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; 9    -3.977  2.366         1      0        0</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; 10   -3.515  1.705         1      0        0</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; 11   -3.368  1.295         1      0        0</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; 12  -10.750     NA         1      1        0</span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt; 13   -6.908  7.073         1      0        1</span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt; 14   -2.627  0.754         1      0        0</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt; 15  -11.319     NA         1      1        0</span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt; 16   -6.908  7.896         1      0        1</span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt; 17   -3.164  1.183         1      0        0</span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt; 18   -6.908  6.066         1      0        1</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt; 19   -3.447  1.462         1      0        0</span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt; 20   -6.908 11.455         1      0        1</span></span></code></pre></div>
+<p>Every fit reports convergence. The dispersion starts from a moment
+estimate clipped at <span class="math inline">\(\alpha =
+10^{-3}\)</span> (<span class="math inline">\(\ln\alpha =
+-6.908\)</span>), and 6 of the 20 fits stopped within 0.01 of it: at the
+edge of the space the likelihood is so flat that the gradient is below
+the optimizer’s tolerance. In 3 fits the Hessian is not negative
+definite, and flexCountReg warns that the standard error of
+<code>ln(alpha)</code> is <code>NA</code>. The remaining standard errors
+are large. In every case the right conclusion is that <span class="math inline">\(\alpha\)</span> is near 0: Poisson is adequate.
+Neither the estimate of <span class="math inline">\(\ln\alpha\)</span>
+nor its Wald standard error is meaningful there, and a likelihood-ratio
+test against Poisson needs the boundary-corrected reference distribution
+that <code>regCompTest()</code> and <code>summary()</code> use.</p>
+</div>
+<div id="weak-identification" class="section level3">
+<h3>Weak identification</h3>
+<p>A model can be identified in principle but not by the data at hand:
+the likelihood has a long, nearly flat ridge. Standard errors computed
+from the curvature can then be finite and even small while the estimates
+are unstable. Small standard errors are not proof of identification.
+flexCountReg warns in the cases it can detect (for example a constant
+zero-inflation probability driven to 0, or an underreporting model whose
+reporting and count coefficients are nearly collinear). The simulations
+in
+<code>vignette(&quot;underreporting-and-identification&quot;, package = &quot;flexCountReg&quot;)</code>
+show that refitting replicate samples is the most reliable check.</p>
+</div>
+<div id="rank-deficiency" class="section level3">
+<h3>Rank deficiency</h3>
+<p>A variable that is an exact linear combination of others is not
+estimable. flexCountReg stops instead of reporting arbitrary
+coefficients:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">rnorm</span>(<span class="dv">100</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>d<span class="sc">$</span>x2 <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> d<span class="sc">$</span>x</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>d<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rpois</span>(<span class="dv">100</span>, <span class="fu">exp</span>(<span class="fl">0.3</span> <span class="sc">+</span> <span class="fl">0.2</span> <span class="sc">*</span> d<span class="sc">$</span>x))</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>res <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(<span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> x2, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>),</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>                <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>res</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;The design matrix of `formula` is rank deficient: x2 is a linear combination of other columns (aliased). Remove it.&quot;</span></span></code></pre></div>
+</div>
+</div>
+<div id="starting-values-and-optimizers" class="section level2">
+<h2>Starting values and optimizers</h2>
+<p>When different starts or optimizers end at materially different
+log-likelihoods, the lower ones are not maxima, or the likelihood has
+several local maxima. Refit from a deliberately poor start with
+<code>start.vals</code> (one value per parameter, in the order of
+<code>coef()</code>):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>bad_start <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">3</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>from_bad <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> washington_roads, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                     <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">start.vals =</span> bad_start)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">default_start =</span> <span class="fu">fit_status</span>(fits<span class="sc">$</span>BFGS)[, <span class="fu">c</span>(<span class="st">&quot;converged&quot;</span>, <span class="st">&quot;logLik&quot;</span>)],</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>      <span class="at">poor_start =</span> <span class="fu">fit_status</span>(from_bad)[, <span class="fu">c</span>(<span class="st">&quot;converged&quot;</span>, <span class="st">&quot;logLik&quot;</span>)])</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;               converged    logLik</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; default_start      TRUE -1084.942</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; poor_start         TRUE -1084.942</span></span></code></pre></div>
+<p>Here the poor start reaches the same maximum. When it does not,
+report the best fit, and treat the disagreement as a warning about the
+model or the data rather than a nuisance to suppress. Raising
+<code>max.iters</code> is only useful when the status shows that the
+iteration limit stopped the optimizer.</p>
+</div>
+<div id="numerical-integration-outer-draws-and-inner-integrals" class="section level2">
+<h2>Numerical integration: outer draws and inner integrals</h2>
+<p>Some models need integrals that have no closed form. There are two
+different kinds, controlled by different arguments:</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Integral</th>
+<th>Control</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>countreg()</code> with PLN, PGE, PW or PLL</td>
+<td>the mixing distribution of the family (inner)</td>
+<td><code>engine</code>: <code>&quot;quadrature&quot;</code> (default, adaptive;
+<code>ndraws</code> is not used) or <code>&quot;halton&quot;</code>
+(<code>ndraws</code> draws)</td>
+</tr>
+<tr class="even">
+<td><code>countreg_rp()</code></td>
+<td>the random parameters (outer)</td>
+<td><code>ndraws</code> Halton draws (<code>scrambled</code> for
+scrambled draws)</td>
+</tr>
+<tr class="odd">
+<td><code>countreg_rp()</code> with PLN, PGE, PW or PLL</td>
+<td>the mixing distribution, inside each outer draw</td>
+<td><code>engine</code>; <code>mix_draws</code> only with
+<code>engine = &quot;halton&quot;</code></td>
+</tr>
+</tbody>
+</table>
+<div id="inner-integrals-the-poisson-lognormal-family" class="section level3">
+<h3>Inner integrals: the Poisson-lognormal family</h3>
+<p>On a subsample of 400 road segments, the Poisson-lognormal model is
+fitted with adaptive quadrature and with Halton draws of increasing
+number:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>sub <span class="ot">&lt;-</span> washington_roads[<span class="fu">sample</span>(<span class="fu">nrow</span>(washington_roads), <span class="dv">400</span>), ]</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>pln <span class="ot">&lt;-</span> <span class="cf">function</span>(engine, ndraws) {</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> sub, <span class="at">family =</span> <span class="st">&quot;PLN&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>                <span class="at">engine =</span> engine, <span class="at">ndraws =</span> ndraws)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">engine =</span> engine, <span class="at">ndraws =</span> ndraws,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>             <span class="at">logLik =</span> m<span class="sc">$</span>model<span class="sc">$</span>maximum,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>             <span class="at">ln_sigma =</span> <span class="fu">coef</span>(m)[[<span class="st">&quot;ln(sigma)&quot;</span>]],</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>             <span class="at">se_ln_sigma =</span> <span class="fu">summary</span>(m)<span class="sc">$</span>coefficients[<span class="st">&quot;ln(sigma)&quot;</span>, <span class="dv">2</span>])</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>}</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>quad <span class="ot">&lt;-</span> <span class="fu">rbind</span>(<span class="fu">pln</span>(<span class="st">&quot;quadrature&quot;</span>, <span class="dv">50</span>), <span class="fu">pln</span>(<span class="st">&quot;quadrature&quot;</span>, <span class="dv">1500</span>))</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>halton <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">c</span>(<span class="dv">25</span>, <span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">200</span>, <span class="dv">400</span>),</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>                                <span class="cf">function</span>(r) <span class="fu">pln</span>(<span class="st">&quot;halton&quot;</span>, r)))</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="fu">rbind</span>(quad, halton)</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;       engine ndraws    logLik   ln_sigma se_ln_sigma</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; 1 quadrature     50 -294.4796 -0.5551128   0.2285614</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; 2 quadrature   1500 -294.4796 -0.5551128   0.2285614</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; 3     halton     25 -294.4376 -0.3531253   0.2339550</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; 4     halton     50 -294.4294 -0.4321822   0.2295869</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; 5     halton    100 -294.4224 -0.4745107   0.2279421</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; 6     halton    200 -294.4255 -0.5017463   0.2275437</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; 7     halton    400 -294.4333 -0.5200564   0.2265139</span></span></code></pre></div>
+<p>The two quadrature fits are identical: quadrature ignores
+<code>ndraws</code>, and increasing it there only suggests a check that
+was not made. With Halton draws, <span class="math inline">\(\ln\sigma\)</span> moves steadily toward the
+quadrature value as the draws increase:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">plot</span>(halton<span class="sc">$</span>ndraws, halton<span class="sc">$</span>ln_sigma, <span class="at">type =</span> <span class="st">&quot;b&quot;</span>, <span class="at">log =</span> <span class="st">&quot;x&quot;</span>, <span class="at">pch =</span> <span class="dv">19</span>,</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>     <span class="at">ylim =</span> <span class="fu">range</span>(halton<span class="sc">$</span>ln_sigma, quad<span class="sc">$</span>ln_sigma),</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Halton draws (log scale)&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Estimate of ln(sigma)&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Poisson-lognormal: Halton draws against quadrature&quot;</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h =</span> quad<span class="sc">$</span>ln_sigma[<span class="dv">1</span>], <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;bottomright&quot;</span>, <span class="fu">c</span>(<span class="st">&quot;Halton&quot;</span>, <span class="st">&quot;adaptive quadrature&quot;</span>), <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>       <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">19</span>, <span class="cn">NA</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>A simulated likelihood with too few draws is biased, here toward a
+smaller <span class="math inline">\(\sigma\)</span>, and its
+log-likelihood is not comparable with the quadrature one. The Halton
+engine is kept to reproduce fits from earlier versions.</p>
+</div>
+<div id="outer-draws-random-parameters" class="section level3">
+<h3>Outer draws: random parameters</h3>
+<p>For a random-parameter model, compare the estimates as the number of
+outer draws increases (on the same subsample):</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>rp_fit <span class="ot">&lt;-</span> <span class="cf">function</span>(r) {</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> lnlength,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                   <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50, <span class="at">data =</span> sub,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                   <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">ndraws =</span> r, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  co <span class="ot">&lt;-</span> <span class="fu">summary</span>(m)<span class="sc">$</span>coefficients</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">ndraws =</span> r, <span class="at">converged =</span> m<span class="sc">$</span>model<span class="sc">$</span>converged,</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>             <span class="at">logLik =</span> <span class="fu">round</span>(m<span class="sc">$</span>model<span class="sc">$</span>maximum, <span class="dv">3</span>),</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>             <span class="at">mean =</span> co[<span class="st">&quot;speed50:Mean&quot;</span>, <span class="dv">1</span>], <span class="at">sd =</span> co[<span class="st">&quot;speed50:St.Dev&quot;</span>, <span class="dv">1</span>],</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>             <span class="at">se_sd =</span> co[<span class="st">&quot;speed50:St.Dev&quot;</span>, <span class="dv">2</span>])</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>}</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>rp_draws <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">c</span>(<span class="dv">50</span>, <span class="dv">100</span>, <span class="dv">200</span>), rp_fit))</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>rp_draws</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt;   ndraws converged   logLik       mean        sd     se_sd</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; 1     50      TRUE -294.253 -0.5235856 0.5163452 0.5927090</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; 2    100      TRUE -294.262 -0.5296093 0.4808545 0.5647731</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; 3    200      TRUE -294.269 -0.5315672 0.4565646 0.5645342</span></span></code></pre></div>
+<p>The estimated standard deviation of the random parameter changes with
+the draws by an amount that is small relative to its standard error
+here, but it has not settled. Choose the number of draws by this kind of
+comparison for the model at hand, and report it. Larger models and
+studies belong in scripts outside of a vignette build.</p>
+</div>
+</div>
+<div id="three-reasons-a-prediction-is-not-a-number" class="section level2">
+<h2>Three reasons a prediction is not a number</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>rp_ln <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> lnlength,</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>                     <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>                     <span class="at">rpardists =</span> <span class="fu">c</span>(<span class="at">speed50 =</span> <span class="st">&quot;ln&quot;</span>), <span class="at">data =</span> sub,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>                     <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; errors of (Intercept), speed50:Mean, speed50:St.Dev are NA. The estimate may be</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; on the boundary of the parameter space or not at a maximum.</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>nd <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">lnaadt =</span> <span class="fu">log</span>(<span class="dv">5000</span>), <span class="at">lnlength =</span> <span class="dv">0</span>, <span class="at">speed50 =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="fu">predict</span>(rp_ln, <span class="at">newdata =</span> nd, <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; Warning: 1 prediction(s) are infinite: the expected value does not exist for a</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; lognormal random parameter with a positive x, or a gamma random parameter with</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; x * sigma^2 / mu &gt;= 1. See ?countreg.rp.</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; [1] 1.5748    Inf</span></span></code></pre></div>
+<ol style="list-style-type: decimal">
+<li><p><strong>The expectation does not exist.</strong> With a lognormal
+random parameter <span class="math inline">\(\beta\)</span>, the
+expected count <span class="math inline">\(E[\exp(x\beta)]\)</span> is
+infinite for every <span class="math inline">\(x &gt; 0\)</span>: the
+lognormal distribution has no moment-generating function for positive
+arguments. flexCountReg returns <code>Inf</code> with a warning, for
+both <code>&quot;Exact&quot;</code> and <code>&quot;Simulated&quot;</code> predictions. This
+is a property of the model, not a numerical failure. (Here the fit also
+put the lognormal parameter at the edge of its space, with
+<code>NA</code> standard errors: a lognormal effect is positive, while
+the effect of <code>speed50</code> is negative.)</p></li>
+<li><p><strong>The expectation exists but exceeds the floating-point
+range.</strong> With a normal random parameter, <span class="math inline">\(E[\exp(x\beta)] = \exp(x\mu +
+x^2\sigma^2/2)\)</span> is finite for every <span class="math inline">\(x\)</span>, but it overflows for extreme <span class="math inline">\(x\)</span>. The value below is far outside the
+data (<code>speed50</code> is 0 or 1) and is used only to show the
+message:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>rp_n <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> lnlength,</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>                    <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50, <span class="at">data =</span> sub,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>                    <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="fu">predict</span>(rp_n, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">lnaadt =</span> <span class="fu">log</span>(<span class="dv">5000</span>), <span class="at">lnlength =</span> <span class="dv">0</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>                                   <span class="at">speed50 =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">100</span>)),</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>        <span class="at">method =</span> <span class="st">&quot;Exact&quot;</span>)</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; Warning: 1 Exact prediction(s) exist but exceed the largest representable</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; number (overflow); they are Inf.</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; [1] 1.168687      Inf</span></span></code></pre></div></li>
+<li><p><strong>A valid quantity was not approximated.</strong> Tolerance
+intervals need the predictive distribution’s upper tail. With a
+deliberately small <code>max_count</code>, the tail is not resolved, and
+the interval is reported as unavailable with a status rather than
+truncated silently:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>nb <span class="ot">&lt;-</span> fits<span class="sc">$</span>BFGS</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>at <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">lnaadt =</span> <span class="fu">log</span>(<span class="fu">c</span>(<span class="dv">2000</span>, <span class="dv">20000</span>)), <span class="at">lnlength =</span> <span class="fu">log</span>(<span class="dv">2</span>),</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>                 <span class="at">speed50 =</span> <span class="dv">0</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="fu">tolerance_interval</span>(nb, <span class="at">newdata =</span> at, <span class="at">max_count =</span> <span class="dv">15</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; Tolerance intervals: content 0.95, confidence 0.95, two-sided, pointwise</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; Method: joint (normal)</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt;          fit lower upper min_content</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; 1  0.9836129    NA    NA          NA</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; 2 11.8924520    NA    NA          NA</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;                                          status</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; 1 upper tail not resolved within max_count = 15</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; 2 upper tail not resolved within max_count = 15</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="fu">tolerance_interval</span>(nb, <span class="at">newdata =</span> at)</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; Tolerance intervals: content 0.95, confidence 0.95, two-sided, pointwise</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; Method: joint (normal)</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt;          fit lower upper min_content status</span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; 1  0.9836129     0     4   0.9620973     ok</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; 2 11.8924520     0    40   0.9512015     ok</span></span></code></pre></div></li>
+</ol>
+</div>
+<div id="reporting-an-unresolved-problem" class="section level2">
+<h2>Reporting an unresolved problem</h2>
+<p>When a fit remains doubtful after these checks, a useful report
+contains: the code and data (or a simulated dataset with the same
+problem), the seed, the fit-status table, the warnings, and the
+versions:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">c</span>(<span class="at">R =</span> R.version.string,</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="at">flexCountReg =</span> <span class="fu">as.character</span>(utils<span class="sc">::</span><span class="fu">packageVersion</span>(<span class="st">&quot;flexCountReg&quot;</span>)),</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">maxLik =</span> <span class="fu">as.character</span>(utils<span class="sc">::</span><span class="fu">packageVersion</span>(<span class="st">&quot;maxLik&quot;</span>)))</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt;                                   R                        flexCountReg </span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; &quot;R version 4.6.1 (2026-06-24 ucrt)&quot;                             &quot;0.1.2&quot; </span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt;                              maxLik </span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt;                            &quot;1.6.10&quot;</span></span></code></pre></div>
+<p>Issues can be reported at <a href="https://github.com/jwood-iastate/flexCountReg/issues" class="uri">https://github.com/jwood-iastate/flexCountReg/issues</a>.</p>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
+<ul>
+<li>Check the gradient, the curvature and the condition of the Hessian,
+not only <code>converged</code>.</li>
+<li>Rescale variables that make the condition number very large.</li>
+<li>Treat estimates that do not move from their starting values,
+<code>NA</code> standard errors and nearly flat directions as
+information about the model, not as noise to suppress.</li>
+<li>Know which control governs which integral, and compare results as it
+changes.</li>
+<li>An infinite prediction can be a property of the model, an overflow,
+or an approximation that was not achieved; the warnings and statuses say
+which.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

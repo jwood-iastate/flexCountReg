@@ -108,6 +108,18 @@ NULL
               toString(if (!is.null(nm)) nm[flat] else which(flat)),
               "; their standard errors are NA."),
             call. = FALSE)
+  } else {
+    # Invertible, but not a maximum in every direction (for example a
+    # parameter drifting to the boundary of its space): negative variances
+    bad <- !is.finite(diag(V)) | diag(V) < 0
+    if (any(bad)) {
+      nm <- colnames(H) %||% names(fit$estimate)
+      warning("The Hessian is not negative definite at the estimates, so ",
+              "the standard errors of ",
+              toString(if (!is.null(nm)) nm[bad] else which(bad)),
+              " are NA. The estimate may be on the boundary of the ",
+              "parameter space or not at a maximum.", call. = FALSE)
+    }
   }
   V
 }

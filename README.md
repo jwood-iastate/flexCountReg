@@ -49,9 +49,9 @@ devtools::install_github("jwood-iastate/flexCountReg")
 - `countreg()` estimates cross-sectional count regression models with
   any of the distributions below, optional models for the distribution
   parameters, underreporting, and zero-inflated or hurdle zero models.
-- `countreg.rp()` (also `countreg_rp()`) estimates random parameters
-  count models, optionally with panels, correlated random parameters,
-  and heterogeneity in the means and variances of the random parameters.
+- `countreg_rp()` estimates random parameters count models, optionally
+  with panels, correlated random parameters, and heterogeneity in the
+  means and variances of the random parameters.
 - `renb()` estimates the random effects negative binomial regression
   model.
 - `poisLind.re()` (also `poislind_re()`) estimates the random effects
@@ -140,7 +140,7 @@ Density (`d`), distribution (`p`), quantile (`q`) and random generation
 - Sichel: `dsichel`, `psichel`, `qsichel`, `rsichel`
 
 See `?count_families` for every distribution available in `countreg()`
-and `countreg.rp()`, with its parameters, variance and model features.
+and `countreg_rp()`, with its parameters, variance and model features.
 
 *Continuous distributions*
 
@@ -525,3 +525,12 @@ The vignettes cover the main workflows. Start with
   `vignette("predictive-validation", package = "flexCountReg")`
 - Predicting new units and known units in panel data:
   `vignette("prediction-for-panel-data", package = "flexCountReg")`
+
+*Advanced*
+
+- Numerical reliability: convergence, integration and difficult fits:
+  `vignette("numerical-reliability", package = "flexCountReg")`
+- Simulation studies for count models:
+  `vignette("simulation-studies", package = "flexCountReg")`
+- Adding a count distribution to flexCountReg:
+  `vignette("extending-count-distributions", package = "flexCountReg")`

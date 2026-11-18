@@ -1,0 +1,325 @@
+---
+title: "Simulation studies for count models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Simulation studies for count models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 4)
+old_rng <- RNGkind()
+```
+
+When the data-generating process is known, a simulation study shows how
+an estimation procedure behaves: whether its estimates are biased, whether
+its standard errors match the actual variability, and whether its
+intervals cover the true value as often as they claim. This vignette builds
+a small study step by step. Its replicate counts are chosen to keep the
+vignette quick; they illustrate the workflow and do not establish the
+properties of any method. A parameterized script for a full-size study is
+included with the package (see the end).
+
+```{r setup}
+library(flexCountReg)
+```
+
+## 1. Design the study before generating data
+
+The estimand is the coefficient $\beta_x$ of a covariate $x$ in a
+log-linear count model with an exposure offset:
+
+$$E[Y_i] = t_i \exp(\beta_0 + \beta_x x_i), \quad
+\beta_0 = 0.5, \; \beta_x = 0.4, \;
+x_i \sim N(0, 1), \; t_i \sim U(0.5, 2).$$
+
+The counts are Poisson or NB2 with $\alpha = 0.5$, with $n = 100$ or
+$400$ independent rows. Two procedures are compared on every dataset: a
+Poisson model and an NB2 model, both with Hessian-based standard errors
+and 95% Wald intervals.
+
+```{r scenarios}
+scenarios <- expand.grid(family = c("POISSON", "NB2"), n = c(100, 400),
+                         stringsAsFactors = FALSE)
+scenarios$beta0 <- 0.5
+scenarios$beta_x <- 0.4
+scenarios$alpha <- ifelse(scenarios$family == "NB2", 0.5, NA)
+scenarios$id <- seq_len(nrow(scenarios))
+scenarios
+```
+
+## 2. A generator that can be checked
+
+The data are generated with base R's `rpois()` and `rnbinom()`, so the
+generator is independent of the code being evaluated:
+
+```{r generator}
+generate <- function(sc) {
+  x <- rnorm(sc$n)
+  t <- runif(sc$n, 0.5, 2)
+  mu <- t * exp(sc$beta0 + sc$beta_x * x)
+  y <- if (sc$family == "POISSON") rpois(sc$n, mu) else
+    rnbinom(sc$n, size = 1 / sc$alpha, mu = mu)
+  data.frame(y, x, log_t = log(t))
+}
+```
+
+Two checks against independent results. First, with $\alpha = 1$ the NB2
+distribution is geometric, so the generator's frequencies must match
+`dgeom()`:
+
+```{r check-geometric}
+set.seed(1)
+draws <- rnbinom(1e5, size = 1, mu = 2)
+round(rbind(simulated = tabulate(draws + 1, 6) / 1e5,
+            geometric = dgeom(0:5, prob = 1 / 3)), 4)
+```
+
+Second, the package's own `simulate()` method, used later for fitted
+models, must reproduce the NB2 mean and variance at the fitted parameters:
+
+```{r check-simulate}
+set.seed(2)
+d <- generate(scenarios[scenarios$family == "NB2" & scenarios$n == 400, ])
+fit <- countreg(y ~ x + offset(log_t), data = d, family = "NB2",
+                method = "BFGS")
+sims <- simulate(fit, nsim = 2000, seed = 3)
+mu <- predict(fit)
+alpha <- exp(coef(fit)[["ln(alpha)"]])
+summary(data.frame(mean_ratio = rowMeans(sims) / mu,
+                   var_ratio = apply(sims, 1, var) / (mu + alpha * mu^2)))
+```
+
+Both ratios are centred on 1, with the spread expected from 2,000 draws.
+
+## 3. One replicate, with its status
+
+A replicate generates one dataset, applies each procedure, and returns
+one row per procedure. Failures and warnings are recorded, not dropped:
+
+```{r replicate}
+fit_one <- function(d, family) {
+  warn <- character(0)
+  m <- tryCatch(
+    withCallingHandlers(
+      countreg(y ~ x + offset(log_t), data = d, family = family,
+               method = "BFGS"),
+      warning = function(w) {
+        warn <<- c(warn, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      }),
+    error = function(e) e)
+  if (inherits(m, "error")) {
+    return(data.frame(estimate = NA, se = NA, status = "error",
+                      note = conditionMessage(m)))
+  }
+  co <- summary(m)$coefficients
+  status <- if (!isTRUE(m$model$converged)) "not converged" else
+    if (length(warn)) "warning" else "ok"
+  data.frame(estimate = co["x", 1], se = co["x", 2], status = status,
+             note = paste(warn, collapse = "; "))
+}
+
+one_replicate <- function(sc, rep) {
+  d <- generate(sc)
+  out <- do.call(rbind, lapply(c("POISSON", "NB2"), function(proc)
+    cbind(scenario = sc$id, rep = rep, procedure = proc, fit_one(d, proc))))
+  out$truth <- sc$beta_x
+  out
+}
+```
+
+## 4. Reproducible random numbers
+
+Each replicate gets its own stream of the L'Ecuyer-CMRG generator, derived
+from one seed. The results do not depend on the order in which replicates
+are run, so the same streams can be used by parallel workers (for example
+with `parallel::mclapply()` or `future.apply`), and any single replicate can
+be rerun on its own:
+
+```{r streams}
+RNGkind("L'Ecuyer-CMRG")
+set.seed(2026)
+make_streams <- function(k) {
+  s <- .Random.seed
+  lapply(seq_len(k), function(i) s <<- parallel::nextRNGStream(s))
+}
+R <- 100
+streams <- make_streams(nrow(scenarios) * R)
+run_scenario <- function(sc) {
+  do.call(rbind, lapply(seq_len(R), function(r) {
+    assign(".Random.seed", streams[[(sc$id - 1) * R + r]],
+           envir = globalenv())
+    one_replicate(sc, r)
+  }))
+}
+results <- do.call(rbind, lapply(split(scenarios, scenarios$id),
+                                 run_scenario))
+results <- merge(scenarios[c("id", "family", "n")], results,
+                 by.x = "id", by.y = "scenario")
+head(results)
+table(results$procedure, results$status)
+```
+
+The result is a tidy table with one row per scenario, replicate and
+procedure. Notes on warnings are kept with the row they belong to.
+
+## 5. Summaries with Monte Carlo standard errors
+
+For each scenario and procedure: bias, empirical standard deviation of the
+estimates, mean reported standard error, root mean squared error and the
+coverage of the 95% Wald interval, each with its Monte Carlo standard error
+(MCSE). Summaries use the successful fits; the attempted and successful
+counts are shown so that the conditioning is visible.
+
+```{r summarize}
+summarize_sim <- function(res) {
+  do.call(rbind, lapply(split(res, list(res$id, res$procedure)),
+                        function(d) {
+    ok <- d$status %in% c("ok", "warning") & is.finite(d$se)
+    e <- d$estimate[ok]
+    se <- d$se[ok]
+    k <- sum(ok)
+    cover <- abs(e - d$truth[ok]) <= qnorm(0.975) * se
+    data.frame(data = d$family[1], n = d$n[1], procedure = d$procedure[1],
+               attempted = nrow(d), used = k,
+               bias = mean(e - d$truth[ok]), mcse_bias = sd(e) / sqrt(k),
+               emp_sd = sd(e), mean_se = mean(se),
+               rmse = sqrt(mean((e - d$truth[ok])^2)),
+               coverage = mean(cover),
+               mcse_coverage = sqrt(mean(cover) * (1 - mean(cover)) / k))
+  }))
+}
+summary_table <- summarize_sim(results)
+summary_table[order(summary_table$data, summary_table$n), -c(4, 5)] |>
+  format(digits = 3)
+summary_table[, c("data", "n", "procedure", "attempted", "used")]
+```
+
+```{r summary-text, include = FALSE}
+st <- summary_table
+pois_on_nb <- st[st$data == "NB2" & st$procedure == "POISSON", ]
+nb_on_nb <- st[st$data == "NB2" & st$procedure == "NB2", ]
+n_warn <- sum(results$status == "warning")
+```
+
+On NB2 data, the Poisson procedure's reported standard errors are much
+smaller than the actual spread of its estimates (for $n = 400$, a mean
+standard error of `r round(pois_on_nb$mean_se[pois_on_nb$n == 400], 3)`
+against an empirical standard deviation of
+`r round(pois_on_nb$emp_sd[pois_on_nb$n == 400], 3)`), so its intervals
+cover the true value only
+`r round(100 * pois_on_nb$coverage[pois_on_nb$n == 400])`% of the time
+(MCSE `r round(100 * pois_on_nb$mcse_coverage[pois_on_nb$n == 400], 1)`
+points). The NB2 procedure's coverage is
+`r round(100 * nb_on_nb$coverage[nb_on_nb$n == 400])`%. Both
+estimators are nearly unbiased: the Poisson estimator is consistent for
+$\beta_x$ under NB2 data, but its standard errors are not.
+
+With `r R` replicates, a coverage estimate near 95% has an MCSE of about
+2.2 percentage points, too large to distinguish 93% from 95%. Differences
+smaller than about two MCSEs are not evidence of anything.
+
+`r n_warn` of the `r nrow(results)` fits gave a warning. These are NB2 fits to
+Poisson data, where the dispersion approaches its boundary (see
+`vignette("numerical-reliability", package = "flexCountReg")`). They are
+kept in the summaries, because the coefficient of $x$ is still estimated
+well; a study whose target was the dispersion would have to treat them
+separately.
+
+## 6. Panel data: keep the independent unit
+
+With repeated measurements, the independent unit is the group, and the
+generator must give all rows of a group one shared effect. Here, 100 units
+are each observed 5 times, with a gamma-distributed unit effect (mean 1,
+variance 0.5), a unit-level covariate $z$ and a row-level covariate $x$:
+
+```{r panel-generator}
+generate_panel <- function(n_units = 100, T = 5, theta = 0.5) {
+  id <- rep(seq_len(n_units), each = T)
+  u <- rgamma(n_units, shape = 1 / theta, rate = 1 / theta)[id]
+  z <- rnorm(n_units)[id]
+  x <- rnorm(n_units * T)
+  data.frame(id, z, x, y = rpois(n_units * T, u * exp(0.2 + 0.4 * z +
+                                                        0.3 * x)))
+}
+```
+
+The negative multinomial model of `negmultinom()` (family `"NM2"`, the
+default) matches this process: Poisson counts given a gamma unit effect
+with mean 1 and variance $lpha$ (here 0.5), shared by the rows of a unit.
+The pooled Poisson model ignores the grouping:
+
+```{r panel-study}
+panel_rep <- function(r) {
+  assign(".Random.seed", panel_streams[[r]], envir = globalenv())
+  d <- generate_panel()
+  est <- function(m, nm) {
+    co <- summary(m)$coefficients
+    c(estimate = co[nm, 1], se = co[nm, 2])
+  }
+  pooled <- countreg(y ~ z + x, data = d, family = "POISSON",
+                     method = "BFGS")
+  nm <- negmultinom(y ~ z + x, group_var = "id", data = d)
+  rbind(data.frame(rep = r, procedure = "pooled Poisson",
+                   term = c("z", "x"),
+                   rbind(est(pooled, "z"), est(pooled, "x")),
+                   converged = pooled$model$converged),
+        data.frame(rep = r, procedure = "negative multinomial",
+                   term = c("z", "x"), rbind(est(nm, "z"), est(nm, "x")),
+                   converged = nm$model$converged))
+}
+R_panel <- 100
+panel_streams <- make_streams(R_panel)
+panel <- do.call(rbind, lapply(seq_len(R_panel), panel_rep))
+panel$truth <- ifelse(panel$term == "z", 0.4, 0.3)
+panel$cover <- abs(panel$estimate - panel$truth) <=
+  qnorm(0.975) * panel$se
+aggregate(cbind(estimate, se, cover, converged) ~ procedure + term,
+          data = panel, FUN = mean)
+aggregate(estimate ~ procedure + term, data = panel, FUN = sd)
+```
+
+The pooled model's standard error for the unit-level covariate $z$ is far
+below the spread of its estimates, and its intervals undercover; the
+negative multinomial model accounts for the shared effect. Bootstrap or
+cross-validation in such a study must also resample whole units, never
+rows (`stderr = "boot"` in the panel models does this).
+
+## 7. A full-size study
+
+The package includes a parameterized script for a larger version of this
+study:
+
+```{r script-path}
+script <- system.file("validation", "simulation-studies",
+                      "count-regression-study.R", package = "flexCountReg")
+file.exists(script)
+```
+
+(`script` holds its location on your computer.) It runs the scenarios
+above with a chosen number of replicates (the
+environment variable `REPS`, default 1000) and seed (`SEED`), using one
+random-number stream per replicate, and writes the replicate results, the
+summary table, and a record of the settings, R and package versions and
+the random-number generator. Run it from a terminal, for example:
+
+```
+REPS=1000 SEED=2026 Rscript count-regression-study.R
+```
+
+## Checklist
+
+* Write down the estimand, the scenarios and the procedures first.
+* Check the generator against independent special cases.
+* Return a status for every fit; never drop failures silently.
+* Report MCSEs and the number of attempted and used replicates.
+* Use independent, reproducible random-number streams per replicate.
+* In panel designs, generate and resample whole units.
+* Record the seed, settings and software versions with the results.
+
+```{r restore-rng, include = FALSE}
+do.call(RNGkind, as.list(old_rng))
+```

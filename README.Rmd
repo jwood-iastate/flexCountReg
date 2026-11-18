@@ -45,7 +45,7 @@ devtools::install_github("jwood-iastate/flexCountReg")
 **Model Estimation Functions**
 
 - `countreg()` estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models.
-- `countreg.rp()` (also `countreg_rp()`) estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.
+- `countreg_rp()` estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.
 - `renb()` estimates the random effects negative binomial regression model.
 - `poisLind.re()` (also `poislind_re()`) estimates the random effects Poisson-Lindley model.
 - `negmultinom()` estimates negative multinomial (random effects) panel models (NM1, NM2 and NM-P).
@@ -103,7 +103,7 @@ for (tp in topics[order(tolower(titles))]) {
 }
 ```
 
-See `?count_families` for every distribution available in `countreg()` and `countreg.rp()`, with its parameters, variance and model features.
+See `?count_families` for every distribution available in `countreg()` and `countreg_rp()`, with its parameters, variance and model features.
 
 *Continuous distributions*
 

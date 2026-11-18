@@ -14,7 +14,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 Road segments, intersections or individuals observed repeatedly are not
 independent, and the effect of a variable often differs from one unit to
 another. flexCountReg handles both with random-parameter models
-(`countreg.rp()`, also available as `countreg_rp()`) and random-effects
+(`countreg_rp()`) and random-effects
 models (`renb()`, `poisLind.re()`, `repois()` and `negmultinom()`).
 
 ```{r setup}
@@ -254,6 +254,8 @@ information and makes the models look better than they are.
   separates predictions for new patients from those for known patients.
 * `vignette("predictive-validation", package = "flexCountReg")` builds
   grouped cross-validation step by step.
+* `vignette("numerical-reliability", package = "flexCountReg")` shows how
+  to check the number of draws and other numerical settings.
 
 ## References
 

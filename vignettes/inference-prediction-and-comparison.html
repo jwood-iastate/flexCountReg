@@ -367,7 +367,7 @@ wrong mean model (they are then estimates of something else, whatever
 their standard errors), and with sampling weights it is not a full
 survey-design analysis (strata, clusters and finite-population
 corrections are not modelled). For panel models
-(<code>countreg.rp()</code> with <code>group_var</code>,
+(<code>countreg_rp()</code> with <code>group_var</code>,
 <code>renb()</code>, <code>poisLind.re()</code>, <code>repois()</code>,
 <code>negmultinom()</code>) the log-likelihood has one contribution per
 panel, so these standard errors are cluster-robust; for
@@ -627,15 +627,18 @@ weights when weights are used.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>po <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>nb1 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;NB1&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>pl <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;PL&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">list</span>(<span class="at">Poisson =</span> po, <span class="at">NB1 =</span> nb1, <span class="at">NB2 =</span> nb_h, <span class="at">PL =</span> pl),</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                      <span class="cf">function</span>(m) <span class="fu">glance</span>(m)[, <span class="fu">c</span>(<span class="st">&quot;logLik&quot;</span>, <span class="st">&quot;AIC&quot;</span>, <span class="st">&quot;BIC&quot;</span>)]))</span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 × 3</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;   logLik   AIC   BIC</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; *  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; 1 -1101. 2209. 2230.</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; 2 -1089. 2188. 2215.</span></span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; 3 -1085. 2180. 2206.</span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; 4 -1086. 2182. 2209.</span></span></code></pre></div>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; errors of ln(theta) are NA. The estimate may be on the boundary of the</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; parameter space or not at a maximum.</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">list</span>(<span class="at">Poisson =</span> po, <span class="at">NB1 =</span> nb1, <span class="at">NB2 =</span> nb_h, <span class="at">PL =</span> pl),</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>                      <span class="cf">function</span>(m) <span class="fu">glance</span>(m)[, <span class="fu">c</span>(<span class="st">&quot;logLik&quot;</span>, <span class="st">&quot;AIC&quot;</span>, <span class="st">&quot;BIC&quot;</span>)]))</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 × 3</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;   logLik   AIC   BIC</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; *  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; 1 -1101. 2209. 2230.</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; 2 -1089. 2188. 2215.</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; 3 -1085. 2180. 2206.</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; 4 -1086. 2182. 2209.</span></span></code></pre></div>
 </div>
 <div id="likelihood-ratio-tests" class="section level3">
 <h3>Likelihood-ratio tests</h3>

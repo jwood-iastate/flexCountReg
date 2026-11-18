@@ -344,8 +344,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <p>Road segments, intersections or individuals observed repeatedly are
 not independent, and the effect of a variable often differs from one
 unit to another. flexCountReg handles both with random-parameter models
-(<code>countreg.rp()</code>, also available as
-<code>countreg_rp()</code>) and random-effects models
+(<code>countreg_rp()</code>) and random-effects models
 (<code>renb()</code>, <code>poisLind.re()</code>, <code>repois()</code>
 and <code>negmultinom()</code>).</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
@@ -675,6 +674,9 @@ separates predictions for new patients from those for known
 patients.</li>
 <li><code>vignette(&quot;predictive-validation&quot;, package = &quot;flexCountReg&quot;)</code>
 builds grouped cross-validation step by step.</li>
+<li><code>vignette(&quot;numerical-reliability&quot;, package = &quot;flexCountReg&quot;)</code>
+shows how to check the number of draws and other numerical
+settings.</li>
 </ul>
 </div>
 <div id="references" class="section level2">

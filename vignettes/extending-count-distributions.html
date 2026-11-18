@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Adding a count distribution to flexCountReg</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Adding a count distribution to
+flexCountReg</h1>
+
+
+
+<p>This article is for contributors. It explains what a new count
+distribution has to provide for it to work throughout flexCountReg, by
+tracing the existing NB2 family through the source code. Code that uses
+<code>flexCountReg:::</code> reaches <em>internal</em> objects: they are
+shown here to explain the implementation, may change between versions,
+and are not part of the user-facing interface. Users only see the
+<code>family</code> argument of <code>countreg()</code> and
+<code>countreg_rp()</code> and the exported distribution functions
+(<code>ddpo()</code>, <code>pdpo()</code> and so on).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span></code></pre></div>
+<div id="define-the-distribution-first" class="section level2">
+<h2>1. Define the distribution first</h2>
+<p>Before writing code, state for the new family:</p>
+<ul>
+<li>its support (here, the counts <span class="math inline">\(0, 1, 2,
+\dots\)</span>);</li>
+<li>its natural parameters and their spaces;</li>
+<li>how the regression enters: in flexCountReg the mean model is <span class="math inline">\(\mu = \exp(X\beta)\)</span> (times an offset), and
+each distribution parameter is <span class="math inline">\(\exp(W\delta)\)</span> of its own linear
+predictor, or a logistic function of it for a probability (labels such
+as <code>ln(alpha)</code> and <code>logit(rho)</code> show the
+scale);</li>
+<li>whether <span class="math inline">\(\mu\)</span> is the actual mean.
+It is for NB2. For the Poisson-lognormal family the mean is <span class="math inline">\(\mu \exp(\sigma^2/2)\)</span>; for the generalized
+Poisson with negative dispersion <span class="math inline">\(\mu\)</span> is a location parameter; for the
+double Poisson, hyper-Poisson, gamma count and discrete Weibull families
+flexCountReg solves numerically for the natural parameter that makes the
+mean equal to <span class="math inline">\(\mu\)</span>.</li>
+</ul>
+<p>These choices decide how coefficients are interpreted, so they belong
+in the documentation (<code>?count_families</code>) as well as in the
+code.</p>
+</div>
+<div id="source-file-map" class="section level2">
+<h2>2. Source-file map</h2>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Piece</th>
+<th>Where</th>
+<th>NB2</th>
+<th>A family added in 0.1.2 (DPO)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Public d/p/q/r functions</td>
+<td><code>R/&lt;name&gt;.R</code></td>
+<td>base R <code>dnbinom()</code> etc.</td>
+<td><code>R/dpo.R</code>: <code>ddpo()</code>, <code>pdpo()</code>,
+<code>qdpo()</code>, <code>rdpo()</code></td>
+</tr>
+<tr class="even">
+<td>Shared argument handling</td>
+<td><code>R/count_dist_utils.R</code></td>
+<td>–</td>
+<td><code>.fcr_d()</code>, <code>.fcr_p()</code>, <code>.fcr_q()</code>,
+<code>.fcr_r()</code></td>
+</tr>
+<tr class="odd">
+<td>Compiled code (if any)</td>
+<td><code>src/*.cpp</code>, then
+<code>Rcpp::compileAttributes()</code></td>
+<td>–</td>
+<td><code>src/meanParam.cpp</code> (mean equation)</td>
+</tr>
+<tr class="even">
+<td>Regression family entry</td>
+<td><code>R/families.R</code> (<code>.fcr_family_registry</code>)</td>
+<td><code>NB2</code> entry</td>
+<td><code>DPO</code> entry</td>
+</tr>
+<tr class="odd">
+<td>Mean-parameterization helpers</td>
+<td><code>R/families_mp.R</code></td>
+<td>–</td>
+<td><code>.tab_mp()</code>, <code>.dpo_mp_rand()</code></td>
+</tr>
+<tr class="even">
+<td>Underreporting (opt-in)</td>
+<td><code>R/families.R</code>: <code>.fcr_thinning_families</code>,
+<code>.fcr_thin_params()</code></td>
+<td>listed</td>
+<td>not closed under thinning</td>
+</tr>
+<tr class="odd">
+<td>Likelihood-ratio nesting (opt-in)</td>
+<td><code>R/nesting.R</code>: <code>.fcr_family_nesting</code></td>
+<td>nests Poisson (boundary)</td>
+<td>nests Poisson (interior)</td>
+</tr>
+<tr class="even">
+<td>Overview documentation</td>
+<td><code>R/count_families.R</code> (<code>?count_families</code>)</td>
+<td>row in each table</td>
+<td>row in each table</td>
+</tr>
+<tr class="odd">
+<td>Reference index</td>
+<td><code>_pkgdown.yml</code> “Count distributions” (also lists them in
+the README)</td>
+<td>–</td>
+<td><code>DoublePoisson</code></td>
+</tr>
+<tr class="even">
+<td>Tests</td>
+<td><code>tests/testthat/</code></td>
+<td>several</td>
+<td><code>test-new-distributions.R</code>,
+<code>test-new-families-regression.R</code>,
+<code>test-count-families-doc.R</code></td>
+</tr>
+<tr class="odd">
+<td>News</td>
+<td><code>NEWS.md</code></td>
+<td>–</td>
+<td>entry for 0.1.2</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="the-regression-family-entry" class="section level2">
+<h2>3. The regression family entry</h2>
+<p>Every family that <code>countreg()</code> and
+<code>countreg_rp()</code> can use has one entry in the internal list
+<code>.fcr_family_registry</code>, built with
+<code>.fcr_family()</code>. The NB2 entry:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>nb2 <span class="ot">&lt;-</span> flexCountReg<span class="sc">:::</span>.fcr_family_registry<span class="sc">$</span>NB2</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">names</span>(nb2)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;params&quot;   &quot;dens&quot;     &quot;variance&quot; &quot;rand&quot;     &quot;mean_adj&quot; &quot;start&quot;    &quot;mean&quot;    </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; [8] &quot;cdf&quot;      &quot;start_rp&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>nb2<span class="sc">$</span>params</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;ln(alpha)&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; [[2]]</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="fu">names</span>(<span class="fu">formals</span>(nb2<span class="sc">$</span>dens))</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; [1] &quot;y&quot;         &quot;predicted&quot; &quot;alpha&quot;     &quot;sigma&quot;     &quot;...&quot;       &quot;log&quot;</span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="fu">body</span>(nb2<span class="sc">$</span>dens)</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; .fcr_quiet_dens(stats::dnbinom(y, size = 1/alpha, mu = predicted, </span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt;     log = log), log)</span></span></code></pre></div>
+<p>The fields (documented at the top of <code>R/families.R</code>):</p>
+<table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>params</code></td>
+<td>labels of the (up to two) distribution parameters, which are also
+the coefficient names; <code>NULL</code> for none</td>
+</tr>
+<tr class="even">
+<td><code>dens</code></td>
+<td><code>function(y, predicted, alpha, sigma, ..., log)</code>: <span class="math inline">\(P(Y = y)\)</span> given the mean parameter
+<code>predicted</code> and the distribution parameters on their natural
+scale; returns probability 0 (or <code>-Inf</code>) outside the
+parameter space, without warnings, because the optimizer tries such
+values</td>
+</tr>
+<tr class="odd">
+<td><code>variance</code></td>
+<td>variance at mean parameter <span class="math inline">\(\mu\)</span>
+(Pearson residuals, documentation tests)</td>
+</tr>
+<tr class="even">
+<td><code>rand</code></td>
+<td>random draws (<code>simulate()</code>, parametric bootstrap)</td>
+</tr>
+<tr class="odd">
+<td><code>cdf</code></td>
+<td>optional log CDF or log survival function, computed directly
+(quantile residuals, intervals); without it the PMF is summed</td>
+</tr>
+<tr class="even">
+<td><code>mean</code>, <code>mean_adj</code></td>
+<td>the mean when it is not <span class="math inline">\(\mu\)</span></td>
+</tr>
+<tr class="odd">
+<td><code>start</code>, <code>start_rp</code></td>
+<td>starting values of the distribution parameters (on the
+linear-predictor scale) for <code>countreg()</code> and
+<code>countreg_rp()</code></td>
+</tr>
+</tbody>
+</table>
+<p>The registry density must agree with an independent calculation:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">6</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">all.equal</span>(nb2<span class="sc">$</span><span class="fu">dens</span>(y, <span class="at">predicted =</span> <span class="fl">2.5</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">sigma =</span> <span class="cn">NULL</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>          <span class="fu">dnbinom</span>(y, <span class="at">size =</span> <span class="dv">1</span> <span class="sc">/</span> <span class="fl">0.4</span>, <span class="at">mu =</span> <span class="fl">2.5</span>))</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<p>The hooks present for each family, read from the registry, together
+with the opt-in features:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>reg <span class="ot">&lt;-</span> flexCountReg<span class="sc">:::</span>.fcr_family_registry</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>nest <span class="ot">&lt;-</span> flexCountReg<span class="sc">:::</span>.fcr_family_nesting</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>label <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="cf">if</span> (<span class="fu">is.null</span>(x)) <span class="st">&quot;--&quot;</span> <span class="cf">else</span> x</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>capabilities <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">names</span>(reg),</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="at">param_1 =</span> <span class="fu">vapply</span>(reg, <span class="cf">function</span>(f) <span class="fu">label</span>(f<span class="sc">$</span>params[[<span class="dv">1</span>]]), <span class="st">&quot;&quot;</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">param_2 =</span> <span class="fu">vapply</span>(reg, <span class="cf">function</span>(f) <span class="fu">label</span>(f<span class="sc">$</span>params[[<span class="dv">2</span>]]), <span class="st">&quot;&quot;</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">variance =</span> <span class="fu">vapply</span>(reg, <span class="cf">function</span>(f) <span class="sc">!</span><span class="fu">is.null</span>(f<span class="sc">$</span>variance), <span class="cn">TRUE</span>),</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">cdf =</span> <span class="fu">vapply</span>(reg, <span class="cf">function</span>(f) <span class="sc">!</span><span class="fu">is.null</span>(f<span class="sc">$</span>cdf), <span class="cn">TRUE</span>),</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">own_mean =</span> <span class="fu">vapply</span>(reg, <span class="cf">function</span>(f) <span class="sc">!</span><span class="fu">is.null</span>(f<span class="sc">$</span>mean), <span class="cn">TRUE</span>),</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">thinning =</span> <span class="fu">names</span>(reg) <span class="sc">%in%</span> flexCountReg<span class="sc">:::</span>.fcr_thinning_families,</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>  <span class="at">lr_vs_poisson =</span> <span class="fu">names</span>(reg) <span class="sc">%in%</span> nest<span class="sc">$</span>full[nest<span class="sc">$</span>restricted <span class="sc">==</span> <span class="st">&quot;POISSON&quot;</span>],</span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>  <span class="at">row.names =</span> <span class="cn">NULL</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>capabilities</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt;        family     param_1   param_2 variance   cdf own_mean thinning</span></span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt; 1     POISSON          --        --     TRUE  TRUE    FALSE     TRUE</span></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; 2         GP1   ln(phi+1)        --     TRUE FALSE     TRUE    FALSE</span></span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; 3         GP2 ln(alpha+1)        --     TRUE FALSE     TRUE    FALSE</span></span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a><span class="co">#&gt; 4         NB1   ln(alpha)        --     TRUE  TRUE    FALSE     TRUE</span></span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a><span class="co">#&gt; 5         NB2   ln(alpha)        --     TRUE  TRUE    FALSE     TRUE</span></span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a><span class="co">#&gt; 6         NBP   ln(alpha)     ln(p)     TRUE  TRUE    FALSE     TRUE</span></span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a><span class="co">#&gt; 7         PLN   ln(sigma)        --     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a><span class="co">#&gt; 8         PGE   ln(shape)        --     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a><span class="co">#&gt; 9        PIG1     ln(eta)        --     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a><span class="co">#&gt; 10       PIG2     ln(eta)        --     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co">#&gt; 11        PIG     ln(eta)        --     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co">#&gt; 12         PL   ln(theta)        --     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co">#&gt; 13        PLG   ln(theta) ln(alpha)     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a><span class="co">#&gt; 14        PLL   ln(theta) ln(sigma)     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a><span class="co">#&gt; 15         PW   ln(alpha)        --     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a><span class="co">#&gt; 16         SI       gamma ln(sigma)     TRUE FALSE    FALSE     TRUE</span></span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a><span class="co">#&gt; 17         GW       ln(k) ln(rho-1)     TRUE FALSE    FALSE    FALSE</span></span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a><span class="co">#&gt; 18        COM      ln(nu)        --     TRUE FALSE    FALSE    FALSE</span></span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a><span class="co">#&gt; 19         DW   ln(shape)        --     TRUE  TRUE    FALSE    FALSE</span></span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a><span class="co">#&gt; 20        DPO     ln(phi)        --     TRUE  TRUE    FALSE    FALSE</span></span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a><span class="co">#&gt; 21  DELAPORTE  logit(rho)     ln(k)     TRUE  TRUE    FALSE     TRUE</span></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a><span class="co">#&gt; 22    HERMITE  logit(rho)        --     TRUE  TRUE    FALSE     TRUE</span></span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a><span class="co">#&gt; 23   HERMITE3  logit(rho)        --     TRUE  TRUE    FALSE    FALSE</span></span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a><span class="co">#&gt; 24   HERMITE4  logit(rho)        --     TRUE  TRUE    FALSE    FALSE</span></span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a><span class="co">#&gt; 25  HYPERPOIS   ln(gamma)        --     TRUE  TRUE    FALSE    FALSE</span></span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a><span class="co">#&gt; 26 GAMMACOUNT   ln(shape)        --     TRUE  TRUE    FALSE    FALSE</span></span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a><span class="co">#&gt; 27         PA     ln(phi)        --     TRUE  TRUE    FALSE     TRUE</span></span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a><span class="co">#&gt; 28       NBGE   ln(shape) ln(alpha)     TRUE  TRUE    FALSE     TRUE</span></span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a><span class="co">#&gt;    lr_vs_poisson</span></span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a><span class="co">#&gt; 1          FALSE</span></span>
+<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a><span class="co">#&gt; 2           TRUE</span></span>
+<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a><span class="co">#&gt; 3           TRUE</span></span>
+<span id="cb4-48"><a href="#cb4-48" tabindex="-1"></a><span class="co">#&gt; 4           TRUE</span></span>
+<span id="cb4-49"><a href="#cb4-49" tabindex="-1"></a><span class="co">#&gt; 5           TRUE</span></span>
+<span id="cb4-50"><a href="#cb4-50" tabindex="-1"></a><span class="co">#&gt; 6          FALSE</span></span>
+<span id="cb4-51"><a href="#cb4-51" tabindex="-1"></a><span class="co">#&gt; 7           TRUE</span></span>
+<span id="cb4-52"><a href="#cb4-52" tabindex="-1"></a><span class="co">#&gt; 8          FALSE</span></span>
+<span id="cb4-53"><a href="#cb4-53" tabindex="-1"></a><span class="co">#&gt; 9           TRUE</span></span>
+<span id="cb4-54"><a href="#cb4-54" tabindex="-1"></a><span class="co">#&gt; 10          TRUE</span></span>
+<span id="cb4-55"><a href="#cb4-55" tabindex="-1"></a><span class="co">#&gt; 11          TRUE</span></span>
+<span id="cb4-56"><a href="#cb4-56" tabindex="-1"></a><span class="co">#&gt; 12         FALSE</span></span>
+<span id="cb4-57"><a href="#cb4-57" tabindex="-1"></a><span class="co">#&gt; 13         FALSE</span></span>
+<span id="cb4-58"><a href="#cb4-58" tabindex="-1"></a><span class="co">#&gt; 14         FALSE</span></span>
+<span id="cb4-59"><a href="#cb4-59" tabindex="-1"></a><span class="co">#&gt; 15         FALSE</span></span>
+<span id="cb4-60"><a href="#cb4-60" tabindex="-1"></a><span class="co">#&gt; 16         FALSE</span></span>
+<span id="cb4-61"><a href="#cb4-61" tabindex="-1"></a><span class="co">#&gt; 17         FALSE</span></span>
+<span id="cb4-62"><a href="#cb4-62" tabindex="-1"></a><span class="co">#&gt; 18          TRUE</span></span>
+<span id="cb4-63"><a href="#cb4-63" tabindex="-1"></a><span class="co">#&gt; 19         FALSE</span></span>
+<span id="cb4-64"><a href="#cb4-64" tabindex="-1"></a><span class="co">#&gt; 20          TRUE</span></span>
+<span id="cb4-65"><a href="#cb4-65" tabindex="-1"></a><span class="co">#&gt; 21         FALSE</span></span>
+<span id="cb4-66"><a href="#cb4-66" tabindex="-1"></a><span class="co">#&gt; 22         FALSE</span></span>
+<span id="cb4-67"><a href="#cb4-67" tabindex="-1"></a><span class="co">#&gt; 23         FALSE</span></span>
+<span id="cb4-68"><a href="#cb4-68" tabindex="-1"></a><span class="co">#&gt; 24         FALSE</span></span>
+<span id="cb4-69"><a href="#cb4-69" tabindex="-1"></a><span class="co">#&gt; 25          TRUE</span></span>
+<span id="cb4-70"><a href="#cb4-70" tabindex="-1"></a><span class="co">#&gt; 26          TRUE</span></span>
+<span id="cb4-71"><a href="#cb4-71" tabindex="-1"></a><span class="co">#&gt; 27         FALSE</span></span>
+<span id="cb4-72"><a href="#cb4-72" tabindex="-1"></a><span class="co">#&gt; 28         FALSE</span></span></code></pre></div>
+</div>
+<div id="public-distribution-functions" class="section level2">
+<h2>4. Public distribution functions</h2>
+<p>A family is more than a likelihood: users need its d/p/q/r functions.
+The families added in 0.1.2 implement four small internal functions and
+pass them to shared wrappers in <code>R/count_dist_utils.R</code>, which
+give every distribution the argument conventions of base R: recycling,
+zero-length inputs, <code>NA</code> and <code>NaN</code>,
+<code>NaN</code> with a warning for invalid parameters, probability 0
+with a warning for non-integer <code>x</code>, <code>lower.tail</code>
+and <code>log.p</code>. For the double Poisson:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">body</span>(ddpo)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; {</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;     .fcr_d(x, list(lambda = lambda, phi = phi), .dpo_valid, .dpo_logpmf, </span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;         log)</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; }</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="fu">body</span>(qdpo)</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; {</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt;     .fcr_q(p, list(lambda = lambda, phi = phi), .dpo_valid, .dpo_logcdf, </span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt;         .dpo_qstart, lower.tail, log.p)</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; }</span></span></code></pre></div>
+<ul>
+<li><code>.dpo_valid()</code> says which parameter values are in the
+parameter space;</li>
+<li><code>.dpo_logpmf()</code> returns <span class="math inline">\(\log
+P(Y = y)\)</span>, computed on the log scale;</li>
+<li><code>.dpo_logcdf()</code> returns <span class="math inline">\(\log
+P(Y \le y)\)</span> or <span class="math inline">\(\log P(Y &gt;
+y)\)</span>, each computed directly, so that tiny upper-tail
+probabilities keep their relative precision (never as <span class="math inline">\(1 - P(Y \le y)\)</span>);</li>
+<li><code>.dpo_qstart()</code> gives a rough starting point for the
+quantile search.</li>
+</ul>
+<p>The contract can be checked numerically. For the Delaporte
+distribution:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="dv">3</span>; rho <span class="ot">&lt;-</span> <span class="fl">0.4</span>; k <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">0</span><span class="sc">:</span><span class="dv">200</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">ddelaporte</span>(x, <span class="at">mu =</span> mu, <span class="at">rho =</span> rho, <span class="at">k =</span> k)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">c</span>(<span class="at">total =</span> <span class="fu">sum</span>(p),</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">mean =</span> <span class="fu">sum</span>(x <span class="sc">*</span> p),</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">cdf_matches_pmf =</span> <span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(<span class="fu">cumsum</span>(p)[<span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>],</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>                                     <span class="fu">pdelaporte</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">19</span>, mu, rho, k))),</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>  <span class="at">log_tail_direct =</span> <span class="fu">pdelaporte</span>(<span class="dv">150</span>, mu, rho, k, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>                               <span class="at">log.p =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;           total            mean cdf_matches_pmf log_tail_direct </span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;          1.0000          3.0000          1.0000       -140.5794</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co"># a quantile is the smallest count whose CDF reaches the probability</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a>q <span class="ot">&lt;-</span> <span class="fu">qdelaporte</span>(<span class="fl">0.9</span>, mu, rho, k)</span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="fu">c</span>(<span class="at">q =</span> q, <span class="at">cdf_q =</span> <span class="fu">pdelaporte</span>(q, mu, rho, k),</span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>  <span class="at">cdf_q_minus_1 =</span> <span class="fu">pdelaporte</span>(q <span class="sc">-</span> <span class="dv">1</span>, mu, rho, k))</span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;             q         cdf_q cdf_q_minus_1 </span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt;     6.0000000     0.9493058     0.8967050</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co"># invalid parameters and non-integer counts</span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="fu">suppressWarnings</span>(<span class="fu">c</span>(<span class="fu">ddelaporte</span>(<span class="dv">2</span>, <span class="at">mu =</span> <span class="sc">-</span><span class="dv">1</span>, <span class="at">rho =</span> rho, <span class="at">k =</span> k),</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>                   <span class="fu">ddelaporte</span>(<span class="fl">2.5</span>, <span class="at">mu =</span> mu, <span class="at">rho =</span> rho, <span class="at">k =</span> k)))</span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; [1] NaN   0</span></span></code></pre></div>
+<p>The log upper tail at 150 is finite, where <span class="math inline">\(1 - P(Y \le 150)\)</span> would be 0 in floating
+point.</p>
+</div>
+<div id="through-a-fitted-model" class="section level2">
+<h2>5. Through a fitted model</h2>
+<p>Once registered, the family is used by every part of
+<code>countreg()</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">4</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>d <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">rnorm</span>(<span class="dv">300</span>))</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>d<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(<span class="dv">300</span>, <span class="at">size =</span> <span class="dv">2</span>, <span class="at">mu =</span> <span class="fu">exp</span>(<span class="fl">0.5</span> <span class="sc">+</span> <span class="fl">0.4</span> <span class="sc">*</span> d<span class="sc">$</span>x))</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>mu_hat <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>alpha_hat <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">coef</span>(fit)[[<span class="st">&quot;ln(alpha)&quot;</span>]])</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co"># predict(type = &quot;prob&quot;) uses the registry density</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">all.equal</span>(<span class="fu">unname</span>(<span class="fu">predict</span>(fit, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>, <span class="at">max_count =</span> <span class="dv">3</span>)[<span class="dv">1</span>, ]),</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>          nb2<span class="sc">$</span><span class="fu">dens</span>(<span class="dv">0</span><span class="sc">:</span><span class="dv">3</span>, <span class="at">predicted =</span> mu_hat[<span class="dv">1</span>], <span class="at">alpha =</span> alpha_hat,</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>                   <span class="at">sigma =</span> <span class="cn">NULL</span>))</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co"># simulate() uses the registry&#39;s random draws</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>sims <span class="ot">&lt;-</span> <span class="fu">simulate</span>(fit, <span class="at">nsim =</span> <span class="dv">4000</span>, <span class="at">seed =</span> <span class="dv">1</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="fu">c</span>(<span class="at">mean_ratio =</span> <span class="fu">mean</span>(<span class="fu">rowMeans</span>(sims) <span class="sc">/</span> mu_hat),</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="at">var_ratio =</span> <span class="fu">mean</span>(<span class="fu">apply</span>(sims, <span class="dv">1</span>, var) <span class="sc">/</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>                     nb2<span class="sc">$</span><span class="fu">variance</span>(mu_hat, alpha_hat, <span class="cn">NULL</span>)))</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; mean_ratio  var_ratio </span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;  0.9999219  0.9997107</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co"># quantile residuals use the cdf hook</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">residuals</span>(fit, <span class="at">type =</span> <span class="st">&quot;quantile&quot;</span>))</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. </span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; -3.314260 -0.650915 -0.022552  0.006811  0.665310  2.549137</span></span></code></pre></div>
+<p>Offsets, weights, the rows used in the fit, and the alignment of
+predictions with <code>newdata</code> are handled by the shared data
+preparation, not by the family. A new family needs no code for them, but
+its tests should include a model with an offset.</p>
+</div>
+<div id="capabilities-are-opt-in" class="section level2">
+<h2>6. Capabilities are opt-in</h2>
+<p>A registry entry makes a family available in <code>countreg()</code>
+(including zero models, which are built from <code>dens</code>) and in
+<code>countreg_rp()</code>. Other features are enabled explicitly,
+because each depends on a mathematical property that must be established
+for the family:</p>
+<ul>
+<li><strong>Underreporting</strong> requires that binomial thinning of
+the family is the same family, with known parameters
+(<code>.fcr_thinning_families</code>, <code>.fcr_thin_params()</code>);
+the reported-count variance law is tested for each listed family.</li>
+<li><strong>Likelihood-ratio tests</strong> against Poisson or another
+family require a nesting and its type: an interior restriction (ordinary
+chi-square) or a boundary one (a mixture of chi-squares). Families are
+listed in <code>.fcr_family_nesting</code> only when the restriction is
+regular.</li>
+<li><strong>Analytic gradients</strong> exist only for Poisson, NB1 and
+NB2; other families use numerical derivatives.</li>
+<li><strong>Moment starting values</strong> for the dispersion exist for
+NB1, NB2, PIG1, PIG2 and PIG (<code>.fcr_moment_disp_start()</code>);
+other families use <code>start</code>.</li>
+<li><strong>Exact random-parameter predictions</strong> use the
+moment-generating function of the random parameter and the family’s mean
+adjustment, so <code>mean_adj</code> and <code>mean</code> must be
+right.</li>
+</ul>
+<p>Diagnostics follow the same contract: Pearson residuals need
+<code>variance</code>, quantile residuals and rootograms need
+<code>dens</code> and preferably <code>cdf</code>, and marginal effects
+need the mean.</p>
+</div>
+<div id="tests" class="section level2">
+<h2>7. Tests</h2>
+<p>At least four kinds of tests are needed:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Special cases</strong> against independent implementations,
+for example NB2 with <span class="math inline">\(\alpha \to 0\)</span>
+against <code>dpois()</code>, or a parameter value that gives a
+geometric distribution.</li>
+<li><strong>The distribution contract</strong>: probabilities sum to 1,
+the CDF equals the summed PMF, quantiles are the smallest count reaching
+the probability, random draws match the probabilities, base-R argument
+handling, large means and extreme parameters stay finite.</li>
+<li><strong>Registry agreement</strong>: the registry density and CDF
+equal the public functions at the regression parameterization, and the
+variance equals the summed second moment.</li>
+<li><strong>Estimation and prediction</strong>: <code>countreg()</code>
+recovers the parameters of simulated data, and <code>predict()</code>,
+<code>simulate()</code> and the residuals agree with the registry.</li>
+</ol>
+<p>A small recovery test, in the form used in
+<code>tests/testthat/</code>:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>testthat<span class="sc">::</span><span class="fu">test_that</span>(<span class="st">&quot;countreg() recovers NB2 parameters&quot;</span>, {</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="fu">set.seed</span>(<span class="dv">11</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="dv">4000</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  d <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">rnorm</span>(n), <span class="at">t =</span> <span class="fu">runif</span>(n, <span class="fl">0.5</span>, <span class="dv">2</span>))</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>  d<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n, <span class="at">size =</span> <span class="dv">1</span> <span class="sc">/</span> <span class="fl">0.5</span>, <span class="at">mu =</span> d<span class="sc">$</span>t <span class="sc">*</span> <span class="fu">exp</span>(<span class="fl">0.5</span> <span class="sc">+</span> <span class="fl">0.4</span> <span class="sc">*</span> d<span class="sc">$</span>x))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(t)), <span class="at">data =</span> d, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>                <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(m<span class="sc">$</span>model<span class="sc">$</span>converged)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  est <span class="ot">&lt;-</span> <span class="fu">coef</span>(m)</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  se <span class="ot">&lt;-</span> <span class="fu">summary</span>(m)<span class="sc">$</span>coefficients[, <span class="dv">2</span>]</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  truth <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.4</span>, <span class="fu">log</span>(<span class="fl">0.5</span>))</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>  <span class="co"># within four standard errors: fails rarely by chance, often if wrong</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>  testthat<span class="sc">::</span><span class="fu">expect_true</span>(<span class="fu">all</span>(<span class="fu">abs</span>(est <span class="sc">-</span> truth) <span class="sc">&lt;</span> <span class="dv">4</span> <span class="sc">*</span> se))</span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>})</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; Test passed with 2 successes 🥇.</span></span></code></pre></div>
+<p>Tests involving random numbers set a seed and use tolerances
+justified by the standard errors, not tolerances tuned until the test
+passes.</p>
+</div>
+<div id="contributor-checklist" class="section level2">
+<h2>8. Contributor checklist</h2>
+<ul class="task-list">
+<li><label><input type="checkbox"></input>Support, parameters, links and the
+meaning of <span class="math inline">\(\mu\)</span> written
+down</label></li>
+<li><label><input type="checkbox"></input>Public
+<code>d</code>/<code>p</code>/<code>q</code>/<code>r</code> functions
+with roxygen documentation and examples, exported (roxygen writes
+<code>NAMESPACE</code>)</label></li>
+<li><label><input type="checkbox"></input>Log-scale PMF and directly computed
+tails; vectorization, <code>NA</code>, invalid parameters</label></li>
+<li><label><input type="checkbox"></input>Compiled code, if any, with
+<code>Rcpp::compileAttributes()</code> run</label></li>
+<li><label><input type="checkbox"></input>Registry entry: <code>params</code>,
+<code>dens</code>, <code>variance</code>, <code>rand</code>,
+<code>cdf</code>, <code>mean</code> or <code>mean_adj</code>,
+<code>start</code>, <code>start_rp</code></label></li>
+<li><label><input type="checkbox"></input>Opt-in features only where
+established: thinning, nesting</label></li>
+<li><label><input type="checkbox"></input>A row in each table of
+<code>?count_families</code>, and the help topic in the “Count
+distributions” section of <code>_pkgdown.yml</code></label></li>
+<li><label><input type="checkbox"></input>Tests of all four kinds above, and
+the family added to the test lists that cover every family</label></li>
+<li><label><input type="checkbox"></input>A <code>NEWS.md</code>
+entry</label></li>
+<li><label><input type="checkbox"></input><code>R CMD check</code> passes,
+including examples and vignettes</label></li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

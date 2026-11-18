@@ -1,0 +1,14 @@
+flexCountReg 0.1.2
+R version 4.6.1 (2026-06-24 ucrt)
+RNG: L'Ecuyer-CMRG, Inversion, Rejection
+seed: 2026
+replications per scenario: 1000
+date: 2026-11-17
+time: rows 167 s, panel 64 s
+statuses:
+                      
+                         ok warning
+  panel negmultinom    2000       0
+  panel pooled Poisson 2000       0
+  rows NB2             3853     147
+  rows POISSON         4000       0

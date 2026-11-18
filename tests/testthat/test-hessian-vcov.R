@@ -18,3 +18,15 @@ test_that("flat likelihood directions get NA variances, not zero", {
     list(hessian = -diag(2))))
   expect_equal(V3, diag(2))
 })
+
+test_that("a Hessian that is not negative definite is reported", {
+  # Invertible, but curved upward in the second parameter (not a maximum)
+  H <- -diag(c(4, -0.5))
+  dimnames(H) <- list(c("a", "b"), c("a", "b"))
+  fit <- list(hessian = H, estimate = c(a = 1, b = -7))
+  expect_warning(V <- flexCountReg:::.fcr_hessian_vcov(fit),
+                 "not negative definite.*standard errors of b are NA")
+  se <- flexCountReg:::.fcr_se(V)
+  expect_equal(unname(se[1]), 0.5)
+  expect_true(is.na(se[2]))
+})

@@ -38,7 +38,7 @@ it.
   model (they are then estimates of something else, whatever their standard
   errors), and with sampling weights it is not a full survey-design analysis
   (strata, clusters and finite-population corrections are not modelled). For
-  panel models (`countreg.rp()` with `group_var`, `renb()`, `poisLind.re()`,
+  panel models (`countreg_rp()` with `group_var`, `renb()`, `poisLind.re()`,
   `repois()`, `negmultinom()`) the log-likelihood has one contribution per
   panel, so these standard errors are cluster-robust; for `countreg()` they
   are computed row by row and do not account for repeated observations of

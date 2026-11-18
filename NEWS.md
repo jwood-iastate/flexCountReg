@@ -85,6 +85,26 @@
   standard error read as perfect precision, e.g. the random-effect
   parameter of a Poisson-Lindley random-effects model at its boundary). The
   warning names those parameters.
+* When the Hessian is invertible but not negative definite (for example an
+  NB2 dispersion drifting toward zero on Poisson-like data), the negative
+  variances already gave `NA` standard errors; a warning now names those
+  parameters instead of leaving them silently `NA`.
+
+## Vignettes
+
+* Fifteen vignettes, grouped on the package website as Start here,
+  Diagnose and interpret, Model structure, Predict and validate, and
+  Advanced. New: getting started; data, exposure and weights; diagnosing
+  count models; predictions, marginal effects and elasticities; modeling
+  distribution parameters; zeros, hurdles and sampling; underreporting and
+  identification; predictive validation; prediction for panel data;
+  numerical reliability; simulation studies; and adding a count
+  distribution (for contributors). The three earlier vignettes are revised.
+* `inst/validation/simulation-studies/count-regression-study.R` is a
+  parameterized simulation study (Poisson, NB2 and a negative multinomial
+  panel) with one random-number stream per replicate; its results are
+  saved alongside it.
+* The vignettes use `countreg_rp()`.
 
 ## New data
 

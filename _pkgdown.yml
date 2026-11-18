@@ -23,6 +23,11 @@ articles:
   contents:
   - predictive-validation
   - prediction-for-panel-data
+- title: Advanced
+  contents:
+  - numerical-reliability
+  - simulation-studies
+  - extending-count-distributions
 
 reference:
 - title: Count regression models

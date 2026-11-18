@@ -1,0 +1,348 @@
+---
+title: "Numerical reliability: convergence, integration and difficult fits"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Numerical reliability: convergence, integration and difficult fits}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 4)
+```
+
+An optimizer that stops and reports success has found a point where its
+stopping rule was met. That is not the same as a reliable maximum
+likelihood estimate with trustworthy standard errors. This vignette shows
+what to inspect after a fit, how to recognize boundary estimates, weak
+identification and scaling problems, which controls govern the numerical
+integrals of the more complex models, and how to tell apart three different
+reasons why a prediction cannot be computed.
+
+```{r setup}
+library(flexCountReg)
+data("washington_roads")
+```
+
+## What a fit records
+
+The `model` element of a fitted `countreg()` or `countreg_rp()` object is
+the result of the optimizer (from the maxLik package) with some additions:
+`converged`, the return `code` and `message`, the number of `iterations`,
+the log-likelihood `maximum`, the `gradient` and the `hessian` at the
+estimates. A small helper collects them:
+
+```{r status-helper}
+fit_status <- function(m) {
+  f <- m$model
+  ev <- eigen(-f$hessian, symmetric = TRUE, only.values = TRUE)$values
+  data.frame(converged = isTRUE(f$converged), code = f$code,
+             iterations = unname(f$iterations[1]),
+             logLik = round(f$maximum, 3),
+             max_abs_gradient = signif(max(abs(f$gradient)), 3),
+             min_eigen = signif(min(ev), 3),
+             condition = signif(max(ev) / min(ev), 3),
+             message = trimws(f$message))
+}
+```
+
+* `max_abs_gradient` should be close to 0 at a maximum. What counts as close
+  depends on the scale of the parameters.
+* `min_eigen` is the smallest eigenvalue of the negative Hessian. It must be
+  positive at a maximum; a value near 0 means a direction in which the
+  likelihood is nearly flat.
+* `condition` is the ratio of the largest to the smallest eigenvalue. A very
+  large value means that the parameters are on very different scales or
+  nearly redundant.
+
+## A fit-status table
+
+The same NB2 model is fitted with four optimizers, and then with the
+traffic volume entered in vehicles per day instead of on the log scale,
+both as it is and divided by 10,000:
+
+```{r status-table}
+f <- Total_crashes ~ lnaadt + lnlength + speed50
+fits <- lapply(c(NM = "NM", BFGS = "BFGS", NR = "NR", BHHH = "BHHH"),
+               function(meth) countreg(f, data = washington_roads,
+                                       family = "NB2", method = meth))
+washington_roads$aadt <- exp(washington_roads$lnaadt)
+washington_roads$aadt_10k <- washington_roads$aadt / 1e4
+fits$NM_raw_aadt <- countreg(Total_crashes ~ aadt + speed50,
+                             data = washington_roads, family = "NB2")
+fits$NM_aadt_10k <- countreg(Total_crashes ~ aadt_10k + speed50,
+                             data = washington_roads, family = "NB2")
+status_table <- do.call(rbind, lapply(fits, fit_status))
+status_table
+```
+
+```{r status-text, include = FALSE}
+g_raw <- status_table["NM_raw_aadt", "max_abs_gradient"]
+c_raw <- status_table["NM_raw_aadt", "condition"]
+c_10k <- status_table["NM_aadt_10k", "condition"]
+```
+
+The four optimizers agree on the log-likelihood and the coefficients
+(`round(sapply(fits[1:4], coef), 4)` shows them), but they stop for
+different reasons. Nelder-Mead (`"NM"`, the default) does not use
+derivatives and stops when the simplex is small: its gradient is the
+largest of the four. Newton-Raphson (`"NR"`) stops at a gradient of
+essentially zero. A `code` of 0 means success for NM and BFGS, while NR
+and BHHH report success with codes 1, 2 or 8 (`converged` already
+accounts for this).
+
+With volume in vehicles per day, Nelder-Mead reports convergence with a
+largest gradient of `r g_raw`: a coefficient per vehicle is tiny, and the
+condition number of `r format(c_raw, big.mark = ",")` shows the poor scaling.
+Dividing the volume by 10,000 brings the condition number down to
+`r c_10k`. Rescaling a variable changes only the units of its coefficient,
+not the model. More iterations would not have fixed the scaling problem.
+
+## Boundaries, weak identification and rank deficiency
+
+### A parameter at the edge of its space
+
+When the data are close to Poisson, the NB2 dispersion $\alpha$ is close
+to 0, the edge of its space, and $\ln\alpha$ drifts towards $-\infty$.
+Twenty samples of Poisson data, each fitted with NB2:
+
+```{r boundary}
+boundary_fit <- function(seed) {
+  set.seed(seed)
+  d <- data.frame(x = rnorm(300))
+  d$y <- rpois(300, exp(0.5 + 0.4 * d$x))
+  warned <- FALSE
+  m <- withCallingHandlers(
+    countreg(y ~ x, data = d, family = "NB2", method = "BFGS"),
+    warning = function(w) {
+      warned <<- TRUE
+      invokeRestart("muffleWarning")
+    })
+  co <- summary(m)$coefficients
+  c(ln_alpha = co["ln(alpha)", 1], se = co["ln(alpha)", 2],
+    converged = m$model$converged, warned = warned)
+}
+boundary <- as.data.frame(t(sapply(1:20, boundary_fit)))
+boundary$at_start <- abs(boundary$ln_alpha - log(1e-3)) < 0.01
+round(boundary, 3)
+```
+
+```{r boundary-text, include = FALSE}
+n_start <- sum(boundary$at_start)
+n_na <- sum(is.na(boundary$se))
+```
+
+Every fit reports convergence. The dispersion starts from a moment
+estimate clipped at $\alpha = 10^{-3}$ ($\ln\alpha = -6.908$), and
+`r n_start` of the 20 fits stopped within 0.01 of it: at the edge of the space
+the likelihood is so flat that the gradient is below the optimizer's
+tolerance. In `r n_na` fits the Hessian is not negative definite, and
+flexCountReg warns that the standard error of `ln(alpha)` is `NA`. The
+remaining standard errors are large. In every case the right conclusion is
+that $\alpha$ is near 0: Poisson is adequate. Neither the estimate of
+$\ln\alpha$ nor its Wald standard error is meaningful there, and a
+likelihood-ratio test against Poisson needs the boundary-corrected
+reference distribution that `regCompTest()` and `summary()` use.
+
+### Weak identification
+
+A model can be identified in principle but not by the data at hand: the
+likelihood has a long, nearly flat ridge. Standard errors computed from the
+curvature can then be finite and even small while the estimates are
+unstable. Small standard errors are not proof of identification. flexCountReg
+warns in the cases it can detect (for example a constant zero-inflation
+probability driven to 0, or an underreporting model whose reporting and
+count coefficients are nearly collinear). The simulations in
+`vignette("underreporting-and-identification", package = "flexCountReg")`
+show that refitting replicate samples is the most reliable check.
+
+### Rank deficiency
+
+A variable that is an exact linear combination of others is not
+estimable. flexCountReg stops instead of reporting arbitrary coefficients:
+
+```{r rank-deficient}
+d <- data.frame(x = rnorm(100))
+d$x2 <- 2 * d$x
+d$y <- rpois(100, exp(0.3 + 0.2 * d$x))
+res <- tryCatch(countreg(y ~ x + x2, data = d, family = "POISSON"),
+                error = function(e) conditionMessage(e))
+res
+```
+
+## Starting values and optimizers
+
+When different starts or optimizers end at materially different
+log-likelihoods, the lower ones are not maxima, or the likelihood has
+several local maxima. Refit from a deliberately poor start with
+`start.vals` (one value per parameter, in the order of `coef()`):
+
+```{r starts}
+bad_start <- c(0, 0, 0, 0, 3)
+from_bad <- countreg(f, data = washington_roads, family = "NB2",
+                     method = "BFGS", start.vals = bad_start)
+rbind(default_start = fit_status(fits$BFGS)[, c("converged", "logLik")],
+      poor_start = fit_status(from_bad)[, c("converged", "logLik")])
+```
+
+Here the poor start reaches the same maximum. When it does not, report
+the best fit, and treat the disagreement as a warning about the model or
+the data rather than a nuisance to suppress. Raising `max.iters` is only
+useful when the status shows that the iteration limit stopped the
+optimizer.
+
+## Numerical integration: outer draws and inner integrals
+
+Some models need integrals that have no closed form. There are two
+different kinds, controlled by different arguments:
+
+| Model | Integral | Control |
+|---|---|---|
+| `countreg()` with PLN, PGE, PW or PLL | the mixing distribution of the family (inner) | `engine`: `"quadrature"` (default, adaptive; `ndraws` is not used) or `"halton"` (`ndraws` draws) |
+| `countreg_rp()` | the random parameters (outer) | `ndraws` Halton draws (`scrambled` for scrambled draws) |
+| `countreg_rp()` with PLN, PGE, PW or PLL | the mixing distribution, inside each outer draw | `engine`; `mix_draws` only with `engine = "halton"` |
+
+### Inner integrals: the Poisson-lognormal family
+
+On a subsample of 400 road segments, the Poisson-lognormal model is fitted
+with adaptive quadrature and with Halton draws of increasing number:
+
+```{r pln-engines}
+set.seed(1)
+sub <- washington_roads[sample(nrow(washington_roads), 400), ]
+pln <- function(engine, ndraws) {
+  m <- countreg(f, data = sub, family = "PLN", method = "BFGS",
+                engine = engine, ndraws = ndraws)
+  data.frame(engine = engine, ndraws = ndraws,
+             logLik = m$model$maximum,
+             ln_sigma = coef(m)[["ln(sigma)"]],
+             se_ln_sigma = summary(m)$coefficients["ln(sigma)", 2])
+}
+quad <- rbind(pln("quadrature", 50), pln("quadrature", 1500))
+halton <- do.call(rbind, lapply(c(25, 50, 100, 200, 400),
+                                function(r) pln("halton", r)))
+rbind(quad, halton)
+```
+
+The two quadrature fits are identical: quadrature ignores `ndraws`, and
+increasing it there only suggests a check that was not made. With Halton
+draws, $\ln\sigma$ moves steadily toward the quadrature value as the draws
+increase:
+
+```{r pln-plot}
+plot(halton$ndraws, halton$ln_sigma, type = "b", log = "x", pch = 19,
+     ylim = range(halton$ln_sigma, quad$ln_sigma),
+     xlab = "Halton draws (log scale)", ylab = "Estimate of ln(sigma)",
+     main = "Poisson-lognormal: Halton draws against quadrature")
+abline(h = quad$ln_sigma[1], lty = 2)
+legend("bottomright", c("Halton", "adaptive quadrature"), lty = c(1, 2),
+       pch = c(19, NA), bty = "n")
+```
+
+A simulated likelihood with too few draws is biased, here toward a
+smaller $\sigma$, and its log-likelihood is not comparable with the
+quadrature one. The Halton engine is kept to reproduce fits from earlier
+versions.
+
+### Outer draws: random parameters
+
+For a random-parameter model, compare the estimates as the number of
+outer draws increases (on the same subsample):
+
+```{r rp-draws}
+rp_fit <- function(r) {
+  m <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
+                   rpar_formula = ~ -1 + speed50, data = sub,
+                   family = "NB2", ndraws = r, method = "BFGS")
+  co <- summary(m)$coefficients
+  data.frame(ndraws = r, converged = m$model$converged,
+             logLik = round(m$model$maximum, 3),
+             mean = co["speed50:Mean", 1], sd = co["speed50:St.Dev", 1],
+             se_sd = co["speed50:St.Dev", 2])
+}
+rp_draws <- do.call(rbind, lapply(c(50, 100, 200), rp_fit))
+rp_draws
+```
+
+The estimated standard deviation of the random parameter changes with
+the draws by an amount that is small relative to its standard error here,
+but it has not settled. Choose the number of draws by this kind of
+comparison for the model at hand, and report it. Larger models and
+studies belong in scripts outside of a vignette build.
+
+## Three reasons a prediction is not a number
+
+```{r lognormal}
+rp_ln <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
+                     rpar_formula = ~ -1 + speed50,
+                     rpardists = c(speed50 = "ln"), data = sub,
+                     family = "NB2", ndraws = 100, method = "BFGS")
+nd <- data.frame(lnaadt = log(5000), lnlength = 0, speed50 = c(0, 1))
+predict(rp_ln, newdata = nd, method = "Exact")
+```
+
+1. **The expectation does not exist.** With a lognormal random parameter
+   $\beta$, the expected count $E[\exp(x\beta)]$ is infinite for every
+   $x > 0$: the lognormal distribution has no moment-generating function
+   for positive arguments. flexCountReg returns `Inf` with a warning, for
+   both `"Exact"` and `"Simulated"` predictions. This is a property of the
+   model, not a numerical failure. (Here the fit also put the lognormal
+   parameter at the edge of its space, with `NA` standard errors: a
+   lognormal effect is positive, while the effect of `speed50` is
+   negative.)
+2. **The expectation exists but exceeds the floating-point range.** With a
+   normal random parameter, $E[\exp(x\beta)] = \exp(x\mu + x^2\sigma^2/2)$
+   is finite for every $x$, but it overflows for extreme $x$. The value
+   below is far outside the data (`speed50` is 0 or 1) and is used only
+   to show the message:
+
+    ```{r overflow}
+    rp_n <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
+                        rpar_formula = ~ -1 + speed50, data = sub,
+                        family = "NB2", ndraws = 100, method = "BFGS")
+    predict(rp_n, newdata = data.frame(lnaadt = log(5000), lnlength = 0,
+                                       speed50 = c(1, 100)),
+            method = "Exact")
+    ```
+
+3. **A valid quantity was not approximated.** Tolerance intervals need
+   the predictive distribution's upper tail. With a deliberately small
+   `max_count`, the tail is not resolved, and the interval is reported as
+   unavailable with a status rather than truncated silently:
+
+    ```{r unresolved}
+    nb <- fits$BFGS
+    at <- data.frame(lnaadt = log(c(2000, 20000)), lnlength = log(2),
+                     speed50 = 0)
+    tolerance_interval(nb, newdata = at, max_count = 15)
+    tolerance_interval(nb, newdata = at)
+    ```
+
+## Reporting an unresolved problem
+
+When a fit remains doubtful after these checks, a useful report contains:
+the code and data (or a simulated dataset with the same problem), the
+seed, the fit-status table, the warnings, and the versions:
+
+```{r versions}
+c(R = R.version.string,
+  flexCountReg = as.character(utils::packageVersion("flexCountReg")),
+  maxLik = as.character(utils::packageVersion("maxLik")))
+```
+
+Issues can be reported at <https://github.com/jwood-iastate/flexCountReg/issues>.
+
+## Summary
+
+* Check the gradient, the curvature and the condition of the Hessian, not
+  only `converged`.
+* Rescale variables that make the condition number very large.
+* Treat estimates that do not move from their starting values, `NA`
+  standard errors and nearly flat directions as information about the
+  model, not as noise to suppress.
+* Know which control governs which integral, and compare results as it
+  changes.
+* An infinite prediction can be a property of the model, an overflow, or
+  an approximation that was not achieved; the warnings and statuses say
+  which.

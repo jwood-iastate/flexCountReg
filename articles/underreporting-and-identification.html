@@ -217,19 +217,19 @@ complete reporting, down to 0.12.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">fits</span>, <span class="kw">function</span><span class="op">(</span><span class="va">m</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $weak</span></span>
 <span><span class="co">#&gt;                            Estimate Std. Error</span></span>
-<span><span class="co">#&gt; (Intercept)                   1.089      0.323</span></span>
+<span><span class="co">#&gt; (Intercept)                   1.089      0.322</span></span>
 <span><span class="co">#&gt; x                             0.541      0.024</span></span>
-<span><span class="co">#&gt; ln(alpha)                    -0.711      0.074</span></span>
-<span><span class="co">#&gt; Underreporting:(Intercept)    1.201      1.180</span></span>
+<span><span class="co">#&gt; ln(alpha)                    -0.711      0.075</span></span>
+<span><span class="co">#&gt; Underreporting:(Intercept)    1.201      1.178</span></span>
 <span><span class="co">#&gt; Underreporting:w             -1.936      0.796</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $strong</span></span>
 <span><span class="co">#&gt;                            Estimate Std. Error</span></span>
-<span><span class="co">#&gt; (Intercept)                   0.988      0.063</span></span>
+<span><span class="co">#&gt; (Intercept)                   0.988      0.061</span></span>
 <span><span class="co">#&gt; x                             0.517      0.025</span></span>
 <span><span class="co">#&gt; ln(alpha)                    -0.694      0.076</span></span>
-<span><span class="co">#&gt; Underreporting:(Intercept)    3.182      0.499</span></span>
-<span><span class="co">#&gt; Underreporting:w             -5.234      0.543</span></span></code></pre></div>
+<span><span class="co">#&gt; Underreporting:(Intercept)    3.182      0.470</span></span>
+<span><span class="co">#&gt; Underreporting:w             -5.234      0.510</span></span></code></pre></div>
 <p>The truth is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mn>0</mn></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\beta_0 = 1</annotation></semantics></math>,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mi>x</mi></msub><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\beta_x = 0.5</annotation></semantics></math>
@@ -294,10 +294,10 @@ a full simulation study):</p>
 <span><span class="va">recovery_table</span><span class="op">[</span>, <span class="fl">4</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">recovery_table</span><span class="op">[</span>, <span class="fl">4</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="va">recovery_table</span></span>
 <span><span class="co">#&gt;   design       parameter truth   mean median    sd converged warned</span></span>
-<span><span class="co">#&gt; 1   weak     (Intercept)   1.0  1.167  1.019 0.525        20     10</span></span>
-<span><span class="co">#&gt; 2   weak               x   0.5  0.501  0.505 0.024        20     10</span></span>
-<span><span class="co">#&gt; 3   weak Rep:(Intercept)   1.5  1.498  1.295 1.571        20     10</span></span>
-<span><span class="co">#&gt; 4   weak           Rep:w  -2.0 -2.214 -1.820 1.061        20     10</span></span>
+<span><span class="co">#&gt; 1   weak     (Intercept)   1.0  1.167  1.019 0.525        20     11</span></span>
+<span><span class="co">#&gt; 2   weak               x   0.5  0.501  0.505 0.024        20     11</span></span>
+<span><span class="co">#&gt; 3   weak Rep:(Intercept)   1.5  1.501  1.295 1.573        20     11</span></span>
+<span><span class="co">#&gt; 4   weak           Rep:w  -2.0 -2.217 -1.820 1.063        20     11</span></span>
 <span><span class="co">#&gt; 5 strong     (Intercept)   1.0  0.990  0.974 0.084        20      0</span></span>
 <span><span class="co">#&gt; 6 strong               x   0.5  0.504  0.508 0.024        20      0</span></span>
 <span><span class="co">#&gt; 7 strong Rep:(Intercept)   3.0  3.102  2.977 0.671        20      0</span></span>
@@ -305,7 +305,7 @@ a full simulation study):</p>
 <p>The summaries use all converged fits; <code>warned</code> counts the
 fits for which flexCountReg warned that the underreporting model is
 weakly identified. In the strong design, 0 of 20 fits gave that warning
-and the estimates centre on the truth. In the weak design 10 of 20 fits
+and the estimates centre on the truth. In the weak design 11 of 20 fits
 gave it, and the reporting intercept has a standard deviation of 1.6
 logit units across replicates: the estimates are unstable even though
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
@@ -425,24 +425,21 @@ strong-design sample:</p>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Warning: "</span>, <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">conditionMessage</a></span><span class="op">(</span><span class="va">w</span><span class="op">)</span><span class="op">)</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">invokeRestart</a></span><span class="op">(</span><span class="st">"muffleWarning"</span><span class="op">)</span></span>
 <span>  <span class="op">}</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard errors of (Intercept), w, Underreporting:(Intercept), Underreporting:w are NA. The estimate may be on the boundary of the parameter space or not at a maximum.</span></span>
-<span><span class="co">#&gt; Warning: The underreporting model is weakly identified: the covariance matrix of the estimates is not positive definite (a flat likelihood ridge). The data do not separate the true count mean from the reporting probability; interpret the true-count estimates with caution, and consider reporting variables that do not affect the true counts or external validation data.</span></span>
+<span><span class="co">#&gt; Warning: The underreporting model is weakly identified: the estimates of Underreporting:(Intercept) and (Intercept) have correlation -1. The data barely separate the true count mean from the reporting probability; interpret the true-count estimates with caution, and consider reporting variables that do not affect the true counts or external validation data.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">both</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                            Estimate Std. Error</span></span>
-<span><span class="co">#&gt; (Intercept)                   5.237         NA</span></span>
+<span><span class="co">#&gt; (Intercept)                   5.237      3.340</span></span>
 <span><span class="co">#&gt; x                             0.518      0.025</span></span>
-<span><span class="co">#&gt; w                            -6.300         NA</span></span>
+<span><span class="co">#&gt; w                            -6.300      3.500</span></span>
 <span><span class="co">#&gt; ln(alpha)                    -0.695      0.076</span></span>
-<span><span class="co">#&gt; Underreporting:(Intercept)   -4.224         NA</span></span>
-<span><span class="co">#&gt; Underreporting:w              5.800         NA</span></span>
+<span><span class="co">#&gt; Underreporting:(Intercept)   -4.224      3.318</span></span>
+<span><span class="co">#&gt; Underreporting:w              5.800      2.629</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cov2cor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">both</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"(Intercept)"</span>, <span class="st">"w"</span><span class="op">)</span>,</span>
 <span>                          <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Underreporting:(Intercept)"</span>,</span>
 <span>                            <span class="st">"Underreporting:w"</span><span class="op">)</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in cov2cor(vcov(both)): diag(V) had non-positive or NA entries; the</span></span>
-<span><span class="co">#&gt; non-finite result may be dubious</span></span>
 <span><span class="co">#&gt;             Underreporting:(Intercept) Underreporting:w</span></span>
-<span><span class="co">#&gt; (Intercept)                        NaN              NaN</span></span>
-<span><span class="co">#&gt; w                                  NaN              NaN</span></span></code></pre></div>
+<span><span class="co">#&gt; (Intercept)                     -1.000            0.993</span></span>
+<span><span class="co">#&gt; w                                0.999           -0.996</span></span></code></pre></div>
 <p>The data were generated with no effect of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
 on the true count and

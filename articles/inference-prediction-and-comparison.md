@@ -118,12 +118,12 @@ margEffTable(nb_h, digits = 4)
 #> Method: delta 
 #> 
 #>      term variable_type           effect_metric estimate std_error t_value
-#>    lnaadt    continuous Average marginal effect   0.4989    0.0349 14.2764
-#>  lnlength    continuous Average marginal effect   0.3511    0.0373  9.4095
+#>    lnaadt    continuous Average marginal effect   0.4989    0.0349 14.2766
+#>  lnlength    continuous Average marginal effect   0.3511    0.0380  9.2511
 #>   speed50     indicator   Pseudo-elasticity (%) -41.5527    6.3016 -6.5940
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
 #>        0 ***   0.4304   0.5674  1501                    NA
-#>        0 ***   0.2780   0.4242  1501                    NA
+#>        0 ***   0.2767   0.4255  1501                    NA
 #>        0 *** -53.9035 -29.2018  1501                    NA
 ```
 
@@ -296,6 +296,9 @@ weights are used.
 po <- countreg(f, d, family = "POISSON", method = "BFGS")
 nb1 <- countreg(f, d, family = "NB1", method = "BFGS")
 pl <- countreg(f, d, family = "PL", method = "BFGS")
+#> Warning: The Hessian is not negative definite at the estimates, so the standard
+#> errors of ln(theta) are NA. The estimate may be on the boundary of the
+#> parameter space or not at a maximum.
 do.call(rbind, lapply(list(Poisson = po, NB1 = nb1, NB2 = nb_h, PL = pl),
                       function(m) glance(m)[, c("logLik", "AIC", "BIC")]))
 #> # A tibble: 4 × 3

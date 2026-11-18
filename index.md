@@ -54,19 +54,74 @@ devtools::install_github("jwood-iastate/flexCountReg")
 
 ## Interactive app
 
-To work without writing code, start the app:
+flexCountReg includes an interactive app for analysts who prefer to work
+without writing code, and for anyone who wants a quick way to explore
+models before scripting them. Start it from R:
 
 ``` r
 
-flexCountReg::launch_app()
+library(flexCountReg)
+launch_app()
 ```
 
-It walks through the data, the model, the fit, diagnostics, comparisons
-and predictions, and downloads an R script that reproduces the analysis
-without the app. The app uses the shiny, bslib, DT, callr, jsonlite and
-zip packages;
+The app opens in a web browser, with one tab for each step of an
+analysis:
+
+- **Data**: load one of the example datasets or a CSV file, inspect the
+  columns and missing values, and create new variables (logs, powers,
+  standardized values, indicators, products, ratios, categories and
+  factors).
+- **Build**: choose the model (count regression, random parameters,
+  random-effects panel models, finite mixtures or latent classes), the
+  count distribution, response, predictors, exposure or offset,
+  frequency weights and panel identifier, and the model-specific
+  options. The draft is checked before it can be estimated.
+- **Fit**: models are estimated in the background, so the app stays
+  responsive and long fits can be canceled. The tab shows the summary,
+  coefficients, numerical checks (convergence, gradient, conditioning of
+  the information matrix) and, for mixtures, class sizes and starts.
+- **Diagnose**: rootograms, randomized quantile residuals and CURE
+  plots.
+- **Compare**: log-likelihood, AIC and BIC of several fits, with a
+  warning when they are not comparable (different rows, responses or
+  units).
+- **Predict**: an editable table of scenarios, with expected counts,
+  confidence or prediction intervals, and tolerance intervals.
+- **Export**: download the analysis.
+
+Everything the app runs is also written as R code. The *R code* panel at
+the bottom shows the session script: the data loading, every new
+variable, every fit, diagnostic, prediction and comparison, in the order
+they ran, using the package’s own functions
+([`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md),
+[`rootogram()`](https://jwood-iastate.github.io/flexCountReg/reference/rootogram.md),
+[`tolerance_interval()`](https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.md),
+…). The app evaluates exactly this code, and the Export tab downloads it
+as `analysis.R` together with the settings of each fit and a manifest of
+versions and warnings, so the analysis can be rerun, modified and shared
+without the app. For example, a session that loads data, adds a variable
+and fits a model produces code like:
+
+``` r
+
+data_1 <- local({
+    env <- new.env()
+    utils::data(list = "washington_roads", package = "flexCountReg", envir = env)
+    env[["washington_roads"]]
+})
+data_1[["aadt10k"]] <- as.integer(data_1[["AADT"]] > 10000)
+fit_1 <- flexCountReg::countreg(formula = Total_crashes ~ lnaadt + aadt10k + 
+    offset(log(Length)), data = data_1, family = "NB2", method = "BFGS", 
+    max.iters = 1000L)
+fit_1_summary <- summary(fit_1)
+```
+
+The app uses the shiny, bslib, DT, callr, jsonlite and zip packages,
+which are suggested rather than required by flexCountReg;
 [`launch_app()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md)
-offers to install them if needed.
+offers to install any that are missing. Uploaded data stay on your
+computer.
 
 ## Functions and Data
 

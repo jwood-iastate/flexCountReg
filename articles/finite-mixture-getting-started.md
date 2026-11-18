@@ -148,7 +148,7 @@ summary(fit2)
 #> N: 500
 #> Entropy: 130.547 | relative entropy: 0.623 
 #> Starts: 5 | 5 reached the selected log-likelihood
-#> Observed information: positive definite (condition number 19.9 ) | max |gradient|: 7.72e-07 
+#> Observed information: positive definite (condition number 19.9 ) | max |gradient|: 1.4e-07 
 #> No likelihood-ratio test of the number of components is reported (non-standard distribution).
 ```
 
@@ -356,7 +356,7 @@ data.frame(model = c("Poisson", "NB2", "2 Poisson components",
 #> 4 3 Poisson components -1031.950  5 2073.901 2094.974
 fit3$model$classes[, c("label", "prior_share", "mean_count")]
 #>                 label prior_share   mean_count
-#> Component1 Component1  0.03284512 2.046596e-05
+#> Component1 Component1  0.03284512 2.320771e-05
 #> Component2 Component2  0.59408926 1.127026e+00
 #> Component3 Component3  0.37306562 4.938665e+00
 ```

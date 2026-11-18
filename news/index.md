@@ -6,22 +6,29 @@
 
 - New
   [`launch_app()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md)
-  opens an interactive interface to flexCountReg in a web browser. Its
-  pages cover the whole workflow: load a bundled example or a CSV file;
-  specify and estimate count regression, finite-mixture and latent-class
-  models (any family, exposure or log offset, frequency weights,
-  distribution-parameter, membership and shared terms, panels); inspect
-  the summary, coefficients, numerical checks, class sizes and starts;
-  diagnose fits (rootogram, randomized quantile residuals, CURE plot);
-  compare them (with the reasons when they are not comparable); predict
-  for an editable table of scenarios (with confidence or prediction
-  intervals for count regressions); and download the analysis.
-- Every fit is compiled from one versioned specification into R code,
-  and the same code runs in the app and in the downloaded `analysis.R`,
-  which reproduces the fit without the app (the bundle also holds the
-  settings as JSON, the coefficients and a manifest with versions and
-  warnings). Column names enter the code only as symbols, never as
-  pasted text.
+  opens an interactive interface to flexCountReg in a web browser, with
+  a tab for each step: load a bundled example or a CSV file and create
+  new variables (logs, powers, standardized values, indicators,
+  products, ratios, categories, factors); specify and estimate count
+  regression, random-parameter, random-effects panel (RENB,
+  Poisson-Lindley, Poisson, negative multinomial), finite-mixture and
+  latent-class models (any family, exposure or log offset, frequency
+  weights, distribution-parameter, membership and shared terms, panels);
+  inspect the summary, coefficients, numerical checks, class sizes and
+  starts; diagnose fits (rootogram, randomized quantile residuals, CURE
+  plot); compare them (with the reasons when they are not comparable);
+  predict for an editable table of scenarios, with confidence,
+  prediction and tolerance intervals for count regressions; and download
+  the analysis.
+- Everything the app runs (data loading, new variables, fits,
+  diagnostics, predictions, intervals and comparisons) is compiled into
+  R code that calls the package’s functions, evaluated from that code
+  and appended to a session script, shown in the app and downloaded as
+  `analysis.R`; the script reproduces the whole session without the app
+  (the download also holds the settings of each fit as JSON and a
+  manifest with versions and warnings). Column names and typed values
+  enter the code only as names, numbers or strings, never as code. An
+  action that fails reports its error and leaves the session running.
 - Models are estimated in background R processes (callr), so the
   interface stays responsive and fits can be canceled; a slow earlier
   fit never replaces a newer one. Data, fits and jobs belong to one

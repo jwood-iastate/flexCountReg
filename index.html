@@ -81,10 +81,40 @@
 <div class="section level2">
 <h2 id="interactive-app">Interactive app<a class="anchor" aria-label="anchor" href="#interactive-app"></a>
 </h2>
-<p>To work without writing code, start the app:</p>
+<p>flexCountReg includes an interactive app for analysts who prefer to work without writing code, and for anyone who wants a quick way to explore models before scripting them. Start it from R:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">flexCountReg</span><span class="fu">::</span><span class="fu"><a href="reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<p>It walks through the data, the model, the fit, diagnostics, comparisons and predictions, and downloads an R script that reproduces the analysis without the app. The app uses the shiny, bslib, DT, callr, jsonlite and zip packages; <code><a href="reference/launch_app.html">launch_app()</a></code> offers to install them if needed.</p>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jwood-iastate.github.io/flexCountReg/">flexCountReg</a></span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>The app opens in a web browser, with one tab for each step of an analysis:</p>
+<ul>
+<li>
+<strong>Data</strong>: load one of the example datasets or a CSV file, inspect the columns and missing values, and create new variables (logs, powers, standardized values, indicators, products, ratios, categories and factors).</li>
+<li>
+<strong>Build</strong>: choose the model (count regression, random parameters, random-effects panel models, finite mixtures or latent classes), the count distribution, response, predictors, exposure or offset, frequency weights and panel identifier, and the model-specific options. The draft is checked before it can be estimated.</li>
+<li>
+<strong>Fit</strong>: models are estimated in the background, so the app stays responsive and long fits can be canceled. The tab shows the summary, coefficients, numerical checks (convergence, gradient, conditioning of the information matrix) and, for mixtures, class sizes and starts.</li>
+<li>
+<strong>Diagnose</strong>: rootograms, randomized quantile residuals and CURE plots.</li>
+<li>
+<strong>Compare</strong>: log-likelihood, AIC and BIC of several fits, with a warning when they are not comparable (different rows, responses or units).</li>
+<li>
+<strong>Predict</strong>: an editable table of scenarios, with expected counts, confidence or prediction intervals, and tolerance intervals.</li>
+<li>
+<strong>Export</strong>: download the analysis.</li>
+</ul>
+<p>Everything the app runs is also written as R code. The <em>R code</em> panel at the bottom shows the session script: the data loading, every new variable, every fit, diagnostic, prediction and comparison, in the order they ran, using the package’s own functions (<code><a href="reference/countreg.html">countreg()</a></code>, <code><a href="reference/countreg.rp.html">countreg_rp()</a></code>, <code><a href="reference/rootogram.html">rootogram()</a></code>, <code><a href="reference/tolerance_interval.html">tolerance_interval()</a></code>, …). The app evaluates exactly this code, and the Export tab downloads it as <code>analysis.R</code> together with the settings of each fit and a manifest of versions and warnings, so the analysis can be rerun, modified and shared without the app. For example, a session that loads data, adds a variable and fits a model produces code like:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">data_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/eval.html" class="external-link">local</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>    <span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">new.env</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>    <span class="fu">utils</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span>list <span class="op">=</span> <span class="st">"washington_roads"</span>, package <span class="op">=</span> <span class="st">"flexCountReg"</span>, envir <span class="op">=</span> <span class="va">env</span><span class="op">)</span></span>
+<span>    <span class="va">env</span><span class="op">[[</span><span class="st">"washington_roads"</span><span class="op">]</span><span class="op">]</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="va">data_1</span><span class="op">[[</span><span class="st">"aadt10k"</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="va">data_1</span><span class="op">[[</span><span class="st">"AADT"</span><span class="op">]</span><span class="op">]</span> <span class="op">&gt;</span> <span class="fl">10000</span><span class="op">)</span></span>
+<span><span class="va">fit_1</span> <span class="op">&lt;-</span> <span class="fu">flexCountReg</span><span class="fu">::</span><span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span>formula <span class="op">=</span> <span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">aadt10k</span> <span class="op">+</span> </span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">Length</span><span class="op">)</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">data_1</span>, family <span class="op">=</span> <span class="st">"NB2"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span>, </span>
+<span>    max.iters <span class="op">=</span> <span class="fl">1000L</span><span class="op">)</span></span>
+<span><span class="va">fit_1_summary</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit_1</span><span class="op">)</span></span></code></pre></div>
+<p>The app uses the shiny, bslib, DT, callr, jsonlite and zip packages, which are suggested rather than required by flexCountReg; <code><a href="reference/launch_app.html">launch_app()</a></code> offers to install any that are missing. Uploaded data stay on your computer.</p>
 </div>
 <div class="section level2">
 <h2 id="functions-and-data">Functions and Data<a class="anchor" aria-label="anchor" href="#functions-and-data"></a>
@@ -257,7 +287,7 @@
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <p>The following is an example of using flexCountReg to estimate a negative binomial (NB-2) regression model with the overdispersion parameter as a function of predictor variables:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jwood-iastate.github.io/flexCountReg/">flexCountReg</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"washington_roads"</span><span class="op">)</span></span>
@@ -289,7 +319,7 @@
 <span><span class="co">#&gt; Log-likelihood: -1082.176 | AIC: 2176.352 | BIC: 2208.235 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span></code></pre></div>
 <p>The results are also available as tibbles, and the model can be compared with a Poisson base model:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">gen.nb2</span>, conf.int <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 6 × 8</span></span>
 <span><span class="co">#&gt;   term        component estimate std.error statistic  p.value conf.low conf.high</span></span>
@@ -319,20 +349,20 @@
 <span><span class="co">#&gt; 7 LR p-value               NA            NA </span></span>
 <span><span class="co">#&gt; 8 McFadden's Pseudo R^2     0.0167       NA</span></span></code></pre></div>
 <p>A rootogram shows how well the fitted distribution reproduces the observed counts; bars that end above or below zero show counts that are over- or under-predicted:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pois</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">gen.nb2</span>, family <span class="op">=</span> <span class="st">"Poisson"</span>, dis_param_formula_1 <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span><span class="va">oldpar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">pois</span>, main <span class="op">=</span> <span class="st">"Poisson"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">gen.nb2</span>, main <span class="op">=</span> <span class="st">"Generalized NB-2"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-rootogram-1.png" width="100%"></p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">oldpar</span><span class="op">)</span></span></code></pre></div>
 <p>Checking the CURE plot:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-cureplot-initial-1.png" width="100%"></p>
 <p>Modifying the model:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gen.nb2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span>
 <span>                      <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADT10kplus</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="va">AADT10kplus</span> <span class="op">/</span> <span class="va">lnaadt</span><span class="op">)</span>,</span>
 <span>                    data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
@@ -366,7 +396,7 @@
 <span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-cureplot-updt-1.png" width="100%"></p>
 <p>Estimating another model (NB-P), without the interaction:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gen.nbp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span>
 <span>                      <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADT10kplus</span>,</span>
 <span>                    data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NBP"</span>,</span>
@@ -398,11 +428,11 @@
 <span><span class="co">#&gt; Log-likelihood: -1062.195 | AIC: 2142.389 | BIC: 2190.214 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span></code></pre></div>
 <p>Checking the CURE plot (notice that the CURE plot is better in this case than the NB-2 without the interaction and still better than the modified NB-2):</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nbp</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-cureplot-lnaadt-1.png" width="100%"></p>
 <p>Creating a table to compare the models:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Generalized NB-2"</span> <span class="op">=</span> <span class="va">gen.nb2</span>, <span class="st">"Generalized NB-P"</span> <span class="op">=</span> <span class="va">gen.nbp</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 15 × 3</span></span>
 <span><span class="co">#&gt;    Parameter             `Generalized NB-2` `Generalized NB-P`</span></span>
@@ -424,7 +454,7 @@
 <span><span class="co">#&gt; 15 Pseudo-R-Sq.          0.303              0.303</span></span></code></pre></div>
 <p>Note that the metrics for comparison are similar. While the models both have the same number of parameters, the NB-P was able to get better performance without requiring the interaction terms (which leads to strange relationships between the exposure metric and the outcome).</p>
 <p>Predictions have one value per row of new data, and the probability of each count is also available:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nd</span> <span class="op">&lt;-</span> <span class="va">washington_roads</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">gen.nbp</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.6417932 0.5787698 0.8832648</span></span>
@@ -434,7 +464,7 @@
 <span><span class="co">#&gt; [2,] 0.587 0.288 0.093 0.025 0.006</span></span>
 <span><span class="co">#&gt; [3,] 0.450 0.326 0.147 0.053 0.017</span></span></code></pre></div>
 <p>Zero-inflated and hurdle versions of any distribution are fitted with <code>zero_formula</code>. For example, animal-related crashes are zero on most segment-years, and a zero-inflated Poisson model with the zero probability depending on the speed limit can be compared with the Poisson model by AIC and BIC (not by a likelihood-ratio test: no zero inflation puts the zero model’s intercept at minus infinity, so the restriction is not regular):</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">washington_roads</span><span class="op">$</span><span class="va">Animal</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.9540306</span></span>
 <span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Animal</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>, data <span class="op">=</span> <span class="va">washington_roads</span>,</span>
@@ -456,7 +486,7 @@
 <span><span class="co">#&gt; 1  -278.  562.  578.</span></span>
 <span><span class="co">#&gt; 2  -266.  542.  569.</span></span></code></pre></div>
 <p>With tidymodels (requires the parsnip package):</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tidymodels/parsnip" class="external-link">parsnip</a></span><span class="op">)</span></span>
 <span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/count_reg.html">count_reg</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"flexCountReg"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">spec</span>, <span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span>,</span>

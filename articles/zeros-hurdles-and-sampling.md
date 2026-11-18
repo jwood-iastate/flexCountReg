@@ -153,9 +153,9 @@ its standard error is `NA`:
 
 summary(zinb_const)$coefficients["Zero:(Intercept)", 1:2]
 #>   Estimate Std. Error 
-#>  -12.32427         NA
+#>  -12.32361         NA
 plogis(coef(zinb_const)[["Zero:(Intercept)"]])
-#> [1] 4.442605e-06
+#> [1] 4.445507e-06
 ```
 
 With covariates, the zero model can describe *which* students have more
@@ -172,17 +172,17 @@ zc <- function(m) {
 }
 zc(zinb)
 #>                    Estimate Std. Error
-#> Zero:(Intercept) -0.8786574  0.4028556
-#> Zero:ment        -0.6113860  0.2464432
-#> Zero:kid5         0.1564024  0.3569711
+#> Zero:(Intercept) -0.8786574  0.4017719
+#> Zero:ment        -0.6113860  0.2454423
+#> Zero:kid5         0.1564023  0.3664404
 zc(hnb)
 #>                     Estimate Std. Error
-#> Zero:(Intercept)  0.23680758 0.29553208
-#> Zero:femWomen    -0.25115052 0.15905687
-#> Zero:marMarried   0.32623628 0.18064477
-#> Zero:kid5        -0.28525098 0.11127637
-#> Zero:phd          0.02221526 0.07968591
-#> Zero:ment         0.08012173 0.01301641
+#> Zero:(Intercept)  0.23680759 0.29417483
+#> Zero:femWomen    -0.25115053 0.15896858
+#> Zero:marMarried   0.32623628 0.18062465
+#> Zero:kid5        -0.28525098 0.11122144
+#> Zero:phd          0.02221526 0.07942908
+#> Zero:ment         0.08012173 0.01301908
 ```
 
 flexCountReg’s likelihoods and zero-model coefficients agree with those

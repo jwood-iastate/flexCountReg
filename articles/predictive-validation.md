@@ -186,13 +186,11 @@ held_out <- do.call(rbind, lapply(1:5, function(k) {
              pooled = predict(pooled, newdata = test),
              renb = predict(panel, newdata = test))
 }))
-#> Warning: The Hessian is singular; standard errors use a generalized inverse and
-#> may be unreliable. The model may not be identified.
 sapply(held_out[c("pooled", "renb")], function(p)
   c(MAE = mean(abs(held_out$y - p)), RMSE = sqrt(mean((held_out$y - p)^2))))
-#>        pooled      renb
-#> MAE  4.693061  309307.9
-#> RMSE 9.193978 4735626.3
+#>        pooled     renb
+#> MAE  4.693061 4.796859
+#> RMSE 9.193978 9.742050
 ```
 
 Only mean-based scores are shown for the random-effects model: a log
@@ -219,7 +217,7 @@ c(MAE_row_split = mean(abs(row_split$y - row_split$renb)))
 #>      4.374853
 ```
 
-The row split gives a different error (4.37 against 3.0930787^{5} with
+The row split gives a different error (4.37 against 4.8 with
 patient-grouped folds), but it does not estimate the error for new
 patients: each test row’s patient also contributed rows to the training
 set. The patient-grouped split is the one that matches the target.

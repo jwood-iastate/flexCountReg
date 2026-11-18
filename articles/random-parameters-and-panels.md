@@ -138,11 +138,11 @@ summary(rp)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -8.9052     0.4516  -19.72  < 2e-16 ***
-#> lnaadt           1.1251     0.0519   21.68  < 2e-16 ***
+#> (Intercept)     -8.9052     0.4603  -19.34  < 2e-16 ***
+#> lnaadt           1.1251     0.0529   21.27  < 2e-16 ***
 #> speed50:Mean    -0.6991     0.1467   -4.77  1.9e-06 ***
-#> speed50:St.Dev   0.6413     0.1700    3.77  0.00016 ***
-#> ln(alpha)       -1.1395     0.2690   -4.24  2.3e-05 ***
+#> speed50:St.Dev   0.6413     0.1699    3.77  0.00016 ***
+#> ln(alpha)       -1.1395     0.2740   -4.16  3.2e-05 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> Offset: lnlength (coefficient fixed at 1)
@@ -188,12 +188,12 @@ tidy(rp_het)
 #> # A tibble: 6 × 6
 #>   term                          component estimate std.error statistic   p.value
 #>   <chr>                         <chr>        <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 (Intercept)                   mean        -8.98     0.463     -19.4  7.74e- 84
-#> 2 lnaadt                        mean         1.13     0.0532     21.3  6.10e-101
-#> 3 speed50:Mean                  random_m…   -0.859    0.159      -5.42 6.08e-  8
-#> 4 speed50:St.Dev                random_s…    0.551    0.170       3.24 1.17e-  3
-#> 5 HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.240       2.91 3.60e-  3
-#> 6 ln(alpha)                     distribu…   -1.13     0.280      -4.05 5.17e-  5
+#> 1 (Intercept)                   mean        -8.98     0.455     -19.7  1.11e- 86
+#> 2 lnaadt                        mean         1.13     0.0523     21.7  2.28e-104
+#> 3 speed50:Mean                  random_m…   -0.859    0.159      -5.39 7.11e-  8
+#> 4 speed50:St.Dev                random_s…    0.551    0.171       3.23 1.23e-  3
+#> 5 HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.240       2.92 3.55e-  3
+#> 6 ln(alpha)                     distribu…   -1.13     0.276      -4.10 4.10e-  5
 ```
 
 ### Predictions
@@ -222,7 +222,7 @@ cbind(observed = nd$Total_crashes,
 #> [3,]        0 0.8495740 0.8372973  0.5285467
 #> [4,]        0 0.7507863 0.7399372  1.0231186
 #> [5,]        1 0.8957947 0.8828501  0.5573020
-#> [6,]        3 0.7916325 0.7801931  1.0787808
+#> [6,]        3 0.7916325 0.7801931  1.0787809
 ```
 
 The segment-specific coefficients from the Empirical Bayes method are
@@ -270,9 +270,6 @@ re_models <- list(
   NM2 = negmultinom(Total_crashes ~ lnaadt + speed50, group_var = "ID",
                     data = washington_roads, offset = "lnlength")
 )
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of ln(theta) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 do.call(rbind, lapply(names(re_models), function(nm) {
   cbind(model = nm,
         glance(re_models[[nm]])[, c("logLik", "AIC", "BIC", "nobs",
@@ -297,12 +294,12 @@ identified and is reported as `NA`:
 
 tidy(re_models$PoisLindRE)
 #> # A tibble: 4 × 6
-#>   term        component    estimate std.error statistic   p.value
-#>   <chr>       <chr>           <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 (Intercept) mean           -8.77     0.512     -17.1   1.22e-65
-#> 2 lnaadt      mean            1.11     0.0603     18.5   4.18e-76
-#> 3 speed50     mean           -0.561    0.132      -4.24  2.19e- 5
-#> 4 ln(theta)   distribution   -7.13    NA          NA    NA    
+#>   term        component    estimate std.error statistic  p.value
+#>   <chr>       <chr>           <dbl>     <dbl>     <dbl>    <dbl>
+#> 1 (Intercept) mean           -8.77     0.516     -17.0  9.97e-65
+#> 2 lnaadt      mean            1.11     0.0607     18.3  4.99e-75
+#> 3 speed50     mean           -0.561    0.132      -4.24 2.23e- 5
+#> 4 ln(theta)   distribution   -7.13     2.16       -3.30 9.56e- 4
 ```
 
 Its fit statistics are close to those of the other two models, but with
@@ -321,17 +318,14 @@ standard errors resample whole panels:
 re_robust <- poisLind.re(Total_crashes ~ lnaadt + speed50, group_var = "ID",
                          data = washington_roads, offset = "lnlength",
                          method = "BFGS", stderr = "robust")
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of ln(theta) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 tidy(re_robust)
 #> # A tibble: 4 × 6
 #>   term        component    estimate std.error statistic  p.value
 #>   <chr>       <chr>           <dbl>     <dbl>     <dbl>    <dbl>
-#> 1 (Intercept) mean           -8.77     0.599     -14.6  1.36e-48
-#> 2 lnaadt      mean            1.11     0.0702     15.9  1.41e-56
-#> 3 speed50     mean           -0.561    0.131      -4.29 1.79e- 5
-#> 4 ln(theta)   distribution   -7.13     0.0642   -111.   0    
+#> 1 (Intercept) mean           -8.77     0.607     -14.4  2.76e-47
+#> 2 lnaadt      mean            1.11     0.0712     15.6  4.96e-55
+#> 3 speed50     mean           -0.561    0.131      -4.28 1.85e- 5
+#> 4 ln(theta)   distribution   -7.13     0.594     -12.0  3.35e-33
 ```
 
 Cross-sectional models can also be fitted with `stderr = "robust"` or

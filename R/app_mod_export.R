@@ -1,114 +1,101 @@
-# Export page: a downloadable analysis bundle for the selected fit.
+# Export page: download the session script (everything the app ran) with
+# the settings of each fit, a manifest and, optionally, the uploaded data.
 
 mod_export_ui <- function(id) {
   ns <- shiny::NS(id)
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
       width = 320,
-      shiny::selectInput(ns("fit"), "Fit to export", character()),
-      shiny::checkboxGroupInput(
-        ns("parts"), "Include in the script",
-        c("Rootogram data" = "rootogram",
-          "Quantile residuals" = "quantile_residuals",
-          "Predictions for the scenarios on the Predict page" = "scenarios"),
-        selected = "rootogram"),
       shiny::checkboxInput(ns("include_data"),
-                           "Include the uploaded data file", FALSE),
+                           "Include uploaded data files", FALSE),
       help_text("Uploaded data are left out unless you include them; the ",
-                "script then names the file it expects. Bundled examples ",
+                "script then names the files it expects. Example datasets ",
                 "are loaded from flexCountReg."),
-      shiny::downloadButton(ns("download"), "Download analysis bundle",
+      shiny::downloadButton(ns("download"), "Download the analysis",
                             class = "btn-primary")),
-    bslib::card(bslib::card_header("Bundle contents"),
+    bslib::card(bslib::card_header("Contents"), fill = FALSE,
                 shiny::tableOutput(ns("manifest"))),
-    bslib::card(bslib::card_header("analysis.R"),
+    bslib::card(bslib::card_header("analysis.R (the session script)"),
+                fill = FALSE,
                 shiny::verbatimTextOutput(ns("script"))))
 }
 
-# Write an analysis bundle for a fit bundle into directory `dir`; returns
-# the file names written.
-write_bundle <- function(b, dir, options = list(), data = NULL,
-                         include_data = FALSE) {
-  spec <- b$spec
+# Write the analysis bundle of a session into `dir`; returns the file names
+# written. `state` is read without reactivity (call inside isolate()).
+write_bundle <- function(state, dir, include_data = FALSE) {
   files <- character(0)
-  script <- analysis_script(spec, options, fit_label = b$label,
-                            fit_id = b$id, versions = b$versions)
-  writeLines(script, file.path(dir, "analysis.R"), useBytes = TRUE)
-  spec_to_json(spec, file.path(dir, "settings.json"))
-  files <- c(files, "analysis.R", "settings.json")
-  if (include_data && spec$data$source != "bundled" && !is.null(data)) {
-    utils::write.csv(data, file.path(dir, spec$data$name), row.names = FALSE)
-    files <- c(files, spec$data$name)
+  writeLines(app_script(state), file.path(dir, "analysis.R"),
+             useBytes = TRUE)
+  files <- c(files, "analysis.R")
+  fits <- state$fits
+  if (length(fits)) {
+    specs <- lapply(fits, function(b) unclass(b$spec))
+    names(specs) <- vapply(fits, `[[`, "", "fit_name")
+    writeLines(jsonlite::toJSON(specs, auto_unbox = TRUE, null = "null",
+                                pretty = TRUE, digits = NA),
+               file.path(dir, "settings.json"), useBytes = TRUE)
+    files <- c(files, "settings.json")
   }
-  f <- b$fit
-  co <- as.data.frame(generics_tidy(f))
-  utils::write.csv(co, file.path(dir, "coefficients.csv"), row.names = FALSE)
-  files <- c(files, "coefficients.csv")
-  m <- f$model
+  ups <- state$uploads
+  if (include_data) {
+    for (u in ups) {
+      file.copy(u$path, file.path(dir, u$name), overwrite = TRUE)
+      files <- c(files, u$name)
+    }
+  }
   info <- c(
-    paste("Fit:", b$label), paste("Request:", b$id),
-    paste("Created:", format(b$created)),
-    paste("Data:", b$data_name, if (spec$data$source != "bundled")
-      if (include_data) "(included)" else "(not included; see analysis.R)"),
-    paste("Rows used:", m$nobs, "| rows removed for missing values:",
-          m$n_dropped %||% 0),
-    paste("Log-likelihood:", format(m$maximum, digits = 10)),
-    paste("Converged:", isTRUE(m$converged)),
-    if (!is.null(m$seed)) paste("Seed:", m$seed),
-    paste("Versions:", paste(names(b$versions), b$versions, collapse = ", ")),
-    if (length(b$warnings)) c("Warnings:", paste(" -", b$warnings)),
+    paste("Created:", format(Sys.time())),
+    paste("Versions:", paste(names(fcr_versions()), fcr_versions(),
+                             collapse = ", ")),
+    if (length(ups)) paste("Uploaded data:",
+                           toString(vapply(ups, `[[`, "", "name")),
+                           if (include_data) "(included)" else
+                             "(not included; analysis.R names the files)"),
+    "", "Fits:",
+    unlist(lapply(fits, function(b) {
+      f <- get(b$fit_name, envir = state$env)
+      m <- f$model
+      c(paste0("  ", b$fit_name, ": ", b$label),
+        paste0("    rows used: ", m$nobs %||% NA,
+               " | log-likelihood: ", format(m$maximum, digits = 10),
+               " | converged: ", isTRUE(m$converged)),
+        if (length(b$warnings)) paste0("    warning: ", b$warnings))
+    })),
     "", "Session:", utils::capture.output(utils::sessionInfo()))
   writeLines(info, file.path(dir, "manifest.txt"), useBytes = TRUE)
   c(files, "manifest.txt")
 }
 
-generics_tidy <- function(f) flexCountReg::tidy(f, conf.int = TRUE)
-
 mod_export_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
-    shiny::observe({
-      fits <- state$fits
-      shiny::updateSelectInput(session, "fit",
-                               choices = label_choices(fits),
-                               selected = state$active)
-    })
-    bundle <- shiny::reactive({
-      shiny::req(nzchar(input$fit %||% ""))
-      state$fits[[input$fit]]
-    })
-    opts <- shiny::reactive({
-      p <- input$parts %||% character()
-      list(rootogram = "rootogram" %in% p,
-           quantile_residuals = "quantile_residuals" %in% p,
-           scenarios = if ("scenarios" %in% p) state$scenarios)
-    })
     output$script <- shiny::renderText({
-      b <- bundle()
-      analysis_script(b$spec, opts(), fit_label = b$label, fit_id = b$id,
-                      versions = b$versions)
+      if (!length(state$log)) return("Nothing has been run yet.")
+      app_script(state)
     })
     output$manifest <- shiny::renderTable({
-      b <- bundle()
-      up <- b$spec$data$source != "bundled"
+      ups <- state$uploads
       data.frame(
-        file = c("analysis.R", "settings.json", "coefficients.csv",
-                 "manifest.txt", if (up && isTRUE(input$include_data))
-                   b$spec$data$name),
-        contents = c("R code that reproduces the fit and selected outputs",
-                     "versioned app settings (can be reloaded)",
-                     "estimates, standard errors and confidence limits",
-                     "fit identity, sample, warnings, versions, session",
-                     if (up && isTRUE(input$include_data)) "the uploaded data"))
+        file = c("analysis.R", if (length(state$fits)) "settings.json",
+                 "manifest.txt",
+                 if (isTRUE(input$include_data))
+                   vapply(ups, `[[`, "", "name")),
+        contents = c("R code of everything the app ran, in order",
+                     if (length(state$fits))
+                       "settings of each fit (JSON)",
+                     "fits, sample sizes, warnings, versions, session",
+                     if (isTRUE(input$include_data))
+                       rep("uploaded data", length(ups))))
     })
     output$download <- shiny::downloadHandler(
-      filename = function() paste0("flexCountReg-analysis-", bundle()$id,
+      filename = function() paste0("flexCountReg-analysis-",
+                                   format(Sys.time(), "%Y%m%d-%H%M%S"),
                                    ".zip"),
       content = function(file) {
         dir <- tempfile("bundle-")
         dir.create(dir)
         on.exit(unlink(dir, recursive = TRUE))
-        files <- write_bundle(bundle(), dir, opts(), state$data,
-                              isTRUE(input$include_data))
+        files <- shiny::isolate(write_bundle(state, dir,
+                                             isTRUE(input$include_data)))
         zip::zip(file, files, root = dir)
       })
   })

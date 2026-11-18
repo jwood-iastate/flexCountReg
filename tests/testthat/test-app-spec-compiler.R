@@ -1,4 +1,4 @@
-# Specification, validation, settings files and the code compiler.
+# App: model specification, validation, settings files and code compiler.
 
 skip_if_not_installed("shiny")
 skip_if_not_installed("bslib")
@@ -7,114 +7,131 @@ skip_if_not_installed("callr")
 skip_if_not_installed("jsonlite")
 skip_if_not_installed("zip")
 
-ab_spec <- function(...) {
-  app_spec(data = list(source = "bundled", name = "abalone_rings"),
-           recipe = list(response = "rings",
-                         predictors = c("shell_weight", "sex")),
-           model = list(family = "NB2", ...))
+eval_fit <- function(spec, data) {
+  env <- new.env()
+  assign(spec$data$object, data, envir = env)
+  run_compiled(compile_fit(spec, "fit_1"), env)
+  env
 }
 
-test_that("the family table matches the installed flexCountReg", {
+test_that("the family table matches the package registry", {
   ft <- fcr_family_table()
-  ids <- utils::getFromNamespace(".fcr_families", "flexCountReg")
-  expect_identical(ft$id, ids)
+  expect_identical(ft$id, .fcr_families)
   expect_true(all(nzchar(ft$name)))
   expect_identical(ft$param1[ft$id == "NB2"], "ln(alpha)")
   expect_true(is.na(ft$param1[ft$id == "POISSON"]))
   expect_identical(ft$param1[ft$id == "DELAPORTE"], "logit(rho)")
   expect_setequal(ft$id[ft$mixture_status == "validated"],
                   c("POISSON", "NB1", "NB2"))
-})
-
-test_that("every exposed family maps to a call that fits", {
-  skip_on_cran()
-  d <- load_bundled_data("washington_roads")
-  d <- d[seq_len(300), ]
-  for (fam in c("POISSON", "NB2", "PIG2", "DPO")) {
-    s <- app_spec(data = list(source = "bundled", name = "washington_roads"),
-                  recipe = list(response = "Total_crashes",
-                                predictors = "lnaadt"),
-                  model = list(family = fam))
-    expect_length(validate_spec(s, d), 0)
-    env <- new.env()
-    env$analysis_data <- d
-    eval(compile_fit(s), env)
-    expect_s3_class(env$fit, "countreg")
-    expect_identical(env$fit$model$family, fam)
-  }
+  expect_true(all(.app_estimators$id %in% getNamespaceExports("flexCountReg")))
 })
 
 test_that("unusual column names are compiled as symbols", {
   d <- data.frame(`my y` = rpois(30, 2), `x "q"` = rnorm(30),
                   `a\`b` = runif(30, 1, 2), check.names = FALSE)
-  s <- app_spec(data = list(source = "upload", name = "d.csv"),
+  s <- app_spec(data = list(source = "upload", name = "d.csv",
+                            object = "data_1"),
                 recipe = list(response = "my y", predictors = "x \"q\"",
                               exposure = "a`b"),
                 model = list(family = "POISSON"))
   expect_length(validate_spec(s, d), 0)
-  f <- compile_formula(s)
-  expect_identical(all.vars(f), c("my y", "x \"q\"", "a`b"))
-  env <- new.env()
-  env$analysis_data <- d
-  eval(compile_fit(s), env)
-  ref <- flexCountReg::countreg(
-    stats::as.formula(paste0("`my y` ~ `x \"q\"` + offset(log(`a\\`b`))")),
+  expect_identical(all.vars(compile_formula(s)), c("my y", "x \"q\"", "a`b"))
+  env <- eval_fit(s, d)
+  ref <- countreg(
+    stats::as.formula("`my y` ~ `x \"q\"` + offset(log(`a\\`b`))"),
     data = d, family = "POISSON", method = "BFGS")
-  expect_equal(as.numeric(logLik(env$fit)), as.numeric(logLik(ref)))
-  # The script deparses the same expressions (and parses back)
-  txt <- analysis_script(s)
-  expect_silent(parse(text = txt))
+  expect_equal(as.numeric(logLik(env$fit_1)), as.numeric(logLik(ref)))
+  expect_silent(parse(text = draft_script(s)))
 })
 
-test_that("the compiler never builds code by pasting user text", {
-  # A column name that is R code stays a name
+test_that("column names that look like code stay names", {
   evil <- "system('echo hacked')"
   d <- data.frame(y = rpois(20, 1), x = rnorm(20))
   names(d)[2] <- evil
-  s <- app_spec(data = list(source = "upload", name = "d.csv"),
-                recipe = list(response = "y", predictors = evil),
+  s <- app_spec(recipe = list(response = "y", predictors = evil),
                 model = list(family = "POISSON"))
-  f <- compile_formula(s)
-  expect_identical(all.vars(f), c("y", evil))
-  expect_false(any(grepl("^system$", all.names(compile_fit(s)))))
+  expect_identical(all.vars(compile_formula(s)), c("y", evil))
+  expect_false("system" %in% all.names(compile_fit(s, "fit_1")$fit))
+})
+
+test_that("every model type compiles to a call that fits", {
+  skip_on_cran()
+  d <- load_bundled_data("washington_roads")
+  base <- list(source = "bundled", name = "washington_roads",
+               object = "data_1")
+  rec <- list(response = "Total_crashes", predictors = c("lnaadt",
+                                                         "speed50"))
+  cases <- list(
+    list(model = list(family = "PIG2"), cls = "countreg"),
+    list(model = list(estimator = "countreg_rp", family = "POISSON",
+                      rpar = "speed50", ndraws = 50), cls = "countreg_rp"),
+    list(model = list(estimator = "countreg_rp", family = "POISSON",
+                      rpar_intercept = TRUE, ndraws = 50,
+                      method = "BFGS"), cls = "countreg_rp"),
+    list(model = list(estimator = "renb"), group = "ID", cls = "renb"),
+    list(model = list(estimator = "repois"), group = "ID", cls = "repois"),
+    list(model = list(estimator = "poisLind.re"), group = "ID",
+         cls = "poislind_re"),
+    list(model = list(estimator = "negmultinom", nm_family = "NM1"),
+         group = "ID", cls = "negmultinom"),
+    list(model = list(estimator = "countreg_mix", family = "POISSON",
+                      components = 2, n_starts = 2), cls = "countreg_mix"))
+  for (cs in cases) {
+    s <- app_spec(data = base, recipe = c(rec, list(group = cs$group)),
+                  model = cs$model)
+    expect_length(validate_spec(s, d), 0)
+    env <- suppressWarnings(eval_fit(s, d))
+    expect_s3_class(env$fit_1, cs$cls)
+    expect_s3_class(env$fit_1_summary, "summary.flexCountReg")
+  }
+})
+
+test_that("random parameters leave the fixed part of the formula", {
+  s <- app_spec(recipe = list(response = "y", predictors = c("a", "b")),
+                model = list(estimator = "countreg_rp", rpar = "b"))
+  cl <- compile_fit(s, "fit_1")$fit[[3]]
+  expect_identical(cl$formula, quote(y ~ a))
+  expect_identical(cl$rpar_formula, quote(~-1 + b))
+  s$model$rpar_intercept <- TRUE
+  cl <- compile_fit(s, "fit_1")$fit[[3]]
+  expect_identical(cl$formula, quote(y ~ a - 1))
+  expect_identical(cl$rpar_formula, quote(~b))
 })
 
 test_that("validation reports problems before fitting", {
   d <- load_bundled_data("abalone_rings")
-  expect_length(validate_spec(ab_spec(), d), 0)
-  p <- validate_spec(app_spec(recipe = list(response = "length")), d)
-  expect_match(p, "whole numbers", all = FALSE)
-  p <- validate_spec(app_spec(recipe = list(response = "rings",
-                                            predictors = "nope")), d)
-  expect_match(p, "not in the data", all = FALSE)
+  ok <- app_spec(recipe = list(response = "rings",
+                               predictors = c("shell_weight", "sex")))
+  expect_length(validate_spec(ok, d), 0)
+  chk <- function(pattern, recipe = list(), model = list()) {
+    s <- app_spec(recipe = utils::modifyList(list(response = "rings"),
+                                             recipe), model = model)
+    expect_match(validate_spec(s, d), pattern, all = FALSE)
+  }
+  chk("whole numbers", list(response = "length"))
+  chk("not in the data", list(predictors = "nope"))
   d$e <- 1
   d$le <- 0
-  p <- validate_spec(app_spec(recipe = list(response = "rings",
-                                            exposure = "e",
-                                            log_offset = "le")), d)
-  expect_match(p, "log it twice", all = FALSE)
   d$e0 <- 0
-  p <- validate_spec(app_spec(recipe = list(response = "rings",
-                                            exposure = "e0")), d)
-  expect_match(p, "positive", all = FALSE)
-  p <- validate_spec(app_spec(recipe = list(response = "rings"),
-                              model = list(family = "POISSON",
-                                           dis1 = "length")), d)
-  expect_match(p, "no distribution parameter", all = FALSE)
-  p <- validate_spec(app_spec(recipe = list(response = "rings",
-                                            group = "sex")), d)
-  expect_match(p, "mixture estimators", all = FALSE)
-  p <- validate_spec(app_spec(recipe = list(response = "rings"),
-                              model = list(estimator = "countreg_lc",
-                                           family = c("POISSON", "NB2"),
-                                           components = 3)), d)
-  expect_match(p, "one per class", all = FALSE)
+  chk("log it twice", list(exposure = "e", log_offset = "le"))
+  chk("positive", list(exposure = "e0"))
+  chk("no distribution parameter", model = list(family = "POISSON",
+                                                dis1 = "length"))
+  chk("does not use a panel", list(group = "sex"))
+  chk("needs a panel identifier", model = list(estimator = "renb"))
+  chk("one per class", model = list(estimator = "countreg_lc",
+                                    family = c("POISSON", "NB2"),
+                                    components = 3))
+  chk("at least one random parameter",
+      model = list(estimator = "countreg_rp"))
+  chk("must be normal", list(predictors = "length"),
+      model = list(estimator = "countreg_rp", rpar = "length",
+                   rpar_dist = "ln", correlated = TRUE))
   expect_error(app_spec(model = list(familly = "NB2")), "Unknown")
 })
 
 test_that("settings round-trip through JSON and reject unknown fields", {
-  s <- app_spec(data = list(source = "bundled", name = "abalone_rings"),
-                recipe = list(response = "rings",
+  s <- app_spec(recipe = list(response = "rings",
                               predictors = c("shell_weight", "sex"),
                               factors = "sex"),
                 model = list(estimator = "countreg_lc", family = "NB2",
@@ -122,8 +139,7 @@ test_that("settings round-trip through JSON and reject unknown fields", {
                              shared_mean = "shell_weight",
                              shared_dis1 = TRUE, seed = 7L))
   s2 <- spec_from_json(spec_to_json(s))
-  expect_identical(compile_analysis(s2), compile_analysis(s))
-  expect_identical(analysis_script(s2), analysis_script(s))
+  expect_identical(compile_fit(s2, "f"), compile_fit(s, "f"))
   j <- jsonlite::fromJSON(spec_to_json(s), simplifyVector = FALSE)
   j$run_this <- "system('x')"
   expect_error(spec_from_json(jsonlite::toJSON(j, auto_unbox = TRUE)),
@@ -132,29 +148,74 @@ test_that("settings round-trip through JSON and reject unknown fields", {
   j$schema <- 99
   expect_error(spec_from_json(jsonlite::toJSON(j, auto_unbox = TRUE)),
                "schema")
-  j$schema <- 1
+  j$schema <- .spec_schema
   j$model$extra <- 1
   expect_error(spec_from_json(jsonlite::toJSON(j, auto_unbox = TRUE)),
                "Unknown specification")
 })
 
 test_that("mixture specifications compile to the latent-class call", {
-  s <- app_spec(data = list(source = "bundled", name = "stream_salamanders"),
-                recipe = list(response = "count", predictors = "cover",
+  s <- app_spec(recipe = list(response = "count", predictors = "cover",
                               group = "site"),
                 model = list(estimator = "countreg_lc", family = "POISSON",
                              components = 2L, mixing = "mined",
                              shared_mean = "cover", n_starts = 3L,
                              seed = 5L))
-  cl <- compile_fit(s)[[3]]
+  cl <- compile_fit(s, "fit_1")$fit[[3]]
   expect_identical(cl[[1]], quote(flexCountReg::countreg_lc))
   expect_identical(cl$classes, 2L)
   expect_identical(cl$group_var, "site")
   expect_identical(cl$membership_formula, quote(~mined))
   expect_identical(cl$shared, quote(list(mean = "cover")))
-  # Different family per class: no `classes` argument (taken from family)
   s$model$family <- c("POISSON", "NB2")
-  cl <- compile_fit(s)[[3]]
+  cl <- compile_fit(s, "fit_1")$fit[[3]]
   expect_null(cl$classes)
   expect_identical(cl$family, quote(c("POISSON", "NB2")))
+})
+
+test_that("new variables are compiled from structured requests", {
+  d <- data.frame(x = c(1, 2, 4), z = c(2, 2, 1), g = c("a", "b", "a"))
+  apply_t <- function(t) {
+    expect_length(check_transform(t, d), 0)
+    env <- new.env()
+    env$data_1 <- d
+    run_compiled(list(compile_transform(t, "data_1")), env)
+    env$data_1[[t$name]]
+  }
+  expect_equal(apply_t(list(type = "log", x = "x", name = "lx")), log(d$x))
+  expect_equal(apply_t(list(type = "log_c", x = "x", constant = "1",
+                            name = "l1")), log(d$x + 1))
+  expect_equal(apply_t(list(type = "power", x = "x", constant = "2",
+                            name = "x2")), d$x^2)
+  expect_equal(apply_t(list(type = "standardize", x = "x", name = "zx")),
+               as.vector(scale(d$x)))
+  expect_equal(apply_t(list(type = "indicator", x = "x", op = ">=",
+                            value = "2", name = "big")), c(0L, 1L, 1L))
+  expect_equal(apply_t(list(type = "indicator_level", x = "g", value = "a",
+                            name = "is_a")), c(1L, 0L, 1L))
+  expect_equal(apply_t(list(type = "product", x = "x", y = "z",
+                            name = "xz")), d$x * d$z)
+  expect_equal(apply_t(list(type = "ratio", x = "x", y = "z", name = "r")),
+               d$x / d$z)
+  expect_equal(as.character(apply_t(list(type = "cut", x = "x",
+                                         value = "2, 3", name = "cx"))),
+               c("[-Inf,2)", "[2,3)", "[3, Inf)"))
+  expect_s3_class(apply_t(list(type = "factor", x = "z", name = "fz")),
+                  "factor")
+  # Problems are reported instead of producing bad columns
+  expect_match(check_transform(list(type = "log", x = "z", name = "x"), d),
+               "already exists", all = FALSE)
+  d$w <- c(0, 1, 2)
+  expect_match(check_transform(list(type = "log", x = "w", name = "lw"), d),
+               "positive", all = FALSE)
+  expect_match(check_transform(list(type = "indicator", x = "x", op = ">",
+                                    value = "system('x')", name = "i"), d),
+               "number", all = FALSE)
+  expect_match(check_transform(list(type = "log", x = "g", name = "lg"), d),
+               "not numeric", all = FALSE)
+  # A value typed by the user is data, not code
+  e <- compile_transform(list(type = "indicator_level", x = "g",
+                              value = "a\") ; system(\"x", name = "i"),
+                         "data_1")
+  expect_false("system" %in% all.names(e))
 })

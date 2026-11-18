@@ -49,6 +49,7 @@ Imports:
     cureplots,
     generics,
     graphics,
+    grDevices,
     gsl,
     gt,
     knitr,

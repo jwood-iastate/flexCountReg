@@ -1,19 +1,34 @@
-# The versioned analysis specification. Every control in the app edits a
-# draft specification; a fit freezes a copy of it, and the code that runs in
-# the worker and the code that is exported are both compiled from it.
+# The versioned model specification of the app. Every Build control edits a
+# draft specification; a fit freezes a copy, and the code that runs and the
+# code that is exported are both compiled from it.
 
-.spec_schema <- 1L
+.spec_schema <- 2L
 
-# Create an analysis specification
-#
+# Create a model specification.
+#   data   - source ("bundled" or "upload"), name (dataset or file name) and
+#            object (the name of the data object in the session script,
+#            e.g. "data_1").
+#   recipe - response, predictors, factors (columns converted with
+#            factor()), exposure (entered as offset(log(exposure))),
+#            log_offset (entered as offset(column)), weights (frequency
+#            weights) and group (panel identifier).
+#   model  - estimator (see .app_estimators), family (one code, or one per
+#            mixture component), components, dis1 (predictors of the first
+#            distribution parameter), mixing (membership predictors),
+#            shared_mean, shared_dis1, rpar (random parameters),
+#            rpar_intercept (random intercept), rpar_dist, correlated,
+#            ndraws, nm_family (negative multinomial), n_starts, seed,
+#            method, max_iters, stderr.
 app_spec <- function(data = list(), recipe = list(), model = list()) {
-  d <- list(source = "bundled", name = "abalone_rings")
+  d <- list(source = "bundled", name = "abalone_rings", object = "data_1")
   r <- list(response = NULL, predictors = character(), factors = character(),
             exposure = NULL, log_offset = NULL, weights = NULL,
             group = NULL)
   m <- list(estimator = "countreg", family = "NB2", components = 2L,
             dis1 = character(), mixing = character(),
             shared_mean = character(), shared_dis1 = FALSE,
+            rpar = character(), rpar_intercept = FALSE, rpar_dist = "n",
+            correlated = FALSE, ndraws = 500L, nm_family = "NM2",
             n_starts = 10L, seed = 1L, method = "BFGS", max_iters = 1000L,
             stderr = "normal")
   merge <- function(base, new) {
@@ -38,6 +53,11 @@ validate_spec <- function(spec, data) {
   r <- spec$recipe
   m <- spec$model
   cols <- names(data)
+  est <- .app_estimator(m$estimator)
+  if (nrow(est) != 1 || is.na(est$id)) {
+    add("Unknown model type \"", m$estimator, "\".")
+    return(p)
+  }
   if (is.null(r$response) || !nzchar(r$response)) {
     add("Choose a response (count) column.")
   } else if (!r$response %in% cols) {
@@ -52,7 +72,7 @@ validate_spec <- function(spec, data) {
     }
   }
   roles <- c(r$predictors, r$factors, r$exposure, r$log_offset, r$weights,
-             r$group, m$dis1, m$mixing)
+             r$group, m$dis1, m$mixing, m$rpar)
   miss <- setdiff(roles, cols)
   if (length(miss)) add("Column(s) not in the data: ", toString(miss), ".")
   if (!is.null(r$response) && r$response %in%
@@ -76,17 +96,31 @@ validate_spec <- function(spec, data) {
       add("Frequency weights must be nonnegative numbers.")
     }
   }
-  if (!is.null(r$group) && r$group %in% c(r$predictors, m$dis1, m$mixing)) {
+  # Panels
+  if (est$group == "required" && is.null(r$group)) {
+    add("This model needs a panel identifier (the column that groups the ",
+        "repeated observations).")
+  }
+  if (est$group == "none" && !is.null(r$group)) {
+    add("Count regression does not use a panel identifier; choose a ",
+        "random-parameter, random-effects or mixture model for panels.")
+  }
+  if (!is.null(r$group) && r$group %in% c(r$predictors, m$dis1, m$mixing,
+                                          m$rpar)) {
     add("The panel identifier should not also be a predictor.")
   }
-  if (!m$estimator %in% .app_estimators) {
-    add("Unknown estimator \"", m$estimator, "\".")
-  }
+  # Families
   ft <- fcr_family_table()
-  if (!length(m$family) || any(!m$family %in% ft$id)) {
-    add("Unknown family: ", toString(setdiff(m$family, ft$id)), ".")
+  if (est$uses_family) {
+    if (!length(m$family) || any(!m$family %in% ft$id)) {
+      add("Unknown family: ", toString(setdiff(m$family, ft$id)), ".")
+    }
   }
-  mixture <- m$estimator %in% c("countreg_mix", "countreg_lc")
+  if (m$estimator == "negmultinom" &&
+      !m$nm_family %in% c("NM1", "NM2", "NMP")) {
+    add("The negative multinomial family must be NM1, NM2 or NMP.")
+  }
+  mixture <- .app_is_mixture(m$estimator)
   if (mixture) {
     if (!is.numeric(m$components) || m$components < 1 ||
         m$components != round(m$components)) {
@@ -99,41 +133,60 @@ validate_spec <- function(spec, data) {
       add("The number of starts must be at least 1.")
     }
   } else {
-    if (length(m$family) != 1) add("Count regression uses one family.")
-    if (!is.null(r$group)) {
-      add("A panel identifier is used by the mixture estimators (one class ",
-          "per panel); for count regression leave it empty.")
+    if (est$uses_family && length(m$family) != 1) {
+      add("This model uses one family.")
     }
     if (length(m$mixing) || length(m$shared_mean)) {
       add("Membership predictors and shared terms apply to mixture models.")
     }
   }
-  if (length(m$dis1) &&
-      all(is.na(ft$param1[ft$id %in% m$family]))) {
-    add("The ", toString(unique(m$family)), " family has no distribution ",
-        "parameter to model; clear the distribution-parameter predictors.")
+  # Random parameters
+  if (m$estimator == "countreg_rp") {
+    if (!length(m$rpar) && !isTRUE(m$rpar_intercept)) {
+      add("Choose at least one random parameter (or a random intercept).")
+    }
+    if (!m$rpar_dist %in% c("n", "ln", "t", "u", "g")) {
+      add("Unknown random-parameter distribution \"", m$rpar_dist, "\".")
+    }
+    if (isTRUE(m$correlated) && m$rpar_dist != "n") {
+      add("Correlated random parameters must be normal.")
+    }
+    if (!is.numeric(m$ndraws) || m$ndraws < 10) {
+      add("Use at least 10 Halton draws.")
+    }
+  } else if (length(m$rpar) || isTRUE(m$rpar_intercept)) {
+    add("Random parameters apply to the random-parameters model.")
+  }
+  if (length(m$dis1)) {
+    if (!est$dis1) {
+      add("Distribution-parameter predictors are not available for this ",
+          "model type.")
+    } else if (all(is.na(ft$param1[ft$id %in% m$family]))) {
+      add("The ", toString(unique(m$family)), " family has no distribution ",
+          "parameter to model; clear the distribution-parameter predictors.")
+    }
   }
   bad_shared <- setdiff(m$shared_mean, c("(Intercept)", r$predictors))
   if (length(bad_shared)) {
     add("Shared terms must be model terms: ", toString(bad_shared), ".")
   }
-  if (!is.numeric(m$max_iters) || m$max_iters < 1) {
+  if (!is.numeric(m$max_iters) || is.na(m$max_iters) || m$max_iters < 1) {
     add("The iteration limit must be at least 1.")
   }
-  if (!is.numeric(m$seed) || length(m$seed) != 1) add("The seed must be a number.")
+  if (!is.numeric(m$seed) || length(m$seed) != 1 || is.na(m$seed)) {
+    add("The seed must be a number.")
+  }
   p
 }
 
 # ---- Settings files -------------------------------------------------------------
-
-# Write and read app settings
 #
-# Settings are stored as versioned JSON. Reading validates the schema and
-# rejects unknown fields instead of ignoring them.
+# Specifications are stored as versioned JSON. Reading validates the schema
+# and rejects unknown fields instead of ignoring them.
+
 spec_to_json <- function(spec, path = NULL) {
-  x <- unclass(spec)
-  txt <- jsonlite::toJSON(x, auto_unbox = TRUE, null = "null", pretty = TRUE,
-                          digits = NA)
+  txt <- jsonlite::toJSON(unclass(spec), auto_unbox = TRUE, null = "null",
+                          pretty = TRUE, digits = NA)
   if (!is.null(path)) writeLines(txt, path, useBytes = TRUE)
   txt
 }
@@ -142,6 +195,10 @@ spec_from_json <- function(txt = NULL, path = NULL) {
   if (!is.null(path)) txt <- paste(readLines(path, warn = FALSE),
                                    collapse = "\n")
   x <- jsonlite::fromJSON(txt, simplifyVector = TRUE)
+  .spec_from_list(x)
+}
+
+.spec_from_list <- function(x) {
   if (!identical(as.integer(x$schema), .spec_schema)) {
     stop("Unsupported settings schema ", format(x$schema), " (this app ",
          "reads schema ", .spec_schema, ").", call. = FALSE)
@@ -156,8 +213,9 @@ spec_from_json <- function(txt = NULL, path = NULL) {
   rec <- x$recipe
   for (nm in c("predictors", "factors")) rec[[nm]] <- vec(rec[[nm]])
   mod <- x$model
-  for (nm in c("dis1", "mixing", "shared_mean")) mod[[nm]] <- vec(mod[[nm]])
-  mod$family <- vec(mod$family)
+  for (nm in c("dis1", "mixing", "shared_mean", "rpar", "family")) {
+    mod[[nm]] <- vec(mod[[nm]])
+  }
   chk <- function(v, nm) {
     if (!is.null(v) && !(is.character(v) && length(v) == 1)) {
       stop("Settings field ", nm, " must be one name.", call. = FALSE)

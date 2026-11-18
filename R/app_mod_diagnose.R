@@ -7,6 +7,7 @@ mod_diagnose_ui <- function(id) {
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
       width = 320,
+      shiny::selectInput(ns("fit"), "Model", character()),
       shiny::uiOutput(ns("fit_note")),
       shiny::selectInput(ns("diag"), "Diagnostic",
                          c("Rootogram" = "rootogram",
@@ -27,7 +28,22 @@ mod_diagnose_ui <- function(id) {
       shiny::uiOutput(ns("unavailable")),
       shiny::actionButton(ns("go"), "Calculate diagnostic",
                           class = "btn-primary"),
-      shiny::downloadButton(ns("download"), "Download plot data")),
+      shiny::downloadButton(ns("download"), "Download plot data"),
+      bslib::accordion(
+        open = FALSE, class = "mt-3",
+        bslib::accordion_panel(
+          "Save the plot as JPEG",
+          shiny::numericInput(ns("jpg_width"), "Width (inches)", 7,
+                              min = 1, max = 30, step = 0.5),
+          shiny::numericInput(ns("jpg_height"), "Height (inches)", 5,
+                              min = 1, max = 30, step = 0.5),
+          shiny::selectInput(ns("jpg_res"), "Resolution (dots per inch)",
+                             c("150" = 150, "300 (print)" = 300,
+                               "600" = 600, "1200" = 1200),
+                             selected = 300),
+          help_text("The code that writes the file is added to the session ",
+                    "script."),
+          shiny::downloadButton(ns("download_jpg"), "Download JPEG")))),
     bslib::card(bslib::card_header(shiny::textOutput(ns("title"))),
                 fill = FALSE,
                 shiny::plotOutput(ns("plot"), height = "420px"),
@@ -50,12 +66,15 @@ diagnostic_data <- function(type, value, fit) {
 mod_diagnose_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
     current <- shiny::reactiveVal(NULL)
-    fit_id <- shiny::reactive(state$active)
+    app_fit_selector(input, session, state, "fit")
+    fit_id <- shiny::reactive({
+      id <- input$fit
+      if (is.null(id) || !nzchar(id)) NULL else id
+    })
     output$fit_note <- shiny::renderUI({
       b <- state$fits[[fit_id() %||% ""]]
       help_text(if (is.null(b)) "Estimate a model first (Build page)." else
-        paste0("Diagnostics of the selected fit: ", b$label, " (",
-               b$fit_name, ")."))
+        paste0("Object ", b$fit_name, "; data ", b$spec$data$object, "."))
     })
     shiny::observe({
       d <- state$data
@@ -137,5 +156,16 @@ mod_diagnose_server <- function(id, state) {
       filename = function() paste0(current()$out %||% "diagnostic", ".csv"),
       content = function(file) utils::write.csv(current()$data, file,
                                                 row.names = FALSE))
+    output$download_jpg <- shiny::downloadHandler(
+      filename = function() paste0(current()$out %||% "plot", ".jpg"),
+      content = function(file) {
+        r <- current()
+        if (is.null(r)) stop("Calculate a diagnostic first.", call. = FALSE)
+        app_save_plot(state, r, file, width = input$jpg_width,
+                      height = input$jpg_height,
+                      res = as.numeric(input$jpg_res))
+      })
+    # The button sits in a collapsed panel at first; keep it ready
+    shiny::outputOptions(output, "download_jpg", suspendWhenHidden = FALSE)
   })
 }

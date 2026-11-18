@@ -94,20 +94,26 @@ check_transform <- function(t, data) {
   p
 }
 
-# The assignment expression of a transformation of data object `obj`
-compile_transform <- function(t, obj) {
+# The assignment expression of a transformation of data object `obj`.
+# When the same variable is created in new data (`train` is the data object
+# it was first created in), quantities learned from data come from the
+# training data: the mean and standard deviation of standardize and center,
+# and the categories of factor(). Recomputing them from the new data would
+# change the meaning of the variable.
+compile_transform <- function(t, obj, train = NULL) {
   d <- .sym(obj)
   col <- function(v) bquote(.(d)[[.(v)]])
   x <- col(t$x)
+  tx <- if (is.null(train)) x else bquote(.(.sym(train))[[.(t$x)]])
   num <- function(v) as.numeric(v)
   rhs <- switch(t$type,
     log = bquote(log(.(x))),
     log_c = bquote(log(.(x) + .(num(t$constant)))),
     sqrt = bquote(sqrt(.(x))),
     power = bquote(.(x)^.(num(t$constant))),
-    standardize = bquote((.(x) - mean(.(x), na.rm = TRUE)) /
-                           stats::sd(.(x), na.rm = TRUE)),
-    center = bquote(.(x) - mean(.(x), na.rm = TRUE)),
+    standardize = bquote((.(x) - mean(.(tx), na.rm = TRUE)) /
+                           stats::sd(.(tx), na.rm = TRUE)),
+    center = bquote(.(x) - mean(.(tx), na.rm = TRUE)),
     indicator = as.call(list(.sym("as.integer"),
                              as.call(list(.sym(t$op), x, num(t$value))))),
     indicator_level = bquote(as.integer(as.character(.(x)) == .(t$value))),
@@ -119,19 +125,25 @@ compile_transform <- function(t, obj) {
                                                  Inf))),
                  right = FALSE))
     },
-    factor = bquote(factor(.(x))))
+    factor = if (is.null(train)) bquote(factor(.(x))) else
+      bquote(factor(.(x), levels = levels(.(.sym(train))[[.(t$name)]]))))
   bquote(.(d)[[.(t$name)]] <- .(rhs))
 }
 
 # A short description of a transformation (for the log title)
 describe_transform <- function(t) {
   e <- compile_transform(t, "d")[[3]]
-  paste0(t$name, " = ", gsub("d\\[\\[\"([^\"]*)\"\\]\\]", "\\1",
-                             .deparse(e)))
+  one_line <- paste(trimws(deparse(e, width.cutoff = 500L)), collapse = " ")
+  paste0(t$name, " = ", gsub("d\\[\\[\"([^\"]*)\"\\]\\]", "\\1", one_line))
 }
 
 # Apply a transformation to the current data object of the session
 app_add_variable <- function(state, t) {
+  # Keep only the settings the transformation uses
+  if (!t$type %in% c("product", "ratio")) t$y <- NULL
+  if (!t$type %in% c("indicator", "indicator_level", "cut")) t$value <- NULL
+  if (!t$type %in% c("log_c", "power")) t$constant <- NULL
+  if (t$type != "indicator") t$op <- NULL
   obj <- state$data_meta$object
   if (is.null(obj)) stop("Load data first.", call. = FALSE)
   env <- state$env
@@ -139,6 +151,9 @@ app_add_variable <- function(state, t) {
   if (length(p)) stop(paste(p, collapse = " "), call. = FALSE)
   e <- compile_transform(t, obj)
   run_compiled(list(e), env)
+  tr <- state$transforms
+  tr[[obj]] <- c(tr[[obj]], list(t))
+  state$transforms <- tr
   state$data <- get(obj, envir = env)
   meta <- state$data_meta
   meta$version <- (meta$version %||% 0L) + 1L
@@ -148,4 +163,59 @@ app_add_variable <- function(state, t) {
                         describe_transform(t)), list(e), "transform",
           t$name)
   invisible(t$name)
+}
+
+# ---- New data for predictions ------------------------------------------------------
+
+# The transformations (in their original order) that create the columns a
+# fitted specification needs, following chains (a variable created from
+# another created variable).
+transforms_needed <- function(spec, transforms) {
+  need <- needed_columns(spec)
+  keep <- rep(FALSE, length(transforms))
+  for (i in rev(seq_along(transforms))) {
+    t <- transforms[[i]]
+    if (t$name %in% need) {
+      keep[i] <- TRUE
+      need <- union(need, .tf_inputs(t))
+    }
+  }
+  transforms[keep]
+}
+
+# The input columns of a transformation
+.tf_inputs <- function(t) {
+  v <- c(t$x, t$y)
+  v[!is.na(v) & nzchar(v)]
+}
+
+# Columns new data must contain for a fit: the columns it needs that are
+# not created by the replayed transformations
+raw_columns_needed <- function(spec, transforms) {
+  tr <- transforms_needed(spec, transforms)
+  need <- needed_columns(spec)
+  for (t in tr) need <- union(need, .tf_inputs(t))
+  setdiff(need, vapply(tr, `[[`, "", "name"))
+}
+
+# Expressions that prepare new data object `newdata` for predictions of a
+# fit, in a copy named `out`: the fit's variable creations (anchored to the
+# training data, see compile_transform()) and its factor conversions (with
+# the training levels).
+compile_prediction_data <- function(spec, fit_name, transforms, newdata,
+                                    out) {
+  train <- spec$data$object
+  o <- .sym(out)
+  ex <- list(call("<-", o, .sym(newdata)))
+  for (t in transforms_needed(spec, transforms)) {
+    ex <- c(ex, list(compile_transform(t, out, train = train)))
+  }
+  if (length(spec$recipe$factors)) {
+    fd <- .sym(paste0(fit_name, "_data"))
+    for (f in spec$recipe$factors) {
+      ex <- c(ex, list(bquote(.(o)[[.(f)]] <- factor(
+        .(o)[[.(f)]], levels = levels(.(fd)[[.(f)]])))))
+    }
+  }
+  ex
 }

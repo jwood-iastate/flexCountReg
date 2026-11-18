@@ -75,13 +75,16 @@ analysis:
   responsive and long fits can be canceled. The tab shows the summary,
   coefficients, numerical checks (convergence, gradient, conditioning of
   the information matrix) and, for mixtures, class sizes and starts.
-- **Diagnose**: rootograms, randomized quantile residuals and CURE
-  plots.
+- **Diagnose**: rootograms, randomized quantile residuals and CURE plots
+  for any of the fitted models, with the plots saved as JPEG files at
+  the size and resolution you choose (for papers and reports).
 - **Compare**: log-likelihood, AIC and BIC of several fits, with a
   warning when they are not comparable (different rows, responses or
   units).
-- **Predict**: an editable table of scenarios, with expected counts,
-  confidence or prediction intervals, and tolerance intervals.
+- **Predict**: expected counts, confidence or prediction intervals, and
+  tolerance intervals for an editable table of scenarios or for a CSV
+  file of new data; variables you created on the Data tab are created in
+  the new data the same way.
 - **Export**: download the analysis.
 
 Everything the app runs is also written as R code. The *R code* panel at

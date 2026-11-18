@@ -49,18 +49,16 @@
   invisible(status)
 }
 
-# Start a background fit. `objects` is a named list of the objects the
-# expressions need (the session's data object).
-start_fit_job <- function(spec, fit_name, objects, dir = tempfile("fcr-app-"),
-                          label = NULL) {
+# Start a background job evaluating `exprs` with the named list `objects`
+# (the session objects the code uses).
+start_job <- function(exprs, objects, dir = tempfile("fcr-app-"),
+                      label = NULL) {
   dir.create(dir, showWarnings = FALSE, recursive = TRUE)
   id <- .new_request_id()
   jdir <- file.path(dir, id)
   dir.create(jdir)
-  exprs <- compile_fit(spec, fit_name)
-  req <- list(id = id, spec = spec, fit_name = fit_name, exprs = exprs,
-              objects = objects, label = label %||% fit_name,
-              created = Sys.time())
+  req <- list(id = id, exprs = exprs, objects = objects,
+              label = label %||% id, created = Sys.time())
   req_path <- file.path(jdir, "request.rds")
   res_path <- file.path(jdir, "result.rds")
   saveRDS(req, req_path)
@@ -68,9 +66,20 @@ start_fit_job <- function(spec, fit_name, objects, dir = tempfile("fcr-app-"),
                       libpath = .libPaths(), supervise = TRUE,
                       stdout = file.path(jdir, "stdout.txt"),
                       stderr = file.path(jdir, "stderr.txt"))
-  list(id = id, label = req$label, spec = spec, fit_name = fit_name,
-       exprs = exprs, proc = proc, dir = jdir, result_path = res_path,
-       started = Sys.time(), status = "running")
+  list(id = id, label = req$label, exprs = exprs, proc = proc, dir = jdir,
+       result_path = res_path, started = Sys.time(), status = "running")
+}
+
+# Start a background fit. `objects` is a named list of the objects the
+# expressions need (the session's data object).
+start_fit_job <- function(spec, fit_name, objects, dir = tempfile("fcr-app-"),
+                          label = NULL) {
+  job <- start_job(compile_fit(spec, fit_name), objects, dir = dir,
+                   label = label %||% fit_name)
+  job$kind <- "fit"
+  job$spec <- spec
+  job$fit_name <- fit_name
+  job
 }
 
 # Update a job's status ("running", "completed", "failed" or "canceled")

@@ -14,6 +14,7 @@ new_app_state <- function(session_dir = tempfile("fcr-app-")) {
     uploads = list(),       # uploaded files, by data object
     transforms = list(),    # variables created, by data object
     newdata = character(),  # new-data objects for predictions
+    outputs = list(),       # results of background output jobs, by id
     spec = NULL,            # draft specification (Build page)
     jobs = list(),          # running and finished jobs, by request id
     fits = list(),          # completed fits, by request id
@@ -123,6 +124,17 @@ record_finished_job <- function(state, j) {
     for (nm in names(j$result$objects)) {
       assign(nm, j$result$objects[[nm]], envir = env)
     }
+    if (identical(j$kind, "output")) {
+      app_log(state, j$label, j$exprs, j$type, j$out)
+      ol <- state$outputs
+      ol[[j$id]] <- list(out = j$out, exprs = j$exprs, type = j$type,
+                         value = get(j$out, envir = env),
+                         fit = state$fits[[j$fit_id]],
+                         messages = j$result$messages,
+                         warnings = j$result$warnings)
+      state$outputs <- ol
+      return(invisible(j$status))
+    }
     res <- j$result
     fl <- state$fits
     fl[[j$id]] <- list(id = j$id, label = j$label, fit_name = j$fit_name,
@@ -154,11 +166,22 @@ app_fit_object <- function(state, id) {
 # evaluate it in the session environment (plots go to a null device; the
 # page redraws them), log it, and return its object name and code.
 app_run_output <- function(state, req, fit_id = NULL) {
+  o <- app_prepare_output(state, req, fit_id)
+  env <- state$env
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  run_compiled(o$exprs, env)
+  app_log(state, o$title, o$exprs, req$type, o$out)
+  list(out = o$out, exprs = o$exprs, value = get(o$out, envir = env),
+       fit = o$fit, type = req$type)
+}
+
+# Compile an output request: its object name, code and log title. Problems
+# that can be seen before running (missing columns of new data) are errors
+# here.
+app_prepare_output <- function(state, req, fit_id = NULL) {
   b <- if (!is.null(fit_id)) state$fits[[fit_id]]
   fit_name <- if (!is.null(b)) b$fit_name else "fit"
-  n <- .app_next(state, req$type)
-  out <- paste0(.app_out_stem[[req$type]], "_", n)
-  req$title <- req$title %||% (if (!is.null(b)) b$label)
   if (!is.null(req$newdata)) {
     # New data: the columns the fit needs must be there (or be created by
     # the fit's variable creations)
@@ -169,22 +192,51 @@ app_run_output <- function(state, req, fit_id = NULL) {
       stop("The new data lack column(s) the model needs: ", toString(miss),
            ".", call. = FALSE)
     }
+  }
+  n <- .app_next(state, req$type)
+  out <- paste0(.app_out_stem[[req$type]], "_", n)
+  req$title <- req$title %||% (if (!is.null(b)) b$label)
+  if (!is.null(req$newdata)) {
     req$prep <- compile_prediction_data(b$spec, fit_name, tr, req$newdata,
                                         paste0(out, "_data"))
   }
   exprs <- compile_output(req, fit_name, out)
-  env <- state$env
-  grDevices::pdf(NULL)
-  on.exit(grDevices::dev.off(), add = TRUE)
-  run_compiled(exprs, env)
   title <- switch(req$type,
                   rootogram = "Rootogram", quantile = "Quantile residuals",
                   cure = "CURE plot", predict = "Predictions",
                   tolerance = "Tolerance intervals",
                   compare = "Model comparison")
-  app_log(state, paste0(title, " ", n, if (!is.null(b))
-    paste0(" (", b$label, ")")), exprs, req$type, out)
-  list(out = out, exprs = exprs, value = get(out, envir = env), fit = b)
+  list(out = out, exprs = exprs, fit = b, type = req$type,
+       title = paste0(title, " ", n, if (!is.null(b))
+         paste0(" (", b$label, ")")))
+}
+
+# Will an interval of this fit need the parametric bootstrap (refits)
+# because its covariance matrix is not positive definite?
+app_needs_bootstrap <- function(fit) {
+  V <- tryCatch(stats::vcov(fit), error = function(e) NULL)
+  !is.matrix(V) || !.fcr_is_pd(V)
+}
+
+# Run an output request in a background R process (predictions and
+# intervals can take minutes, e.g. a parametric bootstrap); returns the
+# job. The objects its code uses are sent to the worker; the objects it
+# creates come back when it finishes (record_finished_job()).
+app_start_output_job <- function(state, req, fit_id) {
+  o <- app_prepare_output(state, req, fit_id)
+  env <- state$env
+  used <- unique(unlist(lapply(o$exprs, all.vars)))
+  objects <- mget(intersect(used, ls(env)), envir = env)
+  job <- start_job(o$exprs, objects, dir = state$session_dir,
+                   label = o$title)
+  job$kind <- "output"
+  job$out <- o$out
+  job$type <- o$type
+  job$fit_id <- fit_id
+  jl <- state$jobs
+  jl[[job$id]] <- job
+  state$jobs <- jl
+  job
 }
 
 # Run code from a page, turning errors into a visible notification instead

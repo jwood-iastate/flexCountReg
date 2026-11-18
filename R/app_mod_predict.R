@@ -77,6 +77,7 @@ mod_predict_ui <- function(id) {
       DT::DTOutput(ns("scen"))),
     bslib::card(bslib::card_header(shiny::textOutput(ns("res_title"))),
                 fill = FALSE,
+                shiny::uiOutput(ns("running")),
                 shiny::uiOutput(ns("res_note")),
                 shiny::tableOutput(ns("res")),
                 shiny::downloadButton(ns("download"), "Download results",
@@ -195,11 +196,61 @@ mod_predict_server <- function(id, state) {
         }
         req$scenarios <- s
       }
-      res <- app_run_output(state, req, b$id)
-      res$type <- req$type
-      res$fit$fit <- b$fit
-      current(res)
+      # Predictions and intervals run in the background (a parametric
+      # bootstrap can take minutes); the result is picked up when the job
+      # finishes
+      if (!identical(req$interval %||% "none", "none") ||
+          identical(req$type, "tolerance")) {
+        if (app_needs_bootstrap(b$fit)) {
+          shiny::showNotification(paste(
+            "The covariance matrix of this model is not positive definite",
+            "(e.g. a parameter at a boundary), so the interval uses a",
+            "parametric bootstrap with 200 refits. This can take several",
+            "minutes; it runs in the background and can be canceled."),
+            type = "warning", duration = 15)
+        }
+      }
+      job <- app_start_output_job(state, req, b$id)
+      pending(job$id)
     }
+    pending <- shiny::reactiveVal(NULL)
+    # Pick up the result (or the failure) of the pending job
+    shiny::observe({
+      id <- pending()
+      if (is.null(id)) return()
+      res <- state$outputs[[id]]
+      if (!is.null(res)) {
+        res$fit$fit <- app_fit_object(state, res$fit$id)
+        current(res)
+        pending(NULL)
+        for (m in res$messages) {
+          shiny::showNotification(m, type = "message", duration = 10)
+        }
+        return()
+      }
+      j <- state$jobs[[id]]
+      if (!is.null(j) && j$status %in% c("failed", "canceled")) pending(NULL)
+    })
+    output$running <- shiny::renderUI({
+      id <- pending()
+      if (is.null(id)) return(NULL)
+      j <- state$jobs[[id]]
+      shiny::div(
+        class = "alert alert-info d-flex align-items-center gap-3",
+        role = "status",
+        shiny::span(paste0("Running ", j$label, " in the background...")),
+        shiny::actionButton(session$ns("cancel"), "Cancel",
+                            class = "btn-sm btn-outline-danger"))
+    })
+    shiny::observeEvent(input$cancel, app_try(what = "Canceling", {
+      id <- pending()
+      if (is.null(id)) return()
+      jl <- state$jobs
+      jl[[id]] <- cancel_fit_job(jl[[id]])
+      state$jobs <- jl
+      pending(NULL)
+      shiny::showNotification("Canceled.", type = "warning")
+    }))
     shiny::observeEvent(input$go, app_try(what = "The predictions", {
       f <- bundle()$fit
       interval <- input$interval

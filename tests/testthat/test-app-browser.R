@@ -18,6 +18,11 @@ test_that("a user can run an analysis and download a working script", {
                                    load_timeout = 60000, timeout = 60000)
   on.exit(app$stop(), add = TRUE)
   status <- function() app$get_value(output = "status_bar")
+  wait_for_result <- function(text) {
+    app$wait_for_js(paste0(
+      "document.getElementById('predict-res_title').innerText",
+      ".includes('", text, "')"), timeout = 120000)
+  }
   wait_for_fit <- function(label) {
     app$wait_for_js(paste0(
       "document.getElementById('status_bar').innerText",
@@ -72,9 +77,11 @@ test_that("a user can run an analysis and download a working script", {
   app$set_inputs(`predict-interval` = "confidence", wait_ = FALSE)
   app$click("predict-go")
   app$wait_for_idle()
+  wait_for_result("pred_1")
   expect_match(app$get_value(output = "predict-res_title"), "pred_1")
   app$click("predict-go_tol")
   app$wait_for_idle()
+  wait_for_result("tol_1")
   expect_match(app$get_value(output = "predict-res_title"), "tol_1")
   # Predictions for uploaded new data (aadt10k is created from AADT)
   nd <- load_bundled_data("washington_roads")[1:5, c("lnaadt", "AADT",
@@ -87,6 +94,7 @@ test_that("a user can run an analysis and download a working script", {
   app$wait_for_idle()
   app$click("predict-go")
   app$wait_for_idle()
+  wait_for_result("pred_2")
   expect_match(app$get_value(output = "predict-res_title"), "pred_2")
 
   # A comparison of the two fits

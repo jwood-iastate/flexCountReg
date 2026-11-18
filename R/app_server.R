@@ -46,7 +46,7 @@ app_server <- function(input, output, session) {
     paste0("Data: ", if (is.null(dm)) "none" else
       paste0(dm$name, " (", dm$object, ")"),
       " | Selected fit: ", if (is.null(act)) "none" else act$label,
-      " | Running fits: ", n_run)
+      " | Running jobs: ", n_run)
   })
 
   output$session_code <- shiny::renderText({

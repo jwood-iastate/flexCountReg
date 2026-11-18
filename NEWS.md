@@ -31,7 +31,11 @@
   error and leaves the session running.
 * Models are estimated in background R processes (callr), so the
   interface stays responsive and fits can be canceled; a slow earlier fit
-  never replaces a newer one. Data, fits and jobs belong to one browser
+  never replaces a newer one. Predictions and intervals also run in the
+  background: an interval for a model whose covariance matrix is not
+  positive definite uses a parametric bootstrap (200 refits), which can
+  take many minutes, and the app says so when it starts and offers to
+  cancel it. Data, fits and jobs belong to one browser
   session.
 * The app's packages (shiny, bslib, DT, callr, jsonlite, zip) are
   suggested, not imported: the statistical functions do not need them, and

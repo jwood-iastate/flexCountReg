@@ -327,3 +327,57 @@ test_that("plots are saved as JPEG files at the requested size", {
                fixed = TRUE)
   expect_silent(parse(text = script))
 })
+
+
+test_that("predictions and intervals can run as background jobs", {
+  skip_on_cran()
+  state <- new_state()
+  shiny::isolate({
+    app_load_data(state, "bundled", "washington_roads")
+    s <- app_spec(data = list(source = "bundled", name = "washington_roads",
+                              object = "data_1"),
+                  recipe = list(response = "Total_crashes",
+                                predictors = "lnaadt", exposure = "Length"),
+                  model = list(family = "NB2"))
+    fj <- app_submit_fit(state, s)
+    record_finished_job(state, wait_job(fj))
+    sc <- typical_row(s, state$data)
+    job <- app_start_output_job(state, list(type = "predict", scenarios = sc,
+                                            interval = "prediction",
+                                            level = 0.9), fj$id)
+    expect_identical(job$kind, "output")
+    expect_identical(job$out, "pred_1")
+    # Nothing is logged until the job finishes
+    expect_false("predict" %in% vapply(state$log, `[[`, "", "kind"))
+    job <- wait_job(job)
+    expect_identical(job$status, "completed")
+    record_finished_job(state, job)
+    res <- state$outputs[[job$id]]
+    expect_identical(res$out, "pred_1")
+    expect_identical(names(res$value), c("lnaadt", "Length", "fit", "lwr",
+                                         "upr"))
+    expect_equal(state$env$pred_1, res$value)
+    expect_true("predict" %in% vapply(state$log, `[[`, "", "kind"))
+    # The same result as running it in the session
+    sync <- app_run_output(state, list(type = "predict", scenarios = sc,
+                                       interval = "prediction", level = 0.9),
+                           fj$id)
+    expect_equal(sync$value[, c("fit", "lwr", "upr")],
+                 res$value[, c("fit", "lwr", "upr")])
+    expect_false(app_needs_bootstrap(state$env$fit_1))
+    # A fit whose covariance is not positive definite is flagged
+    f <- state$env$fit_1
+    f$model$vcov[] <- 0
+    expect_true(app_needs_bootstrap(f))
+    # A canceled output job leaves no result
+    j2 <- app_start_output_job(state, list(type = "tolerance", scenarios = sc,
+                                           content = 0.9, confidence = 0.9,
+                                           side = "two-sided",
+                                           scope = "pointwise",
+                                           tol_method = "auto"), fj$id)
+    j2 <- cancel_fit_job(j2)
+    record_finished_job(state, j2)
+    expect_null(state$outputs[[j2$id]])
+    expect_identical(state$jobs[[j2$id]]$status, "canceled")
+  })
+})

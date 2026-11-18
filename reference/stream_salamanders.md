@@ -132,7 +132,7 @@ summary(fit)
 #>     family = "NB2", method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 46 
+#> Iterations: 42 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -143,7 +143,7 @@ summary(fit)
 #> sppEC-A       -0.671      0.257   -2.61  0.00900 ** 
 #> sppEC-L        0.639      0.220    2.90  0.00369 ** 
 #> sppDES-L       0.822      0.222    3.71  0.00021 ***
-#> sppDF          0.360      0.235    1.53  0.12589    
+#> sppDF          0.360      0.235    1.53  0.12588    
 #> minedyes      -2.038      0.148  -13.79  < 2e-16 ***
 #> ln(alpha)      0.217      0.128    1.69  0.09079 .  
 #> ---

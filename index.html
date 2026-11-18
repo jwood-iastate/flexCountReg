@@ -230,14 +230,14 @@
 <li>Delaporte Distribution</li>
 <li>Hermite Distribution (orders 2, 3 and 4; bounded overdispersion)</li>
 <li>Polya-Aeppli (Poisson-Tweedie, power 1.5) Distribution</li>
-<li>Negative Binomial-Generalized Exponential (NBGE) Distribution</li>
 </ul>
-<p><em>Distributions that Handle Excess Zeros</em></p>
+<p><em>Distributions that Handle Higher Densities of Zeros and Overdispersion</em></p>
 <ul>
 <li>Poisson-Generalized-Exponential Distribution</li>
 <li>Poisson-Lindley Distribution</li>
 <li>Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution</li>
 <li>Poisson-Lindley-Lognormal Distribution</li>
+<li>Negative Binomial-Generalized Exponential (NBGE) Distribution</li>
 </ul>
 </div>
 </div>
@@ -260,7 +260,7 @@
 <span><span class="co">#&gt;     method = "BFGS")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model: countreg | family: NB2 | optimizer: BFGS</span></span>
-<span><span class="co">#&gt; Iterations: 46 </span></span>
+<span><span class="co">#&gt; Iterations: 40 </span></span>
 <span><span class="co">#&gt; Convergence: successful convergence </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
@@ -334,20 +334,20 @@
 <span><span class="co">#&gt;     family = "NB2", dis_param_formula_1 = ~lnlength, method = "BFGS")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model: countreg | family: NB2 | optimizer: BFGS</span></span>
-<span><span class="co">#&gt; Iterations: 54 </span></span>
+<span><span class="co">#&gt; Iterations: 51 </span></span>
 <span><span class="co">#&gt; Convergence: successful convergence </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
 <span><span class="co">#&gt;                       Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; (Intercept)            -7.6757     0.4877  -15.74  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; (Intercept)            -7.6756     0.4877  -15.74  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; lnaadt                  0.9296     0.0569   16.32  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; lnlength                0.8534     0.0699   12.21  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; speed50                -0.3999     0.1091   -3.67  0.00025 ***</span></span>
 <span><span class="co">#&gt; ShouldWidth04           0.2606     0.0916    2.84  0.00446 ** </span></span>
-<span><span class="co">#&gt; AADT10kplus             5.9608     4.5117    1.32  0.18644    </span></span>
-<span><span class="co">#&gt; I(AADT10kplus/lnaadt) -50.1327    43.0018   -1.17  0.24368    </span></span>
+<span><span class="co">#&gt; AADT10kplus             5.9613     4.5117    1.32  0.18640    </span></span>
+<span><span class="co">#&gt; I(AADT10kplus/lnaadt) -50.1377    43.0019   -1.17  0.24364    </span></span>
 <span><span class="co">#&gt; ln(alpha):(Intercept)  -1.9126     0.6648   -2.88  0.00401 ** </span></span>
-<span><span class="co">#&gt; ln(alpha):lnlength     -0.4301     0.4991   -0.86  0.38881    </span></span>
+<span><span class="co">#&gt; ln(alpha):lnlength     -0.4301     0.4991   -0.86  0.38880    </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -407,7 +407,7 @@
 <span><span class="co">#&gt;  4 speed50               -0.4 (0.109)***    -0.384 (0.111)*** </span></span>
 <span><span class="co">#&gt;  5 ShouldWidth04         0.261 (0.092)**    0.258 (0.092)**   </span></span>
 <span><span class="co">#&gt;  6 AADT10kplus           5.961 (4.512)      0.689 (0.132)***  </span></span>
-<span><span class="co">#&gt;  7 I(AADT10kplus/lnaadt) -50.133 (43.002)   ---               </span></span>
+<span><span class="co">#&gt;  7 I(AADT10kplus/lnaadt) -50.138 (43.002)   ---               </span></span>
 <span><span class="co">#&gt;  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.535)**  </span></span>
 <span><span class="co">#&gt;  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.445)    </span></span>
 <span><span class="co">#&gt; 10 ln(p)                 ---                0.525 (0.184)**   </span></span>
@@ -460,11 +460,42 @@
 <div class="section level2">
 <h2 id="learning-more">Learning more<a class="anchor" aria-label="anchor" href="#learning-more"></a>
 </h2>
-<p>The vignettes cover the main workflows:</p>
+<p>The vignettes cover the main workflows. Start with <code><a href="articles/getting-started.html">vignette("getting-started", package = "flexCountReg")</a></code>.</p>
+<p><em>Start here</em></p>
 <ul>
-<li><code><a href="articles/choosing-a-count-distribution.html">vignette("choosing-a-count-distribution", package = "flexCountReg")</a></code></li>
-<li><code><a href="articles/random-parameters-and-panels.html">vignette("random-parameters-and-panels", package = "flexCountReg")</a></code></li>
-<li><code><a href="articles/inference-prediction-and-comparison.html">vignette("inference-prediction-and-comparison", package = "flexCountReg")</a></code></li>
+<li>Getting started with flexCountReg: <code><a href="articles/getting-started.html">vignette("getting-started", package = "flexCountReg")</a></code>
+</li>
+<li>Preparing count data: exposure, offsets, weights and missing values: <code><a href="articles/data-exposure-weights.html">vignette("data-exposure-weights", package = "flexCountReg")</a></code>
+</li>
+</ul>
+<p><em>Diagnose and interpret</em></p>
+<ul>
+<li>Diagnosing a count model and deciding what to change: <code><a href="articles/diagnosing-count-models.html">vignette("diagnosing-count-models", package = "flexCountReg")</a></code>
+</li>
+<li>Interpreting predictions, marginal effects and elasticities: <code><a href="articles/predictions-and-effects.html">vignette("predictions-and-effects", package = "flexCountReg")</a></code>
+</li>
+<li>Inference, prediction and model comparison: <code><a href="articles/inference-prediction-and-comparison.html">vignette("inference-prediction-and-comparison", package = "flexCountReg")</a></code>
+</li>
+</ul>
+<p><em>Model structure</em></p>
+<ul>
+<li>Choosing a count distribution: <code><a href="articles/choosing-a-count-distribution.html">vignette("choosing-a-count-distribution", package = "flexCountReg")</a></code>
+</li>
+<li>Modeling dispersion and other distribution parameters: <code><a href="articles/distribution-parameter-regression.html">vignette("distribution-parameter-regression", package = "flexCountReg")</a></code>
+</li>
+<li>Understanding zeros, hurdles and the sampling process: <code><a href="articles/zeros-hurdles-and-sampling.html">vignette("zeros-hurdles-and-sampling", package = "flexCountReg")</a></code>
+</li>
+<li>Underreporting: observed counts, true counts and identification: <code><a href="articles/underreporting-and-identification.html">vignette("underreporting-and-identification", package = "flexCountReg")</a></code>
+</li>
+<li>Random parameters and panel models: <code><a href="articles/random-parameters-and-panels.html">vignette("random-parameters-and-panels", package = "flexCountReg")</a></code>
+</li>
+</ul>
+<p><em>Predict and validate</em></p>
+<ul>
+<li>Evaluating predictive performance without information leakage: <code><a href="articles/predictive-validation.html">vignette("predictive-validation", package = "flexCountReg")</a></code>
+</li>
+<li>Predicting new units and known units in panel data: <code><a href="articles/prediction-for-panel-data.html">vignette("prediction-for-panel-data", package = "flexCountReg")</a></code>
+</li>
 </ul>
 </div>
 </div>

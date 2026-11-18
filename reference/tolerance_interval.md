@@ -174,8 +174,8 @@ tolerance_interval(fit, scen, content = 0.90, confidence = 0.95)
 #> Tolerance intervals: content 0.9, confidence 0.95, two-sided, pointwise
 #> Method: joint (normal)
 #>         fit lower upper min_content status
-#> 1 0.4817664     0     2   0.9605277     ok
-#> 2 2.9030182     0     8   0.9208960     ok
+#> 1 0.4817677     0     2   0.9605276     ok
+#> 2 2.9030273     0     8   0.9208954     ok
 
 # Exact common-rate Poisson method
 set.seed(1)

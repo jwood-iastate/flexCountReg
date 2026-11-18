@@ -87,11 +87,17 @@ specified, including the count distribution.</li>
 <li>
 <code>"robust"</code>: the sandwich estimator. It remains valid for
 the mean coefficients when the distribution is misspecified but the mean
-model is right (quasi-likelihood). For panel models
+model is right (quasi-likelihood). It does not rescue estimates from a
+wrong mean model (they are then estimates of something else, whatever
+their standard errors), and with sampling weights it is not a full
+survey-design analysis (strata, clusters and finite-population
+corrections are not modelled). For panel models
 (<code><a href="../reference/countreg.rp.html">countreg.rp()</a></code> with <code>group_var</code>,
 <code><a href="../reference/renb.html">renb()</a></code>, <code><a href="../reference/poisLindRE.html">poisLind.re()</a></code>, <code><a href="../reference/repois.html">repois()</a></code>,
 <code><a href="../reference/negmultinom.html">negmultinom()</a></code>) the log-likelihood has one contribution per
-panel, so these standard errors are cluster-robust.</li>
+panel, so these standard errors are cluster-robust; for
+<code><a href="../reference/countreg.html">countreg()</a></code> they are computed row by row and do not account
+for repeated observations of the same unit.</li>
 <li>
 <code>"boot"</code>: a nonparametric bootstrap with
 <code>bootstraps</code> replicates. Rows are resampled for
@@ -110,11 +116,11 @@ check of the other two.</li>
 <span>            robust <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">nb_r</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>            bootstrap <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">nb_b</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span></span>
 <span><span class="co">#&gt;             Hessian robust bootstrap</span></span>
-<span><span class="co">#&gt; (Intercept)  0.4393 0.4855    0.4755</span></span>
+<span><span class="co">#&gt; (Intercept)  0.4393 0.4855    0.4754</span></span>
 <span><span class="co">#&gt; lnaadt       0.0518 0.0558    0.0541</span></span>
 <span><span class="co">#&gt; lnlength     0.0694 0.0695    0.0674</span></span>
 <span><span class="co">#&gt; speed50      0.1078 0.1142    0.1061</span></span>
-<span><span class="co">#&gt; ln(alpha)    0.2487 0.2483    0.2304</span></span></code></pre></div>
+<span><span class="co">#&gt; ln(alpha)    0.2486 0.2483    0.2304</span></span></code></pre></div>
 <p>Similar standard errors, as here, are reassuring. A robust standard
 error that is much larger than the Hessian one points to a misspecified
 distribution or dependence between observations.</p>
@@ -158,13 +164,13 @@ count.</p>
 <span><span class="co">#&gt; Method: delta </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;      term variable_type           effect_metric estimate std_error t_value</span></span>
-<span><span class="co">#&gt;    lnaadt    continuous Average marginal effect   0.4989    0.0348 14.3360</span></span>
-<span><span class="co">#&gt;  lnlength    continuous Average marginal effect   0.3511    0.0373  9.4150</span></span>
-<span><span class="co">#&gt;   speed50     indicator   Pseudo-elasticity (%) -41.5523    6.3016 -6.5939</span></span>
+<span><span class="co">#&gt;    lnaadt    continuous Average marginal effect   0.4989    0.0349 14.2766</span></span>
+<span><span class="co">#&gt;  lnlength    continuous Average marginal effect   0.3511    0.0380  9.2511</span></span>
+<span><span class="co">#&gt;   speed50     indicator   Pseudo-elasticity (%) -41.5527    6.3016 -6.5940</span></span>
 <span><span class="co">#&gt;  p_value sig lower_ci upper_ci n_obs successful_bootstraps</span></span>
-<span><span class="co">#&gt;        0 ***   0.4307   0.5671  1501                    NA</span></span>
-<span><span class="co">#&gt;        0 ***   0.2780   0.4242  1501                    NA</span></span>
-<span><span class="co">#&gt;        0 *** -53.9032 -29.2014  1501                    NA</span></span></code></pre></div>
+<span><span class="co">#&gt;        0 ***   0.4304   0.5674  1501                    NA</span></span>
+<span><span class="co">#&gt;        0 ***   0.2767   0.4255  1501                    NA</span></span>
+<span><span class="co">#&gt;        0 *** -53.9035 -29.2018  1501                    NA</span></span></code></pre></div>
 <p>The bootstrap of <code><a href="../reference/margEffTable.html">margEffTable()</a></code> resamples the model’s
 independent units (rows, or panels for panel models, or the clusters in
 <code>cluster_var</code>) and refits the model without an inner
@@ -221,7 +227,7 @@ quantity:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nd</span> <span class="op">&lt;-</span> <span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">nb_h</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.7798794 0.7097971 1.0432219</span></span>
+<span><span class="co">#&gt; [1] 0.7798765 0.7097941 1.0432200</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">nb_h</span>, newdata <span class="op">=</span> <span class="va">nd</span>, type <span class="op">=</span> <span class="st">"prob"</span>, max_count <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>              overflow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          0     1     2     3     4    &gt;4</span></span>
@@ -254,6 +260,70 @@ are not forecasts for new units.</li>
 <code>"EB"</code> in the same sense.</p>
 </div>
 <div class="section level2">
+<h2 id="three-different-intervals">Three different intervals<a class="anchor" aria-label="anchor" href="#three-different-intervals"></a>
+</h2>
+<p>Three intervals answer three different questions, and are easily
+confused:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Interval</th>
+<th>Question</th>
+<th>How</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Confidence interval for a coefficient</td>
+<td>How uncertain is an estimated effect?</td>
+<td>
+<code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code>, <code>tidy(conf.int = TRUE)</code>
+</td>
+</tr>
+<tr class="even">
+<td>Confidence interval for the expected count</td>
+<td>How uncertain is the estimated mean at given covariates?</td>
+<td><code>predict(interval = "confidence")</code></td>
+</tr>
+<tr class="odd">
+<td>Prediction interval for a new count</td>
+<td>Where is one new observation at given covariates likely to
+fall?</td>
+<td><code>predict(interval = "prediction")</code></td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">nb_h</span><span class="op">)</span><span class="op">[</span><span class="st">"speed50"</span>, <span class="op">]</span></span>
+<span><span class="co">#&gt;      2.5 %     97.5 % </span></span>
+<span><span class="co">#&gt; -0.7483606 -0.3257283</span></span>
+<span><span class="va">nd2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>lnaadt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3000</span>, <span class="fl">15000</span><span class="op">)</span><span class="op">)</span>, lnlength <span class="op">=</span> <span class="fl">0</span>, speed50 <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">nb_h</span>, newdata <span class="op">=</span> <span class="va">nd2</span>, interval <span class="op">=</span> <span class="st">"confidence"</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         fit      lwr       upr</span></span>
+<span><span class="co">#&gt; 1 0.5258891 0.428403 0.6438896</span></span>
+<span><span class="co">#&gt; 2 3.0025638 2.313604 3.9167160</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">nb_h</span>, newdata <span class="op">=</span> <span class="va">nd2</span>, interval <span class="op">=</span> <span class="st">"prediction"</span>, level <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         fit lwr upr</span></span>
+<span><span class="co">#&gt; 1 0.5258891   0   2</span></span>
+<span><span class="co">#&gt; 2 3.0025638   0   8</span></span></code></pre></div>
+<p>The confidence interval for the mean narrows as the sample grows; the
+prediction interval does not, because a new count varies around its mean
+whatever the sample size. Prediction-interval limits are whole counts
+and, because counts are discrete, usually cover a little more than the
+stated level. Both intervals for <code><a href="../reference/countreg.html">countreg()</a></code> models account
+for estimation uncertainty using the asymptotic normal distribution of
+the estimates, evaluated at deterministic Halton points (or a parametric
+bootstrap with <code>uncertainty = "bootstrap"</code>); see
+<code><a href="../reference/predict.flexCountReg.html">?predict.flexCountReg</a></code>.</p>
+<p>A fourth kind, a <em>tolerance interval</em>, is meant to contain at
+least a stated share of all counts at given covariates (for example 90%
+of road segments with these characteristics) with a stated confidence;
+see <code><a href="../reference/tolerance_interval.html">?tolerance_interval</a></code>.</p>
+</div>
+<div class="section level2">
 <h2 id="fitted-values-residuals-and-simulation">Fitted values, residuals and simulation<a class="anchor" aria-label="anchor" href="#fitted-values-residuals-and-simulation"></a>
 </h2>
 <p><code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code> gives the predictions for the rows used in
@@ -270,22 +340,25 @@ the fitted distribution (<code><a href="../reference/countreg.html">countreg()</
 Smyth, 1996), which are standard normal when the model is correct; use
 them for residual plots and normality checks.</li>
 </ul>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals</a></span><span class="op">(</span><span class="va">nb_h</span>, type <span class="op">=</span> <span class="st">"quantile"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;         mean           sd </span></span>
-<span><span class="co">#&gt; -0.005664601  0.978277239</span></span></code></pre></div>
+<span><span class="co">#&gt;        mean          sd </span></span>
+<span><span class="co">#&gt; -0.00566378  0.97827719</span></span></code></pre></div>
 <p><code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code> draws new responses from the fitted
 distribution for the same rows (with <code>seed</code>, reproducible and
-without changing the random-number stream of the session). It is the
-basis of parametric-bootstrap checks:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+without changing the random-number stream of the session). The
+parameters are held at their estimates (a plug-in simulation), so the
+spread of simulated statistics reflects the randomness of the counts,
+not the uncertainty of the estimates. It is the basis of
+parametric-bootstrap checks:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sims</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate</a></span><span class="op">(</span><span class="va">nb_h</span>, nsim <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co"># Observed share of zeros against its simulated distribution</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>observed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">Total_crashes</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span>,</span>
 <span>  simulated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="va">sims</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  observed simulated </span></span>
-<span><span class="co">#&gt; 0.7335110 0.7307495</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.7335110 0.7307528</span></span></code></pre></div>
 <p><code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> and <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code>
 return tidy data frames, and <code><a href="../reference/rootogram.html">rootogram()</a></code> and
 <code><a href="../reference/cureplot.html">cureplot()</a></code> compare the fitted distribution and mean with
@@ -301,7 +374,7 @@ the data (see the vignette on choosing a count distribution).</p>
 or not, and are always reported. BIC uses the number of independent
 units: rows, panels for panel models, and the sum of the frequency
 weights when weights are used.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">po</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">d</span>, family <span class="op">=</span> <span class="st">"POISSON"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">nb1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">d</span>, family <span class="op">=</span> <span class="st">"NB1"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">pl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">d</span>, family <span class="op">=</span> <span class="st">"PL"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
@@ -380,6 +453,17 @@ and
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df}</annotation></semantics></math></td>
 </tr>
 <tr class="even">
+<td>Poisson</td>
+<td>DPO, HYPERPOIS, GAMMACOUNT</td>
+<td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\phi = 1</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma = 1</annotation></semantics></math>,
+shape
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">= 1</annotation></semantics></math>
+</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df}</annotation></semantics></math></td>
+</tr>
+<tr class="odd">
 <td>NB1, NB2</td>
 <td>NBP</td>
 <td>
@@ -389,7 +473,7 @@ or
 </td>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df}</annotation></semantics></math></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>PL</td>
 <td>PLG, PLL</td>
 <td>
@@ -425,6 +509,11 @@ are not identified, so the usual asymptotics fail.</li>
 <strong>Poisson vs PW, PGE or GW.</strong> Their distributions
 approach Poisson only as a parameter goes to infinity.</li>
 <li>
+<strong>Poisson vs DELAPORTE, HERMITE, PA or NBGE.</strong> Poisson
+is reached only at the edge of the parameter space (a share of 0 on the
+logit scale, or a dispersion going to zero), where other parameters are
+not identified.</li>
+<li>
 <strong>A boundary family with a dispersion formula.</strong> The
 restriction sends an intercept to minus infinity while the slopes become
 unidentified.</li>
@@ -444,7 +533,7 @@ parameters unidentified.</li>
 bootstrap of the LR statistic using <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code>.</p>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports a test against Poisson when it is
 valid:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">nb_h</span><span class="op">)</span><span class="op">$</span><span class="va">lr_test</span></span>
 <span><span class="co">#&gt; $statistic</span></span>
 <span><span class="co">#&gt; [1] 31.31106</span></span>
@@ -469,7 +558,7 @@ in <code>y ~ I(2 * x) + z</code>.</p>
 <p><code><a href="../reference/regCompTest.html">regCompTest()</a></code> applies the same rules to two fitted
 models (the one with fewer parameters is the restricted model) or to a
 model and a base model it fits on the same rows:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="va">po</span>, model2 <span class="op">=</span> <span class="va">nb_h</span><span class="op">)</span></span>
 <span><span class="va">r</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LR"</span>, <span class="st">"LRdof"</span>, <span class="st">"LR_type"</span>, <span class="st">"LR_pvalue"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $LR</span></span>
@@ -487,7 +576,7 @@ model and a base model it fits on the same rows:</p>
 <span>                                        method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">r</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LR"</span>, <span class="st">"LRdof"</span>, <span class="st">"LR_type"</span>, <span class="st">"LR_pvalue"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $LR</span></span>
-<span><span class="co">#&gt; [1] 9.828608</span></span>
+<span><span class="co">#&gt; [1] 9.828597</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $LRdof</span></span>
 <span><span class="co">#&gt; [1] 1</span></span>
@@ -496,7 +585,7 @@ model and a base model it fits on the same rows:</p>
 <span><span class="co">#&gt; [1] "interior"</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $LR_pvalue</span></span>
-<span><span class="co">#&gt; [1] 0.001718183</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 0.001718194</span></span></code></pre></div>
 <p>When the larger model has the lower log-likelihood, the larger model
 did not reach its maximum (check its convergence), and no p-value is
 given.</p>
@@ -510,7 +599,7 @@ McFadden’s pseudo-R²,
 against an intercept-only Poisson model on the same rows by default, so
 it is comparable across families. <code>basemodel</code> and
 <code>variables</code> choose another baseline.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Poisson <span class="op">=</span> <span class="va">po</span>, NB2 <span class="op">=</span> <span class="va">nb_h</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 3</span></span></span>
 <span><span class="co">#&gt;    Parameter    Poisson           NB2              </span></span>
@@ -526,6 +615,30 @@ it is comparable across families. <code>basemodel</code> and
 <span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span> BIC          2230.45           2206.453         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span> Pseudo-R-Sq. 0.278             0.288</span></span></code></pre></div>
 </div>
+</div>
+<div class="section level2">
+<h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+</h2>
+<ul>
+<li>
+<code><a href="../articles/getting-started.html">vignette("getting-started", package = "flexCountReg")</a></code>
+applies these tools in a complete analysis.</li>
+<li>
+<code><a href="../articles/diagnosing-count-models.html">vignette("diagnosing-count-models", package = "flexCountReg")</a></code>
+covers residuals, rootograms and held-out comparisons.</li>
+<li>
+<code><a href="../articles/random-parameters-and-panels.html">vignette("random-parameters-and-panels", package = "flexCountReg")</a></code>
+explains the independent unit for repeated observations: the
+<code>washington_roads</code> rows used here are segment-years, so the
+row-level standard errors above treat repeated years of a segment as
+independent.</li>
+<li>
+<code><a href="../articles/predictions-and-effects.html">vignette("predictions-and-effects", package = "flexCountReg")</a></code>
+interprets predictions and marginal effects in detail.</li>
+<li>
+<code><a href="../articles/prediction-for-panel-data.html">vignette("prediction-for-panel-data", package = "flexCountReg")</a></code>
+separates predictions for new and for known units in panels.</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

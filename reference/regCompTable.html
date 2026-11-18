@@ -129,12 +129,10 @@ include: "tibble", "gt", and "latex".</p>
 <span class="r-in"><span><span class="va">nb.1</span> <span class="op">&lt;-</span> <span class="fu"><a href="countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>                    <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADTover10k</span>,</span></span>
 <span class="r-in"><span>                    data<span class="op">=</span><span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">'NB1'</span>, method <span class="op">=</span> <span class="st">'NM'</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The optimizer did not report convergence (iteration limit exceeded). Consider a different `method` or more `max.iters`.</span>
 <span class="r-in"><span>                    </span></span>
 <span class="r-in"><span><span class="va">nb.2</span> <span class="op">&lt;-</span> <span class="fu"><a href="countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span></span>
 <span class="r-in"><span>                    <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADTover10k</span>,</span></span>
 <span class="r-in"><span>                    data<span class="op">=</span><span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">'NB2'</span>, method <span class="op">=</span> <span class="st">'NM'</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The optimizer did not report convergence (iteration limit exceeded). Consider a different `method` or more `max.iters`.</span>
 <span class="r-in"><span>                    </span></span>
 <span class="r-in"><span>                    </span></span>
 <span class="r-in"><span><span class="va">nb.p</span> <span class="op">&lt;-</span> <span class="fu"><a href="countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span></span>
@@ -153,21 +151,21 @@ include: "tibble", "gt", and "latex".</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \toprule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Parameter &amp; NB-1 &amp; NB-2 &amp; NB-P\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \midrule</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept) &amp; -7.811 (0.497)*** &amp; -7.153 (0.477)*** &amp; -7.796 (0.5)***\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt &amp; 0.942 (0.058)*** &amp; 0.867 (0.056)*** &amp; 0.942 (0.058)***\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength &amp; 0.819 (0.066)*** &amp; 0.836 (0.07)*** &amp; 0.834 (0.069)***\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50 &amp; -0.368 (0.11)*** &amp; -0.402 (0.11)*** &amp; -0.387 (0.112)***\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ShouldWidth04 &amp; 0.257 (0.089)** &amp; 0.23 (0.092)* &amp; 0.259 (0.092)**\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept) &amp; -7.661 (0.493)*** &amp; -7.742 (0.489)*** &amp; -7.796 (0.49)***\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt &amp; 0.924 (0.057)*** &amp; 0.936 (0.057)*** &amp; 0.942 (0.057)***\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength &amp; 0.815 (0.066)*** &amp; 0.84 (0.069)*** &amp; 0.834 (0.069)***\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50 &amp; -0.37 (0.11)*** &amp; -0.385 (0.109)*** &amp; -0.387 (0.112)***\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ShouldWidth04 &amp; 0.256 (0.089)** &amp; 0.254 (0.092)** &amp; 0.259 (0.092)**\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k &amp; 0.653 (0.122)*** &amp; 0.829 (0.137)*** &amp; 0.686 (0.132)***\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha) &amp; -1.707 (0.344)*** &amp; -1.326 (0.286)*** &amp; -1.327 (0.293)***\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k &amp; 0.672 (0.122)*** &amp; 0.713 (0.134)*** &amp; 0.686 (0.131)***\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha) &amp; -1.707 (0.347)*** &amp; -1.46 (0.32)*** &amp; -1.327 (0.293)***\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ln(p) &amp; --- &amp; --- &amp; 0.502 (0.176)**\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N Obs. &amp; 1501 &amp; 1501 &amp; 1501\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> LL &amp; -1065.084 &amp; -1063.672 &amp; -1062.266\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> LL &amp; -1065.03 &amp; -1062.794 &amp; -1062.266\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \addlinespace</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AIC &amp; 2144.167 &amp; 2141.345 &amp; 2140.532\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> BIC &amp; 2181.364 &amp; 2178.542 &amp; 2183.043\\</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Pseudo-R-Sq. &amp; 0.301 &amp; 0.302 &amp; 0.303\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AIC &amp; 2144.06 &amp; 2139.589 &amp; 2140.532\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> BIC &amp; 2181.257 &amp; 2176.786 &amp; 2183.043\\</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Pseudo-R-Sq. &amp; 0.301 &amp; 0.303 &amp; 0.303\\</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \bottomrule</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{tabular}</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> \end{table}</span>

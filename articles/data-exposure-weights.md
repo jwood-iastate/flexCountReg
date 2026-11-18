@@ -1,0 +1,371 @@
+# Preparing count data: exposure, offsets, weights and missing values
+
+Before fitting a count model, each column needs a clear role: the count
+is the response; covariates enter the mean model; the length of time or
+space over which the count was observed is an *exposure*; a column
+saying how many identical observations a row stands for is a *frequency
+weight*. Mixing up these roles changes the model being fitted, often
+without an error. This vignette shows each role with simulated data
+whose true values are known.
+
+``` r
+
+library(flexCountReg)
+```
+
+## Question and data
+
+The question is how a covariate `x` changes the rate of events per unit
+of exposure. Each row is one independent unit (for example a road
+segment, a patient-year or a plot) observed for a known `exposure`, and
+`y` is the number of events during that exposure. The data are simulated
+from
+
+``` math
+Y_i \sim \text{Poisson}(\mu_i), \qquad
+  \mu_i = \text{exposure}_i \times \exp(-0.5 + 0.6\,x_i),
+```
+
+so the true rate per unit of exposure is $`\exp(-0.5 + 0.6x)`$.
+
+``` r
+
+set.seed(42)
+n <- 400
+d <- data.frame(id = seq_len(n), x = rnorm(n),
+                exposure = round(runif(n, 0.2, 5), 2))
+d$y <- rpois(n, d$exposure * exp(-0.5 + 0.6 * d$x))
+d$log_exposure <- log(d$exposure)
+head(d)
+#>   id          x exposure y log_exposure
+#> 1  1  1.3709584     4.56 6   1.51732262
+#> 2  2 -0.5646982     4.52 2   1.50851199
+#> 3  3  0.3631284     1.12 1   0.11332869
+#> 4  4  0.6328626     2.75 1   1.01160091
+#> 5  5  0.4042683     2.71 3   0.99694863
+#> 6  6 -0.1061245     0.97 2  -0.03045921
+```
+
+## Exposure belongs in an offset
+
+Taking logs of the mean model gives
+
+``` math
+\log\mu_i = \log(\text{exposure}_i) + \beta_0 + \beta_1 x_i,
+```
+
+so the log exposure enters the linear predictor with a coefficient fixed
+at 1: an *offset*. There are two equivalent ways to supply it. Use one
+or the other in a fit, not both:
+
+``` r
+
+# 1. offset() in the formula, with the exposure on its original scale
+m_formula <- countreg(y ~ x + offset(log(exposure)), data = d,
+                      family = "POISSON", method = "BFGS")
+# 2. the `offset` argument, naming a column that is already logged
+m_column <- countreg(y ~ x, data = d, family = "POISSON",
+                     offset = "log_exposure", method = "BFGS")
+rbind(formula = coef(m_formula), column = coef(m_column))
+#>         (Intercept)         x
+#> formula   -0.542581 0.6455173
+#> column    -0.542581 0.6455173
+all.equal(coef(m_formula), coef(m_column))
+#> [1] TRUE
+```
+
+Both agree with [`glm()`](https://rdrr.io/r/stats/glm.html):
+
+``` r
+
+coef(glm(y ~ x + offset(log(exposure)), data = d, family = poisson()))
+#> (Intercept)           x 
+#>  -0.5425810   0.6455173
+```
+
+The estimates are close to the true values (-0.5 and 0.6). Giving both
+forms at once is an error, because it is ambiguous whether the exposure
+should count once or twice:
+
+``` r
+
+tryCatch(countreg(y ~ x + offset(log(exposure)), data = d,
+                  family = "POISSON", offset = "log_exposure"),
+         error = function(e) conditionMessage(e))
+#> [1] "Specify the offset either with offset() in the formula or with the `offset` argument, not both."
+```
+
+### Is the rate proportional to exposure?
+
+An offset assumes that doubling the exposure doubles the expected count.
+That assumption can be checked by estimating the coefficient of the log
+exposure instead of fixing it at 1:
+
+``` r
+
+m_free <- countreg(y ~ x + log_exposure, data = d, family = "POISSON",
+                   method = "BFGS")
+summary(m_free)$coefficients[, 1:2]
+#>                Estimate Std. Error
+#> (Intercept)  -0.6065579 0.09442651
+#> x             0.6453294 0.03897123
+#> log_exposure  1.0579697 0.07500960
+```
+
+The estimate, 1.06 with standard error 0.08, is within two standard
+errors of 1, so the offset is appropriate here. A coefficient clearly
+different from 1 means the rate itself changes with exposure (for
+example when longer road segments differ systematically from shorter
+ones).
+
+### Pitfall: dividing the count by the exposure
+
+A rate `y / exposure` is not a count, and a count model cannot be fitted
+to it; flexCountReg refuses:
+
+``` r
+
+tryCatch(countreg(I(y / exposure) ~ x, data = d, family = "POISSON",
+                  method = "BFGS"),
+         error = function(e) conditionMessage(e))
+#> [1] "The response must be whole numbers (counts); 263 value(s) are not."
+```
+
+Keep the count as the response and put the exposure in the offset. The
+fitted model still describes the rate: $`\exp(\beta_0 + \beta_1 x)`$ is
+the expected count per unit of exposure.
+
+### Pitfall: logging the exposure twice
+
+`log_exposure` is already logged, so `offset(log(log_exposure))` logs it
+a second time. Here some exposures are below 1, their logs are negative,
+the second log is undefined, and the fit stops:
+
+``` r
+
+tryCatch(suppressWarnings(
+  countreg(y ~ x + offset(log(log_exposure)), data = d,
+           family = "POISSON", method = "BFGS")),
+  error = function(e) conditionMessage(e))
+#> [1] "Offsets must be finite (use the log of the exposure, e.g. log(length))."
+```
+
+If every exposure were above 1, the doubly logged offset would be finite
+and the model would fit without complaint, but with the wrong offset.
+The check in the previous section (an estimated log-exposure coefficient
+near 1) catches this kind of mistake. Exposures of zero or below are
+caught the same way: their logarithm is not finite.
+
+``` r
+
+d_bad <- d
+d_bad$exposure[3] <- 0
+tryCatch(countreg(y ~ x + offset(log(exposure)), data = d_bad,
+                  family = "POISSON", method = "BFGS"),
+         error = function(e) conditionMessage(e))
+#> [1] "Offsets must be finite (use the log of the exposure, e.g. log(length))."
+```
+
+### Predictions need the exposure too
+
+Predictions for new data use the same offset, so `newdata` must contain
+the exposure column. Expected counts scale with the exposure:
+
+``` r
+
+predict(m_formula, newdata = data.frame(x = 0, exposure = c(1, 2, 10)))
+#> [1] 0.5812461 1.1624923 5.8124613
+```
+
+## Frequency weights: rows that stand for several observations
+
+Data are sometimes stored compactly, with one row per distinct
+combination of values and a column counting how many observations share
+it. The `weights` argument treats each row as that many independent
+observations:
+
+``` r
+
+compact <- data.frame(x = rep(c(0, 1), each = 4), y = rep(0:3, 2),
+                      freq = c(5, 8, 4, 1, 2, 6, 6, 3))
+compact
+#>   x y freq
+#> 1 0 0    5
+#> 2 0 1    8
+#> 3 0 2    4
+#> 4 0 3    1
+#> 5 1 0    2
+#> 6 1 1    6
+#> 7 1 2    6
+#> 8 1 3    3
+expanded <- compact[rep(seq_len(nrow(compact)), compact$freq),
+                    c("x", "y")]
+nrow(expanded)
+#> [1] 35
+```
+
+The compact fit with frequency weights and the fit to the expanded data
+are the same model:
+
+``` r
+
+f_compact <- countreg(y ~ x, data = compact, family = "POISSON",
+                      weights = "freq", method = "BFGS")
+f_expanded <- countreg(y ~ x, data = expanded, family = "POISSON",
+                       method = "BFGS")
+rbind(compact = c(coef(f_compact), logLik = logLik(f_compact),
+                  BIC = BIC(f_compact)),
+      expanded = c(coef(f_expanded), logLik = logLik(f_expanded),
+                   BIC = BIC(f_expanded)))
+#>          (Intercept)         x   logLik      BIC
+#> compact   0.05406722 0.4085563 -46.5804 100.2715
+#> expanded  0.05406722 0.4085563 -46.5804 100.2715
+rbind(compact = sqrt(diag(vcov(f_compact))),
+      expanded = sqrt(diag(vcov(f_expanded))))
+#>          (Intercept)         x
+#> compact    0.2294157 0.2994472
+#> expanded   0.2294157 0.2994472
+```
+
+Estimates, log-likelihood, standard errors and BIC agree. Note that
+[`nobs()`](https://rdrr.io/r/stats/nobs.html) counts rows, not
+represented observations: 8 for the compact data and 35 for the expanded
+data. BIC uses the represented observations (35), which is why it
+agrees.
+
+### What weights are not
+
+- **Not an exposure.** A row observed for twice as long is one
+  observation with a larger expected count; it belongs in the offset. A
+  weight of 2 claims two independent observations with the same outcome.
+- **Not survey weights.** Sampling weights reweight the population, but
+  the rows are not repeated observations. `stderr = "robust"` gives
+  sandwich standard errors that are valid for non-integer weights under
+  the model’s independence assumptions; it is not a full design-based
+  survey analysis (strata, clusters and finite-population corrections
+  are not modelled). Bootstrap standard errors require whole-number
+  frequency weights and refuse other weights.
+- **Not numbers of trials.** “3 events out of 10 animals” is a bounded
+  count with a known number of trials, which needs a binomial-type
+  model; neither a weight of 10 nor an exposure of 10 represents it.
+
+``` r
+
+tryCatch(countreg(y ~ x, data = transform(compact, freq = freq / 2),
+                  family = "POISSON", weights = "freq", method = "BFGS",
+                  stderr = "boot", bootstraps = 20),
+         error = function(e) conditionMessage(e))
+#> [1] "Bootstrap standard errors with `weights` need frequency weights: nonnegative whole numbers (each row stands for that many independent observations) with a positive total. Use stderr = \"robust\" for other weights."
+```
+
+## Missing values and the analysis sample
+
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+uses the rows that are complete for *every* variable the model needs:
+the response, the mean covariates, the offset, the weights and the
+variables of any distribution-parameter, zero or underreporting formula.
+All model components therefore use the same rows. To illustrate,
+simulate an overdispersed count `y_nb` (negative binomial, NB2
+dispersion 0.5) and make `x` missing in two rows and a second covariate
+`z`, used only in the model for the dispersion parameter, missing in
+three:
+
+``` r
+
+dm <- d
+dm$y_nb <- rnbinom(n, size = 2, mu = dm$exposure * exp(-0.5 + 0.6 * dm$x))
+dm$z <- rnorm(n)
+dm$x[c(4, 9)] <- NA
+dm$z[c(9, 15, 22)] <- NA
+m_mean <- countreg(y_nb ~ x + offset(log(exposure)), data = dm, family = "NB2",
+                   method = "BFGS")
+#> 2 row(s) with missing values were removed.
+m_disp <- countreg(y_nb ~ x + offset(log(exposure)), data = dm, family = "NB2",
+                   dis_param_formula_1 = ~ z, method = "BFGS")
+#> 4 row(s) with missing values were removed.
+c(mean_model = nobs(m_mean), dispersion_model = nobs(m_disp))
+#>       mean_model dispersion_model 
+#>              398              396
+```
+
+The rows each fit used are stored with the model, so the dropped rows
+can be listed (by position in the data; the `id` column is used only to
+report them, not as a predictor):
+
+``` r
+
+dm$id[setdiff(seq_len(nrow(dm)), m_mean$model$rows_used)]
+#> [1] 4 9
+dm$id[setdiff(seq_len(nrow(dm)), m_disp$model$rows_used)]
+#> [1]  4  9 15 22
+```
+
+### Pitfall: comparing models fitted to different rows
+
+The two models dropped different rows, so their log-likelihoods are sums
+over different observations and cannot be compared.
+[`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
+checks this and refuses:
+
+``` r
+
+tryCatch(regCompTest(m_disp, model2 = m_mean),
+         error = function(e) conditionMessage(e))
+#> [1] "The two models were fit to different numbers of observations (396 and 398); an LR test is not valid."
+```
+
+Define the common analysis sample explicitly and refit both models to
+it:
+
+``` r
+
+vars <- c("y_nb", "x", "z", "exposure")
+common <- dm[complete.cases(dm[vars]), ]
+m_mean2 <- countreg(y_nb ~ x + offset(log(exposure)), data = common,
+                    family = "NB2", method = "BFGS")
+m_disp2 <- countreg(y_nb ~ x + offset(log(exposure)), data = common,
+                    family = "NB2", dis_param_formula_1 = ~ z,
+                    method = "BFGS")
+c(nobs(m_mean2), nobs(m_disp2))
+#> [1] 396 396
+regCompTest(m_disp2, model2 = m_mean2)$statistics
+#> # A tibble: 8 × 3
+#>   Statistic                Model BaseModel
+#>   <chr>                    <dbl>     <dbl>
+#> 1 Log-likelihood        -657.     -657.   
+#> 2 Number of parameters     4         3    
+#> 3 AIC                   1323.     1321.   
+#> 4 BIC                   1339.     1333.   
+#> 5 LR Test Statistic        0.272    NA    
+#> 6 LR degrees of freedom    1        NA    
+#> 7 LR p-value               0.602    NA    
+#> 8 McFadden's Pseudo R^2    0.208     0.208
+```
+
+Both models now use the same 396 rows, and the test is valid. In these
+simulated data the dispersion does not depend on `z`, so the larger
+model is not expected to fit better.
+
+### Pitfall: rows that are not independent
+
+All of the above assumes that rows are independent. When several rows
+belong to the same unit (a road segment observed in several years, a
+patient measured at several visits) the independent unit is the panel,
+not the row. Ordinary standard errors and row-level bootstrap resampling
+then overstate the information in the data. Use an estimator with a
+grouping variable (`group_var`), described in
+[`vignette("random-parameters-and-panels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md).
+
+## Reproducibility and next steps
+
+All data in this vignette are simulated with `set.seed(42)`, so every
+result can be reproduced. The checks shown here are worth repeating with
+real data: confirm the analysis sample
+([`nobs()`](https://rdrr.io/r/stats/nobs.html) and `$model$rows_used`),
+check the proportional-exposure assumption, and keep the roles of
+offsets and weights distinct.
+
+- [`vignette("getting-started", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/getting-started.md)
+  walks through a complete first analysis.
+- [`vignette("inference-prediction-and-comparison", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/inference-prediction-and-comparison.md)
+  covers standard errors and the conditions for likelihood-ratio tests.

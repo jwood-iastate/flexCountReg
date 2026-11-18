@@ -90,7 +90,7 @@ s
 #>     method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 48 
+#> Iterations: 40 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -108,19 +108,19 @@ s
 #> N: 1501
 s$coefficients
 #>                         Estimate Std. Error    z value     Pr(>|z|)      2.5 %
-#> (Intercept)           -8.7563978 0.44040867 -19.882437 5.775862e-88 -9.6195830
-#> lnaadt                 1.0803267 0.05178872  20.860270 1.229765e-96  0.9788227
-#> lnlength               0.7588171 0.06909183  10.982731 4.627175e-28  0.6233996
-#> speed50               -0.5406739 0.11728001  -4.610112 4.024528e-06 -0.7705385
-#> ln(alpha):(Intercept) -1.3232832 0.31500069  -4.200890 2.658677e-05 -1.9406732
-#> ln(alpha):speed50      1.2669833 0.48492203   2.612757 8.981519e-03  0.3165536
+#> (Intercept)           -8.7563801 0.44040767 -19.882442 5.775278e-88 -9.6195633
+#> lnaadt                 1.0803250 0.05178862  20.860279 1.229513e-96  0.9788212
+#> lnlength               0.7588158 0.06909179  10.982722 4.627673e-28  0.6233984
+#> speed50               -0.5406778 0.11727983  -4.610152 4.023752e-06 -0.7705421
+#> ln(alpha):(Intercept) -1.3232745 0.31499831  -4.200894 2.658629e-05 -1.9406599
+#> ln(alpha):speed50      1.2669668 0.48492180   2.612724 8.982383e-03  0.3165375
 #>                           97.5 %
-#> (Intercept)           -7.8932127
-#> lnaadt                 1.1818308
-#> lnlength               0.8942346
-#> speed50               -0.3108093
-#> ln(alpha):(Intercept) -0.7058932
-#> ln(alpha):speed50      2.2174130
+#> (Intercept)           -7.8931969
+#> lnaadt                 1.1818289
+#> lnlength               0.8942333
+#> speed50               -0.3108136
+#> ln(alpha):(Intercept) -0.7058892
+#> ln(alpha):speed50      2.2173960
 tibble::as_tibble(s)
 #> # A tibble: 6 × 7
 #>   parameter          coeff `Std. Err.` `z value` `p-value` `lower CI` `upper CI`

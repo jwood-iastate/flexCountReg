@@ -841,23 +841,21 @@ nb2 <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 + AADT10kplus,
                data = washington_roads, family = "NB2",
                dis_param_formula_1 = ~ speed50, verbose = TRUE, 
                method='BFGS')
-#> initial  value 1087.972055 
-#> iter   2 value 1086.761180
-#> iter   3 value 1082.460817
-#> iter   4 value 1081.386383
-#> iter   5 value 1080.983877
-#> iter   6 value 1079.708975
-#> iter   7 value 1070.603399
-#> iter   8 value 1068.239211
-#> iter   9 value 1065.881517
-#> iter  10 value 1065.612937
-#> iter  11 value 1065.068995
-#> iter  12 value 1064.893660
-#> iter  13 value 1064.876776
-#> iter  14 value 1064.876161
-#> iter  15 value 1064.876105
-#> iter  15 value 1064.876105
-#> iter  15 value 1064.876105
+#> initial  value 1066.772641 
+#> iter   2 value 1066.770434
+#> iter   3 value 1066.651116
+#> iter   4 value 1066.591134
+#> iter   5 value 1066.227309
+#> iter   6 value 1066.021057
+#> iter   7 value 1065.598383
+#> iter   8 value 1065.169686
+#> iter   9 value 1064.882770
+#> iter  10 value 1064.878491
+#> iter  11 value 1064.877220
+#> iter  12 value 1064.876265
+#> iter  13 value 1064.876106
+#> iter  13 value 1064.876105
+#> iter  13 value 1064.876105
 #> final  value 1064.876105 
 #> converged
 summary(nb2)
@@ -867,7 +865,7 @@ summary(nb2)
 #>     dis_param_formula_1 = ~speed50, method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 44 
+#> Iterations: 41 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -877,8 +875,8 @@ summary(nb2)
 #> lnlength                0.8428     0.0700   12.04  < 2e-16 ***
 #> speed50                -0.4699     0.1151   -4.08  4.5e-05 ***
 #> AADT10kplus             0.7697     0.1299    5.92  3.1e-09 ***
-#> ln(alpha):(Intercept)  -1.6192     0.3740   -4.33  1.5e-05 ***
-#> ln(alpha):speed50       1.3059     0.5963    2.19    0.029 *  
+#> ln(alpha):(Intercept)  -1.6191     0.3740   -4.33  1.5e-05 ***
+#> ln(alpha):speed50       1.3058     0.5963    2.19    0.029 *  
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -904,9 +902,9 @@ if (requireNamespace("poilog", quietly = TRUE)) {
 #>             Estimate Std. Error z value Pr(>|z|)    
 #> (Intercept)   -7.507         NA      NA       NA    
 #> lnaadt         0.910         NA      NA       NA    
-#> lnlength       0.847      0.112    7.58  3.5e-14 ***
-#> speed50       -0.459      0.106   -4.34  1.4e-05 ***
-#> AADT10kplus    0.809      0.133    6.07  1.3e-09 ***
+#> lnlength       0.847      0.110    7.70  1.4e-14 ***
+#> speed50       -0.459      0.105   -4.37  1.2e-05 ***
+#> AADT10kplus    0.809      0.133    6.09  1.1e-09 ***
 #> ln(sigma)     -0.734         NA      NA       NA    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -935,19 +933,19 @@ summary(plogn_underreport)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                            Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)                 -6.6903     0.8511   -7.86  3.8e-15 ***
-#> lnaadt                       0.9189     0.0551   16.66  < 2e-16 ***
-#> lnlength                     0.8470     0.0700   12.10  < 2e-16 ***
-#> speed50                      0.0534     0.3886    0.14     0.89    
-#> AADT10kplus                 -0.0274     0.7596   -0.04     0.97    
-#> ln(alpha)                   -1.4959     0.3403   -4.40  1.1e-05 ***
-#> Underreporting:(Intercept)  -0.0898     0.8950   -0.10     0.92    
-#> Underreporting:speed50      -0.5394     0.3936   -1.37     0.17    
-#> Underreporting:AADT10kplus   2.5350     2.6263    0.97     0.33    
+#> (Intercept)                 -6.6923     1.1098   -6.03  1.6e-09 ***
+#> lnaadt                       0.9358     0.0571   16.39  < 2e-16 ***
+#> lnlength                     0.8517     0.0696   12.23  < 2e-16 ***
+#> speed50                      0.5700     0.9614    0.59     0.55    
+#> AADT10kplus                  0.1580     0.7743    0.20     0.84    
+#> ln(alpha)                   -1.5854     0.3752   -4.23  2.4e-05 ***
+#> Underreporting:(Intercept)  -0.2370     1.0076   -0.24     0.81    
+#> Underreporting:speed50      -0.8505     0.7922   -1.07     0.28    
+#> Underreporting:AADT10kplus   0.7909     0.7551    1.05     0.29    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
-#> Log-likelihood: -1065.202 | AIC: 2148.404 | BIC: 2196.229 
+#> Log-likelihood: -1065.466 | AIC: 2148.933 | BIC: 2196.758 
 #> N: 1501
 
 # Estimate a Conway-Maxwell-Poisson model

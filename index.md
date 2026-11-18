@@ -249,14 +249,14 @@ are provided in the documentation (help files).
 - Delaporte Distribution
 - Hermite Distribution (orders 2, 3 and 4; bounded overdispersion)
 - Polya-Aeppli (Poisson-Tweedie, power 1.5) Distribution
-- Negative Binomial-Generalized Exponential (NBGE) Distribution
 
-*Distributions that Handle Excess Zeros*
+*Distributions that Handle Higher Densities of Zeros and Overdispersion*
 
 - Poisson-Generalized-Exponential Distribution
 - Poisson-Lindley Distribution
 - Poisson-Lindley-Gamma (Negative Binomial-Lindley) Distribution
 - Poisson-Lindley-Lognormal Distribution
+- Negative Binomial-Generalized Exponential (NBGE) Distribution
 
 ## Example
 
@@ -280,7 +280,7 @@ summary(gen.nb2)
 #>     method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 46 
+#> Iterations: 40 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -378,20 +378,20 @@ summary(gen.nb2)
 #>     family = "NB2", dis_param_formula_1 = ~lnlength, method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 54 
+#> Iterations: 51 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                       Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)            -7.6757     0.4877  -15.74  < 2e-16 ***
+#> (Intercept)            -7.6756     0.4877  -15.74  < 2e-16 ***
 #> lnaadt                  0.9296     0.0569   16.32  < 2e-16 ***
 #> lnlength                0.8534     0.0699   12.21  < 2e-16 ***
 #> speed50                -0.3999     0.1091   -3.67  0.00025 ***
 #> ShouldWidth04           0.2606     0.0916    2.84  0.00446 ** 
-#> AADT10kplus             5.9608     4.5117    1.32  0.18644    
-#> I(AADT10kplus/lnaadt) -50.1327    43.0018   -1.17  0.24368    
+#> AADT10kplus             5.9613     4.5117    1.32  0.18640    
+#> I(AADT10kplus/lnaadt) -50.1377    43.0019   -1.17  0.24364    
 #> ln(alpha):(Intercept)  -1.9126     0.6648   -2.88  0.00401 ** 
-#> ln(alpha):lnlength     -0.4301     0.4991   -0.86  0.38881    
+#> ln(alpha):lnlength     -0.4301     0.4991   -0.86  0.38880    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -467,7 +467,7 @@ regCompTable(list("Generalized NB-2" = gen.nb2, "Generalized NB-P" = gen.nbp))
 #>  4 speed50               -0.4 (0.109)***    -0.384 (0.111)*** 
 #>  5 ShouldWidth04         0.261 (0.092)**    0.258 (0.092)**   
 #>  6 AADT10kplus           5.961 (4.512)      0.689 (0.132)***  
-#>  7 I(AADT10kplus/lnaadt) -50.133 (43.002)   ---               
+#>  7 I(AADT10kplus/lnaadt) -50.138 (43.002)   ---               
 #>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.535)**  
 #>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.445)    
 #> 10 ln(p)                 ---                0.525 (0.184)**   
@@ -543,8 +543,41 @@ predict(fit, new_data = washington_roads[1:5, ])
 
 ## Learning more
 
-The vignettes cover the main workflows:
+The vignettes cover the main workflows. Start with
+[`vignette("getting-started", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/getting-started.md).
 
-- [`vignette("choosing-a-count-distribution", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/choosing-a-count-distribution.md)
-- [`vignette("random-parameters-and-panels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md)
-- [`vignette("inference-prediction-and-comparison", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/inference-prediction-and-comparison.md)
+*Start here*
+
+- Getting started with flexCountReg:
+  [`vignette("getting-started", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/getting-started.md)
+- Preparing count data: exposure, offsets, weights and missing values:
+  [`vignette("data-exposure-weights", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/data-exposure-weights.md)
+
+*Diagnose and interpret*
+
+- Diagnosing a count model and deciding what to change:
+  [`vignette("diagnosing-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/diagnosing-count-models.md)
+- Interpreting predictions, marginal effects and elasticities:
+  [`vignette("predictions-and-effects", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/predictions-and-effects.md)
+- Inference, prediction and model comparison:
+  [`vignette("inference-prediction-and-comparison", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/inference-prediction-and-comparison.md)
+
+*Model structure*
+
+- Choosing a count distribution:
+  [`vignette("choosing-a-count-distribution", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/choosing-a-count-distribution.md)
+- Modeling dispersion and other distribution parameters:
+  [`vignette("distribution-parameter-regression", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/distribution-parameter-regression.md)
+- Understanding zeros, hurdles and the sampling process:
+  [`vignette("zeros-hurdles-and-sampling", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/zeros-hurdles-and-sampling.md)
+- Underreporting: observed counts, true counts and identification:
+  [`vignette("underreporting-and-identification", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/underreporting-and-identification.md)
+- Random parameters and panel models:
+  [`vignette("random-parameters-and-panels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md)
+
+*Predict and validate*
+
+- Evaluating predictive performance without information leakage:
+  [`vignette("predictive-validation", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/predictive-validation.md)
+- Predicting new units and known units in panel data:
+  [`vignette("prediction-for-panel-data", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/prediction-for-panel-data.md)

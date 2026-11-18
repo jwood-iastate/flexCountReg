@@ -128,7 +128,7 @@ tidy(m, conf.int = TRUE)
 #>   <chr>       <chr>        <dbl>     <dbl>     <dbl>    <dbl>    <dbl>     <dbl>
 #> 1 (Intercept) mean        -9.21     0.445     -20.7  2.06e-95  -10.1      -8.34 
 #> 2 lnaadt      mean         1.12     0.0529     21.1  1.01e-98    1.01      1.22 
-#> 3 lnlength    mean         0.744    0.0696     10.7  1.13e-26    0.608     0.880
+#> 3 lnlength    mean         0.744    0.0696     10.7  1.13e-26    0.608     0.881
 #> 4 ln(alpha)   distribu…   -0.916    0.234      -3.92 8.81e- 5   -1.37     -0.458
 tidy(m, exponentiate = TRUE)
 #> # A tibble: 4 × 6

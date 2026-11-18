@@ -71,7 +71,6 @@ nb_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
                             ShouldWidth04 + AADTover10k,
                             data = washington_roads, family = 'nb2', 
                             method = 'NM', max.iters = 500)
-#> Warning: The optimizer did not report convergence (iteration limit exceeded). Consider a different `method` or more `max.iters`.
                             
 # 1. Plot against fitted values (default) with confidence bands
 cureplot(nb_model, n_resamples = 20)

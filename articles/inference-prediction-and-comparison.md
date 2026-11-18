@@ -29,7 +29,11 @@ all use it.
   including the count distribution.
 - `"robust"`: the sandwich estimator. It remains valid for the mean
   coefficients when the distribution is misspecified but the mean model
-  is right (quasi-likelihood). For panel models
+  is right (quasi-likelihood). It does not rescue estimates from a wrong
+  mean model (they are then estimates of something else, whatever their
+  standard errors), and with sampling weights it is not a full
+  survey-design analysis (strata, clusters and finite-population
+  corrections are not modelled). For panel models
   ([`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
   with `group_var`,
   [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
@@ -37,7 +41,10 @@ all use it.
   [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md),
   [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md))
   the log-likelihood has one contribution per panel, so these standard
-  errors are cluster-robust.
+  errors are cluster-robust; for
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  they are computed row by row and do not account for repeated
+  observations of the same unit.
 - `"boot"`: a nonparametric bootstrap with `bootstraps` replicates. Rows
   are resampled for
   [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
@@ -56,11 +63,11 @@ round(cbind(Hessian = sqrt(diag(vcov(nb_h))),
             robust = sqrt(diag(vcov(nb_r))),
             bootstrap = sqrt(diag(vcov(nb_b)))), 4)
 #>             Hessian robust bootstrap
-#> (Intercept)  0.4393 0.4855    0.4755
+#> (Intercept)  0.4393 0.4855    0.4754
 #> lnaadt       0.0518 0.0558    0.0541
 #> lnlength     0.0694 0.0695    0.0674
 #> speed50      0.1078 0.1142    0.1061
-#> ln(alpha)    0.2487 0.2483    0.2304
+#> ln(alpha)    0.2486 0.2483    0.2304
 ```
 
 Similar standard errors, as here, are reassuring. A robust standard
@@ -111,13 +118,13 @@ margEffTable(nb_h, digits = 4)
 #> Method: delta 
 #> 
 #>      term variable_type           effect_metric estimate std_error t_value
-#>    lnaadt    continuous Average marginal effect   0.4989    0.0348 14.3360
-#>  lnlength    continuous Average marginal effect   0.3511    0.0373  9.4150
-#>   speed50     indicator   Pseudo-elasticity (%) -41.5523    6.3016 -6.5939
+#>    lnaadt    continuous Average marginal effect   0.4989    0.0349 14.2766
+#>  lnlength    continuous Average marginal effect   0.3511    0.0380  9.2511
+#>   speed50     indicator   Pseudo-elasticity (%) -41.5527    6.3016 -6.5940
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
-#>        0 ***   0.4307   0.5671  1501                    NA
-#>        0 ***   0.2780   0.4242  1501                    NA
-#>        0 *** -53.9032 -29.2014  1501                    NA
+#>        0 ***   0.4304   0.5674  1501                    NA
+#>        0 ***   0.2767   0.4255  1501                    NA
+#>        0 *** -53.9035 -29.2018  1501                    NA
 ```
 
 The bootstrap of
@@ -152,7 +159,7 @@ models, `type` chooses the quantity:
 
 nd <- d[1:3, ]
 predict(nb_h, newdata = nd)
-#> [1] 0.7798794 0.7097971 1.0432219
+#> [1] 0.7798765 0.7097941 1.0432200
 round(predict(nb_h, newdata = nd, type = "prob", max_count = 4,
               overflow = TRUE), 3)
 #>          0     1     2     3     4    >4
@@ -180,6 +187,49 @@ coefficients are handled:
 Negative multinomial models have `method = "Standard"` and `"EB"` in the
 same sense.
 
+## Three different intervals
+
+Three intervals answer three different questions, and are easily
+confused:
+
+| Interval | Question | How |
+|----|----|----|
+| Confidence interval for a coefficient | How uncertain is an estimated effect? | [`confint()`](https://rdrr.io/r/stats/confint.html), `tidy(conf.int = TRUE)` |
+| Confidence interval for the expected count | How uncertain is the estimated mean at given covariates? | `predict(interval = "confidence")` |
+| Prediction interval for a new count | Where is one new observation at given covariates likely to fall? | `predict(interval = "prediction")` |
+
+``` r
+
+confint(nb_h)["speed50", ]
+#>      2.5 %     97.5 % 
+#> -0.7483606 -0.3257283
+nd2 <- data.frame(lnaadt = log(c(3000, 15000)), lnlength = 0, speed50 = 1)
+predict(nb_h, newdata = nd2, interval = "confidence")
+#>         fit      lwr       upr
+#> 1 0.5258891 0.428403 0.6438896
+#> 2 3.0025638 2.313604 3.9167160
+predict(nb_h, newdata = nd2, interval = "prediction", level = 0.9)
+#>         fit lwr upr
+#> 1 0.5258891   0   2
+#> 2 3.0025638   0   8
+```
+
+The confidence interval for the mean narrows as the sample grows; the
+prediction interval does not, because a new count varies around its mean
+whatever the sample size. Prediction-interval limits are whole counts
+and, because counts are discrete, usually cover a little more than the
+stated level. Both intervals for
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+models account for estimation uncertainty using the asymptotic normal
+distribution of the estimates, evaluated at deterministic Halton points
+(or a parametric bootstrap with `uncertainty = "bootstrap"`); see
+[`?predict.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md).
+
+A fourth kind, a *tolerance interval*, is meant to contain at least a
+stated share of all counts at given covariates (for example 90% of road
+segments with these characteristics) with a stated confidence; see
+[`?tolerance_interval`](https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.md).
+
 ## Fitted values, residuals and simulation
 
 [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) gives the
@@ -200,14 +250,17 @@ three types:
 
 r <- residuals(nb_h, type = "quantile")
 c(mean = mean(r), sd = sd(r))
-#>         mean           sd 
-#> -0.005664601  0.978277239
+#>        mean          sd 
+#> -0.00566378  0.97827719
 ```
 
 [`simulate()`](https://rdrr.io/r/stats/simulate.html) draws new
 responses from the fitted distribution for the same rows (with `seed`,
 reproducible and without changing the random-number stream of the
-session). It is the basis of parametric-bootstrap checks:
+session). The parameters are held at their estimates (a plug-in
+simulation), so the spread of simulated statistics reflects the
+randomness of the counts, not the uncertainty of the estimates. It is
+the basis of parametric-bootstrap checks:
 
 ``` r
 
@@ -216,7 +269,7 @@ sims <- simulate(nb_h, nsim = 200, seed = 1)
 c(observed = mean(d$Total_crashes == 0),
   simulated = mean(colMeans(sims == 0)))
 #>  observed simulated 
-#> 0.7335110 0.7307495
+#> 0.7335110 0.7307528
 ```
 
 [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
@@ -281,6 +334,7 @@ The families nest as follows:
 | Poisson | NB1, NB2, PLN, PIG1, PIG2, PIG | dispersion = 0 | 50:50 mixture of $`\chi^2_{df-1}`$ and $`\chi^2_{df}`$ |
 | Poisson | GP1, GP2 | dispersion = 0 | $`\chi^2_{df}`$ |
 | Poisson | COM | $`\nu = 1`$ | $`\chi^2_{df}`$ |
+| Poisson | DPO, HYPERPOIS, GAMMACOUNT | $`\phi = 1`$, $`\gamma = 1`$, shape $`= 1`$ | $`\chi^2_{df}`$ |
 | NB1, NB2 | NBP | $`P = 1`$ or $`P = 2`$ | $`\chi^2_{df}`$ |
 | PL | PLG, PLL | $`\alpha = 0`$, $`\sigma = 0`$ | 50:50 mixture |
 
@@ -299,6 +353,10 @@ These comparisons are **not** valid, and no p-value is reported:
   fail.
 - **Poisson vs PW, PGE or GW.** Their distributions approach Poisson
   only as a parameter goes to infinity.
+- **Poisson vs DELAPORTE, HERMITE, PA or NBGE.** Poisson is reached only
+  at the edge of the parameter space (a share of 0 on the logit scale,
+  or a dispersion going to zero), where other parameters are not
+  identified.
 - **A boundary family with a dispersion formula.** The restriction sends
   an intercept to minus infinity while the slopes become unidentified.
 - **Models with and without a zero model or underreporting.** No zero
@@ -367,7 +425,7 @@ r <- regCompTest(nb1, model2 = countreg(f, d, family = "NBP",
                                         method = "BFGS"))
 r[c("LR", "LRdof", "LR_type", "LR_pvalue")]
 #> $LR
-#> [1] 9.828608
+#> [1] 9.828597
 #> 
 #> $LRdof
 #> [1] 1
@@ -376,7 +434,7 @@ r[c("LR", "LRdof", "LR_type", "LR_pvalue")]
 #> [1] "interior"
 #> 
 #> $LR_pvalue
-#> [1] 0.001718183
+#> [1] 0.001718194
 ```
 
 When the larger model has the lower log-likelihood, the larger model did
@@ -409,6 +467,22 @@ regCompTable(list(Poisson = po, NB2 = nb_h))
 #>  9 BIC          2230.45           2206.453         
 #> 10 Pseudo-R-Sq. 0.278             0.288
 ```
+
+## Next steps
+
+- [`vignette("getting-started", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/getting-started.md)
+  applies these tools in a complete analysis.
+- [`vignette("diagnosing-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/diagnosing-count-models.md)
+  covers residuals, rootograms and held-out comparisons.
+- [`vignette("random-parameters-and-panels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md)
+  explains the independent unit for repeated observations: the
+  `washington_roads` rows used here are segment-years, so the row-level
+  standard errors above treat repeated years of a segment as
+  independent.
+- [`vignette("predictions-and-effects", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/predictions-and-effects.md)
+  interprets predictions and marginal effects in detail.
+- [`vignette("prediction-for-panel-data", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/prediction-for-panel-data.md)
+  separates predictions for new and for known units in panels.
 
 ## References
 

@@ -64,18 +64,92 @@
     
     
 <p>flexCountReg fits the same regression model with many count
-distributions. This vignette shows a workflow for choosing among them:
-fit candidate families, compare their fit statistics, and check how well
-each one reproduces the observed counts.</p>
+distributions. This vignette is an overview of how to choose among them:
+which features of the data matter, how to fit and compare candidate
+families on the same rows, which comparisons are valid, and why some
+common shortcuts mislead. For a first complete analysis start with
+<code><a href="../articles/getting-started.html">vignette("getting-started", package = "flexCountReg")</a></code>; for
+the diagnostics used here in more depth see
+<code><a href="../articles/diagnosing-count-models.html">vignette("diagnosing-count-models", package = "flexCountReg")</a></code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jwood-iastate.github.io/flexCountReg/">flexCountReg</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"washington_roads"</span><span class="op">)</span></span></code></pre></div>
-<p>The <code>washington_roads</code> data contain crashes on 507 road
-segments observed over three years. We model total crashes as a function
-of traffic volume (<code>lnaadt</code>) and the speed-limit indicator
-<code>speed50</code>, with segment length as an exposure offset.</p>
 <div class="section level2">
-<h2 id="fitting-candidate-families">Fitting candidate families<a class="anchor" aria-label="anchor" href="#fitting-candidate-families"></a>
+<h2 id="what-to-look-at-before-choosing">What to look at before choosing<a class="anchor" aria-label="anchor" href="#what-to-look-at-before-choosing"></a>
+</h2>
+<p>A distribution is a statement about how counts vary <em>given the
+covariates</em>. The useful questions are:</p>
+<table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
+<thead><tr class="header">
+<th>Feature</th>
+<th>Question</th>
+<th>Families to consider</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Conditional dispersion</td>
+<td>Given the mean model, is the variance larger or smaller than the
+mean? How does it grow with the mean?</td>
+<td>variance ∝ mean: NB1, PIG1, GP1, HERMITE; ∝ mean²: NB2, PIG2, PIG,
+PLN, NBGE; in between: NBP, PA</td>
+</tr>
+<tr class="even">
+<td>Underdispersion</td>
+<td>Is the variance <em>smaller</em> than the mean?</td>
+<td>COM, GP1/GP2, DW, DPO, HYPERPOIS, GAMMACOUNT</td>
+</tr>
+<tr class="odd">
+<td>Tails</td>
+<td>Are very large counts more frequent than a negative binomial
+allows?</td>
+<td>PLN, PIG, SI, GW, PW</td>
+</tr>
+<tr class="even">
+<td>Zeros</td>
+<td>Are there more zeros than the count distribution predicts
+<em>after</em> fitting it?</td>
+<td>zero-inflated or hurdle models (<code>zero_formula</code>), PL, PLG,
+PGE</td>
+</tr>
+<tr class="odd">
+<td>Exposure</td>
+<td>Were the counts observed over different lengths of time or
+space?</td>
+<td>any family, with an offset
+(<code><a href="../articles/data-exposure-weights.html">vignette("data-exposure-weights")</a></code>)</td>
+</tr>
+<tr class="even">
+<td>Mechanism</td>
+<td>Is there a plausible process, e.g. events in clusters or batches, or
+renewal with regular gaps?</td>
+<td>Polya-Aeppli (PA, clusters), HERMITE (pairs), GAMMACOUNT
+(renewal)</td>
+</tr>
+</tbody>
+</table>
+<p><code><a href="../reference/count_families.html">?count_families</a></code> lists every family with its parameters,
+variance and the features (underreporting, likelihood-ratio tests)
+available for it.</p>
+</div>
+<div class="section level2">
+<h2 id="the-data">The data<a class="anchor" aria-label="anchor" href="#the-data"></a>
+</h2>
+<p>The <code>washington_roads</code> data contain crashes on 507 road
+segments, each observed in up to three years (1501 rows). We model total
+crashes as a function of traffic volume (<code>lnaadt</code>) and the
+speed-limit indicator <code>speed50</code>, with the logarithm of
+segment length as an offset. The models in this overview treat every row
+as independent; the repeated observations of the same segments are
+modelled in
+<code><a href="../articles/random-parameters-and-panels.html">vignette("random-parameters-and-panels", package = "flexCountReg")</a></code>.</p>
+</div>
+<div class="section level2">
+<h2 id="fitting-candidate-families-on-the-same-rows">Fitting candidate families on the same rows<a class="anchor" aria-label="anchor" href="#fitting-candidate-families-on-the-same-rows"></a>
 </h2>
 <p><code><a href="../reference/countreg.html">countreg()</a></code> takes the distribution as
 <code>family</code>. Gradient-based optimizers
@@ -92,43 +166,77 @@ fastest choice for the closed-form families.</p>
 <span>  NB1 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"NB1"</span><span class="op">)</span>,</span>
 <span>  NB2 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"NB2"</span><span class="op">)</span>,</span>
 <span>  PIG1 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"PIG1"</span><span class="op">)</span>,</span>
-<span>  GP1 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"GP1"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span>  GP1 <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"GP1"</span><span class="op">)</span>,</span>
+<span>  PA <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"PA"</span><span class="op">)</span>,</span>
+<span>  DELAPORTE <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="st">"DELAPORTE"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">models</span>, <span class="va">nobs</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   Poisson       NB1       NB2      PIG1       GP1        PA DELAPORTE </span></span>
+<span><span class="co">#&gt;      1501      1501      1501      1501      1501      1501      1501</span></span></code></pre></div>
+<p>All models use the same rows, so their log-likelihoods are
+comparable. NB1 and NB2 differ in how the extra variance grows with the
+mean; the Polya-Aeppli family <code>PA</code> (a Poisson-Tweedie
+distribution, variance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mo>+</mo><mi>ϕ</mi><msup><mi>μ</mi><mn>1.5</mn></msup></mrow><annotation encoding="application/x-tex">\mu + \phi\mu^{1.5}</annotation></semantics></math>)
+lies between them, and the Delaporte family mixes a Poisson and a
+negative binomial component.</p>
 </div>
 <div class="section level2">
 <h2 id="comparing-fit-statistics">Comparing fit statistics<a class="anchor" aria-label="anchor" href="#comparing-fit-statistics"></a>
 </h2>
-<p><code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> gives one row of fit statistics per model, so
-the candidates can be compared side by side.</p>
+<p><code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> gives one row of fit statistics per model:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">models</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">nm</span><span class="op">)</span> <span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="va">stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">models</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">nm</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">nm</span>, <span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">models</span><span class="op">[[</span><span class="va">nm</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logLik"</span>, <span class="st">"AIC"</span>, <span class="st">"BIC"</span>, <span class="st">"df"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;     model    logLik      AIC      BIC df</span></span>
-<span><span class="co">#&gt; 1 Poisson -1110.057 2226.114 2242.056  3</span></span>
-<span><span class="co">#&gt; 2     NB1 -1097.226 2202.451 2223.707  4</span></span>
-<span><span class="co">#&gt; 3     NB2 -1090.559 2189.118 2210.374  4</span></span>
-<span><span class="co">#&gt; 4    PIG1 -1096.941 2201.882 2223.138  4</span></span>
-<span><span class="co">#&gt; 5     GP1 -1097.124 2202.247 2223.503  4</span></span></code></pre></div>
-<p>The Poisson model fits far worse than the overdispersed families. For
-a single model, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports a likelihood-ratio test
-against the Poisson model with the same mean specification:</p>
+<span><span class="va">stats</span><span class="op">$</span><span class="va">dAIC</span> <span class="op">&lt;-</span> <span class="va">stats</span><span class="op">$</span><span class="va">AIC</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">stats</span><span class="op">$</span><span class="va">AIC</span><span class="op">)</span></span>
+<span><span class="va">stats</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">stats</span><span class="op">$</span><span class="va">AIC</span><span class="op">)</span>, <span class="op">]</span></span>
+<span><span class="co">#&gt;       model    logLik      AIC      BIC df       dAIC</span></span>
+<span><span class="co">#&gt; 3       NB2 -1090.559 2189.118 2210.374  4  0.0000000</span></span>
+<span><span class="co">#&gt; 6        PA -1090.750 2189.500 2210.755  4  0.3815105</span></span>
+<span><span class="co">#&gt; 7 DELAPORTE -1090.152 2190.304 2216.873  5  1.1858377</span></span>
+<span><span class="co">#&gt; 4      PIG1 -1096.941 2201.882 2223.138  4 12.7638096</span></span>
+<span><span class="co">#&gt; 5       GP1 -1097.124 2202.247 2223.503  4 13.1288271</span></span>
+<span><span class="co">#&gt; 2       NB1 -1097.226 2202.451 2223.707  4 13.3332678</span></span>
+<span><span class="co">#&gt; 1   Poisson -1110.057 2226.114 2242.056  3 36.9960203</span></span></code></pre></div>
+<p>NB2 has the lowest AIC, but NB2, PA, DELAPORTE are within 2 AIC units
+of each other, a difference too small to choose between them on this
+basis alone. The families whose variance is proportional to the mean
+(NB1, PIG1, GP1) are at least 12.8 AIC units behind the best model: the
+extra variance grows faster than the mean in these data.</p>
+<p>More parameters can also be weakly identified. The Delaporte model’s
+share and shape parameters have large standard errors here:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">DELAPORTE</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logit(rho)"</span>, <span class="st">"ln(k)"</span><span class="op">)</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span></span>
+<span><span class="co">#&gt;               Estimate Std. Error</span></span>
+<span><span class="co">#&gt; logit(rho)  0.66718570   2.421449</span></span>
+<span><span class="co">#&gt; ln(k)      -0.02539755   1.861276</span></span></code></pre></div>
+<p>The data do not separate the Poisson and negative binomial components
+of the Delaporte distribution; it offers no advantage over NB2.</p>
+</div>
+<div class="section level2">
+<h2 id="which-comparisons-are-valid">Which comparisons are valid<a class="anchor" aria-label="anchor" href="#which-comparisons-are-valid"></a>
+</h2>
+<p>For a single model, <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports a likelihood-ratio
+test against the Poisson model with the same mean specification, when
+Poisson is a special case (on the boundary of the parameter space for
+NB2, so the p-value uses a 50:50 chi-square mixture):</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Call:</span></span>
 <span><span class="co">#&gt; countreg(formula = f, data = washington_roads, family = family, </span></span>
 <span><span class="co">#&gt;     offset = "lnlength", method = "BFGS")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model: countreg | family: NB2 | optimizer: BFGS</span></span>
-<span><span class="co">#&gt; Iterations: 30 </span></span>
+<span><span class="co">#&gt; Iterations: 37 </span></span>
 <span><span class="co">#&gt; Convergence: successful convergence </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
 <span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; (Intercept)  -8.8953     0.4465  -19.92  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; (Intercept)  -8.8959     0.4465  -19.92  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; lnaadt        1.1244     0.0514   21.87  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; speed50      -0.5677     0.1102   -5.15  2.6e-07 ***</span></span>
-<span><span class="co">#&gt; ln(alpha)    -0.9123     0.2278   -4.00  6.2e-05 ***</span></span>
+<span><span class="co">#&gt; speed50      -0.5678     0.1102   -5.15  2.6e-07 ***</span></span>
+<span><span class="co">#&gt; ln(alpha)    -0.9125     0.2279   -4.00  6.2e-05 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; Offset: lnlength (coefficient fixed at 1)</span></span>
@@ -136,9 +244,9 @@ against the Poisson model with the same mean specification:</p>
 <span><span class="co">#&gt; Log-likelihood: -1090.559 | AIC: 2189.118 | BIC: 2210.374 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span>
 <span><span class="co">#&gt; LR test vs Poisson: chi-sq = 38.996 on 1 df, p-value = 2.12e-10 (boundary-corrected)</span></span></code></pre></div>
-<p><code><a href="../reference/regCompTest.html">regCompTest()</a></code> compares two fitted models directly,
-treating the one with fewer parameters as the restricted model:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p><code><a href="../reference/regCompTest.html">regCompTest()</a></code> compares two fitted models. Poisson is
+nested in NB2:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">Poisson</span>, model2 <span class="op">=</span> <span class="va">models</span><span class="op">$</span><span class="va">NB2</span><span class="op">)</span><span class="op">$</span><span class="va">statistics</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 8 × 3</span></span></span>
 <span><span class="co">#&gt;   Statistic                 Model BaseModel</span></span>
@@ -151,28 +259,86 @@ treating the one with fewer parameters as the restricted model:</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> LR degrees of freedom     1        <span style="color: #BB0000;">NA</span>    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> LR p-value                0        <span style="color: #BB0000;">NA</span>    </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.292     0.279</span></span></code></pre></div>
-<p>and <code><a href="../reference/regCompTable.html">regCompTable()</a></code> builds a coefficient table across
+<p>NB1 and NB2 are not nested (neither is a special case of the other),
+so no likelihood-ratio p-value is reported, only information
+criteria:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB1</span>, model2 <span class="op">=</span> <span class="va">models</span><span class="op">$</span><span class="va">NB2</span><span class="op">)</span><span class="op">$</span><span class="va">statistics</span></span>
+<span><span class="co">#&gt; Warning: The models have the same number of parameters, so they are not nested;</span></span>
+<span><span class="co">#&gt; the LR test is not reported.</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 8 × 3</span></span></span>
+<span><span class="co">#&gt;   Statistic                 Model BaseModel</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> Log-likelihood        -<span style="color: #BB0000; text-decoration: underline;">1</span><span style="color: #BB0000;">091.</span>    -<span style="color: #BB0000; text-decoration: underline;">1</span><span style="color: #BB0000;">097.</span>   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> Number of parameters      4         4    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> AIC                    <span style="text-decoration: underline;">2</span>189.     <span style="text-decoration: underline;">2</span>202.   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> BIC                    <span style="text-decoration: underline;">2</span>210.     <span style="text-decoration: underline;">2</span>224.   </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> LR Test Statistic        <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> LR degrees of freedom    <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> LR p-value               <span style="color: #BB0000;">NA</span>        <span style="color: #BB0000;">NA</span>    </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> McFadden's Pseudo R^2     0.292     0.288</span></span></code></pre></div>
+<p><code><a href="../reference/regCompTable.html">regCompTable()</a></code> builds a coefficient table across
 models:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="va">models</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Poisson"</span>, <span class="st">"NB1"</span>, <span class="st">"NB2"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 9 × 4</span></span></span>
 <span><span class="co">#&gt;   Parameter    Poisson           NB1               NB2              </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept)  -9.119 (0.424)*** -8.68 (0.471)***  -8.895 (0.446)***</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept)  -9.119 (0.424)*** -8.68 (0.471)***  -8.896 (0.446)***</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt       1.147 (0.048)***  1.097 (0.054)***  1.124 (0.051)*** </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50      -0.54 (0.096)***  -0.562 (0.107)*** -0.568 (0.11)*** </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ln(alpha)    ---               -1.309 (0.261)*** -0.912 (0.228)***</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ln(alpha)    ---               -1.308 (0.261)*** -0.913 (0.228)***</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> N Obs.       1501              1501              1501             </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> LL           -1110.057         -1097.226         -1090.559        </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">7</span> AIC          2226.114          2202.451          2189.118         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> BIC          2242.056          2223.707          2210.374         </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">9</span> Pseudo-R-Sq. 0.279             0.288             0.292</span></span></code></pre></div>
 <p>McFadden’s pseudo R-squared compares each model with the same
-baseline, an intercept-only Poisson model (the base count model), so the
-values are comparable across distributions. A different baseline can be
-chosen with the <code>basemodel</code> and <code>variables</code>
-arguments of <code><a href="../reference/regCompTable.html">regCompTable()</a></code> and
-<code><a href="../reference/regCompTest.html">regCompTest()</a></code>.</p>
+baseline, an intercept-only Poisson model, so the values are comparable
+across distributions. A different baseline can be chosen with the
+<code>basemodel</code> and <code>variables</code> arguments of
+<code><a href="../reference/regCompTable.html">regCompTable()</a></code> and <code><a href="../reference/regCompTest.html">regCompTest()</a></code>.</p>
+</div>
+<div class="section level2">
+<h2 id="shortcuts-that-mislead">Shortcuts that mislead<a class="anchor" aria-label="anchor" href="#shortcuts-that-mislead"></a>
+</h2>
+<p>Three summaries are often used to choose a distribution before
+fitting anything. None is sufficient on its own:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">y</span> <span class="op">&lt;-</span> <span class="va">washington_roads</span><span class="op">$</span><span class="va">Total_crashes</span></span>
+<span><span class="va">pearson</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">m</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals</a></span><span class="op">(</span><span class="va">m</span>, type <span class="op">=</span> <span class="st">"pearson"</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span> <span class="op">/</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span><span class="va">expected_zeros</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">models</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Poisson"</span>, <span class="st">"NB2"</span><span class="op">)</span><span class="op">]</span>, <span class="kw">function</span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, type <span class="op">=</span> <span class="st">"prob"</span>, max_count <span class="op">=</span> <span class="fl">0</span><span class="op">)</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>variance_to_mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">var</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span>,</span>
+<span>  pearson_poisson <span class="op">=</span> <span class="fu">pearson</span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">Poisson</span><span class="op">)</span>,</span>
+<span>  observed_zeros <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">y</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span>,</span>
+<span>  expected_zeros_poisson <span class="op">=</span> <span class="va">expected_zeros</span><span class="op">[[</span><span class="st">"Poisson"</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>  expected_zeros_nb2 <span class="op">=</span> <span class="va">expected_zeros</span><span class="op">[[</span><span class="st">"NB2"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt;       variance_to_mean        pearson_poisson         observed_zeros </span></span>
+<span><span class="co">#&gt;              2.1873535              1.3485030              0.7335110 </span></span>
+<span><span class="co">#&gt; expected_zeros_poisson     expected_zeros_nb2 </span></span>
+<span><span class="co">#&gt;              0.7212261              0.7378874</span></span></code></pre></div>
+<ul>
+<li>
+<strong>The unconditional variance-to-mean ratio</strong> (2.19)
+mixes the variation explained by the covariates with the variation left
+over. After fitting the covariates the Poisson Pearson dispersion is
+1.35: there is overdispersion, but less than the raw ratio
+suggests.</li>
+<li>
+<strong>A large share of zeros</strong> (73% here) is not evidence
+of a separate zero process: the fitted Poisson model already expects 72%
+zeros. Compare the observed zeros with those expected under the fitted
+model.</li>
+<li>
+<strong>An AIC ranking</strong> tells which of the fitted models is
+closest to the data among those tried. Small differences are not
+decisive, and a model that is best in-sample is not necessarily best at
+predicting new data; a held-out comparison is shown in
+<code><a href="../articles/diagnosing-count-models.html">vignette("diagnosing-count-models", package = "flexCountReg")</a></code>.</li>
+</ul>
 </div>
 <div class="section level2">
 <h2 id="does-the-model-reproduce-the-counts">Does the model reproduce the counts?<a class="anchor" aria-label="anchor" href="#does-the-model-reproduce-the-counts"></a>
@@ -183,41 +349,40 @@ with the frequency expected under the fitted model, on a square-root
 scale. Bars hang from the expected curve; a bar that ends above zero
 means the count is over-predicted, one that ends below zero means it is
 under-predicted.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">oldpar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">Poisson</span>, main <span class="op">=</span> <span class="st">"Poisson"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span>, main <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="choosing-a-count-distribution_files/figure-html/rootograms-1.png" class="r-plt" alt="" width="672"></p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">oldpar</span><span class="op">)</span></span></code></pre></div>
-<p>The Poisson model under-predicts zeros and large counts, the typical
-signature of overdispersion. NB2 tracks the observed frequencies
-closely.</p>
-<p>Randomized quantile residuals are standard normal when the model is
-correct, for any count distribution, so a normal Q-Q plot is a useful
-check:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<p>Randomized quantile residuals are approximately standard normal when
+the model is correct, for any count distribution, so a normal Q-Q plot
+is a useful check (the residuals are randomized, so a seed is set):</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">oldpar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="kw">for</span> <span class="op">(</span><span class="va">nm</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Poisson"</span>, <span class="st">"NB2"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals</a></span><span class="op">(</span><span class="va">models</span><span class="op">[[</span><span class="va">nm</span><span class="op">]</span><span class="op">]</span>, type <span class="op">=</span> <span class="st">"quantile"</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/stats/qqnorm.html" class="external-link">qqnorm</a></span><span class="op">(</span><span class="va">r</span>, main <span class="op">=</span> <span class="va">nm</span>, pch <span class="op">=</span> <span class="fl">20</span>, col <span class="op">=</span> <span class="st">"grey40"</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, col <span class="op">=</span> <span class="st">"firebrick"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/graphics/abline.html" class="external-link">abline</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, lty <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
 <p><img src="choosing-a-count-distribution_files/figure-html/qq-1.png" class="r-plt" alt="" width="672"></p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">oldpar</span><span class="op">)</span></span></code></pre></div>
-<p>A CURE plot (cumulative residuals against fitted values or a
-covariate) is another standard diagnostic in safety analysis:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span>, n_resamples <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></code></pre></div>
+<p>A CURE plot (cumulative residuals against a covariate) checks the
+mean model along that covariate; its bounds assume independent
+residuals:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="choosing-a-count-distribution_files/figure-html/cure-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="modeling-the-dispersion-and-the-zeros">Modeling the dispersion and the zeros<a class="anchor" aria-label="anchor" href="#modeling-the-dispersion-and-the-zeros"></a>
 </h2>
 <p>The distribution parameters can depend on covariates. Here the NB2
 dispersion depends on the speed-limit indicator:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nb2_gen</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
 <span>                    offset <span class="op">=</span> <span class="st">"lnlength"</span>,</span>
 <span>                    dis_param_formula_1 <span class="op">=</span> <span class="op">~</span> <span class="va">speed50</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
@@ -225,58 +390,83 @@ dispersion depends on the speed-limit indicator:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 5 × 8</span></span></span>
 <span><span class="co">#&gt;   term       component estimate std.error statistic   p.value conf.low conf.high</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercep… mean        -<span style="color: #BB0000;">8.89</span>     0.449     -<span style="color: #BB0000;">19.8</span>  2.17<span style="color: #949494;">e</span><span style="color: #BB0000;">- 87</span>   -<span style="color: #BB0000;">9.77</span>     -<span style="color: #BB0000;">8.02</span> </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt     mean         1.12     0.051<span style="text-decoration: underline;">6</span>     21.8  3.01<span style="color: #949494;">e</span><span style="color: #BB0000;">-105</span>    1.02      1.22 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50    mean        -<span style="color: #BB0000;">0.552</span>    0.120      -<span style="color: #BB0000;">4.58</span> 4.63<span style="color: #949494;">e</span><span style="color: #BB0000;">-  6</span>   -<span style="color: #BB0000;">0.788</span>    -<span style="color: #BB0000;">0.316</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercep… mean        -<span style="color: #BB0000;">8.89</span>     0.449     -<span style="color: #BB0000;">19.8</span>  2.18<span style="color: #949494;">e</span><span style="color: #BB0000;">- 87</span>   -<span style="color: #BB0000;">9.77</span>     -<span style="color: #BB0000;">8.02</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt     mean         1.12     0.051<span style="text-decoration: underline;">6</span>     21.8  3.02<span style="color: #949494;">e</span><span style="color: #BB0000;">-105</span>    1.02      1.22 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50    mean        -<span style="color: #BB0000;">0.552</span>    0.120      -<span style="color: #BB0000;">4.58</span> 4.62<span style="color: #949494;">e</span><span style="color: #BB0000;">-  6</span>   -<span style="color: #BB0000;">0.788</span>    -<span style="color: #BB0000;">0.316</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ln(alpha)… distribu…   -<span style="color: #BB0000;">1.16</span>     0.281      -<span style="color: #BB0000;">4.11</span> 3.99<span style="color: #949494;">e</span><span style="color: #BB0000;">-  5</span>   -<span style="color: #BB0000;">1.71</span>     -<span style="color: #BB0000;">0.604</span></span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> ln(alpha)… distribu…    1.15     0.456       2.53 1.15<span style="color: #949494;">e</span><span style="color: #BB0000;">-  2</span>    0.258     2.04</span></span></code></pre></div>
 <p>When there are more zeros than a count distribution allows, a
 zero-inflated or hurdle version of any family can be fitted with
 <code>zero_formula</code>:</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">zinb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
 <span>                 offset <span class="op">=</span> <span class="st">"lnlength"</span>, zero_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="st">"NR"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The Hessian is singular; standard errors use a generalized inverse and</span></span>
-<span><span class="co">#&gt; may be unreliable. The model may not be identified.</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>NB2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span><span class="op">)</span><span class="op">)</span>, ZINB <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt;       NB2      ZINB </span></span>
-<span><span class="co">#&gt; -1090.559 -1090.589</span></span>
-<span><span class="co"># Estimated probability of a structural zero</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span><span class="op">[</span><span class="st">"Zero:(Intercept)"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 1.29913e-05</span></span></code></pre></div>
-<p>Here the probability of a structural zero is estimated at essentially
-zero and the log-likelihood equals that of NB2: the zeros are already
-explained by the negative binomial, so the zero-inflated model adds
-nothing. (When an estimate is at the boundary like this, its standard
-error is not meaningful.)</p>
+<span><span class="va">pi_zero</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span><span class="op">[</span><span class="st">"Zero:(Intercept)"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>NB2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span><span class="op">)</span><span class="op">)</span>, ZINB <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  zero_probability <span class="op">=</span> <span class="va">pi_zero</span><span class="op">)</span></span>
+<span><span class="co">#&gt;              NB2             ZINB zero_probability </span></span>
+<span><span class="co">#&gt;    -1.090559e+03    -1.090560e+03     4.338153e-05</span></span></code></pre></div>
+<p>The estimated probability of a structural zero is 4.3e-05 and the
+log-likelihoods differ by 5.2e-04: the zeros are already explained by
+the negative binomial, so the zero-inflated model adds nothing. When an
+estimate is at the boundary of its parameter space like this, its
+standard error is not meaningful, and the likelihood-ratio test of NB2
+against ZINB has a non-standard distribution, so it is not reported.</p>
 </div>
 <div class="section level2">
 <h2 id="using-the-chosen-model">Using the chosen model<a class="anchor" aria-label="anchor" href="#using-the-chosen-model"></a>
 </h2>
 <p>Predictions have one value per row of new data. Besides the expected
-count, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> gives the probability of each count:</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+count, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> gives the probability of each count and
+confidence or prediction intervals:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nd</span> <span class="op">&lt;-</span> <span class="va">washington_roads</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 0.7961933 0.7036126 1.1665157</span></span>
+<span><span class="co">#&gt; [1] 0.7961623 0.7035853 1.1664704</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span>, newdata <span class="op">=</span> <span class="va">nd</span>, type <span class="op">=</span> <span class="st">"prob"</span>, max_count <span class="op">=</span> <span class="fl">4</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          0     1     2     3     4</span></span>
 <span><span class="co">#&gt; [1,] 0.501 0.302 0.128 0.046 0.015</span></span>
 <span><span class="co">#&gt; [2,] 0.538 0.295 0.113 0.037 0.011</span></span>
-<span><span class="co">#&gt; [3,] 0.384 0.305 0.170 0.081 0.036</span></span></code></pre></div>
+<span><span class="co">#&gt; [3,] 0.384 0.305 0.170 0.081 0.036</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span>, newdata <span class="op">=</span> <span class="va">nd</span>, interval <span class="op">=</span> <span class="st">"prediction"</span>, level <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         fit lwr upr</span></span>
+<span><span class="co">#&gt; 1 0.7961623   0   3</span></span>
+<span><span class="co">#&gt; 2 0.7035853   0   3</span></span>
+<span><span class="co">#&gt; 3 1.1664704   0   4</span></span></code></pre></div>
 <p>Marginal effects (or elasticities) on the expected count come from
 <code><a href="../reference/margEffTable.html">margEffTable()</a></code>:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/margEffTable.html">margEffTable</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Marginal Effects / Elasticities</span></span>
 <span><span class="co">#&gt; Method: delta </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     term variable_type           effect_metric estimate std_error t_value</span></span>
-<span><span class="co">#&gt;   lnaadt    continuous Average marginal effect    0.532     0.037  14.536</span></span>
-<span><span class="co">#&gt;  speed50     indicator   Pseudo-elasticity (%)  -43.319     6.246  -6.935</span></span>
+<span><span class="co">#&gt;   lnaadt    continuous Average marginal effect    0.532     0.037  14.561</span></span>
+<span><span class="co">#&gt;  speed50     indicator   Pseudo-elasticity (%)  -43.320     6.246  -6.936</span></span>
 <span><span class="co">#&gt;  p_value sig lower_ci upper_ci n_obs successful_bootstraps</span></span>
 <span><span class="co">#&gt;        0 ***    0.460    0.604  1501                    NA</span></span>
-<span><span class="co">#&gt;        0 ***  -55.561  -31.076  1501                    NA</span></span></code></pre></div>
+<span><span class="co">#&gt;        0 ***  -55.562  -31.078  1501                    NA</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="next-steps">Next steps<a class="anchor" aria-label="anchor" href="#next-steps"></a>
+</h2>
+<ul>
+<li>
+<code><a href="../articles/diagnosing-count-models.html">vignette("diagnosing-count-models", package = "flexCountReg")</a></code>:
+residuals, rootograms, calibration and held-out comparisons.</li>
+<li>
+<code><a href="../articles/data-exposure-weights.html">vignette("data-exposure-weights", package = "flexCountReg")</a></code>:
+offsets, weights and analysis samples.</li>
+<li>
+<code><a href="../articles/inference-prediction-and-comparison.html">vignette("inference-prediction-and-comparison", package = "flexCountReg")</a></code>:
+standard errors and the conditions for likelihood-ratio tests.</li>
+<li>
+<code><a href="../articles/zeros-hurdles-and-sampling.html">vignette("zeros-hurdles-and-sampling", package = "flexCountReg")</a></code>:
+zero-inflated and hurdle models.</li>
+<li>
+<code><a href="../articles/distribution-parameter-regression.html">vignette("distribution-parameter-regression", package = "flexCountReg")</a></code>:
+models for the dispersion and shape parameters.</li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

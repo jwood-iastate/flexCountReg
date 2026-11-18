@@ -150,19 +150,19 @@ m <- countreg(Total_crashes ~ lnaadt + lnlength, data = washington_roads,
               family = "NB2", method = "BFGS")
 coef(m)
 #> (Intercept)      lnaadt    lnlength   ln(alpha) 
-#>  -9.2124976   1.1159467   0.7440786  -0.9162318 
+#>  -9.2124976   1.1159470   0.7440805  -0.9162359 
 confint(m)
 #>                   2.5 %     97.5 %
-#> (Intercept) -10.0837231 -8.3412721
-#> lnaadt        1.0122314  1.2196620
-#> lnlength      0.6076579  0.8804992
-#> ln(alpha)    -1.3742012 -0.4582624
+#> (Intercept) -10.0837227 -8.3412726
+#> lnaadt        1.0122318  1.2196622
+#> lnlength      0.6076599  0.8805011
+#> ln(alpha)    -1.3742068 -0.4582650
 AIC(m)
 #> [1] 2203.92
 BIC(m)
 #> [1] 2225.176
 head(residuals(m, type = "pearson"))
-#> [1] -0.8946308  0.7475106  0.2732503 -0.6512653 -0.9049206  0.3294258
+#> [1] -0.8946318  0.7475095  0.2732480 -0.6512653 -0.9049217  0.3294260
 sims <- simulate(m, nsim = 2, seed = 1)
 # }
 ```

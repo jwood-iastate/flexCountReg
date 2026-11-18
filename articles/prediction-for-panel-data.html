@@ -122,11 +122,11 @@ the four rows of a patient share one draw:</p>
 <span><span class="co">#&gt;                    Estimate Std. Error</span></span>
 <span><span class="co">#&gt; progabide            -0.315      0.150</span></span>
 <span><span class="co">#&gt; lbase                 1.028      0.101</span></span>
-<span><span class="co">#&gt; lage                  0.328      0.348</span></span>
+<span><span class="co">#&gt; lage                  0.328      0.351</span></span>
 <span><span class="co">#&gt; V4                   -0.118      0.087</span></span>
 <span><span class="co">#&gt; (Intercept):Mean      1.850      0.109</span></span>
 <span><span class="co">#&gt; (Intercept):St.Dev    0.491      0.061</span></span>
-<span><span class="co">#&gt; ln(alpha)            -2.008      0.236</span></span></code></pre></div>
+<span><span class="co">#&gt; ln(alpha)            -2.008      0.238</span></span></code></pre></div>
 <p>The coefficients are effects on the log of the expected count
 <em>given</em> the patient’s intercept. The standard deviation of the
 intercept (<code>(Intercept):St.Dev</code>) measures how much patients
@@ -179,7 +179,7 @@ with the same covariates differ in their seizure rates.</p>
 <span><span class="co">#&gt; 1      1 5    3.420274  3.389338        3.380582</span></span>
 <span><span class="co">#&gt; 2      2 3    3.420274  3.389338        3.380582</span></span>
 <span><span class="co">#&gt; 3      3 3    3.420274  3.389338        3.380582</span></span>
-<span><span class="co">#&gt; 4      4 3    3.038680  3.011196        3.003416</span></span></code></pre></div>
+<span><span class="co">#&gt; 4      4 3    3.038680  3.011195        3.003416</span></span></code></pre></div>
 <p><code>Exact</code> integrates over the random intercept with its
 moment-generating function; <code>Simulated</code> averages over the
 Halton draws and differs from it by the simulation error. Both describe
@@ -299,9 +299,9 @@ all the rows it is given; a row whose count is missing gets
 <span><span class="co">#&gt; [4,]          NA</span></span>
 <span><span class="co">#&gt; attr(,"eb_sd")</span></span>
 <span><span class="co">#&gt;      (Intercept)</span></span>
-<span><span class="co">#&gt; [1,]   0.2990762</span></span>
-<span><span class="co">#&gt; [2,]   0.2990762</span></span>
-<span><span class="co">#&gt; [3,]   0.2990762</span></span>
+<span><span class="co">#&gt; [1,]   0.2990761</span></span>
+<span><span class="co">#&gt; [2,]   0.2990761</span></span>
+<span><span class="co">#&gt; [3,]   0.2990761</span></span>
 <span><span class="co">#&gt; [4,]          NA</span></span></code></pre></div>
 <p>Computing the Empirical Bayes prediction with the period-4 count
 included and calling it a forecast would leak the answer into the

@@ -63,11 +63,11 @@ round(summary(rp)$coefficients[, 1:2], 3)
 #>                    Estimate Std. Error
 #> progabide            -0.315      0.150
 #> lbase                 1.028      0.101
-#> lage                  0.328      0.348
+#> lage                  0.328      0.351
 #> V4                   -0.118      0.087
 #> (Intercept):Mean      1.850      0.109
 #> (Intercept):St.Dev    0.491      0.061
-#> ln(alpha)            -2.008      0.236
+#> ln(alpha)            -2.008      0.238
 ```
 
 The coefficients are effects on the log of the expected count *given*
@@ -96,7 +96,7 @@ data.frame(period = p1$period, y = p1$y,
 #> 1      1 5    3.420274  3.389338        3.380582
 #> 2      2 3    3.420274  3.389338        3.380582
 #> 3      3 3    3.420274  3.389338        3.380582
-#> 4      4 3    3.038680  3.011196        3.003416
+#> 4      4 3    3.038680  3.011195        3.003416
 ```
 
 `Exact` integrates over the random intercept with its moment-generating
@@ -234,9 +234,9 @@ predict(rp, newdata = p1_hist, method = "Individual")
 #> [4,]          NA
 #> attr(,"eb_sd")
 #>      (Intercept)
-#> [1,]   0.2990762
-#> [2,]   0.2990762
-#> [3,]   0.2990762
+#> [1,]   0.2990761
+#> [2,]   0.2990761
+#> [3,]   0.2990761
 #> [4,]          NA
 ```
 

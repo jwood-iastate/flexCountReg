@@ -177,3 +177,20 @@ test_that("analytic gradients match numeric gradients (Poisson, NB1, NB2)", {
   }, numeric(1))
   expect_lt(diff(range(lls)), 1e-4)
 })
+
+test_that("the identification check warns when variances are not available", {
+  chk <- getFromNamespace(".fcr_check_report_identification", "flexCountReg")
+  nm <- c("(Intercept)", "x", "Underreporting:(Intercept)")
+  # A singular Hessian (as on some platforms for a flat ridge) gives NA
+  # variances for the flat parameters: still a weak-identification warning
+  named <- function(M) { dimnames(M) <- list(nm, nm); M }
+  V <- named(diag(3))
+  V[c(1, 3), ] <- NA
+  V[, c(1, 3)] <- NA
+  expect_warning(chk(V), "weakly identified")
+  # An indefinite covariance matrix
+  V2 <- matrix(c(1, 0, 2, 0, 1, 0, 2, 0, 1), 3, dimnames = list(nm, nm))
+  expect_warning(chk(V2), "weakly identified")
+  # A well-identified model: no warning
+  expect_silent(chk(named(diag(3))))
+})

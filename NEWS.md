@@ -288,6 +288,10 @@
 
 Changed results are marked **(changed)**.
 
+* The underreporting identification check also warns when standard errors
+  are not available because the Hessian is singular (a flat likelihood
+  ridge). Before, it returned silently in that case, so whether a weakly
+  identified model warned depended on the platform's floating point.
 * **Weights for every estimator.** `renb()`, `repois()`, `poisLind.re()` and
   `negmultinom()` accept `weights`, as `countreg()` and `countreg.rp()` do.
   In panel models these are frequency weights of the panels (constant

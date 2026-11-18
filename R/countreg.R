@@ -1139,7 +1139,20 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
 # count mean and the reporting probability is then not identified by the
 # data, even when the optimizer converges and the standard errors are finite.
 .fcr_check_report_identification <- function(V, threshold = 0.99) {
-  if (!all(is.finite(V))) return(invisible(NULL))
+  if (!all(is.finite(V))) {
+    # Non-finite variances: the Hessian was singular (a direction in which
+    # the likelihood is flat) or not negative definite. Whether a nearly
+    # flat ridge is singular in floating point depends on the platform, so
+    # this case warns as the indefinite one below does.
+    warning("The underreporting model is weakly identified: some standard ",
+            "errors are not available because the likelihood is flat or ",
+            "not at a maximum in some direction. The data do not separate ",
+            "the true count mean from the reporting probability; interpret ",
+            "the true-count estimates with caution, and consider reporting ",
+            "variables that do not affect the true counts or external ",
+            "validation data.", call. = FALSE)
+    return(invisible(NULL))
+  }
   ev <- eigen(V, symmetric = TRUE, only.values = TRUE)$values
   if (min(ev) <= 0) {
     warning("The underreporting model is weakly identified: the covariance ",

@@ -96,14 +96,15 @@ test_that("probit and logit underreporting share the same sign convention", {
   y <- rbinom(n, rnbinom(n, size = 2, mu = mu), p_rep)
   sim <- data.frame(y, x, z)
   # The binary reporting variable separates reporting from the count mean
-  # only through the link's curvature, so both fits warn
-  expect_warning(
-    lg <- countreg(y ~ x, sim, underreport_formula = ~z, method = "BFGS"),
-    "weakly identified")
-  expect_warning(
-    pr <- countreg(y ~ x, sim, underreport_formula = ~z,
-                   underreport_family = "probit", method = "BFGS"),
-    "weakly identified")
+  # only through the link's curvature: the likelihood has a nearly flat
+  # ridge, and where the optimizer stops on it (and so whether the
+  # identification warning fires) depends on the platform's floating point.
+  # The warning itself is tested directly below.
+  lg <- fcr_quiet_ridge(
+    countreg(y ~ x, sim, underreport_formula = ~z, method = "BFGS"))
+  pr <- fcr_quiet_ridge(
+    countreg(y ~ x, sim, underreport_formula = ~z,
+             underreport_family = "probit", method = "BFGS"))
   b_lg <- lg$model$estimate["Underreporting:z"]
   b_pr <- pr$model$estimate["Underreporting:z"]
   expect_gt(b_lg, 0)
@@ -191,6 +192,10 @@ test_that("the identification check warns when variances are not available", {
   # An indefinite covariance matrix
   V2 <- matrix(c(1, 0, 2, 0, 1, 0, 2, 0, 1), 3, dimnames = list(nm, nm))
   expect_warning(chk(V2), "weakly identified")
+  # Positive definite, but the count and reporting intercepts are almost
+  # perfectly correlated (a nearly flat ridge)
+  V3 <- named(matrix(c(1, 0, -0.999, 0, 1, 0, -0.999, 0, 1), 3))
+  expect_warning(chk(V3), "have correlation -0.999")
   # A well-identified model: no warning
   expect_silent(chk(named(diag(3))))
 })

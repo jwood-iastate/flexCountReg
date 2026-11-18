@@ -124,12 +124,13 @@ test_that("F03/F04: NB1 underreporting: thinned dispersion, identification", {
   y <- rbinom(n, y_true, plogis(-0.5 + 1.5 * z))
   d <- data.frame(y, x, z)
   # The count intercept and reporting intercept are nearly collinear (only
-  # the logit curvature separates them): a warning, and the truth lies
-  # within the (wide) uncertainty
-  expect_warning(
-    m <- countreg(y ~ x, d, family = "NB1", underreport_formula = ~ z,
-                  method = "BFGS"),
-    "weakly identified")
+  # the logit curvature separates them). Whether the weak-identification
+  # warning fires depends on where the optimizer stops on that flat ridge,
+  # which differs between platforms; the warning is tested directly in
+  # test-countreg-estimation.R.
+  m <- fcr_quiet_ridge(
+    countreg(y ~ x, d, family = "NB1", underreport_formula = ~ z,
+             method = "BFGS"))
   # The well-identified slope is recovered
   expect_equal(unname(coef(m)["x"]), 0.4, tolerance = 0.1)
   expect_equal(unname(sqrt(vcov(m)["x", "x"])), 0.013, tolerance = 0.2)

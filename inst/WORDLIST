@@ -26,6 +26,7 @@ Conde
 Countr
 DELAPORTE
 DPO
+DT
 DW
 DeSarbo
 Delaporte
@@ -165,6 +166,8 @@ al
 asymptotics
 bioChemists
 blacklip
+bslib
+callr
 centre
 centred
 cirrigera
@@ -212,6 +215,7 @@ infty
 integrand
 invertible
 jae
+jsonlite
 labelled
 lage
 lamW

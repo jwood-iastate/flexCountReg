@@ -27,7 +27,8 @@
 #
 # Each replicate has its own L'Ecuyer-CMRG stream derived from SEED, and the
 # starts of each fit use a seed drawn from that stream, so results do not
-# depend on the order in which replicates are run. Every fit gets a status:
+# depend on the order in which replicates are run, or on how many processes
+# run them (CORES). Every fit gets a status:
 # "ok", "warning" (estimates usable; e.g. a standard error unavailable),
 # "not converged" or "error"; summaries use converged fits with a finite
 # standard error and report attempted and used counts with Monte Carlo
@@ -37,18 +38,28 @@
 # package installed:
 #   Rscript inst/validation/finite-mixtures/mixture-recovery-study.R
 # Environment variables: REPS (default 200), SEED (default 2027), STARTS
-# (starts per fit, default 5), OUT (results directory; default this
-# script's directory in the package source).
+# (starts per fit, default 5), CORES (worker processes, default 1; the
+# replicates are spread over a local cluster), OUT (results directory;
+# default this script's directory in the package source).
 
-if (requireNamespace("pkgload", quietly = TRUE) && file.exists("DESCRIPTION")) {
-  pkgload::load_all(".", quiet = TRUE)
-} else {
-  library(flexCountReg)
+# The package: the development version when run from the package source,
+# otherwise the installed one (the same rule in every worker process)
+root <- normalizePath(".")
+load_flexcountreg <- function(root) {
+  if (requireNamespace("pkgload", quietly = TRUE) &&
+      file.exists(file.path(root, "DESCRIPTION"))) {
+    pkgload::load_all(root, quiet = TRUE)
+  } else {
+    library(flexCountReg)
+  }
+  invisible(NULL)
 }
+load_flexcountreg(root)
 
 reps <- as.integer(Sys.getenv("REPS", "200"))
 seed <- as.integer(Sys.getenv("SEED", "2027"))
 n_starts <- as.integer(Sys.getenv("STARTS", "5"))
+cores <- as.integer(Sys.getenv("CORES", "1"))
 out_dir <- Sys.getenv("OUT", file.path("inst", "validation",
                                        "finite-mixtures"))
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
@@ -215,15 +226,38 @@ one_fit <- function(sc, r, stream) {
         note = paste(unique(warn), collapse = "; "))
 }
 
+# One task per scenario and replicate, each with its stream, allocated
+# before anything runs
 streams <- make_streams(length(scenarios) * reps)
+tasks <- lapply(seq_len(length(scenarios) * reps), function(k) {
+  i <- (k - 1) %/% reps + 1
+  list(sc = scenarios[[i]], r = (k - 1) %% reps + 1, stream = streams[[k]])
+})
+run_task <- function(t) one_fit(t$sc, t$r, t$stream)
 t_start <- proc.time()[3]
-results <- do.call(rbind, lapply(seq_along(scenarios), function(i) {
-  sc <- scenarios[[i]]
-  message("Scenario ", sc$id, " (n = ", sc$n, ")")
-  do.call(rbind, lapply(seq_len(reps), function(r) {
-    one_fit(sc, r, streams[[(i - 1) * reps + r]])
-  }))
-}))
+if (cores > 1) {
+  cl <- parallel::makeCluster(cores)
+  on.exit(parallel::stopCluster(cl), add = TRUE)
+  parallel::clusterCall(cl, function(root, f) {
+    RNGkind("L'Ecuyer-CMRG")
+    f(root)
+  }, root, load_flexcountreg)
+  parallel::clusterExport(cl, c("generate", "fit_model", "ref_data",
+                                "mean_at_ref", "one_fit", "truth",
+                                "n_starts"))
+  message("Running ", length(tasks), " fits on ", cores, " processes")
+  out <- parallel::parLapplyLB(cl, tasks, run_task)
+  parallel::stopCluster(cl)
+  on.exit()
+} else {
+  out <- lapply(seq_along(tasks), function(k) {
+    if ((k - 1) %% reps == 0) {
+      message("Scenario ", tasks[[k]]$sc$id, " (n = ", tasks[[k]]$sc$n, ")")
+    }
+    run_task(tasks[[k]])
+  })
+}
+results <- do.call(rbind, out)
 elapsed <- proc.time()[3] - t_start
 
 # ---- Summaries ----------------------------------------------------------------
@@ -264,6 +298,7 @@ info <- c(
   paste("seed:", seed),
   paste("replications per scenario:", reps),
   paste("starts per fit:", n_starts),
+  paste("processes:", cores),
   paste("date:", format(Sys.Date())),
   sprintf("time: %.0f s", elapsed),
   "statuses (one row per fit and term):",

@@ -3,10 +3,8 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
                       fig.height = 4)
 old_rng <- RNGkind()
 
-
 ## ----setup--------------------------------------------------------------------
 library(flexCountReg)
-
 
 ## ----scenarios----------------------------------------------------------------
 scenarios <- expand.grid(family = c("POISSON", "NB2"), n = c(100, 400),
@@ -16,7 +14,6 @@ scenarios$beta_x <- 0.4
 scenarios$alpha <- ifelse(scenarios$family == "NB2", 0.5, NA)
 scenarios$id <- seq_len(nrow(scenarios))
 scenarios
-
 
 ## ----generator----------------------------------------------------------------
 generate <- function(sc) {
@@ -28,13 +25,11 @@ generate <- function(sc) {
   data.frame(y, x, log_t = log(t))
 }
 
-
 ## ----check-geometric----------------------------------------------------------
 set.seed(1)
 draws <- rnbinom(1e5, size = 1, mu = 2)
 round(rbind(simulated = tabulate(draws + 1, 6) / 1e5,
             geometric = dgeom(0:5, prob = 1 / 3)), 4)
-
 
 ## ----check-simulate-----------------------------------------------------------
 set.seed(2)
@@ -46,7 +41,6 @@ mu <- predict(fit)
 alpha <- exp(coef(fit)[["ln(alpha)"]])
 summary(data.frame(mean_ratio = rowMeans(sims) / mu,
                    var_ratio = apply(sims, 1, var) / (mu + alpha * mu^2)))
-
 
 ## ----replicate----------------------------------------------------------------
 fit_one <- function(d, family) {
@@ -79,7 +73,6 @@ one_replicate <- function(sc, rep) {
   out
 }
 
-
 ## ----streams------------------------------------------------------------------
 RNGkind("L'Ecuyer-CMRG")
 set.seed(2026)
@@ -102,7 +95,6 @@ results <- merge(scenarios[c("id", "family", "n")], results,
                  by.x = "id", by.y = "scenario")
 head(results)
 table(results$procedure, results$status)
-
 
 ## ----summarize----------------------------------------------------------------
 summarize_sim <- function(res) {
@@ -127,13 +119,11 @@ summary_table[order(summary_table$data, summary_table$n), -c(4, 5)] |>
   format(digits = 3)
 summary_table[, c("data", "n", "procedure", "attempted", "used")]
 
-
 ## ----summary-text, include = FALSE--------------------------------------------
 st <- summary_table
 pois_on_nb <- st[st$data == "NB2" & st$procedure == "POISSON", ]
 nb_on_nb <- st[st$data == "NB2" & st$procedure == "NB2", ]
 n_warn <- sum(results$status == "warning")
-
 
 ## ----panel-generator----------------------------------------------------------
 generate_panel <- function(n_units = 100, T = 5, theta = 0.5) {
@@ -144,7 +134,6 @@ generate_panel <- function(n_units = 100, T = 5, theta = 0.5) {
   data.frame(id, z, x, y = rpois(n_units * T, u * exp(0.2 + 0.4 * z +
                                                         0.3 * x)))
 }
-
 
 ## ----panel-study--------------------------------------------------------------
 panel_rep <- function(r) {
@@ -175,12 +164,10 @@ aggregate(cbind(estimate, se, cover, converged) ~ procedure + term,
           data = panel, FUN = mean)
 aggregate(estimate ~ procedure + term, data = panel, FUN = sd)
 
-
 ## ----script-path--------------------------------------------------------------
 script <- system.file("validation", "simulation-studies",
                       "count-regression-study.R", package = "flexCountReg")
 file.exists(script)
-
 
 ## ----restore-rng, include = FALSE---------------------------------------------
 do.call(RNGkind, as.list(old_rng))

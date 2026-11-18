@@ -1,0 +1,747 @@
+# Methods for finite-mixture and latent-class models (countreg_mix objects).
+# Statistical methods are implemented once for "countreg_mix"; countreg_lc
+# objects inherit them.
+
+# Settings needed to evaluate a fitted mixture on new rows.
+.fcr_fm_pspec <- function(object) {
+  m <- object$model
+  haltons <- randtoolbox::halton(m$ndraws %||% 1500)
+  list(blueprint = m$blueprint, map = m$map, K = m$K,
+       mix_mode = m$mix_mode, fixed_mixing = m$fixed_mixing,
+       haltons = haltons, normed_haltons = stats::qnorm(haltons),
+       engine = m$engine %||% "quadrature", families = m$family,
+       labels = m$labels)
+}
+
+# Component values and log prior probabilities for the rows of `data`.
+.fcr_fm_rows <- function(object, data, theta = object$model$estimate) {
+  ps <- .fcr_fm_pspec(object)
+  des <- .fcr_fm_design(ps, data)
+  pars <- .fcr_fm_unpack(theta, ps$map)
+  cvs <- lapply(seq_len(ps$K), function(k)
+    .fcr_fm_comp_values(des, pars, k))
+  logpi <- .fcr_fm_logprior(ps, pars, des$Z, des$n)
+  list(ps = ps, des = des, pars = pars, cvs = cvs, logpi = logpi,
+       n = des$n)
+}
+
+# Row log-probabilities of observed counts y under each component
+# (n x K; NA where y or the parameters are missing).
+.fcr_fm_row_logpmf <- function(r, y) {
+  LP <- matrix(NA_real_, r$n, r$ps$K)
+  for (k in seq_len(r$ps$K)) {
+    cv <- r$cvs[[k]]
+    ok <- !is.na(y) & !is.na(cv$mu)
+    if (!any(ok)) next
+    sv <- list(mu = cv$mu[ok], alpha = if (!is.null(cv$alpha)) cv$alpha[ok],
+               sigma = if (!is.null(cv$sigma)) cv$sigma[ok])
+    LP[ok, k] <- .fcr_fm_logpmf(r$ps, sv, r$ps$families[k], y[ok])
+  }
+  LP
+}
+
+# Panel identifiers of the rows of `data` (NULL for cross-sectional fits).
+.fcr_fm_group_ids <- function(object, data) {
+  gv <- object$model$group_var
+  if (is.null(gv)) return(NULL)
+  miss <- setdiff(gv, names(data))
+  if (length(miss)) {
+    stop("The data need the panel identifier column(s) ", toString(miss),
+         " for this target.", call. = FALSE)
+  }
+  as.character(interaction(data[, gv, drop = FALSE], drop = TRUE,
+                           sep = ":"))
+}
+
+# Log class probabilities (n x K) of the rows of `data` under a target:
+#   prior     - membership probabilities from the covariates only;
+#   posterior - updated with the outcomes of `data` itself (retrospective);
+#   history   - updated with the outcomes in `history` (earlier rows of the
+#               same panels), never with the rows being predicted.
+.fcr_fm_log_class <- function(object, r, data, conditioning,
+                              history = NULL) {
+  K <- r$ps$K
+  if (conditioning == "prior" || K == 1L) return(r$logpi)
+  update <- function(logpi_u, A_u) {
+    lc <- logpi_u + A_u
+    lc - .fcr_lse_rows(lc)
+  }
+  if (conditioning == "posterior") {
+    y <- .fcr_response(object, data)
+    if (is.null(y)) {
+      stop("`conditioning = \"posterior\"` needs the outcome in the data.",
+           call. = FALSE)
+    }
+    LP <- .fcr_fm_row_logpmf(r, y)
+    g <- .fcr_fm_group_ids(object, data)
+    if (is.null(g)) return(update(r$logpi, LP))
+    LP[is.na(LP) & !is.na(r$logpi[, 1])] <- 0
+    gi <- match(g, unique(g))
+    A <- rowsum(LP, gi, reorder = TRUE)
+    first <- match(seq_len(max(gi)), gi)
+    post <- update(r$logpi[first, , drop = FALSE], A)
+    return(post[gi, , drop = FALSE])
+  }
+  # history
+  if (is.null(object$model$group_var)) {
+    stop("`conditioning = \"history\"` needs a panel model (`group_var`): ",
+         "without panels, earlier outcomes carry no information about the ",
+         "class of a new row.", call. = FALSE)
+  }
+  if (is.null(history)) {
+    stop("`conditioning = \"history\"` needs `history`: the earlier rows ",
+         "(with outcomes) of the panels being predicted.", call. = FALSE)
+  }
+  history <- as.data.frame(history)
+  rh <- .fcr_fm_rows(object, history)
+  yh <- .fcr_response(object, history)
+  if (is.null(yh)) stop("`history` must contain the outcome.", call. = FALSE)
+  LPh <- .fcr_fm_row_logpmf(rh, yh)
+  gh <- .fcr_fm_group_ids(object, history)
+  usable <- stats::complete.cases(LPh)
+  if (any(!usable)) {
+    warning(sum(!usable), " history row(s) with missing values are not ",
+            "used.", call. = FALSE)
+  }
+  gh <- gh[usable]
+  LPh <- LPh[usable, , drop = FALSE]
+  logpih <- rh$logpi[usable, , drop = FALSE]
+  ug <- unique(gh)
+  gi <- match(gh, ug)
+  A <- rowsum(LPh, gi, reorder = TRUE)
+  prior_h <- logpih[match(seq_along(ug), gi), , drop = FALSE]
+  g <- .fcr_fm_group_ids(object, data)
+  m <- match(g, ug)
+  out <- r$logpi
+  has <- which(!is.na(m))
+  if (length(has)) {
+    dif <- abs(r$logpi[has, , drop = FALSE] - prior_h[m[has], , drop = FALSE])
+    if (any(dif > 1e-8, na.rm = TRUE)) {
+      stop("The membership variables of the target rows differ from those ",
+           "of their panels' history rows; a panel has one membership ",
+           "probability.", call. = FALSE)
+    }
+    out[has, ] <- update(prior_h[m[has], , drop = FALSE],
+                         A[m[has], , drop = FALSE])
+  }
+  attr(out, "n_history_panels") <- length(unique(m[has]))
+  out
+}
+
+# Component means (n x K), using each family's actual expectation.
+.fcr_fm_comp_means <- function(r) {
+  M <- vapply(seq_len(r$ps$K), function(k) {
+    cv <- r$cvs[[k]]
+    suppressWarnings(.fcr_family_mean(r$ps$families[k], cv$mu, cv$alpha,
+                                      cv$sigma))
+  }, numeric(r$n))
+  matrix(M, nrow = r$n, dimnames = list(NULL, r$ps$labels))
+}
+
+.fcr_fm_comp_vars <- function(r) {
+  V <- vapply(seq_len(r$ps$K), function(k) {
+    cv <- r$cvs[[k]]
+    v <- suppressWarnings(.fcr_family_variance(r$ps$families[k], cv$mu,
+                                               cv$alpha, cv$sigma))
+    if (is.null(v)) {
+      stop("A variance function is not available for family \"",
+           r$ps$families[k], "\".", call. = FALSE)
+    }
+    rep_len(v, r$n)
+  }, numeric(r$n))
+  matrix(V, nrow = r$n, dimnames = list(NULL, r$ps$labels))
+}
+
+# Sum over components of P * M, with 0 * Inf = 0 for zero-probability
+# components.
+.fcr_fm_wsum <- function(P, M) {
+  S <- ifelse(P > 0, P * M, 0)
+  S[is.na(P) | is.na(M)] <- NA
+  as.vector(rowSums(S))
+}
+
+#' Predictions for finite-mixture and latent-class models
+#'
+#' @param object a model from [countreg_mix()] or [countreg_lc()].
+#' @param newdata,new_data optional data frame (give one or the other). When
+#'   omitted, the data used to fit the model (rows removed for missing
+#'   values give `NA`).
+#' @param type the prediction:
+#'   \describe{
+#'   \item{`"response"`}{the expected count of the mixture,
+#'     \eqn{\sum_k \pi_k m_k}, where \eqn{m_k} is the actual expected count
+#'     of component \eqn{k} (for PLN and PLL it includes the lognormal
+#'     factor).}
+#'   \item{`"component"`}{a matrix of the component expected counts
+#'     \eqn{m_k}, one column per component.}
+#'   \item{`"variance"`}{the variance of the mixture,
+#'     \eqn{\sum_k \pi_k (V_k + m_k^2) - m^2}, including the variation
+#'     between components (`Inf` when a component with positive probability
+#'     has infinite variance).}
+#'   \item{`"prob"`}{a matrix of count probabilities
+#'     \eqn{P(Y = y) = \sum_k \pi_k f_k(y)} for \eqn{y = 0, \dots,}
+#'     `max_count` (passed in `...`; default the largest training count);
+#'     `overflow = TRUE` adds a column with \eqn{P(Y >} `max_count`\eqn{)}.}
+#'   \item{`"link"`}{a matrix of the component linear predictors
+#'     \eqn{x'\beta_k} plus offset. There is no single linear predictor of
+#'     the mixture.}
+#'   }
+#' @param conditioning which class probabilities \eqn{\pi_k} are used:
+#'   \describe{
+#'   \item{`"prior"` (default)}{membership probabilities from the
+#'     covariates only. The outcomes in `newdata` are never used, so these
+#'     are predictions for new units and the basis of fitted values,
+#'     residuals and diagnostics.}
+#'   \item{`"history"`}{for panel models: the prior updated once with the
+#'     likelihood of each panel's earlier outcomes in `history`,
+#'     \eqn{\pi^H_{gk} \propto \pi_{gk} \prod_{i \in H_g} f_k(y_i)}. Rows of
+#'     panels without history use the prior. The outcomes of `newdata` are
+#'     not used.}
+#'   \item{`"posterior"`}{probabilities conditional on the outcomes in
+#'     `newdata` itself (whole panels for panel models). This is a
+#'     retrospective summary, not an out-of-sample prediction: the outcomes
+#'     being "predicted" were used.}
+#'   }
+#' @param history for `conditioning = "history"`: a data frame of earlier
+#'   rows of the panels in `newdata`, with outcomes and the panel
+#'   identifier.
+#' @param interval only `"none"`: confidence, prediction and tolerance
+#'   intervals are not yet available for mixture models.
+#' @param level unused (for compatibility).
+#' @param ... `max_count` and `overflow` for `type = "prob"`.
+#'
+#' @returns A numeric vector (`"response"`, `"variance"`) with one value per
+#'   row of the data, or a matrix (`"component"`, `"prob"`, `"link"`).
+#' @seealso [component_probs()] for the class probabilities themselves.
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = c(rpois(300, 1), rpois(200, 6)))
+#' m <- countreg_mix(y ~ 1, data = d, components = 2, n_starts = 3,
+#'                   seed = 1)
+#' predict(m, newdata = d[1:3, , drop = FALSE])
+#' predict(m, newdata = d[1:3, , drop = FALSE], type = "component")
+#' predict(m, newdata = d[1:3, , drop = FALSE], type = "prob",
+#'         max_count = 5, overflow = TRUE)
+#' @export
+predict.countreg_mix <- function(object, newdata = NULL, ...,
+                                 type = c("response", "component",
+                                          "variance", "prob", "link"),
+                                 conditioning = c("prior", "history",
+                                                  "posterior"),
+                                 history = NULL, new_data = NULL,
+                                 interval = c("none", "confidence",
+                                              "prediction"),
+                                 level = 0.95) {
+  type <- match.arg(type)
+  conditioning <- match.arg(conditioning)
+  interval <- match.arg(interval)
+  if (interval != "none") {
+    stop("Confidence and prediction intervals are not yet available for ",
+         "finite-mixture models: the interval methods of countreg() assume ",
+         "a one-component model, and mixture intervals need their own ",
+         "validation.", call. = FALSE)
+  }
+  dots <- list(...)
+  if (!is.null(dots$method)) {
+    stop("`method` does not apply to mixture models; use `conditioning`.",
+         call. = FALSE)
+  }
+  if (is.null(newdata)) newdata <- new_data
+  data <- if (!is.null(newdata)) as.data.frame(newdata) else {
+    if (is.null(object$data)) {
+      stop("The model was fit with keep_data = FALSE; pass `newdata`.",
+           call. = FALSE)
+    }
+    as.data.frame(object$data)
+  }
+  r <- .fcr_fm_rows(object, data)
+  if (type == "link") {
+    L <- vapply(seq_len(r$ps$K), function(k) log(r$cvs[[k]]$mu),
+                numeric(r$n))
+    return(matrix(L, nrow = r$n, dimnames = list(NULL, r$ps$labels)))
+  }
+  M <- .fcr_fm_comp_means(r)
+  if (type == "component") return(M)
+  P <- exp(.fcr_fm_log_class(object, r, data, conditioning, history))
+  if (type == "response") return(.fcr_fm_wsum(P, M))
+  if (type == "variance") {
+    V <- .fcr_fm_comp_vars(r)
+    m <- .fcr_fm_wsum(P, M)
+    out <- .fcr_fm_wsum(P, V + M^2) - m^2
+    out[is.infinite(.fcr_fm_wsum(P, V))] <- Inf
+    return(out)
+  }
+  # type == "prob"
+  max_count <- dots$max_count
+  if (is.null(max_count)) max_count <- max(object$model$y %||% 20)
+  if (!is.numeric(max_count) || length(max_count) != 1L ||
+      !is.finite(max_count) || max_count < 0 ||
+      max_count != round(max_count)) {
+    stop("`max_count` must be a single non-negative whole number.",
+         call. = FALSE)
+  }
+  Pr <- .fcr_fm_prob_rows(r, P, max_count)
+  if (isTRUE(dots$overflow)) {
+    Pr <- cbind(Pr, pmax(0, 1 - rowSums(Pr)))
+    colnames(Pr)[ncol(Pr)] <- paste0(">", max_count)
+  }
+  Pr
+}
+
+# Count probabilities of the mixture for k = 0..max_count.
+.fcr_fm_prob_rows <- function(r, P, max_count) {
+  out <- matrix(0, r$n, max_count + 1,
+                dimnames = list(NULL, as.character(0:max_count)))
+  for (k in seq_len(r$ps$K)) {
+    pk <- P[, k]
+    for (c in 0:max_count) {
+      lp <- .fcr_fm_row_logpmf_k(r, k, rep(c, r$n))
+      out[, c + 1] <- out[, c + 1] + ifelse(pk > 0, pk * exp(lp), 0)
+    }
+  }
+  out[is.na(P[, 1]), ] <- NA
+  out
+}
+
+.fcr_fm_row_logpmf_k <- function(r, k, y) {
+  cv <- r$cvs[[k]]
+  out <- rep(NA_real_, r$n)
+  ok <- !is.na(cv$mu) & !is.na(y)
+  if (any(ok)) {
+    sv <- list(mu = cv$mu[ok], alpha = if (!is.null(cv$alpha)) cv$alpha[ok],
+               sigma = if (!is.null(cv$sigma)) cv$sigma[ok])
+    out[ok] <- .fcr_fm_logpmf(r$ps, sv, r$ps$families[k], y[ok])
+  }
+  out
+}
+
+# Probability matrix used by rootogram()
+.fcr_fm_prob_matrix <- function(object, data, max_count) {
+  r <- .fcr_fm_rows(object, data)
+  .fcr_fm_prob_rows(r, exp(r$logpi), max_count)
+}
+
+# Variance of the mixture at the prior probabilities (Pearson residuals)
+.fcr_fm_variance <- function(object, data) {
+  stats::predict(object, newdata = data, type = "variance")
+}
+
+#' Component (class) membership probabilities
+#'
+#' Prior or posterior probabilities of the mixture components (latent
+#' classes). `class_probs()` is the same function under the latent-class
+#' name.
+#'
+#' @param object a model from [countreg_mix()] or [countreg_lc()].
+#' @param newdata optional data frame. Without it, the probabilities of the
+#'   independent units of the training data are returned (one row per row,
+#'   or per panel for panel models).
+#' @param conditioning `"prior"` (default): membership probabilities from
+#'   the covariates; `"posterior"`: conditional on the outcomes (each unit's
+#'   own outcomes; a retrospective classification, not a prediction);
+#'   `"history"`: for panel models, conditional on earlier outcomes in
+#'   `history` (see [predict.countreg_mix()]).
+#' @param history earlier rows of the panels, for `conditioning =
+#'   "history"`.
+#' @param ... passed from `class_probs()`.
+#'
+#' @returns A matrix with one column per component (named by the component
+#'   labels) and one row per unit (training data) or per row of `newdata`.
+#'   These are probabilities of the components, not of counts (for count
+#'   probabilities use `predict(type = "prob")`).
+#' @details The posterior probabilities give a descriptive classification
+#'   (e.g. the most probable class of each unit), which is uncertain: units
+#'   with probabilities near \eqn{1/K} are not well classified. The entropy
+#'   in `summary()` summarizes that uncertainty.
+#' @examples
+#' set.seed(1)
+#' d <- data.frame(y = c(rpois(300, 1), rpois(200, 6)))
+#' m <- countreg_mix(y ~ 1, data = d, components = 2, n_starts = 3,
+#'                   seed = 1)
+#' head(component_probs(m, conditioning = "posterior"))
+#' @export
+component_probs <- function(object, newdata = NULL,
+                            conditioning = c("prior", "posterior",
+                                             "history"),
+                            history = NULL) {
+  if (!inherits(object, "countreg_mix")) {
+    stop("component_probs() needs a countreg_mix() or countreg_lc() model.",
+         call. = FALSE)
+  }
+  conditioning <- match.arg(conditioning)
+  m <- object$model
+  if (is.null(newdata) && conditioning != "history") {
+    out <- if (conditioning == "prior") m$prior else m$posterior
+    rownames(out) <- m$unit_ids
+    attr(out, "conditioning") <- conditioning
+    return(out)
+  }
+  if (is.null(newdata)) newdata <- .fcr_training_rows(object)
+  data <- as.data.frame(newdata)
+  r <- .fcr_fm_rows(object, data)
+  out <- exp(.fcr_fm_log_class(object, r, data, conditioning, history))
+  colnames(out) <- m$labels
+  attr(out, "conditioning") <- conditioning
+  out
+}
+
+#' @rdname component_probs
+#' @export
+class_probs <- function(object, ...) component_probs(object, ...)
+
+#' @export
+fitted.countreg_mix <- function(object, ...) {
+  stats::predict(object, newdata = .fcr_training_rows(object),
+                 type = "response")
+}
+
+#' @export
+residuals.countreg_mix <- function(object,
+                                   type = c("response", "pearson",
+                                            "quantile"), ...) {
+  type <- match.arg(type)
+  d <- .fcr_training_rows(object)
+  y <- as.numeric(object$model$y)
+  if (type == "quantile") return(.fcr_fm_quantile_residuals(object, d, y))
+  mu <- stats::predict(object, newdata = d, type = "response")
+  r <- y - mu
+  if (type == "pearson") {
+    v <- .fcr_fm_variance(object, d)
+    if (any(!is.finite(v) | v <= 0)) {
+      stop("Pearson residuals are not available: the mixture variance is ",
+           "infinite, undefined or zero for ", sum(!is.finite(v) | v <= 0),
+           " row(s) (e.g. a Generalized Waring component with rho <= 2). ",
+           "Use quantile residuals.", call. = FALSE)
+    }
+    r <- r / sqrt(v)
+  }
+  r
+}
+
+# Randomized quantile residuals from the mixture distribution function
+# F(y) = sum_k pi_k F_k(y), computed on the log scale.
+.fcr_fm_quantile_residuals <- function(object, d, y, u = NULL) {
+  r <- .fcr_fm_rows(object, d)
+  n <- length(y)
+  if (is.null(u)) u <- stats::runif(n)
+  logF <- function(q) {
+    L <- vapply(seq_len(r$ps$K), function(k)
+      .fcr_fm_logcdf(r$ps, r$cvs[[k]], r$ps$families[k], q, TRUE),
+      numeric(n))
+    L <- matrix(L, nrow = n)
+    .fcr_lse_rows(r$logpi + L)
+  }
+  upper <- exp(pmin(logF(y), 0))
+  lower <- exp(pmin(logF(y - 1), 0))
+  bad <- is.na(lower) | is.na(upper) | lower > upper + 1e-12
+  if (any(bad)) {
+    warning(sum(bad), " row(s) have invalid fitted probabilities; their ",
+            "quantile residuals are NA.", call. = FALSE)
+  }
+  lower <- pmin(lower, upper)
+  out <- stats::qnorm(lower + u * (upper - lower))
+  out[bad] <- NA
+  out
+}
+
+#' @export
+simulate.countreg_mix <- function(object, nsim = 1, seed = NULL, ...) {
+  if (!is.null(seed)) {
+    old <- if (exists(".Random.seed", envir = globalenv()))
+      get(".Random.seed", envir = globalenv())
+    on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
+      assign(".Random.seed", old, envir = globalenv()))
+    set.seed(seed)
+  }
+  rng_state <- if (exists(".Random.seed", envir = globalenv()))
+    get(".Random.seed", envir = globalenv())
+  m <- object$model
+  d <- .fcr_training_rows(object)
+  r <- .fcr_fm_rows(object, d)
+  n <- r$n
+  K <- r$ps$K
+  unit <- m$unit %||% seq_len(n)
+  prior_u <- m$prior
+  n_u <- nrow(prior_u)
+  classes <- matrix(NA_integer_, n_u, nsim)
+  sims <- lapply(seq_len(nsim), function(s) {
+    cu <- if (K == 1L) rep(1L, n_u) else
+      apply(prior_u, 1, function(p) sample.int(K, 1L, prob = p))
+    classes[, s] <<- cu
+    cr <- cu[unit]
+    y <- numeric(n)
+    for (k in seq_len(K)) {
+      idx <- which(cr == k)
+      if (!length(idx)) next
+      cv <- r$cvs[[k]]
+      y[idx] <- .fcr_family_r(r$ps$families[k], length(idx), cv$mu[idx],
+                              if (!is.null(cv$alpha)) cv$alpha[idx],
+                              if (!is.null(cv$sigma)) cv$sigma[idx])
+    }
+    y
+  })
+  out <- as.data.frame(sims)
+  names(out) <- paste0("sim_", seq_len(nsim))
+  attr(out, "seed") <- rng_state
+  attr(out, "classes") <- classes
+  out
+}
+
+#' @export
+print.countreg_mix <- function(x, digits = max(3L, getOption("digits") - 3L),
+                               ...) {
+  m <- x$model
+  what <- if (inherits(x, "countreg_lc")) "Latent-class" else
+    "Finite-mixture"
+  cat(what, "count model:", m$K,
+      if (inherits(x, "countreg_lc")) "class(es)" else "component(s)", "\n")
+  cat("Families:", paste0(m$labels, " = ", m$family, collapse = ", "), "\n")
+  if (!is.null(x$call)) {
+    cat("Call: ")
+    print(x$call)
+  }
+  cat("\nCoefficients:\n")
+  print.default(format(stats::coef(x), digits = digits), print.gap = 2L,
+                quote = FALSE)
+  cat("\nLog-likelihood:", format(m$maximum, digits = digits + 3),
+      "| N =", m$nobs)
+  if (!is.null(m$n_groups)) cat(" | panels =", m$n_groups)
+  cat("\nMixing proportions (prior means):",
+      paste0(m$labels, " ", format(round(m$classes$prior_share, 3)),
+             collapse = ", "), "\n")
+  if (isFALSE(m$converged)) cat("Warning: the optimizer did not converge.\n")
+  invisible(x)
+}
+
+#' Summaries of finite-mixture and latent-class models
+#'
+#' @param object a model from [countreg_mix()] or [countreg_lc()].
+#' @param x a `summary.countreg_mix` object.
+#' @param level confidence level of the coefficient intervals.
+#' @param digits number of digits to print.
+#' @param ... further arguments for [summary.flexCountReg()].
+#' @details Besides the coefficient table (grouped by component, shared
+#'   parameters and mixing model), the summary reports the prior mixing
+#'   proportions, the posterior (effective) class sizes, the entropy of the
+#'   posterior classification, the starts that reached the selected
+#'   solution, and numerical checks of the observed information. No
+#'   likelihood-ratio test of the number of components is reported: its
+#'   usual chi-square reference distribution does not apply.
+#'
+#'   Entropy is \eqn{H = -\sum_u w_u \sum_k \tau_{uk}\log\tau_{uk}} over the
+#'   independent units with posterior probabilities \eqn{\tau}; the relative
+#'   entropy \eqn{1 - H / (N \log K)} is 1 for a perfect classification and
+#'   0 when every unit has probabilities \eqn{1/K}. ICL is
+#'   \eqn{BIC + 2H} (smaller is better), a classification-oriented
+#'   criterion.
+#' @returns An object of class `c("summary.countreg_mix",
+#'   "summary.flexCountReg")`.
+#' @export
+summary.countreg_mix <- function(object, level = 0.95, ...) {
+  s <- NextMethod()
+  m <- object$model
+  s$K <- m$K
+  s$labels <- m$labels
+  s$families <- m$family
+  s$family_status <- m$family_status
+  s$classes <- m$classes
+  s$entropy <- m$entropy
+  s$relative_entropy <- m$relative_entropy
+  s$ICL <- m$ICL
+  s$starts <- m$starts
+  s$numerical <- m$numerical
+  s$mix_mode <- m$mix_mode
+  s$fixed_mixing <- m$fixed_mixing
+  s$info <- m$map$info
+  s$n_units <- m$n_units
+  s$latent_class <- inherits(object, "countreg_lc")
+  s$n_boot_ambiguous <- m$n_boot_ambiguous
+  s$refined_from <- m$refined_from
+  s$identical_pairs <- m$identical_pairs
+  class(s) <- c("summary.countreg_mix", class(s))
+  s
+}
+
+#' @rdname summary.countreg_mix
+#' @export
+print.summary.countreg_mix <- function(x, digits = x$digits, ...) {
+  unit_word <- if (x$latent_class) "Class" else "Component"
+  cat("Call:\n")
+  if (!is.null(x$call)) print(x$call) else print(x$formula)
+  word <- if (x$latent_class) {
+    if (x$K > 1) "classes" else "class"
+  } else {
+    if (x$K > 1) "components" else "component"
+  }
+  cat("\n", if (x$latent_class) "Latent-class" else "Finite-mixture",
+      " count model with ", x$K, " ", word, "\n", sep = "")
+  fam <- data.frame(label = x$labels, family = x$families,
+                    status = x$family_status)
+  for (i in seq_len(nrow(fam))) {
+    lab <- if (fam$label[i] == paste0(unit_word, i)) "" else
+      paste0(" (", fam$label[i], ")")
+    cat("  ", unit_word, " ", i, lab, ": ", fam$family[i],
+        if (fam$status[i] != "validated") " [experimental]", "\n", sep = "")
+  }
+  mix <- switch(x$mix_mode,
+                none = "none (one component)",
+                constant = "constant proportions",
+                covariate = "multinomial logit on covariates",
+                fixed = paste0("fixed at ",
+                               toString(format(x$fixed_mixing))))
+  cat("Mixing:", mix)
+  if (x$mix_mode %in% c("constant", "covariate")) {
+    cat(" (reference: ", unit_word, " ", x$K, ")", sep = "")
+  }
+  cat("\nOptimizer:", x$method)
+  if (!is.null(x$refined_from)) cat(" + Newton-Raphson refinement")
+  cat(" |", trimws(x$message %||% ""), "\n")
+  if (length(x$identical_pairs)) {
+    cat("Warning: nearly identical components (",
+        paste(x$identical_pairs, collapse = ", "), "): their shares and ",
+        "means are arbitrary.\n", sep = "")
+  }
+  if (isFALSE(x$converged)) {
+    cat("Warning: the optimizer did not report convergence.\n")
+  }
+
+  se_label <- switch(x$vcov_type %||% "hessian",
+                     hessian = "observed information (Hessian)",
+                     robust = "robust (sandwich, unit-level scores)",
+                     bootstrap = paste0("bootstrapped (", x$n_boot_ok,
+                                        " of ", x$bootstraps,
+                                        " replicates)"),
+                     x$vcov_type)
+  cat("\nCoefficients (standard errors: ", se_label, "):\n", sep = "")
+  tab <- x$coefficients[, 1:4, drop = FALSE]
+  info <- x$info
+  groups <- ifelse(info$block == "mixing",
+                   "Mixing (multinomial logit)",
+                   ifelse(is.na(info$component), "Shared parameters",
+                          paste0(unit_word, " ", info$component, " (",
+                                 ifelse(x$labels[pmax(1, info$component)] ==
+                                          paste0(unit_word, info$component),
+                                        "", paste0(x$labels[pmax(
+                                          1, info$component)], ", ")),
+                                 info$family, ")")))
+  for (g in unique(groups)) {
+    cat("\n", g, ":\n", sep = "")
+    stats::printCoefmat(tab[groups == g, , drop = FALSE], digits = digits,
+                        P.values = TRUE, has.Pvalue = TRUE, na.print = "NA")
+  }
+  if (length(x$offset)) {
+    cat("Offset:", paste(x$offset, collapse = " + "),
+        "(coefficient fixed at 1, all components)\n")
+  }
+
+  cl <- x$classes
+  cat("\n", unit_word, " sizes:\n", sep = "")
+  show <- data.frame(
+    label = cl$label, family = cl$family,
+    prior = round(cl$prior_share, 4), posterior = round(cl$posterior_share, 4),
+    effective_n = round(cl$effective_size, 1),
+    modal_n = round(cl$modal_count, 1),
+    mean_count = signif(cl$mean_count, 4))
+  if (any(cl$small)) show$note <- ifelse(cl$small, "small", "")
+  print(show, row.names = FALSE)
+  cat("(prior: mean membership probability; posterior: mean posterior ",
+      "probability;\n effective_n: sum of posterior probabilities; ",
+      "modal_n: units whose most\n probable ", tolower(unit_word),
+      " it is; mean_count: average expected count)\n", sep = "")
+
+  cat("\nLog-likelihood:", format(round(x$logLik, digits)),
+      "| AIC:", format(round(x$AIC, digits)),
+      "| BIC:", format(round(x$BIC, digits)),
+      "| ICL:", format(round(x$ICL, digits)), "\n")
+  cat("N:", x$nobs)
+  if (!is.null(x$n_groups)) cat(" | panels (independent units):", x$n_groups)
+  if (!is.null(x$n_dropped) && x$n_dropped > 0) {
+    cat(" | rows removed (missing values):", x$n_dropped)
+  }
+  cat("\n")
+  if (x$K > 1) {
+    cat("Entropy:", format(round(x$entropy, digits)),
+        "| relative entropy:", format(round(x$relative_entropy, 3)), "\n")
+  }
+  st <- x$starts
+  if (nrow(st) > 1) {
+    cat("Starts:", nrow(st), "|", sum(st$reached_best),
+        "reached the selected log-likelihood\n")
+    if (sum(st$reached_best) < 2) {
+      cat("Note: only one start reached this solution; try more starts.\n")
+    }
+  }
+  num <- x$numerical
+  cat("Observed information:", num$information)
+  if (is.finite(num$condition)) {
+    cat(" (condition number", format(signif(num$condition, 3)), ")")
+  }
+  cat(" | max |gradient|:", format(signif(num$max_abs_gradient, 3)), "\n")
+  if (!is.null(x$n_boot_ambiguous) && x$n_boot_ambiguous > 0) {
+    cat("Bootstrap refits with ambiguous label matching:",
+        x$n_boot_ambiguous, "\n")
+  }
+  if (x$K > 1) {
+    cat("No likelihood-ratio test of the number of ",
+        tolower(unit_word), if (x$latent_class) "es" else "s",
+        " is reported (non-standard distribution).\n", sep = "")
+  }
+  invisible(x)
+}
+
+#' @export
+tidy.countreg_mix <- function(x, conf.int = FALSE, conf.level = 0.95,
+                              exponentiate = FALSE, ...) {
+  cf <- stats::coef(x)
+  se <- .fcr_se(stats::vcov(x), length(cf))
+  info <- x$model$map$info
+  labels <- x$model$labels
+  comp <- ifelse(info$block == "mean", "mean",
+                 ifelse(info$block == "mixing", "mixing", "distribution"))
+  cls <- ifelse(is.na(info$component), "Shared",
+                labels[pmax(1L, info$component)])
+  out <- tibble::tibble(term = names(cf), component = comp, class = cls,
+                        family = info$family, estimate = unname(cf),
+                        std.error = unname(se))
+  out$statistic <- out$estimate / out$std.error
+  out$p.value <- 2 * stats::pnorm(-abs(out$statistic))
+  if (conf.int) {
+    z <- stats::qnorm((1 + conf.level) / 2)
+    out$conf.low <- out$estimate - z * out$std.error
+    out$conf.high <- out$estimate + z * out$std.error
+  }
+  if (exponentiate) {
+    # Rate ratios for the mean coefficients only (mixing coefficients are
+    # log odds ratios against the reference component)
+    i <- out$component == "mean"
+    for (col in intersect(c("estimate", "conf.low", "conf.high"),
+                          names(out))) {
+      out[[col]][i] <- exp(out[[col]][i])
+    }
+    out$std.error[i] <- out$estimate[i] * out$std.error[i]
+  }
+  out
+}
+
+#' @export
+glance.countreg_mix <- function(x, ...) {
+  m <- x$model
+  tibble::tibble(
+    model = class(x)[1],
+    family = paste(m$family, collapse = "+"),
+    components = m$K,
+    logLik = as.numeric(stats::logLik(x)),
+    AIC = stats::AIC(x),
+    BIC = stats::BIC(x),
+    ICL = m$ICL,
+    df = length(stats::coef(x)),
+    nobs = m$nobs,
+    n_units = m$n_units,
+    entropy = m$entropy,
+    relative_entropy = m$relative_entropy,
+    converged = isTRUE(m$converged),
+    n_starts = m$n_starts,
+    starts_reached_best = sum(m$starts$reached_best),
+    information = m$numerical$information,
+    vcov_type = m$vcov_type)
+}

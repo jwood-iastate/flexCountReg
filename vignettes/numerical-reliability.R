@@ -2,11 +2,9 @@
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
                       fig.height = 4)
 
-
 ## ----setup--------------------------------------------------------------------
 library(flexCountReg)
 data("washington_roads")
-
 
 ## ----status-helper------------------------------------------------------------
 fit_status <- function(m) {
@@ -20,7 +18,6 @@ fit_status <- function(m) {
              condition = signif(max(ev) / min(ev), 3),
              message = trimws(f$message))
 }
-
 
 ## ----status-table-------------------------------------------------------------
 f <- Total_crashes ~ lnaadt + lnlength + speed50
@@ -36,12 +33,10 @@ fits$NM_aadt_10k <- countreg(Total_crashes ~ aadt_10k + speed50,
 status_table <- do.call(rbind, lapply(fits, fit_status))
 status_table
 
-
 ## ----status-text, include = FALSE---------------------------------------------
 g_raw <- status_table["NM_raw_aadt", "max_abs_gradient"]
 c_raw <- status_table["NM_raw_aadt", "condition"]
 c_10k <- status_table["NM_aadt_10k", "condition"]
-
 
 ## ----boundary-----------------------------------------------------------------
 boundary_fit <- function(seed) {
@@ -63,11 +58,9 @@ boundary <- as.data.frame(t(sapply(1:20, boundary_fit)))
 boundary$at_start <- abs(boundary$ln_alpha - log(1e-3)) < 0.01
 round(boundary, 3)
 
-
 ## ----boundary-text, include = FALSE-------------------------------------------
 n_start <- sum(boundary$at_start)
 n_na <- sum(is.na(boundary$se))
-
 
 ## ----rank-deficient-----------------------------------------------------------
 d <- data.frame(x = rnorm(100))
@@ -77,14 +70,12 @@ res <- tryCatch(countreg(y ~ x + x2, data = d, family = "POISSON"),
                 error = function(e) conditionMessage(e))
 res
 
-
 ## ----starts-------------------------------------------------------------------
 bad_start <- c(0, 0, 0, 0, 3)
 from_bad <- countreg(f, data = washington_roads, family = "NB2",
                      method = "BFGS", start.vals = bad_start)
 rbind(default_start = fit_status(fits$BFGS)[, c("converged", "logLik")],
       poor_start = fit_status(from_bad)[, c("converged", "logLik")])
-
 
 ## ----pln-engines--------------------------------------------------------------
 set.seed(1)
@@ -102,7 +93,6 @@ halton <- do.call(rbind, lapply(c(25, 50, 100, 200, 400),
                                 function(r) pln("halton", r)))
 rbind(quad, halton)
 
-
 ## ----pln-plot-----------------------------------------------------------------
 plot(halton$ndraws, halton$ln_sigma, type = "b", log = "x", pch = 19,
      ylim = range(halton$ln_sigma, quad$ln_sigma),
@@ -111,7 +101,6 @@ plot(halton$ndraws, halton$ln_sigma, type = "b", log = "x", pch = 19,
 abline(h = quad$ln_sigma[1], lty = 2)
 legend("bottomright", c("Halton", "adaptive quadrature"), lty = c(1, 2),
        pch = c(19, NA), bty = "n")
-
 
 ## ----rp-draws-----------------------------------------------------------------
 rp_fit <- function(r) {
@@ -127,7 +116,6 @@ rp_fit <- function(r) {
 rp_draws <- do.call(rbind, lapply(c(50, 100, 200), rp_fit))
 rp_draws
 
-
 ## ----lognormal----------------------------------------------------------------
 rp_ln <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
                      rpar_formula = ~ -1 + speed50,
@@ -135,7 +123,6 @@ rp_ln <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
                      family = "NB2", ndraws = 100, method = "BFGS")
 nd <- data.frame(lnaadt = log(5000), lnlength = 0, speed50 = c(0, 1))
 predict(rp_ln, newdata = nd, method = "Exact")
-
 
 ## ----overflow-----------------------------------------------------------------
 rp_n <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
@@ -145,14 +132,12 @@ predict(rp_n, newdata = data.frame(lnaadt = log(5000), lnlength = 0,
                                    speed50 = c(1, 100)),
         method = "Exact")
 
-
 ## ----unresolved---------------------------------------------------------------
 nb <- fits$BFGS
 at <- data.frame(lnaadt = log(c(2000, 20000)), lnlength = log(2),
                  speed50 = 0)
 tolerance_interval(nb, newdata = at, max_count = 15)
 tolerance_interval(nb, newdata = at)
-
 
 ## ----versions-----------------------------------------------------------------
 c(R = R.version.string,

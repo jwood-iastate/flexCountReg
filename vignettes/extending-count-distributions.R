@@ -1,10 +1,8 @@
 ## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
-
 ## ----setup--------------------------------------------------------------------
 library(flexCountReg)
-
 
 ## ----nb2-entry----------------------------------------------------------------
 nb2 <- flexCountReg:::.fcr_family_registry$NB2
@@ -13,12 +11,10 @@ nb2$params
 names(formals(nb2$dens))
 body(nb2$dens)
 
-
 ## ----nb2-check----------------------------------------------------------------
 y <- 0:6
 all.equal(nb2$dens(y, predicted = 2.5, alpha = 0.4, sigma = NULL),
           dnbinom(y, size = 1 / 0.4, mu = 2.5))
-
 
 ## ----capabilities-------------------------------------------------------------
 reg <- flexCountReg:::.fcr_family_registry
@@ -36,11 +32,9 @@ capabilities <- data.frame(
   row.names = NULL)
 capabilities
 
-
 ## ----dpo-source---------------------------------------------------------------
 body(ddpo)
 body(qdpo)
-
 
 ## ----contract-----------------------------------------------------------------
 mu <- 3; rho <- 0.4; k <- 2
@@ -60,7 +54,6 @@ c(q = q, cdf_q = pdelaporte(q, mu, rho, k),
 suppressWarnings(c(ddelaporte(2, mu = -1, rho = rho, k = k),
                    ddelaporte(2.5, mu = mu, rho = rho, k = k)))
 
-
 ## ----trace--------------------------------------------------------------------
 set.seed(4)
 d <- data.frame(x = rnorm(300))
@@ -79,7 +72,6 @@ c(mean_ratio = mean(rowMeans(sims) / mu_hat),
                      nb2$variance(mu_hat, alpha_hat, NULL)))
 # quantile residuals use the cdf hook
 summary(residuals(fit, type = "quantile"))
-
 
 ## ----test-example, eval = requireNamespace("testthat", quietly = TRUE)--------
 testthat::test_that("countreg() recovers NB2 parameters", {

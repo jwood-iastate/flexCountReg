@@ -602,8 +602,8 @@ units are each observed 5 times, with a gamma-distributed unit effect
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>}</span></code></pre></div>
 <p>The negative multinomial model of <code>negmultinom()</code> (family
 <code>&quot;NM2&quot;</code>, the default) matches this process: Poisson counts
-given a gamma unit effect with mean 1 and variance <span class="math inline">\(lpha\)</span> (here 0.5), shared by the rows of a
-unit. The pooled Poisson model ignores the grouping:</p>
+given a gamma unit effect with mean 1 and variance <span class="math inline">\(\alpha\)</span> (here 0.5), shared by the rows of
+a unit. The pooled Poisson model ignores the grouping:</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>panel_rep <span class="ot">&lt;-</span> <span class="cf">function</span>(r) {</span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">assign</span>(<span class="st">&quot;.Random.seed&quot;</span>, panel_streams[[r]], <span class="at">envir =</span> <span class="fu">globalenv</span>())</span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  d <span class="ot">&lt;-</span> <span class="fu">generate_panel</span>()</span>
@@ -663,6 +663,17 @@ results, the summary table, and a record of the settings, R and package
 versions and the random-number generator. Run it from a terminal, for
 example:</p>
 <pre><code>REPS=1000 SEED=2026 Rscript count-regression-study.R</code></pre>
+<p>A companion script,
+<code>inst/validation/finite-mixtures/mixture-recovery-study.R</code>,
+applies the same design to finite-mixture and latent-class models
+(<code>vignette(&quot;latent-class-regression&quot;, package = &quot;flexCountReg&quot;)</code>).
+Two features are specific to mixtures. First, component labels are
+arbitrary, so component-specific estimands are compared after a
+documented alignment (there, the display order of the components), and a
+label-invariant estimand (the mixture mean at a reference point) is
+reported alongside them. Second, panel scenarios generate one class per
+panel, so whole panels must be generated and resampled. The script also
+records how many starts reached each selected solution.</p>
 </div>
 <div id="checklist" class="section level2">
 <h2>Checklist</h2>

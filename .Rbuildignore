@@ -13,3 +13,4 @@
 ^data-raw$
 ^inst/validation/intervals/coverage-replicates\.csv$
 ^inst/validation/simulation-studies/study-replicates\.csv$
+^inst/validation/finite-mixtures/mixture-replicates\.csv$

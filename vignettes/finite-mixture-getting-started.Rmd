@@ -1,0 +1,310 @@
+---
+title: "Finite mixtures of count distributions"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Finite mixtures of count distributions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 4)
+```
+
+This article introduces finite mixtures of count distributions without
+covariates: what they are, how to fit them with `countreg_mix()`, how to read
+the fitted object, and what a fitted mixture does and does not tell you. The
+regression and latent-class version is in
+`vignette("latent-class-regression", package = "flexCountReg")`.
+
+```{r setup}
+library(flexCountReg)
+```
+
+## What a finite mixture is
+
+A finite mixture with $K$ components draws an unobserved component $C$ with
+probabilities $\pi_1, \dots, \pi_K$ and then draws **one** count from that
+component's distribution:
+
+$$
+P(Y = y) = \sum_{k=1}^K \pi_k f_k(y).
+$$
+
+Four ideas are easily confused:
+
+* **Finite mixture.** A probability-weighted *sum of distributions*, as
+  above. It can be used purely as a flexible description of a skewed,
+  multimodal or heavy-tailed count distribution.
+* **Latent-class interpretation.** The same model, read as saying that the
+  population consists of $K$ unobserved groups. That reading is an extra
+  substantive assumption; the likelihood is identical, and a good fit with
+  two components does not prove that two real groups exist.
+* **Convolution (a sum of counts).** Adding independent counts from two
+  distributions, e.g. $Y = Y_1 + Y_2$, gives a different distribution. A
+  mixture *selects* one component; a convolution *adds* them.
+* **Within-family (continuous) mixing.** Families such as PLN, PGE and NBGE
+  are themselves Poisson distributions mixed over a *continuous* random
+  effect (see [count_families](../reference/count_families.html)). A
+  two-component PLN mixture has two outer components, each of which already
+  contains continuous mixing. Stacking both kinds of heterogeneity can make
+  the parameters weakly identified.
+
+## Simulated data
+
+We simulate 500 counts: 60% from a Poisson distribution with mean 1 and 40%
+from a Poisson distribution with mean 5, using only base R.
+
+```{r simulate}
+set.seed(2026)
+n <- 500
+true_class <- ifelse(runif(n) < 0.6, 1, 2)
+y <- rpois(n, lambda = c(1, 5)[true_class])
+d <- data.frame(y = y)
+table(y)
+c(mean = mean(y), variance = var(y))
+```
+
+The generating classes are kept aside (`true_class`); they are not used in
+fitting. The variance is well above the mean, as it must be for a mixture of
+Poisson distributions with different means.
+
+## Mean and variance of a mixture
+
+For a mixture, the mean and variance are
+
+$$
+m = \sum_k \pi_k m_k, \qquad
+V = \sum_k \pi_k (V_k + m_k^2) - m^2
+  = \sum_k \pi_k V_k + \sum_k \pi_k (m_k - m)^2 .
+$$
+
+For the generating model ($\pi = (0.6, 0.4)$, means 1 and 5, Poisson
+variances equal to the means) this gives:
+
+```{r oracle}
+p <- c(0.6, 0.4)
+m_k <- c(1, 5)
+m <- sum(p * m_k)
+V <- sum(p * (m_k + m_k^2)) - m^2
+c(mean = m, variance = V)
+```
+
+The variance $6.44$ is the within-component variance $2.6$ plus the
+between-component variance $3.84$. A mixture of Poisson distributions is
+therefore always at least equidispersed; mixtures of *underdispersed*
+families need not be.
+
+## Fitting a two-component Poisson mixture
+
+`countreg_mix()` uses the formula interface of `countreg()`. For a mixture
+without covariates the formula is `y ~ 1`.
+
+```{r fit}
+fit2 <- countreg_mix(y ~ 1, data = d, family = "POISSON", components = 2,
+                     n_starts = 5, seed = 42)
+summary(fit2)
+```
+
+The component intercepts are on the log scale, so the estimated component
+means are `exp()` of them; the mixing coefficient is the log odds of
+component 1 against the reference (the last) component. Same-family
+components are exchangeable, so after fitting they are numbered in
+increasing order of their mean (a display convention).
+
+```{r estimates}
+cf <- coef(fit2)
+exp(cf[c("Component1:Mean:(Intercept)", "Component2:Mean:(Intercept)")])
+plogis(cf["Mixing:Component1:(Intercept)"])
+fit2$model$classes[, c("label", "prior_share", "effective_size",
+                       "mean_count")]
+```
+
+The same fitted model gives the mean and variance of the mixture directly,
+and they can be checked against the formulas above using the estimates:
+
+```{r fitted-moments}
+nd <- data.frame(y = 0)
+c(mean = unname(predict(fit2, newdata = nd, type = "response")),
+  variance = unname(predict(fit2, newdata = nd, type = "variance")))
+p_hat <- fit2$model$classes$prior_share
+m_hat <- predict(fit2, newdata = nd, type = "component")[1, ]
+c(mean = sum(p_hat * m_hat),
+  variance = sum(p_hat * (m_hat + m_hat^2)) - sum(p_hat * m_hat)^2)
+```
+
+### Starts
+
+Mixture likelihoods often have several local maxima, so `countreg_mix()`
+starts from several preliminary partitions of the data (reproducible from
+`seed`), improves each by the EM algorithm and polishes the best distinct
+solutions by maximizing the observed-data likelihood directly. The start
+table records every attempt:
+
+```{r starts}
+fit2$model$starts[, c("start", "strategy", "em_iterations", "em_status",
+                      "loglik_start", "polished", "loglik", "reached_best",
+                      "selected")]
+```
+
+A solution reached from several different starts is more trustworthy than
+one found once. It is still not a proof that the maximum is global.
+
+## Raw counts and a frequency table give the same fit
+
+Without covariates, the data are fully described by the frequency of each
+count. Fitting the frequency table with `weights` gives exactly the same
+likelihood, because the frequency multiplies the log-likelihood of each
+distinct count *outside* the logarithm of the mixture.
+
+```{r freq-table}
+tab <- as.data.frame(table(y), stringsAsFactors = FALSE)
+tab$y <- as.numeric(tab$y)
+head(tab)
+fit2_tab <- countreg_mix(y ~ 1, data = tab, weights = "Freq",
+                         family = "POISSON", components = 2,
+                         n_starts = 5, seed = 42)
+c(raw = logLik(fit2), table = logLik(fit2_tab))
+all.equal(coef(fit2), coef(fit2_tab), tolerance = 1e-5)
+c(raw = BIC(fit2), table = BIC(fit2_tab))
+```
+
+BIC also agrees, because the number of independent units is the sum of the
+frequencies. This compression is valid only because nothing but the count
+differs between the compressed rows. With covariates or different exposures,
+rows can be combined only when all of their model inputs agree.
+
+## Plotting the fitted distribution
+
+`predict(type = "prob")` returns the mixture probabilities $P(Y = y)$ on a
+finite grid; `overflow = TRUE` adds the probability of the tail beyond the
+grid, so nothing is silently dropped. The weighted contributions
+$\pi_k f_k(y)$ of the components add up to the total. (Each $f_k$ alone
+sums to one; the weighted contributions sum to $\pi_k$.)
+
+```{r pmf-plot}
+max_count <- 12
+P <- predict(fit2, newdata = nd, type = "prob", max_count = max_count,
+             overflow = TRUE)
+round(P, 4)
+grid <- 0:max_count
+contrib <- sapply(1:2, function(k) p_hat[k] * dpois(grid, m_hat[k]))
+all.equal(rowSums(contrib), unname(P[1, seq_along(grid)]))
+
+obs <- as.vector(table(factor(pmin(y, max_count + 1),
+                              levels = 0:(max_count + 1)))) / n
+plot(c(grid, max_count + 1), P[1, ], type = "h", lwd = 6, col = "grey70",
+     xaxt = "n", xlab = "Count", ylab = "Probability",
+     ylim = c(0, max(P, obs, contrib)),
+     main = "Fitted mixture (bars), components (lines), data (points)")
+axis(1, at = c(grid, max_count + 1),
+     labels = c(grid, paste0(">", max_count)))
+lines(grid, contrib[, 1], type = "b", pch = 1, lty = 1)
+lines(grid, contrib[, 2], type = "b", pch = 2, lty = 2)
+points(c(grid, max_count + 1), obs, pch = 19, col = "firebrick")
+legend("topright", c("mixture", "pi_1 f_1", "pi_2 f_2", "observed"),
+       lty = c(1, 1, 2, NA), lwd = c(6, 1, 1, NA), pch = c(NA, 1, 2, 19),
+       col = c("grey70", "black", "black", "firebrick"), bty = "n")
+```
+
+The last bar is the tail bin $Y > 12$. Note that the component curves are
+weighted contributions; they are not the probabilities of class membership
+given a count. Those posterior probabilities are a different quantity:
+
+```{r posterior}
+post <- component_probs(fit2, conditioning = "posterior")
+round(cbind(y = y, post)[order(y)[c(1, 250, 350, 450, 500)], ], 3)
+```
+
+A rootogram compares observed and expected frequencies over all rows:
+
+```{r rootogram}
+rootogram(fit2, main = "Two-component Poisson mixture")
+```
+
+## Comparing numbers of components
+
+A one-component Poisson model, an NB2 model and the two-component mixture are
+compared on the same rows with information criteria:
+
+```{r compare}
+fit1 <- countreg_mix(y ~ 1, data = d, family = "POISSON", components = 1)
+nb2 <- countreg(y ~ 1, data = d, family = "NB2", method = "BFGS")
+fit3 <- countreg_mix(y ~ 1, data = d, family = "POISSON", components = 3,
+                     n_starts = 5, seed = 42)
+data.frame(model = c("Poisson", "NB2", "2 Poisson components",
+                     "3 Poisson components"),
+           logLik = sapply(list(fit1, nb2, fit2, fit3), logLik),
+           df = sapply(list(fit1, nb2, fit2, fit3),
+                       function(m) length(coef(m))),
+           AIC = sapply(list(fit1, nb2, fit2, fit3), AIC),
+           BIC = sapply(list(fit1, nb2, fit2, fit3), BIC))
+fit3$model$classes[, c("label", "prior_share", "mean_count")]
+```
+
+No likelihood-ratio p-value is given for the number of components. The usual
+chi-square reference distribution does not apply when comparing $K$ with
+$K + 1$ components: under the smaller model, the extra component's
+proportion is at the boundary (zero) or its parameters are not identified,
+which breaks the regularity conditions of the test. `regCompTest()` refuses
+mixture models for this reason. Use information criteria on the same
+sample, the stability of the solution across starts and, preferably,
+held-out log scores (see
+`vignette("predictive-validation", package = "flexCountReg")`). Also look at
+what an extra component does. Here the third component has a share of about
+3% and an expected count of practically zero: it is a boundary solution
+(a mean parameter heading to zero) that adds a little probability at zero,
+improves the log-likelihood by a fraction of a unit and is rejected by both
+AIC and BIC. Such a component is a symptom of overfitting, not a discovered
+group.
+
+## Known mixing proportions
+
+Sometimes the proportions are known from outside the data, for example from
+a design (a sample deliberately drawn as 60% from one source and 40% from
+another) or from a census of the population being sampled. They can then be
+fixed with `fixed_mixing`; they are not estimated and add no parameters:
+
+```{r fixed}
+fit_fixed <- countreg_mix(y ~ 1, data = d, family = "POISSON",
+                          components = 2, fixed_mixing = c(0.6, 0.4),
+                          n_starts = 3, seed = 1)
+coef(fit_fixed)
+fit_fixed$model$classes[, c("label", "prior_share", "posterior_share")]
+c(df_estimated = length(coef(fit2)), df_fixed = length(coef(fit_fixed)))
+```
+
+Known proportions are not frequency weights (which say how many independent
+copies a row represents) and not starting values. They should never be taken
+from a previous fit's posterior classification of the same data: that would
+use the data twice and understate uncertainty.
+
+## Limitations
+
+* A mixture with $K$ components can describe a skewed or heavy-tailed
+  distribution without the components corresponding to real groups.
+  Interpreting components as subpopulations needs external evidence.
+* Components with similar means and small shares are weakly identified;
+  their standard errors (from the observed information) may be unreliable.
+  Check `fit$model$numerical`, the start table and, if needed, bootstrap
+  standard errors (`stderr = "boot"`).
+* Only the Poisson, NB1 and NB2 families are marked as validated mixture
+  components. Other families can be used as components, but recovery of such
+  mixtures has not been studied (`countreg_mix()` says so with a message).
+
+## Reproducibility
+
+Every random step uses the `seed` argument, and the seed of every start is
+stored in `fit$model$starts`, so the fits above are reproduced exactly by
+re-running the code. The settings used are stored in `fit$model$settings`
+and `fit$model$control`.
+
+Next steps:
+
+* `vignette("latent-class-regression", package = "flexCountReg")` for
+  covariates, class-membership models and panels.
+* `vignette("choosing-a-count-distribution", package = "flexCountReg")` for
+  single-component alternatives.
+* `vignette("numerical-reliability", package = "flexCountReg")` for reading
+  convergence and information diagnostics.

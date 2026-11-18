@@ -122,6 +122,26 @@ family in \code{\link[=countreg]{countreg()}}, and every family can be used with
 parameters in \code{\link[=countreg.rp]{countreg.rp()}} (GP2 only with a nonnegative dispersion).
 }
 
+\subsection{Finite mixtures and latent classes}{
+
+Every family can be a component of a finite mixture or latent-class model
+(\code{\link[=countreg_mix]{countreg_mix()}}, \code{\link[=countreg_lc]{countreg_lc()}}), with the same component density,
+mean, variance, distribution function and random generator as in
+\code{\link[=countreg]{countreg()}} (one-component mixtures reproduce \code{countreg()}). Mixtures
+of \code{POISSON}, \code{NB1} and \code{NB2} components are validated (analytic scores,
+independent likelihood checks and simulation recovery in the tests).
+Mixtures of the other families are experimental: they are computed
+correctly, but how well their components and mixing proportions can be
+recovered has not been studied, and adding outer components to a family
+that already mixes over a continuous random effect (PLN, PGE, PLL, NBGE,
+and others) can make the model weakly identified. A finite mixture
+selects one component and draws one count from it; it is not a
+convolution (a sum of counts) and not the within-family mixing of these
+families. A Generalized Waring component with \eqn{\rho \le 2} has an
+infinite variance, so the mixture variance is infinite and Pearson
+residuals are not available.
+}
+
 \subsection{Underreporting and the variance of the reported counts}{
 
 In an underreporting model the true count \eqn{Y} has mean
@@ -211,5 +231,6 @@ c(NB2 = AIC(fit_nb2), PA = AIC(fit_pa))
 
 }
 \seealso{
-\code{\link[=countreg]{countreg()}}, \code{\link[=countreg.rp]{countreg.rp()}}, \code{\link[=summary.flexCountReg]{summary.flexCountReg()}}
+\code{\link[=countreg]{countreg()}}, \code{\link[=countreg.rp]{countreg.rp()}}, \code{\link[=countreg_mix]{countreg_mix()}},
+\code{\link[=summary.flexCountReg]{summary.flexCountReg()}}
 }

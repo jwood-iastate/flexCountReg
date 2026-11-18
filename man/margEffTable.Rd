@@ -28,9 +28,12 @@ margEffTable(
 \item{vars}{Optional character vector of variable names to evaluate. If
 \code{NULL}, the function uses the non-response variables of the model formula
 and of the formulas that also change the expected value: the
-underreporting, random-parameter and heterogeneity formulas, and the
-distribution-parameter formulas of the PLN and PLL families. Offsets and
-panel identifiers are excluded.}
+underreporting, random-parameter, heterogeneity and mixing (class
+membership) formulas, and the distribution-parameter formulas of the
+PLN and PLL families. Offsets (columns given in \code{offset}, and variables
+that appear only inside \code{offset()} in the formula, such as an exposure
+in \code{offset(log(exposure))}) and panel identifiers are excluded; name
+them in \code{vars} to evaluate them anyway.}
 
 \item{measure}{Character scalar. One of:
 \describe{

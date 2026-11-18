@@ -19,6 +19,10 @@ articles:
   - zeros-hurdles-and-sampling
   - underreporting-and-identification
   - random-parameters-and-panels
+- title: Finite mixtures and latent classes
+  contents:
+  - finite-mixture-getting-started
+  - latent-class-regression
 - title: Predict and validate
   contents:
   - predictive-validation
@@ -41,6 +45,15 @@ reference:
   - poisLindRE
   - repois
   - negmultinom
+
+- title: Finite mixtures and latent classes
+  desc: Mixtures of count distributions and latent-class count regression.
+  contents:
+  - countreg_mix
+  - mixture_control
+  - predict.countreg_mix
+  - summary.countreg_mix
+  - component_probs
 
 - title: Working with fitted models
   contents:

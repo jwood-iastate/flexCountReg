@@ -653,11 +653,14 @@ zero-inflated or hurdle version of any family can be fitted with
 <code>zero_formula</code>:</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>zinb <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> washington_roads, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
 <span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>                 <span class="at">offset =</span> <span class="st">&quot;lnlength&quot;</span>, <span class="at">zero_formula =</span> <span class="sc">~</span> <span class="dv">1</span>, <span class="at">method =</span> <span class="st">&quot;NR&quot;</span>)</span>
-<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>pi_zero <span class="ot">&lt;-</span> <span class="fu">unname</span>(<span class="fu">plogis</span>(<span class="fu">coef</span>(zinb)[<span class="st">&quot;Zero:(Intercept)&quot;</span>]))</span>
-<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="fu">c</span>(<span class="at">NB2 =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(models<span class="sc">$</span>NB2)), <span class="at">ZINB =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(zinb)),</span>
-<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">zero_probability =</span> pi_zero)</span>
-<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt;              NB2             ZINB zero_probability </span></span>
-<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt;    -1.090559e+03    -1.090560e+03     1.008008e-04</span></span></code></pre></div>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; errors of Zero:(Intercept) are NA. The estimate may be on the boundary of the</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; parameter space or not at a maximum.</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>pi_zero <span class="ot">&lt;-</span> <span class="fu">unname</span>(<span class="fu">plogis</span>(<span class="fu">coef</span>(zinb)[<span class="st">&quot;Zero:(Intercept)&quot;</span>]))</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="fu">c</span>(<span class="at">NB2 =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(models<span class="sc">$</span>NB2)), <span class="at">ZINB =</span> <span class="fu">as.numeric</span>(<span class="fu">logLik</span>(zinb)),</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>  <span class="at">zero_probability =</span> pi_zero)</span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt;              NB2             ZINB zero_probability </span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt;    -1.090559e+03    -1.090560e+03     1.008008e-04</span></span></code></pre></div>
 <p>The estimated probability of a structural zero is 1e-04 and the
 log-likelihoods differ by 1.2e-03: the zeros are already explained by
 the negative binomial, so the zero-inflated model adds nothing. When an
@@ -709,6 +712,13 @@ standard errors and the conditions for likelihood-ratio tests.</li>
 zero-inflated and hurdle models.</li>
 <li><code>vignette(&quot;distribution-parameter-regression&quot;, package = &quot;flexCountReg&quot;)</code>:
 models for the dispersion and shape parameters.</li>
+<li><code>vignette(&quot;finite-mixture-getting-started&quot;, package = &quot;flexCountReg&quot;)</code>
+and
+<code>vignette(&quot;latent-class-regression&quot;, package = &quot;flexCountReg&quot;)</code>:
+when no single family fits, a finite mixture of families (with constant
+or covariate-dependent proportions) is another option. Compare it with
+the single-family fits on the same rows with AIC, BIC and held-out
+scores, not with a likelihood-ratio test.</li>
 </ul>
 </div>
 

@@ -41,6 +41,12 @@ Mixtures of count distributions and latent-class count regression.
   [`class_probs()`](https://jwood-iastate.github.io/flexCountReg/reference/component_probs.md)
   : Component (class) membership probabilities
 
+## Interactive app
+
+- [`launch_app()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md)
+  [`app_object()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md)
+  : Interactive analysis app
+
 ## Working with fitted models
 
 - [`summary(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)

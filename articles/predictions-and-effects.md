@@ -249,7 +249,7 @@ me_dv[, c("term", "effect_metric", "estimate", "std_error")]
 #> Method: delta 
 #> 
 #>    term           effect_metric estimate std_error
-#>     age Average marginal effect    0.264     0.057
+#>     age Average marginal effect    0.264     0.058
 #>  income Average marginal effect   -0.040     0.034
 h <- 1e-4
 d_up <- d_dn <- dv
@@ -273,7 +273,7 @@ el[, c("term", "effect_metric", "estimate", "std_error", "lower_ci",
 #> Method: delta 
 #> 
 #>    term effect_metric estimate std_error lower_ci upper_ci
-#>  income    Elasticity   -0.076     0.064     -0.2    0.049
+#>  income    Elasticity   -0.076     0.064   -0.201    0.049
 ```
 
 A 1% higher income is associated with an expected number of visits about

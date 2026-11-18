@@ -2,6 +2,38 @@
 
 ## flexCountReg 0.1.2 (development)
 
+### Interactive app
+
+- New
+  [`launch_app()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md)
+  opens an interactive interface to flexCountReg in a web browser. Its
+  pages cover the whole workflow: load a bundled example or a CSV file;
+  specify and estimate count regression, finite-mixture and latent-class
+  models (any family, exposure or log offset, frequency weights,
+  distribution-parameter, membership and shared terms, panels); inspect
+  the summary, coefficients, numerical checks, class sizes and starts;
+  diagnose fits (rootogram, randomized quantile residuals, CURE plot);
+  compare them (with the reasons when they are not comparable); predict
+  for an editable table of scenarios (with confidence or prediction
+  intervals for count regressions); and download the analysis.
+- Every fit is compiled from one versioned specification into R code,
+  and the same code runs in the app and in the downloaded `analysis.R`,
+  which reproduces the fit without the app (the bundle also holds the
+  settings as JSON, the coefficients and a manifest with versions and
+  warnings). Column names enter the code only as symbols, never as
+  pasted text.
+- Models are estimated in background R processes (callr), so the
+  interface stays responsive and fits can be canceled; a slow earlier
+  fit never replaces a newer one. Data, fits and jobs belong to one
+  browser session.
+- The app’s packages (shiny, bslib, DT, callr, jsonlite, zip) are
+  suggested, not imported: the statistical functions do not need them,
+  and
+  [`launch_app()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md)
+  offers to install any that are missing.
+  [`app_object()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md)
+  returns the app for deployment or testing.
+
 ### Finite mixtures and latent classes
 
 - New
@@ -97,7 +129,18 @@
   not been studied.
 - New vignettes: “Finite mixtures of count distributions” and
   “Latent-class and finite-mixture count regression”, and a recovery and
-  coverage study script, `inst/validation/finite-mixtures/`.
+  coverage study, `inst/validation/finite-mixtures/` (its `CORES`
+  setting runs the replicates in parallel with the same results). In 200
+  replicates of each of seven designs (well and weakly separated Poisson
+  mixtures, a latent-class NB2 regression with membership covariates and
+  a shared dispersion, a panel latent-class model, and a Poisson + NB2
+  mixture), every fit converged; Wald intervals covered 0.89 to 0.985
+  (Monte Carlo standard errors about 0.015), and the label-invariant
+  mixture mean was nearly unbiased in every design. With weakly
+  separated components and n = 300 the low component’s intercept was
+  biased (-0.18) and its standard errors unstable, and 40% of the fits
+  were reached by only one of five starts: use more starts and treat
+  component-specific inference with caution in such data.
 - A warning (and a note in
   [`summary()`](https://rdrr.io/r/base/summary.html)) flags components
   of the same family with nearly identical parameters: the fit is then

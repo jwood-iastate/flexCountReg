@@ -66,7 +66,8 @@
 <li>random parameters, with heterogeneity in their means and variances, and exact, simulated and Empirical Bayes (observation-specific) predictions;</li>
 <li>random-effects panel models (negative binomial, Poisson-Lindley, negative multinomial);</li>
 <li>finite mixtures and latent-class count regressions, with constant, covariate-dependent or known class proportions, shared or class-specific parameters, different families in different classes, and one class per panel;</li>
-<li>model comparison and diagnostics: likelihood-ratio tests, comparison tables, marginal effects, CURE plots, rootograms and randomized quantile residuals.</li>
+<li>model comparison and diagnostics: likelihood-ratio tests, comparison tables, marginal effects, CURE plots, rootograms and randomized quantile residuals;</li>
+<li>an interactive app (<code><a href="reference/launch_app.html">launch_app()</a></code>) for the whole workflow, from data to a downloadable R script that reproduces the analysis.</li>
 </ul>
 <p>Fitted models work with the standard R generics (<code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code>, <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code>, <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>, <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code>, <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code>, …), with <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> and <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code>, and with tidymodels through the <code><a href="reference/count_reg.html">count_reg()</a></code> parsnip model.</p>
 <div class="section level2">
@@ -76,6 +77,14 @@
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"jwood-iastate/flexCountReg"</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="interactive-app">Interactive app<a class="anchor" aria-label="anchor" href="#interactive-app"></a>
+</h2>
+<p>To work without writing code, start the app:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">flexCountReg</span><span class="fu">::</span><span class="fu"><a href="reference/launch_app.html">launch_app</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>It walks through the data, the model, the fit, diagnostics, comparisons and predictions, and downloads an R script that reproduces the analysis without the app. The app uses the shiny, bslib, DT, callr, jsonlite and zip packages; <code><a href="reference/launch_app.html">launch_app()</a></code> offers to install them if needed.</p>
 </div>
 <div class="section level2">
 <h2 id="functions-and-data">Functions and Data<a class="anchor" aria-label="anchor" href="#functions-and-data"></a>
@@ -248,7 +257,7 @@
 <h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
 </h2>
 <p>The following is an example of using flexCountReg to estimate a negative binomial (NB-2) regression model with the overdispersion parameter as a function of predictor variables:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jwood-iastate.github.io/flexCountReg/">flexCountReg</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"washington_roads"</span><span class="op">)</span></span>
@@ -263,7 +272,7 @@
 <span><span class="co">#&gt;     method = "BFGS")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model: countreg | family: NB2 | optimizer: BFGS</span></span>
-<span><span class="co">#&gt; Iterations: 40 </span></span>
+<span><span class="co">#&gt; Iterations: 44 </span></span>
 <span><span class="co">#&gt; Convergence: successful convergence </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
@@ -273,24 +282,24 @@
 <span><span class="co">#&gt; lnlength                0.7588     0.0691   10.98  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; speed50                -0.5407     0.1173   -4.61  4.0e-06 ***</span></span>
 <span><span class="co">#&gt; ln(alpha):(Intercept)  -1.3233     0.3150   -4.20  2.7e-05 ***</span></span>
-<span><span class="co">#&gt; ln(alpha):speed50       1.2670     0.4849    2.61    0.009 ** </span></span>
+<span><span class="co">#&gt; ln(alpha):speed50       1.2669     0.4849    2.61    0.009 ** </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Log-likelihood: -1082.176 | AIC: 2176.352 | BIC: 2208.235 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span></code></pre></div>
 <p>The results are also available as tibbles, and the model can be compared with a Poisson base model:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">gen.nb2</span>, conf.int <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 6 × 8</span></span>
 <span><span class="co">#&gt;   term        component estimate std.error statistic  p.value conf.low conf.high</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;       &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 (Intercept) mean        -8.76     0.440     -19.9  5.78e-88   -9.62     -7.89 </span></span>
+<span><span class="co">#&gt; 1 (Intercept) mean        -8.76     0.440     -19.9  5.77e-88   -9.62     -7.89 </span></span>
 <span><span class="co">#&gt; 2 lnaadt      mean         1.08     0.0518     20.9  1.23e-96    0.979     1.18 </span></span>
 <span><span class="co">#&gt; 3 lnlength    mean         0.759    0.0691     11.0  4.63e-28    0.623     0.894</span></span>
 <span><span class="co">#&gt; 4 speed50     mean        -0.541    0.117      -4.61 4.02e- 6   -0.771    -0.311</span></span>
 <span><span class="co">#&gt; 5 ln(alpha):… distribu…   -1.32     0.315      -4.20 2.66e- 5   -1.94     -0.706</span></span>
-<span><span class="co">#&gt; 6 ln(alpha):… distribu…    1.27     0.485       2.61 8.98e- 3    0.317     2.22</span></span>
+<span><span class="co">#&gt; 6 ln(alpha):… distribu…    1.27     0.485       2.61 8.99e- 3    0.316     2.22</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">gen.nb2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 1 × 10</span></span>
 <span><span class="co">#&gt;   model    family logLik   AIC   BIC    df  nobs n_groups converged vcov_type</span></span>
@@ -310,22 +319,20 @@
 <span><span class="co">#&gt; 7 LR p-value               NA            NA </span></span>
 <span><span class="co">#&gt; 8 McFadden's Pseudo R^2     0.0167       NA</span></span></code></pre></div>
 <p>A rootogram shows how well the fitted distribution reproduces the observed counts; bars that end above or below zero show counts that are over- or under-predicted:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pois</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">gen.nb2</span>, family <span class="op">=</span> <span class="st">"Poisson"</span>, dis_param_formula_1 <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
 <span><span class="va">oldpar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">pois</span>, main <span class="op">=</span> <span class="st">"Poisson"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">gen.nb2</span>, main <span class="op">=</span> <span class="st">"Generalized NB-2"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-rootogram-1.png" alt="" width="100%"></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<p><img src="reference/figures/README-rootogram-1.png" width="100%"></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">oldpar</span><span class="op">)</span></span></code></pre></div>
 <p>Checking the CURE plot:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Covariate: indvar_values</span></span>
-<span><span class="co">#&gt; CURE data frame was provided. Its first column, lnaadt, will be used.</span></span></code></pre></div>
-<p><img src="reference/figures/README-cureplot-initial-1.png" alt="" width="100%"></p>
-<p>Modifying the model:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-cureplot-initial-1.png" width="100%"></p>
+<p>Modifying the model:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gen.nb2</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span>
 <span>                      <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADT10kplus</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/AsIs.html" class="external-link">I</a></span><span class="op">(</span><span class="va">AADT10kplus</span> <span class="op">/</span> <span class="va">lnaadt</span><span class="op">)</span>,</span>
 <span>                    data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
@@ -356,12 +363,10 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Log-likelihood: -1061.914 | AIC: 2141.828 | BIC: 2189.653 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span>
-<span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Covariate: indvar_values</span></span>
-<span><span class="co">#&gt; CURE data frame was provided. Its first column, lnaadt, will be used.</span></span></code></pre></div>
-<p><img src="reference/figures/README-cureplot-updt-1.png" alt="" width="100%"></p>
+<span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-cureplot-updt-1.png" width="100%"></p>
 <p>Estimating another model (NB-P), without the interaction:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gen.nbp</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span>
 <span>                      <span class="va">ShouldWidth04</span> <span class="op">+</span> <span class="va">AADT10kplus</span>,</span>
 <span>                    data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NBP"</span>,</span>
@@ -393,13 +398,11 @@
 <span><span class="co">#&gt; Log-likelihood: -1062.195 | AIC: 2142.389 | BIC: 2190.214 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span></code></pre></div>
 <p>Checking the CURE plot (notice that the CURE plot is better in this case than the NB-2 without the interaction and still better than the modified NB-2):</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nbp</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Covariate: indvar_values</span></span>
-<span><span class="co">#&gt; CURE data frame was provided. Its first column, lnaadt, will be used.</span></span></code></pre></div>
-<p><img src="reference/figures/README-cureplot-lnaadt-1.png" alt="" width="100%"></p>
-<p>Creating a table to compare the models:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nbp</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="reference/figures/README-cureplot-lnaadt-1.png" width="100%"></p>
+<p>Creating a table to compare the models:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"Generalized NB-2"</span> <span class="op">=</span> <span class="va">gen.nb2</span>, <span class="st">"Generalized NB-P"</span> <span class="op">=</span> <span class="va">gen.nbp</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 15 × 3</span></span>
 <span><span class="co">#&gt;    Parameter             `Generalized NB-2` `Generalized NB-P`</span></span>
@@ -421,7 +424,7 @@
 <span><span class="co">#&gt; 15 Pseudo-R-Sq.          0.303              0.303</span></span></code></pre></div>
 <p>Note that the metrics for comparison are similar. While the models both have the same number of parameters, the NB-P was able to get better performance without requiring the interaction terms (which leads to strange relationships between the exposure metric and the outcome).</p>
 <p>Predictions have one value per row of new data, and the probability of each count is also available:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nd</span> <span class="op">&lt;-</span> <span class="va">washington_roads</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">gen.nbp</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.6417932 0.5787698 0.8832648</span></span>
@@ -431,7 +434,7 @@
 <span><span class="co">#&gt; [2,] 0.587 0.288 0.093 0.025 0.006</span></span>
 <span><span class="co">#&gt; [3,] 0.450 0.326 0.147 0.053 0.017</span></span></code></pre></div>
 <p>Zero-inflated and hurdle versions of any distribution are fitted with <code>zero_formula</code>. For example, animal-related crashes are zero on most segment-years, and a zero-inflated Poisson model with the zero probability depending on the speed limit can be compared with the Poisson model by AIC and BIC (not by a likelihood-ratio test: no zero inflation puts the zero model’s intercept at minus infinity, so the restriction is not regular):</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">washington_roads</span><span class="op">$</span><span class="va">Animal</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.9540306</span></span>
 <span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Animal</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>, data <span class="op">=</span> <span class="va">washington_roads</span>,</span>
@@ -453,7 +456,7 @@
 <span><span class="co">#&gt; 1  -278.  562.  578.</span></span>
 <span><span class="co">#&gt; 2  -266.  542.  569.</span></span></code></pre></div>
 <p>With tidymodels (requires the parsnip package):</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tidymodels/parsnip" class="external-link">parsnip</a></span><span class="op">)</span></span>
 <span><span class="va">spec</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/count_reg.html">count_reg</a></span><span class="op">(</span>family <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"flexCountReg"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">spec</span>, <span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span>,</span>
@@ -491,6 +494,13 @@
 <li>Underreporting: observed counts, true counts and identification: <code><a href="articles/underreporting-and-identification.html">vignette("underreporting-and-identification", package = "flexCountReg")</a></code>
 </li>
 <li>Random parameters and panel models: <code><a href="articles/random-parameters-and-panels.html">vignette("random-parameters-and-panels", package = "flexCountReg")</a></code>
+</li>
+</ul>
+<p><em>Finite mixtures and latent classes</em></p>
+<ul>
+<li>Finite mixtures of count distributions: <code><a href="articles/finite-mixture-getting-started.html">vignette("finite-mixture-getting-started", package = "flexCountReg")</a></code>
+</li>
+<li>Latent-class and finite-mixture count regression: <code><a href="articles/latent-class-regression.html">vignette("latent-class-regression", package = "flexCountReg")</a></code>
 </li>
 </ul>
 <p><em>Predict and validate</em></p>

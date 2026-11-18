@@ -20,7 +20,11 @@ issues, including:
   and one class per panel;
 - model comparison and diagnostics: likelihood-ratio tests, comparison
   tables, marginal effects, CURE plots, rootograms and randomized
-  quantile residuals.
+  quantile residuals;
+- an interactive app
+  ([`launch_app()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md))
+  for the whole workflow, from data to a downloadable R script that
+  reproduces the analysis.
 
 Fitted models work with the standard R generics
 ([`coef()`](https://rdrr.io/r/stats/coef.html),
@@ -47,6 +51,22 @@ You can install the development version of flexCountReg using:
 # install.packages("devtools")
 devtools::install_github("jwood-iastate/flexCountReg")
 ```
+
+## Interactive app
+
+To work without writing code, start the app:
+
+``` r
+
+flexCountReg::launch_app()
+```
+
+It walks through the data, the model, the fit, diagnostics, comparisons
+and predictions, and downloads an R script that reproduces the analysis
+without the app. The app uses the shiny, bslib, DT, callr, jsonlite and
+zip packages;
+[`launch_app()`](https://jwood-iastate.github.io/flexCountReg/reference/launch_app.md)
+offers to install them if needed.
 
 ## Functions and Data
 
@@ -291,7 +311,7 @@ summary(gen.nb2)
 #>     method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 40 
+#> Iterations: 44 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -301,7 +321,7 @@ summary(gen.nb2)
 #> lnlength                0.7588     0.0691   10.98  < 2e-16 ***
 #> speed50                -0.5407     0.1173   -4.61  4.0e-06 ***
 #> ln(alpha):(Intercept)  -1.3233     0.3150   -4.20  2.7e-05 ***
-#> ln(alpha):speed50       1.2670     0.4849    2.61    0.009 ** 
+#> ln(alpha):speed50       1.2669     0.4849    2.61    0.009 ** 
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -318,12 +338,12 @@ tidy(gen.nb2, conf.int = TRUE)
 #> # A tibble: 6 × 8
 #>   term        component estimate std.error statistic  p.value conf.low conf.high
 #>   <chr>       <chr>        <dbl>     <dbl>     <dbl>    <dbl>    <dbl>     <dbl>
-#> 1 (Intercept) mean        -8.76     0.440     -19.9  5.78e-88   -9.62     -7.89 
+#> 1 (Intercept) mean        -8.76     0.440     -19.9  5.77e-88   -9.62     -7.89 
 #> 2 lnaadt      mean         1.08     0.0518     20.9  1.23e-96    0.979     1.18 
 #> 3 lnlength    mean         0.759    0.0691     11.0  4.63e-28    0.623     0.894
 #> 4 speed50     mean        -0.541    0.117      -4.61 4.02e- 6   -0.771    -0.311
 #> 5 ln(alpha):… distribu…   -1.32     0.315      -4.20 2.66e- 5   -1.94     -0.706
-#> 6 ln(alpha):… distribu…    1.27     0.485       2.61 8.98e- 3    0.317     2.22
+#> 6 ln(alpha):… distribu…    1.27     0.485       2.61 8.99e- 3    0.316     2.22
 glance(gen.nb2)
 #> # A tibble: 1 × 10
 #>   model    family logLik   AIC   BIC    df  nobs n_groups converged vcov_type
@@ -368,8 +388,6 @@ Checking the CURE plot:
 ``` r
 
 cureplot(gen.nb2, indvar = "lnaadt")
-#> Covariate: indvar_values
-#> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
 
 ![](reference/figures/README-cureplot-initial-1.png)
@@ -409,8 +427,6 @@ summary(gen.nb2)
 #> Log-likelihood: -1061.914 | AIC: 2141.828 | BIC: 2189.653 
 #> N: 1501
 cureplot(gen.nb2, indvar = "lnaadt")
-#> Covariate: indvar_values
-#> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
 
 ![](reference/figures/README-cureplot-updt-1.png)
@@ -458,8 +474,6 @@ NB-2):
 ``` r
 
 cureplot(gen.nbp, indvar = "lnaadt")
-#> Covariate: indvar_values
-#> CURE data frame was provided. Its first column, lnaadt, will be used.
 ```
 
 ![](reference/figures/README-cureplot-lnaadt-1.png)
@@ -585,6 +599,13 @@ The vignettes cover the main workflows. Start with
   [`vignette("underreporting-and-identification", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/underreporting-and-identification.md)
 - Random parameters and panel models:
   [`vignette("random-parameters-and-panels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md)
+
+*Finite mixtures and latent classes*
+
+- Finite mixtures of count distributions:
+  [`vignette("finite-mixture-getting-started", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/finite-mixture-getting-started.md)
+- Latent-class and finite-mixture count regression:
+  [`vignette("latent-class-regression", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/latent-class-regression.md)
 
 *Predict and validate*
 

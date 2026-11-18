@@ -84,8 +84,12 @@ negative multinomial models ("Standard" or "EB"). The default
 
 
 <dt id="arg-n-resamples">n_resamples<a class="anchor" aria-label="anchor" href="#arg-n-resamples"></a></dt>
-<dd><p>Number of resamples for potential resampling in the CURE
-plot confidence bands. Default is 0 (no bands).</p></dd>
+<dd><p>Number of curves of randomly reordered residuals drawn
+in grey for comparison. Default is 0 (none). The red limits
+(\(\pm 1.96\) times the standard deviation of the cumulative residuals
+computed by <span class="pkg">cureplots</span>) are drawn whatever the value of
+<code>n_resamples</code>; they are a descriptive reference, not a calibrated
+simultaneous band.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -111,14 +115,10 @@ plot confidence bands. Default is 0 (no bands).</p></dd>
 <span class="r-in"><span>                            </span></span>
 <span class="r-in"><span><span class="co"># 1. Plot against fitted values (default) with confidence bands</span></span></span>
 <span class="r-in"><span><span class="fu">cureplot</span><span class="op">(</span><span class="va">nb_model</span>, n_resamples <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Covariate: indvar_values</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> CURE data frame was provided. Its first column, Predicted Values, will be used.</span>
 <span class="r-plt img"><img src="cureplot-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 2. Plot against a specific covariate (e.g., lnlength)</span></span></span>
 <span class="r-in"><span><span class="fu">cureplot</span><span class="op">(</span><span class="va">nb_model</span>, indvar <span class="op">=</span> <span class="st">"lnlength"</span>, n_resamples <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Covariate: indvar_values</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> CURE data frame was provided. Its first column, lnlength, will be used.</span>
 <span class="r-plt img"><img src="cureplot-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>

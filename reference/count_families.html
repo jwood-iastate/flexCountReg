@@ -98,6 +98,28 @@ parameters in <code><a href="countreg.rp.html">countreg.rp()</a></code> (GP2 onl
 </div>
 
 <div class="section">
+<h3 id="finite-mixtures-and-latent-classes">Finite mixtures and latent classes<a class="anchor" aria-label="anchor" href="#finite-mixtures-and-latent-classes"></a></h3>
+
+
+<p>Every family can be a component of a finite mixture or latent-class model
+(<code><a href="countreg_mix.html">countreg_mix()</a></code>, <code><a href="countreg_mix.html">countreg_lc()</a></code>), with the same component density,
+mean, variance, distribution function and random generator as in
+<code><a href="countreg.html">countreg()</a></code> (one-component mixtures reproduce <code><a href="countreg.html">countreg()</a></code>). Mixtures
+of <code>POISSON</code>, <code>NB1</code> and <code>NB2</code> components are validated (analytic scores,
+independent likelihood checks and simulation recovery in the tests).
+Mixtures of the other families are experimental: they are computed
+correctly, but how well their components and mixing proportions can be
+recovered has not been studied, and adding outer components to a family
+that already mixes over a continuous random effect (PLN, PGE, PLL, NBGE,
+and others) can make the model weakly identified. A finite mixture
+selects one component and draws one count from it; it is not a
+convolution (a sum of counts) and not the within-family mixing of these
+families. A Generalized Waring component with \(\rho \le 2\) has an
+infinite variance, so the mixture variance is infinite and Pearson
+residuals are not available.</p>
+</div>
+
+<div class="section">
 <h3 id="underreporting-and-the-variance-of-the-reported-counts">Underreporting and the variance of the reported counts<a class="anchor" aria-label="anchor" href="#underreporting-and-the-variance-of-the-reported-counts"></a></h3>
 
 
@@ -157,7 +179,8 @@ observations with the same covariates is not part of the model.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="countreg.html">countreg()</a></code>, <code><a href="countreg.rp.html">countreg.rp()</a></code>, <code><a href="summary.flexCountReg.html">summary.flexCountReg()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="countreg.html">countreg()</a></code>, <code><a href="countreg.rp.html">countreg.rp()</a></code>, <code><a href="countreg_mix.html">countreg_mix()</a></code>,
+<code><a href="summary.flexCountReg.html">summary.flexCountReg()</a></code></p></div>
     </div>
 
     <div class="section level2">

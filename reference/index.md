@@ -22,6 +22,25 @@ random parameters and random effects.
 - [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
   : Negative Multinomial Family Panel Regression (NM1, NM2, NM-P)
 
+## Finite mixtures and latent classes
+
+Mixtures of count distributions and latent-class count regression.
+
+- [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  : Finite-mixture and latent-class count regression
+- [`mixture_control()`](https://jwood-iastate.github.io/flexCountReg/reference/mixture_control.md)
+  [`lc_control()`](https://jwood-iastate.github.io/flexCountReg/reference/mixture_control.md)
+  : Control settings for finite-mixture and latent-class count models
+- [`predict(`*`<countreg_mix>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mix.md)
+  : Predictions for finite-mixture and latent-class models
+- [`summary(`*`<countreg_mix>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.countreg_mix.md)
+  [`print(`*`<summary.countreg_mix>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.countreg_mix.md)
+  : Summaries of finite-mixture and latent-class models
+- [`component_probs()`](https://jwood-iastate.github.io/flexCountReg/reference/component_probs.md)
+  [`class_probs()`](https://jwood-iastate.github.io/flexCountReg/reference/component_probs.md)
+  : Component (class) membership probabilities
+
 ## Working with fitted models
 
 - [`summary(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)

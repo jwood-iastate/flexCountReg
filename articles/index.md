@@ -29,6 +29,13 @@
 - [Random parameters and panel
   models](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md):
 
+### Finite mixtures and latent classes
+
+- [Finite mixtures of count
+  distributions](https://jwood-iastate.github.io/flexCountReg/articles/finite-mixture-getting-started.md):
+- [Latent-class and finite-mixture count
+  regression](https://jwood-iastate.github.io/flexCountReg/articles/latent-class-regression.md):
+
 ### Predict and validate
 
 - [Evaluating predictive performance without information

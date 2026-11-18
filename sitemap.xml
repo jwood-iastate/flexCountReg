@@ -8,9 +8,11 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/diagnosing-count-models.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/distribution-parameter-regression.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/extending-count-distributions.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/articles/finite-mixture-getting-started.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/getting-started.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/index.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/inference-prediction-and-comparison.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/articles/latent-class-regression.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/prediction-for-panel-data.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/predictions-and-effects.html</loc></url>
@@ -46,6 +48,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/SichelDistribution.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/Triangular.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/abalone_rings.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/component_probs.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/cor2cov.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/corr_haltons.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_families.html</loc></url>
@@ -54,6 +57,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_reg_fit.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/cureplot.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.html</loc></url>
@@ -62,11 +66,13 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/invgamma.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/mae.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/mixture_control.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/moment_lognormal.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/myAIC.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/myBIC.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/reexports.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.html</loc></url>
@@ -77,6 +83,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/rmse.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/rootogram.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/stream_salamanders.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/summary.countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/washington_roads.html</loc></url>

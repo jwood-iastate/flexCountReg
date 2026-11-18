@@ -126,6 +126,30 @@ and every family can be used with random parameters in
 [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
 (GP2 only with a nonnegative dispersion).
 
+### Finite mixtures and latent classes
+
+Every family can be a component of a finite mixture or latent-class
+model
+([`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
+[`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)),
+with the same component density, mean, variance, distribution function
+and random generator as in
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+(one-component mixtures reproduce
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)).
+Mixtures of `POISSON`, `NB1` and `NB2` components are validated
+(analytic scores, independent likelihood checks and simulation recovery
+in the tests). Mixtures of the other families are experimental: they are
+computed correctly, but how well their components and mixing proportions
+can be recovered has not been studied, and adding outer components to a
+family that already mixes over a continuous random effect (PLN, PGE,
+PLL, NBGE, and others) can make the model weakly identified. A finite
+mixture selects one component and draws one count from it; it is not a
+convolution (a sum of counts) and not the within-family mixing of these
+families. A Generalized Waring component with \\\rho \le 2\\ has an
+infinite variance, so the mixture variance is infinite and Pearson
+residuals are not available.
+
 ### Underreporting and the variance of the reported counts
 
 In an underreporting model the true count \\Y\\ has mean \\\mu =
@@ -201,6 +225,7 @@ observations with the same covariates is not part of the model.
 
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
 [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md),
+[`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
 [`summary.flexCountReg()`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)
 
 ## Examples

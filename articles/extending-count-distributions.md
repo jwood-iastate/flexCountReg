@@ -315,6 +315,26 @@ Diagnostics follow the same contract: Pearson residuals need `variance`,
 quantile residuals and rootograms need `dens` and preferably `cdf`, and
 marginal effects need the mean.
 
+**Finite mixtures and latent classes**
+([`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
+[`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md))
+use the same registry entry for each component: the log-scale `dens` for
+the likelihood and posterior class probabilities, `mean` (or `mean_adj`)
+for component and mixture expected counts, `variance` for the mixture
+variance and Pearson residuals, `cdf` (or a summed PMF) for the mixture
+distribution function and quantile residuals, and `rand` for
+[`simulate()`](https://rdrr.io/r/stats/simulate.html). A new family
+therefore works as a mixture component as soon as its entry is complete,
+but it is reported as *experimental* until it is added to
+`.fcr_fm_validated` together with tests: one-component agreement with
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
+an independently coded two-component likelihood, and a recovery study
+such as `inst/validation/finite-mixtures/mixture-recovery-study.R`. The
+`dens` function must return `NA` (not `-Inf`) or the optimizer cannot
+tell an invalid parameter value from a count with probability zero; the
+mixture engine additionally rejects non-finite or non-positive component
+parameters before evaluating any density.
+
 ## 7. Tests
 
 At least four kinds of tests are needed:

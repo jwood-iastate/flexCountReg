@@ -47,8 +47,11 @@ cureplot(
 
 - n_resamples:
 
-  Number of resamples for potential resampling in the CURE plot
-  confidence bands. Default is 0 (no bands).
+  Number of curves of randomly reordered residuals drawn in grey for
+  comparison. Default is 0 (none). The red limits (\\\pm 1.96\\ times
+  the standard deviation of the cumulative residuals computed by
+  cureplots) are drawn whatever the value of `n_resamples`; they are a
+  descriptive reference, not a calibrated simultaneous band.
 
 - ...:
 
@@ -74,14 +77,10 @@ nb_model <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
                             
 # 1. Plot against fitted values (default) with confidence bands
 cureplot(nb_model, n_resamples = 20)
-#> Covariate: indvar_values
-#> CURE data frame was provided. Its first column, Predicted Values, will be used.
 
 
 # 2. Plot against a specific covariate (e.g., lnlength)
 cureplot(nb_model, indvar = "lnlength", n_resamples = 20)
-#> Covariate: indvar_values
-#> CURE data frame was provided. Its first column, lnlength, will be used.
 
 # }
 ```

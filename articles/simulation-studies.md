@@ -295,8 +295,9 @@ generate_panel <- function(n_units = 100, T = 5, theta = 0.5) {
 The negative multinomial model of
 [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
 (family `"NM2"`, the default) matches this process: Poisson counts given
-a gamma unit effect with mean 1 and variance \$lpha\$ (here 0.5), shared
-by the rows of a unit. The pooled Poisson model ignores the grouping:
+a gamma unit effect with mean 1 and variance $`\alpha`$ (here 0.5),
+shared by the rows of a unit. The pooled Poisson model ignores the
+grouping:
 
 ``` r
 
@@ -366,6 +367,18 @@ a record of the settings, R and package versions and the random-number
 generator. Run it from a terminal, for example:
 
     REPS=1000 SEED=2026 Rscript count-regression-study.R
+
+A companion script,
+`inst/validation/finite-mixtures/mixture-recovery-study.R`, applies the
+same design to finite-mixture and latent-class models
+([`vignette("latent-class-regression", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/latent-class-regression.md)).
+Two features are specific to mixtures. First, component labels are
+arbitrary, so component-specific estimands are compared after a
+documented alignment (there, the display order of the components), and a
+label-invariant estimand (the mixture mean at a reference point) is
+reported alongside them. Second, panel scenarios generate one class per
+panel, so whole panels must be generated and resampled. The script also
+records how many starts reached each selected solution.
 
 ## Checklist
 

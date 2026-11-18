@@ -283,9 +283,16 @@ several local maxima. Refit from a deliberately poor start with
 <span><span class="co">#&gt; poor_start         TRUE -1084.942</span></span></code></pre></div>
 <p>Here the poor start reaches the same maximum. When it does not,
 report the best fit, and treat the disagreement as a warning about the
-model or the data rather than a nuisance to suppress. Raising
-<code>max.iters</code> is only useful when the status shows that the
-iteration limit stopped the optimizer.</p>
+model or the data rather than a nuisance to suppress. Finite-mixture and
+latent-class models (<code><a href="../reference/countreg_mix.html">countreg_mix()</a></code>,
+<code><a href="../reference/countreg_mix.html">countreg_lc()</a></code>) have several local maxima as a rule; they
+run several starts themselves and record them in
+<code>fit$model$starts</code>, together with the definiteness and
+conditioning of the observed information
+(<code>fit$model$numerical</code>); see
+<code><a href="../articles/latent-class-regression.html">vignette("latent-class-regression", package = "flexCountReg")</a></code>.
+Raising <code>max.iters</code> is only useful when the status shows that
+the iteration limit stopped the optimizer.</p>
 </div>
 <div class="section level2">
 <h2 id="numerical-integration-outer-draws-and-inner-integrals">Numerical integration: outer draws and inner integrals<a class="anchor" aria-label="anchor" href="#numerical-integration-outer-draws-and-inner-integrals"></a>

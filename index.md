@@ -14,6 +14,10 @@ issues, including:
   predictions;
 - random-effects panel models (negative binomial, Poisson-Lindley,
   negative multinomial);
+- finite mixtures and latent-class count regressions, with constant,
+  covariate-dependent or known class proportions, shared or
+  class-specific parameters, different families in different classes,
+  and one class per panel;
 - model comparison and diagnostics: likelihood-ratio tests, comparison
   tables, marginal effects, CURE plots, rootograms and randomized
   quantile residuals.
@@ -56,6 +60,15 @@ devtools::install_github("jwood-iastate/flexCountReg")
   estimates random parameters count models, optionally with panels,
   correlated random parameters, and heterogeneity in the means and
   variances of the random parameters.
+- [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  and
+  [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  estimate finite-mixture and latent-class count models (the same engine
+  under two vocabularies), with several reproducible starts, and
+  [`component_probs()`](https://jwood-iastate.github.io/flexCountReg/reference/component_probs.md)
+  /
+  [`class_probs()`](https://jwood-iastate.github.io/flexCountReg/reference/component_probs.md)
+  give prior or posterior class probabilities.
 - [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
   estimates the random effects negative binomial regression model.
 - [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)

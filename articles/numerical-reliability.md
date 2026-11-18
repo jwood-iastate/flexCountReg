@@ -225,9 +225,17 @@ rbind(default_start = fit_status(fits$BFGS)[, c("converged", "logLik")],
 
 Here the poor start reaches the same maximum. When it does not, report
 the best fit, and treat the disagreement as a warning about the model or
-the data rather than a nuisance to suppress. Raising `max.iters` is only
-useful when the status shows that the iteration limit stopped the
-optimizer.
+the data rather than a nuisance to suppress. Finite-mixture and
+latent-class models
+([`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
+[`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md))
+have several local maxima as a rule; they run several starts themselves
+and record them in `fit$model$starts`, together with the definiteness
+and conditioning of the observed information (`fit$model$numerical`);
+see
+[`vignette("latent-class-regression", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/latent-class-regression.md).
+Raising `max.iters` is only useful when the status shows that the
+iteration limit stopped the optimizer.
 
 ## Numerical integration: outer draws and inner integrals
 

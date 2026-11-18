@@ -40,9 +40,13 @@ margEffTable(
   Optional character vector of variable names to evaluate. If `NULL`,
   the function uses the non-response variables of the model formula and
   of the formulas that also change the expected value: the
-  underreporting, random-parameter and heterogeneity formulas, and the
-  distribution-parameter formulas of the PLN and PLL families. Offsets
-  and panel identifiers are excluded.
+  underreporting, random-parameter, heterogeneity and mixing (class
+  membership) formulas, and the distribution-parameter formulas of the
+  PLN and PLL families. Offsets (columns given in `offset`, and
+  variables that appear only inside
+  [`offset()`](https://rdrr.io/r/stats/offset.html) in the formula, such
+  as an exposure in `offset(log(exposure))`) and panel identifiers are
+  excluded; name them in `vars` to evaluate them anyway.
 
 - measure:
 

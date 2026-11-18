@@ -338,8 +338,10 @@ and a row-level covariate
 <span><span class="op">}</span></span></code></pre></div>
 <p>The negative multinomial model of <code><a href="../reference/negmultinom.html">negmultinom()</a></code> (family
 <code>"NM2"</code>, the default) matches this process: Poisson counts
-given a gamma unit effect with mean 1 and variance <span class="math inline">$lpha$</span> (here 0.5), shared by the rows of a
-unit. The pooled Poisson model ignores the grouping:</p>
+given a gamma unit effect with mean 1 and variance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
+(here 0.5), shared by the rows of a unit. The pooled Poisson model
+ignores the grouping:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">panel_rep</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/assign.html" class="external-link">assign</a></span><span class="op">(</span><span class="st">".Random.seed"</span>, <span class="va">panel_streams</span><span class="op">[[</span><span class="va">r</span><span class="op">]</span><span class="op">]</span>, envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">globalenv</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -404,6 +406,17 @@ results, the summary table, and a record of the settings, R and package
 versions and the random-number generator. Run it from a terminal, for
 example:</p>
 <pre><code>REPS=1000 SEED=2026 Rscript count-regression-study.R</code></pre>
+<p>A companion script,
+<code>inst/validation/finite-mixtures/mixture-recovery-study.R</code>,
+applies the same design to finite-mixture and latent-class models
+(<code><a href="../articles/latent-class-regression.html">vignette("latent-class-regression", package = "flexCountReg")</a></code>).
+Two features are specific to mixtures. First, component labels are
+arbitrary, so component-specific estimands are compared after a
+documented alignment (there, the display order of the components), and a
+label-invariant estimand (the mixture mean at a reference point) is
+reported alongside them. Second, panel scenarios generate one class per
+panel, so whole panels must be generated and resampled. The script also
+records how many starts reached each selected solution.</p>
 </div>
 <div class="section level2">
 <h2 id="checklist">Checklist<a class="anchor" aria-label="anchor" href="#checklist"></a>

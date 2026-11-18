@@ -217,3 +217,113 @@ test_that("operations report what a model does not support", {
   expect_match(app_supports(f, "tolerance")$reason, "countreg")
   expect_true(app_supports(f, "cure")$ok)
 })
+
+test_that("new data get the fit's variable creations, anchored to training", {
+  skip_on_cran()
+  state <- new_state()
+  d <- load_bundled_data("washington_roads")
+  shiny::isolate({
+    app_load_data(state, "bundled", "washington_roads")
+    add <- function(...) app_add_variable(state, list(...))
+    add(type = "standardize", x = "lnaadt", name = "z_aadt")
+    add(type = "indicator", x = "AADT", op = ">", value = "10000",
+        name = "big")
+    add(type = "product", x = "z_aadt", y = "big", name = "z_big")
+    add(type = "factor", x = "speed50", name = "f_speed")
+    add(type = "sqrt", x = "Animal", name = "unused")
+    s <- app_spec(data = list(source = "bundled", name = "washington_roads",
+                              object = "data_1"),
+                  recipe = list(response = "Total_crashes",
+                                predictors = c("z_aadt", "z_big",
+                                               "f_speed"),
+                                exposure = "Length"),
+                  model = list(family = "NB2"))
+    # Only the creations the model needs, in order, following the chain
+    tr <- transforms_needed(s, state$transforms$data_1)
+    expect_identical(vapply(tr, `[[`, "", "name"),
+                     c("z_aadt", "big", "z_big", "f_speed"))
+    expect_setequal(raw_columns_needed(s, state$transforms$data_1),
+                    c("lnaadt", "AADT", "speed50", "Length"))
+    job <- app_submit_fit(state, s)
+    record_finished_job(state, wait_job(job))
+    # New data: a few rows of the raw columns only
+    nd <- d[c(5, 50, 500), c("lnaadt", "AADT", "speed50", "Length")]
+    path <- file.path(state$session_dir, "nd.csv")
+    utils::write.csv(nd, path, row.names = FALSE)
+    obj <- app_load_newdata(state, "new roads.csv", path)
+    expect_identical(obj, "newdata_1")
+    expect_identical(state$data_meta$object, "data_1")
+    r <- app_run_output(state, list(type = "predict", newdata = obj,
+                                    interval = "none"), job$id)
+    t <- app_run_output(state, list(type = "tolerance", newdata = obj,
+                                    content = 0.9, confidence = 0.9,
+                                    side = "upper", scope = "pointwise",
+                                    tol_method = "auto"), job$id)
+    # Standardizing used the training mean and SD, not the new rows'
+    expect_equal(r$value$z_aadt, (nd$lnaadt - mean(d$lnaadt)) / sd(d$lnaadt))
+    expect_identical(levels(r$value$f_speed), c("0", "1"))
+    # The same predictions as the training rows they came from
+    fit <- state$env$fit_1
+    expect_equal(r$value$expected_count,
+                 unname(predict(fit, newdata = state$env$data_1[c(5, 50, 500), ])))
+    expect_equal(nrow(t$value), 3)
+    # Missing columns are named
+    bad <- nd[, c("lnaadt", "AADT", "Length")]
+    path2 <- file.path(state$session_dir, "bad.csv")
+    utils::write.csv(bad, path2, row.names = FALSE)
+    obj2 <- app_load_newdata(state, "bad.csv", path2)
+    expect_error(app_run_output(state, list(type = "predict", newdata = obj2,
+                                            interval = "none"), job$id),
+                 "speed50")
+    script <- app_script(state)
+    dir <- tempfile("bundle-")
+    dir.create(dir)
+    write_bundle(state, dir, include_data = TRUE)
+    local <- r$value$expected_count
+  })
+  expect_match(script, "newdata_1_file <- \"new roads.csv\"", fixed = TRUE)
+  expect_match(script, "mean(data_1[[\"lnaadt\"]], na.rm = TRUE)",
+               fixed = TRUE)
+  out <- callr::r(function(dir) {
+    setwd(dir)
+    env <- new.env()
+    sys.source("analysis.R", envir = env)
+    env$pred_1$expected_count
+  }, args = list(dir), libpath = .libPaths())
+  expect_equal(out, local, tolerance = 1e-10)
+})
+
+# Pixel width and height of a baseline JPEG file (from its SOF0 segment)
+jpeg_dims <- function(path) {
+  b <- readBin(path, "raw", file.size(path))
+  i <- which(b[-length(b)] == as.raw(0xFF) & b[-1] == as.raw(0xC0))[1]
+  c(width = as.integer(b[i + 7]) * 256 + as.integer(b[i + 8]),
+    height = as.integer(b[i + 5]) * 256 + as.integer(b[i + 6]))
+}
+
+test_that("plots are saved as JPEG files at the requested size", {
+  skip_on_cran()
+  state <- new_state()
+  shiny::isolate({
+    app_load_data(state, "bundled", "abalone_rings")
+    s <- app_spec(recipe = list(response = "rings",
+                                predictors = "shell_weight"),
+                  model = list(family = "POISSON"))
+    job <- app_submit_fit(state, s)
+    record_finished_job(state, wait_job(job))
+    for (type in c("rootogram", "quantile", "cure")) {
+      r <- app_run_output(state, list(type = type), job$id)
+      f <- tempfile(fileext = ".jpg")
+      app_save_plot(state, r, f, width = 4, height = 3, res = 150)
+      expect_identical(readBin(f, "raw", 2), as.raw(c(0xFF, 0xD8)))
+      expect_equal(unname(jpeg_dims(f)), c(600, 450), label = type)
+    }
+    expect_error(app_save_plot(state, r, f, width = 0), "inches")
+    expect_error(app_save_plot(state, r, f, res = 10), "resolution")
+    script <- app_script(state)
+  })
+  expect_match(script, "plot_file <- \"rootogram_1.jpg\"", fixed = TRUE)
+  expect_match(script, "grDevices::jpeg(plot_file, width = 4, height = 3",
+               fixed = TRUE)
+  expect_silent(parse(text = script))
+})

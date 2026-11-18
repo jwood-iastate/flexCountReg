@@ -12,6 +12,8 @@ new_app_state <- function(session_dir = tempfile("fcr-app-")) {
     data = NULL,            # the current data frame
     data_meta = NULL,       # list(source, name, title, object, ...)
     uploads = list(),       # uploaded files, by data object
+    transforms = list(),    # variables created, by data object
+    newdata = character(),  # new-data objects for predictions
     spec = NULL,            # draft specification (Build page)
     jobs = list(),          # running and finished jobs, by request id
     fits = list(),          # completed fits, by request id
@@ -61,6 +63,25 @@ app_load_data <- function(state, source, name, upload_path = NULL,
   state$data_meta <- list(source = source, name = name, title = title,
                           object = obj, response = response, group = group)
   app_log(state, paste0("Data ", k, ": ", name), code$display, "data", obj)
+  invisible(obj)
+}
+
+# Load an uploaded CSV file of new data (for predictions) as object
+# newdata_<k>; the current analysis data do not change
+app_load_newdata <- function(state, name, upload_path) {
+  k <- .app_next(state, "newdata")
+  obj <- paste0("newdata_", k)
+  code <- compile_data_load("upload", name, obj)
+  env <- state$env
+  assign(paste0(obj, "_file"), upload_path, envir = env)
+  up <- state$uploads
+  up[[obj]] <- list(path = upload_path, name = name)
+  state$uploads <- up
+  run_compiled(code$run, env)
+  state$newdata <- c(state$newdata, stats::setNames(obj, paste0(
+    obj, ": ", name, " (", nrow(get(obj, envir = env)), " rows)")))
+  app_log(state, paste0("New data ", k, ": ", name), code$display, "data",
+          obj)
   invisible(obj)
 }
 
@@ -138,6 +159,19 @@ app_run_output <- function(state, req, fit_id = NULL) {
   n <- .app_next(state, req$type)
   out <- paste0(.app_out_stem[[req$type]], "_", n)
   req$title <- req$title %||% (if (!is.null(b)) b$label)
+  if (!is.null(req$newdata)) {
+    # New data: the columns the fit needs must be there (or be created by
+    # the fit's variable creations)
+    tr <- state$transforms[[b$spec$data$object]] %||% list()
+    nd <- get(req$newdata, envir = state$env)
+    miss <- setdiff(raw_columns_needed(b$spec, tr), names(nd))
+    if (length(miss)) {
+      stop("The new data lack column(s) the model needs: ", toString(miss),
+           ".", call. = FALSE)
+    }
+    req$prep <- compile_prediction_data(b$spec, fit_name, tr, req$newdata,
+                                        paste0(out, "_data"))
+  }
   exprs <- compile_output(req, fit_name, out)
   env <- state$env
   grDevices::pdf(NULL)
@@ -161,4 +195,52 @@ app_try <- function(expr, what = "This action") {
                             type = "error", duration = NULL)
     NULL
   })
+}
+
+# Keep a page's model selector (input `id`) in step with the completed fits:
+# it lists every fit and moves to each newly completed fit; in between, it
+# stays where the user put it.
+app_fit_selector <- function(input, session, state, id) {
+  shiny::observe({
+    ch <- label_choices(state$fits)
+    cur <- shiny::isolate(input[[id]])
+    sel <- if (!is.null(cur) && cur %in% ch) cur else utils::tail(ch, 1)
+    shiny::updateSelectInput(session, id, choices = ch,
+                             selected = if (length(ch)) sel)
+  })
+  shiny::observeEvent(state$active, {
+    shiny::updateSelectInput(session, id, selected = state$active)
+  })
+}
+
+# Code that writes the plot of an output (its plotting expressions) to a
+# JPEG file
+compile_plot_file <- function(exprs, filename, width, height, res) {
+  c(list(call("<-", .sym("plot_file"), filename),
+         bquote(grDevices::jpeg(plot_file, width = .(width),
+                                height = .(height), units = "in",
+                                res = .(res), quality = 95))),
+    exprs, list(quote(grDevices::dev.off())))
+}
+
+# Save the plot of a diagnostic result `r` (from app_run_output()) as a
+# JPEG file at `path`, and log the code (with the file name <out>.jpg)
+app_save_plot <- function(state, r, path, width = 7, height = 5, res = 300) {
+  ok <- function(v, lo, hi) is.numeric(v) && length(v) == 1 && !is.na(v) &&
+    v >= lo && v <= hi
+  if (!ok(width, 1, 30) || !ok(height, 1, 30)) {
+    stop("Width and height must be between 1 and 30 inches.", call. = FALSE)
+  }
+  if (!ok(res, 50, 2400)) {
+    stop("The resolution must be between 50 and 2400 dpi.", call. = FALSE)
+  }
+  fname <- paste0(r$out, ".jpg")
+  # Draw in a child of the session environment (objects stay unchanged)
+  env <- new.env(parent = state$env)
+  run_compiled(compile_plot_file(r$exprs, path, width, height, res), env)
+  app_log(state, paste0("Plot file ", fname, " (", width, " x ", height,
+                        " in, ", res, " dpi)"),
+          compile_plot_file(r$exprs, fname, width, height, res),
+          "plot_file", fname)
+  invisible(path)
 }

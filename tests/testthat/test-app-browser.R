@@ -52,12 +52,21 @@ test_that("a user can run an analysis and download a working script", {
   app$wait_for_idle()
   expect_match(app$get_value(output = "fit-summary"), "Poisson B")
 
-  # A diagnostic and predictions of the selected fit
+  # A diagnostic of the first fit (not the latest), saved as JPEG
   app$set_inputs(page = "Diagnose")
+  app$wait_for_idle()
+  first <- app$get_js(paste0(
+    "Object.values($('#diagnose-fit')[0].selectize.options)",
+    ".find(o => o.label === 'NB2 A').value"))
+  app$set_inputs(`diagnose-fit` = first, wait_ = FALSE)
   app$set_inputs(`diagnose-diag` = "cure", wait_ = FALSE)
   app$click("diagnose-go")
   app$wait_for_idle()
   expect_match(app$get_value(output = "diagnose-title"), "cure_1")
+  expect_match(app$get_value(output = "diagnose-title"), "NB2 A")
+  app$set_inputs(`diagnose-jpg_res` = "150", wait_ = FALSE)
+  jpg <- app$get_download("diagnose-download_jpg")
+  expect_identical(readBin(jpg, "raw", 2), as.raw(c(0xFF, 0xD8)))
   app$set_inputs(page = "Predict")
   app$wait_for_idle()
   app$set_inputs(`predict-interval` = "confidence", wait_ = FALSE)
@@ -67,6 +76,18 @@ test_that("a user can run an analysis and download a working script", {
   app$click("predict-go_tol")
   app$wait_for_idle()
   expect_match(app$get_value(output = "predict-res_title"), "tol_1")
+  # Predictions for uploaded new data (aadt10k is created from AADT)
+  nd <- load_bundled_data("washington_roads")[1:5, c("lnaadt", "AADT",
+                                                     "Length")]
+  nd_file <- tempfile(fileext = ".csv")
+  utils::write.csv(nd, nd_file, row.names = FALSE)
+  app$set_inputs(`predict-rows` = "newdata")
+  app$upload_file(`predict-nd_file` = nd_file)
+  app$click("predict-nd_load")
+  app$wait_for_idle()
+  app$click("predict-go")
+  app$wait_for_idle()
+  expect_match(app$get_value(output = "predict-res_title"), "pred_2")
 
   # A comparison of the two fits
   app$set_inputs(page = "Compare")
@@ -82,13 +103,17 @@ test_that("a user can run an analysis and download a working script", {
   # Everything that ran is in the session script
   script <- app$get_value(output = "session_code")
   for (pat in c("data_1 <- local", "data_1[[\"aadt10k\"]] <-",
+                "cure_1 <- flexCountReg::cureplot(fit_1",
+                "plot_file <- \"cure_1.jpg\"",
                 "fit_1 <- flexCountReg::countreg", "fit_2 <-",
-                "cure_1 <-", "pred_1 <-", "tol_1 <-", "comparison_1 <-")) {
+                "cure_1 <-", "pred_1 <-", "tol_1 <-", "newdata_1 <-",
+                "pred_2_data[[\"aadt10k\"]] <-", "comparison_1 <-")) {
     expect_match(script, pat, fixed = TRUE)
   }
 
   # The download reproduces it without the app
   app$set_inputs(page = "Export")
+  app$set_inputs(`export-include_data` = TRUE)
   app$wait_for_idle()
   zipfile <- app$get_download("export-download")
   dir <- tempfile("dl-")

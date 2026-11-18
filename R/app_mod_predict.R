@@ -7,7 +7,21 @@ mod_predict_ui <- function(id) {
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
       width = 340,
+      shiny::selectInput(ns("fit"), "Model", character()),
       shiny::uiOutput(ns("fit_note")),
+      shiny::radioButtons(ns("rows"), "Rows to predict",
+                          c("Scenario table (edit below)" = "table",
+                            "New data (CSV file)" = "newdata")),
+      shiny::conditionalPanel(
+        "input.rows == 'newdata'", ns = ns,
+        shiny::fileInput(ns("nd_file"), "Upload new data (CSV)",
+                         accept = c(".csv", "text/csv")),
+        shiny::actionButton(ns("nd_load"), "Load new data",
+                            class = "btn-outline-primary btn-sm"),
+        shiny::selectInput(ns("newdata"), "New data", character()),
+        help_text("Variables you created on the Data page are created in ",
+                  "the new data in the same way, with the means, standard ",
+                  "deviations and categories of the training data.")),
       bslib::accordion(
         multiple = FALSE,
         bslib::accordion_panel(
@@ -64,7 +78,9 @@ mod_predict_ui <- function(id) {
     bslib::card(bslib::card_header(shiny::textOutput(ns("res_title"))),
                 fill = FALSE,
                 shiny::uiOutput(ns("res_note")),
-                shiny::tableOutput(ns("res"))),
+                shiny::tableOutput(ns("res")),
+                shiny::downloadButton(ns("download"), "Download results",
+                                      class = "btn-sm")),
     bslib::card(bslib::card_header("Code that produced it"), fill = FALSE,
                 shiny::verbatimTextOutput(ns("code"))))
 }
@@ -102,18 +118,31 @@ mod_predict_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
     scen <- shiny::reactiveVal(NULL)
     current <- shiny::reactiveVal(NULL)
+    app_fit_selector(input, session, state, "fit")
     bundle <- shiny::reactive({
-      b <- state$fits[[state$active %||% ""]]
+      b <- state$fits[[input$fit %||% ""]]
       shiny::req(b)
       b$fit <- app_fit_object(state, b$id)
       b
     })
     output$fit_note <- shiny::renderUI({
-      b <- state$fits[[state$active %||% ""]]
+      b <- state$fits[[input$fit %||% ""]]
       help_text(if (is.null(b)) "Estimate a model first (Build page)." else
-        paste0("Predictions of the selected fit: ", b$label, " (",
-               b$fit_name, ")."))
+        paste0("Object ", b$fit_name, "; data ", b$spec$data$object, "."))
     })
+    # New data
+    shiny::observeEvent(input$nd_load, app_try(what = "Loading new data", {
+      f <- input$nd_file
+      if (is.null(f)) stop("Choose a CSV file first.", call. = FALSE)
+      keep <- file.path(state$session_dir,
+                        paste0("newdata-", length(state$newdata) + 1, ".csv"))
+      file.copy(f$datapath, keep, overwrite = TRUE)
+      obj <- app_load_newdata(state, f$name, keep)
+      shiny::updateSelectInput(session, "newdata", choices = state$newdata,
+                               selected = obj)
+      shiny::showNotification(paste("Loaded", f$name, "as", obj),
+                              type = "message")
+    }))
     output$method_ui <- shiny::renderUI({
       m <- app_predict_methods(bundle()$fit)
       if (is.null(m)) return(NULL)
@@ -153,11 +182,19 @@ mod_predict_server <- function(id, state) {
 
     run <- function(req) {
       b <- bundle()
-      s <- scen()
-      if (is.null(s) || !nrow(s)) {
-        stop("The scenario table is empty.", call. = FALSE)
+      if (identical(input$rows, "newdata")) {
+        nd <- input$newdata
+        if (is.null(nd) || !nzchar(nd)) {
+          stop("Load new data first.", call. = FALSE)
+        }
+        req$newdata <- nd
+      } else {
+        s <- scen()
+        if (is.null(s) || !nrow(s)) {
+          stop("The scenario table is empty.", call. = FALSE)
+        }
+        req$scenarios <- s
       }
-      req$scenarios <- s
       res <- app_run_output(state, req, b$id)
       res$type <- req$type
       res$fit$fit <- b$fit
@@ -201,6 +238,9 @@ mod_predict_server <- function(id, state) {
           ". min_content is the smallest content over the evaluated ",
           "parameter points, not a certified global minimum."))
       }
+      n <- nrow(as.data.frame(v))
+      if (n > 200) return(help_text("Showing the first 200 of ", n,
+                                    " rows; download for all of them."))
       if (inherits(r$fit$fit, "countreg_mix")) help_text(
         "expected_count is the mixture mean (class probabilities from the ",
         "membership variables; no outcomes used); mean.*: class expected ",
@@ -209,8 +249,14 @@ mod_predict_server <- function(id, state) {
     output$res <- shiny::renderTable({
       r <- current()
       shiny::req(r)
-      as.data.frame(r$value)
+      utils::head(as.data.frame(r$value), 200)
     }, digits = 4)
+    output$download <- shiny::downloadHandler(
+      filename = function() paste0(current()$out %||% "predictions", ".csv"),
+      content = function(file) {
+        utils::write.csv(as.data.frame(current()$value), file,
+                         row.names = FALSE)
+      })
     output$code <- shiny::renderText({
       r <- current()
       shiny::req(r)

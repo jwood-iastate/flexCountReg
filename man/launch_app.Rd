@@ -32,7 +32,11 @@ random-effects panel (\code{\link[=renb]{renb()}}, \code{\link[=poisLind.re]{poi
 \code{\link[=countreg_lc]{countreg_lc()}}) models; check their numerical status; diagnose them
 (rootograms, randomized quantile residuals, CURE plots); compare fits;
 compute predictions, confidence or prediction intervals and tolerance
-intervals for a table of scenarios; and download the analysis.
+intervals for a table of scenarios or for uploaded new data (with the
+variables created on the Data tab, using the means, standard deviations
+and categories of the training data); save plots as JPEG files at a chosen
+size and resolution; and download the analysis. The Diagnose and Predict
+tabs work on any completed model.
 }
 \details{
 Everything the app runs is compiled into R code that calls the package's

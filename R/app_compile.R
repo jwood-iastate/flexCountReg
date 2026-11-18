@@ -158,6 +158,16 @@ compile_data_frame <- function(df) {
   as.call(c(.sym("data.frame"), cols, check.names = FALSE))
 }
 
+# The rows predicted: an edited scenario table (<out>_scenarios), or new
+# data prepared for the fit (<out>_data, from req$prep)
+.scenario_sym <- function(req, out) {
+  .sym(paste0(out, if (!is.null(req$prep)) "_data" else "_scenarios"))
+}
+.scenario_exprs <- function(req, sc) {
+  if (!is.null(req$prep)) return(req$prep)
+  list(call("<-", sc, compile_data_frame(req$scenarios)))
+}
+
 # Expressions of one output request on a fitted model. `req` is a list with
 # `type` and its settings; `out` is the name of the result object.
 #   rootogram  - max_count (NULL: largest observed count)
@@ -196,7 +206,7 @@ compile_output <- function(req, fit_name, out) {
            call("print", o))
     },
     predict = {
-      sc <- .sym(paste0(out, "_scenarios"))
+      sc <- .scenario_sym(req, out)
       pa <- list(f, newdata = sc)
       if (!is.null(req$method)) pa$method <- req$method
       if (!identical(req$interval %||% "none", "none")) {
@@ -216,17 +226,16 @@ compile_output <- function(req, fit_name, out) {
         pred <- call("cbind", sc,
                      expected_count = as.call(c(quote(stats::predict), pa)))
       }
-      list(call("<-", sc, compile_data_frame(req$scenarios)),
-           call("<-", o, pred))
+      c(.scenario_exprs(req, sc), list(call("<-", o, pred)))
     },
     tolerance = {
-      sc <- .sym(paste0(out, "_scenarios"))
+      sc <- .scenario_sym(req, out)
       ta <- list(f, newdata = sc, content = req$content,
                  confidence = req$confidence, side = req$side,
                  scope = req$scope, method = req$tol_method)
-      list(call("<-", sc, compile_data_frame(req$scenarios)),
-           call("<-", o, as.call(c(quote(flexCountReg::tolerance_interval),
-                                   ta))))
+      c(.scenario_exprs(req, sc),
+        list(call("<-", o, as.call(c(quote(flexCountReg::tolerance_interval),
+                                     ta)))))
     },
     compare = {
       fl <- as.call(c(.sym("list"), stats::setNames(
@@ -261,7 +270,9 @@ session_script <- function(log, versions = fcr_versions()) {
                                  collapse = ", ")),
     "", "library(flexCountReg)", "")
   body <- unlist(lapply(log, function(e) {
-    c(paste0("# ---- ", e$title, " ----"),
+    # A title is a one-line comment, whatever it contains
+    title <- gsub("[[:space:]]+", " ", e$title)
+    c(paste0("# ---- ", title, " ----"),
       vapply(e$display, .deparse, character(1)), "")
   }))
   paste(c(hdr, body), collapse = "\n")

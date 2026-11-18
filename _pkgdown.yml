@@ -111,3 +111,8 @@ reference:
   - washington_roads
   - abalone_rings
   - stream_salamanders
+
+# Do not look up CRAN release dates for the news page: the lookup contacts
+# crandb.r-pkg.org, and a timeout there fails the whole site build.
+news:
+  cran_dates: false

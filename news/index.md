@@ -419,6 +419,11 @@
 
 Changed results are marked **(changed)**.
 
+- The underreporting identification check also warns when standard
+  errors are not available because the Hessian is singular (a flat
+  likelihood ridge). Before, it returned silently in that case, so
+  whether a weakly identified model warned depended on the platform’s
+  floating point.
 - **Weights for every estimator.**
   [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
   [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md),

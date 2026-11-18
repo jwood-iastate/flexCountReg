@@ -176,17 +176,31 @@ results <- do.call(rbind, lapply(split(scenarios, scenarios$id),
 results <- merge(scenarios[c("id", "family", "n")], results,
                  by.x = "id", by.y = "scenario")
 head(results)
-#>   id  family   n rep procedure  estimate         se status note truth
-#> 1  1 POISSON 100   1   POISSON 0.4112948 0.07481077     ok        0.4
-#> 2  1 POISSON 100   1       NB2 0.4113006 0.07481521     ok        0.4
-#> 3  1 POISSON 100   2   POISSON 0.5252295 0.07525128     ok        0.4
-#> 4  1 POISSON 100   2       NB2 0.5252188 0.07525526     ok        0.4
-#> 5  1 POISSON 100   3   POISSON 0.5619560 0.06897158     ok        0.4
-#> 6  1 POISSON 100   3       NB2 0.5619552 0.06897677     ok        0.4
+#>   id  family   n rep procedure  estimate         se  status
+#> 1  1 POISSON 100   1   POISSON 0.4112948 0.07481077      ok
+#> 2  1 POISSON 100   1       NB2 0.4113006 0.07481521      ok
+#> 3  1 POISSON 100   2   POISSON 0.5252295 0.07525128      ok
+#> 4  1 POISSON 100   2       NB2 0.5252188 0.07525494 warning
+#> 5  1 POISSON 100   3   POISSON 0.5619560 0.06897158      ok
+#> 6  1 POISSON 100   3       NB2 0.5619552 0.06897677      ok
+#>                                                                                                                                                                                 note
+#> 1                                                                                                                                                                                   
+#> 2                                                                                                                                                                                   
+#> 3                                                                                                                                                                                   
+#> 4 The Hessian is not negative definite at the estimates, so the standard errors of ln(alpha) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.
+#> 5                                                                                                                                                                                   
+#> 6                                                                                                                                                                                   
+#>   truth
+#> 1   0.4
+#> 2   0.4
+#> 3   0.4
+#> 4   0.4
+#> 5   0.4
+#> 6   0.4
 table(results$procedure, results$status)
 #>          
 #>            ok warning
-#>   NB2     387      13
+#>   NB2     388      12
 #>   POISSON 400       0
 ```
 
@@ -265,7 +279,7 @@ With 100 replicates, a coverage estimate near 95% has an MCSE of about
 2.2 percentage points, too large to distinguish 93% from 95%.
 Differences smaller than about two MCSEs are not evidence of anything.
 
-13 of the 800 fits gave a warning. These are NB2 fits to Poisson data,
+12 of the 800 fits gave a warning. These are NB2 fits to Poisson data,
 where the dispersion approaches its boundary (see
 [`vignette("numerical-reliability", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.md)).
 They are kept in the summaries, because the coefficient of $`x`$ is

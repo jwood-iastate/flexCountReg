@@ -224,17 +224,31 @@ own:</p>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/merge.html" class="external-link">merge</a></span><span class="op">(</span><span class="va">scenarios</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"id"</span>, <span class="st">"family"</span>, <span class="st">"n"</span><span class="op">)</span><span class="op">]</span>, <span class="va">results</span>,</span>
 <span>                 by.x <span class="op">=</span> <span class="st">"id"</span>, by.y <span class="op">=</span> <span class="st">"scenario"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   id  family   n rep procedure  estimate         se status note truth</span></span>
-<span><span class="co">#&gt; 1  1 POISSON 100   1   POISSON 0.4112948 0.07481077     ok        0.4</span></span>
-<span><span class="co">#&gt; 2  1 POISSON 100   1       NB2 0.4113006 0.07481521     ok        0.4</span></span>
-<span><span class="co">#&gt; 3  1 POISSON 100   2   POISSON 0.5252295 0.07525128     ok        0.4</span></span>
-<span><span class="co">#&gt; 4  1 POISSON 100   2       NB2 0.5252188 0.07525526     ok        0.4</span></span>
-<span><span class="co">#&gt; 5  1 POISSON 100   3   POISSON 0.5619560 0.06897158     ok        0.4</span></span>
-<span><span class="co">#&gt; 6  1 POISSON 100   3       NB2 0.5619552 0.06897677     ok        0.4</span></span>
+<span><span class="co">#&gt;   id  family   n rep procedure  estimate         se  status</span></span>
+<span><span class="co">#&gt; 1  1 POISSON 100   1   POISSON 0.4112948 0.07481077      ok</span></span>
+<span><span class="co">#&gt; 2  1 POISSON 100   1       NB2 0.4113006 0.07481521      ok</span></span>
+<span><span class="co">#&gt; 3  1 POISSON 100   2   POISSON 0.5252295 0.07525128      ok</span></span>
+<span><span class="co">#&gt; 4  1 POISSON 100   2       NB2 0.5252188 0.07525494 warning</span></span>
+<span><span class="co">#&gt; 5  1 POISSON 100   3   POISSON 0.5619560 0.06897158      ok</span></span>
+<span><span class="co">#&gt; 6  1 POISSON 100   3       NB2 0.5619552 0.06897677      ok</span></span>
+<span><span class="co">#&gt;                                                                                                                                                                                 note</span></span>
+<span><span class="co">#&gt; 1                                                                                                                                                                                   </span></span>
+<span><span class="co">#&gt; 2                                                                                                                                                                                   </span></span>
+<span><span class="co">#&gt; 3                                                                                                                                                                                   </span></span>
+<span><span class="co">#&gt; 4 The Hessian is not negative definite at the estimates, so the standard errors of ln(alpha) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.</span></span>
+<span><span class="co">#&gt; 5                                                                                                                                                                                   </span></span>
+<span><span class="co">#&gt; 6                                                                                                                                                                                   </span></span>
+<span><span class="co">#&gt;   truth</span></span>
+<span><span class="co">#&gt; 1   0.4</span></span>
+<span><span class="co">#&gt; 2   0.4</span></span>
+<span><span class="co">#&gt; 3   0.4</span></span>
+<span><span class="co">#&gt; 4   0.4</span></span>
+<span><span class="co">#&gt; 5   0.4</span></span>
+<span><span class="co">#&gt; 6   0.4</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">results</span><span class="op">$</span><span class="va">procedure</span>, <span class="va">results</span><span class="op">$</span><span class="va">status</span><span class="op">)</span></span>
 <span><span class="co">#&gt;          </span></span>
 <span><span class="co">#&gt;            ok warning</span></span>
-<span><span class="co">#&gt;   NB2     387      13</span></span>
+<span><span class="co">#&gt;   NB2     388      12</span></span>
 <span><span class="co">#&gt;   POISSON 400       0</span></span></code></pre></div>
 <p>The result is a tidy table with one row per scenario, replicate and
 procedure. Notes on warnings are kept with the row they belong to.</p>
@@ -309,7 +323,7 @@ under NB2 data, but its standard errors are not.</p>
 about 2.2 percentage points, too large to distinguish 93% from 95%.
 Differences smaller than about two MCSEs are not evidence of
 anything.</p>
-<p>13 of the 800 fits gave a warning. These are NB2 fits to Poisson
+<p>12 of the 800 fits gave a warning. These are NB2 fits to Poisson
 data, where the dispersion approaches its boundary (see
 <code><a href="../articles/numerical-reliability.html">vignette("numerical-reliability", package = "flexCountReg")</a></code>).
 They are kept in the summaries, because the coefficient of

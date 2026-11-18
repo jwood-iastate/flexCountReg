@@ -164,7 +164,8 @@
 <div class="section level3">
 <h3 id="corrections-from-the-follow-up-review-0-1-2">Corrections from the follow-up review<a class="anchor" aria-label="anchor" href="#corrections-from-the-follow-up-review-0-1-2"></a></h3>
 <p>Changed results are marked <strong>(changed)</strong>.</p>
-<ul><li>
+<ul><li>The underreporting identification check also warns when standard errors are not available because the Hessian is singular (a flat likelihood ridge). Before, it returned silently in that case, so whether a weakly identified model warned depended on the platform’s floating point.</li>
+<li>
 <strong>Weights for every estimator.</strong> <code><a href="../reference/renb.html">renb()</a></code>, <code><a href="../reference/repois.html">repois()</a></code>, <code><a href="../reference/poisLindRE.html">poisLind.re()</a></code> and <code><a href="../reference/negmultinom.html">negmultinom()</a></code> accept <code>weights</code>, as <code><a href="../reference/countreg.html">countreg()</a></code> and <code><a href="../reference/countreg.rp.html">countreg.rp()</a></code> do. In panel models these are frequency weights of the panels (constant within a panel): a panel with weight w counts as w independent panels in the log-likelihood, the robust covariance, BIC and the bootstrap. Fits with weights equal fits to the expanded panels.</li>
 <li>
 <strong>Frequency-weight bootstrap (changed).</strong> With <code>weights</code>, bootstrap standard errors (coefficients and <code><a href="../reference/margEffTable.html">margEffTable()</a></code>) now draw new frequencies from Multinomial(sum(w), w / sum(w)) and refit with them in place of the weights. This equals the bootstrap of the expanded observations (or panels). Before, rows were resampled with their original weights, which is a different and much more variable sampling scheme. Bootstrap standard errors need whole-number weights; use <code>stderr = "robust"</code> for other weights.</li>

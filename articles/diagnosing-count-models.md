@@ -250,14 +250,44 @@ application.
 
 ## CURE plots: cumulative residuals along a covariate
 
-A CURE plot (Hauer and Bamfo, 1997) accumulates the residuals after
-sorting the units by a covariate. When the mean is right the curve
-wanders around zero; a systematic arch shows that the model over- or
-under-predicts over a range of the covariate.
+A CURE plot (Hauer and Bamfo, 1997) sorts the units by a covariate and
+plots the running sum of the residuals (observed minus fitted). When the
+mean is right for every value of the covariate, the curve wanders around
+zero.
 [`cureplot()`](https://jwood-iastate.github.io/flexCountReg/reference/cureplot.md)
 uses the cureplots package; its bounds (about two standard deviations of
 the cumulative sum) assume independent residuals, so they are a rough
 guide rather than a calibrated test.
+
+### Reading the trends
+
+The slope of the curve over a range of the covariate is the average
+residual there, so the direction of each stretch says how the model
+errs:
+
+- **Upward trend:** observed counts exceed the predictions, so the model
+  **under-predicts** over that range.
+- **Downward trend:** the model **over-predicts** over that range.
+- **No trend (a flat curve around zero):** the mean is right there.
+
+Where the trends start and stop points to what the model is missing:
+
+| CURE pattern | Likely cause | Possible change |
+|----|----|----|
+| A smooth arch (down then up, or up then down) over the whole range | wrong functional form | polynomial, spline or transformed term |
+| A change of direction at one value of the covariate | a threshold effect: missing indicator | indicator (or piecewise) term for the threshold |
+| Different trends in different subgroups | missing interaction | interaction between the covariate and the subgroup |
+| A trend along a variable that is not in the model | omitted variable | add it, or a function of it |
+| A trend along the fitted values | wrong overall functional form or link | revisit the mean model |
+
+Sharp or long trends matter more than short wiggles: the curve is a sum
+of noisy residuals, so it drifts by chance too. The bounds help to judge
+this.
+
+### Functional form: an arch
+
+For the curved mean simulated above, the linear model leaves an arch,
+and the quadratic model removes it:
 
 ``` r
 
@@ -281,8 +311,156 @@ models.](diagnosing-count-models_files/figure-html/cure-2.png)
 CURE plots for the curved mean: linear (top) and quadratic (bottom)
 models.
 
-The linear model’s cumulative residuals leave the bounds; the quadratic
-model’s stay within them.
+The linear model’s cumulative residuals rise, fall and rise again and
+leave the bounds: it under-predicts at both ends of `x` and
+over-predicts in the middle, the signature of a missing $`x^2`$ term.
+The quadratic model’s curve stays within the bounds.
+
+### A missing indicator: a change of direction at a threshold
+
+Here the counts jump when `x` exceeds 0.5, but the model has only a
+linear term in `x`:
+
+``` r
+
+set.seed(102)
+step_dat <- data.frame(x = runif(n, -1.5, 1.5))
+step_dat$above <- as.numeric(step_dat$x > 0.5)
+step_dat$y <- rpois(n, exp(0.4 + 0.5 * step_dat$x + 0.7 * step_dat$above))
+no_ind <- countreg(y ~ x, data = step_dat, family = "POISSON",
+                   method = "BFGS")
+with_ind <- countreg(y ~ x + above, data = step_dat, family = "POISSON",
+                     method = "BFGS")
+```
+
+``` r
+
+cureplot(no_ind, indvar = "x")
+```
+
+![CURE plots along x without (top) and with (bottom) the indicator for x
+\> 0.5.](diagnosing-count-models_files/figure-html/cure-step-1.png)
+
+CURE plots along x without (top) and with (bottom) the indicator for x
+\> 0.5.
+
+``` r
+
+cureplot(with_ind, indvar = "x")
+```
+
+![CURE plots along x without (top) and with (bottom) the indicator for x
+\> 0.5.](diagnosing-count-models_files/figure-html/cure-step-2.png)
+
+CURE plots along x without (top) and with (bottom) the indicator for x
+\> 0.5.
+
+Without the indicator, the curve falls until about `x = 0.5` and then
+climbs steeply: the linear term is a compromise that over-predicts below
+the threshold and under-predicts above it. The average residual in each
+range, which is the slope of the curve there, shows the same thing in
+numbers:
+
+``` r
+
+seg_mean <- function(fit, data, v, breaks) {
+  r <- data$y - predict(fit, newdata = data)
+  round(tapply(r, cut(data[[v]], breaks, include.lowest = TRUE), mean), 3)
+}
+rbind(without_indicator = seg_mean(no_ind, step_dat, "x", c(-1.5, 0.5, 1.5)),
+      with_indicator = seg_mean(with_ind, step_dat, "x", c(-1.5, 0.5, 1.5)))
+#>                   [-1.5,0.5] (0.5,1.5]
+#> without_indicator     -0.162     0.337
+#> with_indicator         0.000     0.000
+```
+
+A change of direction at a particular value is a cue to try an indicator
+for that value (here `x > 0.5`); after adding it, the curve has no
+trend.
+
+### A real example: crashes and traffic volume
+
+The same reasoning applies to the Washington road segments. A negative
+binomial model for total crashes with log traffic volume (`lnaadt`), log
+length and the speed-limit indicator:
+
+``` r
+
+data("washington_roads")
+wa <- washington_roads
+wa$AADT10kplus <- as.numeric(wa$AADT > 10000)
+nb_base <- countreg(Total_crashes ~ lnaadt + lnlength + speed50, data = wa,
+                    family = "NB2", method = "BFGS")
+```
+
+``` r
+
+cureplot(nb_base, indvar = "lnaadt")
+```
+
+![CURE plot along lnaadt for the model without the high-volume
+indicator.](diagnosing-count-models_files/figure-html/cure-wa-base-1.png)
+
+CURE plot along lnaadt for the model without the high-volume indicator.
+
+The curve stays within the bounds up to `lnaadt` of about 8.8, then
+falls steeply below the lower bound until about 9.2 and climbs back
+above it: the model over-predicts crashes on segments just below about
+10,000 vehicles per day ($`\log(10000) \approx 9.21`$) and
+under-predicts them above it. That suggests a threshold in traffic
+volume, so an indicator for segments with more than 10,000 vehicles per
+day (`AADT10kplus`) is added, and, to check whether the effect of volume
+also changes above the threshold, an interaction:
+
+``` r
+
+nb_ind <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
+                     AADT10kplus, data = wa, family = "NB2",
+                   method = "BFGS")
+nb_int <- countreg(Total_crashes ~ lnaadt + lnlength + speed50 +
+                     AADT10kplus + AADT10kplus:lnaadt, data = wa,
+                   family = "NB2", method = "BFGS")
+```
+
+``` r
+
+cureplot(nb_ind, indvar = "lnaadt")
+```
+
+![CURE plot along lnaadt with the high-volume
+indicator.](diagnosing-count-models_files/figure-html/cure-wa-ind-1.png)
+
+CURE plot along lnaadt with the high-volume indicator.
+
+With the indicator, the curve no longer climbs at the high end. The
+average residuals below and above the threshold, and AIC, agree:
+
+``` r
+
+wa_seg <- function(fit) {
+  r <- wa$Total_crashes - predict(fit, newdata = wa)
+  round(tapply(r, cut(wa$lnaadt, c(-Inf, 8.5, log(10000), Inf)), mean), 3)
+}
+cbind(rbind(base = wa_seg(nb_base), indicator = wa_seg(nb_ind),
+            interaction = wa_seg(nb_int)),
+      AIC = round(c(AIC(nb_base), AIC(nb_ind), AIC(nb_int)), 1))
+#>             (-Inf,8.5] (8.5,9.21] (9.21, Inf]    AIC
+#> base             0.008     -0.190       0.807 2179.9
+#> indicator        0.000      0.003      -0.064 2145.2
+#> interaction     -0.001      0.006      -0.061 2146.5
+```
+
+The indicator removes most of the under-prediction above 10,000 vehicles
+per day and lowers AIC. Adding the interaction changes little and raises
+AIC, so for these data the threshold shifts the crash level rather than
+the effect of volume. Only 83 segments are above the threshold, so the
+high end of the curve rests on few segments; held-out evidence (next
+section) is a good check before settling on the change.
+
+A CURE plot can also be drawn along a variable that is not yet in the
+model (any column of `data`), which shows whether that variable explains
+part of what the model misses, and along the fitted values (the default,
+without `indvar`), which checks the mean model as a whole.
 
 ## Deciding on a change: use predictive evidence
 
@@ -321,7 +499,9 @@ cross-validated splits are more reliable.
 | Pattern | Possible explanations | Follow-up |
 |----|----|----|
 | Pearson dispersion well above 1 | missing mean terms; overdispersion; omitted grouping | look for trends in residuals before adding dispersion |
-| Trend in residuals against a covariate or CURE plot arch | wrong functional form or missing interaction | add terms (polynomial, spline, interaction); recheck |
+| Trend in residuals against a covariate, or a CURE plot arch | wrong functional form | add terms (polynomial, spline, transformation); recheck |
+| CURE plot changes direction at one covariate value | threshold effect | indicator or piecewise term; recheck |
+| CURE trends differ between subgroups | missing interaction | interaction term; recheck |
 | Too few zeros and large counts expected (rootogram, calibration) | variance too small | dispersion-flexible family; compare on held-out data |
 | Too many zeros observed, rest fits | possible zero process | zero-inflated or hurdle model (`zero_formula`); check other explanations first |
 | Quantile residuals beyond $`\pm 2`$ more than about 5% of the time | variance or tail misfit | rootogram and calibration to locate it |

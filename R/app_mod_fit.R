@@ -71,7 +71,7 @@ mod_fit_server <- function(id, state) {
       shiny::updateSelectInput(session, "cancel_id",
                                choices = label_choices(run))
     })
-    shiny::observeEvent(input$cancel, {
+    shiny::observeEvent(input$cancel, app_try(what = "Canceling", {
       id <- input$cancel_id
       if (!nzchar(id %||% "")) return()
       jl <- state$jobs
@@ -79,13 +79,17 @@ mod_fit_server <- function(id, state) {
       state$jobs <- jl
       shiny::showNotification(paste("Canceled", jl[[id]]$label),
                               type = "warning")
-    })
+    }))
     output$jobs <- shiny::renderTable({
       jobs <- state$jobs
       if (!length(jobs)) return(data.frame(job = "none yet"))
       data.frame(
         job = vapply(jobs, `[[`, "", "label"),
-        status = vapply(jobs, `[[`, "", "status"),
+        status = vapply(jobs, function(j) {
+          if (identical(j$status, "failed")) {
+            paste("failed:", j$result$error %||% "")
+          } else j$status
+        }, ""),
         seconds = vapply(jobs, function(j) {
           end <- j$finished %||% Sys.time()
           round(as.numeric(difftime(end, j$started, units = "secs")), 1)
@@ -94,12 +98,15 @@ mod_fit_server <- function(id, state) {
 
     bundle <- shiny::reactive({
       shiny::req(state$active)
-      state$fits[[state$active]]
+      b <- state$fits[[state$active]]
+      shiny::req(b)
+      b$fit <- app_fit_object(state, b$id)
+      b
     })
     output$summary <- shiny::renderPrint({
       b <- bundle()
-      cat("Fit:", b$label, "| request", b$id, "| data:", b$data_name, "\n\n")
-      print(summary(b$fit))
+      cat(b$label, "| object", b$fit_name, "| data:", b$data_name, "\n\n")
+      print(get(paste0(b$fit_name, "_summary"), envir = state$env))
     })
     output$coefs <- DT::renderDT({
       td <- flexCountReg::tidy(bundle()$fit, conf.int = TRUE)

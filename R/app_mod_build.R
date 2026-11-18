@@ -6,14 +6,27 @@ mod_build_ui <- function(id) {
   ft <- fcr_family_table()
   fam_choices <- stats::setNames(ft$id, paste0(ft$name, " (", ft$id, ")"))
   none <- c("(none)" = "")
+  js_in <- function(ids) {
+    paste0("['", paste(ids, collapse = "','"), "'].indexOf(input.estimator) >= 0")
+  }
+  family_models <- .app_estimators$id[.app_estimators$uses_family]
+  mixture_models <- c("countreg_mix", "countreg_lc")
+  panel_models <- .app_estimators$id[.app_estimators$group != "none"]
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
-      width = 360,
-      shiny::selectInput(ns("estimator"), "Model", .app_estimators),
-      shiny::selectizeInput(ns("family"), "Count distribution (family)",
-                            fam_choices, selected = "NB2"),
+      width = 380,
+      shiny::selectInput(ns("estimator"), "Model", .app_estimator_choices()),
+      shiny::uiOutput(ns("estimator_help")),
       shiny::conditionalPanel(
-        "input.estimator != 'countreg'", ns = ns,
+        js_in(family_models), ns = ns,
+        shiny::selectizeInput(ns("family"), "Count distribution (family)",
+                              fam_choices, selected = "NB2")),
+      shiny::conditionalPanel(
+        "input.estimator == 'negmultinom'", ns = ns,
+        shiny::selectInput(ns("nm_family"), "Negative multinomial form",
+                           c("NM2" = "NM2", "NM1" = "NM1", "NM-P" = "NMP"))),
+      shiny::conditionalPanel(
+        js_in(mixture_models), ns = ns,
         shiny::numericInput(ns("components"), "Number of classes", 2,
                             min = 1, max = 6, step = 1),
         shiny::selectizeInput(ns("family_each"),
@@ -33,11 +46,30 @@ mod_build_ui <- function(id) {
       shiny::selectInput(ns("log_offset"),
                          "Offset already on the log scale", none),
       shiny::selectInput(ns("weights"), "Frequency weights", none),
-      help_text("Frequency weights count each row that many times; they ",
-                "are not survey weights."),
+      help_text("Frequency weights count each row (or panel) that many ",
+                "times; they are not survey weights."),
+      shiny::conditionalPanel(
+        js_in(panel_models), ns = ns,
+        shiny::selectInput(ns("group"), "Panel identifier", none),
+        shiny::uiOutput(ns("group_help"))),
       shiny::uiOutput(ns("dis1_ui")),
       shiny::conditionalPanel(
-        "input.estimator != 'countreg'", ns = ns,
+        "input.estimator == 'countreg_rp'", ns = ns,
+        shiny::selectizeInput(ns("rpar"), "Random parameters", character(),
+                              multiple = TRUE),
+        help_text("Predictors whose coefficients vary across observations ",
+                  "(or panels). They are taken out of the fixed part."),
+        shiny::checkboxInput(ns("rpar_intercept"), "Random intercept"),
+        shiny::selectInput(ns("rpar_dist"), "Distribution of the random parameters",
+                           c("Normal" = "n", "Lognormal" = "ln",
+                             "Triangular" = "t", "Uniform" = "u",
+                             "Gamma" = "g")),
+        shiny::checkboxInput(ns("correlated"),
+                             "Correlated random parameters (normal only)"),
+        shiny::numericInput(ns("ndraws"), "Halton draws", 500, min = 10,
+                            step = 50)),
+      shiny::conditionalPanel(
+        js_in(mixture_models), ns = ns,
         shiny::selectizeInput(ns("mixing"), "Membership predictors",
                               character(), multiple = TRUE),
         help_text("Variables that change the class probabilities ",
@@ -47,16 +79,15 @@ mod_build_ui <- function(id) {
                               "Same coefficient in every class",
                               character(), multiple = TRUE),
         shiny::checkboxInput(ns("shared_dis1"),
-                             "Same distribution parameter in every class"),
-        shiny::selectInput(ns("group"), "Panel identifier (one class per panel)",
-                           none)),
+                             "Same distribution parameter in every class")),
       bslib::accordion(
         open = FALSE,
         bslib::accordion_panel(
           "Advanced settings",
           shiny::numericInput(ns("n_starts"), "Starts (mixture models)", 10,
                               min = 1, step = 1),
-          shiny::numericInput(ns("seed"), "Random seed", 1, step = 1),
+          shiny::numericInput(ns("seed"), "Random seed (mixture models)", 1,
+                              step = 1),
           shiny::selectInput(ns("method"), "Optimizer",
                              c("BFGS", "NR", "BHHH", "NM", "CG")),
           shiny::numericInput(ns("max_iters"), "Iteration limit", 1000,
@@ -64,57 +95,97 @@ mod_build_ui <- function(id) {
           shiny::selectInput(ns("stderr"), "Standard errors",
                              c("Observed information (Hessian)" = "normal",
                                "Robust (sandwich)" = "robust")))),
-      shiny::textInput(ns("label"), "Fit label", placeholder = "e.g. NB2 base"),
+      shiny::textInput(ns("label"), "Fit label (optional)",
+                       placeholder = "e.g. NB2 base"),
       shiny::actionButton(ns("estimate"), "Estimate model",
                           class = "btn-primary")),
-    bslib::card(bslib::card_header("Model"),
+    bslib::card(bslib::card_header("Model"), fill = FALSE,
                 shiny::uiOutput(ns("summary"))),
-    bslib::card(bslib::card_header("Checks before fitting"),
+    bslib::card(bslib::card_header("Checks before fitting"), fill = FALSE,
                 shiny::uiOutput(ns("checks"))))
 }
 
 mod_build_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
     none <- c("(none)" = "")
-    # New data: reset the column choices
-    shiny::observeEvent(state$data_meta, {
+    last_object <- NULL
+    # New data: reset the column choices. A new variable in the same dataset
+    # only extends the choices and keeps the current selections.
+    shiny::observeEvent(state$data_meta, app_try(what = "Updating choices", {
       d <- state$data
       cols <- names(d)
       cl <- column_summary(d)
       counts <- cl$column[cl$count_like]
       m <- state$data_meta
-      resp <- if (!is.null(m$response) && m$response %in% cols) m$response else
-        counts[1]
+      same <- identical(m$object, last_object)
+      last_object <<- m$object
+      keep <- function(v, default) {
+        if (same) intersect(v %||% character(), cols) else default
+      }
+      resp <- if (same && isTRUE(input$response %in% cols)) input$response else
+        if (!is.null(m$response) && m$response %in% cols) m$response else
+          counts[1]
       shiny::updateSelectInput(session, "response", choices = cols,
                                selected = resp)
-      for (nm in c("predictors", "factors", "mixing", "shared_mean")) {
+      for (nm in c("predictors", "factors", "mixing", "rpar")) {
         shiny::updateSelectizeInput(session, nm, choices = cols,
-                                    selected = character())
+                                    selected = keep(input[[nm]], character()))
       }
       num <- cl$column[cl$type %in% c("numeric", "integer")]
       for (nm in c("exposure", "log_offset", "weights")) {
         shiny::updateSelectInput(session, nm, choices = c(none, num),
-                                 selected = "")
+                                 selected = keep(input[[nm]], ""))
       }
+      g <- if (!is.null(m$group) && !is.na(m$group) && m$group %in% cols)
+        m$group else ""
       shiny::updateSelectInput(session, "group", choices = c(none, cols),
-                               selected = "")
-    })
-    # Shared terms can only be chosen among the predictors
+                               selected = if (same) input$group %||% "" else g)
+    }))
+    # Shared terms and random parameters are chosen among the predictors
     shiny::observeEvent(input$predictors, ignoreNULL = FALSE, {
       shiny::updateSelectizeInput(
         session, "shared_mean",
         choices = c("(Intercept)", input$predictors),
         selected = intersect(input$shared_mean,
                              c("(Intercept)", input$predictors)))
+      shiny::updateSelectizeInput(
+        session, "rpar", choices = input$predictors,
+        selected = intersect(input$rpar, input$predictors))
     })
 
     families <- shiny::reactive({
-      if (input$estimator != "countreg" && length(input$family_each)) {
+      if (.app_is_mixture(input$estimator) && length(input$family_each)) {
         input$family_each
       } else input$family
     })
     caps <- shiny::reactive(fcr_capabilities(input$estimator, families()))
 
+    output$estimator_help <- shiny::renderUI({
+      txt <- switch(input$estimator,
+        countreg = "Cross-sectional regression with any count family.",
+        countreg_rp = paste(
+          "Coefficients that vary randomly across observations (or panels),",
+          "estimated by maximum simulated likelihood."),
+        renb = , poisLind.re = , repois = paste(
+          "A random effect shared by the rows of each panel."),
+        negmultinom = paste(
+          "Panel model with a gamma random effect shared within each panel",
+          "(negative multinomial)."),
+        countreg_mix = paste(
+          "A mixture of count distributions or regressions; components",
+          "are a flexible description of the outcome."),
+        countreg_lc = paste(
+          "The same mixture model, read as latent classes of units."))
+      help_text(txt)
+    })
+    output$group_help <- shiny::renderUI({
+      g <- .app_estimator(input$estimator)$group
+      help_text(if (identical(g, "required"))
+        "Required: the column that identifies the panels." else
+          if (.app_is_mixture(input$estimator))
+            "Optional: one class per panel." else
+              "Optional: each panel shares one draw of the random parameters.")
+    })
     output$dis1_ui <- shiny::renderUI({
       cp <- caps()
       if (!isTRUE(cp$dis1)) return(NULL)
@@ -131,8 +202,7 @@ mod_build_server <- function(id, state) {
     shiny::observeEvent(caps(), {
       if (!isTRUE(caps()$dis1) && length(input$dis1)) {
         shiny::showNotification(
-          paste("The", toString(unique(families())), "family has no",
-                "distribution parameter; its predictors were cleared."),
+          "This model has no distribution parameter to model; its predictors were cleared.",
           type = "warning")
       }
     })
@@ -140,48 +210,65 @@ mod_build_server <- function(id, state) {
     spec <- shiny::reactive({
       shiny::req(state$data_meta)
       opt <- function(v) if (is.null(v) || !nzchar(v)) NULL else v
+      num <- function(v, default) if (is.null(v) || is.na(v)) default else v
       m <- state$data_meta
+      est <- input$estimator
+      mixture <- .app_is_mixture(est)
+      grp <- if (.app_estimator(est)$group != "none") opt(input$group)
       app_spec(
-        data = list(source = m$source, name = m$name),
+        data = list(source = m$source, name = m$name, object = m$object),
         recipe = list(response = opt(input$response),
                       predictors = input$predictors %||% character(),
                       factors = input$factors %||% character(),
                       exposure = opt(input$exposure),
                       log_offset = opt(input$log_offset),
-                      weights = opt(input$weights),
-                      group = if (input$estimator != "countreg")
-                        opt(input$group)),
+                      weights = opt(input$weights), group = grp),
         model = list(
-          estimator = input$estimator, family = families(),
-          components = if (input$estimator != "countreg" &&
-                           length(input$family_each))
-            length(input$family_each) else input$components,
+          estimator = est,
+          family = if (caps()$uses_family) families() else "NB2",
+          components = if (mixture && length(input$family_each))
+            length(input$family_each) else num(input$components, 2),
           dis1 = if (isTRUE(caps()$dis1)) input$dis1 %||% character() else
             character(),
-          mixing = if (input$estimator != "countreg")
-            input$mixing %||% character() else character(),
-          shared_mean = if (input$estimator != "countreg")
-            input$shared_mean %||% character() else character(),
-          shared_dis1 = input$estimator != "countreg" &&
-            isTRUE(input$shared_dis1) && isTRUE(caps()$dis1),
-          n_starts = input$n_starts, seed = input$seed,
-          method = input$method, max_iters = input$max_iters,
+          mixing = if (mixture) input$mixing %||% character() else
+            character(),
+          shared_mean = if (mixture) input$shared_mean %||% character() else
+            character(),
+          shared_dis1 = mixture && isTRUE(input$shared_dis1) &&
+            isTRUE(caps()$dis1),
+          rpar = if (est == "countreg_rp") input$rpar %||% character() else
+            character(),
+          rpar_intercept = est == "countreg_rp" &&
+            isTRUE(input$rpar_intercept),
+          rpar_dist = input$rpar_dist %||% "n",
+          correlated = est == "countreg_rp" && isTRUE(input$correlated),
+          ndraws = num(input$ndraws, 500), nm_family = input$nm_family %||%
+            "NM2",
+          n_starts = num(input$n_starts, 10), seed = num(input$seed, 1),
+          method = input$method, max_iters = num(input$max_iters, 1000),
           stderr = input$stderr))
     })
-    shiny::observe(state$spec <- spec())
+    shiny::observe(state$spec <- tryCatch(spec(), error = function(e) NULL))
 
     output$summary <- shiny::renderUI({
       s <- spec()
       ft <- fcr_family_table()
       fam <- ft[match(s$model$family, ft$id), ]
       f <- tryCatch(paste(deparse(compile_formula(s)), collapse = " "),
-                    error = function(e) "(incomplete)")
+                    error = function(e) "(choose a response)")
       shiny::tagList(
+        shiny::p(shiny::strong("Model: "),
+                 .app_estimator(s$model$estimator)$label),
         shiny::p(shiny::strong("Formula: "), shiny::code(f)),
-        shiny::p(shiny::strong("Family: "),
-                 paste(unique(paste0(fam$name, " (", fam$id, ")")),
-                       collapse = "; ")),
-        if (any(!is.na(fam$param1))) shiny::p(
+        if (s$model$estimator == "countreg_rp") shiny::p(
+          shiny::strong("Random parameters: "),
+          toString(c(if (isTRUE(s$model$rpar_intercept)) "(Intercept)",
+                     s$model$rpar))),
+        if (caps()$uses_family) shiny::p(
+          shiny::strong("Family: "),
+          paste(unique(paste0(fam$name, " (", fam$id, ")")),
+                collapse = "; ")),
+        if (caps()$uses_family && any(!is.na(fam$param1))) shiny::p(
           "Distribution parameter(s): ",
           toString(unique(stats::na.omit(c(fam$param1, fam$param2)))),
           ". Labels follow ", shiny::code("?flexCountReg::count_families"),
@@ -217,23 +304,18 @@ mod_build_server <- function(id, state) {
       s <- spec()
       p <- validate_spec(s, state$data)
       if (length(p)) {
-        shiny::showNotification("Fix the problems listed under 'Checks' first.",
-                                type = "error")
+        shiny::showModal(shiny::modalDialog(
+          title = "The model cannot be estimated yet",
+          shiny::tags$ul(lapply(p, shiny::tags$li)), easyClose = TRUE))
         return()
       }
-      n <- length(state$jobs) + 1
-      label <- if (nzchar(input$label)) input$label else
-        paste0("Fit ", n, ": ", paste(unique(s$model$family), collapse = "+"),
-               if (s$model$estimator != "countreg")
-                 paste0(", K = ", s$model$components))
-      job <- start_fit_job(s, data = if (s$data$source != "bundled")
-        state$data, dir = state$session_dir, label = label)
-      jl <- state$jobs
-      jl[[job$id]] <- job
-      state$jobs <- jl
-      state$last_submitted <- job$id
-      shiny::showNotification(paste("Estimating", label, "..."),
+      job <- app_try(app_submit_fit(state, s, input$label),
+                     "Starting the fit")
+      if (is.null(job)) return()
+      shiny::updateTextInput(session, "label", value = "")
+      shiny::showNotification(paste("Estimating", job$label, "..."),
                               type = "message")
+      app_go_to(session, "Fit")
     })
   })
 }

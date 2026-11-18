@@ -1,17 +1,17 @@
-# Background estimation. Each fit runs in its own R process (callr::r_bg),
-# from an immutable request saved in a session-specific directory. The
-# worker loads the installed flexCountReg, evaluates the compiled
-# expressions and saves the fit bundle; the app polls the process, never
-# blocking the session. Results carry their request id, so a slow earlier
-# job cannot overwrite a newer one.
+# Background estimation. Each fit runs in its own R process (callr::r_bg)
+# from an immutable request saved in the session directory: the data object
+# of the session and the compiled fit expressions. The worker evaluates the
+# expressions and saves the fitted objects; the app polls the process and
+# never blocks. Results carry their request id, so a slow earlier job never
+# replaces a newer one.
 
 .new_request_id <- function() {
   paste0(format(Sys.time(), "%Y%m%d-%H%M%S"), "-",
          paste(sample(c(letters, 0:9), 6, replace = TRUE), collapse = ""))
 }
 
-# The worker (runs in the child process; uses only base R and
-# flexCountReg, so it does not depend on the app's global state)
+# The worker (runs in the child process; base R and flexCountReg only, so it
+# does not depend on the app's state)
 .fit_worker <- function(request_path, result_path) {
   req <- readRDS(request_path)
   warnings <- character(0)
@@ -19,10 +19,9 @@
   t0 <- proc.time()[["elapsed"]]
   suppressPackageStartupMessages(requireNamespace("flexCountReg"))
   env <- new.env(parent = globalenv())
-  if (!is.null(req$data_file)) assign("data_file", req$data_file, envir = env)
+  for (nm in names(req$objects)) assign(nm, req$objects[[nm]], envir = env)
   status <- "completed"
   err <- NULL
-  set.seed(if (is.null(req$seed)) 1L else req$seed)
   withCallingHandlers(
     tryCatch(for (e in req$exprs) eval(e, env),
              error = function(e) {
@@ -37,10 +36,9 @@
       messages <<- c(messages, trimws(conditionMessage(m)))
       invokeRestart("muffleMessage")
     })
-  fit <- if (exists("fit", envir = env, inherits = FALSE)) env$fit
-  # The data are already kept in the app; drop them from the stored fit
-  # only when asked (they are needed for fitted values and diagnostics)
-  saveRDS(list(id = req$id, status = status, error = err, fit = fit,
+  created <- setdiff(ls(env), names(req$objects))
+  saveRDS(list(id = req$id, status = status, error = err,
+               objects = mget(created, envir = env),
                warnings = unique(warnings), messages = unique(messages),
                elapsed = proc.time()[["elapsed"]] - t0,
                versions = c(R = paste(R.version$major, R.version$minor,
@@ -51,23 +49,18 @@
   invisible(status)
 }
 
-# Start a background fit
-#
-start_fit_job <- function(spec, data = NULL, dir = tempfile("fcr-app-"),
+# Start a background fit. `objects` is a named list of the objects the
+# expressions need (the session's data object).
+start_fit_job <- function(spec, fit_name, objects, dir = tempfile("fcr-app-"),
                           label = NULL) {
   dir.create(dir, showWarnings = FALSE, recursive = TRUE)
   id <- .new_request_id()
   jdir <- file.path(dir, id)
   dir.create(jdir)
-  data_file <- NULL
-  if (!identical(spec$data$source, "bundled")) {
-    data_file <- file.path(jdir, "data.csv")
-    utils::write.csv(data, data_file, row.names = FALSE)
-  }
-  a <- compile_analysis(spec)
-  req <- list(id = id, spec = spec, exprs = c(a$prep, a$fit),
-              data_file = data_file, seed = spec$model$seed,
-              label = label %||% id, created = Sys.time())
+  exprs <- compile_fit(spec, fit_name)
+  req <- list(id = id, spec = spec, fit_name = fit_name, exprs = exprs,
+              objects = objects, label = label %||% fit_name,
+              created = Sys.time())
   req_path <- file.path(jdir, "request.rds")
   res_path <- file.path(jdir, "result.rds")
   saveRDS(req, req_path)
@@ -75,11 +68,12 @@ start_fit_job <- function(spec, data = NULL, dir = tempfile("fcr-app-"),
                       libpath = .libPaths(), supervise = TRUE,
                       stdout = file.path(jdir, "stdout.txt"),
                       stderr = file.path(jdir, "stderr.txt"))
-  list(id = id, label = req$label, spec = spec, proc = proc, dir = jdir,
-       result_path = res_path, started = Sys.time(), status = "running")
+  list(id = id, label = req$label, spec = spec, fit_name = fit_name,
+       exprs = exprs, proc = proc, dir = jdir, result_path = res_path,
+       started = Sys.time(), status = "running")
 }
 
-# Status of a background fit
+# Update a job's status ("running", "completed", "failed" or "canceled")
 poll_fit_job <- function(job) {
   if (!identical(job$status, "running")) return(job)
   if (job$proc$is_alive()) return(job)
@@ -107,15 +101,4 @@ cancel_fit_job <- function(job) {
     job$finished <- Sys.time()
   }
   job
-}
-
-# A fit bundle: the immutable record of one completed fit
-make_fit_bundle <- function(job, data_name) {
-  res <- job$result
-  list(id = job$id, label = job$label, spec = job$spec,
-       fit = res$fit, warnings = res$warnings, messages = res$messages,
-       elapsed = res$elapsed, versions = res$versions,
-       data_name = data_name, created = job$finished %||% Sys.time(),
-       script = analysis_script(job$spec, fit_label = job$label,
-                                fit_id = job$id))
 }

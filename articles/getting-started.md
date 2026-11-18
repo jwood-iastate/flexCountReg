@@ -229,7 +229,7 @@ summary(nb2)
 #> countreg(formula = count ~ spray, data = d, family = "NB2", method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 14 
+#> Iterations: 15 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):

@@ -17,9 +17,14 @@
   inspect the summary, coefficients, numerical checks, class sizes and
   starts; diagnose fits (rootogram, randomized quantile residuals, CURE
   plot); compare them (with the reasons when they are not comparable);
-  predict for an editable table of scenarios, with confidence,
-  prediction and tolerance intervals for count regressions; and download
-  the analysis.
+  predict for an editable table of scenarios or for uploaded new data,
+  with confidence, prediction and tolerance intervals for count
+  regressions; and download the analysis. The Diagnose and Predict tabs
+  work on any completed model (a selector, which moves to each new fit),
+  plots can be saved as JPEG files at a chosen size and resolution, and
+  new data get the variables created on the Data tab that the model
+  needs, with the means, standard deviations and categories of the
+  training data.
 - Everything the app runs (data loading, new variables, fits,
   diagnostics, predictions, intervals and comparisons) is compiled into
   R code that calls the package’s functions, evaluated from that code

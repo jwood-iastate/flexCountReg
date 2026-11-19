@@ -36,7 +36,7 @@ The useful questions are:
 | Conditional dispersion | Given the mean model, is the variance larger or smaller than the mean? How does it grow with the mean? | variance ∝ mean: NB1, PIG1, GP1, HERMITE; ∝ mean²: NB2, PIG2, PIG, PLN, NBGE; in between: NBP, PA |
 | Underdispersion | Is the variance *smaller* than the mean? | COM, GP1/GP2, DW, DPO, HYPERPOIS, GAMMACOUNT |
 | Tails | Are very large counts more frequent than a negative binomial allows? | PLN, PIG, SI, GW, PW |
-| Zeros | Are there more zeros than the count distribution predicts *after* fitting it? | zero-inflated or hurdle models (`zero_formula`), PL, PLG, PGE, NBGE |
+| Zeros | Are there more zeros than the count distribution predicts *after* fitting it? | zero-inflated or hurdle models (`zero_formula`), PL, PLG, PLL, PGE, NBGE |
 | Exposure | Were the counts observed over different lengths of time or space? | any family, with an offset (`vignette("data-exposure-weights")`) |
 | Mechanism | Is there a plausible process, e.g. events in clusters or batches, or renewal with regular gaps? | Polya-Aeppli (PA, clusters), HERMITE (pairs), GAMMACOUNT (renewal) |
 

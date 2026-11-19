@@ -1,4 +1,4 @@
-# Family registry for countreg() and countreg.rp().
+# Family registry for countreg() and countreg_rp().
 #
 # Each count family is defined once, here. An entry has:
 #   params    list(<parameter 1 label>, <parameter 2 label>); NULL when the
@@ -21,7 +21,7 @@
 #   cdf       optional function(q, predicted, alpha, sigma, lower.tail):
 #             log P(Y <= q) or log P(Y > q), computed directly.
 #   start_rp  optional starting value(s) of the distribution parameters in
-#             countreg.rp() (default: -2, near the Poisson limit of most
+#             countreg_rp() (default: -2, near the Poisson limit of most
 #             families).
 #
 # A complete family also needs public distribution functions, moments,

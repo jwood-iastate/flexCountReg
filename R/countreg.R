@@ -651,7 +651,7 @@
 #' For DW, DPO, HYPERPOIS and GAMMACOUNT the natural parameter of every
 #' observation is found by solving the mean equation numerically (Newton
 #' iterations in compiled code), so these fits are slower than closed-form
-#' families, especially in \code{\link{countreg.rp}}. Their shape
+#' families, especially in \code{\link{countreg_rp}}. Their shape
 #' parameter is restricted to \eqn{[10^{-6}, 10^6]} and the mean to at most
 #' \eqn{10^9}; outside this numerical domain the likelihood is treated as 0.
 #'

@@ -21,7 +21,7 @@ test_that("F01: PGE and PW estimate only the shape parameter", {
     expect_error(countreg(Total_crashes ~ lnaadt, d, family = fam,
                           dis_param_formula_2 = ~ speed50),
                  "cancels out of the likelihood")
-    expect_error(countreg.rp(Total_crashes ~ lnaadt,
+    expect_error(countreg_rp(Total_crashes ~ lnaadt,
                              rpar_formula = ~ -1 + speed50, data = d,
                              family = fam, dis_param_formula_2 = ~ speed50),
                  "cancels out of the likelihood")
@@ -66,7 +66,7 @@ test_that("F02: random-parameter GP predictions average the exact mean", {
   x <- runif(n)
   sim <- data.frame(x = x, y = rgp1(n, mu = exp(0.6 + 0.5 * x), phi = -0.3))
   # F09: the default start (dispersion 0) gives a finite likelihood
-  rp <- countreg.rp(y ~ 1, rpar_formula = ~ -1 + x, data = sim,
+  rp <- countreg_rp(y ~ 1, rpar_formula = ~ -1 + x, data = sim,
                     family = "GP1", ndraws = 30, method = "BFGS",
                     max.iters = 100)
   expect_lt(exp(coef(rp)[["ln(phi+1)"]]) - 1, 0)
@@ -294,7 +294,7 @@ test_that("F08: Cholesky labels, starts and decoding use one packing", {
   d <- washington_roads
   d$x3 <- d$ShouldWidth04
   rp3 <- ~ -1 + lnaadt + speed50 + x3
-  m <- suppressWarnings(countreg.rp(Total_crashes ~ 1, rpar_formula = rp3,
+  m <- suppressWarnings(countreg_rp(Total_crashes ~ 1, rpar_formula = rp3,
                                     data = d, correlated = TRUE, ndraws = 20,
                                     method = "BFGS", max.iters = 0))
   ch <- coef(m)[grepl("^Chol:", names(coef(m)))]
@@ -314,17 +314,17 @@ test_that("F08: Cholesky labels, starts and decoding use one packing", {
 
 test_that("F10: a free-location random slope cannot also be a fixed slope", {
   d <- washington_roads
-  expect_error(countreg.rp(Total_crashes ~ lnaadt + speed50,
+  expect_error(countreg_rp(Total_crashes ~ lnaadt + speed50,
                            rpar_formula = ~ -1 + speed50, data = d,
                            rpardists = c(speed50 = "n")),
                "Only the sum of the fixed coefficient")
-  expect_error(countreg.rp(Total_crashes ~ lnaadt + speed50,
+  expect_error(countreg_rp(Total_crashes ~ lnaadt + speed50,
                            rpar_formula = ~ -1 + speed50, data = d,
                            rpardists = c(speed50 = "u")),
                "both `formula` and `rpar_formula`")
   # Gamma random parameters have a fixed support, so a fixed shift is allowed
   expect_s3_class(
-    suppressWarnings(countreg.rp(Total_crashes ~ lnaadt + speed50,
+    suppressWarnings(countreg_rp(Total_crashes ~ lnaadt + speed50,
                                  rpar_formula = ~ -1 + speed50, data = d,
                                  rpardists = c(speed50 = "g"), ndraws = 20,
                                  method = "BFGS", max.iters = 20)),
@@ -514,7 +514,7 @@ test_that("F16: frequency weights match the expanded data", {
   # Panel frequency weights (constant within panels): panels are counted
   # with their weights in BIC
   wp <- as.numeric(factor(d$ID)) %% 2 + 1
-  rp <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  rp <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                     data = d, weights = wp, group_var = "ID", ndraws = 20,
                     method = "BFGS", max.iters = 50)
   expect_equal(attr(logLik(rp), "nobs"), sum(wp[!duplicated(d$ID)]))
@@ -615,7 +615,7 @@ test_that("F20: invalid data and controls fail before optimization", {
   bad_y <- function(v) { dd <- d; dd$Total_crashes[1] <- v; dd }
   for (fit in list(
     function(dd) countreg(f, dd),
-    function(dd) countreg.rp(f, rpar_formula = ~ -1 + speed50, data = dd),
+    function(dd) countreg_rp(f, rpar_formula = ~ -1 + speed50, data = dd),
     function(dd) renb(f, dd, group_var = "ID"),
     function(dd) negmultinom(f, "ID", dd))) {
     expect_error(fit(bad_y(-1)), "non-negative counts")
@@ -635,13 +635,13 @@ test_that("F20: invalid data and controls fail before optimization", {
   expect_error(countreg(f, d, start.vals = c(NA, 1, 0)), "must be finite")
   expect_error(countreg(f, d, max.iters = -5), "`max.iters`")
   expect_error(countreg(f, d, family = "PLN", ndraws = 0), "`ndraws`")
-  expect_error(countreg.rp(f, rpar_formula = ~ -1 + speed50, data = d,
+  expect_error(countreg_rp(f, rpar_formula = ~ -1 + speed50, data = d,
                            rpardists = "zz"), "Unknown random-parameter")
 })
 
 test_that("F21: Simulated and Exact agree on whether the mean exists", {
   d <- washington_roads
-  rp <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  rp <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                     data = d, rpardists = c(speed50 = "ln"), ndraws = 50,
                     method = "BFGS", max.iters = 50)
   nd <- d[c(which(d$speed50 == 1)[1:2], which(d$speed50 == 0)[1:2]), ]
@@ -671,22 +671,22 @@ test_that("F21: Simulated and Exact agree on whether the mean exists", {
 test_that("F22: inner mixing draws are separate, scrambled draws reproducible", {
   d <- washington_roads
   t_small <- system.time(
-    a <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+    a <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                      data = d, family = "PLN", ndraws = 30, mix_draws = 10,
                      method = "BFGS", max.iters = 10))["elapsed"]
   expect_equal(a$model$mix_draws, 10)
-  expect_equal(countreg.rp(Total_crashes ~ lnaadt,
+  expect_equal(countreg_rp(Total_crashes ~ lnaadt,
                            rpar_formula = ~ -1 + speed50, data = d,
                            family = "PLN", ndraws = 300, max.iters = 0,
                            method = "BFGS")$model$mix_draws, 200)
   # Scrambled draws: predictions reuse the fit's draws and leave the
   # caller's random-number stream unchanged
   set.seed(4)
-  s1 <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  s1 <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                     data = d, ndraws = 50, scrambled = TRUE, method = "BFGS",
                     max.iters = 30)
   set.seed(4)
-  s2 <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  s2 <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                     data = d, ndraws = 50, scrambled = TRUE, method = "BFGS",
                     max.iters = 30)
   expect_equal(coef(s1), coef(s2))

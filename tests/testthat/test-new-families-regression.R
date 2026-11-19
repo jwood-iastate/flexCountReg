@@ -1,4 +1,4 @@
-# The count families added to countreg() and countreg.rp() in 0.1.2. All are
+# The count families added to countreg() and countreg_rp() in 0.1.2. All are
 # parameterized by the mean mu = exp(X beta); the registry passes the
 # distribution parameters as exp(W delta).
 
@@ -203,7 +203,7 @@ test_that("underreporting models are available for thinning families", {
                         underreport_formula = ~ z), "not available")
 })
 
-test_that("countreg.rp() fits the new families", {
+test_that("countreg_rp() fits the new families", {
   skip_on_cran()
   set.seed(3)
   n <- 300
@@ -211,7 +211,7 @@ test_that("countreg.rp() fits the new families", {
   b <- 0.4 + 0.3 * stats::rnorm(n)
   d$y <- rdelaporte(n, mu = exp(0.6 + b * d$x), rho = 0.5, k = 2)
   for (fam in c("DELAPORTE", "PA", "DW")) {
-    fit <- countreg.rp(y ~ 1, rpar_formula = ~ -1 + x, data = d,
+    fit <- countreg_rp(y ~ 1, rpar_formula = ~ -1 + x, data = d,
                        family = fam, ndraws = 50, method = "BFGS")
     expect_true(isTRUE(fit$model$converged), label = fam)
     expect_true(all(is.finite(stats::coef(fit))), label = fam)

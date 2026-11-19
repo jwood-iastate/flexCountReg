@@ -19,7 +19,7 @@
 #' @param seed an optional random seed, as in \code{\link[stats]{simulate}}.
 #' @param digits the number of significant digits to print.
 #' @param ... further arguments passed to or from other methods. For
-#'   \code{fitted()} and \code{residuals()} of \code{countreg.rp()} models,
+#'   \code{fitted()} and \code{residuals()} of \code{countreg_rp()} models,
 #'   this can include \code{method} (see \code{\link{predict.flexCountReg}}).
 #'
 #' @details
@@ -31,7 +31,7 @@
 #'
 #' \code{nobs()} is the number of rows used in estimation. For panel models
 #' (\code{renb()}, \code{poisLind.re()}, \code{repois()}, \code{negmultinom()}
-#' and \code{countreg.rp()} with \code{panel_id}), the \code{nobs} attribute
+#' and \code{countreg_rp()} with \code{panel_id}), the \code{nobs} attribute
 #' of \code{logLik()}, which \code{BIC()} uses, is the number of panels,
 #' because the panels are the independent units.
 #' With frequency weights (\code{weights}), it is the sum of the weights

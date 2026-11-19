@@ -57,7 +57,7 @@ test_that("probit underreporting fits from older versions keep their sign", {
 test_that("Empirical Bayes predictions work with heterogeneity formulas", {
   d <- washington_roads
   d$AADT10kplus <- as.numeric(d$AADT > 10000)
-  rp <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  rp <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                     het_mean_formula = ~ AADT10kplus,
                     het_var_formula = ~ AADT10kplus,
                     data = d, family = "NB2", rpardists = c(speed50 = "n"),

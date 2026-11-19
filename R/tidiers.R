@@ -17,7 +17,7 @@
 #' @param type.residuals the residual type for \code{.resid}: \code{"response"}
 #'   or \code{"pearson"} (see \code{\link{residuals.flexCountReg}}).
 #' @param ... further arguments passed to \code{predict()} (for example
-#'   \code{method} for \code{countreg.rp()} models).
+#'   \code{method} for \code{countreg_rp()} models).
 #'
 #' @details
 #' \code{tidy()} has one row per parameter, with a \code{component} column

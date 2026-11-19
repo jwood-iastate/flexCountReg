@@ -578,6 +578,14 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
     .frequency = "once", .frequency_id = paste0("fcr_", fun, "_", old))
 }
 
+# Once-per-session deprecation warning for a renamed function.
+.fcr_deprecated_fun <- function(old, new) {
+  rlang::warn(
+    paste0(old, "() is deprecated; use ", new, "() instead."),
+    class = "lifecycle_warning_deprecated",
+    .frequency = "once", .frequency_id = paste0("fcr_", old))
+}
+
 # Resolve print.level/verbose to a maxLik printLevel.
 .fcr_print_level <- function(fun, verbose, print.level) {
   if (!is.null(print.level)) {

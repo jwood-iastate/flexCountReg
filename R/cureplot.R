@@ -70,7 +70,7 @@ cureplot <- function(model, data = NULL, indvar = NULL,
     stats::predict(model, newdata = data)
   } else {
     if (!inherits(model, c("countreg_rp", "negmultinom"))) {
-      stop("`method` applies only to countreg.rp() and negmultinom() ",
+      stop("`method` applies only to countreg_rp() and negmultinom() ",
            "models.", call. = FALSE)
     }
     stats::predict(model, newdata = data, method = method)

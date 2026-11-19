@@ -67,7 +67,7 @@ test_that("Countreg Bootstrapping",{
     Total_crashes ~ lnaadt + offset(lnlength) + speed50 + AADT10kplus,
     data = washington_roads, family = "Lindley"))
   # A short Nelder-Mead run stops at the iteration limit
-  mod.rp <- suppressWarnings(countreg.rp(Total_crashes ~ lnlength + speed50,
+  mod.rp <- suppressWarnings(countreg_rp(Total_crashes ~ lnlength + speed50,
                         rpar_formula = ~ -1 + lnaadt,
                         data = washington_roads,
                         family = "NB2",

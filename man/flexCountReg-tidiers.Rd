@@ -31,7 +31,7 @@
 (giving incidence rate ratios)? Other components are not transformed.}
 
 \item{...}{further arguments passed to \code{predict()} (for example
-\code{method} for \code{countreg.rp()} models).}
+\code{method} for \code{countreg_rp()} models).}
 
 \item{data}{the data to augment. Defaults to the rows of the training data
 used in estimation.}

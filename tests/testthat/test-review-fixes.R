@@ -109,10 +109,10 @@ test_that("fitted objects keep the expanded `.` formulas", {
   expect_equal(attr(terms(m$formula), "term.labels"), c("lnaadt", "lnlength"))
   # Methods that re-read the formula without data work
   expect_equal(margEffTable(m)$term, c("lnaadt", "lnlength"))
-  # Bootstrap refits of countreg.rp() must not expand `.` against the
+  # Bootstrap refits of countreg_rp() must not expand `.` against the
   # bootstrap panel column (it would add a coefficient)
   set.seed(1)
-  r <- countreg.rp(Total_crashes ~ . - lnlength,
+  r <- countreg_rp(Total_crashes ~ . - lnlength,
                    rpar_formula = ~ -1 + lnlength,
                    data = d, ndraws = 20, method = "BFGS", stderr = "boot",
                    bootstraps = 3, max.iters = 50)

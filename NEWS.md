@@ -823,9 +823,12 @@ Changed results are marked **(changed)**.
 
 ## Deprecations
 
+* `countreg.rp()` is deprecated; use `countreg_rp()`, now the documented
+  name (`?countreg_rp`). `countreg.rp()` still works, with a
+  once-per-session warning, and returns the same fit.
 * `predict(object, data = ...)` is deprecated; use `newdata`.
 * `print.level` in `renb()`, `poisLind.re()` and `repois()` is deprecated; use
-  `verbose`. `panel_id` in `countreg.rp()` is deprecated; use `group_var`.
+  `verbose`. `panel_id` in `countreg_rp()` is deprecated; use `group_var`.
   The old names still work, with a once-per-session warning.
 
 ## Methods and API consistency

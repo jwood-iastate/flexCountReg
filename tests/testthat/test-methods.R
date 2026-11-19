@@ -110,8 +110,8 @@ test_that("old argument names still work with a deprecation warning", {
   rlang::reset_warning_verbosity("fcr_renb_print.level")
   expect_warning(renb(Total_crashes ~ lnaadt, group_var = "ID", data = d,
                       method = "BFGS", print.level = 0), "deprecated")
-  rlang::reset_warning_verbosity("fcr_countreg.rp_panel_id")
-  expect_warning(m <- countreg.rp(Total_crashes ~ lnaadt,
+  rlang::reset_warning_verbosity("fcr_countreg_rp_panel_id")
+  expect_warning(m <- countreg_rp(Total_crashes ~ lnaadt,
                                   rpar_formula = ~ -1 + speed50, data = d,
                                   ndraws = 20, method = "BFGS",
                                   max.iters = 20, panel_id = "ID"),

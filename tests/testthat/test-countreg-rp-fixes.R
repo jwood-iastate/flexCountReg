@@ -1,4 +1,4 @@
-# Regression tests for countreg.rp(): draw conventions, rp_mgf(), Exact vs
+# Regression tests for countreg_rp(): draw conventions, rp_mgf(), Exact vs
 # Simulated predictions, heterogeneity in means, input validation and
 # compatibility with fits from earlier versions.
 
@@ -38,7 +38,7 @@ test_that("Exact and Simulated agree with heterogeneity, for each distribution",
   skip_on_cran()  # slow (stochastic recovery); run on CI and locally
   d <- rp_data()
   for (dist in c("n", "u", "t", "g")) {
-    m <- suppressWarnings(countreg.rp(
+    m <- suppressWarnings(countreg_rp(
       Total_crashes ~ lnlength, rpar_formula = ~ -1 + x, data = d,
       rpardists = c(x = dist), ndraws = 100, method = "BFGS",
       het_mean_formula = ~ speed50, het_var_formula = ~ ShouldWidth04))
@@ -51,7 +51,7 @@ test_that("Exact and Simulated agree with heterogeneity, for each distribution",
 
 test_that("heterogeneity in means is additive with one effect per parameter", {
   d <- rp_data()
-  m <- countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x + speed50,
+  m <- countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x + speed50,
                    data = d, rpardists = c(x = "n", speed50 = "n"),
                    het_mean_formula = ~ ShouldWidth04, ndraws = 50,
                    method = "BFGS", max.iters = 200)
@@ -73,36 +73,36 @@ test_that("heterogeneity in means is additive with one effect per parameter", {
 
 test_that("rpardists are matched by name and validated", {
   d <- rp_data()
-  m <- countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x + speed50,
+  m <- countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x + speed50,
                    data = d, rpardists = c(speed50 = "u", x = "n"),
                    ndraws = 30, method = "BFGS", max.iters = 50)
   expect_equal(m$model$rpardists, c(x = "n", speed50 = "u"))
-  expect_error(countreg.rp(Total_crashes ~ lnlength,
+  expect_error(countreg_rp(Total_crashes ~ lnlength,
                            rpar_formula = ~ -1 + x + speed50, data = d,
                            rpardists = c(speed50 = "n")), "Missing: x")
-  expect_error(countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
+  expect_error(countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
                            data = d, rpardists = c(x = "q")),
                "Unknown random-parameter distribution")
 })
 
 test_that("invalid specifications fail early", {
   d <- rp_data()
-  expect_error(countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ x,
+  expect_error(countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ x,
                            data = d, rpardists = c(Intercept = "n", x = "n")),
                "intercept is in both")
-  expect_error(countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
+  expect_error(countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
                            data = d, group_var = "nope"), "not a column")
-  expect_error(countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
+  expect_error(countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
                            data = d, family = "Poisson",
                            dis_param_formula_1 = ~ speed50),
                "no distribution parameter")
-  expect_error(countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
+  expect_error(countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
                            data = d, method = "BFSG"), "`method` must be")
 })
 
 test_that("an implicit intercept in rpar_formula is not a random parameter", {
   d <- rp_data()
-  m <- countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ x, data = d,
+  m <- countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ x, data = d,
                    ndraws = 30, method = "BFGS", max.iters = 50)
   expect_equal(m$model$rpar, "x")
   expect_false("(Intercept):Mean" %in% names(m$model$estimate))
@@ -112,7 +112,7 @@ test_that("gamma random parameters start from a positive mean", {
   skip_on_cran()  # slow (stochastic recovery); run on CI and locally
   d <- rp_data()
   d$negx <- -d$speed50   # Poisson start for this coefficient is negative
-  m <- suppressWarnings(countreg.rp(
+  m <- suppressWarnings(countreg_rp(
     Total_crashes ~ lnaadt + lnlength, rpar_formula = ~ -1 + negx, data = d,
     rpardists = c(negx = "g"), ndraws = 50, method = "BFGS", max.iters = 50))
   expect_true(is.finite(m$model$maximum))
@@ -120,16 +120,16 @@ test_that("gamma random parameters start from a positive mean", {
 
 test_that("formula offsets, missing values and weights are handled", {
   d <- rp_data()
-  a <- countreg.rp(Total_crashes ~ lnaadt + offset(lnlength),
+  a <- countreg_rp(Total_crashes ~ lnaadt + offset(lnlength),
                    rpar_formula = ~ -1 + speed50, data = d, ndraws = 50,
                    method = "BFGS")
-  b <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  b <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                    data = d, offset = "lnlength", ndraws = 50, method = "BFGS")
   expect_equal(a$model$estimate, b$model$estimate, tolerance = 1e-6)
 
   d2 <- d
   d2$speed50[1:4] <- NA
-  m <- suppressMessages(countreg.rp(Total_crashes ~ lnaadt,
+  m <- suppressMessages(countreg_rp(Total_crashes ~ lnaadt,
                                     rpar_formula = ~ -1 + speed50, data = d2,
                                     ndraws = 30, method = "BFGS",
                                     max.iters = 50))
@@ -137,12 +137,12 @@ test_that("formula offsets, missing values and weights are handled", {
 
   # Doubling every weight doubles the log-likelihood at the same estimates
   d$w2 <- 2
-  w <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  w <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                    data = d, weights = "w2", group_var = "ID", ndraws = 30,
                    method = "BFGS",
                    start.vals = b$model$estimate[names(b$model$estimate)],
                    max.iters = 0)
-  u <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  u <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                    data = d, group_var = "ID", ndraws = 30, method = "BFGS",
                    start.vals = b$model$estimate, max.iters = 0)
   expect_equal(w$model$maximum, 2 * u$model$maximum)
@@ -150,7 +150,7 @@ test_that("formula offsets, missing values and weights are handled", {
 
 test_that("fits from earlier versions predict with their own conventions", {
   d <- rp_data()
-  m <- countreg.rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
+  m <- countreg_rp(Total_crashes ~ lnlength, rpar_formula = ~ -1 + x,
                    data = d, rpardists = c(x = "u"), ndraws = 50,
                    method = "BFGS")
   old <- m
@@ -163,7 +163,7 @@ test_that("fits from earlier versions predict with their own conventions", {
 
 test_that("lognormal Exact predictions with positive x are Inf with a warning", {
   d <- rp_data()
-  m <- suppressWarnings(countreg.rp(
+  m <- suppressWarnings(countreg_rp(
     Total_crashes ~ lnlength, rpar_formula = ~ -1 + speed50, data = d,
     rpardists = c(speed50 = "ln"), ndraws = 30, method = "BFGS",
     max.iters = 30))

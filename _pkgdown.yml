@@ -39,7 +39,7 @@ reference:
     random parameters and random effects.
   contents:
   - countreg
-  - countreg.rp
+  - countreg_rp
   - count_families
   - renb
   - poisLindRE

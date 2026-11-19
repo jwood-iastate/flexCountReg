@@ -68,7 +68,7 @@ used in estimating the model are provided. With \code{interval =
 \description{
 Generates predictions for the expected count (lambda) for observations.
 
-For \strong{countreg.rp} (Random Parameters) models, three methods are
+For \strong{countreg_rp} (Random Parameters) models, three methods are
 available:
 \itemize{
 \item \strong{Simulated}: Uses Halton draws to simulate the random
@@ -117,7 +117,7 @@ if an offset column is missing from \code{newdata}.
 }
 \note{
 optional parameter \code{method}: Only valid for random parameters models
-(\code{countreg.rp}). Options include \code{Simulated} (default),
+(\code{countreg_rp}). Options include \code{Simulated} (default),
 \code{Individual} (or \code{EB}), or \code{Exact}.
 
 optional parameter \code{eb_type}: for \code{method = "Individual"},
@@ -188,9 +188,9 @@ nb2_fixed <- countreg(Total_crashes ~ lnaadt + lnlength + speed50,
 pred_fixed <- predict(nb2_fixed, newdata = washington_roads)
 
 # =========================================================================
-# 2. Random Parameters Model (countreg.rp)
+# 2. Random Parameters Model (countreg_rp)
 # =========================================================================
-rp_nb2 <- countreg.rp(Total_crashes ~ lnaadt + lnlength,
+rp_nb2 <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
                       rpar_formula = ~ -1 + speed50,
                       data = washington_roads,
                       family = "NB2",

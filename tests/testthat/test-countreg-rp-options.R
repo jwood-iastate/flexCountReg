@@ -1,4 +1,4 @@
-# countreg.rp(): panel ids, correlated random parameters, distribution
+# countreg_rp(): panel ids, correlated random parameters, distribution
 # parameter formulas, standard-error options and argument validation.
 
 d <- washington_roads

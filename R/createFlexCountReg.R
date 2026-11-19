@@ -4,7 +4,7 @@
 # a list with `call`, `model` (the fitted maxLik object with the package's
 # fields added), `data` (the training data, unless keep_data = FALSE) and
 # `formula`. The subclass is derived from model$modelType:
-#   countreg     -> "countreg"       countreg.rp -> "countreg_rp"
+#   countreg     -> "countreg"       countreg_rp -> "countreg_rp"
 #   RENB         -> "renb"           poisLindRE  -> "poislind_re"
 #   REPoisson    -> "repois"         NegMultinom -> "negmultinom"
 #   countreg_mix -> "countreg_mix"   countreg_lc -> c("countreg_lc",

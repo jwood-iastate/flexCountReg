@@ -1,10 +1,10 @@
-test_that("countreg.rp: Basic execution with BHHH and Predictions", {
+test_that("countreg_rp: Basic execution with BHHH and Predictions", {
   data("washington_roads")
   # Use smaller subset for speed
   small_data <- washington_roads[1:300, ]
   
   model <- suppressWarnings(
-    countreg.rp(Total_crashes ~ lnaadt + lnlength,
+    countreg_rp(Total_crashes ~ lnaadt + lnlength,
                 rpar_formula = ~ -1 + speed50,
                 data = small_data,  # Use smaller data
                 family = "NB2",
@@ -16,7 +16,7 @@ test_that("countreg.rp: Basic execution with BHHH and Predictions", {
   
   expect_s3_class(model, "flexCountReg")
   
-  # Test Predict methods for countreg.rp
+  # Test Predict methods for countreg_rp
   pred_sim <- predict(model, newdata = small_data, method = "Simulated")
   pred_ind <- predict(model, newdata = small_data, method = "Individual")
   
@@ -26,7 +26,7 @@ test_that("countreg.rp: Basic execution with BHHH and Predictions", {
   expect_false(any(is.na(pred_ind)))
 })
 
-test_that("countreg.rp: Heterogeneity, Dist Formulas, and Panel Data", {
+test_that("countreg_rp: Heterogeneity, Dist Formulas, and Panel Data", {
   data("washington_roads")
   washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
   
@@ -35,7 +35,7 @@ test_that("countreg.rp: Heterogeneity, Dist Formulas, and Panel Data", {
   small_data$site_id <- rep(1:20, length.out = nrow(small_data))
   
   model <- suppressWarnings(
-    countreg.rp(Total_crashes ~ lnaadt,
+    countreg_rp(Total_crashes ~ lnaadt,
                 rpar_formula = ~ -1 + speed50,
                 dis_param_formula_1 = ~ lnlength,
                 het_mean_formula = ~ AADT10kplus,
@@ -52,12 +52,12 @@ test_that("countreg.rp: Heterogeneity, Dist Formulas, and Panel Data", {
   expect_true(length(model$model$estimate) > 0)
 })
 
-test_that("countreg.rp: Correlated Random Parameters", {
+test_that("countreg_rp: Correlated Random Parameters", {
   data("washington_roads")
   small_data <- washington_roads[1:200, ]
   
   model <- suppressWarnings(
-    countreg.rp(Total_crashes ~ lnaadt,
+    countreg_rp(Total_crashes ~ lnaadt,
                 rpar_formula = ~ speed50 + lnlength,
                 data = small_data,
                 family = "NB2",
@@ -173,7 +173,7 @@ test_that("Random parameter generation handles non-Normal distributions", {
   
   # 1. Triangular Distribution ("t")
   expect_error(
-    countreg.rp(Total_crashes ~ lnaadt,
+    countreg_rp(Total_crashes ~ lnaadt,
                 rpar_formula = ~ -1 + speed50,
                 data = small_data,
                 family = "POISSON",
@@ -186,7 +186,7 @@ test_that("Random parameter generation handles non-Normal distributions", {
   
   # 2. Uniform Distribution ("u")
   expect_error(
-    countreg.rp(Total_crashes ~ lnaadt,
+    countreg_rp(Total_crashes ~ lnaadt,
                 rpar_formula = ~ -1 + speed50,
                 data = small_data,
                 family = "NB2",

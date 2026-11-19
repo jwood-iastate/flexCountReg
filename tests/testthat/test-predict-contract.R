@@ -84,9 +84,9 @@ test_that("the data argument is deprecated but still works", {
   expect_equal(p, predict(m, newdata = d[1:3, ]))
 })
 
-test_that("countreg.rp predictions use the offset", {
+test_that("countreg_rp predictions use the offset", {
   d <- make_data()
-  rp <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  rp <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                     data = d, family = "NB2", rpardists = c(speed50 = "n"),
                     ndraws = 100, offset = "lnlength", method = "BFGS")
   ps <- predict(rp, newdata = d, method = "Simulated")
@@ -95,7 +95,7 @@ test_that("countreg.rp predictions use the offset", {
 
 test_that("Individual (Empirical Bayes) predictions follow Wood and Gayah", {
   d <- make_data()
-  rp <- countreg.rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
+  rp <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
                     data = d, family = "NB2", rpardists = c(speed50 = "n"),
                     ndraws = 100, offset = "lnlength", group_var = "ID",
                     method = "BFGS")

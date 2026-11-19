@@ -176,11 +176,11 @@ test_that("predict function works for renb models", {
 })
 
 test_that(
-  "predict function works for countreg.rp models (Exact vs Simulated)", {
+  "predict function works for countreg_rp models (Exact vs Simulated)", {
     # Estimate a quick Random Parameter model
     # Suppress warnings for cleaner test output
     rp_mod <- suppressWarnings(
-      countreg.rp(y ~ x1 - 1, 
+      countreg_rp(y ~ x1 - 1, 
                   rpar_formula = ~ 1, 
                   data = test_data,
                   family = "NB2",

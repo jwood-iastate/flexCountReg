@@ -3,10 +3,10 @@
 \name{count_families}
 \alias{count_families}
 \alias{count-families}
-\title{Count Families for countreg() and countreg.rp()}
+\title{Count Families for countreg() and countreg_rp()}
 \description{
 Overview of the count distributions that can be used as the \code{family} of
-\code{\link[=countreg]{countreg()}} and \code{\link[=countreg.rp]{countreg.rp()}}: their distribution parameters (the
+\code{\link[=countreg]{countreg()}} and \code{\link[=countreg_rp]{countreg_rp()}}: their distribution parameters (the
 parameters modeled by \code{dis_param_formula_1} and \code{dis_param_formula_2}),
 variances, distribution functions, and the model features available for
 each.
@@ -69,7 +69,7 @@ probabilities (see \code{\link[=countreg]{countreg()}}).
 
 (2) The natural parameter of each observation is found by solving the
 mean equation numerically, so \eqn{\mu} is exactly the mean. These
-families are slower to fit, especially in \code{\link[=countreg.rp]{countreg.rp()}}; their shape
+families are slower to fit, especially in \code{\link[=countreg_rp]{countreg_rp()}}; their shape
 parameter must lie in \eqn{[10^{-6}, 10^6]} and the mean be at most
 \eqn{10^9} (outside this numerical domain the likelihood is treated as
 0).
@@ -119,7 +119,7 @@ interior special case, and "--" when no regular test exists.\tabular{llll}{
 
 Zero inflation and hurdles (\code{zero_formula}) are available for every
 family in \code{\link[=countreg]{countreg()}}, and every family can be used with random
-parameters in \code{\link[=countreg.rp]{countreg.rp()}} (GP2 only with a nonnegative dispersion).
+parameters in \code{\link[=countreg_rp]{countreg_rp()}} (GP2 only with a nonnegative dispersion).
 }
 
 \subsection{Finite mixtures and latent classes}{
@@ -231,6 +231,6 @@ c(NB2 = AIC(fit_nb2), PA = AIC(fit_pa))
 
 }
 \seealso{
-\code{\link[=countreg]{countreg()}}, \code{\link[=countreg.rp]{countreg.rp()}}, \code{\link[=countreg_mix]{countreg_mix()}},
+\code{\link[=countreg]{countreg()}}, \code{\link[=countreg_rp]{countreg_rp()}}, \code{\link[=countreg_mix]{countreg_mix()}},
 \code{\link[=summary.flexCountReg]{summary.flexCountReg()}}
 }

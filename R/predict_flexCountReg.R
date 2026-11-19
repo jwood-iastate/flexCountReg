@@ -93,7 +93,7 @@
 #' \code{newdata} may contain only a subset of the levels. An error is raised
 #' if an offset column is missing from \code{newdata}.
 #' @note optional parameter `method`: Only valid for random parameters models
-#'   (`countreg.rp`). Options include \code{Simulated} (default),
+#'   (`countreg_rp`). Options include \code{Simulated} (default),
 #'   \code{Individual} (or \code{EB}), or \code{Exact}.
 #' @note optional parameter `eb_type`: for \code{method = "Individual"},
 #'   either \code{"coefficients"} (default) or \code{"mean"}.
@@ -101,7 +101,7 @@
 #' @description
 #' Generates predictions for the expected count (lambda) for observations.
 #' 
-#' For \strong{countreg.rp} (Random Parameters) models, three methods are
+#' For \strong{countreg_rp} (Random Parameters) models, three methods are
 #' available:
 #' \itemize{
 #'   \item \strong{Simulated}: Uses Halton draws to simulate the random
@@ -171,9 +171,9 @@
 #' pred_fixed <- predict(nb2_fixed, newdata = washington_roads)
 #' 
 #' # =========================================================================
-#' # 2. Random Parameters Model (countreg.rp)
+#' # 2. Random Parameters Model (countreg_rp)
 #' # =========================================================================
-#' rp_nb2 <- countreg.rp(Total_crashes ~ lnaadt + lnlength,
+#' rp_nb2 <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
 #'                       rpar_formula = ~ -1 + speed50,
 #'                       data = washington_roads,
 #'                       family = "NB2",
@@ -288,7 +288,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   }
   
   # =========================================================================
-  # 1. RANDOM PARAMETERS MODELS (countreg.rp)
+  # 1. RANDOM PARAMETERS MODELS (countreg_rp)
   # =========================================================================
   if(modtype == "countreg.rp"){
     
@@ -397,7 +397,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
         warning(sum(no_mean), " prediction(s) are infinite: the expected ",
                 "value does not exist for a lognormal random parameter with ",
                 "a positive x, or a gamma random parameter with ",
-                "x * sigma^2 / mu >= 1. See ?countreg.rp.", call. = FALSE)
+                "x * sigma^2 / mu >= 1. See ?countreg_rp.", call. = FALSE)
       }
       if (method == "Exact") {
         if (correlated) {
@@ -677,7 +677,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
 }
 
 
-# Panel (cluster) identifier for the rows of `data` in a countreg.rp model.
+# Panel (cluster) identifier for the rows of `data` in a countreg_rp model.
 .fcr_rp_panel <- function(model, data) {
   pid <- model$panel_id
   if (is.null(pid)) return(seq_len(nrow(data)))
@@ -694,7 +694,7 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
        "`panel_id` given as a column name.", call. = FALSE)
 }
 
-# Empirical Bayes (observation-specific) predictions for countreg.rp models,
+# Empirical Bayes (observation-specific) predictions for countreg_rp models,
 # following Wood and Gayah (2025), Eqs. 5-7. Each simulation draw r is weighted
 # by the likelihood of unit i's observed outcomes at that draw,
 #   W_ir = L_ir / sum_r L_ir,  L_ir = prod_{t in i} f(y_it | mu_itr, theta),

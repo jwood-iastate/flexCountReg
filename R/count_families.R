@@ -1,7 +1,7 @@
-#' Count Families for countreg() and countreg.rp()
+#' Count Families for countreg() and countreg_rp()
 #'
 #' Overview of the count distributions that can be used as the `family` of
-#' [countreg()] and [countreg.rp()]: their distribution parameters (the
+#' [countreg()] and [countreg_rp()]: their distribution parameters (the
 #' parameters modeled by `dis_param_formula_1` and `dis_param_formula_2`),
 #' variances, distribution functions, and the model features available for
 #' each.
@@ -65,7 +65,7 @@
 #'
 #' (2) The natural parameter of each observation is found by solving the
 #' mean equation numerically, so \eqn{\mu} is exactly the mean. These
-#' families are slower to fit, especially in [countreg.rp()]; their shape
+#' families are slower to fit, especially in [countreg_rp()]; their shape
 #' parameter must lie in \eqn{[10^{-6}, 10^6]} and the mean be at most
 #' \eqn{10^9} (outside this numerical domain the likelihood is treated as
 #' 0).
@@ -114,7 +114,7 @@
 #'
 #' Zero inflation and hurdles (`zero_formula`) are available for every
 #' family in [countreg()], and every family can be used with random
-#' parameters in [countreg.rp()] (GP2 only with a nonnegative dispersion).
+#' parameters in [countreg_rp()] (GP2 only with a nonnegative dispersion).
 #'
 #' ## Finite mixtures and latent classes
 #'
@@ -211,7 +211,7 @@
 #' function of the covariates: extra variation in reporting between
 #' observations with the same covariates is not part of the model.
 #'
-#' @seealso [countreg()], [countreg.rp()], [countreg_mix()],
+#' @seealso [countreg()], [countreg_rp()], [countreg_mix()],
 #'   [summary.flexCountReg()]
 #'
 #' @examples

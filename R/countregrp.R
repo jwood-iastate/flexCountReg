@@ -1,6 +1,6 @@
 #' Random Parameters Count Regression Models
 #'
-#' @name countreg.rp
+#' @name countreg_rp
 #' @aliases countreg_rp
 #' @param formula an R formula. This formula should specify the outcome and the
 #'   independent variables that have fixed parameters.
@@ -89,8 +89,10 @@
 #' @param verbose logical.
 #' 
 #' @details
-#' \code{countreg_rp()} is the same function as \code{countreg.rp()}, under a
-#' name that tools do not mistake for an S3 method.
+#' \code{countreg_rp()} is the former name of \code{countreg_rp()}. It is
+#' deprecated (a name with a dot is easily mistaken for an S3 method): it
+#' still works, with a once-per-session warning, and calls
+#' \code{countreg_rp()}.
 #'
 #' \strong{Random parameter distributions.} Each random parameter is
 #' \eqn{\beta = \mu + \sigma \upsilon}, where the \code{:Mean} and
@@ -139,7 +141,7 @@
 #' washington_roads$AADT10kplus <- ifelse(washington_roads$AADT > 10000, 1, 0)
 #' 
 #' # 1. Basic Random Parameters Negative Binomial (NB2)
-#' rp_nb2 <- countreg.rp(Total_crashes ~ lnaadt + lnlength,
+#' rp_nb2 <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
 #'                       rpar_formula = ~ -1 + speed50,
 #'                       data = washington_roads,
 #'                       family = "NB2",
@@ -149,7 +151,7 @@
 #' summary(rp_nb2)
 #' 
 #' # 2. Random Parameters with Panel Structure (if 'site_id' exists)
-#' # rp_panel <- countreg.rp(Total_crashes ~ -1 + lnaadt,
+#' # rp_panel <- countreg_rp(Total_crashes ~ -1 + lnaadt,
 #' #                        rpar_formula = ~ speed50,
 #' #                        data = washington_roads,
 #' #                        group_var = "site_id",
@@ -157,7 +159,7 @@
 #' #                        ndraws = 100)
 #' 
 #' # 3. Generalized Random Parameters Model with Heterogeneity
-#' rp_gen <- countreg.rp(Total_crashes ~ lnaadt,
+#' rp_gen <- countreg_rp(Total_crashes ~ lnaadt,
 #'                       rpar_formula = ~ -1 + speed50,
 #'                       dis_param_formula_1 = ~ lnlength, 
 #'                       het_mean_formula = ~ AADT10kplus,
@@ -168,7 +170,7 @@
 #' summary(rp_gen)
 #' 
 #' # 4. Random Parameters Poisson Model with panel specification
-#' rp_poisson <- countreg.rp(Total_crashes ~ lnaadt,
+#' rp_poisson <- countreg_rp(Total_crashes ~ lnaadt,
 #'                       rpar_formula = ~ -1 + speed50,
 #'                       het_mean_formula = ~ AADT10kplus,
 #'                       data = washington_roads,
@@ -187,7 +189,7 @@
 #' 
 #' @include helpers.R tri.R  createFlexCountReg.R
 #' @export
-countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
+countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
                          rpardists = NULL,
                          dis_param_formula_1 = NULL,
                          dis_param_formula_2 = NULL,
@@ -204,7 +206,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   
   print.level <- if (verbose) 2 else 0
   if (!is.null(panel_id)) {
-    .fcr_deprecated_arg("countreg.rp", "panel_id", "group_var")
+    .fcr_deprecated_arg("countreg_rp", "panel_id", "group_var")
     if (is.null(group_var)) group_var <- panel_id
   }
   panel_id <- group_var
@@ -570,7 +572,7 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
         boot_id <- .fcr_unused_name(names(bd), ".fcr_boot_panel")
         bd[[boot_id]] <- rep(seq_along(sel), lengths(sel))
         w_r <- if (!is.null(w)) rep(w, lengths(sel))
-        m <- countreg.rp(formula = formula, rpar_formula = rpar_formula,
+        m <- countreg_rp(formula = formula, rpar_formula = rpar_formula,
                          data = bd, family = family,
                          rpardists = rpardists,
                          dis_param_formula_1 = dis_param_formula_1,
@@ -662,7 +664,14 @@ countreg.rp <- function(formula, rpar_formula, data, family = "NB2",
   rpardists[rpar]
 }
 
-#' @rdname countreg.rp
+#' @rdname countreg_rp
 #' @usage NULL
 #' @export
-countreg_rp <- countreg.rp
+countreg.rp <- function(...) {
+  .fcr_deprecated_fun("countreg.rp", "countreg_rp")
+  # Re-evaluate the caller's own call under the new name, so that the stored
+  # call (used by refits) has the original argument expressions
+  cl <- sys.call()
+  cl[[1]] <- quote(flexCountReg::countreg_rp)
+  eval(cl, parent.frame())
+}

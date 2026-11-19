@@ -341,7 +341,7 @@ test_that("panel models: weights must be constant within panels", {
                          method = "BFGS"),
                  "constant within each panel")
   }
-  expect_error(countreg.rp(y ~ 1, rpar_formula = ~ x, data = d,
+  expect_error(countreg_rp(y ~ 1, rpar_formula = ~ x, data = d,
                            group_var = "id", weights = "w", ndraws = 20),
                "constant within each panel")
 })
@@ -433,7 +433,7 @@ test_that("R05: GP2 random-parameter models require a nonnegative dispersion", {
   set.seed(4)
   d <- data.frame(x = rnorm(150))
   d$y <- rpois(150, exp(0.5 + 0.3 * d$x))
-  m <- suppressWarnings(countreg.rp(y ~ 1, rpar_formula = ~ x, data = d,
+  m <- suppressWarnings(countreg_rp(y ~ 1, rpar_formula = ~ x, data = d,
                                     family = "GP2", ndraws = 30,
                                     method = "NM", max.iters = 400))
   # alpha = a + 1 >= 1: the estimate stays in the allowed region
@@ -690,7 +690,7 @@ test_that("R07: Simulated lognormal predictions do not need lamW", {
   set.seed(9)
   d <- data.frame(x = -abs(rnorm(150)), id = rep(1:50, each = 3))
   d$y <- rpois(150, exp(0.5 - 0.4 * d$x))
-  m <- suppressWarnings(countreg.rp(y ~ 1, rpar_formula = ~ -1 + x,
+  m <- suppressWarnings(countreg_rp(y ~ 1, rpar_formula = ~ -1 + x,
                                     data = d, family = "POISSON",
                                     rpardists = c(x = "ln"), ndraws = 50,
                                     method = "BFGS"))
@@ -714,7 +714,7 @@ test_that("R07: overflow of a finite expectation is not called nonexistence", {
   set.seed(10)
   d <- data.frame(x = rnorm(120))
   d$y <- rpois(120, exp(0.3 + 0.2 * d$x))
-  m <- suppressWarnings(countreg.rp(y ~ 1, rpar_formula = ~ -1 + x,
+  m <- suppressWarnings(countreg_rp(y ~ 1, rpar_formula = ~ -1 + x,
                                     data = d, family = "POISSON",
                                     ndraws = 30, method = "BFGS"))
   nd <- data.frame(x = c(1, 1e4))
@@ -883,11 +883,11 @@ test_that("R03: changed panels and random-parameter distributions", {
   # The same partition with other labels is the same set of panels
   b2 <- repois(y ~ x1 + x2, group_var = "id2", data = d, method = "BFGS")
   expect_equal(regCompTest(a, model2 = b2)$LRdof, 1)
-  pn <- suppressWarnings(countreg.rp(y ~ x2, rpar_formula = ~ -1 + x1,
+  pn <- suppressWarnings(countreg_rp(y ~ x2, rpar_formula = ~ -1 + x1,
                                      data = d, family = "POISSON",
                                      rpardists = c(x1 = "u"), ndraws = 30,
                                      method = "BFGS"))
-  nb <- suppressWarnings(countreg.rp(y ~ x2, rpar_formula = ~ -1 + x1,
+  nb <- suppressWarnings(countreg_rp(y ~ x2, rpar_formula = ~ -1 + x1,
                                      data = d, family = "NB2",
                                      rpardists = c(x1 = "n"), ndraws = 30,
                                      method = "BFGS"))

@@ -9,7 +9,7 @@ part of the user-facing interface. Users only see the `family` argument
 of
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
 and
-[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
 and the exported distribution functions
 ([`ddpo()`](https://jwood-iastate.github.io/flexCountReg/reference/DoublePoisson.md),
 [`pdpo()`](https://jwood-iastate.github.io/flexCountReg/reference/DoublePoisson.md)
@@ -64,7 +64,7 @@ as well as in the code.
 Every family that
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
 and
-[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
 can use has one entry in the internal list `.fcr_family_registry`, built
 with `.fcr_family()`. The NB2 entry:
 
@@ -97,7 +97,7 @@ The fields (documented at the top of `R/families.R`):
 | `rand` | random draws ([`simulate()`](https://rdrr.io/r/stats/simulate.html), parametric bootstrap) |
 | `cdf` | optional log CDF or log survival function, computed directly (quantile residuals, intervals); without it the PMF is summed |
 | `mean`, `mean_adj` | the mean when it is not $`\mu`$ |
-| `start`, `start_rp` | starting values of the distribution parameters (on the linear-predictor scale) for [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md) and [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md) |
+| `start`, `start_rp` | starting values of the distribution parameters (on the linear-predictor scale) for [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md) and [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md) |
 
 The registry density must agree with an independent calculation:
 
@@ -290,7 +290,7 @@ should include a model with an offset.
 A registry entry makes a family available in
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
 (including zero models, which are built from `dens`) and in
-[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md).
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md).
 Other features are enabled explicitly, because each depends on a
 mathematical property that must be established for the family:
 

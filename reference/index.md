@@ -7,11 +7,11 @@ random parameters and random effects.
 
 - [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
   : Count regression models
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   : Random Parameters Count Regression Models
 - [`count_families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
   [`count-families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
-  : Count Families for countreg() and countreg.rp()
+  : Count Families for countreg() and countreg_rp()
 - [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
   : Estimate a Random Effects Negative Binomial regression model
 - [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)

@@ -52,7 +52,7 @@ augment(
   further arguments passed to
   [`predict()`](https://rdrr.io/r/stats/predict.html) (for example
   `method` for
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   models).
 
 - data:

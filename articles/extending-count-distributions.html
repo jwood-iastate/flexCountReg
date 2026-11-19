@@ -70,7 +70,7 @@ tracing the existing NB2 family through the source code. Code that uses
 shown here to explain the implementation, may change between versions,
 and are not part of the user-facing interface. Users only see the
 <code>family</code> argument of <code><a href="../reference/countreg.html">countreg()</a></code> and
-<code><a href="../reference/countreg.rp.html">countreg_rp()</a></code> and the exported distribution functions
+<code><a href="../reference/countreg_rp.html">countreg_rp()</a></code> and the exported distribution functions
 (<code><a href="../reference/DoublePoisson.html">ddpo()</a></code>, <code><a href="../reference/DoublePoisson.html">pdpo()</a></code> and so on).</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jwood-iastate.github.io/flexCountReg/">flexCountReg</a></span><span class="op">)</span></span></code></pre></div>
@@ -222,7 +222,7 @@ the README)</td>
 <h2 id="the-regression-family-entry">3. The regression family entry<a class="anchor" aria-label="anchor" href="#the-regression-family-entry"></a>
 </h2>
 <p>Every family that <code><a href="../reference/countreg.html">countreg()</a></code> and
-<code><a href="../reference/countreg.rp.html">countreg_rp()</a></code> can use has one entry in the internal list
+<code><a href="../reference/countreg_rp.html">countreg_rp()</a></code> can use has one entry in the internal list
 <code>.fcr_family_registry</code>, built with
 <code>.fcr_family()</code>. The NB2 entry:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -296,7 +296,7 @@ because the optimizer tries such values</td>
 </td>
 <td>starting values of the distribution parameters (on the
 linear-predictor scale) for <code><a href="../reference/countreg.html">countreg()</a></code> and
-<code><a href="../reference/countreg.rp.html">countreg_rp()</a></code>
+<code><a href="../reference/countreg_rp.html">countreg_rp()</a></code>
 </td>
 </tr>
 </tbody>
@@ -491,7 +491,7 @@ its tests should include a model with an offset.</p>
 </h2>
 <p>A registry entry makes a family available in <code><a href="../reference/countreg.html">countreg()</a></code>
 (including zero models, which are built from <code>dens</code>) and in
-<code><a href="../reference/countreg.rp.html">countreg_rp()</a></code>. Other features are enabled explicitly,
+<code><a href="../reference/countreg_rp.html">countreg_rp()</a></code>. Other features are enabled explicitly,
 because each depends on a mathematical property that must be established
 for the family:</p>
 <ul>

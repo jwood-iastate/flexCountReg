@@ -2,7 +2,7 @@
 
 Generates predictions for the expected count (lambda) for observations.
 
-For **countreg.rp** (Random Parameters) models, three methods are
+For **countreg_rp** (Random Parameters) models, three methods are
 available:
 
 - **Simulated**: Uses Halton draws to simulate the random parameters and
@@ -128,7 +128,7 @@ an offset column is missing from `newdata`.
 ## Note
 
 optional parameter `method`: Only valid for random parameters models
-(`countreg.rp`). Options include `Simulated` (default), `Individual` (or
+(`countreg_rp`). Options include `Simulated` (default), `Individual` (or
 `EB`), or `Exact`.
 
 optional parameter `eb_type`: for `method = "Individual"`, either
@@ -206,9 +206,9 @@ nb2_fixed <- countreg(Total_crashes ~ lnaadt + lnlength + speed50,
 pred_fixed <- predict(nb2_fixed, newdata = washington_roads)
 
 # =========================================================================
-# 2. Random Parameters Model (countreg.rp)
+# 2. Random Parameters Model (countreg_rp)
 # =========================================================================
-rp_nb2 <- countreg.rp(Total_crashes ~ lnaadt + lnlength,
+rp_nb2 <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
                       rpar_formula = ~ -1 + speed50,
                       data = washington_roads,
                       family = "NB2",

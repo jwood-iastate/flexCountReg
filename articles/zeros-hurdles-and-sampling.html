@@ -63,12 +63,17 @@
 
     
     
-<p>Many count datasets have many zeros. That alone says little: a count
-distribution with a small mean or a large variance produces many zeros
-by itself. This vignette shows how to tell whether a model needs a
-separate zero process, what zero-inflated and hurdle models assume, how
-flexCountReg labels their components, and why a zero-heavy sample is not
-the same thing as a zero-truncated sampling design.</p>
+<p>Many count datasets have a high density of zeros. That alone says
+little: a count distribution with a small mean or a large variance
+produces many zeros by itself. This vignette shows how to tell whether a
+model needs a separate zero process, what zero-inflated and hurdle
+models assume, how flexCountReg labels their components, and why a
+zero-heavy sample is not the same thing as a zero-truncated sampling
+design. For discussion on whether a zero-inflated or hurdle model is
+appropriate, see Zeileis et al. (2008) and Lord et al.  (2007). Note
+that there should be a substantive reason for believing that a separate
+zero process exists, and that the zero-inflated and hurdle models are
+not interchangeable.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jwood-iastate.github.io/flexCountReg/">flexCountReg</a></span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
@@ -260,9 +265,9 @@ its standard error is <code>NA</code>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">zinb_const</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span><span class="st">"Zero:(Intercept)"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   Estimate Std. Error </span></span>
-<span><span class="co">#&gt;  -12.32427         NA</span></span>
+<span><span class="co">#&gt;  -12.32361         NA</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">zinb_const</span><span class="op">)</span><span class="op">[[</span><span class="st">"Zero:(Intercept)"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 4.442605e-06</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 4.445507e-06</span></span></code></pre></div>
 <p>With covariates, the zero model can describe <em>which</em> students
 have more zeros. In the zero-inflated model a negative
 <code>Zero:ment</code> coefficient means fewer structural zeros among
@@ -276,17 +281,17 @@ at least one article:</p>
 <span><span class="op">}</span></span>
 <span><span class="fu">zc</span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                    Estimate Std. Error</span></span>
-<span><span class="co">#&gt; Zero:(Intercept) -0.8786574  0.4028556</span></span>
-<span><span class="co">#&gt; Zero:ment        -0.6113860  0.2464432</span></span>
-<span><span class="co">#&gt; Zero:kid5         0.1564024  0.3569711</span></span>
+<span><span class="co">#&gt; Zero:(Intercept) -0.8786574  0.4017719</span></span>
+<span><span class="co">#&gt; Zero:ment        -0.6113860  0.2454423</span></span>
+<span><span class="co">#&gt; Zero:kid5         0.1564023  0.3664404</span></span>
 <span><span class="fu">zc</span><span class="op">(</span><span class="va">hnb</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                     Estimate Std. Error</span></span>
-<span><span class="co">#&gt; Zero:(Intercept)  0.23680758 0.29553208</span></span>
-<span><span class="co">#&gt; Zero:femWomen    -0.25115052 0.15905687</span></span>
-<span><span class="co">#&gt; Zero:marMarried   0.32623628 0.18064477</span></span>
-<span><span class="co">#&gt; Zero:kid5        -0.28525098 0.11127637</span></span>
-<span><span class="co">#&gt; Zero:phd          0.02221526 0.07968591</span></span>
-<span><span class="co">#&gt; Zero:ment         0.08012173 0.01301641</span></span></code></pre></div>
+<span><span class="co">#&gt; Zero:(Intercept)  0.23680759 0.29417483</span></span>
+<span><span class="co">#&gt; Zero:femWomen    -0.25115053 0.15896858</span></span>
+<span><span class="co">#&gt; Zero:marMarried   0.32623628 0.18062465</span></span>
+<span><span class="co">#&gt; Zero:kid5        -0.28525098 0.11122144</span></span>
+<span><span class="co">#&gt; Zero:phd          0.02221526 0.07942908</span></span>
+<span><span class="co">#&gt; Zero:ment         0.08012173 0.01301908</span></span></code></pre></div>
 <p>flexCountReg’s likelihoods and zero-model coefficients agree with
 those of pscl:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -394,6 +399,10 @@ compares observed and expected zeros on road-crash data.</li>
 </h2>
 <p>Long, J. S. (1990). The origins of sex differences in science.
 <em>Social Forces</em>, 68(4), 1297-1316.</p>
+<p>Lord, Dominique, Simon Washington, and John N. Ivan. (2007). Further
+notes on<br>
+the application of zero-inflated models in highway safety. <em>Accident
+Analysis &amp; Prevention</em> 39(1), 53-57.</p>
 <p>Zeileis, A., Kleiber, C. and Jackman, S. (2008). Regression models
 for count data in R. <em>Journal of Statistical Software</em>, 27(8),
 1-25.</p>

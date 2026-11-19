@@ -77,7 +77,7 @@ three different reasons why a prediction cannot be computed.</p>
 <h2 id="what-a-fit-records">What a fit records<a class="anchor" aria-label="anchor" href="#what-a-fit-records"></a>
 </h2>
 <p>The <code>model</code> element of a fitted <code><a href="../reference/countreg.html">countreg()</a></code> or
-<code><a href="../reference/countreg.rp.html">countreg_rp()</a></code> object is the result of the optimizer (from
+<code><a href="../reference/countreg_rp.html">countreg_rp()</a></code> object is the result of the optimizer (from
 the maxLik package) with some additions: <code>converged</code>, the
 return <code>code</code> and <code>message</code>, the number of
 <code>iterations</code>, the log-likelihood <code>maximum</code>, the
@@ -200,15 +200,15 @@ Twenty samples of Poisson data, each fitted with NB2:</p>
 <span><span class="co">#&gt; 1    -3.451  1.454         1      0        0</span></span>
 <span><span class="co">#&gt; 2    -3.705  1.809         1      0        0</span></span>
 <span><span class="co">#&gt; 3    -2.680  0.724         1      0        0</span></span>
-<span><span class="co">#&gt; 4   -11.233 14.116         1      0        0</span></span>
+<span><span class="co">#&gt; 4   -11.233  5.191         1      0        0</span></span>
 <span><span class="co">#&gt; 5    -6.181 20.637         1      0        0</span></span>
 <span><span class="co">#&gt; 6    -6.908  6.721         1      0        1</span></span>
 <span><span class="co">#&gt; 7    -3.722  1.703         1      0        0</span></span>
-<span><span class="co">#&gt; 8    -6.908 17.415         1      0        1</span></span>
+<span><span class="co">#&gt; 8    -6.908 17.416         1      0        1</span></span>
 <span><span class="co">#&gt; 9    -3.977  2.366         1      0        0</span></span>
 <span><span class="co">#&gt; 10   -3.515  1.705         1      0        0</span></span>
 <span><span class="co">#&gt; 11   -3.368  1.295         1      0        0</span></span>
-<span><span class="co">#&gt; 12  -10.750 15.674         1      0        0</span></span>
+<span><span class="co">#&gt; 12  -10.750     NA         1      1        0</span></span>
 <span><span class="co">#&gt; 13   -6.908  7.073         1      0        1</span></span>
 <span><span class="co">#&gt; 14   -2.627  0.754         1      0        0</span></span>
 <span><span class="co">#&gt; 15  -11.319 17.465         1      0        0</span></span>
@@ -223,7 +223,7 @@ estimate clipped at
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi><mo>=</mo><mi>−</mi><mn>6.908</mn></mrow><annotation encoding="application/x-tex">\ln\alpha = -6.908</annotation></semantics></math>),
 and 6 of the 20 fits stopped within 0.01 of it: at the edge of the space
 the likelihood is so flat that the gradient is below the optimizer’s
-tolerance. In 0 fits the Hessian is not negative definite, and
+tolerance. In 1 fits the Hessian is not negative definite, and
 flexCountReg warns that the standard error of <code>ln(alpha)</code> is
 <code>NA</code>. The remaining standard errors are large. In every case
 the right conclusion is that
@@ -321,7 +321,7 @@ different kinds, controlled by different arguments:</p>
 (<code>ndraws</code> draws)</td>
 </tr>
 <tr class="even">
-<td><code><a href="../reference/countreg.rp.html">countreg_rp()</a></code></td>
+<td><code><a href="../reference/countreg_rp.html">countreg_rp()</a></code></td>
 <td>the random parameters (outer)</td>
 <td>
 <code>ndraws</code> Halton draws (<code>scrambled</code> for
@@ -329,7 +329,7 @@ scrambled draws)</td>
 </tr>
 <tr class="odd">
 <td>
-<code><a href="../reference/countreg.rp.html">countreg_rp()</a></code> with PLN, PGE, PW or PLL</td>
+<code><a href="../reference/countreg_rp.html">countreg_rp()</a></code> with PLN, PGE, PW or PLL</td>
 <td>the mixing distribution, inside each outer draw</td>
 <td>
 <code>engine</code>; <code>mix_draws</code> only with
@@ -360,13 +360,13 @@ number:</p>
 <span>                                <span class="kw">function</span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="fu">pln</span><span class="op">(</span><span class="st">"halton"</span>, <span class="va">r</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span><span class="va">quad</span>, <span class="va">halton</span><span class="op">)</span></span>
 <span><span class="co">#&gt;       engine ndraws    logLik   ln_sigma se_ln_sigma</span></span>
-<span><span class="co">#&gt; 1 quadrature     50 -294.4796 -0.5551128   0.2282297</span></span>
-<span><span class="co">#&gt; 2 quadrature   1500 -294.4796 -0.5551128   0.2282297</span></span>
-<span><span class="co">#&gt; 3     halton     25 -294.4376 -0.3531253   0.2339105</span></span>
-<span><span class="co">#&gt; 4     halton     50 -294.4294 -0.4321822   0.2292423</span></span>
-<span><span class="co">#&gt; 5     halton    100 -294.4224 -0.4745107   0.2282395</span></span>
-<span><span class="co">#&gt; 6     halton    200 -294.4255 -0.5017463   0.2272242</span></span>
-<span><span class="co">#&gt; 7     halton    400 -294.4333 -0.5200564   0.2268687</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 quadrature     50 -294.4796 -0.5551128   0.2282727</span></span>
+<span><span class="co">#&gt; 2 quadrature   1500 -294.4796 -0.5551128   0.2282727</span></span>
+<span><span class="co">#&gt; 3     halton     25 -294.4376 -0.3531253   0.2337645</span></span>
+<span><span class="co">#&gt; 4     halton     50 -294.4294 -0.4321822   0.2295976</span></span>
+<span><span class="co">#&gt; 5     halton    100 -294.4224 -0.4745107   0.2282137</span></span>
+<span><span class="co">#&gt; 6     halton    200 -294.4255 -0.5017463   0.2272083</span></span>
+<span><span class="co">#&gt; 7     halton    400 -294.4333 -0.5200564   0.2265148</span></span></code></pre></div>
 <p>The two quadrature fits are identical: quadrature ignores
 <code>ndraws</code>, and increasing it there only suggests a check that
 was not made. With Halton draws,
@@ -394,7 +394,7 @@ Halton engine is kept to reproduce fits from earlier versions.</p>
 outer draws increases (on the same subsample):</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rp_fit</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span>
+<span>  <span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span>
 <span>                   rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="op">-</span><span class="fl">1</span> <span class="op">+</span> <span class="va">speed50</span>, data <span class="op">=</span> <span class="va">sub</span>,</span>
 <span>                   family <span class="op">=</span> <span class="st">"NB2"</span>, ndraws <span class="op">=</span> <span class="va">r</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span>  <span class="va">co</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span></span>
@@ -406,9 +406,9 @@ outer draws increases (on the same subsample):</p>
 <span><span class="va">rp_draws</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">200</span><span class="op">)</span>, <span class="va">rp_fit</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">rp_draws</span></span>
 <span><span class="co">#&gt;   ndraws converged   logLik       mean        sd     se_sd</span></span>
-<span><span class="co">#&gt; 1     50      TRUE -294.253 -0.5235857 0.5163452 0.5943831</span></span>
-<span><span class="co">#&gt; 2    100      TRUE -294.262 -0.5296093 0.4808545 0.5679274</span></span>
-<span><span class="co">#&gt; 3    200      TRUE -294.269 -0.5315672 0.4565646 0.5644011</span></span></code></pre></div>
+<span><span class="co">#&gt; 1     50      TRUE -294.253 -0.5235857 0.5163452 0.5843359</span></span>
+<span><span class="co">#&gt; 2    100      TRUE -294.262 -0.5296093 0.4808545 0.5681022</span></span>
+<span><span class="co">#&gt; 3    200      TRUE -294.269 -0.5315672 0.4565646 0.5612988</span></span></code></pre></div>
 <p>The estimated standard deviation of the random parameter changes with
 the draws by an amount that is small relative to its standard error
 here, but it has not settled. Choose the number of draws by this kind of
@@ -420,7 +420,7 @@ studies belong in scripts outside of a vignette build.</p>
 <h2 id="three-reasons-a-prediction-is-not-a-number">Three reasons a prediction is not a number<a class="anchor" aria-label="anchor" href="#three-reasons-a-prediction-is-not-a-number"></a>
 </h2>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">rp_ln</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span>
+<code class="sourceCode R"><span><span class="va">rp_ln</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span>
 <span>                     rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="op">-</span><span class="fl">1</span> <span class="op">+</span> <span class="va">speed50</span>,</span>
 <span>                     rpardists <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>speed50 <span class="op">=</span> <span class="st">"ln"</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">sub</span>,</span>
 <span>                     family <span class="op">=</span> <span class="st">"NB2"</span>, ndraws <span class="op">=</span> <span class="fl">100</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
@@ -431,7 +431,7 @@ studies belong in scripts outside of a vignette build.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp_ln</span>, newdata <span class="op">=</span> <span class="va">nd</span>, method <span class="op">=</span> <span class="st">"Exact"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: 1 prediction(s) are infinite: the expected value does not exist for a</span></span>
 <span><span class="co">#&gt; lognormal random parameter with a positive x, or a gamma random parameter with</span></span>
-<span><span class="co">#&gt; x * sigma^2 / mu &gt;= 1. See ?countreg.rp.</span></span>
+<span><span class="co">#&gt; x * sigma^2 / mu &gt;= 1. See ?countreg_rp.</span></span>
 <span><span class="co">#&gt; [1] 1.5748    Inf</span></span></code></pre></div>
 <ol style="list-style-type: decimal">
 <li><p><strong>The expectation does not exist.</strong> With a lognormal
@@ -459,7 +459,7 @@ but it overflows for extreme
 The value below is far outside the data (<code>speed50</code> is 0 or 1)
 and is used only to show the message:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">rp_n</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span>
+<code class="sourceCode R"><span><span class="va">rp_n</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span>
 <span>                    rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="op">-</span><span class="fl">1</span> <span class="op">+</span> <span class="va">speed50</span>, data <span class="op">=</span> <span class="va">sub</span>,</span>
 <span>                    family <span class="op">=</span> <span class="st">"NB2"</span>, ndraws <span class="op">=</span> <span class="fl">100</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp_n</span>, newdata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>lnaadt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">5000</span><span class="op">)</span>, lnlength <span class="op">=</span> <span class="fl">0</span>,</span>

@@ -89,7 +89,7 @@ including with <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>further arguments passed to or from other methods. For
-<code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code> and <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> of <code><a href="countreg.rp.html">countreg.rp()</a></code> models,
+<code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code> and <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> of <code><a href="countreg_rp.html">countreg_rp()</a></code> models,
 this can include <code>method</code> (see <code><a href="predict.flexCountReg.html">predict.flexCountReg</a></code>).</p></dd>
 
 
@@ -142,7 +142,7 @@ fit time: Hessian-based, robust (sandwich) or bootstrapped (see the
 <code>stderr</code> argument of each estimator).</p>
 <p><code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code> is the number of rows used in estimation. For panel models
 (<code><a href="renb.html">renb()</a></code>, <code><a href="poisLindRE.html">poisLind.re()</a></code>, <code><a href="repois.html">repois()</a></code>, <code><a href="negmultinom.html">negmultinom()</a></code>
-and <code><a href="countreg.rp.html">countreg.rp()</a></code> with <code>panel_id</code>), the <code>nobs</code> attribute
+and <code><a href="countreg_rp.html">countreg_rp()</a></code> with <code>panel_id</code>), the <code>nobs</code> attribute
 of <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, which <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code> uses, is the number of panels,
 because the panels are the independent units.
 With frequency weights (<code>weights</code>), it is the sum of the weights

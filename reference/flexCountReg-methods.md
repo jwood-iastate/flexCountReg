@@ -55,7 +55,7 @@ print(x, digits = max(3L, getOption("digits") - 3L), ...)
   further arguments passed to or from other methods. For
   [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) and
   [`residuals()`](https://rdrr.io/r/stats/residuals.html) of
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   models, this can include `method` (see
   [`predict.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md)).
 
@@ -124,7 +124,7 @@ in estimation. For panel models
 [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md),
 [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
 and
-[`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
 with `panel_id`), the `nobs` attribute of
 [`logLik()`](https://rdrr.io/r/stats/logLik.html), which
 [`BIC()`](https://rdrr.io/r/stats/AIC.html) uses, is the number of

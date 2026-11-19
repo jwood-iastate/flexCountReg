@@ -114,7 +114,7 @@ than a factor with both levels. <code>group_var = "subject"</code> makes
 the four rows of a patient share one draw:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fe</span> <span class="op">&lt;-</span> <span class="va">y</span> <span class="op">~</span> <span class="op">-</span><span class="fl">1</span> <span class="op">+</span> <span class="va">progabide</span> <span class="op">+</span> <span class="va">lbase</span> <span class="op">+</span> <span class="va">lage</span> <span class="op">+</span> <span class="va">V4</span></span>
-<span><span class="va">rp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">fe</span>, rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">epil</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
+<span><span class="va">rp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">fe</span>, rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">epil</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
 <span>                  group_var <span class="op">=</span> <span class="st">"subject"</span>, ndraws <span class="op">=</span> <span class="fl">200</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">rp</span><span class="op">$</span><span class="va">model</span><span class="op">$</span><span class="va">converged</span></span>
 <span><span class="co">#&gt; [1] TRUE</span></span>
@@ -122,11 +122,11 @@ the four rows of a patient share one draw:</p>
 <span><span class="co">#&gt;                    Estimate Std. Error</span></span>
 <span><span class="co">#&gt; progabide            -0.315      0.150</span></span>
 <span><span class="co">#&gt; lbase                 1.028      0.101</span></span>
-<span><span class="co">#&gt; lage                  0.328      0.348</span></span>
+<span><span class="co">#&gt; lage                  0.328      0.351</span></span>
 <span><span class="co">#&gt; V4                   -0.118      0.087</span></span>
 <span><span class="co">#&gt; (Intercept):Mean      1.850      0.109</span></span>
 <span><span class="co">#&gt; (Intercept):St.Dev    0.491      0.061</span></span>
-<span><span class="co">#&gt; ln(alpha)            -2.008      0.236</span></span></code></pre></div>
+<span><span class="co">#&gt; ln(alpha)            -2.008      0.238</span></span></code></pre></div>
 <p>The coefficients are effects on the log of the expected count
 <em>given</em> the patient’s intercept. The standard deviation of the
 intercept (<code>(Intercept):St.Dev</code>) measures how much patients
@@ -179,7 +179,7 @@ with the same covariates differ in their seizure rates.</p>
 <span><span class="co">#&gt; 1      1 5    3.420274  3.389338        3.380582</span></span>
 <span><span class="co">#&gt; 2      2 3    3.420274  3.389338        3.380582</span></span>
 <span><span class="co">#&gt; 3      3 3    3.420274  3.389338        3.380582</span></span>
-<span><span class="co">#&gt; 4      4 3    3.038680  3.011196        3.003416</span></span></code></pre></div>
+<span><span class="co">#&gt; 4      4 3    3.038680  3.011195        3.003416</span></span></code></pre></div>
 <p><code>Exact</code> integrates over the random intercept with its
 moment-generating function; <code>Simulated</code> averages over the
 Halton draws and differs from it by the simulation error. Both describe
@@ -238,7 +238,7 @@ the comparison:</p>
 <span><span class="va">held_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="kw">function</span><span class="op">(</span><span class="va">k</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">train</span> <span class="op">&lt;-</span> <span class="va">epil</span><span class="op">[</span><span class="va">epil</span><span class="op">$</span><span class="va">fold</span> <span class="op">!=</span> <span class="va">k</span>, <span class="op">]</span></span>
 <span>  <span class="va">test</span> <span class="op">&lt;-</span> <span class="va">epil</span><span class="op">[</span><span class="va">epil</span><span class="op">$</span><span class="va">fold</span> <span class="op">==</span> <span class="va">k</span>, <span class="op">]</span></span>
-<span>  <span class="va">m_rp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">fe</span>, rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">train</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
+<span>  <span class="va">m_rp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">fe</span>, rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>, data <span class="op">=</span> <span class="va">train</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
 <span>                      group_var <span class="op">=</span> <span class="st">"subject"</span>, ndraws <span class="op">=</span> <span class="fl">200</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span>  <span class="va">m_pool</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">progabide</span> <span class="op">+</span> <span class="va">lbase</span> <span class="op">+</span> <span class="va">lage</span> <span class="op">+</span> <span class="va">V4</span>, data <span class="op">=</span> <span class="va">train</span>,</span>
 <span>                     family <span class="op">=</span> <span class="st">"NB2"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
@@ -299,9 +299,9 @@ all the rows it is given; a row whose count is missing gets
 <span><span class="co">#&gt; [4,]          NA</span></span>
 <span><span class="co">#&gt; attr(,"eb_sd")</span></span>
 <span><span class="co">#&gt;      (Intercept)</span></span>
-<span><span class="co">#&gt; [1,]   0.2990762</span></span>
-<span><span class="co">#&gt; [2,]   0.2990762</span></span>
-<span><span class="co">#&gt; [3,]   0.2990762</span></span>
+<span><span class="co">#&gt; [1,]   0.2990761</span></span>
+<span><span class="co">#&gt; [2,]   0.2990761</span></span>
+<span><span class="co">#&gt; [3,]   0.2990761</span></span>
 <span><span class="co">#&gt; [4,]          NA</span></span></code></pre></div>
 <p>Computing the Empirical Bayes prediction with the period-4 count
 included and calling it a forecast would leak the answer into the

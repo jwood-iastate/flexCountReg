@@ -102,7 +102,7 @@
 <li>
 <strong>Export</strong>: download the analysis.</li>
 </ul>
-<p>Everything the app runs is also written as R code. The <em>R code</em> panel at the bottom shows the session script: the data loading, every new variable, every fit, diagnostic, prediction and comparison, in the order they ran, using the package’s own functions (<code><a href="reference/countreg.html">countreg()</a></code>, <code><a href="reference/countreg.rp.html">countreg_rp()</a></code>, <code><a href="reference/rootogram.html">rootogram()</a></code>, <code><a href="reference/tolerance_interval.html">tolerance_interval()</a></code>, …). The app evaluates exactly this code, and the Export tab downloads it as <code>analysis.R</code> together with the settings of each fit and a manifest of versions and warnings, so the analysis can be rerun, modified and shared without the app. For example, a session that loads data, adds a variable and fits a model produces code like:</p>
+<p>Everything the app runs is also written as R code. The <em>R code</em> panel at the bottom shows the session script: the data loading, every new variable, every fit, diagnostic, prediction and comparison, in the order they ran, using the package’s own functions (<code><a href="reference/countreg.html">countreg()</a></code>, <code><a href="reference/countreg_rp.html">countreg_rp()</a></code>, <code><a href="reference/rootogram.html">rootogram()</a></code>, <code><a href="reference/tolerance_interval.html">tolerance_interval()</a></code>, …). The app evaluates exactly this code, and the Export tab downloads it as <code>analysis.R</code> together with the settings of each fit and a manifest of versions and warnings, so the analysis can be rerun, modified and shared without the app. For example, a session that loads data, adds a variable and fits a model produces code like:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data_1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/eval.html" class="external-link">local</a></span><span class="op">(</span><span class="op">{</span></span>
 <span>    <span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">new.env</a></span><span class="op">(</span><span class="op">)</span></span>
@@ -124,7 +124,7 @@
 <li>
 <code><a href="reference/countreg.html">countreg()</a></code> estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models.</li>
 <li>
-<code><a href="reference/countreg.rp.html">countreg_rp()</a></code> estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.</li>
+<code><a href="reference/countreg_rp.html">countreg_rp()</a></code> estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.</li>
 <li>
 <code><a href="reference/countreg_mix.html">countreg_mix()</a></code> and <code><a href="reference/countreg_mix.html">countreg_lc()</a></code> estimate finite-mixture and latent-class count models (the same engine under two vocabularies), with several reproducible starts, and <code><a href="reference/component_probs.html">component_probs()</a></code> / <code><a href="reference/component_probs.html">class_probs()</a></code> give prior or posterior class probabilities.</li>
 <li>
@@ -215,7 +215,7 @@
 <li>Sichel: <code>dsichel</code>, <code>psichel</code>, <code>qsichel</code>, <code>rsichel</code>
 </li>
 </ul>
-<p>See <code><a href="reference/count_families.html">?count_families</a></code> for every distribution available in <code><a href="reference/countreg.html">countreg()</a></code> and <code><a href="reference/countreg.rp.html">countreg_rp()</a></code>, with its parameters, variance and model features.</p>
+<p>See <code><a href="reference/count_families.html">?count_families</a></code> for every distribution available in <code><a href="reference/countreg.html">countreg()</a></code> and <code><a href="reference/countreg_rp.html">countreg_rp()</a></code>, with its parameters, variance and model features.</p>
 <p><em>Continuous distributions</em></p>
 <ul>
 <li>Inverse Gamma: <code>dinvgamma</code>, <code>pinvgamma</code>, <code>qinvgamma</code>, <code>rinvgamma</code>

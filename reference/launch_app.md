@@ -7,7 +7,7 @@ indicators, products, ratios, categories, factors); specify and estimate
 count regression
 ([`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)),
 random-parameter
-([`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)),
+([`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)),
 random-effects panel
 ([`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
 [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md),

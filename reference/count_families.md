@@ -1,9 +1,9 @@
-# Count Families for countreg() and countreg.rp()
+# Count Families for countreg() and countreg_rp()
 
 Overview of the count distributions that can be used as the `family` of
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
 and
-[`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md):
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
 their distribution parameters (the parameters modeled by
 `dis_param_formula_1` and `dis_param_formula_2`), variances,
 distribution functions, and the model features available for each.
@@ -70,7 +70,7 @@ probabilities (see
 \(2\) The natural parameter of each observation is found by solving the
 mean equation numerically, so \\\mu\\ is exactly the mean. These
 families are slower to fit, especially in
-[`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md);
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md);
 their shape parameter must lie in \\\[10^{-6}, 10^6\]\\ and the mean be
 at most \\10^9\\ (outside this numerical domain the likelihood is
 treated as 0).
@@ -123,7 +123,7 @@ Zero inflation and hurdles (`zero_formula`) are available for every
 family in
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
 and every family can be used with random parameters in
-[`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
 (GP2 only with a nonnegative dispersion).
 
 ### Finite mixtures and latent classes
@@ -224,7 +224,7 @@ observations with the same covariates is not part of the model.
 ## See also
 
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
-[`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md),
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
 [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
 [`summary.flexCountReg()`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)
 

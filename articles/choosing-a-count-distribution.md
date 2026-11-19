@@ -25,7 +25,7 @@ covariates*. The useful questions are:
 | Conditional dispersion | Given the mean model, is the variance larger or smaller than the mean? How does it grow with the mean? | variance ∝ mean: NB1, PIG1, GP1, HERMITE; ∝ mean²: NB2, PIG2, PIG, PLN, NBGE; in between: NBP, PA |
 | Underdispersion | Is the variance *smaller* than the mean? | COM, GP1/GP2, DW, DPO, HYPERPOIS, GAMMACOUNT |
 | Tails | Are very large counts more frequent than a negative binomial allows? | PLN, PIG, SI, GW, PW |
-| Zeros | Are there more zeros than the count distribution predicts *after* fitting it? | zero-inflated or hurdle models (`zero_formula`), PL, PLG, PGE |
+| Zeros | Are there more zeros than the count distribution predicts *after* fitting it? | zero-inflated or hurdle models (`zero_formula`), PL, PLG, PLL, PGE, NBGE |
 | Exposure | Were the counts observed over different lengths of time or space? | any family, with an offset ([`vignette("data-exposure-weights")`](https://jwood-iastate.github.io/flexCountReg/articles/data-exposure-weights.md)) |
 | Mechanism | Is there a plausible process, e.g. events in clusters or batches, or renewal with regular gaps? | Polya-Aeppli (PA, clusters), HERMITE (pairs), GAMMACOUNT (renewal) |
 
@@ -111,9 +111,9 @@ share and shape parameters have large standard errors here:
 ``` r
 
 summary(models$DELAPORTE)$coefficients[c("logit(rho)", "ln(k)"), 1:2]
-#>              Estimate Std. Error
-#> logit(rho)  0.6671856  0.9616704
-#> ln(k)      -0.0253976  0.7495974
+#>               Estimate Std. Error
+#> logit(rho)  0.66718570   2.421449
+#> ln(k)      -0.02539755   1.861276
 ```
 
 The data do not separate the Poisson and negative binomial components of
@@ -135,7 +135,7 @@ summary(models$NB2)
 #>     offset = "lnlength", method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 38 
+#> Iterations: 37 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -342,19 +342,19 @@ zero-inflated or hurdle version of any family can be fitted with
 
 zinb <- countreg(f, data = washington_roads, family = "NB2",
                  offset = "lnlength", zero_formula = ~ 1, method = "NR")
-#> Warning: The Hessian is singular; standard errors use a generalized inverse and
-#> may be unreliable. The model may not be identified. The likelihood is flat in a
-#> direction involving Zero:(Intercept); their standard errors are NA.
+#> Warning: The Hessian is not negative definite at the estimates, so the standard
+#> errors of Zero:(Intercept) are NA. The estimate may be on the boundary of the
+#> parameter space or not at a maximum.
 pi_zero <- unname(plogis(coef(zinb)["Zero:(Intercept)"]))
 c(NB2 = as.numeric(logLik(models$NB2)), ZINB = as.numeric(logLik(zinb)),
   zero_probability = pi_zero)
 #>              NB2             ZINB zero_probability 
-#>    -1.090559e+03    -1.090559e+03    3.701046e-100
+#>    -1.090559e+03    -1.090560e+03     4.338153e-05
 ```
 
-The estimated probability of a structural zero is 3.7e-100 and the
-log-likelihoods differ by 5e-08: the zeros are already explained by the
-negative binomial, so the zero-inflated model adds nothing. When an
+The estimated probability of a structural zero is 4.3e-05 and the
+log-likelihoods differ by 5.2e-04: the zeros are already explained by
+the negative binomial, so the zero-inflated model adds nothing. When an
 estimate is at the boundary of its parameter space like this, its
 standard error is not meaningful, and the likelihood-ratio test of NB2
 against ZINB has a non-standard distribution, so it is not reported.
@@ -392,7 +392,7 @@ margEffTable(models$NB2)
 #> Method: delta 
 #> 
 #>     term variable_type           effect_metric estimate std_error t_value
-#>   lnaadt    continuous Average marginal effect    0.532     0.037  14.565
+#>   lnaadt    continuous Average marginal effect    0.532     0.037  14.561
 #>  speed50     indicator   Pseudo-elasticity (%)  -43.320     6.246  -6.936
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
 #>        0 ***    0.460    0.604  1501                    NA

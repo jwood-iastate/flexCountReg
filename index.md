@@ -97,7 +97,7 @@ the bottom shows the session script: the data loading, every new
 variable, every fit, diagnostic, prediction and comparison, in the order
 they ran, using the package’s own functions
 ([`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
-[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md),
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
 [`rootogram()`](https://jwood-iastate.github.io/flexCountReg/reference/rootogram.md),
 [`tolerance_interval()`](https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.md),
 …). The app evaluates exactly this code, and the Export tab downloads it
@@ -134,7 +134,7 @@ computer.
   estimates cross-sectional count regression models with any of the
   distributions below, optional models for the distribution parameters,
   underreporting, and zero-inflated or hurdle zero models.
-- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md)
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   estimates random parameters count models, optionally with panels,
   correlated random parameters, and heterogeneity in the means and
   variances of the random parameters.
@@ -272,7 +272,7 @@ See
 for every distribution available in
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
 and
-[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.rp.md),
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
 with its parameters, variance and model features.
 
 *Continuous distributions*

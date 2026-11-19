@@ -283,15 +283,16 @@
 
 ### Vignettes
 
-- Fifteen vignettes, grouped on the package website as Start here,
-  Diagnose and interpret, Model structure, Predict and validate, and
-  Advanced. New: getting started; data, exposure and weights; diagnosing
-  count models; predictions, marginal effects and elasticities; modeling
-  distribution parameters; zeros, hurdles and sampling; underreporting
-  and identification; predictive validation; prediction for panel data;
-  numerical reliability; simulation studies; and adding a count
-  distribution (for contributors). The three earlier vignettes are
-  revised.
+- Seventeen vignettes, grouped on the package website as Start here,
+  Diagnose and interpret, Model structure, Finite mixtures and latent
+  classes, Predict and validate, and Advanced. New (besides the two
+  finite-mixture vignettes above): getting started; data, exposure and
+  weights; diagnosing count models; predictions, marginal effects and
+  elasticities; modeling distribution parameters; zeros, hurdles and
+  sampling; underreporting and identification; predictive validation;
+  prediction for panel data; numerical reliability; simulation studies;
+  and adding a count distribution (for contributors). The three earlier
+  vignettes are revised.
 - `inst/validation/simulation-studies/count-regression-study.R` is a
   parameterized simulation study (Poisson, NB2 and a negative
   multinomial panel) with one random-number stream per replicate; its

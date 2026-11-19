@@ -538,11 +538,13 @@ component as soon as its entry is complete, but it is reported as
 agreement with <code><a href="../reference/countreg.html">countreg()</a></code>, an independently coded
 two-component likelihood, and a recovery study such as
 <code>inst/validation/finite-mixtures/mixture-recovery-study.R</code>.
-The <code>dens</code> function must return <code>NA</code> (not
-<code>-Inf</code>) or the optimizer cannot tell an invalid parameter
-value from a count with probability zero; the mixture engine
-additionally rejects non-finite or non-positive component parameters
-before evaluating any density.</p>
+Because a registry <code>dens</code> returns probability 0
+(<code>-Inf</code> on the log scale) for an invalid parameter value, as
+<code><a href="../reference/countreg.html">countreg()</a></code> needs, the mixture engine cannot tell such a
+value from a count with probability zero by the density alone. It
+therefore checks the component parameters itself and rejects a candidate
+whose parameters are not finite and positive, or whose density raises an
+error, before it enters the likelihood.</p>
 </div>
 <div class="section level2">
 <h2 id="tests">7. Tests<a class="anchor" aria-label="anchor" href="#tests"></a>

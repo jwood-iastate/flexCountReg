@@ -260,9 +260,9 @@ its standard error is <code>NA</code>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">zinb_const</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span><span class="st">"Zero:(Intercept)"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   Estimate Std. Error </span></span>
-<span><span class="co">#&gt;  -12.32361         NA</span></span>
+<span><span class="co">#&gt;  -12.32427         NA</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">zinb_const</span><span class="op">)</span><span class="op">[[</span><span class="st">"Zero:(Intercept)"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 4.445507e-06</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 4.442605e-06</span></span></code></pre></div>
 <p>With covariates, the zero model can describe <em>which</em> students
 have more zeros. In the zero-inflated model a negative
 <code>Zero:ment</code> coefficient means fewer structural zeros among
@@ -276,17 +276,17 @@ at least one article:</p>
 <span><span class="op">}</span></span>
 <span><span class="fu">zc</span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                    Estimate Std. Error</span></span>
-<span><span class="co">#&gt; Zero:(Intercept) -0.8786574  0.4017719</span></span>
-<span><span class="co">#&gt; Zero:ment        -0.6113860  0.2454423</span></span>
-<span><span class="co">#&gt; Zero:kid5         0.1564023  0.3664404</span></span>
+<span><span class="co">#&gt; Zero:(Intercept) -0.8786574  0.4028556</span></span>
+<span><span class="co">#&gt; Zero:ment        -0.6113860  0.2464432</span></span>
+<span><span class="co">#&gt; Zero:kid5         0.1564024  0.3569711</span></span>
 <span><span class="fu">zc</span><span class="op">(</span><span class="va">hnb</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                     Estimate Std. Error</span></span>
-<span><span class="co">#&gt; Zero:(Intercept)  0.23680759 0.29417483</span></span>
-<span><span class="co">#&gt; Zero:femWomen    -0.25115053 0.15896858</span></span>
-<span><span class="co">#&gt; Zero:marMarried   0.32623628 0.18062465</span></span>
-<span><span class="co">#&gt; Zero:kid5        -0.28525098 0.11122144</span></span>
-<span><span class="co">#&gt; Zero:phd          0.02221526 0.07942908</span></span>
-<span><span class="co">#&gt; Zero:ment         0.08012173 0.01301908</span></span></code></pre></div>
+<span><span class="co">#&gt; Zero:(Intercept)  0.23680758 0.29553208</span></span>
+<span><span class="co">#&gt; Zero:femWomen    -0.25115052 0.15905687</span></span>
+<span><span class="co">#&gt; Zero:marMarried   0.32623628 0.18064477</span></span>
+<span><span class="co">#&gt; Zero:kid5        -0.28525098 0.11127637</span></span>
+<span><span class="co">#&gt; Zero:phd          0.02221526 0.07968591</span></span>
+<span><span class="co">#&gt; Zero:ment         0.08012173 0.01301641</span></span></code></pre></div>
 <p>flexCountReg’s likelihoods and zero-model coefficients agree with
 those of pscl:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">

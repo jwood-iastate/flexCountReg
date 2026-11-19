@@ -13,12 +13,16 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
 has_pscl <- requireNamespace("pscl", quietly = TRUE)
 ```
 
-Many count datasets have many zeros. That alone says little: a count
-distribution with a small mean or a large variance produces many zeros by
+Many count datasets have a high density of zeros. That alone says little: a 
+count distribution with a small mean or a large variance produces many zeros by
 itself. This vignette shows how to tell whether a model needs a separate
 zero process, what zero-inflated and hurdle models assume, how flexCountReg
 labels their components, and why a zero-heavy sample is not the same thing
-as a zero-truncated sampling design.
+as a zero-truncated sampling design. For discussion on whether a zero-inflated 
+or hurdle model is appropriate, see Zeileis et al. (2008) and Lord et al. 
+(2007). Note that there should be a substantive reason for believing that a 
+separate zero process exists, and that the zero-inflated and hurdle models are 
+not interchangeable.
 
 ```{r setup}
 library(flexCountReg)
@@ -257,6 +261,10 @@ package.
 
 Long, J. S. (1990). The origins of sex differences in science.
 *Social Forces*, 68(4), 1297-1316.
+
+Lord, Dominique, Simon Washington, and John N. Ivan. (2007). Further notes on  
+the application of zero-inflated models in highway safety. 
+*Accident Analysis & Prevention* 39(1), 53-57.
 
 Zeileis, A., Kleiber, C. and Jackman, S. (2008). Regression models for count
 data in R. *Journal of Statistical Software*, 27(8), 1-25.

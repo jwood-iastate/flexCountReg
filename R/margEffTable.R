@@ -291,7 +291,7 @@ print.flexEffectTable <- function(x, ...) {
 # valid values)? Checked numerically on a small grid, so it covers every
 # registered family.
 .fcr_mean_uses_dispersion <- function(family) {
-  if (is.null(.fcr_family_registry[[family]])) return(FALSE)
+  if (is.null(.fcr_family_or_null(family))) return(FALSE)
   tryCatch({
     m <- suppressWarnings(.fcr_family_mean(
       family, mu = rep(2, 4), alpha = c(0.3, 0.3, 1.7, 1.7),

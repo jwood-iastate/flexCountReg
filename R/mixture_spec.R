@@ -106,17 +106,15 @@ print.fcr_mixture_control <- function(x, ...) {
 # family vector (length K) and the display labels.
 .fcr_fm_families <- function(family, components, components_missing,
                              label_prefix = "Component") {
-  if (!is.character(family) || !length(family) || anyNA(family)) {
-    stop("`family` must be a character vector of family codes.",
-         call. = FALSE)
+  # One family, a vector of names, or a list of names and user families
+  if (inherits(family, "fcr_count_family")) family <- list(family)
+  if (!(is.character(family) || is.list(family)) || !length(family) ||
+      (is.character(family) && anyNA(family))) {
+    stop("`family` must be family codes or families made with ",
+         "new_count_family().", call. = FALSE)
   }
   labels <- names(family)
-  fam <- toupper(gsub("[^[:alnum:]]", "", family))
-  bad <- setdiff(fam, .fcr_families)
-  if (length(bad)) {
-    stop("Unknown `family` ", toString(paste0('"', bad, '"')),
-         ". Must be one of: ", toString(.fcr_families), ".", call. = FALSE)
-  }
+  fam <- vapply(family, .fcr_resolve_family, character(1), USE.NAMES = FALSE)
   if (!is.numeric(components) || length(components) != 1L ||
       !is.finite(components) || components < 1 ||
       components != round(components)) {
@@ -143,7 +141,11 @@ print.fcr_mixture_control <- function(x, ...) {
     }
     labels <- paste0(label_prefix, seq_len(K))
   }
-  list(families = unname(fam), labels = unname(labels), K = K)
+  specs <- if (is.list(family)) {
+    Filter(function(f) inherits(f, "fcr_count_family"), family)
+  }
+  list(families = unname(fam), labels = unname(labels), K = K,
+       specs = unname(specs[!duplicated(vapply(specs, `[[`, "", "key"))]))
 }
 
 # ---- Free-parameter map --------------------------------------------------------

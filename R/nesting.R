@@ -36,7 +36,7 @@
 # Coefficient names with the "(Intercept)" of a distribution-parameter formula
 # folded into the scalar name, so "ln(alpha):(Intercept)" matches "ln(alpha)".
 .fcr_norm_coef_names <- function(nm, family) {
-  labels <- if (!is.null(family) && family %in% .fcr_families) {
+  labels <- if (!is.null(family) && .fcr_is_family(family)) {
     unlist(get_params(family))
   }
   for (lab in labels) {
@@ -274,8 +274,11 @@
   n <- nrow(fd$X)
   ones <- matrix(1, n, 1)
   fam <- m$family
-  par_labels <- if (is.character(fam) && toupper(fam) %in% .fcr_families)
-    get_params(toupper(fam)) else list(NULL, NULL)
+  par_labels <- if (is.character(fam) && .fcr_is_family(fam)) {
+    get_params(fam)
+  } else if (is.character(fam) && .fcr_is_family(toupper(fam))) {
+    get_params(toupper(fam))
+  } else list(NULL, NULL)
   for (k in 1:2) {
     nm <- paste0("dis", k)
     if (!is.null(fd$aux[[nm]])) out[[nm]] <- fd$aux[[nm]]

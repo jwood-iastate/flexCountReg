@@ -238,7 +238,7 @@ print.flexCountReg <- function(x, digits = max(3L, getOption("digits") - 3L),
                                ...) {
   m <- x$model
   cat("flexCountReg model:", class(x)[1])
-  if (!is.null(m$family)) cat(" | family:", m$family)
+  if (!is.null(m$family)) cat(" | family:", .fcr_family_label(m$family))
   cat("\n")
   if (!is.null(x$call)) {
     cat("Call: ")

@@ -56,7 +56,7 @@
   pos <- function(v) if (is.null(v)) rep(TRUE, n) else
     rep_len(is.finite(v) & v > 0, n)
   ok <- pos(mu) & pos(alpha) & pos(sigma)
-  hook <- .fcr_family_registry[[family]]$valid
+  hook <- .fcr_family_or_null(family)$valid
   if (!is.null(hook) && any(ok)) {
     r <- .fcr_recycle(mu, alpha %||% NA_real_, sigma %||% NA_real_)
     h <- hook(r[[1]], if (!is.null(alpha)) r[[2]], if (!is.null(sigma)) r[[3]])
@@ -455,13 +455,33 @@
 .fcr_families <- names(.fcr_family_registry)
 
 .fcr_get_family <- function(family) {
-  f <- .fcr_family_registry[[family]]
+  f <- .fcr_family_or_null(family)
   if (is.null(f)) {
+    if (is.character(family) && length(family) == 1L &&
+        startsWith(family, "user:")) {
+      stop("The user-defined family \"", .fcr_family_label(family),
+           "\" is not available in this R session. Use the fitted model ",
+           "(which stores it), or pass the family object again.",
+           call. = FALSE)
+    }
     stop("Unknown `family` \"", family, "\". Must be one of: ",
          toString(.fcr_families), ".", call. = FALSE)
   }
   f
 }
+
+# Registry entry of a built-in or registered user family (user families
+# saved with a fit are registered again when needed); NULL if unknown.
+.fcr_family_or_null <- function(family) {
+  if (!is.character(family) || length(family) != 1L || is.na(family)) {
+    return(NULL)
+  }
+  .fcr_family_registry[[family]] %||% .fcr_user_families[[family]] %||%
+    .fcr_recover_family(family)
+}
+
+# Is `family` a known family key (built-in or user)?
+.fcr_is_family <- function(family) !is.null(.fcr_family_or_null(family))
 
 # Parameter labels: list(<parameter 1>, <parameter 2>)
 # Errors for distribution-parameter formulas a family cannot use.
@@ -485,17 +505,17 @@
 }
 
 get_params <- function(family) {
-  .fcr_family_registry[[family]]$params
+  .fcr_family_or_null(family)$params
 }
 
 # Probability function P(Y = y | ...)
 get_probFunc <- function(family) {
-  .fcr_family_registry[[family]]$dens
+  .fcr_family_or_null(family)$dens
 }
 
 # Variance at mean parameter mu (NULL when not available)
 .fcr_family_variance <- function(family, mu, alpha = NULL, sigma = NULL) {
-  v <- .fcr_family_registry[[family]]$variance
+  v <- .fcr_family_or_null(family)$variance
   if (is.null(v)) NULL else v(mu, alpha, sigma)
 }
 
@@ -532,6 +552,12 @@ get_probFunc <- function(family) {
 
 .fcr_check_thinning <- function(family) {
   if (!family %in% .fcr_thinning_families) {
+    if (startsWith(family, "user:")) {
+      stop("Underreporting models are not available for the user-defined ",
+           "family \"", .fcr_family_label(family), "\": it is not known to ",
+           "be closed under binomial thinning. Available families: ",
+           toString(.fcr_thinning_families), ".", call. = FALSE)
+    }
     stop("Underreporting models are not available for family \"", family,
          "\": the distribution of the reported counts (binomial thinning of ",
          "the true counts) is not of the same family. Available families: ",
@@ -558,7 +584,7 @@ get_probFunc <- function(family) {
 # Mean of the family at mean parameter mu: E[Y] (mu times the mean
 # adjustment, or the family's own mean function)
 .fcr_family_mean <- function(family, mu, alpha = NULL, sigma = NULL) {
-  f <- .fcr_family_registry[[family]]
+  f <- .fcr_family_or_null(family)
   if (!is.null(f$mean)) {
     m <- f$mean(mu, alpha, sigma)
     bad <- is.nan(m) & !is.na(mu)
@@ -583,7 +609,7 @@ get_probFunc <- function(family) {
 
 # Ratio of the mean to exp(X beta)
 .fcr_mean_adjust <- function(family, vec_1, vec_2) {
-  f <- .fcr_family_registry[[family]]
+  f <- .fcr_family_or_null(family)
   if (is.null(f)) return(1)
   a <- f$mean_adj(vec_1, vec_2)
   if (length(a) == 0) 1 else a

@@ -68,6 +68,34 @@
   tools built on them work with flexCountReg fits. One-way and two-way
   cluster covariances equal `sandwich::vcovCL(type = "HC0")` to 1e-10.
 
+## User-defined count distributions
+
+* New `new_count_family()` and `count_param()` define a count distribution
+  from its log PMF, with up to two parameters, each with a log, logit or
+  identity link. The family object can be passed as `family` to
+  `countreg()`, `countreg_rp()`, `countreg_mix()` and `countreg_lc()`. It
+  works with distribution-parameter formulas, zero-inflated and hurdle
+  models, predictions, quantile residuals, rootograms, `simulate()` and
+  robust or cluster-robust standard errors.
+  * Optional `mean`, `variance`, `cdf`, `rand` and `valid` functions can be
+    given. Without them, the moments and the CDF come from summing the PMF,
+    and random draws from inverting the CDF.
+  * A user NB2 reproduces the built-in NB2 in fixed, random-parameter,
+    hurdle and mixture fits. A user zero-inflated NB2 reproduces
+    `zero_formula = ~ 1`.
+  * Each family is registered under its name and a hash of its definition,
+    so two families with the same name do not collide.
+  * The fit stores the family, so a model saved with `saveRDS()` works in a
+    new R session.
+  * Underreporting is not available for user families.
+* New `check_count_family()` checks a family over a grid of means and
+  parameter values. It tests that the PMF sums to one, that `mean`,
+  `variance`, `cdf` and `rand` agree with the PMF, that the function is
+  vectorized, and that missing or invalid values cause no errors.
+* New vignette, "Fitting your own count distribution"
+  (`vignette("user-defined-count-distributions")`), with a one-inflated
+  negative binomial as the worked example.
+
 ## Interactive app
 
 * New `launch_app()` opens an interactive interface to flexCountReg in a

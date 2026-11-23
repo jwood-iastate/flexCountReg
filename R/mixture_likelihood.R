@@ -133,7 +133,7 @@
   todo <- which(!is.na(q) & q >= 0 & defined)
   if (!length(todo)) return(out)
   sub <- function(v, i) if (!is.null(v)) v[i]
-  fam <- .fcr_family_registry[[family]]
+  fam <- .fcr_family_or_null(family)
   if (!is.null(fam$cdf)) {
     out[todo] <- suppressWarnings(fam$cdf(q[todo], cv$mu[todo],
                                           sub(cv$alpha, todo),

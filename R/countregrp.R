@@ -285,11 +285,9 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   stderr <- wt$stderr
   
   # --- 1. Family, method and argument checks ---
-  family <- toupper(gsub("[^[:alnum:]]", "", family))
-  if (!family %in% .fcr_families) {
-    stop("Unknown `family` \"", family, "\". Must be one of: ",
-         toString(.fcr_families), ".", call. = FALSE)
-  }
+  # A built-in family name, or a user family (registered under its key)
+  family_spec <- if (inherits(family, "fcr_count_family")) family
+  family <- .fcr_resolve_family(family)
   params <- get_params(family)
   engine <- match.arg(engine, c("quadrature", "halton", "poilog"))
   if (engine == "poilog" && family == "PLN") {
@@ -574,6 +572,8 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$dis_param_formula_1 <- dis_param_formula_1
   fit$dis_param_formula_2 <- dis_param_formula_2
   fit$family <- family
+  # A user-defined family travels with the fit (see user_families.R)
+  fit$family_spec <- family_spec
   fit$modelType <- "countreg.rp"
   fit$method <- method
   fit$ndraws <- ndraws

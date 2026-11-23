@@ -99,7 +99,7 @@ print.summary.flexCountReg <- function(x, digits = x$digits, ...) {
   cat("Call:\n")
   if (!is.null(x$call)) print(x$call) else print(x$formula)
   cat("\nModel:", x$model_type)
-  if (!is.null(x$family)) cat(" | family:", x$family)
+  if (!is.null(x$family)) cat(" | family:", .fcr_family_label(x$family))
   if (!is.null(x$method)) cat(" | optimizer:", x$method)
   cat("\n")
   if (!is.null(x$iterations)) cat("Iterations:", x$iterations, "\n")

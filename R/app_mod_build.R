@@ -41,6 +41,13 @@ mod_build_ui <- function(id) {
                             multiple = TRUE),
       shiny::selectizeInput(ns("factors"), "Treat as categorical (factor)",
                             character(), multiple = TRUE),
+      shiny::selectizeInput(ns("interactions"), "Interactions",
+                            character(), multiple = TRUE,
+                            options = list(placeholder = "none")),
+      help_text("Pairs of predictors whose effects depend on each other ",
+                "(a:b). Main effects stay in the model; a categorical ",
+                "(factor) predictor gives one interaction coefficient per ",
+                "non-reference level. Interactions enter the mean only."),
       shiny::selectInput(ns("exposure"), "Exposure (logged: offset(log(x)))",
                          none),
       shiny::selectInput(ns("log_offset"),
@@ -105,6 +112,36 @@ mod_build_ui <- function(id) {
                 shiny::uiOutput(ns("checks"))))
 }
 
+# Interactions as choices of a selector. Each pair is one value: the JSON
+# array of its two names (e.g. ["a b","c:d"]), so names with spaces, colons
+# or quotes stay intact and two different pairs never share a value. The
+# label is "a \u00d7 b".
+.pair_value <- function(pr) as.character(jsonlite::toJSON(as.character(pr)))
+
+.pair_decode <- function(v) {
+  unname(lapply(v %||% character(),
+                function(x) as.character(jsonlite::fromJSON(x))))
+}
+
+# All pairs of the chosen predictors, in their order
+interaction_choices <- function(preds) {
+  if (length(preds) < 2) return(character())
+  ij <- utils::combn(length(preds), 2)
+  stats::setNames(
+    apply(ij, 2, function(k) .pair_value(preds[k])),
+    apply(ij, 2, function(k) paste(preds[k], collapse = " \u00d7 ")))
+}
+
+# The chosen pairs (selector values) whose two predictors are still chosen,
+# as values of the new choices; pairs with a dropped predictor are dropped
+keep_interactions <- function(selected, preds) {
+  ch <- interaction_choices(preds)
+  if (!length(ch)) return(character())
+  key <- function(p) paste(sort(p), collapse = "\r")
+  sel <- vapply(.pair_decode(selected), key, "")
+  unname(ch[vapply(.pair_decode(ch), key, "") %in% sel])
+}
+
 mod_build_server <- function(id, state) {
   shiny::moduleServer(id, function(input, output, session) {
     none <- c("(none)" = "")
@@ -151,6 +188,10 @@ mod_build_server <- function(id, state) {
       shiny::updateSelectizeInput(
         session, "rpar", choices = input$predictors,
         selected = intersect(input$rpar, input$predictors))
+      shiny::updateSelectizeInput(
+        session, "interactions",
+        choices = interaction_choices(input$predictors),
+        selected = keep_interactions(input$interactions, input$predictors))
     })
 
     families <- shiny::reactive({
@@ -215,11 +256,17 @@ mod_build_server <- function(id, state) {
       est <- input$estimator
       mixture <- .app_is_mixture(est)
       grp <- if (.app_estimator(est)$group != "none") opt(input$group)
+      preds <- input$predictors %||% character()
+      # Pairs whose predictors are still chosen (the selector drops the
+      # others when it is next updated)
+      inter <- Filter(function(p) all(p %in% preds),
+                      .pair_decode(input$interactions))
       app_spec(
         data = list(source = m$source, name = m$name, object = m$object),
         recipe = list(response = opt(input$response),
-                      predictors = input$predictors %||% character(),
+                      predictors = preds,
                       factors = input$factors %||% character(),
+                      interactions = inter,
                       exposure = opt(input$exposure),
                       log_offset = opt(input$log_offset),
                       weights = opt(input$weights), group = grp),

@@ -79,6 +79,7 @@ mod_predict_ui <- function(id) {
                 fill = FALSE,
                 shiny::uiOutput(ns("running")),
                 shiny::uiOutput(ns("res_note")),
+                shiny::uiOutput(ns("res_warnings")),
                 shiny::tableOutput(ns("res")),
                 shiny::downloadButton(ns("download"), "Download results",
                                       class = "btn-sm")),
@@ -137,7 +138,9 @@ mod_predict_server <- function(id, state) {
       if (is.null(f)) stop("Choose a CSV file first.", call. = FALSE)
       keep <- file.path(state$session_dir,
                         paste0("newdata-", length(state$newdata) + 1, ".csv"))
-      file.copy(f$datapath, keep, overwrite = TRUE)
+      if (!isTRUE(file.copy(f$datapath, keep, overwrite = TRUE))) {
+        stop("Could not keep a copy of the uploaded file.", call. = FALSE)
+      }
       obj <- app_load_newdata(state, f$name, keep)
       shiny::updateSelectInput(session, "newdata", choices = state$newdata,
                                selected = obj)
@@ -226,6 +229,11 @@ mod_predict_server <- function(id, state) {
         for (m in res$messages) {
           shiny::showNotification(m, type = "message", duration = 10)
         }
+        if (length(res$warnings)) {
+          shiny::showNotification(paste(
+            length(res$warnings), "warning(s); see below the results."),
+            type = "warning", duration = 10)
+        }
         return()
       }
       j <- state$jobs[[id]]
@@ -297,6 +305,9 @@ mod_predict_server <- function(id, state) {
         "membership variables; no outcomes used); mean.*: class expected ",
         "counts; prob.*: class probabilities.")
     })
+    # Warnings, messages and the uncertainty settings stay beside the
+    # result (and are written to the manifest of the export)
+    output$res_warnings <- shiny::renderUI(output_notes(current()))
     output$res <- shiny::renderTable({
       r <- current()
       shiny::req(r)

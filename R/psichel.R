@@ -187,54 +187,12 @@ dsichel <- function(x, mu = 1, sigma = 1, gamma = 1, log = FALSE) {
 #' @return log(besselK(x, nu)), or -Inf/Inf for edge cases
 #' @noRd
 log_besselK_safe <- function(x, nu) {
-  n <- length(x)
-  result <- rep(-Inf, n)
-  
-  # besselK is only defined for x > 0
-  valid <- is.finite(x) & x > 0 & is.finite(nu)
-  
-  if (!any(valid)) {
-    return(result)
-  }
-  
-  x_v <- x[valid]
-  nu_v <- nu[valid]
-  
-  # Compute besselK
-  # Use expon.scaled = TRUE for large x to avoid underflow
-  # besselK(x, nu, expon.scaled = TRUE) returns exp(x) * K_nu(x)
-  
-  # Determine which values need scaling
-  needs_scaling <- x_v > 700  # exp(709) overflows, so be conservative
-  
-  result_v <- numeric(length(x_v))
-  
-  # For moderate x, use direct computation
-  if (any(!needs_scaling)) {
-    K_direct <- besselK(x_v[!needs_scaling], nu_v[!needs_scaling])
-    
-    # Handle cases where besselK returns 0 (underflow) or Inf (overflow)
-    K_direct[K_direct == 0] <- .Machine$double.xmin
-    K_direct[!is.finite(K_direct)] <- NA
-    
-    result_v[!needs_scaling] <- log(K_direct)
-  }
-  
-  # For large x, use scaled version
-  if (any(needs_scaling)) {
-    K_scaled <- besselK(
-      x_v[needs_scaling], nu_v[needs_scaling], expon.scaled = TRUE)
-    
-    # log(K_nu(x)) = log(exp(-x) * K_scaled) = -x + log(K_scaled)
-    K_scaled[K_scaled == 0] <- .Machine$double.xmin
-    K_scaled[!is.finite(K_scaled)] <- NA
-    
-    result_v[needs_scaling] <- -x_v[needs_scaling] + log(K_scaled)
-  }
-  
-  result[valid] <- result_v
-  
-  return(result)
+  # Order recurrence on the log scale (.fcr_log_besselK): besselK() itself
+  # underflows to 0 for large arguments and overflows for large orders, and
+  # clamping those values gave -Inf log-probabilities where the PMF is finite.
+  out <- .fcr_log_besselK(x, nu)
+  out[is.na(out)] <- -Inf
+  out
 }
 
 #' @rdname SichelDistribution
@@ -305,19 +263,8 @@ psichel <- function(q, mu = 1, sigma = 1, gamma = 1,
       }
       alpha_val <- sqrt(alpha_sq)
       
-      # Compute log-PMF for 0:q_i
-      # If q_i is 0, this creates a vector of length 1, which is safe.
-      log_pmf <- numeric(q_i + 1)
-      
-      for (y in 0:q_i) {
-        log_mu_over_c_y <- y * (log(mu_i) - log_c)
-        log_K_y_gamma_alpha <- log_besselK_safe(alpha_val, y + gamma_i)
-        log_factorial_y <- lgamma(y + 1)
-        log_alpha_sigma_pow <- (y + gamma_i) * log(alpha_val * sigma_i)
-        
-        log_pmf[y + 1] <- log_mu_over_c_y + log_K_y_gamma_alpha - 
-          log_K_gamma_inv_sigma - log_factorial_y - log_alpha_sigma_pow
-      }
+      # Log-PMF for 0:q_i in one sweep of the Bessel order recurrence
+      log_pmf <- .fcr_sichel_logpmf_seq(q_i, mu_i, sigma_i, gamma_i)
       
       # Log-sum-exp for cumulative probability
       max_log <- max(log_pmf[is.finite(log_pmf)])
@@ -348,58 +295,57 @@ qsichel <- function(p, mu = 1, sigma = 1, gamma = 1,
   if (any(mu <= 0, na.rm = TRUE)) warning("'mu' must be positive")
   if (any(sigma <= 0, na.rm = TRUE)) warning("'sigma' must be positive")
   
-  # Handle log.p
   if (log.p) p <- exp(p)
-  
-  # Handle lower.tail
   if (!lower.tail) p <- 1 - p
-  
-  # Validate probabilities
   if (any(p < 0 | p > 1, na.rm = TRUE)) {
     warning("'p' must be in [0, 1]")
   }
   
-  # Vectorize
-  n <- max(length(p), length(mu), length(sigma), length(gamma))
-  p <- rep_len(p, n)
-  mu <- rep_len(mu, n)
-  sigma <- rep_len(sigma, n)
-  gamma <- rep_len(gamma, n)
+  r <- .fcr_recycle(p, mu, sigma, gamma)
+  p <- r[[1]]; mu <- r[[2]]; sigma <- r[[3]]; gamma <- r[[4]]
   
-  # Compute quantiles
-  q <- mapply(function(pi, mui, sigmai, gammai) {
-    if (is.na(pi)) return(NA_real_)
-    if (pi < 0 || pi > 1) return(NaN)
-    if (is.na(mui) || is.na(sigmai) || mui <= 0 || sigmai <= 0) return(NaN)
-    if (pi == 0) return(0)
-    if (pi == 1) return(Inf)
-    
-    y <- 0L
-    cum_p <- dsichel(0, mu = mui, sigma = sigmai, gamma = gammai)
-    
-    # Safety check: if parameters are invalid, dsichel might return NA
-    if (is.na(cum_p)) return(NA_real_)
-    
-    max_iter <- 10000 
-    
-    # Added !is.na check to prevent "missing value where TRUE/FALSE needed"
-    # if cum_p becomes NA during iteration
-    while (!is.na(cum_p) && cum_p < pi && y < max_iter) {
-      y <- y + 1L
-      prob_y <- dsichel(y, mu = mui, sigma = sigmai, gamma = gammai)
-      if(is.na(prob_y)) break 
-      cum_p <- cum_p + prob_y
+  # The support is searched in blocks that double in size (.fcr_qsearch), and
+  # each block's PMF comes from one sweep of the Bessel order recurrence, so
+  # the cost is linear in the quantile. Stepping one count at a time with an
+  # iteration cap stopped short for heavy-tailed parameters.
+  vapply(seq_along(p), function(i) {
+    if (is.na(p[i]) || is.na(gamma[i])) return(NA_real_)
+    if (is.na(mu[i]) || is.na(sigma[i]) || mu[i] <= 0 || sigma[i] <= 0) {
+      return(NaN)
     }
-    
-    if (y >= max_iter) {
-      warning("Maximum iterations reached in qsichel")
+    .fcr_qsearch(p[i], function(y) {
+      cumsum(exp(.fcr_sichel_logpmf_seq(max(y), mu[i], sigma[i], gamma[i])))
+    })
+  }, numeric(1))
+}
+
+# Log-PMF of the Sichel distribution at 0, 1, ..., K for scalar parameters.
+# log K_{y + gamma}(alpha) comes from the upward order recurrence
+#   K_{v+1}(z) = K_{v-1}(z) + (2 v / z) K_v(z),
+# carried out on the log scale. It is stable for v > 0, so orders up to 1
+# (and all orders below 0, where the 2 v / z term is negative) are computed
+# directly. The cost is O(K) instead of O(K^2) for K separate evaluations.
+.fcr_sichel_logpmf_seq <- function(K, mu, sigma, gamma) {
+  y <- 0:K
+  lKg <- .fcr_log_besselK(1 / sigma, gamma)
+  log_c <- .fcr_log_besselK(1 / sigma, gamma + 1) - lKg
+  alpha <- sqrt(1 / sigma^2 + 2 * mu / (exp(log_c) * sigma))
+  if (!is.finite(lKg) || !is.finite(log_c) || !is.finite(alpha)) {
+    return(rep(NA_real_, K + 1))
+  }
+  v <- y + gamma
+  lK <- numeric(K + 1)
+  n_direct <- min(K + 1, max(2, which(v > 1)[1], na.rm = TRUE))
+  lK[seq_len(n_direct)] <- .fcr_log_besselK(alpha, v[seq_len(n_direct)])
+  if (n_direct < K + 1) {
+    for (k in (n_direct + 1):(K + 1)) {
+      # log K_{v_k} from log K_{v_k - 2} and log K_{v_k - 1}
+      lK[k] <- lK[k - 1] + log(exp(lK[k - 2] - lK[k - 1]) +
+                                 2 * v[k - 1] / alpha)
     }
-    
-    return(y)
-    
-  }, p, mu, sigma, gamma, SIMPLIFY = TRUE)
-  
-  as.numeric(q)
+  }
+  y * (log(mu) - log_c) + lK - lKg - lgamma(y + 1) -
+    (y + gamma) * log(alpha * sigma)
 }
 
 #' @rdname SichelDistribution

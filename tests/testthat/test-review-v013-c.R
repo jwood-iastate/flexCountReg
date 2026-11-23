@@ -1,3 +1,4 @@
+# Split by run time so the parts run in parallel (see Config/testthat/start-first).
 # Regression tests for the corrections from the development review of
 # flexCountReg 0.1.2 (findings F01-F28).
 
@@ -169,38 +170,6 @@ test_that("F05: no LR test against Poisson when Poisson is not nested", {
   lr <- summary(gp)$lr_test
   expect_false(lr$boundary)
   expect_equal(lr$p.value, pchisq(lr$statistic, 1, lower.tail = FALSE))
-})
-
-test_that("F05: two-model LR tests check nesting and the sample", {
-  d <- washington_roads
-  nb1 <- countreg(Total_crashes ~ lnaadt, d, family = "NB1", method = "BFGS")
-  nbp <- countreg(Total_crashes ~ lnaadt, d, family = "NBP", method = "BFGS")
-  pl <- countreg(Total_crashes ~ lnaadt, d, family = "PL", method = "BFGS")
-  plg <- countreg(Total_crashes ~ lnaadt, d, family = "PLG", method = "BFGS")
-  # NB1 is NBP with P = 1 (interior)
-  r <- regCompTest(nb1, model2 = nbp)
-  expect_equal(r$LR_type, "interior")
-  expect_equal(r$LR_pvalue, pchisq(r$LR, 1, lower.tail = FALSE))
-  # PL is PLG with alpha = 0 (boundary)
-  expect_equal(.fcr_nesting(.fcr_model_spec(pl), .fcr_model_spec(plg))$type,
-               "boundary")
-  # Poisson within NB2, two-model form: boundary test
-  po <- countreg(Total_crashes ~ lnaadt, d, family = "POISSON",
-                 method = "BFGS")
-  nb2 <- countreg(Total_crashes ~ lnaadt, d, method = "BFGS")
-  r <- regCompTest(nb2, model2 = po)
-  expect_equal(r$LR_type, "boundary")
-  expect_equal(r$LR_pvalue, 0.5 * pchisq(r$LR, 1, lower.tail = FALSE))
-  # PL and NB1 have the same number of parameters; PL vs NBP is not nested
-  expect_warning(r <- regCompTest(pl, model2 = nbp),
-                 "not nested|not a subset")
-  expect_true(is.na(r$LR_pvalue))
-  # Same number of rows but different observations
-  d2 <- d
-  d2$Total_crashes <- rev(d2$Total_crashes)
-  other <- countreg(Total_crashes ~ lnaadt, d2, family = "NBP",
-                    method = "BFGS")
-  expect_error(regCompTest(nb1, model2 = other), "same observations")
 })
 
 test_that("F06: likelihoods use log-probabilities computed on the log scale", {
@@ -666,37 +635,6 @@ test_that("F21: Simulated and Exact agree on whether the mean exists", {
     expect_equal(rp_mgf(dist, -1e-10, 0.5, 1), exp(-1e-10 * 0.5),
                  tolerance = 1e-12)
   }
-})
-
-test_that("F22: inner mixing draws are separate, scrambled draws reproducible", {
-  d <- washington_roads
-  t_small <- system.time(
-    a <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
-                     data = d, family = "PLN", ndraws = 30, mix_draws = 10,
-                     method = "BFGS", max.iters = 10))["elapsed"]
-  expect_equal(a$model$mix_draws, 10)
-  expect_equal(countreg_rp(Total_crashes ~ lnaadt,
-                           rpar_formula = ~ -1 + speed50, data = d,
-                           family = "PLN", ndraws = 300, max.iters = 0,
-                           method = "BFGS")$model$mix_draws, 200)
-  # Scrambled draws: predictions reuse the fit's draws and leave the
-  # caller's random-number stream unchanged
-  set.seed(4)
-  s1 <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
-                    data = d, ndraws = 50, scrambled = TRUE, method = "BFGS",
-                    max.iters = 30)
-  set.seed(4)
-  s2 <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
-                    data = d, ndraws = 50, scrambled = TRUE, method = "BFGS",
-                    max.iters = 30)
-  expect_equal(coef(s1), coef(s2))
-  set.seed(10)
-  u1 <- runif(1)
-  set.seed(10)
-  p1 <- predict(s1, newdata = d[1:20, ], method = "Simulated")
-  u2 <- runif(1)
-  expect_equal(u1, u2)
-  expect_equal(predict(s1, newdata = d[1:20, ], method = "Simulated"), p1)
 })
 
 test_that("F23: panel NB likelihoods reach the Poisson limit without cancellation", {

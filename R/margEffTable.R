@@ -114,7 +114,12 @@ margEffTable <- function(object,
          "and label alignment); use se = \"delta\", which uses the full ",
          "covariance matrix of the fit.", call. = FALSE)
   }
-  
+  if (identical(object$model$weight_type, "sampling") && se == "bootstrap") {
+    stop("The marginal-effect bootstrap resamples frequency weights; for a ",
+         "model with sampling weights use se = \"delta\", which uses its ",
+         "robust covariance matrix.", call. = FALSE)
+  }
+
   # Without `data`, the effects average over the rows used in estimation,
   # counting each row with its frequency weight
   w_rows <- NULL
@@ -282,6 +287,20 @@ print.flexEffectTable <- function(x, ...) {
   "countreg"
 }
 
+# Does the mean of `family` depend on its distribution parameters (for some
+# valid values)? Checked numerically on a small grid, so it covers every
+# registered family.
+.fcr_mean_uses_dispersion <- function(family) {
+  if (is.null(.fcr_family_registry[[family]])) return(FALSE)
+  tryCatch({
+    m <- suppressWarnings(.fcr_family_mean(
+      family, mu = rep(2, 4), alpha = c(0.3, 0.3, 1.7, 1.7),
+      sigma = c(0.4, 1.6, 0.4, 1.6)))
+    m <- m[is.finite(m)]
+    length(m) > 1L && diff(range(m)) > 1e-8 * max(abs(m))
+  }, error = function(e) TRUE)
+}
+
 .margEff_default_vars <- function(object, data) {
   form <- object$formula
   if (is.null(form)) {
@@ -297,11 +316,15 @@ print.flexEffectTable <- function(x, ...) {
   
   # Variables that enter only through auxiliary formulas also change E[y]:
   # underreporting, random parameters and their heterogeneity, and the
-  # distribution parameters of families whose mean depends on them.
+  # distribution parameters when the mean depends on them: families whose
+  # mean is not exp(X beta) (such as PLN and PLL), and hurdle models, whose
+  # mean z mu / (1 - f0) depends on the count distribution's P(0).
   m <- object$model
   aux <- list(m$underreport_formula, m$zero_formula, m$rpar_formula,
               m$het_mean_formula, m$het_var_formula, m$mixing_formula)
-  if (any(m$family %in% c("PLN", "PLL"))) {
+  if (identical(m$zero_type, "hurdle") ||
+      any(vapply(as.character(m$family), .fcr_mean_uses_dispersion,
+                 logical(1)))) {
     aux <- c(aux, list(m$dis_param_formula_1, m$dis_param_formula_2))
   }
   term_vars <- unique(c(term_vars, do.call(.fcr_vars, aux)))
@@ -592,7 +615,11 @@ print.flexEffectTable <- function(x, ...) {
   }
   
   x_num <- as.numeric(x)
-  h <- pmax(sqrt(.Machine$double.eps) * pmax(abs(x_num), 1), 1e-7)
+  # Central differences: the step eps^(1/3) balances truncation (h^2) and
+  # rounding (eps / h) errors. The effect is differenced again with respect
+  # to the coefficients for delta-method standard errors, so sqrt(eps) here
+  # left rounding noise of about 1e-8 that the outer difference amplified.
+  h <- .Machine$double.eps^(1 / 3) * pmax(abs(x_num), 1)
   
   data_plus <- data
   data_minus <- data
@@ -617,7 +644,7 @@ print.flexEffectTable <- function(x, ...) {
   )
 }
 
-.margEff_num_jacobian <- function(f, theta, eps = sqrt(.Machine$double.eps)) {
+.margEff_num_jacobian <- function(f, theta, eps = .Machine$double.eps^(1 / 3)) {
   theta <- as.numeric(theta)
   p <- length(theta)
   grad <- numeric(p)

@@ -1,5 +1,5 @@
 # Error 02: Poisson-Lindley panel likelihood, not the RENB likelihood.
-# Uses maxLik's public objectiveFn() accessor, with no mocking or copied body.
+# Uses the package's panel likelihood function, with no mocking or copied body.
 
 reg02_data <- function() {
   data.frame(
@@ -23,7 +23,7 @@ reg02_fit <- local({
   }
 })
 
-reg02_objective <- function() maxLik::objectiveFn(reg02_fit()$model)
+reg02_objective <- function() .fcr_poislind_re_ll
 
 # Independent oracle: Lindley = a mixture of Gamma(1,theta) and Gamma(2,theta).
 # Panel total has a mixture of negative-binomial distributions; conditional

@@ -86,6 +86,7 @@ summary.flexCountReg <- function(object, level = 0.95, ...) {
     n_dropped = m[["n_dropped"]],
     converged = m[["converged"]],
     offset = m[["offset"]],
+    weight_type = m[["weight_type"]],
     lr_test = .fcr_lr_vs_poisson(object),
     digits = if (is.numeric(args$digits)) args$digits else 3
   ), class = "summary.flexCountReg")
@@ -124,6 +125,10 @@ print.summary.flexCountReg <- function(x, digits = x$digits, ...) {
   cat("\nLog-likelihood:", format(round(x$logLik, digits)),
       "| AIC:", format(round(x$AIC, digits)),
       "| BIC:", format(round(x$BIC, digits)), "\n")
+  if (identical(x$weight_type, "sampling")) {
+    cat("Note: with sampling weights the log-likelihood is a",
+        "pseudo-likelihood; LR tests, AIC and BIC are not valid.\n")
+  }
   cat("N:", x$nobs)
   if (!is.null(x$n_groups) && x$n_groups != x$nobs) {
     cat(" | panels:", x$n_groups)
@@ -168,6 +173,7 @@ as_tibble.summary.flexCountReg <- function(x, ...) {
 .fcr_lr_vs_poisson <- function(object) {
   m <- object$model
   if (!inherits(object, "countreg") || is.null(object$data)) return(NULL)
+  if (identical(m$weight_type, "sampling")) return(NULL)
   full <- .fcr_model_spec(object)
   bp <- m$blueprint %||% .fcr_blueprint(object)
   nest <- .fcr_nesting(.fcr_base_spec("POISSON", bp$x_names), full)

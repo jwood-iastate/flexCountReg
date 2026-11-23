@@ -2,7 +2,9 @@
 # draft specification; a fit freezes a copy, and the code that runs and the
 # code that is exported are both compiled from it.
 
-.spec_schema <- 2L
+# Schema 3 added recipe$interactions; schema 2 settings are migrated on
+# reading (see .spec_migrate()).
+.spec_schema <- 3L
 
 # Create a model specification.
 #   data   - source ("bundled" or "upload"), name (dataset or file name) and
@@ -11,7 +13,9 @@
 #   recipe - response, predictors, factors (columns converted with
 #            factor()), exposure (entered as offset(log(exposure))),
 #            log_offset (entered as offset(column)), weights (frequency
-#            weights) and group (panel identifier).
+#            weights), group (panel identifier) and interactions (a list
+#            of pairs of predictor names; each pair enters the mean formula
+#            as a:b next to the main effects).
 #   model  - estimator (see .app_estimators), family (one code, or one per
 #            mixture component), components, dis1 (predictors of the first
 #            distribution parameter), mixing (membership predictors),
@@ -23,7 +27,7 @@ app_spec <- function(data = list(), recipe = list(), model = list()) {
   d <- list(source = "bundled", name = "abalone_rings", object = "data_1")
   r <- list(response = NULL, predictors = character(), factors = character(),
             exposure = NULL, log_offset = NULL, weights = NULL,
-            group = NULL)
+            group = NULL, interactions = list())
   m <- list(estimator = "countreg", family = "NB2", components = 2L,
             dis1 = character(), mixing = character(),
             shared_mean = character(), shared_dis1 = FALSE,
@@ -166,6 +170,25 @@ validate_spec <- function(spec, data) {
           "parameter to model; clear the distribution-parameter predictors.")
     }
   }
+  # Interactions: pairs of two different chosen predictors (random
+  # parameters of countreg_rp are among the predictors too)
+  for (pr in r$interactions) {
+    pr <- unlist(pr)
+    if (!is.character(pr) || length(pr) != 2 || anyNA(pr)) {
+      add("Each interaction must name two predictors.")
+    } else if (pr[1] == pr[2]) {
+      add("An interaction needs two different predictors (\"", pr[1],
+          "\" is given twice).")
+    } else if (!all(pr %in% r$predictors)) {
+      add("The interaction ", pr[1], " \u00d7 ", pr[2], " uses ",
+          toString(paste0("\"", setdiff(pr, r$predictors), "\"")),
+          ", which is not among the predictors; choose it as a predictor ",
+          "first.")
+    }
+  }
+  keys <- vapply(r$interactions, function(pr)
+    paste(sort(as.character(unlist(pr))), collapse = "\r"), "")
+  if (anyDuplicated(keys)) add("An interaction is given more than once.")
   bad_shared <- setdiff(m$shared_mean, c("(Intercept)", r$predictors))
   if (length(bad_shared)) {
     add("Shared terms must be model terms: ", toString(bad_shared), ".")
@@ -198,11 +221,36 @@ spec_from_json <- function(txt = NULL, path = NULL) {
   .spec_from_list(x)
 }
 
-.spec_from_list <- function(x) {
-  if (!identical(as.integer(x$schema), .spec_schema)) {
+# Bring settings of an older schema up to the current one. Schema 2 had no
+# interactions.
+.spec_migrate <- function(x) {
+  sc <- suppressWarnings(as.integer(x$schema))
+  if (length(sc) != 1 || is.na(sc) || !sc %in% c(2L, .spec_schema)) {
     stop("Unsupported settings schema ", format(x$schema), " (this app ",
-         "reads schema ", .spec_schema, ").", call. = FALSE)
+         "reads schemas 2 to ", .spec_schema, ").", call. = FALSE)
   }
+  if (sc == 2L) {
+    x$recipe["interactions"] <- list(list())
+    x$schema <- .spec_schema
+  }
+  x
+}
+
+# Interactions read from JSON: jsonlite simplifies a list of pairs to a
+# two-column character matrix (or keeps a list); either becomes a list of
+# character pairs
+.spec_pairs <- function(v) {
+  if (is.null(v) || !length(v)) return(list())
+  if (is.matrix(v)) {
+    return(lapply(seq_len(nrow(v)), function(i) as.character(v[i, ])))
+  }
+  if (is.list(v)) return(lapply(v, function(p) as.character(unlist(p))))
+  stop("Settings field interactions must be a list of pairs of names.",
+       call. = FALSE)
+}
+
+.spec_from_list <- function(x) {
+  x <- .spec_migrate(x)
   extra <- setdiff(names(x), c("schema", "data", "recipe", "model"))
   if (length(extra)) {
     stop("Unknown top-level settings field(s): ", toString(extra), ".",
@@ -212,6 +260,7 @@ spec_from_json <- function(txt = NULL, path = NULL) {
     character() else unlist(v)
   rec <- x$recipe
   for (nm in c("predictors", "factors")) rec[[nm]] <- vec(rec[[nm]])
+  rec["interactions"] <- list(.spec_pairs(rec$interactions))
   mod <- x$model
   for (nm in c("dis1", "mixing", "shared_mean", "rpar", "family")) {
     mod[[nm]] <- vec(mod[[nm]])

@@ -47,7 +47,8 @@ mod_diagnose_ui <- function(id) {
     bslib::card(bslib::card_header(shiny::textOutput(ns("title"))),
                 fill = FALSE,
                 shiny::plotOutput(ns("plot"), height = "420px"),
-                shiny::uiOutput(ns("note"))),
+                shiny::uiOutput(ns("note")),
+                shiny::uiOutput(ns("warnings"))),
     bslib::card(bslib::card_header("Code that produced it"), fill = FALSE,
                 shiny::verbatimTextOutput(ns("code"))),
     bslib::card(bslib::card_header("Plot data"), fill = FALSE,
@@ -143,6 +144,9 @@ mod_diagnose_server <- function(id, state) {
         "Bars hang from the expected frequencies; bars ending above or below ",
         "zero mark counts the model under- or over-predicts.")
     })
+    # Warnings and messages raised while the diagnostic ran (also written
+    # to the manifest of the export)
+    output$warnings <- shiny::renderUI(output_notes(current()))
     output$table <- DT::renderDT({
       r <- current()
       shiny::req(r)

@@ -61,6 +61,7 @@ Imports:
     sandwich,
     stats,
     tibble,
+    tools,
     truncnorm,
     utils
 Depends: R (>= 4.5.0)
@@ -90,6 +91,9 @@ Suggests:
     testthat (>= 3.0.0), 
     poilog
 Config/testthat/edition: 3
+Config/testthat/parallel: true
+Config/testthat/start-first: review-v013-a, countreg-rp-fixes-a,
+    review-v013-b, countreg-rp-fixes-b, intervals, app-browser, countreg
 VignetteBuilder: knitr
 Language: en-US
 URL: https://jwood-iastate.github.io/flexCountReg/,

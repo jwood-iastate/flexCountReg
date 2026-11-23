@@ -66,6 +66,11 @@
 #' 
 #' \deqn{Var[y_{it}] = \frac{a+b-1}{a-2}\mu_{it} + \frac{a+b-1}{b(a-2)} \mu_{it}^2}
 #' 
+#' The mean exists for \eqn{a > 1} and the variance only for \eqn{a > 2}:
+#' for \eqn{1 < a \le 2} (legal values, which the estimates can take) the
+#' variance is infinite, not the negative value the formula gives, while the
+#' mean and the coefficient estimates remain valid.
+#' 
 #' Thus, the formulation of the model estimated here allows the use of the 
 #' estimated coefficients to directly compute the marginal mean.
 #' 

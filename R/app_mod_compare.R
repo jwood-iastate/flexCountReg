@@ -99,7 +99,8 @@ mod_compare_server <- function(id, state) {
         if (isTRUE(r$mixture)) shiny::p(
           "No likelihood-ratio p-value is shown for numbers of classes: ",
           "its usual chi-square distribution does not hold. Use AIC/BIC, ",
-          "start stability and held-out predictive scores."))
+          "start stability and held-out predictive scores."),
+        output_notes(r))
     })
   })
 }

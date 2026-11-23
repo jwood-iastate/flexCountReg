@@ -25,11 +25,20 @@
 
 # ---- Data -------------------------------------------------------------------------
 
+# Path of an uploaded file in the exported bundle, relative to the script:
+# data/<object>.csv. It comes from the object name (data_1, newdata_1, ...),
+# which is unique in a session, and not from the name of the uploaded file,
+# so two uploads with the same file name never collapse into one file.
+.app_upload_file <- function(object) paste0("data/", object, ".csv")
+
 # Expressions that load a dataset into `object`. For an uploaded file the
-# script names the file (`<object>_file <- "name.csv"`); the app instead
-# points that variable to its own copy of the upload. Returns list(display,
-# run): the expressions shown in the script and those the app evaluates.
-compile_data_load <- function(source, name, object) {
+# script names the file by its path in the bundle
+# (`<object>_file <- "data/<object>.csv"`, see .app_upload_file()); the app
+# instead points that variable to its own copy of the upload. Returns
+# list(display, run): the expressions shown in the script and those the app
+# evaluates.
+compile_data_load <- function(source, name, object,
+                              file = .app_upload_file(object)) {
   obj <- .sym(object)
   if (identical(source, "bundled")) {
     e <- bquote(.(obj) <- local({
@@ -42,13 +51,16 @@ compile_data_load <- function(source, name, object) {
   fvar <- .sym(paste0(object, "_file"))
   read <- bquote(.(obj) <- utils::read.csv(.(fvar), check.names = FALSE,
                                            stringsAsFactors = FALSE))
-  list(display = list(bquote(.(fvar) <- .(name)), read), run = list(read))
+  list(display = list(bquote(.(fvar) <- .(file)), read), run = list(read))
 }
 
 # ---- Models -----------------------------------------------------------------------
 
 # The model formula (as a call). Random parameters of countreg_rp() are
-# left out of the fixed formula (they are in rpar_formula).
+# left out of the fixed formula (they are in rpar_formula). Interactions
+# (pairs of predictors) follow the main effects as a:b; with countreg_rp an
+# interaction that involves a random parameter stays a fixed term of this
+# formula (the variable's own effect is the random parameter).
 compile_formula <- function(spec) {
   r <- spec$recipe
   m <- spec$model
@@ -56,6 +68,10 @@ compile_formula <- function(spec) {
   rp <- m$estimator == "countreg_rp"
   if (rp) preds <- setdiff(preds, m$rpar)
   terms <- lapply(preds, .sym)
+  for (pr in r$interactions) {
+    pr <- unlist(pr)
+    terms <- c(terms, list(call(":", .sym(pr[1]), .sym(pr[2]))))
+  }
   if (!is.null(r$exposure)) {
     terms <- c(terms, list(call("offset", call("log", .sym(r$exposure)))))
   }
@@ -173,9 +189,19 @@ compile_data_frame <- function(df) {
 #   rootogram  - max_count (NULL: largest observed count)
 #   quantile   - randomized quantile residuals (seed 1) and their plots
 #   cure       - var (NULL: fitted values)
-#   predict    - scenarios (data frame), interval, level, method, mixture
-#   tolerance  - scenarios, content, confidence, side, scope, tol_method
+#   predict    - scenarios (data frame), interval, level, method, mixture,
+#                seed
+#   tolerance  - scenarios, content, confidence, side, scope, tol_method,
+#                seed
 #   compare    - fits (object names), labels
+#   margeff    - measure, indicator, se, bootstraps, vars (NULL: the
+#                defaults of margEffTable()), seed (bootstrap only)
+# `seed` (frozen by app_prepare_output()) is passed to predict() and
+# tolerance_interval(), so a parametric bootstrap behind an interval gives
+# the same limits whenever the code is run. An interval prediction is kept
+# whole in `<out>_interval` (its "interval" attribute records the
+# uncertainty method and the bootstrap refits accepted) before it is bound
+# to the scenarios in `<out>`.
 compile_output <- function(req, fit_name, out) {
   f <- .sym(fit_name)
   o <- .sym(out)
@@ -209,10 +235,14 @@ compile_output <- function(req, fit_name, out) {
       sc <- .scenario_sym(req, out)
       pa <- list(f, newdata = sc)
       if (!is.null(req$method)) pa$method <- req$method
+      pre <- list()
       if (!identical(req$interval %||% "none", "none")) {
         pa$interval <- req$interval
         pa$level <- req$level
-        pred <- call("cbind", sc, as.call(c(quote(stats::predict), pa)))
+        if (!is.null(req$seed)) pa$seed <- as.integer(req$seed)
+        iv <- .sym(paste0(out, "_interval"))
+        pre <- list(call("<-", iv, as.call(c(quote(stats::predict), pa))))
+        pred <- call("cbind", sc, iv)
       } else if (isTRUE(req$mixture)) {
         pred <- as.call(list(
           .sym("data.frame"), sc,
@@ -226,16 +256,34 @@ compile_output <- function(req, fit_name, out) {
         pred <- call("cbind", sc,
                      expected_count = as.call(c(quote(stats::predict), pa)))
       }
-      c(.scenario_exprs(req, sc), list(call("<-", o, pred)))
+      c(.scenario_exprs(req, sc), pre, list(call("<-", o, pred)))
     },
     tolerance = {
       sc <- .scenario_sym(req, out)
       ta <- list(f, newdata = sc, content = req$content,
                  confidence = req$confidence, side = req$side,
                  scope = req$scope, method = req$tol_method)
+      if (!is.null(req$seed)) ta$seed <- as.integer(req$seed)
       c(.scenario_exprs(req, sc),
         list(call("<-", o, as.call(c(quote(flexCountReg::tolerance_interval),
                                      ta)))))
+    },
+    margeff = {
+      # digits = Inf keeps the numbers unrounded; the page rounds them for
+      # display only. A bootstrap draws resamples, so its frozen seed is
+      # set first.
+      a <- list(f)
+      if (length(req$vars)) a$vars <- .cvec(req$vars)
+      a$measure <- req$measure %||% "auto"
+      a$indicator <- req$indicator %||% "pseudo_elasticity"
+      a$se <- req$se %||% "delta"
+      if (identical(a$se, "bootstrap")) {
+        a$bootstraps <- as.integer(req$bootstraps %||% 200L)
+      }
+      a$digits <- Inf
+      c(if (!is.null(req$seed)) list(call("set.seed", as.integer(req$seed))),
+        list(call("<-", o, as.call(c(quote(flexCountReg::margEffTable),
+                                     a)))))
     },
     compare = {
       fl <- as.call(c(.sym("list"), stats::setNames(

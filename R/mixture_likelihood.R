@@ -39,6 +39,37 @@
        n = n)
 }
 
+# Membership (mixing) design of panels. A whole panel belongs to one class,
+# so its rows must share one membership design row; otherwise the panel's
+# prior would depend on which row is taken, and so on the row order. One
+# validator serves fitting, prior and posterior prediction and history
+# conditioning. Z: the row design (NULL for fixed or one-component mixing,
+# which has nothing to check); gi: the panel index (1..G) of each row.
+# Rows with missing membership values are not compared: a panel's design is
+# the common value of its complete rows (NA when it has none). Returns the
+# G-row panel design, or NULL when Z is NULL. `where` is added to the error
+# message (e.g. " (in `history`)").
+.fcr_fm_panel_design <- function(Z, gi, G = max(0L, gi), where = "") {
+  if (is.null(Z)) return(NULL)
+  Zu <- matrix(NA_real_, G, ncol(Z), dimnames = list(NULL, colnames(Z)))
+  cc <- which(stats::complete.cases(Z))
+  if (!length(cc)) return(Zu)
+  ref <- cc[match(seq_len(G), gi[cc])]
+  has <- !is.na(ref)
+  Zu[has, ] <- Z[ref[has], ]
+  Zc <- Z[cc, , drop = FALSE]
+  dif <- abs(Zc - Zu[gi[cc], , drop = FALSE])
+  bad <- colnames(Z)[colSums(dif > 1e-10 * pmax(1, abs(Zc))) > 0]
+  if (length(bad)) {
+    stop("Mixing (membership) variables must be constant within each ",
+         "panel", where, ", because the whole panel belongs to one class. ",
+         "Not constant: ", toString(bad), ". Use a panel-level summary ",
+         "(e.g. the panel mean) as a new column if that is what you ",
+         "intend.", call. = FALSE)
+  }
+  Zu
+}
+
 # Component k's parameters for the rows of a design: the mean parameter
 # mu = exp(X beta_k + offset) (the `predicted` argument of the registry
 # density) and the distribution parameters alpha = exp(D1 delta1_k), sigma =
@@ -50,28 +81,39 @@
   list(mu = mu, alpha = alpha, sigma = sigma)
 }
 
-# Are the component parameters valid numbers (finite and positive) at the
-# rows `rows`? Invalid values (an overflow tried by the optimizer) are not
-# probability zero: the whole candidate is rejected.
-.fcr_fm_valid <- function(cv, rows = NULL) {
-  chk <- function(v) {
-    if (is.null(v)) return(TRUE)
-    if (!is.null(rows)) v <- v[rows]
-    all(is.finite(v) & v > 0)
-  }
-  chk(cv$mu) && chk(cv$alpha) && chk(cv$sigma)
+# Is component `family` defined at its parameters `cv` on the rows `rows`
+# (all rows when NULL)? Besides finite positive values this checks the
+# family's coupled conditions (GP2: 1 + (alpha - 1) mu > 0) through
+# .fcr_family_valid(). An undefined component is not probability zero: its
+# registry density would quietly return 0 for every count, and another
+# component with positive weight could then hide it (a nominal 50:50
+# mixture of a nonexistent GP2 and a Poisson sums to 0.5). So the whole
+# candidate is rejected. A legitimate zero, such as a count outside the
+# finite support of a valid underdispersed GP2, is not affected: the
+# component is valid and only that probability is 0.
+.fcr_fm_valid <- function(cv, family, rows = NULL) {
+  sub <- function(v) if (!is.null(v) && !is.null(rows)) v[rows] else v
+  all(.fcr_family_valid(family, sub(cv$mu), sub(cv$alpha), sub(cv$sigma)))
 }
 
 # Log-probabilities log f_k(y) of component values `cv` (family `family`).
-# Errors of the numerical code give NA (the candidate is rejected).
+# Rows where the component is undefined (see .fcr_fm_valid()) and errors of
+# the numerical code give NA, never a quiet probability 0: estimation then
+# rejects the candidate, and predictions report NA for those rows.
 .fcr_fm_logpmf <- function(spec, cv, family, y) {
   dens <- get_probFunc(family)
-  tryCatch(
-    as.vector(dens(y = y, predicted = cv$mu, alpha = cv$alpha,
-                   sigma = cv$sigma, haltons = spec$haltons,
+  n <- length(y)
+  ok <- rep_len(.fcr_family_valid(family, cv$mu, cv$alpha, cv$sigma), n)
+  out <- rep(NA_real_, n)
+  if (!any(ok)) return(out)
+  sub <- function(v) if (!is.null(v)) rep_len(v, n)[ok]
+  out[ok] <- tryCatch(
+    as.vector(dens(y = y[ok], predicted = sub(cv$mu), alpha = sub(cv$alpha),
+                   sigma = sub(cv$sigma), haltons = spec$haltons,
                    normed_haltons = spec$normed_haltons,
                    engine = spec$engine, log = TRUE)),
-    error = function(e) rep(NA_real_, length(y)))
+    error = function(e) NA_real_)
+  out
 }
 
 # log P(Y <= q) (lower.tail = TRUE) or log P(Y > q) of a component, from the
@@ -84,7 +126,11 @@
   out <- rep(NA_real_, n)
   neg <- !is.na(q) & q < 0
   out[neg] <- if (lower.tail) -Inf else 0
-  todo <- which(!is.na(q) & q >= 0 & !is.na(cv$mu))
+  # Rows where the component is undefined stay NA (no distribution
+  # function), like .fcr_fm_logpmf()
+  defined <- .fcr_family_valid(family, cv$mu, cv$alpha, cv$sigma)
+  out[neg & !defined] <- NA_real_
+  todo <- which(!is.na(q) & q >= 0 & defined)
   if (!length(todo)) return(out)
   sub <- function(v, i) if (!is.null(v)) v[i]
   fam <- .fcr_family_registry[[family]]
@@ -141,7 +187,7 @@
   if (is.null(LP)) LP <- matrix(NA_real_, spec$n, K)
   for (k in comps) {
     cv <- .fcr_fm_comp_values(spec$des, pars, k)
-    if (!.fcr_fm_valid(cv, pos)) return(NULL)
+    if (!.fcr_fm_valid(cv, spec$map$families[k], pos)) return(NULL)
     LP[, k] <- .fcr_fm_logpmf(spec, cv, spec$map$families[k], spec$y)
   }
   if (anyNA(LP[pos, , drop = FALSE])) return(NULL)
@@ -218,7 +264,7 @@
   total <- 0
   for (k in comps) {
     cv <- .fcr_fm_comp_values(spec$des, pars, k)
-    if (!.fcr_fm_valid(cv, pos)) return(NA_real_)
+    if (!.fcr_fm_valid(cv, spec$map$families[k], pos)) return(NA_real_)
     lp <- .fcr_fm_logpmf(spec, cv, spec$map$families[k], spec$y)
     wk <- spec$w_row * tau_row[, k]
     use <- wk > 0

@@ -110,8 +110,12 @@ underreporting).
 }
 \details{
 The returned vector always has one element per row of \code{newdata}, in the
-same order. Rows with missing values in any variable the model uses get
-\code{NA}. Factor levels and contrasts from the training data are used, so
+same order. Rows with missing values in any variable the estimate needs
+get \code{NA}: a row with a missing distribution-parameter, zero-model or
+reporting covariate has no count distribution, so its probabilities
+(\code{type = "prob"}) and intervals are \code{NA}, while its expected
+count is returned when it does not depend on that parameter (for example
+the NB2 mean) and is \code{NA} otherwise. Factor levels and contrasts from the training data are used, so
 \code{newdata} may contain only a subset of the levels. An error is raised
 if an offset column is missing from \code{newdata}.
 }

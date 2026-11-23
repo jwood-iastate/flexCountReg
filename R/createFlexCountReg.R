@@ -17,6 +17,15 @@
   formula <- formula(stats::as.formula(model$formula))
   model <- .fcr_normalize_model(model)
   model$data <- NULL   # the training data is stored once, in obj$data
+  # maxLik keeps the log-likelihood (objectiveFn) and any gradient or Hessian
+  # functions. Their closures hold the training data, design matrices and
+  # draws, so with them a keep_data = FALSE fit still carried (and shared)
+  # the data, and every fit was several times larger than needed. No method
+  # uses them after estimation.
+  model[vapply(model, is.function, logical(1))] <- NULL
+  # Without the data, the LR sample evidence keeps only fingerprints of the
+  # model's variables, not their values
+  if (!isTRUE(keep_data)) model$lr_sample <- .fcr_lr_sample_strip(model$lr_sample)
   # Package version that created the object (for migrating saved fits)
   model$fcr_version <- tryCatch(
     as.character(utils::packageVersion("flexCountReg")),

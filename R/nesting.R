@@ -185,26 +185,66 @@
 # the values of every variable both models use must agree too. Variables
 # only one model uses are not compared.
 .fcr_same_sample <- function(sa, sb) {
+  # A sample stored without its data (keep_data = FALSE) holds fingerprints
+  # of its values (.fcr_lr_sample_strip()); the other sample's values are
+  # then compared through their fingerprints
+  fp <- isTRUE(sa$fingerprinted) || isTRUE(sb$fingerprinted)
+  val <- function(s, nm) {
+    if (fp && !isTRUE(s$fingerprinted)) .fcr_fingerprint(s[[nm]]) else s[[nm]]
+  }
+  var <- function(s, v) {
+    if (fp && !isTRUE(s$fingerprinted)) .fcr_fingerprint(s$vars[[v]]) else
+      s$vars[[v]]
+  }
   eq <- function(a, b) isTRUE(all.equal(a, b, check.attributes = FALSE))
-  if (length(sa$y) != length(sb$y) || !identical(sa$rows_used, sb$rows_used))
+  if (length(sa$rows_used) != length(sb$rows_used) ||
+      !identical(sa$rows_used, sb$rows_used))
     return("the models were fit to different rows")
-  if (!eq(sa$y, sb$y)) return("the models have different outcomes")
-  if (!eq(sa$weights, sb$weights)) return("the models have different weights")
-  if (!eq(sa$offset, sb$offset)) return("the models have different offsets")
+  if (!eq(val(sa, "y"), val(sb, "y"))) return("the models have different outcomes")
+  if (!eq(val(sa, "weights"), val(sb, "weights")))
+    return("the models have different weights")
+  if (!eq(val(sa, "offset"), val(sb, "offset")))
+    return("the models have different offsets")
   if (!is.null(sa$group) || !is.null(sb$group)) {
-    ga <- sa$group %||% seq_along(sa$y)
-    gb <- sb$group %||% seq_along(sb$y)
+    ga <- sa$group %||% seq_along(sa$rows_used)
+    gb <- sb$group %||% seq_along(sb$rows_used)
     pairs <- unique(cbind(ga, gb))
     if (nrow(pairs) != length(unique(ga)) || nrow(pairs) != length(unique(gb)))
       return("the models have different panels")
   }
   shared <- intersect(names(sa$vars), names(sb$vars))
   for (v in shared) {
-    if (!eq(sa$vars[[v]], sb$vars[[v]])) {
+    if (!eq(var(sa, v), var(sb, v))) {
       return(paste0("the models use different values of `", v, "`"))
     }
   }
   ""
+}
+
+# Summary of a vector that identifies its values without storing them:
+# numeric vectors keep their length, number of missing values and three
+# weighted sums (compared with all.equal()'s tolerance, like the values);
+# other vectors keep a hash of their values.
+.fcr_fingerprint <- function(x) {
+  if (is.null(x)) return(NULL)
+  if (is.numeric(x) || is.logical(x)) {
+    x <- as.numeric(x)
+    ok <- !is.na(x)
+    t <- seq_along(x) / max(1, length(x))
+    return(c(length(x), sum(!ok), sum(x[ok]), sum(x[ok]^2),
+             sum(t[ok] * x[ok])))
+  }
+  rlang::hash(as.character(x))
+}
+
+# Sample evidence without the data (for keep_data = FALSE): row numbers and
+# panels are kept, values are replaced by fingerprints.
+.fcr_lr_sample_strip <- function(s) {
+  if (is.null(s) || isTRUE(s$fingerprinted)) return(s)
+  for (nm in c("y", "weights", "offset")) s[[nm]] <- .fcr_fingerprint(s[[nm]])
+  s$vars <- lapply(s$vars, .fcr_fingerprint)
+  s$fingerprinted <- TRUE
+  s
 }
 
 # Is every column of A in the column space of B (relative tolerance)?
@@ -221,7 +261,15 @@
 .fcr_fit_designs <- function(object) {
   m <- object$model
   bp <- m$blueprint
-  fd <- forge_new_data(bp, m$lr_sample$vars)
+  if (isTRUE(m$lr_sample$fingerprinted)) {
+    if (is.null(object$data)) {
+      stop("A model was fit with keep_data = FALSE.", call. = FALSE)
+    }
+    vars <- as.data.frame(object$data)[m$lr_sample$rows_used, , drop = FALSE]
+  } else {
+    vars <- m$lr_sample$vars
+  }
+  fd <- forge_new_data(bp, vars)
   out <- list(mean = fd$X)
   n <- nrow(fd$X)
   ones <- matrix(1, n, 1)
@@ -247,6 +295,10 @@
   dr <- tryCatch(.fcr_fit_designs(obj_r), error = function(e) NULL)
   df <- tryCatch(.fcr_fit_designs(obj_f), error = function(e) NULL)
   if (is.null(dr) || is.null(df)) {
+    if (is.null(obj_r$data) || is.null(obj_f$data)) {
+      return(paste("the design matrices of the models could not be rebuilt",
+                   "(a model was fit with keep_data = FALSE)"))
+    }
     return("the design matrices of the models could not be rebuilt")
   }
   for (nm in names(dr)) {
@@ -279,6 +331,11 @@
   }
   why <- .fcr_same_sample(sr, sf)
   if (nzchar(why)) return(no(why, sample_ok = FALSE))
+  if (identical(obj_r$model$weight_type, "sampling") ||
+      identical(obj_f$model$weight_type, "sampling")) {
+    return(no(paste("a model uses sampling weights, so its log-likelihood is",
+                    "a pseudo-likelihood")))
+  }
   if (!isTRUE(obj_r$model$converged) || !isTRUE(obj_f$model$converged)) {
     return(no(paste("a model did not report convergence (or its",
                     "convergence is unknown)")))

@@ -75,15 +75,18 @@ nb_b$model$boot_failures
 If many replicates fail, increase `max.iters`, try another `method`, or
 simplify the model. If fewer than two succeed, the standard errors are `NA`.
 
-**Weights.** Every estimator takes `weights`, which are frequency weights:
-a row with weight 3 counts as three independent observations. The
+**Weights.** Every estimator takes `weights`, which are frequency weights
+by default: a row with weight 3 counts as three independent observations. The
 estimates, log-likelihood, robust covariance and BIC are those of the
 expanded data. In panel models the weights belong to the panels (a panel
 with weight 3 counts as three independent panels), so they must be constant
 within a panel. The bootstrap resamples the expanded observations: it draws
 new frequencies from a multinomial distribution and refits with them in
-place of the weights, so it needs whole-number weights (use
-`stderr = "robust"` for other weights).
+place of the weights, so it needs whole-number weights. Survey or
+inverse-probability weights are declared with `weight_type = "sampling"`
+(in `countreg()` and `countreg_rp()`): robust standard errors are then the
+default and do not depend on the scale of the weights, and LR tests, AIC
+and BIC are flagged as not valid.
 
 ## Marginal effects
 

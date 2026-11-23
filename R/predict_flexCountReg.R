@@ -88,8 +88,12 @@
 #'
 #' @details
 #' The returned vector always has one element per row of \code{newdata}, in the
-#' same order. Rows with missing values in any variable the model uses get
-#' \code{NA}. Factor levels and contrasts from the training data are used, so
+#' same order. Rows with missing values in any variable the estimate needs
+#' get \code{NA}: a row with a missing distribution-parameter, zero-model or
+#' reporting covariate has no count distribution, so its probabilities
+#' (\code{type = "prob"}) and intervals are \code{NA}, while its expected
+#' count is returned when it does not depend on that parameter (for example
+#' the NB2 mean) and is \code{NA} otherwise. Factor levels and contrasts from the training data are used, so
 #' \code{newdata} may contain only a subset of the levels. An error is raised
 #' if an offset column is missing from \code{newdata}.
 #' @note optional parameter `method`: Only valid for random parameters models
@@ -683,12 +687,27 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   if (is.null(pid)) return(seq_len(nrow(data)))
   if (is.character(pid) && length(pid) == 1L) {
     if (!pid %in% names(data)) {
+      if (isTRUE(model$group_from_vector)) {
+        stop("method = \"Individual\" needs each row's panel id. The model ",
+             "was fit with `group_var` given as a vector, which is stored ",
+             "in the training data as the column `", pid, "`. Add that ",
+             "column to `newdata`, or refit with `group_var` naming a ",
+             "column of `data`.", call. = FALSE)
+      }
       stop("method = \"Individual\" requires the panel id column `", pid,
            "` in `newdata`.", call. = FALSE)
     }
     return(data[[pid]])
   }
-  if (length(pid) == nrow(data)) return(pid)
+  # Fits from flexCountReg 0.1.2 and earlier stored the vector itself; it
+  # can only be matched to rows by position
+  if (length(pid) == nrow(data)) {
+    warning("The model was fit with `group_var` given as a vector, so ",
+            "panels are matched to the rows of `newdata` by position. This ",
+            "is only correct for the training rows in their original ",
+            "order; refit to match by id.", call. = FALSE)
+    return(pid)
+  }
   stop("The model was fit with a `panel_id` vector; method = \"Individual\" ",
        "is only available for data with the same rows. Refit with ",
        "`panel_id` given as a column name.", call. = FALSE)
@@ -710,12 +729,21 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
                                dist_haltons) {
   eb_type <- match.arg(eb_type, c("coefficients", "mean"))
   
-  y_name <- all.vars(model$formula)[1]
-  if (!y_name %in% names(data)) {
+  # The response as in estimation: the formula's left-hand side evaluated on
+  # the data (so I(count / 2) ~ x uses count / 2, not the raw `count`)
+  lhs <- model$formula[[2]]
+  miss <- setdiff(all.vars(lhs), names(data))
+  if (length(miss)) {
     stop("method = \"Individual\" (Empirical Bayes) requires the outcome `",
-         y_name, "` in `newdata`.", call. = FALSE)
+         paste(miss, collapse = "`, `"), "` in `newdata`.", call. = FALSE)
   }
-  y <- data[[y_name]]
+  y <- eval(lhs, data, environment(model$formula) %||% parent.frame())
+  if (is.logical(y) && all(is.na(y))) y <- as.numeric(y)   # all missing
+  if (!is.numeric(y) || NCOL(y) != 1L || length(y) != nrow(data)) {
+    stop("The model's response must evaluate to one numeric value per row ",
+         "of `newdata`.", call. = FALSE)
+  }
+  y <- as.vector(y)
   panel <- .fcr_rp_panel(model, data)
   
   N <- nrow(mu_mat)

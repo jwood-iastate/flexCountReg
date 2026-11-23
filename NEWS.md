@@ -1,5 +1,18 @@
 # flexCountReg 0.1.2 (development)
 
+## Sampling weights
+
+* `countreg()` and `countreg_rp()` gain `weight_type = c("frequency",
+  "sampling")`. Frequency weights (the default) count each row as that many
+  independent observations, as before. Sampling (survey or
+  inverse-probability) weights make the weighted log-likelihood a
+  pseudo-likelihood: standard errors default to the robust sandwich with
+  meat sum((w s)(w s)') and a G / (G - 1) factor, so they do not change when
+  all weights are rescaled (with frequency weights, multiplying every weight
+  by 100 shrinks them 10-fold); the number of units is the number of rows
+  or panels; the bootstrap is refused; `summary()` notes that LR tests, AIC
+  and BIC are not valid; and `regCompTest()` runs no LR test.
+
 ## Interactive app
 
 * New `launch_app()` opens an interactive interface to flexCountReg in a
@@ -37,6 +50,20 @@
   take many minutes, and the app says so when it starts and offers to
   cancel it. Data, fits and jobs belong to one browser
   session.
+* Models built in the app can include interactions between pairs of
+  predictors (entered as `a:b`; main effects stay in the model), and the
+  Fit page has a Marginal effects tab running `margEffTable()` (average
+  marginal effects or elasticities; pseudo-elasticities or discrete changes
+  for indicators; delta-method or bootstrap standard errors) in the
+  background, with the code added to the session script and the table
+  downloadable as CSV.
+* Exports are reproducible: each uploaded file is stored at its own path
+  (`data/data_1.csv`, `data/newdata_1.csv`, ...) with its MD5 checksum in
+  the manifest; warnings and messages of every result are shown beside it
+  and listed in the manifest with the uncertainty method, accepted
+  bootstrap refits and seed; and stochastic requests (bootstrap intervals,
+  tolerance intervals, bootstrap marginal effects) fix their seed when they
+  are made, so the exported script replays them exactly.
 * The app's packages (shiny, bslib, DT, callr, jsonlite, zip) are
   suggested, not imported: the statistical functions do not need them, and
   `launch_app()` offers to install any that are missing. `app_object()`
@@ -231,10 +258,6 @@
   settings are saved alongside it. The per-replicate results of this study
   and of the interval coverage study are kept in the source repository but
   left out of the package build.
-* The vignettes use `countreg_rp()`.
-* A control character in the negative-multinomial paragraph of the
-  simulation-studies vignette is replaced by the intended `\alpha`.
-
 ## New data
 
 * `abalone_rings`: shell-ring counts and measurements of 4,177 abalone from
@@ -272,6 +295,10 @@
   coefficient matrix, or `tibble::as_tibble(summary(m))` for the tibble that
   `summary()` returned before. The offset is shown as a note, not as a
   coefficient row.
+* Fitted objects no longer keep the optimizer's log-likelihood function
+  (`maxLik::objectiveFn(fit$model)` is unavailable): its closure held the
+  data, design matrices and draws, so fits were several times larger than
+  the data (30 MB for 4.3 MB of data).
 * Fitted objects have class `c(<estimator>, "flexCountReg")`, with
   `<estimator>` one of `countreg`, `countreg_rp`, `renb`, `poislind_re`,
   `repois` and `negmultinom`. The unused S4 class definition is removed. The
@@ -288,10 +315,6 @@
   `regCompTable()`.
 * `cor2cov()` stops (instead of warning and returning `NULL`) on invalid
   input, and checks that `C` is a symmetric correlation matrix.
-* `margEffTable()` includes by default the variables of the underreporting,
-  random-parameter and heterogeneity formulas (and the dispersion formulas of
-  PLN and PLL models), which also change the expected value.
-
 * Probit underreporting now uses P(reported) = pnorm(z'g), the same sign
   convention as logit (a positive coefficient means more likely to be
   reported). Previously probit used 1 - pnorm(z'g), so probit coefficients had
@@ -348,12 +371,27 @@
 
 ## Bug fixes
 
-* `margEffTable()` no longer reports an effect for a variable that enters
-  the model only through `offset()` in the formula (for example the
-  exposure in `offset(log(exposure))`); such variables were treated as
-  predictors, while offsets given with the `offset` argument were already
-  excluded. A variable that is also a predictor is still evaluated, and
-  offset variables can still be named in `vars`.
+* `dpinvgaus()`, `ppinvgaus()` and the PIG1/PIG2 families: P(0) was
+  computed as `exp(mu / eta * (1 - sqrt(1 + 2 * eta)))`, which cancels as
+  eta -> 0 (at eta = 1e-16 the Type 1 PMF summed to 20, and
+  `ppinvgaus(5, 3, 1e-16)` was 18.4), and fits could exploit it to report a
+  positive log-likelihood. It is now `exp(-2 * mu / (1 + sqrt(1 + 2 *
+  eta)))`, which tends to the Poisson value.
+* `dsichel()` returned -Inf where the log PMF is finite (for example
+  `dsichel(500, 500, 1, 1, log = TRUE)`), and `qsichel()` (and so
+  `rsichel()`) stopped at 10,000 for heavy tails. Bessel functions now come
+  from a log-scale order recurrence, and `psichel()` and `qsichel()`
+  evaluate the PMF in one recurrence sweep and search the support in
+  doubling blocks.
+* The inverse-Gaussian draws behind `rpinvgaus()` cancelled to 0 for large
+  dispersions; the root is now computed as m / (1 + t + sqrt(t (t + 2))).
+* `dpoisweibull()` and friends with `mean_value` and `sd_value`: the shape
+  was searched only in [0.1, 5], so small coefficients of variation were
+  silently given shape 5 (SD 0.229 instead of 0.01 at mean 1). The shape is
+  now solved from the coefficient of variation with an expanding bracket.
+* `regCompTable(coefs = FALSE)` printed the coefficients anyway, and an
+  unnamed list of models gave a table without model columns (they are now
+  named "Model 1", "Model 2", ...).
 * `cureplot()` no longer prints the cureplots messages "Covariate:
   indvar_values" and "CURE data frame was provided...", which named the
   wrapper's internal objects; other messages are kept. The documentation
@@ -395,18 +433,12 @@
   longer return `Inf` or `NaN` at large counts (e.g. y > 85 with mu = 2,
   eta = 0.5).
 * r-functions (`rpLnorm()`, `rplind()`, `rplindLnorm()`, `rplindGamma()`,
-  `rpge()`, `rcom()`, `rgp1()`, `rgp2()`) accept vector parameters, as needed
+  `rpge()`, `rcom()`) accept vector parameters, as needed
   for simulation from fitted models. Mixture families draw the mixing
   variable per observation.
 * q-functions no longer loop forever at p = 1 (they return `Inf`), return
   `NaN` for p outside [0, 1], and no longer recompute the CDF at every step.
 * `dplind(lambda = )` uses `lambda` (it previously ignored it).
-* `dgp1()` and `dgp2()` are vectorized, and for underdispersed values the
-  normalizing constant is summed only where the probability is not
-  negligible. Near phi = 0 (or alpha = 0) from below the old code summed up
-  to millions of terms per observation, so GP1/GP2 fits could run for hours
-  (for example the GP1 example in `?countreg`, which now takes under a
-  second).
 * The RENB likelihood computes log-gamma differences without cancellation for
   large means. Previously the likelihood was overstated far from the optimum,
   and optimizers such as BFGS could converge to meaningless estimates.
@@ -423,22 +455,18 @@
 * `predict(method = "Exact")` for `countreg.rp()` includes heterogeneity in
   means and variances.
 
-## Corrections from the follow-up review
+## Further bug fixes and changed results
 
 Changed results are marked **(changed)**.
 
-* The underreporting identification check also warns when standard errors
-  are not available because the Hessian is singular (a flat likelihood
-  ridge). Before, it returned silently in that case, so whether a weakly
-  identified model warned depended on the platform's floating point.
-* **Weights for every estimator.** `renb()`, `repois()`, `poisLind.re()` and
-  `negmultinom()` accept `weights`, as `countreg()` and `countreg.rp()` do.
+* **Weights for the panel estimators.** `renb()` and `poisLind.re()` accept
+  `weights`, as `countreg()` and `countreg.rp()` do.
   In panel models these are frequency weights of the panels (constant
   within a panel): a panel with weight w counts as w independent panels in
   the log-likelihood, the robust covariance, BIC and the bootstrap. Fits
   with weights equal fits to the expanded panels.
 * **Frequency-weight bootstrap (changed).** With `weights`, bootstrap
-  standard errors (coefficients and `margEffTable()`) now draw new
+  standard errors now draw new
   frequencies from Multinomial(sum(w), w / sum(w)) and refit with them in
   place of the weights. This equals the bootstrap of the expanded
   observations (or panels). Before, rows were resampled with their original
@@ -447,18 +475,7 @@ Changed results are marked **(changed)**.
   `stderr = "robust"` for other weights.
 * **Bootstrap acceptance.** A replicate counts only if its refit reports
   convergence (unknown convergence is a failure), has exactly the expected
-  coefficients and finite estimates. `negmultinom()` uses the shared
-  bootstrap. Failures are stored by reason in `model$boot_failures`.
-* **Marginal-effect bootstraps** refit with the frozen, expanded formulas
-  (a `y ~ .` formula no longer picks up helper columns), stored argument
-  values (not objects that changed since the fit), a collision-safe panel
-  column and panel keys of (sampled cluster occurrence, original panel), so
-  a `cluster_var` cluster drawn twice keeps its panels distinct. They
-  resample the analysis rows with the stored weights and panels.
-  `cluster_var` with weights, and panels split across clusters, are
-  rejected. Without `data`, effects average over the rows used in
-  estimation, counting each with its frequency weight **(changed** for
-  weighted models**)**.
+  coefficients and finite estimates. Failures are stored by reason in `model$boot_failures`.
 * **Likelihood-ratio tests.** Fits store evidence of their analysis sample
   (rows, response, weights, offsets, panels and the variables they use).
   An LR test between two models requires the same sample (shared variables
@@ -481,35 +498,17 @@ Changed results are marked **(changed)**.
   with independent quadrature to about 1e-9, for counts up to 1e5. Fits are
   faster too. `engine = "halton"` keeps the earlier method, and objects
   without a stored engine predict as before.
-* **GP domains.** Generalized Poisson moments and predictions are `NaN`, with
-  a warning, outside the parameter space (for GP2, 1 + a mu > 0), instead
-  of textbook moments. In `countreg.rp()` the GP2 dispersion must be
-  nonnegative, since random parameters with unbounded support violate the
-  bound for some draws; use GP1 for underdispersed random-parameter models.
 * **Moment existence.** Random-parameter predictions decide whether
   E[exp(x beta)] exists from the parameters alone, so `Simulated`
   predictions with lognormal parameters no longer need lamW. `Exact` uses
   log-scale MGFs and reports an overflow of a finite expectation as such.
   For lognormal parameters with x < 0, `Exact` uses a Laplace approximation
   (documented as approximate).
-* **Quantile residuals** evaluate only F(y - 1) and F(y): directly for
-  Poisson and the negative binomial families (no cost growth with the
-  counts), and by one streaming pass with a work budget (an error before
-  any work when it would be exceeded) for the others. Zero-inflated and
-  hurdle CDFs are computed stably.
-* **Rootograms (changed).** Expected frequencies sum the fitted
-  probabilities of every row, including rows whose outcome is above
-  `max_count`; before, those rows were dropped. New `overflow` argument for a
-  `Y > max_count` bin; the tail is also returned in attribute `"tail"`. Rows
-  with non-finite fitted means are left out of both frequencies, with a
-  warning.
 * **Distribution contracts.** Invalid parameters give `NaN` for that
   element, with one warning (base R's convention), and missing parameters
   `NA`, at every `q` including `q < 0` and `q = Inf` (before, those endpoints
   returned 0 or 1). `dgwar()`/`pgwar()` no longer stop for an invalid
-  element. `plindley()` computes both tails directly. Zero-truncated
-  simulation reports invalid probabilities and its count limit as `NA`
-  draws with a warning, instead of returning a count.
+  element. `plindley()` computes both tails directly.
 * **COM controls.** `find_lambda_cpp()` honors its tolerance (relative
   error of the mean) and iteration limit and reports non-convergence
   instead of accepting a collapsed bracket; `find_lambda_diag_cpp()` gives
@@ -530,7 +529,6 @@ Changed results are marked **(changed)**.
   the rate cancels; fitted objects carry a schema version
   (`model$fcr_schema`).
 
-## Corrections from the development review
 
 * PGE and PW: with the mean parameterization, the scale of the mixing
   distribution cancels out of the likelihood, so it was not identified (the
@@ -539,14 +537,6 @@ Changed results are marked **(changed)**.
   `dis_param_formula_2` is an error for them. Predictions from fits made with
   earlier versions are unchanged. The `dpge()`/`dpoisweibull()` families of
   functions keep their scale arguments.
-* GP1 and GP2 with a negative dispersion: the PMF is truncated and
-  renormalized, so `mu` is a location parameter, not the mean (GP1 with
-  mu = 0.75 and phi = -0.5 has mean 0.803). Predictions, Pearson residuals
-  (variances), Empirical Bayes and random-parameter predictions now use the
-  exact moments of the implemented PMF. Exact random-parameter predictions
-  fall back to Simulated for these models, because the mean is not
-  proportional to exp(X beta). The GP normalizing constants are computed
-  vectorized, which makes GP random-parameter models much faster.
 * Underreporting is binomial thinning of the true counts, and the model of
   the reported counts now matches it: for NB1 and PIG1 the reported counts'
   dispersion is p * alpha, and for NBP alpha * p^(2 - P) (before, the
@@ -554,7 +544,7 @@ Changed results are marked **(changed)**.
   thinned counts). Poisson, NB2, PIG2, PIG and the mixed-Poisson families
   (PLN, PL, PLG, PLL, PGE, PW, SI) were already exact. GP1, GP2, COM and GW
   are not closed under thinning, so underreporting is now an error for them.
-  This changes NB1, NBP and PIG1 underreporting estimates.
+  This changes NB1, NBP and PIG1 underreporting estimates **(changed)**.
 * Underreporting identification: an intercept-only `underreport_formula` is
   an error (only exp(b0) * p is identified), and `countreg()` warns when the
   reporting and count coefficients are nearly collinear (correlation above
@@ -574,9 +564,8 @@ Changed results are marked **(changed)**.
   AIC and BIC.
 * Likelihoods use log-probabilities computed on the log scale (every family
   density has a `log` argument), so extreme counts keep finite
-  log-likelihoods (log P(Y = 1000 | mu = 1) = -5913 instead of log(0)).
-  Zero-inflated and hurdle adjustments are done on the log scale, and rows
-  or panels with zero weight contribute exactly 0.
+  log-likelihoods (log P(Y = 1000 | mu = 1) = -5913 instead of log(0)). Rows or panels with
+  zero weight contribute exactly 0.
 * The Conway-Maxwell-Poisson functions use the log normalizing constant (it
   overflowed for lambda = 1000, nu = 1, so `dcom(1000, lambda = 1000,
   nu = 1)` was 0 instead of 0.0126), one support rule for the PMF, CDF,
@@ -596,50 +585,25 @@ Changed results are marked **(changed)**.
   when its random parameter is normal, uniform or triangular (only the sum
   of the fixed coefficient and the random mean is identified). Lognormal
   and gamma random parameters with a fixed shift are still allowed.
-* Auxiliary formulas (distribution parameters, underreporting, zero model,
+* Auxiliary formulas (distribution parameters, underreporting,
   random parameters, heterogeneity) keep their trained terms, so
   data-dependent bases such as `poly()`, `splines::ns()` and `scale()` are
   evaluated with the training values at prediction time (a row is predicted
   the same alone or in any batch).
-* `negmultinom()` uses the shared data preparation and stores the training
-  blueprint: predictions use the training factor levels, contrasts and
-  bases and coefficients by name; a missing offset column is an error
-  instead of silently dropping the offset; giving both a formula offset and
-  `offset` is an error; EB predictions handle transformed responses; named
-  `start.vals` are matched by name; convergence uses the optimizer's own
-  return codes (a BFGS fit stopped at the iteration limit was reported as
-  converged); and the stored BIC uses the number of panels, as `BIC()` does.
-* `renb()`, `poisLind.re()` and `repois()` predictions use the estimates by
-  name rather than a cached copy, so their delta-method marginal-effect
-  standard errors are no longer zero.
-* The `margEffTable()` bootstrap resamples the model's independent units by
-  default (panels for panel models), gives every sampled cluster a fresh id
-  (a cluster drawn twice is two panels), resamples a numeric weights vector
-  with its rows, refits without an inner bootstrap, counts only converged
-  refits, and errors for a `cluster_var` that is not in the data.
 * Bootstrapped standard errors use only replicates whose refit converged
   and gave finite estimates for every parameter (failed optimizations were
   counted as successes before). The warning about failed replicates gives
   the reasons, the counts are stored (`boot_failures`), and the covariance
   uses the accepted replicates only (not pairwise deletion).
-  `negmultinom()` applies the same rule.
 * Frequency weights now give the same results as expanding the data: the
   robust (sandwich) covariance uses sum(w s s') instead of sum(w^2 s s'),
   and BIC uses the sum of the weights (of rows, or of panels in panel
   models) as the sample size. `countreg.rp()` weights that vary within a
   panel are an error (they were silently replaced by the first weight of
-  the panel). The parsnip engine warns that importance weights are treated
-  as frequencies.
-* Hurdle models: `simulate()` draws membership first and positive counts
-  from the exact zero-truncated distribution (by inversion), instead of
-  redrawing zeros at most 1,000 times and keeping the remaining zeros (about
-  37% of the "positive" draws were zero for a count mean of 0.001).
-  Predictions, Pearson variances and probability matrices use
-  1 - P(Y = 0) = -expm1(log P(Y = 0)), which keeps its precision when
-  P(Y = 0) is close to 1.
+  the panel).
 * All count p-functions (`pplind()`, `ppinvgaus()`, `ppinvgamma()`,
   `ppLnorm()`, `pplindLnorm()`, `pplindGamma()`, `ppge()`, `ppoisweibull()`,
-  `psichel()`, `pgwar()`, `pcom()`, `pgp1()`, `pgp2()`) follow one contract:
+  `psichel()`, `pgwar()`, `pcom()`) follow one contract:
   NA gives NA (it gave 0), q < 0 and -Inf give 0, Inf gives 1 (several gave
   0 or failed with "result would be too long a vector"), the upper tail and
   log scale follow, and zero-length input gives `numeric(0)`. Small upper
@@ -649,9 +613,6 @@ Changed results are marked **(changed)**.
   (they could be misaligned after missing values), errors for an unknown
   `indvar`, and passes `method` only to random-parameter and negative
   multinomial models (the default `NULL` uses the estimator's default).
-  `augment(data = )` predicts the rows of `data` in the order given
-  (before, data of the training size were matched to the cached fitted
-  values by position).
 * Input checks before optimization, shared by all estimators: the response
   must be finite, non-negative whole numbers (non-integer counts are now an
   error, not a warning); design matrices must be finite after formula
@@ -671,9 +632,6 @@ Changed results are marked **(changed)**.
   Scrambled Halton draws are generated from a seed stored in the fit, so
   predictions reuse the estimation draws and leave the caller's random
   numbers unchanged.
-* `repois()` and `negmultinom()` compute their panel log-likelihoods and
-  scores without the cancellation in lgamma(r + Y) - lgamma(r) for large
-  r = 1 / alpha, so they tend continuously to the Poisson log-likelihood.
 * When fewer than 2 bootstrap replicates succeed, the fit is returned with
   NA standard errors and a warning, instead of an error.
 * Documentation now matches the implementation: the NB2 PMF uses size
@@ -683,28 +641,15 @@ Changed results are marked **(changed)**.
   section gives the base PMF evaluated at lambda (the expanded formula had
   the wrong power of theta + 2) and no longer describes an LR test against
   Poisson; the PGE integral is over the generalized-exponential
-  distribution. Version references in code and messages refer to 0.1.1
-  (the last release) instead of a nonexistent 0.1.3, and fitted objects
-  record the package version that created them (`model$fcr_version`).
-* Diagnostics: randomized quantile residuals are computed in chunks of rows
-  sorted by the outcome (bounded memory; one large count no longer widens
-  every row's probability grid); `predict(type = "prob")` validates
-  `max_count` and adds the tail mass P(Y > max_count) with
-  `overflow = TRUE`; rootograms count frequency weights; and
-  `simulate(seed = )` restores the caller's random-number state.
-* Packaging: the parsnip engine is registered even when another package has
-  already registered a `count_reg` model; `DESCRIPTION` has `BugReports`
+  distribution. Fitted objects record the package version that
+  created them (`model$fcr_version`).
+* Packaging: `DESCRIPTION` has `BugReports`
   and the GitHub URL; a `CITATION` file and a contributor guide with a
   release checklist were added; CI also checks the minimum R version; the
   slowest stochastic tests are skipped on CRAN.
 * The minimum R version is now 4.5.0, because the current CRAN release of
   the gsl package (an import) requires it.
-* `countreg.rp()` starts GP1/GP2 at zero dispersion (the Poisson model)
-  instead of a strongly underdispersed value that gave larger counts zero
-  probability, so default GP fits no longer fail with "NA in the initial
-  gradient".
-
-## Bug fixes found by the extended test suite
+## Bug fixes (distribution functions and inputs)
 
 * `pcom()` ignored `lower.tail` and `log.p`. Both tails are now summed
   directly on the log scale with a precise normalizing constant, so upper
@@ -717,13 +662,12 @@ Changed results are marked **(changed)**.
   and the mean; parameters given only partly now warn instead of failing.
 * The d/p/q functions of the Poisson-Lindley, Poisson-Lindley-Lognormal,
   Poisson-inverse-Gaussian, Poisson-inverse-gamma, Poisson-generalized-
-  exponential, Sichel, GP1 and inverse-gamma distributions return `NaN`
+  exponential, Sichel and inverse-gamma distributions return `NaN`
   (with one warning) for invalid parameters
   instead of failing, returning 0, or emitting extra warnings. Missing inputs
   give `NA`.
 * `qsichel()` returns `Inf` at p = 1 (it returned `NA` with a coercion
-  warning) and `NaN` for p outside [0, 1] (it searched 10,000 counts).
-  `qgp1()` no longer fails for invalid parameters. `rsichel()` and
+  warning) and `NaN` for p outside [0, 1] (it searched 10,000 counts). `rsichel()` and
   `rinvgamma()` accept a vector `n` (its length is used, as in base R).
 * `halton_dists()` draws one dimension by default, uses the stated
   half-width for uniform draws (`mean +/- sdev`), and errors for an unknown
@@ -731,33 +675,23 @@ Changed results are marked **(changed)**.
   deviation and bounds for truncated normal draws, and errors for an
   unsupported distribution, `hdraws` with the wrong number of columns, or a
   Cholesky factor of the wrong size.
-* `margEffTable()` errors for misspelled variables (they were dropped
-  silently) and refits bootstrap replicates in the environment of the
-  model formula.
 * `confint()`, `summary()` and `tidy()` work (with `NA` standard errors) when
   a model has no covariance matrix.
 * `bootstraps` is checked up front (a single number of at least 2) instead of
   failing after the model is fit.
-* `repois()` uses the shared data preparation and panel bootstrap: the
-  bootstrap covariance matrix is computed from the coefficient draws, the
-  rows used are recorded, and a prediction blueprint is stored, so
-  `predict()` and `augment()` work with `keep_data = FALSE`.
 * Data preparation rejects infinite counts and non-numeric (e.g. factor)
   responses, expands `.` in formulas, and keeps the contrasts of factors in
   auxiliary formulas for prediction. Fitted objects store the expanded
-  formulas, so `margEffTable()` and bootstrap refits of models written with
-  `.` work.
+  formulas, so bootstrap refits of models written with `.` work.
 * `method = "Nelder-Mead"` is accepted by every estimator as an alias of
-  `"NM"`, and `repois()` accepts all optimizers the other estimators accept.
+  `"NM"`.
 * `qplind()` and `qplindLnorm()` return `NA` for missing parameters instead
   of failing, and `qplindLnorm()`/`rplindLnorm()` accept `sigma = 0` (the
   Poisson-Lindley limit).
 * `regCompTable()` fits the baseline model only when the pseudo-R^2 is
   requested. `tidy()` classifies parameters from the model's bookkeeping
   (covariates named like distribution parameters are no longer
-  misclassified), and `augment()` computes residuals from the transformed
-  response (e.g. `log(y + 1) ~ x`), evaluated in the environment of the
-  model formula.
+  misclassified).
 
 ## Documentation
 
@@ -767,13 +701,15 @@ Changed results are marked **(changed)**.
   random-effects and finite-mixture models, the prediction, interval,
   effect and diagnostic tools, and references for latent-class
   regression, randomized quantile residuals and rootograms.
-* Corrected the Generalized Poisson parameter restrictions, the parameter
+* Corrected the parameter
   table in `?countreg` (PGE, Sichel), the Poisson-Lindley-Lognormal mean and
   parameter descriptions, the RENB density, the Sichel reference (Zou, Lord
   and Zhang, 2012) and several typos. `?countreg` no longer claims that an LR
   test is printed; see `regCompTest()`.
 * `?countreg.rp` documents each random-parameter distribution's scale, the
   heterogeneity specification and the lognormal caveat.
+* `?renb` states that the marginal variance exists only for a > 2 (it is
+  infinite for the legal values 1 < a <= 2).
 * `?washington_roads` describes the panel structure; the `Rollover` label in
   the data is corrected. The README function list is corrected and completed.
 
@@ -797,8 +733,18 @@ Changed results are marked **(changed)**.
 * `msg1` and `.dpge_one` are no longer exported. The hand-maintained
   `Collate` field is removed.
 
-## New features
+## Other new features
 
+* New `margEffTable()`: average marginal effects, elasticities and, for
+  indicators, pseudo-elasticities or discrete changes, for every estimator,
+  with delta-method or bootstrap (independent units, optional
+  `cluster_var`) standard errors. Variables that change the expected count
+  only through auxiliary formulas (underreporting, zero model, random
+  parameters and their heterogeneity, and distribution parameters when the
+  mean depends on them, as in hurdle models) are included by default.
+* New panel estimators `repois()` (random-effects Poisson) and
+  `negmultinom()` (negative multinomial NM1, NM2 and NM-P), with weights, robust and
+  bootstrap standard errors, predictions and the common methods.
 * Zero-inflated and hurdle models for every `countreg()` family, through the
   new `zero_formula` and `zero_type` arguments (checked against
   `pscl::zeroinfl()` and `pscl::hurdle()`).
@@ -814,6 +760,9 @@ Changed results are marked **(changed)**.
   now computes Empirical Bayes observation-specific predictions following
   Wood and Gayah (2025), weighting each draw by the likelihood of the unit's
   observed outcomes. Previously it returned the simulated predictions.
+  Panels are matched to the rows of `newdata` by id (a `group_var` given
+  as a vector is stored as the column `.fcr_panel_id`), and the response
+  expression is evaluated as in estimation.
   `eb_type = "mean"` returns the conditional mean instead of plugging in the
   conditional coefficients; the conditional coefficients and their standard
   deviations are returned as attributes.
@@ -827,7 +776,7 @@ Changed results are marked **(changed)**.
   name (`?countreg_rp`). `countreg.rp()` still works, with a
   once-per-session warning, and returns the same fit.
 * `predict(object, data = ...)` is deprecated; use `newdata`.
-* `print.level` in `renb()`, `poisLind.re()` and `repois()` is deprecated; use
+* `print.level` in `renb()` and `poisLind.re()` is deprecated; use
   `verbose`. `panel_id` in `countreg_rp()` is deprecated; use `group_var`.
   The old names still work, with a once-per-session warning.
 
@@ -841,7 +790,7 @@ Changed results are marked **(changed)**.
 * `simulate()` draws responses from fitted `countreg()` models (all
   families, including underreporting).
 * Every estimator stores one covariance matrix (`vcov()`), and `renb()`,
-  `poisLind.re()`, `repois()` and `countreg.rp()` gain `stderr = c("normal",
+  `poisLind.re()` and `countreg.rp()` gain `stderr = c("normal",
   "robust", "boot")`. Robust standard errors of panel models are clustered by
   panel; bootstraps resample whole panels. `countreg.rp()` gains
   `bootstraps`.
@@ -849,8 +798,6 @@ Changed results are marked **(changed)**.
   training data.
 * `countreg_rp()` and `poislind_re()` are snake_case names for
   `countreg.rp()` and `poisLind.re()`.
-* `repois()` predictions work (its linear-predictor coefficients were
-  truncated to one value), and its likelihood returns one value per cluster.
 * For fitted models, `AIC()` and `BIC()` replace `myAIC()` and `myBIC()`.
 
 # flexCountReg 0.1.1

@@ -16,7 +16,20 @@
 #'   `offset()`. Use only one of the two approaches: supplying both is an
 #'   error.
 #' @param weights the name of a variable in the data frame, or a numeric vector
-#'   with one value per row of `data`, to be used as frequency weights.
+#'   with one value per row of `data`, to be used as weights (see
+#'   `weight_type`).
+#' @param weight_type `"frequency"` (default): each weight is the number of
+#'   independent observations a row stands for, so the log-likelihood, LR
+#'   tests, AIC and BIC are those of the expanded data. `"sampling"`: survey or
+#'   inverse-probability weights, which only set how much each unit counts.
+#'   The weighted log-likelihood is then a pseudo-likelihood: standard errors
+#'   default to the robust sandwich with meat sum((w s)(w s)') and the
+#'   small-sample factor G / (G - 1) for G units, so they do not change when
+#'   all weights are
+#'   rescaled; the number of units is the number of rows (panels) with a
+#'   positive weight; bootstrap standard errors are not available; and LR
+#'   tests, AIC and BIC are not valid (they are reported, with a note, by
+#'   \code{summary()} and are refused by \code{regCompTest()}).
 #' @param verbose an optional parameter. If `TRUE`, the function will print out
 #'   the progress of the model fitting. Default is `FALSE`.
 #' @param dis_param_formula_1 a symbolic description of the model for the
@@ -780,9 +793,11 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      stderr = "normal", bootstraps = NULL,
                      engine = "quadrature", keep_data = TRUE,
                      zero_formula = NULL,
-                     zero_type = c("inflated", "hurdle")) {
+                     zero_type = c("inflated", "hurdle"),
+                     weight_type = c("frequency", "sampling")) {
   
   print.level <- if (verbose) 2 else 0
+  stderr_missing <- missing(stderr)
   
   # ---- Validate options ------------------------------------------------------
   # Remove non-alphanumeric characters from the family name, upper case
@@ -802,6 +817,10 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   underreport_family <- match.arg(tolower(underreport_family),
                                   c("logit", "probit"))
   stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
+  wt <- .fcr_resolve_weight_type(weight_type, weights, stderr,
+                                 stderr_missing && is.null(bootstraps))
+  weight_type <- wt$weight_type
+  stderr <- wt$stderr
   zero_type <- match.arg(zero_type)
   if (!is.null(underreport_formula)) .fcr_check_thinning(family)
   if (!is.null(zero_formula) && !is.null(underreport_formula)) {
@@ -1078,7 +1097,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     fit$n_boot_ok <- sum(stats::complete.cases(draws))
     vcov_type <- "bootstrap"
   } else if (stderr == "robust") {
-    V <- .fcr_robust_vcov(fit, weights.df)
+    V <- .fcr_robust_vcov(fit, weights.df, weight_type)
     vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)
@@ -1121,8 +1140,11 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit$y <- y
   fit$weights <- weights.df
   fit$nobs <- length(y)
-  # Independent units for BIC: the rows, counted with their frequency weights
-  fit$n_bic <- sum(weights.df)
+  fit$weight_type <- weight_type
+  # Independent units for BIC: the rows, counted with their frequency
+  # weights (sampling weights do not change the number of units)
+  fit$n_bic <- if (weight_type == "sampling") sum(weights.df > 0) else
+    sum(weights.df)
   # Sample evidence for likelihood-ratio comparisons
   fit$lr_sample <- .fcr_lr_sample(prep, data)
   fit$rows_used <- prep$rows_used

@@ -20,10 +20,10 @@ test_that("Sichel functions handle invalid and missing inputs", {
   expect_true(is.nan(pr[2]))
   expect_warning(psichel(1, sigma = -1), "'sigma' must be positive")
   expect_true(is.na(psichel(NA, mu = 2)))
-  expect_warning(
-    d <- dsichel(1, mu = 2, gamma = 1e6),
-    "Bessel function computation failed")
-  expect_equal(d, 0)
+  # A very large gamma is close to the Poisson limit; the log-scale Bessel
+  # recurrence keeps it finite (besselK() itself overflowed and gave 0)
+  expect_no_warning(d <- dsichel(1, mu = 2, gamma = 1e6))
+  expect_equal(d, dpois(1, 2), tolerance = 1e-5)
 })
 
 test_that("qsichel handles the boundaries, tails and log scale", {

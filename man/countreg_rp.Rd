@@ -30,7 +30,8 @@ countreg_rp(
   engine = "quadrature",
   keep_data = TRUE,
   panel_id = NULL,
-  mix_draws = NULL
+  mix_draws = NULL,
+  weight_type = c("frequency", "sampling")
 )
 }
 \arguments{
@@ -101,9 +102,10 @@ value per row, defining the panel structure (repeated measures). If
 provided, each panel shares one draw of the random parameters, and the
 likelihood and standard errors account for the panel structure.}
 
-\item{weights}{the name of a variable, or a numeric vector, of frequency
-weights. With \code{panel_id}, weights apply to whole panels (the panel
-log-likelihood is weighted), so they should be constant within a panel.}
+\item{weights}{the name of a variable, or a numeric vector, of weights
+(see \code{weight_type}). With \code{group_var}, weights apply to whole
+panels (the panel log-likelihood is weighted), so they should be
+constant within a panel.}
 
 \item{offset}{the name of a variable, or vector of variable names, to be
 used as an offset (summed when several are given). An offset can instead
@@ -143,6 +145,19 @@ draws for integrating over the mixing distribution of the PLN, PGE, PLL
 and PW families (inside each random-parameter draw). The default is
 \code{min(ndraws, 200)}. Not used by the default
 \code{engine = "quadrature"}, which integrates adaptively.}
+
+\item{weight_type}{\code{"frequency"} (default): each weight is the number of
+independent observations a row stands for, so the log-likelihood, LR
+tests, AIC and BIC are those of the expanded data. \code{"sampling"}: survey or
+inverse-probability weights, which only set how much each unit counts.
+The weighted log-likelihood is then a pseudo-likelihood: standard errors
+default to the robust sandwich with meat sum((w s)(w s)') and the
+small-sample factor G / (G - 1) for G units, so they do not change when
+all weights are
+rescaled; the number of units is the number of panels (rows without \code{group_var}) with a
+positive weight; bootstrap standard errors are not available; and LR
+tests, AIC and BIC are not valid (they are reported, with a note, by
+\code{summary()} and are refused by \code{regCompTest()}).}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

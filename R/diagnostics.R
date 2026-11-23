@@ -18,6 +18,14 @@
               numeric(length(parts$mu_link)))
   P <- matrix(P, ncol = max_count + 1,
               dimnames = list(NULL, as.character(0:max_count)))
+  # A row with a missing value in any component (mean, distribution
+  # parameters, reporting or zero model) has no distribution: its
+  # probabilities are NA, not 0 (which made the overflow column 1)
+  miss <- is.na(parts$mu_link)
+  for (nm in c("p_report", "alpha", "sigma", "zero_prob")) {
+    if (!is.null(parts[[nm]])) miss <- miss | is.na(parts[[nm]])
+  }
+  P[miss, ] <- NA_real_
   if (!is.null(parts$zero_prob)) {
     zp <- parts$zero_prob
     f0 <- P[, 1]
@@ -96,20 +104,29 @@
 #   F(y) = 1 - z P_base(Y > y) / (1 - f0),  y >= 0,
 # computed from the upper tail so it stays accurate when f0 is near 1.
 .fcr_fitted_log_cdf <- function(object, parts, q) {
+  .fcr_fitted_log_tails(object, parts, q)$lower
+}
+
+# log P(Y <= q) (lower) and log P(Y > q) (upper) of the fitted distribution,
+# including any zero component. Both tails are kept on the log scale, so a
+# probability near 1 in one tail is not lost to rounding in the other.
+.fcr_fitted_log_tails <- function(object, parts, q) {
   cd <- .fcr_parts_cdf(object, parts, q)
   zp <- parts$zero_prob
-  if (is.null(zp)) return(cd$lower)
+  if (is.null(zp)) return(cd)
   q <- rep_len(q, length(cd$lower))
+  neg <- !is.na(q) & q < 0
   if (parts$zero_type == "inflated") {
-    out <- .fcr_logadd(log(zp), log1p(-zp) + cd$lower)
-    out[!is.na(q) & q < 0] <- -Inf
-    return(out)
+    low <- .fcr_logadd(log(zp), log1p(-zp) + cd$lower)
+    upp <- log1p(-zp) + cd$upper
+  } else {
+    lf0 <- parts$lf0 %||% .fcr_parts_density(object, parts, 0, log = TRUE)
+    upp <- pmin(log(zp) + cd$upper - .fcr_log1mexp(lf0), 0)
+    low <- .fcr_log1mexp(upp)
   }
-  lf0 <- parts$lf0 %||% .fcr_parts_density(object, parts, 0, log = TRUE)
-  log_s <- log(zp) + cd$upper - .fcr_log1mexp(lf0)
-  out <- .fcr_log1mexp(pmin(log_s, 0))
-  out[!is.na(q) & q < 0] <- -Inf
-  out
+  low[neg] <- -Inf
+  upp[neg] <- 0
+  list(lower = low, upper = upp)
 }
 
 # Randomized quantile residuals (Dunn and Smyth, 1996): for each training
@@ -117,24 +134,49 @@
 # residual is qnorm(u). Only F(y - 1) and F(y) are evaluated, so the cost
 # does not grow with a probability grid up to the largest count. `u` (one
 # uniform per row) can be given to reproduce the randomization.
+#
+# Everything stays on the log scale. With lp = log P(Y = y),
+#   log U     = logadd(log F(y - 1), log(u) + lp)        (lower half)
+#   log(1 - U) = logadd(log S(y), log1p(-u) + lp)        (upper half)
+# and the residual is qnorm() of that log probability in the matching tail,
+# so an outcome far in either tail gives a large finite residual (for
+# Poisson(1) and y = 25, F(24) and F(25) both round to 1 and the
+# exponentiated form gave Inf).
 .fcr_quantile_residuals <- function(object, u = NULL) {
   d <- .fcr_training_rows(object)
   y <- as.numeric(object$model[["y"]])
   n <- length(y)
   if (is.null(u)) u <- stats::runif(n)
   parts <- .fcr_countreg_parts(object, d)
-  upper <- exp(.fcr_fitted_log_cdf(object, parts, y))
-  lower <- exp(.fcr_fitted_log_cdf(object, parts, y - 1))
-  bad <- is.na(lower) | is.na(upper) | lower > upper + 1e-12 |
-    upper > 1 + 1e-12
+  t_hi <- .fcr_fitted_log_tails(object, parts, y)       # F(y), S(y)
+  t_lo <- .fcr_fitted_log_tails(object, parts, y - 1)   # F(y - 1), S(y - 1)
+  .fcr_qres_from_log_tails(t_lo$lower, t_hi$lower, t_lo$upper, t_hi$upper, u)
+}
+
+# Randomized quantile residuals from log F(y - 1), log F(y), log S(y - 1)
+# and log S(y) (see .fcr_quantile_residuals()).
+.fcr_qres_from_log_tails <- function(lF_lo, lF_hi, lS_lo, lS_hi, u) {
+  bad <- is.na(lF_lo) | is.na(lF_hi) | lF_lo > lF_hi + 1e-12 |
+    lF_hi > 1e-12
   if (any(bad)) {
     warning(sum(bad), " row(s) have invalid fitted probabilities; their ",
             "quantile residuals are NA.", call. = FALSE)
   }
-  upper <- pmin(upper, 1)
-  lower <- pmin(lower, upper)
-  r <- stats::qnorm(lower + u * (upper - lower))
-  r[bad] <- NA
+  r <- rep(NA_real_, length(u))
+  up <- !bad & lF_lo > log(0.5) & !is.na(lS_lo) & !is.na(lS_hi)
+  lo <- !bad & !up
+  if (any(lo)) {
+    a <- pmin(lF_lo[lo], lF_hi[lo])
+    lp <- lF_hi[lo] + .fcr_log1mexp(a - lF_hi[lo])
+    logU <- .fcr_logadd(a, log(u[lo]) + lp)
+    r[lo] <- stats::qnorm(pmin(logU, 0), log.p = TRUE)
+  }
+  if (any(up)) {
+    b <- pmin(lS_hi[up], lS_lo[up])
+    lp <- lS_lo[up] + .fcr_log1mexp(b - lS_lo[up])
+    log1mU <- .fcr_logadd(b, log1p(-u[up]) + lp)
+    r[up] <- stats::qnorm(pmin(log1mU, 0), lower.tail = FALSE, log.p = TRUE)
+  }
   r
 }
 

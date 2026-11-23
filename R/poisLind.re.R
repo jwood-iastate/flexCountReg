@@ -181,60 +181,9 @@ poisLind.re <- function(formula, group_var, data,
   full_start <- c(start, log(theta))
   names(full_start) <- x_names
   
-  .fcr_lse <- function(x) {
-    if (!length(x)) return(-Inf)
-    if (anyNA(x)) return(NA_real_)
-    m <- max(x)
-    if (is.infinite(m)) return(m)
-    m + log(sum(exp(x - m)))
-  }
-
-  # Poisson-Lindley log likelihood, evaluated separately for each panel.
-  reg.run.RE <- function(beta, y, X, group, offset_vec) {
-    n_covariates <- ncol(X)
-    if (length(beta) != n_covariates + 1L || nrow(X) != length(y) ||
-        length(group) != length(y) || length(offset_vec) != length(y) ||
-        anyNA(group)) {
-      stop("Poisson-Lindley parameters, rows, groups and offsets must align.")
-    }
-    beta_cov <- beta[seq_len(n_covariates)]
-    theta <- exp(beta[n_covariates + 1L])
-    panels <- split(seq_along(y), group, drop = TRUE)
-    n_panels <- length(panels)
-
-    if (!is.finite(theta) || theta <= 0) {
-      return(rep(-Inf, n_panels))
-    }
-
-    # Convert the marginal mean into the conditional Poisson rate multiplier.
-    log_theta <- log(theta)
-    log_1p_theta <- log1p(theta)
-    log_lambda <- drop(X %*% beta_cov) + offset_vec +
-      log_theta + log_1p_theta - log(theta + 2)
-    if (any(!is.finite(log_lambda))) {
-      return(rep(-Inf, n_panels))
-    }
-    theta_const <- 2 * log_theta - log_1p_theta
-
-    # Integrate over the shared Lindley random effect within each panel.
-    vapply(panels, function(idx) {
-      y_panel <- y[idx]
-      log_lambda_panel <- log_lambda[idx]
-      y_sum <- sum(y_panel)
-      log_A <- .fcr_lse(log_lambda_panel)
-      log_denom <- .fcr_lse(c(log_A, log_theta))
-      log_linear <- .fcr_lse(c(log_A, log(theta + y_sum + 1)))
-      log_lik_obs <- sum(y_panel * log_lambda_panel - lgamma(y_panel + 1))
-      log_lik_gamma <- lgamma(y_sum + 1)
-
-      theta_const + log_lik_obs + log_lik_gamma +
-        log_linear - (y_sum + 2) * log_denom
-    }, numeric(1))
-  }
-
   # Weighted per-panel log-likelihood
   ll_w <- function(beta, y, X, group, offset_vec, w = NULL) {
-    .fcr_weight_ll(reg.run.RE(beta, y, X, group, offset_vec), w)
+    .fcr_weight_ll(.fcr_poislind_re_ll(beta, y, X, group, offset_vec), w)
   }
 
   fit <- maxLik::maxLik(
@@ -295,3 +244,56 @@ poisLind.re <- function(formula, group_var, data,
 #' @usage NULL
 #' @export
 poislind_re <- poisLind.re
+
+# log(sum(exp(x))) without overflow
+.fcr_lse <- function(x) {
+  if (!length(x)) return(-Inf)
+  if (anyNA(x)) return(NA_real_)
+  m <- max(x)
+  if (is.infinite(m)) return(m)
+  m + log(sum(exp(x - m)))
+}
+
+# Poisson-Lindley random-effects log-likelihood of each panel (internal; a
+# package function rather than a closure, so fitted objects need not keep it).
+.fcr_poislind_re_ll <- function(beta, y, X, group, offset_vec) {
+  n_covariates <- ncol(X)
+  if (length(beta) != n_covariates + 1L || nrow(X) != length(y) ||
+      length(group) != length(y) || length(offset_vec) != length(y) ||
+      anyNA(group)) {
+    stop("Poisson-Lindley parameters, rows, groups and offsets must align.")
+  }
+  beta_cov <- beta[seq_len(n_covariates)]
+  theta <- exp(beta[n_covariates + 1L])
+  panels <- split(seq_along(y), group, drop = TRUE)
+  n_panels <- length(panels)
+
+  if (!is.finite(theta) || theta <= 0) {
+    return(rep(-Inf, n_panels))
+  }
+
+  # Convert the marginal mean into the conditional Poisson rate multiplier.
+  log_theta <- log(theta)
+  log_1p_theta <- log1p(theta)
+  log_lambda <- drop(X %*% beta_cov) + offset_vec +
+    log_theta + log_1p_theta - log(theta + 2)
+  if (any(!is.finite(log_lambda))) {
+    return(rep(-Inf, n_panels))
+  }
+  theta_const <- 2 * log_theta - log_1p_theta
+
+  # Integrate over the shared Lindley random effect within each panel.
+  vapply(panels, function(idx) {
+    y_panel <- y[idx]
+    log_lambda_panel <- log_lambda[idx]
+    y_sum <- sum(y_panel)
+    log_A <- .fcr_lse(log_lambda_panel)
+    log_denom <- .fcr_lse(c(log_A, log_theta))
+    log_linear <- .fcr_lse(c(log_A, log(theta + y_sum + 1)))
+    log_lik_obs <- sum(y_panel * log_lambda_panel - lgamma(y_panel + 1))
+    log_lik_gamma <- lgamma(y_sum + 1)
+
+    theta_const + log_lik_obs + log_lik_gamma +
+      log_linear - (y_sum + 2) * log_denom
+  }, numeric(1))
+}

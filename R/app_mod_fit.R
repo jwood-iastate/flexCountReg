@@ -1,4 +1,5 @@
-# Fit page: jobs, saved fits and the results of the selected fit.
+# Fit page: jobs, saved fits and the results of the selected fit, including
+# its marginal effects (computed on request, as a background job).
 
 mod_fit_ui <- function(id) {
   ns <- shiny::NS(id)
@@ -17,7 +18,70 @@ mod_fit_ui <- function(id) {
       bslib::nav_panel("Coefficients", DT::DTOutput(ns("coefs"))),
       bslib::nav_panel("Numerical checks", shiny::uiOutput(ns("checks"))),
       bslib::nav_panel("Classes", shiny::uiOutput(ns("classes"))),
+      bslib::nav_panel("Marginal effects", margeff_ui(ns)),
       bslib::nav_panel("Messages", shiny::uiOutput(ns("messages")))))
+}
+
+# Controls and results of the marginal effects of the selected fit (see
+# ?flexCountReg::margEffTable)
+margeff_ui <- function(ns) {
+  bslib::layout_columns(
+    col_widths = c(4, 8),
+    shiny::div(
+      shiny::selectInput(ns("me_measure"), "Measure",
+                         c("Automatic (AME; indicators as below)" = "auto",
+                           "Average marginal effect (AME)" = "ame",
+                           "Elasticity" = "elasticity")),
+      shiny::selectInput(ns("me_indicator"), "Indicator (0/1) variables",
+                         c("Pseudo-elasticity (%)" = "pseudo_elasticity",
+                           "Discrete change" = "discrete_change")),
+      shiny::selectInput(ns("me_se"), "Standard errors",
+                         c("Delta method" = "delta",
+                           "Bootstrap" = "bootstrap")),
+      shiny::conditionalPanel(
+        "input.me_se == 'bootstrap'", ns = ns,
+        shiny::numericInput(ns("me_bootstraps"), "Bootstrap resamples", 200,
+                            min = 10, step = 50),
+        help_text("Each request gets its own seed, written into the code, ",
+                  "so the result can be reproduced.")),
+      shiny::selectizeInput(ns("me_vars"), "Variables", character(),
+                            multiple = TRUE,
+                            options = list(placeholder =
+                                             "all variables of the model")),
+      help_text("Effects on the expected count, averaged over the rows ",
+                "used in estimation. See ",
+                shiny::code("?flexCountReg::margEffTable"), "."),
+      shiny::actionButton(ns("me_go"), "Compute marginal effects",
+                          class = "btn-primary")),
+    shiny::div(
+      shiny::uiOutput(ns("me_status")),
+      shiny::uiOutput(ns("me_title")),
+      DT::DTOutput(ns("me_table")),
+      shiny::uiOutput(ns("me_notes")),
+      shiny::downloadButton(ns("me_download"), "Download table (CSV)",
+                            class = "btn-sm"),
+      shiny::verbatimTextOutput(ns("me_code"))))
+}
+
+# Variables a marginal effect can be asked for: the columns the fit uses,
+# except offsets (which margEffTable() also leaves out by default)
+margeff_var_choices <- function(spec) {
+  setdiff(needed_columns(spec), c(spec$recipe$exposure,
+                                  spec$recipe$log_offset))
+}
+
+# A marginal-effects request from the page's settings
+margeff_request <- function(measure, indicator, se, bootstraps = 200,
+                            vars = NULL) {
+  if (identical(se, "bootstrap") &&
+      (!is.numeric(bootstraps) || length(bootstraps) != 1 ||
+       is.na(bootstraps) || bootstraps < 1)) {
+    stop("The number of bootstrap resamples must be at least 1.",
+         call. = FALSE)
+  }
+  list(type = "margeff", measure = measure, indicator = indicator, se = se,
+       bootstraps = if (identical(se, "bootstrap")) as.integer(bootstraps),
+       vars = if (length(vars)) vars)
 }
 
 # Numerical status of a fit, with unavailable checks shown as such
@@ -38,7 +102,9 @@ fit_checks <- function(fit) {
       condition = if (length(ev) && min(ev) > 0) max(ev) / min(ev) else
         NA_real_)
   }
-  se <- m$se %||% sqrt(pmax(diag(m$vcov), NA))
+  # Standard errors from the covariance matrix when the object has none;
+  # negative or non-finite variances give NA (unavailable)
+  se <- m$se %||% .fcr_se(m$vcov, length(m$estimate))
   data.frame(
     check = c("Optimizer reported convergence", "Optimizer message",
               "Iterations", "Log-likelihood", "Largest absolute gradient",
@@ -151,6 +217,99 @@ mod_fit_server <- function(id, state) {
                  "found by one start only deserves caution."),
         shiny::renderTable(st, digits = 4))
     })
+    # Marginal effects: a background job of the selected fit. Its result,
+    # or the error it stopped with, is shown in the panel.
+    me_pending <- shiny::reactiveVal(NULL)
+    me_result <- shiny::reactiveVal(NULL)
+    me_error <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(bundle(), {
+      ch <- margeff_var_choices(bundle()$spec)
+      shiny::updateSelectizeInput(session, "me_vars", choices = ch,
+                                  selected = intersect(input$me_vars, ch))
+    })
+    shiny::observeEvent(input$me_go, {
+      me_error(NULL)
+      tryCatch({
+        b <- bundle()
+        req <- margeff_request(input$me_measure, input$me_indicator,
+                               input$me_se, input$me_bootstraps,
+                               input$me_vars)
+        job <- app_start_output_job(state, req, b$id)
+        me_result(NULL)
+        me_pending(job$id)
+      }, error = function(e) me_error(conditionMessage(e)))
+    })
+    shiny::observe({
+      id <- me_pending()
+      if (is.null(id)) return()
+      res <- state$outputs[[id]]
+      if (!is.null(res)) {
+        me_result(res)
+        me_pending(NULL)
+        return()
+      }
+      j <- state$jobs[[id]]
+      if (!is.null(j) && j$status %in% c("failed", "canceled")) {
+        me_error(if (identical(j$status, "failed"))
+          j$result$error %||% "The computation failed." else "Canceled.")
+        me_pending(NULL)
+      }
+    })
+    shiny::observeEvent(input$me_cancel, {
+      id <- me_pending()
+      if (is.null(id)) return()
+      jl <- state$jobs
+      jl[[id]] <- cancel_fit_job(jl[[id]])
+      state$jobs <- jl
+      me_error("Canceled.")
+      me_pending(NULL)
+    })
+    output$me_status <- shiny::renderUI({
+      id <- me_pending()
+      err <- me_error()
+      if (!is.null(id)) {
+        return(shiny::div(
+          class = "alert alert-info d-flex align-items-center gap-3",
+          role = "status",
+          shiny::span(paste0("Running ", state$jobs[[id]]$label,
+                             " in the background...")),
+          shiny::actionButton(session$ns("me_cancel"), "Cancel",
+                              class = "btn-sm btn-outline-danger")))
+      }
+      if (!is.null(err)) {
+        shiny::div(class = "alert alert-danger", role = "alert",
+                   shiny::strong("Marginal effects not computed: "), err)
+      }
+    })
+    output$me_title <- shiny::renderUI({
+      r <- me_result()
+      if (is.null(r)) return(shiny::p("No marginal effects yet."))
+      shiny::h6(paste0("Marginal effects - ", r$fit$label, " (", r$out, ")"))
+    })
+    output$me_table <- DT::renderDT({
+      r <- me_result()
+      shiny::req(r)
+      # Rounded for display only; the object and the download keep every
+      # digit
+      td <- as.data.frame(r$value)
+      num <- vapply(td, is.numeric, logical(1))
+      td[num] <- lapply(td[num], signif, 4)
+      DT::datatable(td, rownames = FALSE,
+                    options = list(dom = "t", pageLength = 100,
+                                   scrollX = TRUE))
+    })
+    output$me_notes <- shiny::renderUI(output_notes(me_result()))
+    output$me_code <- shiny::renderText({
+      r <- me_result()
+      shiny::req(r)
+      paste(vapply(r$exprs, .deparse, character(1)), collapse = "\n")
+    })
+    output$me_download <- shiny::downloadHandler(
+      filename = function() paste0(me_result()$out %||% "margeff", ".csv"),
+      content = function(file) {
+        utils::write.csv(as.data.frame(me_result()$value), file,
+                         row.names = FALSE)
+      })
     output$messages <- shiny::renderUI({
       b <- bundle()
       shiny::tagList(

@@ -273,7 +273,7 @@ el[, c("term", "effect_metric", "estimate", "std_error", "lower_ci",
 #> Method: delta 
 #> 
 #>    term effect_metric estimate std_error lower_ci upper_ci
-#>  income    Elasticity   -0.076     0.064     -0.2    0.049
+#>  income    Elasticity   -0.076     0.064   -0.201    0.049
 ```
 
 A 1% higher income is associated with an expected number of visits about

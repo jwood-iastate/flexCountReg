@@ -97,7 +97,12 @@ predict(
 - history:
 
   for `conditioning = "history"`: a data frame of earlier rows of the
-  panels in `newdata`, with outcomes and the panel identifier.
+  panels in `newdata`, with outcomes and the panel identifier. History
+  rows with a missing outcome or covariate are dropped with a warning; a
+  panel without usable history rows keeps its prior. For panel models
+  the membership variables must be constant within each panel (in
+  `newdata`, in `history` and between the two), as in fitting, so the
+  class probabilities never depend on the row order.
 
 - interval:
 
@@ -134,8 +139,8 @@ predict(m, newdata = d[1:3, , drop = FALSE], type = "component")
 #> [3,]  0.9645638   6.082595
 predict(m, newdata = d[1:3, , drop = FALSE], type = "prob",
         max_count = 5, overflow = TRUE)
-#>             0         1         2         3          4          5        >5
-#> [1,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
-#> [2,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
-#> [3,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
+#>          0         1         2         3          4          5        >5
+#> 1 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
+#> 2 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
+#> 3 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
 ```

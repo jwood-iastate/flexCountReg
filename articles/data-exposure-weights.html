@@ -264,13 +264,18 @@ offset. A weight of 2 claims two independent observations with the same
 outcome.</li>
 <li>
 <strong>Not survey weights.</strong> Sampling weights reweight the
-population, but the rows are not repeated observations.
-<code>stderr = "robust"</code> gives sandwich standard errors that are
-valid for non-integer weights under the model’s independence
-assumptions; it is not a full design-based survey analysis (strata,
-clusters and finite-population corrections are not modelled). Bootstrap
-standard errors require whole-number frequency weights and refuse other
-weights.</li>
+population, but the rows are not repeated observations. Declare them
+with <code>weight_type = "sampling"</code> in <code><a href="../reference/countreg.html">countreg()</a></code> or
+<code><a href="../reference/countreg_rp.html">countreg_rp()</a></code>: the standard errors are then the robust
+sandwich for weighted scores, sum((w s)(w s)’) with a G / (G - 1)
+factor, which does not change when all weights are multiplied by a
+constant. (With the default frequency weights, multiplying every weight
+by 100 claims 100 times the data and shrinks the standard errors
+10-fold.) The weighted log-likelihood is a pseudo-likelihood, so LR
+tests, AIC and BIC are not valid. This is not a full design-based survey
+analysis (strata, clusters and finite-population corrections are not
+modelled). Bootstrap standard errors require whole-number frequency
+weights and refuse other weights.</li>
 <li>
 <strong>Not numbers of trials.</strong> “3 events out of 10 animals”
 is a bounded count with a known number of trials, which needs a
@@ -282,7 +287,7 @@ represents it.</li>
 <span>                  family <span class="op">=</span> <span class="st">"POISSON"</span>, weights <span class="op">=</span> <span class="st">"freq"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span>,</span>
 <span>                  stderr <span class="op">=</span> <span class="st">"boot"</span>, bootstraps <span class="op">=</span> <span class="fl">20</span><span class="op">)</span>,</span>
 <span>         error <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">e</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">conditionMessage</a></span><span class="op">(</span><span class="va">e</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "Bootstrap standard errors with `weights` need frequency weights: nonnegative whole numbers (each row stands for that many independent observations) with a positive total. Use stderr = \"robust\" for other weights."</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "Bootstrap standard errors with `weights` need frequency weights: nonnegative whole numbers (each row stands for that many independent observations) with a positive total. For survey or inverse-probability weights, use weight_type = \"sampling\" with stderr = \"robust\"."</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">

@@ -177,11 +177,11 @@ grows.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
 <span><span class="co">#&gt;                Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; (Intercept)     -8.9052     0.4603  -19.34  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; lnaadt           1.1251     0.0529   21.27  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; (Intercept)     -8.9052     0.4516  -19.72  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; lnaadt           1.1251     0.0519   21.68  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; speed50:Mean    -0.6991     0.1467   -4.77  1.9e-06 ***</span></span>
-<span><span class="co">#&gt; speed50:St.Dev   0.6413     0.1699    3.77  0.00016 ***</span></span>
-<span><span class="co">#&gt; ln(alpha)       -1.1395     0.2740   -4.16  3.2e-05 ***</span></span>
+<span><span class="co">#&gt; speed50:St.Dev   0.6413     0.1700    3.77  0.00016 ***</span></span>
+<span><span class="co">#&gt; ln(alpha)       -1.1395     0.2690   -4.24  2.3e-05 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; Offset: lnlength (coefficient fixed at 1)</span></span>
@@ -286,12 +286,12 @@ variable:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 6</span></span></span>
 <span><span class="co">#&gt;   term                          component estimate std.error statistic   p.value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept)                   mean        -<span style="color: #BB0000;">8.98</span>     0.455     -<span style="color: #BB0000;">19.7</span>  1.11<span style="color: #949494;">e</span><span style="color: #BB0000;">- 86</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt                        mean         1.13     0.052<span style="text-decoration: underline;">3</span>     21.7  2.28<span style="color: #949494;">e</span><span style="color: #BB0000;">-104</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50:Mean                  random_m…   -<span style="color: #BB0000;">0.859</span>    0.159      -<span style="color: #BB0000;">5.39</span> 7.11<span style="color: #949494;">e</span><span style="color: #BB0000;">-  8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> speed50:St.Dev                random_s…    0.551    0.171       3.23 1.23<span style="color: #949494;">e</span><span style="color: #BB0000;">-  3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.240       2.92 3.55<span style="color: #949494;">e</span><span style="color: #BB0000;">-  3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> ln(alpha)                     distribu…   -<span style="color: #BB0000;">1.13</span>     0.276      -<span style="color: #BB0000;">4.10</span> 4.10<span style="color: #949494;">e</span><span style="color: #BB0000;">-  5</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept)                   mean        -<span style="color: #BB0000;">8.98</span>     0.463     -<span style="color: #BB0000;">19.4</span>  7.74<span style="color: #949494;">e</span><span style="color: #BB0000;">- 84</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt                        mean         1.13     0.053<span style="text-decoration: underline;">2</span>     21.3  6.10<span style="color: #949494;">e</span><span style="color: #BB0000;">-101</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50:Mean                  random_m…   -<span style="color: #BB0000;">0.859</span>    0.159      -<span style="color: #BB0000;">5.42</span> 6.08<span style="color: #949494;">e</span><span style="color: #BB0000;">-  8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> speed50:St.Dev                random_s…    0.551    0.170       3.24 1.17<span style="color: #949494;">e</span><span style="color: #BB0000;">-  3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.240       2.91 3.60<span style="color: #949494;">e</span><span style="color: #BB0000;">-  3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> ln(alpha)                     distribu…   -<span style="color: #BB0000;">1.13</span>     0.280      -<span style="color: #BB0000;">4.05</span> 5.17<span style="color: #949494;">e</span><span style="color: #BB0000;">-  5</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="predictions">Predictions<a class="anchor" aria-label="anchor" href="#predictions"></a>
@@ -322,7 +322,7 @@ so it is for data with observed outcomes.</li>
 <span><span class="co">#&gt; [3,]        0 0.8495740 0.8372973  0.5285467</span></span>
 <span><span class="co">#&gt; [4,]        0 0.7507863 0.7399372  1.0231186</span></span>
 <span><span class="co">#&gt; [5,]        1 0.8957947 0.8828501  0.5573020</span></span>
-<span><span class="co">#&gt; [6,]        3 0.7916325 0.7801931  1.0787809</span></span></code></pre></div>
+<span><span class="co">#&gt; [6,]        3 0.7916325 0.7801931  1.0787808</span></span></code></pre></div>
 <p>The segment-specific coefficients from the Empirical Bayes method are
 returned as an attribute:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -368,6 +368,12 @@ model (<code><a href="../reference/poisLindRE.html">poisLind.re()</a></code>) an
 <span>  NM2 <span class="op">=</span> <span class="fu"><a href="../reference/negmultinom.html">negmultinom</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span>, group_var <span class="op">=</span> <span class="st">"ID"</span>,</span>
 <span>                    data <span class="op">=</span> <span class="va">washington_roads</span>, offset <span class="op">=</span> <span class="st">"lnlength"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
+<span><span class="co">#&gt; errors of ln(a-1) are NA. The estimate may be on the boundary of the parameter</span></span>
+<span><span class="co">#&gt; space or not at a maximum.</span></span>
+<span><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
+<span><span class="co">#&gt; errors of ln(theta) are NA. The estimate may be on the boundary of the</span></span>
+<span><span class="co">#&gt; parameter space or not at a maximum.</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">re_models</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">nm</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">nm</span>,</span>
 <span>        <span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">re_models</span><span class="op">[[</span><span class="va">nm</span><span class="op">]</span><span class="op">]</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logLik"</span>, <span class="st">"AIC"</span>, <span class="st">"BIC"</span>, <span class="st">"nobs"</span>,</span>
@@ -387,12 +393,12 @@ not identified and is reported as <code>NA</code>:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">re_models</span><span class="op">$</span><span class="va">PoisLindRE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 6</span></span></span>
-<span><span class="co">#&gt;   term        component    estimate std.error statistic  p.value</span></span>
-<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept) mean           -<span style="color: #BB0000;">8.77</span>     0.516     -<span style="color: #BB0000;">17.0</span>  9.97<span style="color: #949494;">e</span><span style="color: #BB0000;">-65</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt      mean            1.11     0.060<span style="text-decoration: underline;">7</span>     18.3  4.99<span style="color: #949494;">e</span><span style="color: #BB0000;">-75</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50     mean           -<span style="color: #BB0000;">0.561</span>    0.132      -<span style="color: #BB0000;">4.24</span> 2.23<span style="color: #949494;">e</span><span style="color: #BB0000;">- 5</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ln(theta)   distribution   -<span style="color: #BB0000;">7.13</span>     2.16       -<span style="color: #BB0000;">3.30</span> 9.56<span style="color: #949494;">e</span><span style="color: #BB0000;">- 4</span></span></span></code></pre></div>
+<span><span class="co">#&gt;   term        component    estimate std.error statistic   p.value</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept) mean           -<span style="color: #BB0000;">8.77</span>     0.512     -<span style="color: #BB0000;">17.1</span>   1.22<span style="color: #949494;">e</span><span style="color: #BB0000;">-65</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt      mean            1.11     0.060<span style="text-decoration: underline;">3</span>     18.5   4.18<span style="color: #949494;">e</span><span style="color: #BB0000;">-76</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50     mean           -<span style="color: #BB0000;">0.561</span>    0.132      -<span style="color: #BB0000;">4.24</span>  2.19<span style="color: #949494;">e</span><span style="color: #BB0000;">- 5</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ln(theta)   distribution   -<span style="color: #BB0000;">7.13</span>    <span style="color: #BB0000;">NA</span>          <span style="color: #BB0000;">NA</span>    <span style="color: #BB0000;">NA</span>   <span style="color: #949494;"> </span></span></span></code></pre></div>
 <p>Its fit statistics are close to those of the other two models, but
 with one parameter not identified its reported uncertainty is
 incomplete. When models fit about equally well, prefer one whose
@@ -408,14 +414,17 @@ standard errors resample whole panels:</p>
 <code class="sourceCode R"><span><span class="va">re_robust</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/poisLindRE.html">poisLind.re</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span>, group_var <span class="op">=</span> <span class="st">"ID"</span>,</span>
 <span>                         data <span class="op">=</span> <span class="va">washington_roads</span>, offset <span class="op">=</span> <span class="st">"lnlength"</span>,</span>
 <span>                         method <span class="op">=</span> <span class="st">"BFGS"</span>, stderr <span class="op">=</span> <span class="st">"robust"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
+<span><span class="co">#&gt; errors of ln(theta) are NA. The estimate may be on the boundary of the</span></span>
+<span><span class="co">#&gt; parameter space or not at a maximum.</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">re_robust</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 4 × 6</span></span></span>
 <span><span class="co">#&gt;   term        component    estimate std.error statistic  p.value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept) mean           -<span style="color: #BB0000;">8.77</span>     0.607     -<span style="color: #BB0000;">14.4</span>  2.76<span style="color: #949494;">e</span><span style="color: #BB0000;">-47</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt      mean            1.11     0.071<span style="text-decoration: underline;">2</span>     15.6  4.96<span style="color: #949494;">e</span><span style="color: #BB0000;">-55</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50     mean           -<span style="color: #BB0000;">0.561</span>    0.131      -<span style="color: #BB0000;">4.28</span> 1.85<span style="color: #949494;">e</span><span style="color: #BB0000;">- 5</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ln(theta)   distribution   -<span style="color: #BB0000;">7.13</span>     0.594     -<span style="color: #BB0000;">12.0</span>  3.35<span style="color: #949494;">e</span><span style="color: #BB0000;">-33</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept) mean           -<span style="color: #BB0000;">8.77</span>     0.599     -<span style="color: #BB0000;">14.6</span>  1.36<span style="color: #949494;">e</span><span style="color: #BB0000;">-48</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt      mean            1.11     0.070<span style="text-decoration: underline;">2</span>     15.9  1.41<span style="color: #949494;">e</span><span style="color: #BB0000;">-56</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50     mean           -<span style="color: #BB0000;">0.561</span>    0.131      -<span style="color: #BB0000;">4.29</span> 1.79<span style="color: #949494;">e</span><span style="color: #BB0000;">- 5</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> ln(theta)   distribution   -<span style="color: #BB0000;">7.13</span>     0.064<span style="text-decoration: underline;">2</span>   -<span style="color: #BB0000;">111.</span>   0   <span style="color: #949494;"> </span></span></span></code></pre></div>
 <p>Cross-sectional models can also be fitted with
 <code>stderr = "robust"</code> or <code>"boot"</code>; for repeated
 observations of the same units, prefer a panel model or clustered

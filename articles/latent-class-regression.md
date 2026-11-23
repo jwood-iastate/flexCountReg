@@ -335,7 +335,7 @@ margEffTable(lc_sd)
 #> Method: delta 
 #> 
 #>  term variable_type           effect_metric estimate std_error t_value p_value
-#>     x    continuous Average marginal effect    1.784     0.186   9.599       0
+#>     x    continuous Average marginal effect    1.784     0.186   9.591       0
 #>     z     indicator   Pseudo-elasticity (%)  -36.340     4.698  -7.735       0
 #>  sig lower_ci upper_ci n_obs successful_bootstraps
 #>  ***    1.420    2.149   600                    NA

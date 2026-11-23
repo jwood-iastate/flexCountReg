@@ -64,7 +64,8 @@
 <span>  engine <span class="op">=</span> <span class="st">"quadrature"</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  panel_id <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  mix_draws <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  mix_draws <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  weight_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"frequency"</span>, <span class="st">"sampling"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -166,9 +167,10 @@ likelihood and standard errors account for the panel structure.</p></dd>
 
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
-<dd><p>the name of a variable, or a numeric vector, of frequency
-weights. With <code>panel_id</code>, weights apply to whole panels (the panel
-log-likelihood is weighted), so they should be constant within a panel.</p></dd>
+<dd><p>the name of a variable, or a numeric vector, of weights
+(see <code>weight_type</code>). With <code>group_var</code>, weights apply to whole
+panels (the panel log-likelihood is weighted), so they should be
+constant within a panel.</p></dd>
 
 
 <dt id="arg-offset">offset<a class="anchor" aria-label="anchor" href="#arg-offset"></a></dt>
@@ -230,6 +232,21 @@ draws for integrating over the mixing distribution of the PLN, PGE, PLL
 and PW families (inside each random-parameter draw). The default is
 <code>min(ndraws, 200)</code>. Not used by the default
 <code>engine = "quadrature"</code>, which integrates adaptively.</p></dd>
+
+
+<dt id="arg-weight-type">weight_type<a class="anchor" aria-label="anchor" href="#arg-weight-type"></a></dt>
+<dd><p><code>"frequency"</code> (default): each weight is the number of
+independent observations a row stands for, so the log-likelihood, LR
+tests, AIC and BIC are those of the expanded data. <code>"sampling"</code>: survey or
+inverse-probability weights, which only set how much each unit counts.
+The weighted log-likelihood is then a pseudo-likelihood: standard errors
+default to the robust sandwich with meat sum((w s)(w s)') and the
+small-sample factor G / (G - 1) for G units, so they do not change when
+all weights are
+rescaled; the number of units is the number of panels (rows without <code>group_var</code>) with a
+positive weight; bootstrap standard errors are not available; and LR
+tests, AIC and BIC are not valid (they are reported, with a note, by
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and are refused by <code><a href="regCompTest.html">regCompTest()</a></code>).</p></dd>
 
 </dl></div>
     <div class="section level2">

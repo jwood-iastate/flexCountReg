@@ -376,7 +376,6 @@ data("abalone_rings")
 fit <- countreg_lc(rings ~ shell_weight, data = abalone_rings,
                    family = "NB2", classes = 2,
                    membership_formula = ~ sex, n_starts = 5, seed = 1)
-#> Warning: The Hessian is not negative definite at the estimates, so the standard errors of Component1:ln(alpha) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.
 summary(fit)
 #> Call:
 #> countreg_lc(formula = rings ~ shell_weight, data = abalone_rings, 
@@ -393,42 +392,42 @@ summary(fit)
 #> 
 #> Class 1 (NB2):
 #>                              Estimate Std. Error z value Pr(>|z|)    
-#> Component1:Mean:(Intercept)    2.0974     0.0145     145   <2e-16 ***
-#> Component1:Mean:shell_weight   0.9675     0.0439      22   <2e-16 ***
-#> Component1:ln(alpha)         -24.6839         NA      NA       NA    
+#> Component1:Mean:(Intercept)    2.0974     0.0145  145.07   <2e-16 ***
+#> Component1:Mean:shell_weight   0.9677     0.0437   22.13   <2e-16 ***
+#> Component1:ln(alpha)         -20.6190   333.1417   -0.06     0.95    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Class 2 (NB2):
 #>                              Estimate Std. Error z value Pr(>|z|)    
-#> Component2:Mean:(Intercept)    1.7141     0.0189    90.6   <2e-16 ***
-#> Component2:Mean:shell_weight   2.5624     0.1107    23.2   <2e-16 ***
-#> Component2:ln(alpha)         -16.0747     0.2460   -65.3   <2e-16 ***
+#> Component2:Mean:(Intercept)    1.7141     0.0189   90.58   <2e-16 ***
+#> Component2:Mean:shell_weight   2.5623     0.1107   23.16   <2e-16 ***
+#> Component2:ln(alpha)         -20.2864   441.7990   -0.05     0.96    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Mixing (multinomial logit):
 #>                               Estimate Std. Error z value Pr(>|z|)    
-#> Mixing:Component1:(Intercept)     4.32       1.08    4.01  6.0e-05 ***
-#> Mixing:Component1:sexI           -9.33       1.52   -6.14  8.2e-10 ***
-#> Mixing:Component1:sexM            2.56       6.20    0.41     0.68    
+#> Mixing:Component1:(Intercept)     4.32       1.08    4.01  6.1e-05 ***
+#> Mixing:Component1:sexI           -9.33       1.52   -6.14  8.3e-10 ***
+#> Mixing:Component1:sexM            7.37      71.57    0.10     0.92    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Class sizes:
 #>   label family  prior posterior effective_n modal_n mean_count
-#>  Class1    NB2 0.6764    0.6764      2825.3    2834      10.36
-#>  Class2    NB2 0.3236    0.3236      1351.7    1343      10.97
+#>  Class1    NB2 0.6768    0.6768      2826.8    2834      10.36
+#>  Class2    NB2 0.3232    0.3232      1350.2    1343      10.97
 #> (prior: mean membership probability; posterior: mean posterior probability;
 #>  effective_n: sum of posterior probabilities; modal_n: units whose most
 #>  probable class it is; mean_count: average expected count)
 #> 
-#> Log-likelihood: -9681.506 | AIC: 19381.01 | BIC: 19438.05 | ICL: 19724.96 
+#> Log-likelihood: -9681.481 | AIC: 19380.96 | BIC: 19438 | ICL: 19701.38 
 #> N: 4177
-#> Entropy: 143.454 | relative entropy: 0.95 
+#> Entropy: 131.692 | relative entropy: 0.955 
 #> Starts: 5 | 1 reached the selected log-likelihood
 #> Note: only one start reached this solution; try more starts.
-#> Observed information: indefinite | max |gradient|: 1.04 
+#> Observed information: singular | max |gradient|: 0.000289 
 #> No likelihood-ratio test of the number of classes is reported (non-standard distribution).
 # }
 ```

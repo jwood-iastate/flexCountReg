@@ -87,7 +87,8 @@ countreg(
   engine = "quadrature",
   keep_data = TRUE,
   zero_formula = NULL,
-  zero_type = c("inflated", "hurdle")
+  zero_type = c("inflated", "hurdle"),
+  weight_type = c("frequency", "sampling")
 )
 ```
 
@@ -121,7 +122,7 @@ countreg(
 - weights:
 
   the name of a variable in the data frame, or a numeric vector with one
-  value per row of `data`, to be used as frequency weights.
+  value per row of `data`, to be used as weights (see `weight_type`).
 
 - verbose:
 
@@ -234,6 +235,22 @@ countreg(
   model, \\q = logit^{-1}(z\gamma)\\ is the probability of a positive
   count and positive counts follow the zero-truncated family: \\P(0) =
   1 - q\\ and \\P(y) = q f(y) / (1 - f(0))\\.
+
+- weight_type:
+
+  `"frequency"` (default): each weight is the number of independent
+  observations a row stands for, so the log-likelihood, LR tests, AIC
+  and BIC are those of the expanded data. `"sampling"`: survey or
+  inverse-probability weights, which only set how much each unit counts.
+  The weighted log-likelihood is then a pseudo-likelihood: standard
+  errors default to the robust sandwich with meat sum((w s)(w s)') and
+  the small-sample factor G / (G - 1) for G units, so they do not change
+  when all weights are rescaled; the number of units is the number of
+  rows (panels) with a positive weight; bootstrap standard errors are
+  not available; and LR tests, AIC and BIC are not valid (they are
+  reported, with a note, by
+  [`summary()`](https://rdrr.io/r/base/summary.html) and are refused by
+  [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)).
 
 ## Value
 
@@ -903,9 +920,9 @@ if (requireNamespace("poilog", quietly = TRUE)) {
 #>             Estimate Std. Error z value Pr(>|z|)    
 #> (Intercept)   -7.507         NA      NA       NA    
 #> lnaadt         0.910         NA      NA       NA    
-#> lnlength       0.847      0.110    7.70  1.4e-14 ***
-#> speed50       -0.459      0.105   -4.37  1.2e-05 ***
-#> AADT10kplus    0.809      0.133    6.09  1.1e-09 ***
+#> lnlength       0.847      0.112    7.58  3.5e-14 ***
+#> speed50       -0.459      0.106   -4.34  1.4e-05 ***
+#> AADT10kplus    0.809      0.133    6.07  1.3e-09 ***
 #> ln(sigma)     -0.734         NA      NA       NA    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -934,15 +951,15 @@ summary(plogn_underreport)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                            Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)                 -6.6923     1.1098   -6.03  1.6e-09 ***
-#> lnaadt                       0.9358     0.0571   16.39  < 2e-16 ***
-#> lnlength                     0.8517     0.0696   12.23  < 2e-16 ***
-#> speed50                      0.5700     0.9614    0.59     0.55    
-#> AADT10kplus                  0.1580     0.7743    0.20     0.84    
-#> ln(alpha)                   -1.5854     0.3752   -4.23  2.4e-05 ***
-#> Underreporting:(Intercept)  -0.2370     1.0076   -0.24     0.81    
-#> Underreporting:speed50      -0.8505     0.7922   -1.07     0.28    
-#> Underreporting:AADT10kplus   0.7909     0.7551    1.05     0.29    
+#> (Intercept)                 -6.6923     1.2044   -5.56  2.7e-08 ***
+#> lnaadt                       0.9358     0.0562   16.66  < 2e-16 ***
+#> lnlength                     0.8517     0.0698   12.21  < 2e-16 ***
+#> speed50                      0.5700     1.0308    0.55     0.58    
+#> AADT10kplus                  0.1580     0.8404    0.19     0.85    
+#> ln(alpha)                   -1.5854     0.3837   -4.13  3.6e-05 ***
+#> Underreporting:(Intercept)  -0.2370     1.1619   -0.20     0.84    
+#> Underreporting:speed50      -0.8505     0.9645   -0.88     0.38    
+#> Underreporting:AADT10kplus   0.7909     0.7482    1.06     0.29    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

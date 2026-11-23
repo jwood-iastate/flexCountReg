@@ -148,7 +148,7 @@ summary(fit2)
 #> N: 500
 #> Entropy: 130.547 | relative entropy: 0.623 
 #> Starts: 5 | 5 reached the selected log-likelihood
-#> Observed information: positive definite (condition number 19.9 ) | max |gradient|: 1.4e-07 
+#> Observed information: positive definite (condition number 19.9 ) | max |gradient|: 7.72e-07 
 #> No likelihood-ratio test of the number of components is reported (non-standard distribution).
 ```
 
@@ -278,10 +278,10 @@ max_count <- 12
 P <- predict(fit2, newdata = nd, type = "prob", max_count = max_count,
              overflow = TRUE)
 round(P, 4)
-#>           0      1      2      3      4      5      6      7      8      9
-#> [1,] 0.2225 0.2402 0.1512 0.0968 0.0797 0.0697 0.0553 0.0383 0.0233 0.0126
-#>          10     11     12   >12
-#> [1,] 0.0061 0.0027 0.0011 6e-04
+#>        0      1      2      3      4      5      6      7      8      9     10
+#> 1 0.2225 0.2402 0.1512 0.0968 0.0797 0.0697 0.0553 0.0383 0.0233 0.0126 0.0061
+#>       11     12   >12
+#> 1 0.0027 0.0011 6e-04
 grid <- 0:max_count
 contrib <- sapply(1:2, function(k) p_hat[k] * dpois(grid, m_hat[k]))
 all.equal(rowSums(contrib), unname(P[1, seq_along(grid)]))
@@ -356,7 +356,7 @@ data.frame(model = c("Poisson", "NB2", "2 Poisson components",
 #> 4 3 Poisson components -1031.950  5 2073.901 2094.974
 fit3$model$classes[, c("label", "prior_share", "mean_count")]
 #>                 label prior_share   mean_count
-#> Component1 Component1  0.03284512 2.320771e-05
+#> Component1 Component1  0.03284512 2.046596e-05
 #> Component2 Component2  0.59408926 1.127026e+00
 #> Component3 Component3  0.37306562 4.938665e+00
 ```

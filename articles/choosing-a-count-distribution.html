@@ -208,9 +208,9 @@ extra variance grows faster than the mean in these data.</p>
 share and shape parameters have large standard errors here:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">DELAPORTE</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logit(rho)"</span>, <span class="st">"ln(k)"</span><span class="op">)</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span></span>
-<span><span class="co">#&gt;               Estimate Std. Error</span></span>
-<span><span class="co">#&gt; logit(rho)  0.66718570   2.421449</span></span>
-<span><span class="co">#&gt; ln(k)      -0.02539755   1.861276</span></span></code></pre></div>
+<span><span class="co">#&gt;              Estimate Std. Error</span></span>
+<span><span class="co">#&gt; logit(rho)  0.6671856  0.9616704</span></span>
+<span><span class="co">#&gt; ln(k)      -0.0253976  0.7495974</span></span></code></pre></div>
 <p>The data do not separate the Poisson and negative binomial components
 of the Delaporte distribution; it offers no advantage over NB2.</p>
 </div>
@@ -401,17 +401,17 @@ zero-inflated or hurdle version of any family can be fitted with
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">zinb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
 <span>                 offset <span class="op">=</span> <span class="st">"lnlength"</span>, zero_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>, method <span class="op">=</span> <span class="st">"NR"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
-<span><span class="co">#&gt; errors of Zero:(Intercept) are NA. The estimate may be on the boundary of the</span></span>
-<span><span class="co">#&gt; parameter space or not at a maximum.</span></span>
+<span><span class="co">#&gt; Warning: The Hessian is singular; standard errors use a generalized inverse and</span></span>
+<span><span class="co">#&gt; may be unreliable. The model may not be identified. The likelihood is flat in a</span></span>
+<span><span class="co">#&gt; direction involving Zero:(Intercept); their standard errors are NA.</span></span>
 <span><span class="va">pi_zero</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span><span class="op">[</span><span class="st">"Zero:(Intercept)"</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>NB2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">models</span><span class="op">$</span><span class="va">NB2</span><span class="op">)</span><span class="op">)</span>, ZINB <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">zinb</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  zero_probability <span class="op">=</span> <span class="va">pi_zero</span><span class="op">)</span></span>
 <span><span class="co">#&gt;              NB2             ZINB zero_probability </span></span>
-<span><span class="co">#&gt;    -1.090559e+03    -1.090560e+03     4.338153e-05</span></span></code></pre></div>
-<p>The estimated probability of a structural zero is 4.3e-05 and the
-log-likelihoods differ by 5.2e-04: the zeros are already explained by
-the negative binomial, so the zero-inflated model adds nothing. When an
+<span><span class="co">#&gt;    -1.090559e+03    -1.090559e+03    3.701046e-100</span></span></code></pre></div>
+<p>The estimated probability of a structural zero is 3.7e-100 and the
+log-likelihoods differ by 5e-08: the zeros are already explained by the
+negative binomial, so the zero-inflated model adds nothing. When an
 estimate is at the boundary of its parameter space like this, its
 standard error is not meaningful, and the likelihood-ratio test of NB2
 against ZINB has a non-standard distribution, so it is not reported.</p>
@@ -444,7 +444,7 @@ confidence or prediction intervals:</p>
 <span><span class="co">#&gt; Method: delta </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     term variable_type           effect_metric estimate std_error t_value</span></span>
-<span><span class="co">#&gt;   lnaadt    continuous Average marginal effect    0.532     0.037  14.561</span></span>
+<span><span class="co">#&gt;   lnaadt    continuous Average marginal effect    0.532     0.037  14.436</span></span>
 <span><span class="co">#&gt;  speed50     indicator   Pseudo-elasticity (%)  -43.320     6.246  -6.936</span></span>
 <span><span class="co">#&gt;  p_value sig lower_ci upper_ci n_obs successful_bootstraps</span></span>
 <span><span class="co">#&gt;        0 ***    0.460    0.604  1501                    NA</span></span>

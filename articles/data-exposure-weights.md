@@ -239,12 +239,21 @@ agrees.
   observation with a larger expected count; it belongs in the offset. A
   weight of 2 claims two independent observations with the same outcome.
 - **Not survey weights.** Sampling weights reweight the population, but
-  the rows are not repeated observations. `stderr = "robust"` gives
-  sandwich standard errors that are valid for non-integer weights under
-  the model’s independence assumptions; it is not a full design-based
-  survey analysis (strata, clusters and finite-population corrections
-  are not modelled). Bootstrap standard errors require whole-number
-  frequency weights and refuse other weights.
+  the rows are not repeated observations. Declare them with
+  `weight_type = "sampling"` in
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  or
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
+  the standard errors are then the robust sandwich for weighted scores,
+  sum((w s)(w s)’) with a G / (G - 1) factor, which does not change when
+  all weights are multiplied by a constant. (With the default frequency
+  weights, multiplying every weight by 100 claims 100 times the data and
+  shrinks the standard errors 10-fold.) The weighted log-likelihood is a
+  pseudo-likelihood, so LR tests, AIC and BIC are not valid. This is not
+  a full design-based survey analysis (strata, clusters and
+  finite-population corrections are not modelled). Bootstrap standard
+  errors require whole-number frequency weights and refuse other
+  weights.
 - **Not numbers of trials.** “3 events out of 10 animals” is a bounded
   count with a known number of trials, which needs a binomial-type
   model; neither a weight of 10 nor an exposure of 10 represents it.
@@ -255,7 +264,7 @@ tryCatch(countreg(y ~ x, data = transform(compact, freq = freq / 2),
                   family = "POISSON", weights = "freq", method = "BFGS",
                   stderr = "boot", bootstraps = 20),
          error = function(e) conditionMessage(e))
-#> [1] "Bootstrap standard errors with `weights` need frequency weights: nonnegative whole numbers (each row stands for that many independent observations) with a positive total. Use stderr = \"robust\" for other weights."
+#> [1] "Bootstrap standard errors with `weights` need frequency weights: nonnegative whole numbers (each row stands for that many independent observations) with a positive total. For survey or inverse-probability weights, use weight_type = \"sampling\" with stderr = \"robust\"."
 ```
 
 ## Missing values and the analysis sample

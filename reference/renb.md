@@ -138,6 +138,11 @@ The marginal mean and marginal variance of the RENB model are given by:
 \$\$Var\[y\_{it}\] = \frac{a+b-1}{a-2}\mu\_{it} + \frac{a+b-1}{b(a-2)}
 \mu\_{it}^2\$\$
 
+The mean exists for \\a \> 1\\ and the variance only for \\a \> 2\\: for
+\\1 \< a \le 2\\ (legal values, which the estimates can take) the
+variance is infinite, not the negative value the formula gives, while
+the mean and the coefficient estimates remain valid.
+
 Thus, the formulation of the model estimated here allows the use of the
 estimated coefficients to directly compute the marginal mean.
 

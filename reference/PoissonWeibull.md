@@ -168,7 +168,7 @@ parameters indirectly.
 dpoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=0.5, ndraws=10)
 #> [1] 0.1082605
 ppoisweibull(4, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
-#> [1] 0.8392135
+#> [1] 0.8392137
 qpoisweibull(0.95, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)
 #> [1] 9
 rpoisweibull(10, lambda=1.5, mean_value=1.5, sd_value=2, ndraws=10)

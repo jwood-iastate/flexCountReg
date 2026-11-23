@@ -120,10 +120,15 @@ used in estimating the model are provided. With
 ## Details
 
 The returned vector always has one element per row of `newdata`, in the
-same order. Rows with missing values in any variable the model uses get
-`NA`. Factor levels and contrasts from the training data are used, so
-`newdata` may contain only a subset of the levels. An error is raised if
-an offset column is missing from `newdata`.
+same order. Rows with missing values in any variable the estimate needs
+get `NA`: a row with a missing distribution-parameter, zero-model or
+reporting covariate has no count distribution, so its probabilities
+(`type = "prob"`) and intervals are `NA`, while its expected count is
+returned when it does not depend on that parameter (for example the NB2
+mean) and is `NA` otherwise. Factor levels and contrasts from the
+training data are used, so `newdata` may contain only a subset of the
+levels. An error is raised if an offset column is missing from
+`newdata`.
 
 ## Note
 

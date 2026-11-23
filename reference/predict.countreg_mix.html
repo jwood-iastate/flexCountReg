@@ -130,7 +130,11 @@ being "predicted" were used.</p></dd>
 <dt id="arg-history">history<a class="anchor" aria-label="anchor" href="#arg-history"></a></dt>
 <dd><p>for <code>conditioning = "history"</code>: a data frame of earlier
 rows of the panels in <code>newdata</code>, with outcomes and the panel
-identifier.</p></dd>
+identifier. History rows with a missing outcome or covariate are
+dropped with a warning; a panel without usable history rows keeps its
+prior. For panel models the membership variables must be constant
+within each panel (in <code>newdata</code>, in <code>history</code> and between the two), as
+in fitting, so the class probabilities never depend on the row order.</p></dd>
 
 
 <dt id="arg-interval">interval<a class="anchor" aria-label="anchor" href="#arg-interval"></a></dt>
@@ -167,10 +171,10 @@ row of the data, or a matrix (<code>"component"</code>, <code>"prob"</code>, <co
 <span class="r-out co"><span class="r-pr">#&gt;</span> [3,]  0.9645638   6.082595</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, newdata <span class="op">=</span> <span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, type <span class="op">=</span> <span class="st">"prob"</span>,</span></span>
 <span class="r-in"><span>        max_count <span class="op">=</span> <span class="fl">5</span>, overflow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             0         1         2         3          4          5        &gt;5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [3,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          0         1         2         3          4          5        &gt;5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

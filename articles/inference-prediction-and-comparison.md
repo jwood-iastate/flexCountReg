@@ -94,14 +94,21 @@ simplify the model. If fewer than two succeed, the standard errors are
 `NA`.
 
 **Weights.** Every estimator takes `weights`, which are frequency
-weights: a row with weight 3 counts as three independent observations.
-The estimates, log-likelihood, robust covariance and BIC are those of
-the expanded data. In panel models the weights belong to the panels (a
-panel with weight 3 counts as three independent panels), so they must be
-constant within a panel. The bootstrap resamples the expanded
-observations: it draws new frequencies from a multinomial distribution
-and refits with them in place of the weights, so it needs whole-number
-weights (use `stderr = "robust"` for other weights).
+weights by default: a row with weight 3 counts as three independent
+observations. The estimates, log-likelihood, robust covariance and BIC
+are those of the expanded data. In panel models the weights belong to
+the panels (a panel with weight 3 counts as three independent panels),
+so they must be constant within a panel. The bootstrap resamples the
+expanded observations: it draws new frequencies from a multinomial
+distribution and refits with them in place of the weights, so it needs
+whole-number weights. Survey or inverse-probability weights are declared
+with `weight_type = "sampling"` (in
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+and
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)):
+robust standard errors are then the default and do not depend on the
+scale of the weights, and LR tests, AIC and BIC are flagged as not
+valid.
 
 ## Marginal effects
 
@@ -118,12 +125,12 @@ margEffTable(nb_h, digits = 4)
 #> Method: delta 
 #> 
 #>      term variable_type           effect_metric estimate std_error t_value
-#>    lnaadt    continuous Average marginal effect   0.4989    0.0349 14.2766
-#>  lnlength    continuous Average marginal effect   0.3511    0.0380  9.2511
+#>    lnaadt    continuous Average marginal effect   0.4989    0.0350 14.2620
+#>  lnlength    continuous Average marginal effect   0.3511    0.0373  9.4042
 #>   speed50     indicator   Pseudo-elasticity (%) -41.5527    6.3016 -6.5940
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
-#>        0 ***   0.4304   0.5674  1501                    NA
-#>        0 ***   0.2767   0.4255  1501                    NA
+#>        0 ***   0.4304   0.5675  1501                    NA
+#>        0 ***   0.2779   0.4243  1501                    NA
 #>        0 *** -53.9035 -29.2018  1501                    NA
 ```
 
@@ -296,9 +303,6 @@ weights are used.
 po <- countreg(f, d, family = "POISSON", method = "BFGS")
 nb1 <- countreg(f, d, family = "NB1", method = "BFGS")
 pl <- countreg(f, d, family = "PL", method = "BFGS")
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of ln(theta) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 do.call(rbind, lapply(list(Poisson = po, NB1 = nb1, NB2 = nb_h, PL = pl),
                       function(m) glance(m)[, c("logLik", "AIC", "BIC")]))
 #> # A tibble: 4 × 3

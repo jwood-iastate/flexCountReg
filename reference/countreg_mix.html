@@ -421,7 +421,6 @@ Applied Econometrics</em>, 8(4), 397-411.</p>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">countreg_lc</span><span class="op">(</span><span class="va">rings</span> <span class="op">~</span> <span class="va">shell_weight</span>, data <span class="op">=</span> <span class="va">abalone_rings</span>,</span></span>
 <span class="r-in"><span>                   family <span class="op">=</span> <span class="st">"NB2"</span>, classes <span class="op">=</span> <span class="fl">2</span>,</span></span>
 <span class="r-in"><span>                   membership_formula <span class="op">=</span> <span class="op">~</span> <span class="va">sex</span>, n_starts <span class="op">=</span> <span class="fl">5</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The Hessian is not negative definite at the estimates, so the standard errors of Component1:ln(alpha) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> countreg_lc(formula = rings ~ shell_weight, data = abalone_rings, </span>
@@ -438,42 +437,42 @@ Applied Econometrics</em>, 8(4), 397-411.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Class 1 (NB2):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                              Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:Mean:(Intercept)    2.0974     0.0145     145   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:Mean:shell_weight   0.9675     0.0439      22   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:ln(alpha)         -24.6839         NA      NA       NA    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:Mean:(Intercept)    2.0974     0.0145  145.07   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:Mean:shell_weight   0.9677     0.0437   22.13   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:ln(alpha)         -20.6190   333.1417   -0.06     0.95    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Class 2 (NB2):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                              Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:Mean:(Intercept)    1.7141     0.0189    90.6   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:Mean:shell_weight   2.5624     0.1107    23.2   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:ln(alpha)         -16.0747     0.2460   -65.3   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:Mean:(Intercept)    1.7141     0.0189   90.58   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:Mean:shell_weight   2.5623     0.1107   23.16   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:ln(alpha)         -20.2864   441.7990   -0.05     0.96    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mixing (multinomial logit):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                               Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:(Intercept)     4.32       1.08    4.01  6.0e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:sexI           -9.33       1.52   -6.14  8.2e-10 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:sexM            2.56       6.20    0.41     0.68    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:(Intercept)     4.32       1.08    4.01  6.1e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:sexI           -9.33       1.52   -6.14  8.3e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:sexM            7.37      71.57    0.10     0.92    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Class sizes:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   label family  prior posterior effective_n modal_n mean_count</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Class1    NB2 0.6764    0.6764      2825.3    2834      10.36</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  Class2    NB2 0.3236    0.3236      1351.7    1343      10.97</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Class1    NB2 0.6768    0.6768      2826.8    2834      10.36</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  Class2    NB2 0.3232    0.3232      1350.2    1343      10.97</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> (prior: mean membership probability; posterior: mean posterior probability;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  effective_n: sum of posterior probabilities; modal_n: units whose most</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  probable class it is; mean_count: average expected count)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -9681.506 | AIC: 19381.01 | BIC: 19438.05 | ICL: 19724.96 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -9681.481 | AIC: 19380.96 | BIC: 19438 | ICL: 19701.38 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N: 4177</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Entropy: 143.454 | relative entropy: 0.95 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Entropy: 131.692 | relative entropy: 0.955 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Starts: 5 | 1 reached the selected log-likelihood</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Note: only one start reached this solution; try more starts.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Observed information: indefinite | max |gradient|: 1.04 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Observed information: singular | max |gradient|: 0.000289 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> No likelihood-ratio test of the number of classes is reported (non-standard distribution).</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>

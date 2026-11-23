@@ -30,7 +30,8 @@ countreg_rp(
   engine = "quadrature",
   keep_data = TRUE,
   panel_id = NULL,
-  mix_draws = NULL
+  mix_draws = NULL,
+  weight_type = c("frequency", "sampling")
 )
 ```
 
@@ -131,9 +132,9 @@ countreg_rp(
 
 - weights:
 
-  the name of a variable, or a numeric vector, of frequency weights.
-  With `panel_id`, weights apply to whole panels (the panel
-  log-likelihood is weighted), so they should be constant within a
+  the name of a variable, or a numeric vector, of weights (see
+  `weight_type`). With `group_var`, weights apply to whole panels (the
+  panel log-likelihood is weighted), so they should be constant within a
   panel.
 
 - offset:
@@ -197,6 +198,22 @@ countreg_rp(
   (inside each random-parameter draw). The default is
   `min(ndraws, 200)`. Not used by the default `engine = "quadrature"`,
   which integrates adaptively.
+
+- weight_type:
+
+  `"frequency"` (default): each weight is the number of independent
+  observations a row stands for, so the log-likelihood, LR tests, AIC
+  and BIC are those of the expanded data. `"sampling"`: survey or
+  inverse-probability weights, which only set how much each unit counts.
+  The weighted log-likelihood is then a pseudo-likelihood: standard
+  errors default to the robust sandwich with meat sum((w s)(w s)') and
+  the small-sample factor G / (G - 1) for G units, so they do not change
+  when all weights are rescaled; the number of units is the number of
+  panels (rows without `group_var`) with a positive weight; bootstrap
+  standard errors are not available; and LR tests, AIC and BIC are not
+  valid (they are reported, with a note, by
+  [`summary()`](https://rdrr.io/r/base/summary.html) and are refused by
+  [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)).
 
 ## Value
 

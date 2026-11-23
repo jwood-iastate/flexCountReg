@@ -140,30 +140,30 @@ round(boundary, 3)
 #> 1    -3.451  1.454         1      0        0
 #> 2    -3.705  1.809         1      0        0
 #> 3    -2.680  0.724         1      0        0
-#> 4   -11.233  5.191         1      0        0
-#> 5    -6.181 20.637         1      0        0
-#> 6    -6.908  6.721         1      0        1
+#> 4   -11.233 60.273         1      0        0
+#> 5    -6.181 20.512         1      0        0
+#> 6    -6.908  6.702         1      0        1
 #> 7    -3.722  1.703         1      0        0
-#> 8    -6.908 17.416         1      0        1
+#> 8    -6.908 17.422         1      0        1
 #> 9    -3.977  2.366         1      0        0
 #> 10   -3.515  1.705         1      0        0
 #> 11   -3.368  1.295         1      0        0
-#> 12  -10.750     NA         1      1        0
-#> 13   -6.908  7.073         1      0        1
+#> 12  -10.750 53.641         1      0        0
+#> 13   -6.908  7.080         1      0        1
 #> 14   -2.627  0.754         1      0        0
-#> 15  -11.319 17.465         1      0        0
-#> 16   -6.908  7.891         1      0        1
+#> 15  -11.319 48.728         1      0        0
+#> 16   -6.908  7.839         1      0        1
 #> 17   -3.164  1.183         1      0        0
-#> 18   -6.908  6.066         1      0        1
+#> 18   -6.908  6.052         1      0        1
 #> 19   -3.447  1.462         1      0        0
-#> 20   -6.908 11.455         1      0        1
+#> 20   -6.908 11.390         1      0        1
 ```
 
 Every fit reports convergence. The dispersion starts from a moment
 estimate clipped at $`\alpha = 10^{-3}`$ ($`\ln\alpha = -6.908`$), and 6
 of the 20 fits stopped within 0.01 of it: at the edge of the space the
 likelihood is so flat that the gradient is below the optimizer’s
-tolerance. In 1 fits the Hessian is not negative definite, and
+tolerance. In 0 fits the Hessian is not negative definite, and
 flexCountReg warns that the standard error of `ln(alpha)` is `NA`. The
 remaining standard errors are large. In every case the right conclusion
 is that $`\alpha`$ is near 0: Poisson is adequate. Neither the estimate
@@ -271,13 +271,13 @@ halton <- do.call(rbind, lapply(c(25, 50, 100, 200, 400),
                                 function(r) pln("halton", r)))
 rbind(quad, halton)
 #>       engine ndraws    logLik   ln_sigma se_ln_sigma
-#> 1 quadrature     50 -294.4796 -0.5551128   0.2282727
-#> 2 quadrature   1500 -294.4796 -0.5551128   0.2282727
-#> 3     halton     25 -294.4376 -0.3531253   0.2337645
-#> 4     halton     50 -294.4294 -0.4321822   0.2295976
-#> 5     halton    100 -294.4224 -0.4745107   0.2282137
-#> 6     halton    200 -294.4255 -0.5017463   0.2272083
-#> 7     halton    400 -294.4333 -0.5200564   0.2265148
+#> 1 quadrature     50 -294.4796 -0.5551128   0.2282297
+#> 2 quadrature   1500 -294.4796 -0.5551128   0.2282297
+#> 3     halton     25 -294.4376 -0.3531253   0.2339105
+#> 4     halton     50 -294.4294 -0.4321822   0.2292423
+#> 5     halton    100 -294.4224 -0.4745107   0.2282395
+#> 6     halton    200 -294.4255 -0.5017463   0.2272242
+#> 7     halton    400 -294.4333 -0.5200564   0.2268687
 ```
 
 The two quadrature fits are identical: quadrature ignores `ndraws`, and
@@ -323,9 +323,9 @@ rp_fit <- function(r) {
 rp_draws <- do.call(rbind, lapply(c(50, 100, 200), rp_fit))
 rp_draws
 #>   ndraws converged   logLik       mean        sd     se_sd
-#> 1     50      TRUE -294.253 -0.5235857 0.5163452 0.5843359
-#> 2    100      TRUE -294.262 -0.5296093 0.4808545 0.5681022
-#> 3    200      TRUE -294.269 -0.5315672 0.4565646 0.5612988
+#> 1     50      TRUE -294.253 -0.5235857 0.5163452 0.5943831
+#> 2    100      TRUE -294.262 -0.5296093 0.4808545 0.5679274
+#> 3    200      TRUE -294.269 -0.5315672 0.4565646 0.5644011
 ```
 
 The estimated standard deviation of the random parameter changes with

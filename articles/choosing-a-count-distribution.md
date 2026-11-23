@@ -111,9 +111,9 @@ share and shape parameters have large standard errors here:
 ``` r
 
 summary(models$DELAPORTE)$coefficients[c("logit(rho)", "ln(k)"), 1:2]
-#>               Estimate Std. Error
-#> logit(rho)  0.66718570   2.421449
-#> ln(k)      -0.02539755   1.861276
+#>              Estimate Std. Error
+#> logit(rho)  0.6671856  0.9616704
+#> ln(k)      -0.0253976  0.7495974
 ```
 
 The data do not separate the Poisson and negative binomial components of
@@ -342,19 +342,19 @@ zero-inflated or hurdle version of any family can be fitted with
 
 zinb <- countreg(f, data = washington_roads, family = "NB2",
                  offset = "lnlength", zero_formula = ~ 1, method = "NR")
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of Zero:(Intercept) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
+#> Warning: The Hessian is singular; standard errors use a generalized inverse and
+#> may be unreliable. The model may not be identified. The likelihood is flat in a
+#> direction involving Zero:(Intercept); their standard errors are NA.
 pi_zero <- unname(plogis(coef(zinb)["Zero:(Intercept)"]))
 c(NB2 = as.numeric(logLik(models$NB2)), ZINB = as.numeric(logLik(zinb)),
   zero_probability = pi_zero)
 #>              NB2             ZINB zero_probability 
-#>    -1.090559e+03    -1.090560e+03     4.338153e-05
+#>    -1.090559e+03    -1.090559e+03    3.701046e-100
 ```
 
-The estimated probability of a structural zero is 4.3e-05 and the
-log-likelihoods differ by 5.2e-04: the zeros are already explained by
-the negative binomial, so the zero-inflated model adds nothing. When an
+The estimated probability of a structural zero is 3.7e-100 and the
+log-likelihoods differ by 5e-08: the zeros are already explained by the
+negative binomial, so the zero-inflated model adds nothing. When an
 estimate is at the boundary of its parameter space like this, its
 standard error is not meaningful, and the likelihood-ratio test of NB2
 against ZINB has a non-standard distribution, so it is not reported.
@@ -392,7 +392,7 @@ margEffTable(models$NB2)
 #> Method: delta 
 #> 
 #>     term variable_type           effect_metric estimate std_error t_value
-#>   lnaadt    continuous Average marginal effect    0.532     0.037  14.561
+#>   lnaadt    continuous Average marginal effect    0.532     0.037  14.436
 #>  speed50     indicator   Pseudo-elasticity (%)  -43.320     6.246  -6.936
 #>  p_value sig lower_ci upper_ci n_obs successful_bootstraps
 #>        0 ***    0.460    0.604  1501                    NA

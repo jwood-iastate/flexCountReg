@@ -72,8 +72,8 @@ with `.fcr_family()`. The NB2 entry:
 
 nb2 <- flexCountReg:::.fcr_family_registry$NB2
 names(nb2)
-#> [1] "params"   "dens"     "variance" "rand"     "mean_adj" "start"    "mean"    
-#> [8] "cdf"      "start_rp"
+#>  [1] "params"   "dens"     "variance" "rand"     "mean_adj" "start"   
+#>  [7] "mean"     "cdf"      "start_rp" "valid"
 nb2$params
 #> [[1]]
 #> [1] "ln(alpha)"

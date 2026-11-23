@@ -47,6 +47,27 @@
 * Families can declare a `score` function in the internal registry; the
   NB1, NB2 and NBP scores are shared by `countreg()` and `countreg_rp()`.
 
+## Cluster-robust standard errors and the sandwich package
+
+* `countreg()` and `countreg_rp()` gain `stderr = "cluster"` with
+  `cluster = ~ corridor` (or column names, or a vector of ids). Two or more
+  variables (`~ corridor + year`) give multiway clustering (Cameron, Gelbach
+  and Miller 2011). The scores of the independent units (rows, or panels)
+  are summed within clusters, with the factor G / (G - 1). Clusters may be
+  coarser than the panels (sites within corridors) but may not split a
+  panel. Giving `cluster` alone selects cluster-robust standard errors.
+  With frequency weights, a row's copies are in its cluster.
+  `summary()` reports the number of clusters.
+* `vcov()` gains `type = c("fit", "hessian", "robust", "cluster")` and
+  `cluster`, which recompute the covariance matrix from the stored scores
+  without refitting. This works for `countreg()`, `countreg_rp()`, `renb()`,
+  `repois()` and `poislind_re()` fits. With `keep_data = FALSE`, the
+  clusters are given as a vector.
+* New `estfun()` and `bread()` methods for the sandwich package, so
+  `sandwich::vcovCL()`, `vcovHC()`, `sandwich()`, `lmtest::coeftest()` and
+  tools built on them work with flexCountReg fits. One-way and two-way
+  cluster covariances equal `sandwich::vcovCL(type = "HC0")` to 1e-10.
+
 ## Interactive app
 
 * New `launch_app()` opens an interactive interface to flexCountReg in a
@@ -329,6 +350,12 @@
   coefficient matrix, or `tibble::as_tibble(summary(m))` for the tibble that
   `summary()` returned before. The offset is shown as a note, not as a
   coefficient row.
+* Hessian-based, robust and cluster-robust covariances use the symmetric
+  part of the numeric Hessian. In poorly conditioned fits the inverse
+  amplified the Hessian's small asymmetry. For example, a `renb()` fit by
+  Nelder-Mead on `washington_roads` had a negative robust variance for
+  ln(a-1); it is now 0.036. In well-conditioned fits the change is
+  negligible.
 * `countreg_rp()` gives each unit (panel, or row without `group_var`) its
   own simulation draws by default: new argument `draws = c("per_unit",
   "shared")`. Unit u uses draws (u - 1) R + 1 to u R of one Halton sequence,

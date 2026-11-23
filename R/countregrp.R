@@ -65,7 +65,17 @@
 #' @param stderr the type of standard errors: \code{"normal"} (Hessian-based,
 #'   the default), \code{"robust"} (sandwich; clustered by panel when
 #'   \code{group_var} is given), or \code{"boot"} (bootstrap that resamples
-#'   whole panels and refits the model).
+#'   whole panels and refits the model), or \code{"cluster"}
+#'   (cluster-robust, with \code{cluster}; clusters must contain whole
+#'   panels, so they may be coarser than the panels, e.g. sites within
+#'   corridors).
+#' @param cluster clustering variable(s) for \code{stderr = "cluster"}: a
+#'   one-sided formula of columns of \code{data} (\code{~ corridor}; two
+#'   or more, \code{~ corridor + year}, give multiway clustering), their
+#'   names, or a vector with one cluster id per row of \code{data}. Given
+#'   without \code{stderr}, it sets \code{stderr = "cluster"}. See
+#'   \code{\link{vcov.flexCountReg}}, which also gives cluster-robust
+#'   covariances after the fit.
 #' @param bootstraps the number of bootstrap samples when
 #'   \code{stderr = "boot"} (default 200).
 #' @param keep_data logical; if \code{FALSE}, the training data are not stored
@@ -255,7 +265,8 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
                          engine = "quadrature", keep_data = TRUE,
                          panel_id = NULL, mix_draws = NULL,
                          weight_type = c("frequency", "sampling"),
-                         draws = c("per_unit", "shared")) {
+                         draws = c("per_unit", "shared"),
+                         cluster = NULL) {
   
   print.level <- if (verbose) 2 else 0
   draws <- match.arg(draws)
@@ -265,7 +276,9 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
     if (is.null(group_var)) group_var <- panel_id
   }
   panel_id <- group_var
-  stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
+  stderr <- .fcr_resolve_stderr(stderr, stderr_missing, bootstraps,
+                                c("normal", "robust", "boot", "cluster"),
+                                cluster)
   wt <- .fcr_resolve_weight_type(weight_type, weights, stderr,
                                  stderr_missing && is.null(bootstraps))
   weight_type <- wt$weight_type
@@ -339,6 +352,9 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }
+  # Cluster ids of the rows used (checked before fitting)
+  cluster_frame <- if (stderr == "cluster")
+    .fcr_cluster_frame(cluster, data, prep$rows_used)
   y <- prep$y
   N_obs <- length(y)
   X_Fixed <- prep$X
@@ -650,6 +666,16 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
     # with frequency weights per panel
     V <- .fcr_robust_vcov(fit, w_panel, weight_type)
     vcov_type <- "robust"
+  } else if (stderr == "cluster") {
+    # Panel scores summed by cluster (clusters contain whole panels)
+    U <- fit$gradientObs
+    colnames(U) <- x_names
+    V <- .fcr_cluster_vcov(U, .fcr_hessian_vcov(fit),
+                           as.integer(panel_group), cluster_frame, w_panel)
+    fit$n_clusters <- attr(V, "n_clusters")
+    fit$cluster <- names(cluster_frame)
+    attr(V, "n_clusters") <- NULL
+    vcov_type <- "cluster"
   } else {
     V <- .fcr_hessian_vcov(fit)
     vcov_type <- "hessian"

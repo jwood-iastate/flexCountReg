@@ -69,7 +69,15 @@
 #'   are matched to the parameters by name.
 #' @param stderr Type of standard errors to use. The default is "normal"
 #'   (based on the Hessian). Other options include "boot" for bootstrapped
-#'   standard errors, or "robust" for robust (sandwich) standard errors.
+#'   standard errors, "robust" for robust (sandwich) standard errors, or
+#'   "cluster" for cluster-robust standard errors (with \code{cluster}).
+#' @param cluster clustering variable(s) for \code{stderr = "cluster"}: a
+#'   one-sided formula of columns of \code{data} (\code{~ corridor}; two
+#'   or more, \code{~ corridor + year}, give multiway clustering), their
+#'   names, or a vector with one cluster id per row of \code{data}. Given
+#'   without \code{stderr}, it sets \code{stderr = "cluster"}. See
+#'   \code{\link{vcov.flexCountReg}}, which also gives cluster-robust
+#'   covariances after the fit.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples
 #'   to be used for estimating standard errors when `stderr`= "boot". Defaults
 #'   to 200 when `stderr = "boot"` and `bootstraps` is not given.
@@ -794,7 +802,8 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      engine = "quadrature", keep_data = TRUE,
                      zero_formula = NULL,
                      zero_type = c("inflated", "hurdle"),
-                     weight_type = c("frequency", "sampling")) {
+                     weight_type = c("frequency", "sampling"),
+                     cluster = NULL) {
   
   print.level <- if (verbose) 2 else 0
   stderr_missing <- missing(stderr)
@@ -816,7 +825,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   .fcr_check_controls(max.iters, ndraws)
   underreport_family <- match.arg(tolower(underreport_family),
                                   c("logit", "probit"))
-  stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
+  stderr <- .fcr_resolve_stderr(stderr, stderr_missing, NULL,
+                                c("normal", "robust", "boot", "cluster"),
+                                cluster)
   wt <- .fcr_resolve_weight_type(weight_type, weights, stderr,
                                  stderr_missing && is.null(bootstraps))
   weight_type <- wt$weight_type
@@ -862,6 +873,9 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     message(prep$n_dropped, " row(s) with missing values were removed.")
   }
   
+  # Cluster ids of the rows used (checked before fitting)
+  cluster_frame <- if (stderr == "cluster")
+    .fcr_cluster_frame(cluster, data, prep$rows_used)
   X <- prep$X
   y <- prep$y
   X_offset <- prep$offset
@@ -1099,11 +1113,21 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   } else if (stderr == "robust") {
     V <- .fcr_robust_vcov(fit, weights.df, weight_type)
     vcov_type <- "robust"
+  } else if (stderr == "cluster") {
+    # Rows are the independent units; their scores are summed by cluster
+    U <- fit$gradientObs
+    colnames(U) <- x_names
+    V <- .fcr_cluster_vcov(U, .fcr_hessian_vcov(fit), seq_len(nrow(U)),
+                           cluster_frame, weights.df)
+    fit$n_clusters <- attr(V, "n_clusters")
+    fit$cluster <- names(cluster_frame)
+    vcov_type <- "cluster"
   } else {
     V <- .fcr_hessian_vcov(fit)
     vcov_type <- "hessian"
   }
   dimnames(V) <- list(x_names, x_names)
+  attr(V, "n_clusters") <- NULL
   
   if (N_underreport > 0) .fcr_check_report_identification(V)
   

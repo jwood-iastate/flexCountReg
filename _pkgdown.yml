@@ -63,6 +63,8 @@ reference:
   contents:
   - summary.flexCountReg
   - flexCountReg-methods
+  - vcov.flexCountReg
+  - estfun.flexCountReg
   - flexCountReg-tidiers
   - predict.flexCountReg
 

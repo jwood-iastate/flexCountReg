@@ -3,7 +3,6 @@
 \name{flexCountReg-methods}
 \alias{flexCountReg-methods}
 \alias{coef.flexCountReg}
-\alias{vcov.flexCountReg}
 \alias{nobs.flexCountReg}
 \alias{logLik.flexCountReg}
 \alias{formula.flexCountReg}
@@ -16,8 +15,6 @@
 \title{Standard methods for flexCountReg models}
 \usage{
 \method{coef}{flexCountReg}(object, ...)
-
-\method{vcov}{flexCountReg}(object, ...)
 
 \method{nobs}{flexCountReg}(object, ...)
 
@@ -80,8 +77,9 @@ including with \code{AIC()}, \code{BIC()}, \code{confint()},
 \code{coef()} returns all estimated parameters, including distribution,
 underreporting, random-parameter and heterogeneity parameters, named as in
 \code{summary()}. \code{vcov()} returns the covariance matrix chosen at
-fit time: Hessian-based, robust (sandwich) or bootstrapped (see the
-\code{stderr} argument of each estimator).
+fit time: Hessian-based, robust (sandwich), cluster-robust or
+bootstrapped (see the \code{stderr} argument of each estimator); see
+\code{\link{vcov.flexCountReg}} to recompute it after the fit.
 
 \code{nobs()} is the number of rows used in estimation. For panel models
 (\code{renb()}, \code{poisLind.re()}, \code{repois()}, \code{negmultinom()}

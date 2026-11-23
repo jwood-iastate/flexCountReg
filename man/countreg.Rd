@@ -25,7 +25,8 @@ countreg(
   keep_data = TRUE,
   zero_formula = NULL,
   zero_type = c("inflated", "hurdle"),
-  weight_type = c("frequency", "sampling")
+  weight_type = c("frequency", "sampling"),
+  cluster = NULL
 )
 }
 \arguments{
@@ -97,7 +98,8 @@ are matched to the parameters by name.}
 
 \item{stderr}{Type of standard errors to use. The default is "normal"
 (based on the Hessian). Other options include "boot" for bootstrapped
-standard errors, or "robust" for robust (sandwich) standard errors.}
+standard errors, "robust" for robust (sandwich) standard errors, or
+"cluster" for cluster-robust standard errors (with \code{cluster}).}
 
 \item{bootstraps}{Optional integer specifying the number of bootstrap samples
 to be used for estimating standard errors when \code{stderr}= "boot". Defaults
@@ -141,6 +143,14 @@ rescaled; the number of units is the number of rows (panels) with a
 positive weight; bootstrap standard errors are not available; and LR
 tests, AIC and BIC are not valid (they are reported, with a note, by
 \code{summary()} and are refused by \code{regCompTest()}).}
+
+\item{cluster}{clustering variable(s) for \code{stderr = "cluster"}: a
+one-sided formula of columns of \code{data} (\code{~ corridor}; two
+or more, \code{~ corridor + year}, give multiway clustering), their
+names, or a vector with one cluster id per row of \code{data}. Given
+without \code{stderr}, it sets \code{stderr = "cluster"}. See
+\code{\link{vcov.flexCountReg}}, which also gives cluster-robust
+covariances after the fit.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

@@ -112,8 +112,13 @@ NULL
 # is flat (the null space of the Hessian), which would read as perfect
 # precision; the variances and covariances of the parameters involved in
 # those directions are set to NA instead.
+# A numeric Hessian is not exactly symmetric; its symmetric part is used,
+# because in a poorly conditioned model the inverse amplifies the
+# asymmetry, and a sandwich built from an asymmetric bread can have
+# negative variances.
 .fcr_hessian_vcov <- function(fit) {
   H <- fit$hessian
+  if (is.matrix(H)) H <- (H + t(H)) / 2
   V <- tryCatch(solve(-H), error = function(e) NULL)
   if (is.null(V)) {
     V <- MASS::ginv(-H)
@@ -698,14 +703,25 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
 
 # Validate stderr; `bootstraps` given without `stderr` means bootstrap, as in
 # earlier versions.
-.fcr_resolve_stderr <- function(stderr, stderr_missing, bootstraps) {
+.fcr_resolve_stderr <- function(stderr, stderr_missing, bootstraps,
+                                allowed = c("normal", "robust", "boot"),
+                                cluster = NULL) {
   if (!is.null(bootstraps) &&
       (!is.numeric(bootstraps) || length(bootstraps) != 1L ||
        is.na(bootstraps) || bootstraps < 2)) {
     stop("`bootstraps` must be a single number of at least 2.", call. = FALSE)
   }
   if (stderr_missing && !is.null(bootstraps)) return("boot")
-  stderr <- match.arg(tolower(stderr), c("normal", "robust", "boot"))
+  # `cluster` given without `stderr` means cluster-robust standard errors
+  if (stderr_missing && !is.null(cluster)) return("cluster")
+  stderr <- match.arg(tolower(stderr), allowed)
+  if (stderr == "cluster" && is.null(cluster)) {
+    stop("stderr = \"cluster\" needs `cluster`, e.g. cluster = ~ site.",
+         call. = FALSE)
+  }
+  if (stderr != "cluster" && !is.null(cluster)) {
+    stop("`cluster` is used with stderr = \"cluster\".", call. = FALSE)
+  }
   stderr
 }
 

@@ -32,7 +32,8 @@ countreg_rp(
   panel_id = NULL,
   mix_draws = NULL,
   weight_type = c("frequency", "sampling"),
-  draws = c("per_unit", "shared")
+  draws = c("per_unit", "shared"),
+  cluster = NULL
 )
 }
 \arguments{
@@ -131,7 +132,10 @@ Named values are matched to the parameters by name.}
 \item{stderr}{the type of standard errors: \code{"normal"} (Hessian-based,
 the default), \code{"robust"} (sandwich; clustered by panel when
 \code{group_var} is given), or \code{"boot"} (bootstrap that resamples
-whole panels and refits the model).}
+whole panels and refits the model), or \code{"cluster"}
+(cluster-robust, with \code{cluster}; clusters must contain whole
+panels, so they may be coarser than the panels, e.g. sites within
+corridors).}
 
 \item{bootstraps}{the number of bootstrap samples when
 \code{stderr = "boot"} (default 200).}
@@ -176,6 +180,14 @@ earlier versions. Empirical Bayes predictions
 (\code{method = "Individual"}) regenerate each estimation unit's own
 draws, matched by panel id (by row position without panels); units not
 in the estimation data get new draws.}
+
+\item{cluster}{clustering variable(s) for \code{stderr = "cluster"}: a
+one-sided formula of columns of \code{data} (\code{~ corridor}; two
+or more, \code{~ corridor + year}, give multiway clustering), their
+names, or a vector with one cluster id per row of \code{data}. Given
+without \code{stderr}, it sets \code{stderr = "cluster"}. See
+\code{\link{vcov.flexCountReg}}, which also gives cluster-robust
+covariances after the fit.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

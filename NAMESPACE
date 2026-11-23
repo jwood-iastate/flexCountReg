@@ -2,8 +2,10 @@
 
 S3method(as_tibble,summary.flexCountReg)
 S3method(augment,flexCountReg)
+S3method(bread,flexCountReg)
 S3method(coef,flexCountReg)
 S3method(confint,flexCountReg)
+S3method(estfun,flexCountReg)
 S3method(fitted,countreg_mix)
 S3method(fitted,flexCountReg)
 S3method(formula,flexCountReg)
@@ -193,7 +195,11 @@ importFrom(maxLik,
   maxLik
 )
 importFrom(randtoolbox,halton)
-importFrom(sandwich,sandwich)
+importFrom(sandwich,
+  bread,
+  estfun,
+  sandwich
+)
 importFrom(stats,
   .getXlevels,
   as.formula,

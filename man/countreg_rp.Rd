@@ -21,7 +21,7 @@ countreg_rp(
   group_var = NULL,
   weights = NULL,
   offset = NULL,
-  method = "BHHH",
+  method = "BFGS",
   max.iters = 1000,
   start.vals = NULL,
   verbose = FALSE,
@@ -111,7 +111,14 @@ constant within a panel.}
 used as an offset (summed when several are given). An offset can instead
 be given with \code{offset()} in \code{formula}; use only one of the two.}
 
-\item{method}{optimization method (e.g., "BHHH", "BFGS", "NM").}
+\item{method}{optimization method passed to \code{\link[maxLik]{maxLik}}:
+\code{"BFGS"} (default), \code{"NR"}, \code{"BHHH"}, \code{"BFGSR"},
+\code{"CG"}, \code{"NM"} or \code{"SANN"}. BFGS uses the analytic
+gradient and is the most reliable choice. BHHH is often
+faster on simple models, but on harder ones it can crawl, or stop where
+the log-likelihood has stopped changing well short of the maximum; such
+stops are flagged (see Details). NR is reliable near the maximum but
+slow, because it differentiates the gradient numerically for its Hessian.}
 
 \item{max.iters}{maximum number of iterations.}
 
@@ -172,7 +179,7 @@ An object of class \code{flexCountReg} which is a list with the following compon
 Random Parameters Count Regression Models
 }
 \details{
-\code{countreg_rp()} is the former name of \code{countreg_rp()}. It is
+\code{countreg.rp()} is the former name of \code{countreg_rp()}. It is
 deprecated (a name with a dot is easily mistaken for an S3 method): it
 still works, with a once-per-session warning, and calls
 \code{countreg_rp()}.
@@ -202,6 +209,26 @@ parameter, or \code{method = "Individual"} predictions instead.
 
 The mixing distribution of the PLN, PGE, PLL and PW families uses its own
 Halton dimension, independent of the random parameters' draws.
+
+\strong{Gradient.} The optimizer uses the analytic gradient of the
+simulated log-likelihood: each panel's score is the average, over draws
+weighted by their posterior probabilities, of the family's score in the
+log mean times the derivative of the log mean in each parameter. The
+Poisson, NB1, NB2 and NBP families have closed-form scores; the other
+families use central differences in the log mean and in each distribution
+parameter, two density evaluations per parameter of the distribution
+whatever the number of regression parameters. A numeric gradient needs
+two likelihood evaluations per parameter, so fits are several times
+faster. \code{options(flexCountReg.rp_gradient = "numeric")} restores the
+numeric gradient, to check a fit.
+
+\strong{Convergence.} BHHH, NR and BFGSR stop when the log-likelihood
+changes by less than a tolerance between iterations, which a slow
+optimizer can also meet far from the maximum. After the fit,
+\code{countreg_rp()} computes the Newton decrement
+\eqn{g'(-H)^{-1}g} at the estimates (twice the further gain a Newton step
+predicts; stored as \code{model$newton_decrement}). Above 0.1, the fit is
+marked as not converged, with a warning.
 }
 \examples{
 \donttest{
@@ -215,8 +242,7 @@ rp_nb2 <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
                       data = washington_roads,
                       family = "NB2",
                       rpardists = c(speed50 = "n"),
-                      ndraws = 100,
-                      method = "BHHH")
+                      ndraws = 100)
 summary(rp_nb2)
 
 # 2. Random Parameters with Panel Structure (if 'site_id' exists)

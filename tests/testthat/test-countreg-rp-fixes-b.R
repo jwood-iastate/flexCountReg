@@ -123,14 +123,16 @@ test_that("formula offsets, missing values and weights are handled", {
 
   # Doubling every weight doubles the log-likelihood at the same estimates
   d$w2 <- 2
-  w <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
-                   data = d, weights = "w2", group_var = "ID", ndraws = 30,
-                   method = "BFGS",
-                   start.vals = b$model$estimate[names(b$model$estimate)],
-                   max.iters = 0)
-  u <- countreg_rp(Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50,
-                   data = d, group_var = "ID", ndraws = 30, method = "BFGS",
-                   start.vals = b$model$estimate, max.iters = 0)
+  # (max.iters = 0 evaluates at the starting values, which are not the
+  # maximum of these panel models: a warning says so)
+  w <- suppressWarnings(countreg_rp(
+    Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50, data = d,
+    weights = "w2", group_var = "ID", ndraws = 30, method = "BFGS",
+    start.vals = b$model$estimate[names(b$model$estimate)], max.iters = 0))
+  u <- suppressWarnings(countreg_rp(
+    Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50, data = d,
+    group_var = "ID", ndraws = 30, method = "BFGS",
+    start.vals = b$model$estimate, max.iters = 0))
   expect_equal(w$model$maximum, 2 * u$model$maximum)
 })
 

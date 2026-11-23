@@ -23,6 +23,11 @@
 #   start_rp  optional starting value(s) of the distribution parameters in
 #             countreg_rp() (default: -2, near the Poisson limit of most
 #             families).
+#   score     optional function(y, mu, alpha, sigma) returning
+#             list(eta, alpha, sigma): the derivatives of log P(Y = y) with
+#             respect to log(mu), log(alpha) and log(sigma) (NULL for a
+#             parameter the family does not have). Families without it use
+#             central differences of `dens` (see .fcr_family_score()).
 #
 # A complete family also needs public distribution functions, moments,
 # simulation and tests; the families added in 0.1.2 have their helpers in
@@ -33,10 +38,10 @@
 .fcr_family <- function(params, dens, variance = NULL, rand = NULL,
                         mean_adj = function(alpha, sigma) 1, start = 0,
                         mean = NULL, cdf = NULL, start_rp = NULL,
-                        valid = NULL) {
+                        valid = NULL, score = NULL) {
   list(params = params, dens = dens, variance = variance, rand = rand,
        mean_adj = mean_adj, start = start, mean = mean, cdf = cdf,
-       start_rp = start_rp, valid = valid)
+       start_rp = start_rp, valid = valid, score = score)
 }
 
 # Is the distribution defined at each row's parameters (on the registry's
@@ -124,7 +129,8 @@
     rand = function(n, mu, alpha, sigma) stats::rpois(n, mu),
     # Closed-form CDF (log scale, either tail) for quantile residuals
     cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
-      stats::ppois(q, predicted, lower.tail = lower.tail, log.p = TRUE)),
+      stats::ppois(q, predicted, lower.tail = lower.tail, log.p = TRUE),
+    score = function(y, mu, alpha, sigma) list(eta = y - mu)),
 
   GP1 = .fcr_family(
     params = list("ln(phi+1)", NULL),
@@ -160,7 +166,8 @@
       stats::rnbinom(n, size = mu / alpha, mu = mu),
     cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
       stats::pnbinom(q, size = predicted / alpha, mu = predicted,
-                     lower.tail = lower.tail, log.p = TRUE)),
+                     lower.tail = lower.tail, log.p = TRUE),
+    score = function(y, mu, alpha, sigma) .fcr_nb_score("NB1", y, mu, alpha)),
 
   NB2 = .fcr_family(
     params = list("ln(alpha)", NULL),
@@ -172,7 +179,8 @@
       stats::rnbinom(n, size = 1 / alpha, mu = mu),
     cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
       stats::pnbinom(q, size = 1 / alpha, mu = predicted,
-                     lower.tail = lower.tail, log.p = TRUE)),
+                     lower.tail = lower.tail, log.p = TRUE),
+    score = function(y, mu, alpha, sigma) .fcr_nb_score("NB2", y, mu, alpha)),
 
   NBP = .fcr_family(
     params = list("ln(alpha)", "ln(p)"),
@@ -184,7 +192,9 @@
       stats::rnbinom(n, size = mu^(2 - sigma) / alpha, mu = mu),
     cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
       stats::pnbinom(q, size = predicted^(2 - sigma) / alpha, mu = predicted,
-                     lower.tail = lower.tail, log.p = TRUE)),
+                     lower.tail = lower.tail, log.p = TRUE),
+    score = function(y, mu, alpha, sigma)
+      .fcr_nb_score("NBP", y, mu, alpha, sigma)),
 
   PLN = .fcr_family(
     params = list("ln(sigma)", NULL),

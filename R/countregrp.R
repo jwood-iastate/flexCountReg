@@ -89,7 +89,14 @@
 #'   positive weight; bootstrap standard errors are not available; and LR
 #'   tests, AIC and BIC are not valid (they are reported, with a note, by
 #'   \code{summary()} and are refused by \code{regCompTest()}).
-#' @param method optimization method (e.g., "BHHH", "BFGS", "NM").
+#' @param method optimization method passed to \code{\link[maxLik]{maxLik}}:
+#'   \code{"BFGS"} (default), \code{"NR"}, \code{"BHHH"}, \code{"BFGSR"},
+#'   \code{"CG"}, \code{"NM"} or \code{"SANN"}. BFGS uses the analytic
+#'   gradient and is the most reliable choice. BHHH is often
+#'   faster on simple models, but on harder ones it can crawl, or stop where
+#'   the log-likelihood has stopped changing well short of the maximum; such
+#'   stops are flagged (see Details). NR is reliable near the maximum but
+#'   slow, because it differentiates the gradient numerically for its Hessian.
 #' @param max.iters maximum number of iterations.
 #' @param engine the numerical method for the mixed Poisson families PLN, PGE, PW
 #'   and PLL: \code{"quadrature"} (default; adaptive quadrature on the log
@@ -102,7 +109,7 @@
 #' @param verbose logical.
 #' 
 #' @details
-#' \code{countreg_rp()} is the former name of \code{countreg_rp()}. It is
+#' \code{countreg.rp()} is the former name of \code{countreg_rp()}. It is
 #' deprecated (a name with a dot is easily mistaken for an S3 method): it
 #' still works, with a once-per-session warning, and calls
 #' \code{countreg_rp()}.
@@ -133,6 +140,26 @@
 #' The mixing distribution of the PLN, PGE, PLL and PW families uses its own
 #' Halton dimension, independent of the random parameters' draws.
 #'
+#' \strong{Gradient.} The optimizer uses the analytic gradient of the
+#' simulated log-likelihood: each panel's score is the average, over draws
+#' weighted by their posterior probabilities, of the family's score in the
+#' log mean times the derivative of the log mean in each parameter. The
+#' Poisson, NB1, NB2 and NBP families have closed-form scores; the other
+#' families use central differences in the log mean and in each distribution
+#' parameter, two density evaluations per parameter of the distribution
+#' whatever the number of regression parameters. A numeric gradient needs
+#' two likelihood evaluations per parameter, so fits are several times
+#' faster. \code{options(flexCountReg.rp_gradient = "numeric")} restores the
+#' numeric gradient, to check a fit.
+#'
+#' \strong{Convergence.} BHHH, NR and BFGSR stop when the log-likelihood
+#' changes by less than a tolerance between iterations, which a slow
+#' optimizer can also meet far from the maximum. After the fit,
+#' \code{countreg_rp()} computes the Newton decrement
+#' \eqn{g'(-H)^{-1}g} at the estimates (twice the further gain a Newton step
+#' predicts; stored as \code{model$newton_decrement}). Above 0.1, the fit is
+#' marked as not converged, with a warning.
+#'
 #' @references
 #' Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and interpretation for
 #' random parameter generalized linear models. \emph{Accident Analysis and
@@ -159,8 +186,7 @@
 #'                       data = washington_roads,
 #'                       family = "NB2",
 #'                       rpardists = c(speed50 = "n"),
-#'                       ndraws = 100,
-#'                       method = "BHHH")
+#'                       ndraws = 100)
 #' summary(rp_nb2)
 #' 
 #' # 2. Random Parameters with Panel Structure (if 'site_id' exists)
@@ -211,7 +237,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
                          ndraws = 500, scrambled = FALSE,
                          correlated = FALSE, group_var = NULL,
                          weights = NULL, offset = NULL,
-                         method = 'BHHH', max.iters = 1000,
+                         method = "BFGS", max.iters = 1000,
                          start.vals = NULL, verbose = FALSE,
                          stderr = "normal", bootstraps = NULL,
                          engine = "quadrature", keep_data = TRUE,
@@ -445,90 +471,59 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
     names(start) <- x_names
   }
   
-  # --- 5. Likelihood ---
-  local_probFunc <- get_probFunc(family)
+  # --- 5. Likelihood and its analytic gradient (see rp_gradient.R) ---
   n_var_params <- if (correlated) N_rand * (N_rand + 1) / 2 else N_rand
-  
-  ll_countreg_rp <- function(p) {
-    idx <- 0
-    take <- function(k) {
-      if (k == 0) return(NULL)
-      out <- p[idx + seq_len(k)]
-      idx <<- idx + k
-      out
+  rp_design <- list(
+    family = family, probFunc = get_probFunc(family), engine = engine,
+    y = y, N_obs = N_obs, X_Fixed = X_Fixed, X_offset = X_offset,
+    X_rand = X_rand, X_dis_1 = X_dis_1, X_dis_2 = X_dis_2,
+    X_het_mean = X_het_mean, X_het_var = X_het_var,
+    N_fixed = N_fixed, N_rand = N_rand, n_var_params = n_var_params,
+    N_het_mean = N_het_mean, N_het_var = N_het_var,
+    N_dis_1 = N_dis_1, N_dis_2 = N_dis_2,
+    hdraws = hdraws, rpardists = rpardists, rpar = rpar,
+    correlated = correlated, dist_haltons = dist_haltons,
+    normed_dist_haltons = normed_dist_haltons,
+    panel_group = panel_group, panel_idx = as.integer(panel_group),
+    w_panel = w_panel)
+  # The optimizer asks for the value and the gradient at the same point, so
+  # the last evaluation is kept for the gradient
+  rp_state <- NULL
+  rp_at <- function(p) {
+    if (is.null(rp_state) || !identical(rp_state$p, p)) {
+      rp_state <<- .fcr_rp_eval(p, rp_design)
     }
-    fixed_coefs <- take(N_fixed)
-    rand_means <- take(N_rand)
-    rand_vars <- take(n_var_params)
-    het_mean_coefs <- take(N_het_mean)
-    if (!is.null(het_mean_coefs)) {
-      het_mean_coefs <- matrix(het_mean_coefs, ncol = N_rand)
-    }
-    het_var_coefs <- take(N_het_var)
-    p_dis_1 <- take(N_dis_1)
-    p_dis_2 <- take(N_dis_2)
-    
-    vec_1 <- if (N_dis_1 == 0) NULL else if (is.null(X_dis_1))
-      rep(exp(p_dis_1), N_obs) else exp(as.vector(X_dis_1 %*% p_dis_1))
-    vec_2 <- if (N_dis_2 == 0) NULL else if (is.null(X_dis_2))
-      rep(exp(p_dis_2), N_obs) else exp(as.vector(X_dis_2 %*% p_dis_2))
-    
-    # GP2 with negative dispersion a requires 1 + a * mu > 0, which
-    # unbounded random parameters violate for some draws of every
-    # observation: the model is only defined for a >= 0 (alpha = a + 1)
-    if (family == "GP2" && any(vec_1 < 1)) {
-      return(rep(-Inf, length(w_panel)))
-    }
-    mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
-    
-    draws_info <- generate_random_draws(hdraws = hdraws, 
-                                        random_coefs_means = rand_means, 
-                                        rand_var_params = rand_vars, 
-                                        rpardists = rpardists, 
-                                        rpar = rpar, 
-                                        X_rand = X_rand,
-                                        het_mean_coefs = het_mean_coefs, 
-                                        X_het_mean = X_het_mean,
-                                        het_var_coefs = het_var_coefs, 
-                                        X_het_var = X_het_var,
-                                        correlated = correlated)
-    mu_mat <- exp(draws_info$xb_rand_mat) * mu_fixed
-    D <- ncol(mu_mat)
-    
-    probs_flat <- tryCatch(
-      local_probFunc(y = rep(y, times = D), 
-                     predicted = as.vector(mu_mat), 
-                     alpha = if (!is.null(vec_1)) rep(vec_1, times = D),
-                     sigma = if (!is.null(vec_2)) rep(vec_2, times = D),
-                     haltons = dist_haltons, 
-                     normed_haltons = normed_dist_haltons,
-                     engine = engine, log = TRUE),
-      error = function(e) rep(NA_real_, N_obs * D))
-    
-    # Panel log-likelihood per draw, averaged over draws on the log scale
-    log_probs <- matrix(probs_flat, nrow = N_obs, ncol = D)
-    sum_log <- rowsum(log_probs, group = panel_group, reorder = TRUE)
-    m <- apply(sum_log, 1, max)
-    ll_panel <- m + log(rowMeans(exp(sum_log - m)))
-    ll_panel[!is.finite(m)] <- m[!is.finite(m)]
-    # Panels with zero weight contribute exactly 0 (also when -Inf)
-    ll_panel[w_panel == 0] <- 0
-    
-    ll_panel * w_panel
+    rp_state
   }
+  ll_countreg_rp <- function(p) rp_at(p)$ll
+  gr_countreg_rp <- function(p) .fcr_rp_score(rp_at(p), rp_design)
+  use_grad <- !identical(getOption("flexCountReg.rp_gradient"), "numeric")
   
   # --- 6. Optimization ---
   fit <- maxLik::maxLik(
     ll_countreg_rp,
+    grad = if (use_grad) gr_countreg_rp,
     start = start,
     method = method,
     control = list(iterlim = max.iters, printLevel = print.level))
+  rp_state <- NULL
   names(fit$estimate) <- x_names
   fit$converged <- .fcr_converged(fit, method)
+  fit$newton_decrement <- .fcr_newton_decrement(fit)
   if (!isTRUE(fit$converged)) {
     warning("The optimizer did not report convergence (",
             trimws(fit$message), "). Consider a different `method` or more ",
             "`max.iters`.", call. = FALSE)
+  } else if (isTRUE(fit$newton_decrement > .fcr_decrement_tol)) {
+    # Stopped because the log-likelihood barely changed, not at a maximum
+    fit$converged <- FALSE
+    warning("The optimizer stopped (", trimws(fit$message), ") where the ",
+            "log-likelihood can still increase by about ",
+            signif(fit$newton_decrement / 2, 2), " (Newton decrement ",
+            "g'(-H)^-1 g = ", signif(fit$newton_decrement, 2), "), so the ",
+            "estimates are not at a maximum. Try ",
+            if (method != "BFGS") "`method = \"BFGS\"` or ",
+            "other starting values.", call. = FALSE)
   }
   
   # --- 7. Result Packaging ---

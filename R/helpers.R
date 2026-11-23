@@ -66,6 +66,28 @@ NULL
   }
 }
 
+# Newton decrement g' (-H)^+ g at the estimates (g the gradient, H the
+# Hessian; a generalized inverse where the likelihood is flat): twice the
+# increase in the log-likelihood that a Newton step predicts. maxLik's NR,
+# BHHH and BFGSR stop when the log-likelihood changes by less than a
+# tolerance between iterations (codes 2 and 8), which a crawling optimizer
+# also meets far from the maximum; the decrement tells the two apart.
+.fcr_newton_decrement <- function(fit) {
+  g <- fit$gradient
+  H <- fit$hessian
+  if (is.null(g) || is.null(H) || !all(is.finite(g)) || !all(is.finite(H))) {
+    return(NA_real_)
+  }
+  abs(as.numeric(crossprod(g, MASS::ginv(-H) %*% g)))
+}
+
+# Largest Newton decrement accepted as convergence: a predicted further gain
+# in the log-likelihood of at most 0.05, which changes a likelihood-ratio
+# statistic by at most 0.1. (A random-parameter standard deviation at 0 is a
+# corner of the likelihood, where the quadratic model behind the decrement
+# overstates the gain, so a tighter tolerance flags fits at their maximum.)
+.fcr_decrement_tol <- 0.1
+
 # Moment-based starting value of the log dispersion from a Poisson fit with
 # means mu, by the auxiliary regression of Cameron and Trivedi (2013, Sec.
 # 3.4) through the origin: for Var(Y) = mu + a mu^2 (NB2, PIG2, PIG),
@@ -684,6 +706,107 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
   }
 }
 
+# Scores of the negative binomial log-density with respect to eta = log(mu)
+# and log(alpha) (and log(P) for NBP), for the NB1 (size mu / alpha), NB2
+# (size 1 / alpha) and NBP (size mu^(2 - P) / alpha) parameterizations.
+#
+# Near the Poisson limit (size r -> Inf) the terms of the ln(alpha) score
+# are O(y) but cancel to O(alpha y^2), so the direct form loses about
+# log10(1 / c) digits, with c = max(y, mu) / r, and is NaN once alpha
+# underflows to 0. There the leading term of the series is used: for a
+# variance mu + alpha g(mu), the score is
+#   alpha g(mu) ((y - mu)^2 - y) / (2 mu^2),
+# with g = mu^2 (NB2), mu (NB1) or mu^P (NBP). The two errors balance at
+# c = 1e-8, where each is about 1e-8 relative.
+.fcr_nb_score <- function(family, y, mu, alpha, P = NULL) {
+  if (family == "NB2") {
+    r <- 1 / alpha
+    d_eta <- (y - mu) / (1 + alpha * mu)
+    # With one dispersion for all rows (and, in countreg_rp(), all draws)
+    # the digamma difference depends only on y: compute it once per count
+    psi <- if (length(r) > 1 && length(y) == length(r) &&
+               all(r == r[1]) && is.finite(r[1])) {
+      uy <- unique(y)
+      .fcr_digamma_diff(r[1], uy)[match(y, uy)]
+    } else .fcr_digamma_diff(r, y)
+    d_r <- psi - log1p(mu / r) + (mu - y) / (r + mu)
+    d_lnalpha <- -r * d_r                        # dr / dln(alpha) = -r
+    lim <- which(alpha * pmax(y, mu) < 1e-8)
+    d_lnalpha[lim] <- (alpha * ((y - mu)^2 - y) /
+                         (2 * (1 + alpha * mu)^2))[lim]
+    return(list(eta = d_eta, alpha = d_lnalpha))
+  }
+  if (family == "NB1") {                         # size r = mu / alpha
+    r <- mu / alpha
+    psi <- .fcr_digamma_diff(r, y)
+    d_eta <- r * (psi - log1p(alpha))
+    d_lnalpha <- -r * (psi - log1p(alpha)) - r * alpha / (1 + alpha) +
+      y / (1 + alpha)
+    lim <- which(alpha * pmax(y, mu) / mu < 1e-8)
+    d_eta[lim] <- (y - mu)[lim]
+    d_lnalpha[lim] <- (alpha * ((y - mu)^2 - y) / (2 * mu))[lim]
+    return(list(eta = d_eta, alpha = d_lnalpha))
+  }
+  # NBP: size r = mu^(2 - P) / alpha, so dr/deta = (2 - P) r,
+  # dr/dln(alpha) = -r and dr/dln(P) = -P log(mu) r. With r fixed,
+  # d log f / d eta = r (y - mu) / (r + mu).
+  r <- mu^(2 - P) / alpha
+  rd_r <- r * (.fcr_digamma_diff(r, y) - log1p(mu / r) + (mu - y) / (r + mu))
+  lim <- which(pmax(y, mu) / r < 1e-8)
+  rd_r[lim] <- (-((y - mu)^2 - y) * r / (2 * (r + mu)^2))[lim]
+  list(eta = r * (y - mu) / (r + mu) + (2 - P) * rd_r,
+       alpha = -rd_r,
+       sigma = -P * log(mu) * rd_r)
+}
+
+# Scores of log P(Y = y) with respect to log(mu) and the log-scale
+# distribution parameters (list(eta, alpha, sigma); NULL for a parameter the
+# family does not have). Families with a `score` in the registry use it.
+# Others use central differences of the density on the log scale, two
+# density calls per parameter whatever the size of the model; `center` is
+# log P(Y = y) at the given values. Where one side of the difference is not
+# finite (a step across the edge of the support) the one-sided difference
+# is used.
+#   dens_args  further arguments of the family's `dens` (haltons, engine)
+.fcr_family_score <- function(family, y, mu, alpha = NULL, sigma = NULL,
+                              center = NULL, dens_args = list()) {
+  fam <- .fcr_get_family(family)
+  if (!is.null(fam$score)) {
+    s <- fam$score(y, mu, alpha, sigma)
+    return(list(eta = s$eta,
+                alpha = if (!is.null(alpha)) s$alpha,
+                sigma = if (!is.null(sigma)) s$sigma))
+  }
+  logf <- function(mu, alpha, sigma) {
+    out <- tryCatch(
+      do.call(fam$dens, c(list(y = y, predicted = mu, alpha = alpha,
+                               sigma = sigma), dens_args, list(log = TRUE))),
+      error = function(e) rep(NA_real_, length(y)))
+    out
+  }
+  if (is.null(center)) center <- logf(mu, alpha, sigma)
+  h <- .Machine$double.eps^(1 / 3)
+  diff_log <- function(up, dn) {
+    d <- (up - dn) / (2 * h)
+    ok_u <- is.finite(up)
+    ok_d <- is.finite(dn)
+    one_u <- ok_u & !ok_d
+    one_d <- ok_d & !ok_u
+    d[one_u] <- ((up - center) / h)[one_u]
+    d[one_d] <- ((center - dn) / h)[one_d]
+    d[!ok_u & !ok_d] <- NA_real_
+    d[!is.finite(center)] <- NA_real_
+    d
+  }
+  e <- exp(h)
+  list(
+    eta = diff_log(logf(mu * e, alpha, sigma), logf(mu / e, alpha, sigma)),
+    alpha = if (!is.null(alpha))
+      diff_log(logf(mu, alpha * e, sigma), logf(mu, alpha / e, sigma)),
+    sigma = if (!is.null(sigma))
+      diff_log(logf(mu, alpha, sigma * e), logf(mu, alpha, sigma / e)))
+}
+
 # Analytic per-observation gradient (scores) of the countreg() log-likelihood
 # for the Poisson, NB1 and NB2 families, with an optional dispersion formula
 # (no underreporting or zero model). Rows are multiplied by the weights.
@@ -698,33 +821,8 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
   } else {
     delta <- p[kx + seq_len(ncol(W_alpha))]
     alpha <- exp(as.vector(W_alpha %*% delta))
-    # Near the Poisson limit (size r -> Inf) the terms of the ln(alpha) score
-    # are O(y) but cancel to O(alpha y^2), so the direct form loses about
-    # log10(1 / c) digits, with c = max(y, mu) / r, and is NaN once alpha
-    # underflows to 0. There the leading term of the series is used: for a
-    # variance mu + alpha g(mu), the score is
-    #   alpha g(mu) ((y - mu)^2 - y) / (2 mu^2),
-    # with g = mu^2 (NB2) or g = mu (NB1). The two errors balance at
-    # c = 1e-8, where each is about 1e-8 relative.
-    if (family == "NB2") {
-      r <- 1 / alpha
-      d_eta <- (y - mu) / (1 + alpha * mu)
-      d_r <- .fcr_digamma_diff(r, y) - log1p(mu / r) + (mu - y) / (r + mu)
-      d_lnalpha <- -r * d_r                      # dr / dln(alpha) = -r
-      lim <- which(alpha * pmax(y, mu) < 1e-8)
-      d_lnalpha[lim] <- (alpha * ((y - mu)^2 - y) /
-                           (2 * (1 + alpha * mu)^2))[lim]
-    } else {                                     # NB1: size r = mu / alpha
-      r <- mu / alpha
-      psi <- .fcr_digamma_diff(r, y)
-      d_eta <- r * (psi - log1p(alpha))
-      d_lnalpha <- -r * (psi - log1p(alpha)) - r * alpha / (1 + alpha) +
-        y / (1 + alpha)
-      lim <- which(alpha * pmax(y, mu) / mu < 1e-8)
-      d_eta[lim] <- (y - mu)[lim]
-      d_lnalpha[lim] <- (alpha * ((y - mu)^2 - y) / (2 * mu))[lim]
-    }
-    G <- cbind(d_eta * X, d_lnalpha * W_alpha)
+    s <- .fcr_nb_score(family, y, mu, alpha)
+    G <- cbind(s$eta * X, s$alpha * W_alpha)
   }
   G <- G * w
   G[w == 0, ] <- 0

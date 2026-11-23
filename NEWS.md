@@ -13,6 +13,40 @@
   or panels; the bootstrap is refused; `summary()` notes that LR tests, AIC
   and BIC are not valid; and `regCompTest()` runs no LR test.
 
+## Faster random-parameter estimation
+
+* `countreg_rp()` now gives the optimizer the analytic gradient of the
+  simulated log-likelihood instead of a numeric one. Each panel's score is
+  the posterior-weighted average over draws of the family's score in the
+  log mean times the derivative of the log mean in each parameter. This
+  covers fixed coefficients; normal, lognormal, uniform, triangular and
+  gamma random parameters; correlated (Cholesky) parameters; heterogeneity
+  in means and in variances; and distribution-parameter formulas.
+  Poisson, NB1, NB2 and NBP have closed-form scores. The other families use
+  central differences in the log mean and in each distribution parameter,
+  which take two density evaluations per distribution parameter whatever
+  the number of regression parameters. On `washington_roads` with three
+  random parameters (9 parameters), a 500-draw NB2 fit by BFGS takes 8.6 s
+  instead of 41 s, and a 100-draw fit by BHHH takes 6 s instead of 38 s,
+  with the same log-likelihood. Newton-Raphson's Hessian is now the
+  numeric derivative of the analytic gradient, which is faster and more
+  accurate than second differences of the log-likelihood.
+  `options(flexCountReg.rp_gradient = "numeric")` restores the numeric
+  gradient.
+* `countreg_rp()` no longer reports convergence where the optimizer only
+  stopped because the log-likelihood changed little between iterations.
+  BHHH, NR and BFGSR stop on that test, and a crawling BHHH also meets it
+  far from the maximum. On `washington_roads`, a 100-draw NB2 fit with
+  three random parameters started from the matching `countreg()` fit
+  "converged" at -1086.9, 21.6 below the maximum. The fit now checks the
+  Newton decrement g'(-H)^-1 g at the estimates, which is twice the gain a
+  Newton step predicts. Above 0.1 it sets `converged = FALSE` and warns
+  with the predicted gain. Fits with `max.iters = 0` by BFGS, which `optim()`
+  reported as converged, are flagged the same way. The decrement is stored
+  as `model$newton_decrement`.
+* Families can declare a `score` function in the internal registry; the
+  NB1, NB2 and NBP scores are shared by `countreg()` and `countreg_rp()`.
+
 ## Interactive app
 
 * New `launch_app()` opens an interactive interface to flexCountReg in a
@@ -295,6 +329,16 @@
   coefficient matrix, or `tibble::as_tibble(summary(m))` for the tibble that
   `summary()` returned before. The offset is shown as a note, not as a
   coefficient row.
+* `countreg_rp()` now uses `method = "BFGS"` by default (it was `"BHHH"`).
+  With the analytic gradient, BFGS reached the maximum in each of six test
+  models. BHHH failed on two of the six. On a 500-draw NB2 model with three
+  random parameters it was still at -1093 after 200 iterations, while BFGS
+  reached -1065.5 in about 10 s. On the same model with 100 draws it
+  reported convergence at the Poisson boundary (ln(alpha) = -167), 0.08
+  below the maximum, where no gradient method can recover. BHHH remains
+  available and is often faster on simple models. Code that relies on the
+  default can give different estimates; pass `method = "BHHH"` to
+  reproduce earlier fits.
 * Fitted objects no longer keep the optimizer's log-likelihood function
   (`maxLik::objectiveFn(fit$model)` is unavailable): its closure held the
   data, design matrices and draws, so fits were several times larger than

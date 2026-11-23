@@ -14,9 +14,6 @@ build on these generics.
 coef(object, ...)
 
 # S3 method for class 'flexCountReg'
-vcov(object, ...)
-
-# S3 method for class 'flexCountReg'
 nobs(object, ...)
 
 # S3 method for class 'flexCountReg'
@@ -114,8 +111,11 @@ parameters, including distribution, underreporting, random-parameter and
 heterogeneity parameters, named as in
 [`summary()`](https://rdrr.io/r/base/summary.html).
 [`vcov()`](https://rdrr.io/r/stats/vcov.html) returns the covariance
-matrix chosen at fit time: Hessian-based, robust (sandwich) or
-bootstrapped (see the `stderr` argument of each estimator).
+matrix chosen at fit time: Hessian-based, robust (sandwich),
+cluster-robust or bootstrapped (see the `stderr` argument of each
+estimator); see
+[`vcov.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md)
+to recompute it after the fit.
 
 [`nobs()`](https://rdrr.io/r/stats/nobs.html) is the number of rows used
 in estimation. For panel models

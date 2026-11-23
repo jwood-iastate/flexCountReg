@@ -392,25 +392,25 @@ summary(fit)
 #> 
 #> Class 1 (NB2):
 #>                              Estimate Std. Error z value Pr(>|z|)    
-#> Component1:Mean:(Intercept)    2.0974     0.0145  145.07   <2e-16 ***
-#> Component1:Mean:shell_weight   0.9677     0.0437   22.13   <2e-16 ***
-#> Component1:ln(alpha)         -20.6190   333.1417   -0.06     0.95    
+#> Component1:Mean:(Intercept)    2.0974     0.0145  144.74   <2e-16 ***
+#> Component1:Mean:shell_weight   0.9677     0.0439   22.05   <2e-16 ***
+#> Component1:ln(alpha)         -20.6190   366.8057   -0.06     0.96    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Class 2 (NB2):
 #>                              Estimate Std. Error z value Pr(>|z|)    
-#> Component2:Mean:(Intercept)    1.7141     0.0189   90.58   <2e-16 ***
-#> Component2:Mean:shell_weight   2.5623     0.1107   23.16   <2e-16 ***
-#> Component2:ln(alpha)         -20.2864   441.7990   -0.05     0.96    
+#> Component2:Mean:(Intercept)    1.7141     0.0189   90.51   <2e-16 ***
+#> Component2:Mean:shell_weight   2.5623     0.1107   23.14   <2e-16 ***
+#> Component2:ln(alpha)         -20.2864   462.1310   -0.04     0.96    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Mixing (multinomial logit):
 #>                               Estimate Std. Error z value Pr(>|z|)    
-#> Mixing:Component1:(Intercept)     4.32       1.08    4.01  6.1e-05 ***
-#> Mixing:Component1:sexI           -9.33       1.52   -6.14  8.3e-10 ***
-#> Mixing:Component1:sexM            7.37      71.57    0.10     0.92    
+#> Mixing:Component1:(Intercept)     4.32       1.16    3.74  0.00018 ***
+#> Mixing:Component1:sexI           -9.33       1.57   -5.94  2.8e-09 ***
+#> Mixing:Component1:sexM            7.37      71.58    0.10  0.91799    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

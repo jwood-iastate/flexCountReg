@@ -49,9 +49,6 @@ including with <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'flexCountReg'</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># S3 method for class 'flexCountReg'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'flexCountReg'</span></span>
@@ -138,8 +135,9 @@ the main model formula. <code><a href="https://rdrr.io/r/stats/terms.html" class
     <p><code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> returns all estimated parameters, including distribution,
 underreporting, random-parameter and heterogeneity parameters, named as in
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>. <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> returns the covariance matrix chosen at
-fit time: Hessian-based, robust (sandwich) or bootstrapped (see the
-<code>stderr</code> argument of each estimator).</p>
+fit time: Hessian-based, robust (sandwich), cluster-robust or
+bootstrapped (see the <code>stderr</code> argument of each estimator); see
+<code><a href="vcov.flexCountReg.html">vcov.flexCountReg</a></code> to recompute it after the fit.</p>
 <p><code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code> is the number of rows used in estimation. For panel models
 (<code><a href="renb.html">renb()</a></code>, <code><a href="poisLindRE.html">poisLind.re()</a></code>, <code><a href="repois.html">repois()</a></code>, <code><a href="negmultinom.html">negmultinom()</a></code>
 and <code><a href="countreg_rp.html">countreg_rp()</a></code> with <code>panel_id</code>), the <code>nobs</code> attribute

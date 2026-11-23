@@ -54,7 +54,6 @@ Mixtures of count distributions and latent-class count regression.
   [`as_tibble(`*`<summary.flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.md)
   : Summarize a flexCountReg model
 - [`coef(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
-  [`vcov(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   [`nobs(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   [`logLik(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   [`formula(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
@@ -65,6 +64,11 @@ Mixtures of count distributions and latent-class count regression.
   [`simulate(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   [`print(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   : Standard methods for flexCountReg models
+- [`vcov(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md)
+  : Covariance matrix of the estimates
+- [`estfun(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/estfun.flexCountReg.md)
+  [`bread(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/estfun.flexCountReg.md)
+  : Scores and bread for the sandwich package
 - [`tidy(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.md)
   [`glance(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.md)
   [`augment(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.md)
@@ -108,6 +112,18 @@ A parsnip model specification with the flexCountReg engine.
   : Count regression model specification for tidymodels
 - [`count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md)
   : Count distribution tuning parameter
+
+## User-defined count distributions
+
+Define a count distribution from its log probability function and use it
+in any of the models.
+
+- [`new_count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/new_count_family.md)
+  : Define a count distribution for the regression functions
+- [`count_param()`](https://jwood-iastate.github.io/flexCountReg/reference/count_param.md)
+  : A distribution parameter of a user-defined count family
+- [`check_count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/check_count_family.md)
+  : Check a user-defined count family
 
 ## Count distributions
 

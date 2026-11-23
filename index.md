@@ -7,10 +7,15 @@ issues, including:
 - many count distributions beyond the Poisson and negative binomial (see
   the list below), with any distribution parameter modeled as a function
   of variables (generalized count models);
+- your own count distributions, defined from a log probability function
+  with
+  [`new_count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/new_count_family.md)
+  and usable in every model;
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;
 - random parameters, with heterogeneity in their means and variances,
-  and exact, simulated and Empirical Bayes (observation-specific)
+  analytic gradients, separate simulation draws for each panel, and
+  exact, simulated and Empirical Bayes (observation-specific)
   predictions;
 - random-effects panel models (negative binomial, Poisson-Lindley,
   negative multinomial);
@@ -18,6 +23,9 @@ issues, including:
   covariate-dependent or known class proportions, shared or
   class-specific parameters, different families in different classes,
   and one class per panel;
+- inference with Hessian-based, robust, cluster-robust (one-way or
+  multiway) or bootstrap standard errors, frequency or sampling weights,
+  and methods for the sandwich and lmtest packages;
 - model comparison and diagnostics: likelihood-ratio tests, comparison
   tables, marginal effects, CURE plots, rootograms and randomized
   quantile residuals;
@@ -73,13 +81,15 @@ analysis:
   factors).
 - **Build**: choose the model (count regression, random parameters,
   random-effects panel models, finite mixtures or latent classes), the
-  count distribution, response, predictors, exposure or offset,
-  frequency weights and panel identifier, and the model-specific
-  options. The draft is checked before it can be estimated.
+  count distribution, response, predictors, interactions between
+  predictors, exposure or offset, frequency weights and panel
+  identifier, and the model-specific options. The draft is checked
+  before it can be estimated.
 - **Fit**: models are estimated in the background, so the app stays
   responsive and long fits can be canceled. The tab shows the summary,
-  coefficients, numerical checks (convergence, gradient, conditioning of
-  the information matrix) and, for mixtures, class sizes and starts.
+  coefficients, marginal effects (or elasticities) with standard errors,
+  numerical checks (convergence, gradient, conditioning of the
+  information matrix) and, for mixtures, class sizes and starts.
 - **Diagnose**: rootograms, randomized quantile residuals and CURE plots
   for any of the fitted models, with the plots saved as JPEG files at
   the size and resolution you choose (for papers and reports).
@@ -133,11 +143,15 @@ computer.
 - [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
   estimates cross-sectional count regression models with any of the
   distributions below, optional models for the distribution parameters,
-  underreporting, and zero-inflated or hurdle zero models.
+  underreporting, and zero-inflated or hurdle zero models, with
+  Hessian-based, robust, cluster-robust (`cluster = ~ site`) or
+  bootstrap standard errors.
 - [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   estimates random parameters count models, optionally with panels,
   correlated random parameters, and heterogeneity in the means and
-  variances of the random parameters.
+  variances of the random parameters. Fits use the analytic gradient of
+  the simulated likelihood and, by default, separate Halton draws for
+  each panel.
 - [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
   and
   [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
@@ -158,6 +172,18 @@ computer.
   and NM-P).
 - [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
   estimates the random effects Poisson model with a gamma random effect.
+- [`new_count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/new_count_family.md)
+  defines a count distribution from its log probability function (with
+  optional mean, variance, CDF and random-draw functions) for use as
+  `family` in
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
+  [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  and
+  [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md);
+  [`check_count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/check_count_family.md)
+  tests it numerically. See
+  [`vignette("user-defined-count-distributions", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/user-defined-count-distributions.md).
 - [`count_reg()`](https://jwood-iastate.github.io/flexCountReg/reference/count_reg.md)
   is a [parsnip](https://parsnip.tidymodels.org/) model specification
   with a `"flexCountReg"` engine, for use with tidymodels (the
@@ -196,6 +222,15 @@ computer.
   [`simulate()`](https://rdrr.io/r/stats/simulate.html) and
   [`update()`](https://rdrr.io/r/stats/update.html) work as for other R
   models.
+- `vcov(m, type = "cluster", cluster = ~ corridor)` recomputes
+  cluster-robust (one-way or multiway) covariances after the fit,
+  without refitting; `type = "robust"` and `"hessian"` are also
+  available. `estfun()` and `bread()` methods let
+  [`sandwich::vcovCL()`](https://zeileis.codeberg.page/sandwich/reference/vcovCL.html),
+  [`sandwich::vcovHC()`](https://zeileis.codeberg.page/sandwich/reference/vcovHC.html)
+  and
+  [`lmtest::coeftest()`](https://rdrr.io/pkg/lmtest/man/coeftest.html)
+  work with flexCountReg models.
 - [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
   [`glance()`](https://generics.r-lib.org/reference/glance.html) and
   [`augment()`](https://generics.r-lib.org/reference/augment.html)
@@ -446,6 +481,10 @@ Checking the CURE plot:
 ``` r
 
 cureplot(gen.nb2, indvar = "lnaadt")
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
+#> Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
 ```
 
 ![](reference/figures/README-cureplot-initial-1.png)
@@ -465,7 +504,7 @@ summary(gen.nb2)
 #>     family = "NB2", dis_param_formula_1 = ~lnlength, method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 51 
+#> Iterations: 50 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
@@ -485,6 +524,10 @@ summary(gen.nb2)
 #> Log-likelihood: -1061.914 | AIC: 2141.828 | BIC: 2189.653 
 #> N: 1501
 cureplot(gen.nb2, indvar = "lnaadt")
+#> Warning: Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
+#> Removed 1 row containing missing values or values outside the scale range
+#> (`geom_line()`).
 ```
 
 ![](reference/figures/README-cureplot-updt-1.png)
@@ -509,15 +552,15 @@ summary(gen.nbp)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                       Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)            -7.7637     0.4850  -16.01  < 2e-16 ***
-#> lnaadt                  0.9382     0.0567   16.53  < 2e-16 ***
-#> lnlength                0.8362     0.0696   12.02  < 2e-16 ***
-#> speed50                -0.3843     0.1107   -3.47  0.00052 ***
-#> ShouldWidth04           0.2578     0.0922    2.80  0.00517 ** 
-#> AADT10kplus             0.6893     0.1317    5.23  1.7e-07 ***
-#> ln(alpha):(Intercept)  -1.4960     0.5350   -2.80  0.00517 ** 
-#> ln(alpha):lnlength     -0.1673     0.4450   -0.38  0.70689    
-#> ln(p)                   0.5247     0.1837    2.86  0.00429 ** 
+#> (Intercept)            -7.7637     0.5697  -13.63  < 2e-16 ***
+#> lnaadt                  0.9382     0.0669   14.03  < 2e-16 ***
+#> lnlength                0.8362     0.0692   12.08  < 2e-16 ***
+#> speed50                -0.3843     0.1126   -3.41  0.00064 ***
+#> ShouldWidth04           0.2578     0.0922    2.80  0.00514 ** 
+#> AADT10kplus             0.6893     0.1318    5.23  1.7e-07 ***
+#> ln(alpha):(Intercept)  -1.4960     0.7251   -2.06  0.03908 *  
+#> ln(alpha):lnlength     -0.1673     0.4685   -0.36  0.72096    
+#> ln(p)                   0.5247     0.2286    2.30  0.02169 *  
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -544,16 +587,16 @@ regCompTable(list("Generalized NB-2" = gen.nb2, "Generalized NB-P" = gen.nbp))
 #> # A tibble: 15 × 3
 #>    Parameter             `Generalized NB-2` `Generalized NB-P`
 #>    <chr>                 <chr>              <chr>             
-#>  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.485)*** 
-#>  2 lnaadt                0.93 (0.057)***    0.938 (0.057)***  
-#>  3 lnlength              0.853 (0.07)***    0.836 (0.07)***   
-#>  4 speed50               -0.4 (0.109)***    -0.384 (0.111)*** 
+#>  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.57)***  
+#>  2 lnaadt                0.93 (0.057)***    0.938 (0.067)***  
+#>  3 lnlength              0.853 (0.07)***    0.836 (0.069)***  
+#>  4 speed50               -0.4 (0.109)***    -0.384 (0.113)*** 
 #>  5 ShouldWidth04         0.261 (0.092)**    0.258 (0.092)**   
 #>  6 AADT10kplus           5.961 (4.512)      0.689 (0.132)***  
 #>  7 I(AADT10kplus/lnaadt) -50.138 (43.002)   ---               
-#>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.535)**  
-#>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.445)    
-#> 10 ln(p)                 ---                0.525 (0.184)**   
+#>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.725)*   
+#>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.468)    
+#> 10 ln(p)                 ---                0.525 (0.229)*    
 #> 11 N Obs.                1501               1501              
 #> 12 LL                    -1061.914          -1062.195         
 #> 13 AIC                   2141.828           2142.389          
@@ -595,15 +638,18 @@ mean(washington_roads$Animal == 0)
 #> [1] 0.9540306
 zip <- countreg(Animal ~ lnaadt + lnlength, data = washington_roads,
                 family = "Poisson", zero_formula = ~ speed50, method = "NR")
+#> Warning: The Hessian is not negative definite at the estimates, so the standard
+#> errors of (Intercept), lnaadt are NA. The estimate may be on the boundary of
+#> the parameter space or not at a maximum.
 tidy(zip)
 #> # A tibble: 5 × 6
-#>   term             component estimate std.error statistic  p.value
-#>   <chr>            <chr>        <dbl>     <dbl>     <dbl>    <dbl>
-#> 1 (Intercept)      mean        -8.64      1.17     -7.41  1.26e-13
-#> 2 lnaadt           mean         0.976     0.134     7.28  3.33e-13
-#> 3 lnlength         mean         1.53      0.212     7.21  5.52e-13
-#> 4 Zero:(Intercept) zero        -0.116     0.482    -0.241 8.10e- 1
-#> 5 Zero:speed50     zero         1.51      0.478     3.16  1.59e- 3
+#>   term             component estimate std.error statistic   p.value
+#>   <chr>            <chr>        <dbl>     <dbl>     <dbl>     <dbl>
+#> 1 (Intercept)      mean        -8.64     NA        NA     NA       
+#> 2 lnaadt           mean         0.976    NA        NA     NA       
+#> 3 lnlength         mean         1.53      0.207     7.40   1.35e-13
+#> 4 Zero:(Intercept) zero        -0.116     0.399    -0.290  7.72e- 1
+#> 5 Zero:speed50     zero         1.51      0.458     3.30   9.74e- 4
 rbind(Poisson = glance(update(zip, zero_formula = NULL)),
       ZIP = glance(zip))[, c("logLik", "AIC", "BIC")]
 #> # A tibble: 2 × 3
@@ -678,5 +724,7 @@ The vignettes cover the main workflows. Start with
   [`vignette("numerical-reliability", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.md)
 - Simulation studies for count models:
   [`vignette("simulation-studies", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/simulation-studies.md)
+- Fitting your own count distribution:
+  [`vignette("user-defined-count-distributions", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/user-defined-count-distributions.md)
 - Adding a count distribution to flexCountReg:
   [`vignette("extending-count-distributions", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/extending-count-distributions.md)

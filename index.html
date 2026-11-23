@@ -62,10 +62,12 @@
 <p>The goal of flexCountReg is to provide functions that allow the analyst to estimate count regression models that can handle multiple analysis issues, including:</p>
 <ul>
 <li>many count distributions beyond the Poisson and negative binomial (see the list below), with any distribution parameter modeled as a function of variables (generalized count models);</li>
+<li>your own count distributions, defined from a log probability function with <code><a href="reference/new_count_family.html">new_count_family()</a></code> and usable in every model;</li>
 <li>underreporting, and zero-inflated or hurdle versions of every distribution;</li>
-<li>random parameters, with heterogeneity in their means and variances, and exact, simulated and Empirical Bayes (observation-specific) predictions;</li>
+<li>random parameters, with heterogeneity in their means and variances, analytic gradients, separate simulation draws for each panel, and exact, simulated and Empirical Bayes (observation-specific) predictions;</li>
 <li>random-effects panel models (negative binomial, Poisson-Lindley, negative multinomial);</li>
 <li>finite mixtures and latent-class count regressions, with constant, covariate-dependent or known class proportions, shared or class-specific parameters, different families in different classes, and one class per panel;</li>
+<li>inference with Hessian-based, robust, cluster-robust (one-way or multiway) or bootstrap standard errors, frequency or sampling weights, and methods for the sandwich and lmtest packages;</li>
 <li>model comparison and diagnostics: likelihood-ratio tests, comparison tables, marginal effects, CURE plots, rootograms and randomized quantile residuals;</li>
 <li>an interactive app (<code><a href="reference/launch_app.html">launch_app()</a></code>) for the whole workflow, from data to a downloadable R script that reproduces the analysis.</li>
 </ul>
@@ -90,9 +92,9 @@
 <li>
 <strong>Data</strong>: load one of the example datasets or a CSV file, inspect the columns and missing values, and create new variables (logs, powers, standardized values, indicators, products, ratios, categories and factors).</li>
 <li>
-<strong>Build</strong>: choose the model (count regression, random parameters, random-effects panel models, finite mixtures or latent classes), the count distribution, response, predictors, exposure or offset, frequency weights and panel identifier, and the model-specific options. The draft is checked before it can be estimated.</li>
+<strong>Build</strong>: choose the model (count regression, random parameters, random-effects panel models, finite mixtures or latent classes), the count distribution, response, predictors, interactions between predictors, exposure or offset, frequency weights and panel identifier, and the model-specific options. The draft is checked before it can be estimated.</li>
 <li>
-<strong>Fit</strong>: models are estimated in the background, so the app stays responsive and long fits can be canceled. The tab shows the summary, coefficients, numerical checks (convergence, gradient, conditioning of the information matrix) and, for mixtures, class sizes and starts.</li>
+<strong>Fit</strong>: models are estimated in the background, so the app stays responsive and long fits can be canceled. The tab shows the summary, coefficients, marginal effects (or elasticities) with standard errors, numerical checks (convergence, gradient, conditioning of the information matrix) and, for mixtures, class sizes and starts.</li>
 <li>
 <strong>Diagnose</strong>: rootograms, randomized quantile residuals and CURE plots for any of the fitted models, with the plots saved as JPEG files at the size and resolution you choose (for papers and reports).</li>
 <li>
@@ -122,9 +124,9 @@
 <p><strong>Model Estimation Functions</strong></p>
 <ul>
 <li>
-<code><a href="reference/countreg.html">countreg()</a></code> estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models.</li>
+<code><a href="reference/countreg.html">countreg()</a></code> estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models, with Hessian-based, robust, cluster-robust (<code>cluster = ~ site</code>) or bootstrap standard errors.</li>
 <li>
-<code><a href="reference/countreg_rp.html">countreg_rp()</a></code> estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.</li>
+<code><a href="reference/countreg_rp.html">countreg_rp()</a></code> estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters. Fits use the analytic gradient of the simulated likelihood and, by default, separate Halton draws for each panel.</li>
 <li>
 <code><a href="reference/countreg_mix.html">countreg_mix()</a></code> and <code><a href="reference/countreg_mix.html">countreg_lc()</a></code> estimate finite-mixture and latent-class count models (the same engine under two vocabularies), with several reproducible starts, and <code><a href="reference/component_probs.html">component_probs()</a></code> / <code><a href="reference/component_probs.html">class_probs()</a></code> give prior or posterior class probabilities.</li>
 <li>
@@ -135,6 +137,8 @@
 <code><a href="reference/negmultinom.html">negmultinom()</a></code> estimates negative multinomial (random effects) panel models (NM1, NM2 and NM-P).</li>
 <li>
 <code><a href="reference/repois.html">repois()</a></code> estimates the random effects Poisson model with a gamma random effect.</li>
+<li>
+<code><a href="reference/new_count_family.html">new_count_family()</a></code> defines a count distribution from its log probability function (with optional mean, variance, CDF and random-draw functions) for use as <code>family</code> in <code><a href="reference/countreg.html">countreg()</a></code>, <code><a href="reference/countreg_rp.html">countreg_rp()</a></code>, <code><a href="reference/countreg_mix.html">countreg_mix()</a></code> and <code><a href="reference/countreg_mix.html">countreg_lc()</a></code>; <code><a href="reference/check_count_family.html">check_count_family()</a></code> tests it numerically. See <code><a href="articles/user-defined-count-distributions.html">vignette("user-defined-count-distributions", package = "flexCountReg")</a></code>.</li>
 <li>
 <code><a href="reference/count_reg.html">count_reg()</a></code> is a <a href="https://parsnip.tidymodels.org/" class="external-link">parsnip</a> model specification with a <code>"flexCountReg"</code> engine, for use with tidymodels (the distribution can be tuned with <code><a href="reference/count_family.html">count_family()</a></code>).</li>
 </ul>
@@ -148,6 +152,8 @@
 <code><a href="reference/tolerance_interval.html">tolerance_interval()</a></code> gives content tolerance intervals for <code><a href="reference/countreg.html">countreg()</a></code> models: count ranges intended to contain at least a stated share of the outcome distribution with a stated confidence.</li>
 <li>
 <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code>, <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code>, <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code>, <code><a href="https://rdrr.io/r/stats/nobs.html" class="external-link">nobs()</a></code>, <code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> (response, Pearson and randomized quantile), <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code> and <code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update()</a></code> work as for other R models.</li>
+<li>
+<code>vcov(m, type = "cluster", cluster = ~ corridor)</code> recomputes cluster-robust (one-way or multiway) covariances after the fit, without refitting; <code>type = "robust"</code> and <code>"hessian"</code> are also available. <code>estfun()</code> and <code>bread()</code> methods let <code><a href="https://zeileis.codeberg.page/sandwich/reference/vcovCL.html" class="external-link">sandwich::vcovCL()</a></code>, <code><a href="https://zeileis.codeberg.page/sandwich/reference/vcovHC.html" class="external-link">sandwich::vcovHC()</a></code> and <code><a href="https://rdrr.io/pkg/lmtest/man/coeftest.html" class="external-link">lmtest::coeftest()</a></code> work with flexCountReg models.</li>
 <li>
 <code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code>, <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> and <code><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment()</a></code> return tibbles in the broom format.</li>
 </ul>
@@ -359,7 +365,11 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">oldpar</span><span class="op">)</span></span></code></pre></div>
 <p>Checking the CURE plot:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span>
+<span><span class="co">#&gt; Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
 <p><img src="reference/figures/README-cureplot-initial-1.png" alt="" width="100%"></p>
 <p>Modifying the model:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -374,7 +384,7 @@
 <span><span class="co">#&gt;     family = "NB2", dis_param_formula_1 = ~lnlength, method = "BFGS")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model: countreg | family: NB2 | optimizer: BFGS</span></span>
-<span><span class="co">#&gt; Iterations: 51 </span></span>
+<span><span class="co">#&gt; Iterations: 50 </span></span>
 <span><span class="co">#&gt; Convergence: successful convergence </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
@@ -393,7 +403,11 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Log-likelihood: -1061.914 | AIC: 2141.828 | BIC: 2189.653 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span>
-<span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">gen.nb2</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span>
+<span><span class="co">#&gt; Removed 1 row containing missing values or values outside the scale range</span></span>
+<span><span class="co">#&gt; (`geom_line()`).</span></span></code></pre></div>
 <p><img src="reference/figures/README-cureplot-updt-1.png" alt="" width="100%"></p>
 <p>Estimating another model (NB-P), without the interaction:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
@@ -413,15 +427,15 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
 <span><span class="co">#&gt;                       Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; (Intercept)            -7.7637     0.4850  -16.01  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; lnaadt                  0.9382     0.0567   16.53  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; lnlength                0.8362     0.0696   12.02  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; speed50                -0.3843     0.1107   -3.47  0.00052 ***</span></span>
-<span><span class="co">#&gt; ShouldWidth04           0.2578     0.0922    2.80  0.00517 ** </span></span>
-<span><span class="co">#&gt; AADT10kplus             0.6893     0.1317    5.23  1.7e-07 ***</span></span>
-<span><span class="co">#&gt; ln(alpha):(Intercept)  -1.4960     0.5350   -2.80  0.00517 ** </span></span>
-<span><span class="co">#&gt; ln(alpha):lnlength     -0.1673     0.4450   -0.38  0.70689    </span></span>
-<span><span class="co">#&gt; ln(p)                   0.5247     0.1837    2.86  0.00429 ** </span></span>
+<span><span class="co">#&gt; (Intercept)            -7.7637     0.5697  -13.63  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; lnaadt                  0.9382     0.0669   14.03  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; lnlength                0.8362     0.0692   12.08  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; speed50                -0.3843     0.1126   -3.41  0.00064 ***</span></span>
+<span><span class="co">#&gt; ShouldWidth04           0.2578     0.0922    2.80  0.00514 ** </span></span>
+<span><span class="co">#&gt; AADT10kplus             0.6893     0.1318    5.23  1.7e-07 ***</span></span>
+<span><span class="co">#&gt; ln(alpha):(Intercept)  -1.4960     0.7251   -2.06  0.03908 *  </span></span>
+<span><span class="co">#&gt; ln(alpha):lnlength     -0.1673     0.4685   -0.36  0.72096    </span></span>
+<span><span class="co">#&gt; ln(p)                   0.5247     0.2286    2.30  0.02169 *  </span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -437,16 +451,16 @@
 <span><span class="co">#&gt; # A tibble: 15 × 3</span></span>
 <span><span class="co">#&gt;    Parameter             `Generalized NB-2` `Generalized NB-P`</span></span>
 <span><span class="co">#&gt;    &lt;chr&gt;                 &lt;chr&gt;              &lt;chr&gt;             </span></span>
-<span><span class="co">#&gt;  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.485)*** </span></span>
-<span><span class="co">#&gt;  2 lnaadt                0.93 (0.057)***    0.938 (0.057)***  </span></span>
-<span><span class="co">#&gt;  3 lnlength              0.853 (0.07)***    0.836 (0.07)***   </span></span>
-<span><span class="co">#&gt;  4 speed50               -0.4 (0.109)***    -0.384 (0.111)*** </span></span>
+<span><span class="co">#&gt;  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.57)***  </span></span>
+<span><span class="co">#&gt;  2 lnaadt                0.93 (0.057)***    0.938 (0.067)***  </span></span>
+<span><span class="co">#&gt;  3 lnlength              0.853 (0.07)***    0.836 (0.069)***  </span></span>
+<span><span class="co">#&gt;  4 speed50               -0.4 (0.109)***    -0.384 (0.113)*** </span></span>
 <span><span class="co">#&gt;  5 ShouldWidth04         0.261 (0.092)**    0.258 (0.092)**   </span></span>
 <span><span class="co">#&gt;  6 AADT10kplus           5.961 (4.512)      0.689 (0.132)***  </span></span>
 <span><span class="co">#&gt;  7 I(AADT10kplus/lnaadt) -50.138 (43.002)   ---               </span></span>
-<span><span class="co">#&gt;  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.535)**  </span></span>
-<span><span class="co">#&gt;  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.445)    </span></span>
-<span><span class="co">#&gt; 10 ln(p)                 ---                0.525 (0.184)**   </span></span>
+<span><span class="co">#&gt;  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.725)*   </span></span>
+<span><span class="co">#&gt;  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.468)    </span></span>
+<span><span class="co">#&gt; 10 ln(p)                 ---                0.525 (0.229)*    </span></span>
 <span><span class="co">#&gt; 11 N Obs.                1501               1501              </span></span>
 <span><span class="co">#&gt; 12 LL                    -1061.914          -1062.195         </span></span>
 <span><span class="co">#&gt; 13 AIC                   2141.828           2142.389          </span></span>
@@ -469,15 +483,18 @@
 <span><span class="co">#&gt; [1] 0.9540306</span></span>
 <span><span class="va">zip</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Animal</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>, data <span class="op">=</span> <span class="va">washington_roads</span>,</span>
 <span>                family <span class="op">=</span> <span class="st">"Poisson"</span>, zero_formula <span class="op">=</span> <span class="op">~</span> <span class="va">speed50</span>, method <span class="op">=</span> <span class="st">"NR"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
+<span><span class="co">#&gt; errors of (Intercept), lnaadt are NA. The estimate may be on the boundary of</span></span>
+<span><span class="co">#&gt; the parameter space or not at a maximum.</span></span>
 <span><span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">zip</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 5 × 6</span></span>
-<span><span class="co">#&gt;   term             component estimate std.error statistic  p.value</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 (Intercept)      mean        -8.64      1.17     -7.41  1.26e-13</span></span>
-<span><span class="co">#&gt; 2 lnaadt           mean         0.976     0.134     7.28  3.33e-13</span></span>
-<span><span class="co">#&gt; 3 lnlength         mean         1.53      0.212     7.21  5.52e-13</span></span>
-<span><span class="co">#&gt; 4 Zero:(Intercept) zero        -0.116     0.482    -0.241 8.10e- 1</span></span>
-<span><span class="co">#&gt; 5 Zero:speed50     zero         1.51      0.478     3.16  1.59e- 3</span></span>
+<span><span class="co">#&gt;   term             component estimate std.error statistic   p.value</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;            &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 (Intercept)      mean        -8.64     NA        NA     NA       </span></span>
+<span><span class="co">#&gt; 2 lnaadt           mean         0.976    NA        NA     NA       </span></span>
+<span><span class="co">#&gt; 3 lnlength         mean         1.53      0.207     7.40   1.35e-13</span></span>
+<span><span class="co">#&gt; 4 Zero:(Intercept) zero        -0.116     0.399    -0.290  7.72e- 1</span></span>
+<span><span class="co">#&gt; 5 Zero:speed50     zero         1.51      0.458     3.30   9.74e- 4</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span>Poisson <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">zip</span>, zero_formula <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>      ZIP <span class="op">=</span> <span class="fu"><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance</a></span><span class="op">(</span><span class="va">zip</span><span class="op">)</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logLik"</span>, <span class="st">"AIC"</span>, <span class="st">"BIC"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; # A tibble: 2 × 3</span></span>
@@ -545,6 +562,8 @@
 <li>Numerical reliability: convergence, integration and difficult fits: <code><a href="articles/numerical-reliability.html">vignette("numerical-reliability", package = "flexCountReg")</a></code>
 </li>
 <li>Simulation studies for count models: <code><a href="articles/simulation-studies.html">vignette("simulation-studies", package = "flexCountReg")</a></code>
+</li>
+<li>Fitting your own count distribution: <code><a href="articles/user-defined-count-distributions.html">vignette("user-defined-count-distributions", package = "flexCountReg")</a></code>
 </li>
 <li>Adding a count distribution to flexCountReg: <code><a href="articles/extending-count-distributions.html">vignette("extending-count-distributions", package = "flexCountReg")</a></code>
 </li>

@@ -1,12 +1,16 @@
 # Adding a count distribution to flexCountReg
 
-This article is for contributors. It explains what a new count
-distribution has to provide for it to work throughout flexCountReg, by
-tracing the existing NB2 family through the source code. Code that uses
-`flexCountReg:::` reaches *internal* objects: they are shown here to
-explain the implementation, may change between versions, and are not
-part of the user-facing interface. Users only see the `family` argument
-of
+This article is for contributors. To *fit* a distribution that is not
+built in, you do not need any of this: define it with
+[`new_count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/new_count_family.md),
+as shown in
+[`vignette("user-defined-count-distributions")`](https://jwood-iastate.github.io/flexCountReg/articles/user-defined-count-distributions.md).
+This article explains what a new *built-in* count distribution has to
+provide for it to work throughout flexCountReg, by tracing the existing
+NB2 family through the source code. Code that uses `flexCountReg:::`
+reaches *internal* objects: they are shown here to explain the
+implementation, may change between versions, and are not part of the
+user-facing interface. Users only see the `family` argument of
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
 and
 [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
@@ -73,7 +77,7 @@ with `.fcr_family()`. The NB2 entry:
 nb2 <- flexCountReg:::.fcr_family_registry$NB2
 names(nb2)
 #>  [1] "params"   "dens"     "variance" "rand"     "mean_adj" "start"   
-#>  [7] "mean"     "cdf"      "start_rp" "valid"
+#>  [7] "mean"     "cdf"      "start_rp" "valid"    "score"
 nb2$params
 #> [[1]]
 #> [1] "ln(alpha)"

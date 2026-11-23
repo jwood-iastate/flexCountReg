@@ -61,13 +61,13 @@ rp$model$converged
 #> [1] TRUE
 round(summary(rp)$coefficients[, 1:2], 3)
 #>                    Estimate Std. Error
-#> progabide            -0.315      0.150
-#> lbase                 1.028      0.101
-#> lage                  0.328      0.348
+#> progabide            -0.319      0.150
+#> lbase                 1.031      0.099
+#> lage                  0.330      0.343
 #> V4                   -0.118      0.087
-#> (Intercept):Mean      1.850      0.109
-#> (Intercept):St.Dev    0.491      0.061
-#> ln(alpha)            -2.008      0.236
+#> (Intercept):Mean      1.840      0.110
+#> (Intercept):St.Dev   -0.485      0.064
+#> ln(alpha)            -2.007      0.237
 ```
 
 The coefficients are effects on the log of the expected count *given*
@@ -93,10 +93,10 @@ data.frame(period = p1$period, y = p1$y,
            simulated = predict(rp, newdata = p1, method = "Simulated"),
            empirical_bayes = predict(rp, newdata = p1, method = "Individual"))
 #>   period y new_patient simulated empirical_bayes
-#> 1      1 5    3.420274  3.389338        3.380582
-#> 2      2 3    3.420274  3.389338        3.380582
-#> 3      3 3    3.420274  3.389338        3.380582
-#> 4      4 3    3.038680  3.011196        3.003416
+#> 1      1 5    3.370838  3.340954        3.366935
+#> 2      2 3    3.370838  3.340954        3.366935
+#> 3      3 3    3.370838  3.340954        3.366935
+#> 4      4 3    2.995742  2.969184        2.992274
 ```
 
 `Exact` integrates over the random intercept with its moment-generating
@@ -182,8 +182,8 @@ all(held_out$converged)
 sapply(held_out[c("random_intercept", "pooled")], function(p)
   c(MAE = mean(abs(held_out$y - p)), RMSE = sqrt(mean((held_out$y - p)^2))))
 #>      random_intercept   pooled
-#> MAE          4.697688 4.693061
-#> RMSE         9.259691 9.193978
+#> MAE          4.681604 4.693061
+#> RMSE         9.286376 9.193978
 ```
 
 For a new patient, the random-intercept model has no information beyond
@@ -201,7 +201,7 @@ c(empirical_bayes_in_sample = mean(abs(epil$y - predict(rp, newdata = epil,
   population_in_sample = mean(abs(epil$y - predict(rp, newdata = epil,
                                                     method = "Exact"))))
 #> empirical_bayes_in_sample      population_in_sample 
-#>                  2.634991                  4.345251
+#>                  2.641450                  4.321722
 ```
 
 The Empirical Bayes error is much smaller because each prediction used
@@ -225,18 +225,18 @@ forecast:
 p1_hist <- p1
 p1_hist$y[4] <- NA
 predict(rp, newdata = p1_hist, method = "Individual")
-#> [1] 3.385678 3.385678 3.385678       NA
+#> [1] 3.370376 3.370376 3.370376       NA
 #> attr(,"eb_coefficients")
 #>      (Intercept)
-#> [1,]    1.959762
-#> [2,]    1.959762
-#> [3,]    1.959762
+#> [1,]    1.957358
+#> [2,]    1.957358
+#> [3,]    1.957358
 #> [4,]          NA
 #> attr(,"eb_sd")
 #>      (Intercept)
-#> [1,]   0.2990762
-#> [2,]   0.2990762
-#> [3,]   0.2990762
+#> [1,]   0.2981845
+#> [2,]   0.2981845
+#> [3,]   0.2981845
 #> [4,]          NA
 ```
 
@@ -277,10 +277,10 @@ rbind(joint = c(mean = mean(joint), sd = sd(joint),
                       quantile(indep, c(0.05, 0.95)),
                       P_over_40 = mean(indep > 40)))
 #>                 mean       sd 5% 95% P_over_40
-#> joint       13.29395 8.383284  3  29    0.0114
-#> independent 13.26105 5.678857  5  24    0.0008
+#> joint       13.08775 8.126171  3  29   0.01025
+#> independent 13.06770 5.586365  5  23   0.00055
 sum(predict(rp, newdata = patient, method = "Exact"))
-#> [1] 13.2995
+#> [1] 13.10826
 ```
 
 Both simulations have the same mean, which matches the sum of the

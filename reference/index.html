@@ -168,10 +168,24 @@
 
         <dt>
 
-          <code><a href="flexCountReg-methods.html">coef(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">vcov(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">nobs(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">logLik(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">formula(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">terms(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">confint(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">fitted(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">residuals(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">simulate(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">print(<i>&lt;flexCountReg&gt;</i>)</a></code>
+          <code><a href="flexCountReg-methods.html">coef(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">nobs(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">logLik(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">formula(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">terms(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">confint(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">fitted(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">residuals(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">simulate(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-methods.html">print(<i>&lt;flexCountReg&gt;</i>)</a></code>
 
         </dt>
         <dd>Standard methods for flexCountReg models</dd>
+
+        <dt>
+
+          <code><a href="vcov.flexCountReg.html">vcov(<i>&lt;flexCountReg&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Covariance matrix of the estimates</dd>
+
+        <dt>
+
+          <code><a href="estfun.flexCountReg.html">estfun(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="estfun.flexCountReg.html">bread(<i>&lt;flexCountReg&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Scores and bread for the sandwich package</dd>
 
         <dt>
 
@@ -297,6 +311,36 @@
 
         </dt>
         <dd>Count distribution tuning parameter</dd>
+      </dl></div><div class="section level2">
+      <h2 id="user-defined-count-distributions">User-defined count distributions<a class="anchor" aria-label="anchor" href="#user-defined-count-distributions"></a></h2>
+
+      <div class="section-desc"><p>Define a count distribution from its log probability function and use it in any of the models.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="new_count_family.html">new_count_family()</a></code>
+
+        </dt>
+        <dd>Define a count distribution for the regression functions</dd>
+
+        <dt>
+
+          <code><a href="count_param.html">count_param()</a></code>
+
+        </dt>
+        <dd>A distribution parameter of a user-defined count family</dd>
+
+        <dt>
+
+          <code><a href="check_count_family.html">check_count_family()</a></code>
+
+        </dt>
+        <dd>Check a user-defined count family</dd>
       </dl></div><div class="section level2">
       <h2 id="count-distributions">Count distributions<a class="anchor" aria-label="anchor" href="#count-distributions"></a></h2>
 

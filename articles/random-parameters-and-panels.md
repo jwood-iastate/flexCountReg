@@ -138,16 +138,16 @@ summary(rp)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -8.9052     0.4516  -19.72  < 2e-16 ***
-#> lnaadt           1.1251     0.0519   21.68  < 2e-16 ***
-#> speed50:Mean    -0.6991     0.1467   -4.77  1.9e-06 ***
-#> speed50:St.Dev   0.6413     0.1700    3.77  0.00016 ***
-#> ln(alpha)       -1.1395     0.2690   -4.24  2.3e-05 ***
+#> (Intercept)     -8.8995     0.4558  -19.52  < 2e-16 ***
+#> lnaadt           1.1244     0.0524   21.46  < 2e-16 ***
+#> speed50:Mean    -0.7108     0.1458   -4.88  1.1e-06 ***
+#> speed50:St.Dev   0.5903     0.1673    3.53  0.00042 ***
+#> ln(alpha)       -1.1255     0.2696   -4.18  3.0e-05 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> Offset: lnlength (coefficient fixed at 1)
 #> 
-#> Log-likelihood: -1087.279 | AIC: 2184.559 | BIC: 2205.701 
+#> Log-likelihood: -1087.589 | AIC: 2185.178 | BIC: 2206.32 
 #> N: 1501 | panels: 507
 ```
 
@@ -188,12 +188,12 @@ tidy(rp_het)
 #> # A tibble: 6 × 6
 #>   term                          component estimate std.error statistic   p.value
 #>   <chr>                         <chr>        <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 (Intercept)                   mean        -8.98     0.463     -19.4  7.74e- 84
-#> 2 lnaadt                        mean         1.13     0.0532     21.3  6.10e-101
-#> 3 speed50:Mean                  random_m…   -0.859    0.159      -5.42 6.08e-  8
-#> 4 speed50:St.Dev                random_s…    0.551    0.170       3.24 1.17e-  3
-#> 5 HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.240       2.91 3.60e-  3
-#> 6 ln(alpha)                     distribu…   -1.13     0.280      -4.05 5.17e-  5
+#> 1 (Intercept)                   mean        -8.96     0.457     -19.6  8.77e- 86
+#> 2 lnaadt                        mean         1.13     0.0525     21.6  3.51e-103
+#> 3 speed50:Mean                  random_m…   -0.878    0.160      -5.48 4.28e-  8
+#> 4 speed50:St.Dev                random_s…    0.502    0.160       3.13 1.73e-  3
+#> 5 HetMean:speed50:ShouldWidth04 heteroge…    0.709    0.238       2.98 2.87e-  3
+#> 6 ln(alpha)                     distribu…   -1.12     0.269      -4.18 2.96e-  5
 ```
 
 ### Predictions
@@ -217,12 +217,12 @@ cbind(observed = nd$Total_crashes,
       simulated = predict(rp, newdata = nd, method = "Simulated"),
       individual = predict(rp, newdata = nd, method = "Individual"))
 #>      observed     exact simulated individual
-#> [1,]        0 0.8546141 0.8422646  0.5316823
-#> [2,]        2 0.7552404 0.7443269  1.0291883
-#> [3,]        0 0.8495740 0.8372973  0.5285467
-#> [4,]        0 0.7507863 0.7399372  1.0231186
-#> [5,]        1 0.8957947 0.8828501  0.5573020
-#> [6,]        3 0.7916325 0.7801931  1.0787808
+#> [1,]        0 0.8185769 0.8084031  0.5459108
+#> [2,]        2 0.7233935 0.7144027  0.9928805
+#> [3,]        0 0.8137520 0.8036382  0.5426930
+#> [4,]        0 0.7191297 0.7101919  0.9870282
+#> [5,]        1 0.8579982 0.8473345  0.5722010
+#> [6,]        3 0.7582310 0.7488072  1.0406960
 ```
 
 The segment-specific coefficients from the Empirical Bayes method are
@@ -233,7 +233,7 @@ returned as an attribute:
 eb <- predict(rp, newdata = washington_roads, method = "Individual")
 summary(attr(eb, "eb_coefficients")[, "speed50"])
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#> -1.3126 -0.7051 -0.7051 -0.7080 -0.7051  0.1780
+#> -1.2928 -0.7226 -0.7126 -0.7125 -0.7052  0.1469
 ```
 
 A caution about the expected count: with a random parameter the expected

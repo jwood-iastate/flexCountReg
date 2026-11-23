@@ -155,7 +155,8 @@ available model features.</p>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  zero_formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  zero_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"inflated"</span>, <span class="st">"hurdle"</span><span class="op">)</span>,</span>
-<span>  weight_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"frequency"</span>, <span class="st">"sampling"</span><span class="op">)</span></span>
+<span>  weight_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"frequency"</span>, <span class="st">"sampling"</span><span class="op">)</span>,</span>
+<span>  cluster <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -260,7 +261,8 @@ are matched to the parameters by name.</p></dd>
 <dt id="arg-stderr">stderr<a class="anchor" aria-label="anchor" href="#arg-stderr"></a></dt>
 <dd><p>Type of standard errors to use. The default is "normal"
 (based on the Hessian). Other options include "boot" for bootstrapped
-standard errors, or "robust" for robust (sandwich) standard errors.</p></dd>
+standard errors, "robust" for robust (sandwich) standard errors, or
+"cluster" for cluster-robust standard errors (with <code>cluster</code>).</p></dd>
 
 
 <dt id="arg-bootstraps">bootstraps<a class="anchor" aria-label="anchor" href="#arg-bootstraps"></a></dt>
@@ -316,6 +318,16 @@ rescaled; the number of units is the number of rows (panels) with a
 positive weight; bootstrap standard errors are not available; and LR
 tests, AIC and BIC are not valid (they are reported, with a note, by
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> and are refused by <code><a href="regCompTest.html">regCompTest()</a></code>).</p></dd>
+
+
+<dt id="arg-cluster">cluster<a class="anchor" aria-label="anchor" href="#arg-cluster"></a></dt>
+<dd><p>clustering variable(s) for <code>stderr = "cluster"</code>: a
+one-sided formula of columns of <code>data</code> (<code>~ corridor</code>; two
+or more, <code>~ corridor + year</code>, give multiway clustering), their
+names, or a vector with one cluster id per row of <code>data</code>. Given
+without <code>stderr</code>, it sets <code>stderr = "cluster"</code>. See
+<code><a href="vcov.flexCountReg.html">vcov.flexCountReg</a></code>, which also gives cluster-robust
+covariances after the fit.</p></dd>
 
 </dl></div>
     <div class="section level2">

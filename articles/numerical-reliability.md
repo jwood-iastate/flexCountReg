@@ -245,7 +245,7 @@ different kinds, controlled by different arguments:
 | Model | Integral | Control |
 |----|----|----|
 | [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md) with PLN, PGE, PW or PLL | the mixing distribution of the family (inner) | `engine`: `"quadrature"` (default, adaptive; `ndraws` is not used) or `"halton"` (`ndraws` draws) |
-| [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md) | the random parameters (outer) | `ndraws` Halton draws (`scrambled` for scrambled draws) |
+| [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md) | the random parameters (outer) | `ndraws` Halton draws for each panel (`draws = "per_unit"`, default) or the same draws for every panel (`draws = "shared"`); `scrambled` for scrambled draws |
 | [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md) with PLN, PGE, PW or PLL | the mixing distribution, inside each outer draw | `engine`; `mix_draws` only with `engine = "halton"` |
 
 ### Inner integrals: the Poisson-lognormal family
@@ -323,9 +323,9 @@ rp_fit <- function(r) {
 rp_draws <- do.call(rbind, lapply(c(50, 100, 200), rp_fit))
 rp_draws
 #>   ndraws converged   logLik       mean        sd     se_sd
-#> 1     50      TRUE -294.253 -0.5235857 0.5163452 0.5943831
-#> 2    100      TRUE -294.262 -0.5296093 0.4808545 0.5679274
-#> 3    200      TRUE -294.269 -0.5315672 0.4565646 0.5644011
+#> 1     50      TRUE -294.177 -0.5708183 0.5124562 0.4916367
+#> 2    100      TRUE -294.278 -0.5321927 0.4309691 0.5723279
+#> 3    200      TRUE -294.293 -0.5278457 0.4168919 0.5763524
 ```
 
 The estimated standard deviation of the random parameter changes with
@@ -342,15 +342,12 @@ rp_ln <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
                      rpar_formula = ~ -1 + speed50,
                      rpardists = c(speed50 = "ln"), data = sub,
                      family = "NB2", ndraws = 100, method = "BFGS")
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of speed50:St.Dev are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 nd <- data.frame(lnaadt = log(5000), lnlength = 0, speed50 = c(0, 1))
 predict(rp_ln, newdata = nd, method = "Exact")
 #> Warning: 1 prediction(s) are infinite: the expected value does not exist for a
 #> lognormal random parameter with a positive x, or a gamma random parameter with
 #> x * sigma^2 / mu >= 1. See ?countreg_rp.
-#> [1] 1.5748    Inf
+#> [1] 1.574824      Inf
 ```
 
 1.  **The expectation does not exist.** With a lognormal random
@@ -380,7 +377,7 @@ predict(rp_ln, newdata = nd, method = "Exact")
             method = "Exact")
     #> Warning: 1 Exact prediction(s) exist but exceed the largest representable
     #> number (overflow); they are Inf.
-    #> [1] 1.168687      Inf
+    #> [1] 1.140991      Inf
     ```
 
 3.  **A valid quantity was not approximated.** Tolerance intervals need

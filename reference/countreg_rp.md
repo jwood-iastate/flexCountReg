@@ -21,7 +21,7 @@ countreg_rp(
   group_var = NULL,
   weights = NULL,
   offset = NULL,
-  method = "BHHH",
+  method = "BFGS",
   max.iters = 1000,
   start.vals = NULL,
   verbose = FALSE,
@@ -31,7 +31,9 @@ countreg_rp(
   keep_data = TRUE,
   panel_id = NULL,
   mix_draws = NULL,
-  weight_type = c("frequency", "sampling")
+  weight_type = c("frequency", "sampling"),
+  draws = c("per_unit", "shared"),
+  cluster = NULL
 )
 ```
 
@@ -115,8 +117,9 @@ countreg_rp(
 
   if the Halton draws should be scrambled. Scrambled draws are generated
   from a random seed that is stored in the fit, so predictions reuse the
-  same draws (and [`set.seed()`](https://rdrr.io/r/base/Random.html)
-  before fitting makes the fit reproducible).
+  same draws, [`set.seed()`](https://rdrr.io/r/base/Random.html) before
+  fitting makes the fit reproducible, and different seeds give different
+  draws.
 
 - correlated:
 
@@ -146,7 +149,15 @@ countreg_rp(
 
 - method:
 
-  optimization method (e.g., "BHHH", "BFGS", "NM").
+  optimization method passed to
+  [`maxLik`](https://rdrr.io/pkg/maxLik/man/maxLik.html): `"BFGS"`
+  (default), `"NR"`, `"BHHH"`, `"BFGSR"`, `"CG"`, `"NM"` or `"SANN"`.
+  BFGS uses the analytic gradient and is the most reliable choice. BHHH
+  is often faster on simple models, but on harder ones it can crawl, or
+  stop where the log-likelihood has stopped changing well short of the
+  maximum; such stops are flagged (see Details). NR is reliable near the
+  maximum but slow, because it differentiates the gradient numerically
+  for its Hessian.
 
 - max.iters:
 
@@ -166,7 +177,9 @@ countreg_rp(
   the type of standard errors: `"normal"` (Hessian-based, the default),
   `"robust"` (sandwich; clustered by panel when `group_var` is given),
   or `"boot"` (bootstrap that resamples whole panels and refits the
-  model).
+  model), or `"cluster"` (cluster-robust, with `cluster`; clusters must
+  contain whole panels, so they may be coarser than the panels, e.g.
+  sites within corridors).
 
 - bootstraps:
 
@@ -215,6 +228,27 @@ countreg_rp(
   [`summary()`](https://rdrr.io/r/base/summary.html) and are refused by
   [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)).
 
+- draws:
+
+  `"per_unit"` (default): each unit (panel, or row when there is no
+  `group_var`) has its own `ndraws` draws, a consecutive block of one
+  Halton sequence after its first 10 points (Train 2009, Sec. 9.3.3), so
+  the simulation errors of different units are independent. `"shared"`:
+  the same draws for every unit, as in earlier versions. Empirical Bayes
+  predictions (`method = "Individual"`) regenerate each estimation
+  unit's own draws, matched by panel id (by row position without
+  panels); units not in the estimation data get new draws.
+
+- cluster:
+
+  clustering variable(s) for `stderr = "cluster"`: a one-sided formula
+  of columns of `data` (`~ corridor`; two or more, `~ corridor + year`,
+  give multiway clustering), their names, or a vector with one cluster
+  id per row of `data`. Given without `stderr`, it sets
+  `stderr = "cluster"`. See
+  [`vcov.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md),
+  which also gives cluster-robust covariances after the fit.
+
 ## Value
 
 An object of class `flexCountReg` which is a list with the following
@@ -230,7 +264,7 @@ components:
 
 ## Details
 
-`countreg_rp()` is the former name of `countreg_rp()`. It is deprecated
+`countreg.rp()` is the former name of `countreg_rp()`. It is deprecated
 (a name with a dot is easily mistaken for an S3 method): it still works,
 with a once-per-session warning, and calls `countreg_rp()`.
 
@@ -263,7 +297,30 @@ with a once-per-session warning, and calls `countreg_rp()`.
 The mixing distribution of the PLN, PGE, PLL and PW families uses its
 own Halton dimension, independent of the random parameters' draws.
 
+**Gradient.** The optimizer uses the analytic gradient of the simulated
+log-likelihood: each panel's score is the average, over draws weighted
+by their posterior probabilities, of the family's score in the log mean
+times the derivative of the log mean in each parameter. The Poisson,
+NB1, NB2 and NBP families have closed-form scores; the other families
+use central differences in the log mean and in each distribution
+parameter, two density evaluations per parameter of the distribution
+whatever the number of regression parameters. A numeric gradient needs
+two likelihood evaluations per parameter, so fits are several times
+faster. `options(flexCountReg.rp_gradient = "numeric")` restores the
+numeric gradient, to check a fit.
+
+**Convergence.** BHHH, NR and BFGSR stop when the log-likelihood changes
+by less than a tolerance between iterations, which a slow optimizer can
+also meet far from the maximum. After the fit, `countreg_rp()` computes
+the Newton decrement \\g'(-H)^{-1}g\\ at the estimates (twice the
+further gain a Newton step predicts; stored as
+`model$newton_decrement`). Above 0.1, the fit is marked as not
+converged, with a warning.
+
 ## References
+
+Train, K. (2009). *Discrete Choice Methods with Simulation*, 2nd ed.
+Cambridge University Press.
 
 Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and
 interpretation for random parameter generalized linear models. *Accident
@@ -283,30 +340,29 @@ rp_nb2 <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
                       data = washington_roads,
                       family = "NB2",
                       rpardists = c(speed50 = "n"),
-                      ndraws = 100,
-                      method = "BHHH")
+                      ndraws = 100)
 summary(rp_nb2)
 #> Call:
 #> countreg_rp(formula = Total_crashes ~ lnaadt + lnlength, rpar_formula = ~-1 + 
 #>     speed50, data = washington_roads, family = "NB2", rpardists = c(speed50 = "n"), 
-#>     ndraws = 100, method = "BHHH")
+#>     ndraws = 100)
 #> 
-#> Model: countreg_rp | family: NB2 | optimizer: BHHH
-#> Iterations: 29 
-#> Convergence: successive function values within relative tolerance limit (reltol) 
+#> Model: countreg_rp | family: NB2 | optimizer: BFGS
+#> Iterations: 41 
+#> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -8.7552     0.4133  -21.18  < 2e-16 ***
-#> lnaadt           1.0799     0.0500   21.58  < 2e-16 ***
-#> lnlength         0.7564     0.0693   10.92  < 2e-16 ***
-#> speed50:Mean    -0.7445     0.1687   -4.41  1.0e-05 ***
-#> speed50:St.Dev   0.7170     0.2705    2.65    0.008 ** 
-#> ln(alpha)       -1.3182     0.3052   -4.32  1.6e-05 ***
+#> (Intercept)      -8.760      0.442  -19.82  < 2e-16 ***
+#> lnaadt            1.080      0.052   20.79  < 2e-16 ***
+#> lnlength          0.756      0.069   10.95  < 2e-16 ***
+#> speed50:Mean     -0.745      0.167   -4.47  7.7e-06 ***
+#> speed50:St.Dev    0.640      0.201    3.18   0.0015 ** 
+#> ln(alpha)        -1.297      0.316   -4.10  4.1e-05 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
-#> Log-likelihood: -1082.98 | AIC: 2177.961 | BIC: 2209.844 
+#> Log-likelihood: -1083.165 | AIC: 2178.33 | BIC: 2210.213 
 #> N: 1501
 
 # 2. Random Parameters with Panel Structure (if 'site_id' exists)
@@ -333,23 +389,23 @@ summary(rp_gen)
 #>     dis_param_formula_1 = ~lnlength, het_mean_formula = ~AADT10kplus, 
 #>     ndraws = 100)
 #> 
-#> Model: countreg_rp | family: NB2 | optimizer: BHHH
-#> Iterations: 18 
-#> Convergence: successive function values within relative tolerance limit (reltol) 
+#> Model: countreg_rp | family: NB2 | optimizer: BFGS
+#> Iterations: 45 
+#> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)                  -8.4758     0.4390  -19.31   <2e-16 ***
-#> lnaadt                        0.9559     0.0518   18.46   <2e-16 ***
-#> speed50:Mean                 -0.7810     0.1872   -4.17    3e-05 ***
-#> speed50:St.Dev                0.7417     0.2514    2.95   0.0032 ** 
-#> HetMean:speed50:AADT10kplus   1.5599     1.2085    1.29   0.1968    
-#> ln(alpha):(Intercept)        -1.1705     0.3638   -3.22   0.0013 ** 
-#> ln(alpha):lnlength           -0.4738     0.2842   -1.67   0.0955 .  
+#> (Intercept)                  -8.4867     0.4521  -18.77  < 2e-16 ***
+#> lnaadt                        0.9575     0.0531   18.04  < 2e-16 ***
+#> speed50:Mean                 -0.8133     0.1894   -4.29  1.8e-05 ***
+#> speed50:St.Dev                0.7099     0.2279    3.12   0.0018 ** 
+#> HetMean:speed50:AADT10kplus   1.5787     0.6084    2.60   0.0095 ** 
+#> ln(alpha):(Intercept)        -1.2101     0.5325   -2.27   0.0231 *  
+#> ln(alpha):lnlength           -0.5031     0.4293   -1.17   0.2413    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
-#> Log-likelihood: -1139.336 | AIC: 2292.673 | BIC: 2329.87 
+#> Log-likelihood: -1139.169 | AIC: 2292.337 | BIC: 2329.534 
 #> N: 1501
 
 # 4. Random Parameters Poisson Model with panel specification
@@ -367,21 +423,21 @@ summary(rp_poisson)
 #>     speed50, data = washington_roads, family = "POISSON", rpardists = c(speed50 = "n"), 
 #>     het_mean_formula = ~AADT10kplus, ndraws = 100, group_var = "ID")
 #> 
-#> Model: countreg_rp | family: POISSON | optimizer: BHHH
-#> Iterations: 11 
-#> Convergence: successive function values within relative tolerance limit (reltol) 
+#> Model: countreg_rp | family: POISSON | optimizer: BFGS
+#> Iterations: 34 
+#> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)                  -8.6482     0.2933  -29.48  < 2e-16 ***
-#> lnaadt                        0.9723     0.0328   29.64  < 2e-16 ***
-#> speed50:Mean                 -0.8228     0.1555   -5.29  1.2e-07 ***
-#> speed50:St.Dev                0.8465     0.1844    4.59  4.4e-06 ***
-#> HetMean:speed50:AADT10kplus   1.0877     0.5333    2.04    0.041 *  
+#> (Intercept)                  -8.6547     0.4108  -21.07  < 2e-16 ***
+#> lnaadt                        0.9730     0.0467   20.84  < 2e-16 ***
+#> speed50:Mean                 -0.8427     0.1611   -5.23  1.7e-07 ***
+#> speed50:St.Dev                0.8015     0.1565    5.12  3.0e-07 ***
+#> HetMean:speed50:AADT10kplus   1.1471     0.5484    2.09    0.036 *  
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
-#> Log-likelihood: -1161.033 | AIC: 2332.066 | BIC: 2353.208 
+#> Log-likelihood: -1161.328 | AIC: 2332.656 | BIC: 2353.798 
 #> N: 1501 | panels: 507
 # }
 ```

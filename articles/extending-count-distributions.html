@@ -63,9 +63,13 @@
 
     
     
-<p>This article is for contributors. It explains what a new count
-distribution has to provide for it to work throughout flexCountReg, by
-tracing the existing NB2 family through the source code. Code that uses
+<p>This article is for contributors. To <em>fit</em> a distribution that
+is not built in, you do not need any of this: define it with
+<code><a href="../reference/new_count_family.html">new_count_family()</a></code>, as shown in
+<code><a href="../articles/user-defined-count-distributions.html">vignette("user-defined-count-distributions")</a></code>. This article
+explains what a new <em>built-in</em> count distribution has to provide
+for it to work throughout flexCountReg, by tracing the existing NB2
+family through the source code. Code that uses
 <code>flexCountReg:::</code> reaches <em>internal</em> objects: they are
 shown here to explain the implementation, may change between versions,
 and are not part of the user-facing interface. Users only see the
@@ -229,7 +233,7 @@ the README)</td>
 <code class="sourceCode R"><span><span class="va">nb2</span> <span class="op">&lt;-</span> <span class="fu">flexCountReg</span><span class="fu">:::</span><span class="va">.fcr_family_registry</span><span class="op">$</span><span class="va">NB2</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">nb2</span><span class="op">)</span></span>
 <span><span class="co">#&gt;  [1] "params"   "dens"     "variance" "rand"     "mean_adj" "start"   </span></span>
-<span><span class="co">#&gt;  [7] "mean"     "cdf"      "start_rp" "valid"</span></span>
+<span><span class="co">#&gt;  [7] "mean"     "cdf"      "start_rp" "valid"    "score"</span></span>
 <span><span class="va">nb2</span><span class="op">$</span><span class="va">params</span></span>
 <span><span class="co">#&gt; [[1]]</span></span>
 <span><span class="co">#&gt; [1] "ln(alpha)"</span></span>

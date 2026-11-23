@@ -49,5 +49,7 @@
   fits](https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.md):
 - [Simulation studies for count
   models](https://jwood-iastate.github.io/flexCountReg/articles/simulation-studies.md):
+- [Fitting your own count
+  distribution](https://jwood-iastate.github.io/flexCountReg/articles/user-defined-count-distributions.md):
 - [Adding a count distribution to
   flexCountReg](https://jwood-iastate.github.io/flexCountReg/articles/extending-count-distributions.md):

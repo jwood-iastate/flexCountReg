@@ -20,6 +20,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/simulation-studies.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/underreporting-and-identification.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/articles/user-defined-count-distributions.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/zeros-hurdles-and-sampling.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/authors.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/index.html</loc></url>
@@ -48,17 +49,20 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/SichelDistribution.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/Triangular.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/abalone_rings.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/check_count_family.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/component_probs.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/cor2cov.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/corr_haltons.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_families.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_family.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_param.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_reg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_reg_fit.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/cureplot.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/estfun.flexCountReg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-tidiers.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/halton_dists.html</loc></url>
@@ -72,6 +76,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/myAIC.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/myBIC.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/new_count_family.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.html</loc></url>
@@ -87,6 +92,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/summary.countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/washington_roads.html</loc></url>
 </urlset>
 

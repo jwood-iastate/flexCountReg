@@ -88,7 +88,8 @@ countreg(
   keep_data = TRUE,
   zero_formula = NULL,
   zero_type = c("inflated", "hurdle"),
-  weight_type = c("frequency", "sampling")
+  weight_type = c("frequency", "sampling"),
+  cluster = NULL
 )
 ```
 
@@ -192,7 +193,8 @@ countreg(
 
   Type of standard errors to use. The default is "normal" (based on the
   Hessian). Other options include "boot" for bootstrapped standard
-  errors, or "robust" for robust (sandwich) standard errors.
+  errors, "robust" for robust (sandwich) standard errors, or "cluster"
+  for cluster-robust standard errors (with `cluster`).
 
 - bootstraps:
 
@@ -251,6 +253,16 @@ countreg(
   reported, with a note, by
   [`summary()`](https://rdrr.io/r/base/summary.html) and are refused by
   [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)).
+
+- cluster:
+
+  clustering variable(s) for `stderr = "cluster"`: a one-sided formula
+  of columns of `data` (`~ corridor`; two or more, `~ corridor + year`,
+  give multiway clustering), their names, or a vector with one cluster
+  id per row of `data`. Given without `stderr`, it sets
+  `stderr = "cluster"`. See
+  [`vcov.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md),
+  which also gives cluster-robust covariances after the fit.
 
 ## Value
 

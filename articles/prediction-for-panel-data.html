@@ -120,13 +120,13 @@ the four rows of a patient share one draw:</p>
 <span><span class="co">#&gt; [1] TRUE</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">rp</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                    Estimate Std. Error</span></span>
-<span><span class="co">#&gt; progabide            -0.315      0.150</span></span>
-<span><span class="co">#&gt; lbase                 1.028      0.101</span></span>
-<span><span class="co">#&gt; lage                  0.328      0.348</span></span>
+<span><span class="co">#&gt; progabide            -0.319      0.150</span></span>
+<span><span class="co">#&gt; lbase                 1.031      0.099</span></span>
+<span><span class="co">#&gt; lage                  0.330      0.343</span></span>
 <span><span class="co">#&gt; V4                   -0.118      0.087</span></span>
-<span><span class="co">#&gt; (Intercept):Mean      1.850      0.109</span></span>
-<span><span class="co">#&gt; (Intercept):St.Dev    0.491      0.061</span></span>
-<span><span class="co">#&gt; ln(alpha)            -2.008      0.236</span></span></code></pre></div>
+<span><span class="co">#&gt; (Intercept):Mean      1.840      0.110</span></span>
+<span><span class="co">#&gt; (Intercept):St.Dev   -0.485      0.064</span></span>
+<span><span class="co">#&gt; ln(alpha)            -2.007      0.237</span></span></code></pre></div>
 <p>The coefficients are effects on the log of the expected count
 <em>given</em> the patient’s intercept. The standard deviation of the
 intercept (<code>(Intercept):St.Dev</code>) measures how much patients
@@ -176,10 +176,10 @@ with the same covariates differ in their seizure rates.</p>
 <span>           simulated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp</span>, newdata <span class="op">=</span> <span class="va">p1</span>, method <span class="op">=</span> <span class="st">"Simulated"</span><span class="op">)</span>,</span>
 <span>           empirical_bayes <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp</span>, newdata <span class="op">=</span> <span class="va">p1</span>, method <span class="op">=</span> <span class="st">"Individual"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   period y new_patient simulated empirical_bayes</span></span>
-<span><span class="co">#&gt; 1      1 5    3.420274  3.389338        3.380582</span></span>
-<span><span class="co">#&gt; 2      2 3    3.420274  3.389338        3.380582</span></span>
-<span><span class="co">#&gt; 3      3 3    3.420274  3.389338        3.380582</span></span>
-<span><span class="co">#&gt; 4      4 3    3.038680  3.011196        3.003416</span></span></code></pre></div>
+<span><span class="co">#&gt; 1      1 5    3.370838  3.340954        3.366935</span></span>
+<span><span class="co">#&gt; 2      2 3    3.370838  3.340954        3.366935</span></span>
+<span><span class="co">#&gt; 3      3 3    3.370838  3.340954        3.366935</span></span>
+<span><span class="co">#&gt; 4      4 3    2.995742  2.969184        2.992274</span></span></code></pre></div>
 <p><code>Exact</code> integrates over the random intercept with its
 moment-generating function; <code>Simulated</code> averages over the
 Halton draws and differs from it by the simulation error. Both describe
@@ -253,8 +253,8 @@ the comparison:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">held_out</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"random_intercept"</span>, <span class="st">"pooled"</span><span class="op">)</span><span class="op">]</span>, <span class="kw">function</span><span class="op">(</span><span class="va">p</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>MAE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">held_out</span><span class="op">$</span><span class="va">y</span> <span class="op">-</span> <span class="va">p</span><span class="op">)</span><span class="op">)</span>, RMSE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="va">held_out</span><span class="op">$</span><span class="va">y</span> <span class="op">-</span> <span class="va">p</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      random_intercept   pooled</span></span>
-<span><span class="co">#&gt; MAE          4.697688 4.693061</span></span>
-<span><span class="co">#&gt; RMSE         9.259691 9.193978</span></span></code></pre></div>
+<span><span class="co">#&gt; MAE          4.681604 4.693061</span></span>
+<span><span class="co">#&gt; RMSE         9.286376 9.193978</span></span></code></pre></div>
 <p>For a new patient, the random-intercept model has no information
 beyond the covariates, and its mean predictions are close to those of
 the pooled model. Its advantages lie elsewhere: valid standard errors
@@ -269,7 +269,7 @@ forecast individual patients.</p>
 <span>  population_in_sample <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">epil</span><span class="op">$</span><span class="va">y</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp</span>, newdata <span class="op">=</span> <span class="va">epil</span>,</span>
 <span>                                                    method <span class="op">=</span> <span class="st">"Exact"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; empirical_bayes_in_sample      population_in_sample </span></span>
-<span><span class="co">#&gt;                  2.634991                  4.345251</span></span></code></pre></div>
+<span><span class="co">#&gt;                  2.641450                  4.321722</span></span></code></pre></div>
 <p>The Empirical Bayes error is much smaller because each prediction
 used the count it is compared with. It is a description of the observed
 patients, not an estimate of predictive accuracy.</p>
@@ -290,18 +290,18 @@ all the rows it is given; a row whose count is missing gets
 <code class="sourceCode R"><span><span class="va">p1_hist</span> <span class="op">&lt;-</span> <span class="va">p1</span></span>
 <span><span class="va">p1_hist</span><span class="op">$</span><span class="va">y</span><span class="op">[</span><span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp</span>, newdata <span class="op">=</span> <span class="va">p1_hist</span>, method <span class="op">=</span> <span class="st">"Individual"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 3.385678 3.385678 3.385678       NA</span></span>
+<span><span class="co">#&gt; [1] 3.370376 3.370376 3.370376       NA</span></span>
 <span><span class="co">#&gt; attr(,"eb_coefficients")</span></span>
 <span><span class="co">#&gt;      (Intercept)</span></span>
-<span><span class="co">#&gt; [1,]    1.959762</span></span>
-<span><span class="co">#&gt; [2,]    1.959762</span></span>
-<span><span class="co">#&gt; [3,]    1.959762</span></span>
+<span><span class="co">#&gt; [1,]    1.957358</span></span>
+<span><span class="co">#&gt; [2,]    1.957358</span></span>
+<span><span class="co">#&gt; [3,]    1.957358</span></span>
 <span><span class="co">#&gt; [4,]          NA</span></span>
 <span><span class="co">#&gt; attr(,"eb_sd")</span></span>
 <span><span class="co">#&gt;      (Intercept)</span></span>
-<span><span class="co">#&gt; [1,]   0.2990762</span></span>
-<span><span class="co">#&gt; [2,]   0.2990762</span></span>
-<span><span class="co">#&gt; [3,]   0.2990762</span></span>
+<span><span class="co">#&gt; [1,]   0.2981845</span></span>
+<span><span class="co">#&gt; [2,]   0.2981845</span></span>
+<span><span class="co">#&gt; [3,]   0.2981845</span></span>
 <span><span class="co">#&gt; [4,]          NA</span></span></code></pre></div>
 <p>Computing the Empirical Bayes prediction with the period-4 count
 included and calling it a forecast would leak the answer into the
@@ -340,10 +340,10 @@ spread.</p>
 <span>                      <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">indep</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.05</span>, <span class="fl">0.95</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>                      P_over_40 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">indep</span> <span class="op">&gt;</span> <span class="fl">40</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                 mean       sd 5% 95% P_over_40</span></span>
-<span><span class="co">#&gt; joint       13.29395 8.383284  3  29    0.0114</span></span>
-<span><span class="co">#&gt; independent 13.26105 5.678857  5  24    0.0008</span></span>
+<span><span class="co">#&gt; joint       13.08775 8.126171  3  29   0.01025</span></span>
+<span><span class="co">#&gt; independent 13.06770 5.586365  5  23   0.00055</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp</span>, newdata <span class="op">=</span> <span class="va">patient</span>, method <span class="op">=</span> <span class="st">"Exact"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 13.2995</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 13.10826</span></span></code></pre></div>
 <p>Both simulations have the same mean, which matches the sum of the
 expected counts, but only the joint simulation gives the spread of one
 patient’s total. These simulations use the estimated parameters as if

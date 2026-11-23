@@ -177,16 +177,16 @@ grows.</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
 <span><span class="co">#&gt;                Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; (Intercept)     -8.9052     0.4516  -19.72  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; lnaadt           1.1251     0.0519   21.68  &lt; 2e-16 ***</span></span>
-<span><span class="co">#&gt; speed50:Mean    -0.6991     0.1467   -4.77  1.9e-06 ***</span></span>
-<span><span class="co">#&gt; speed50:St.Dev   0.6413     0.1700    3.77  0.00016 ***</span></span>
-<span><span class="co">#&gt; ln(alpha)       -1.1395     0.2690   -4.24  2.3e-05 ***</span></span>
+<span><span class="co">#&gt; (Intercept)     -8.8995     0.4558  -19.52  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; lnaadt           1.1244     0.0524   21.46  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; speed50:Mean    -0.7108     0.1458   -4.88  1.1e-06 ***</span></span>
+<span><span class="co">#&gt; speed50:St.Dev   0.5903     0.1673    3.53  0.00042 ***</span></span>
+<span><span class="co">#&gt; ln(alpha)       -1.1255     0.2696   -4.18  3.0e-05 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; Offset: lnlength (coefficient fixed at 1)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Log-likelihood: -1087.279 | AIC: 2184.559 | BIC: 2205.701 </span></span>
+<span><span class="co">#&gt; Log-likelihood: -1087.589 | AIC: 2185.178 | BIC: 2206.32 </span></span>
 <span><span class="co">#&gt; N: 1501 | panels: 507</span></span></code></pre></div>
 <p><code>speed50:Mean</code> and <code>speed50:St.Dev</code> are the
 mean and standard deviation of the speed-limit effect across segments.
@@ -286,12 +286,12 @@ variable:</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 6</span></span></span>
 <span><span class="co">#&gt;   term                          component estimate std.error statistic   p.value</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                         <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept)                   mean        -<span style="color: #BB0000;">8.98</span>     0.463     -<span style="color: #BB0000;">19.4</span>  7.74<span style="color: #949494;">e</span><span style="color: #BB0000;">- 84</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt                        mean         1.13     0.053<span style="text-decoration: underline;">2</span>     21.3  6.10<span style="color: #949494;">e</span><span style="color: #BB0000;">-101</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50:Mean                  random_m…   -<span style="color: #BB0000;">0.859</span>    0.159      -<span style="color: #BB0000;">5.42</span> 6.08<span style="color: #949494;">e</span><span style="color: #BB0000;">-  8</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> speed50:St.Dev                random_s…    0.551    0.170       3.24 1.17<span style="color: #949494;">e</span><span style="color: #BB0000;">-  3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> HetMean:speed50:ShouldWidth04 heteroge…    0.700    0.240       2.91 3.60<span style="color: #949494;">e</span><span style="color: #BB0000;">-  3</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> ln(alpha)                     distribu…   -<span style="color: #BB0000;">1.13</span>     0.280      -<span style="color: #BB0000;">4.05</span> 5.17<span style="color: #949494;">e</span><span style="color: #BB0000;">-  5</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> (Intercept)                   mean        -<span style="color: #BB0000;">8.96</span>     0.457     -<span style="color: #BB0000;">19.6</span>  8.77<span style="color: #949494;">e</span><span style="color: #BB0000;">- 86</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> lnaadt                        mean         1.13     0.052<span style="text-decoration: underline;">5</span>     21.6  3.51<span style="color: #949494;">e</span><span style="color: #BB0000;">-103</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> speed50:Mean                  random_m…   -<span style="color: #BB0000;">0.878</span>    0.160      -<span style="color: #BB0000;">5.48</span> 4.28<span style="color: #949494;">e</span><span style="color: #BB0000;">-  8</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> speed50:St.Dev                random_s…    0.502    0.160       3.13 1.73<span style="color: #949494;">e</span><span style="color: #BB0000;">-  3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> HetMean:speed50:ShouldWidth04 heteroge…    0.709    0.238       2.98 2.87<span style="color: #949494;">e</span><span style="color: #BB0000;">-  3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> ln(alpha)                     distribu…   -<span style="color: #BB0000;">1.12</span>     0.269      -<span style="color: #BB0000;">4.18</span> 2.96<span style="color: #949494;">e</span><span style="color: #BB0000;">-  5</span></span></span></code></pre></div>
 </div>
 <div class="section level3">
 <h3 id="predictions">Predictions<a class="anchor" aria-label="anchor" href="#predictions"></a>
@@ -317,19 +317,19 @@ so it is for data with observed outcomes.</li>
 <span>      simulated <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp</span>, newdata <span class="op">=</span> <span class="va">nd</span>, method <span class="op">=</span> <span class="st">"Simulated"</span><span class="op">)</span>,</span>
 <span>      individual <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp</span>, newdata <span class="op">=</span> <span class="va">nd</span>, method <span class="op">=</span> <span class="st">"Individual"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      observed     exact simulated individual</span></span>
-<span><span class="co">#&gt; [1,]        0 0.8546141 0.8422646  0.5316823</span></span>
-<span><span class="co">#&gt; [2,]        2 0.7552404 0.7443269  1.0291883</span></span>
-<span><span class="co">#&gt; [3,]        0 0.8495740 0.8372973  0.5285467</span></span>
-<span><span class="co">#&gt; [4,]        0 0.7507863 0.7399372  1.0231186</span></span>
-<span><span class="co">#&gt; [5,]        1 0.8957947 0.8828501  0.5573020</span></span>
-<span><span class="co">#&gt; [6,]        3 0.7916325 0.7801931  1.0787808</span></span></code></pre></div>
+<span><span class="co">#&gt; [1,]        0 0.8185769 0.8084031  0.5459108</span></span>
+<span><span class="co">#&gt; [2,]        2 0.7233935 0.7144027  0.9928805</span></span>
+<span><span class="co">#&gt; [3,]        0 0.8137520 0.8036382  0.5426930</span></span>
+<span><span class="co">#&gt; [4,]        0 0.7191297 0.7101919  0.9870282</span></span>
+<span><span class="co">#&gt; [5,]        1 0.8579982 0.8473345  0.5722010</span></span>
+<span><span class="co">#&gt; [6,]        3 0.7582310 0.7488072  1.0406960</span></span></code></pre></div>
 <p>The segment-specific coefficients from the Empirical Bayes method are
 returned as an attribute:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">eb</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp</span>, newdata <span class="op">=</span> <span class="va">washington_roads</span>, method <span class="op">=</span> <span class="st">"Individual"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">eb</span>, <span class="st">"eb_coefficients"</span><span class="op">)</span><span class="op">[</span>, <span class="st">"speed50"</span><span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
-<span><span class="co">#&gt; -1.3126 -0.7051 -0.7051 -0.7080 -0.7051  0.1780</span></span></code></pre></div>
+<span><span class="co">#&gt; -1.2928 -0.7226 -0.7126 -0.7125 -0.7052  0.1469</span></span></code></pre></div>
 <p>A caution about the expected count: with a random parameter the
 expected value of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(x\beta)</annotation></semantics></math>

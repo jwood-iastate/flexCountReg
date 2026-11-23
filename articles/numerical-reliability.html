@@ -324,8 +324,10 @@ different kinds, controlled by different arguments:</p>
 <td><code><a href="../reference/countreg_rp.html">countreg_rp()</a></code></td>
 <td>the random parameters (outer)</td>
 <td>
-<code>ndraws</code> Halton draws (<code>scrambled</code> for
-scrambled draws)</td>
+<code>ndraws</code> Halton draws for each panel
+(<code>draws = "per_unit"</code>, default) or the same draws for every
+panel (<code>draws = "shared"</code>); <code>scrambled</code> for
+scrambled draws</td>
 </tr>
 <tr class="odd">
 <td>
@@ -406,9 +408,9 @@ outer draws increases (on the same subsample):</p>
 <span><span class="va">rp_draws</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">100</span>, <span class="fl">200</span><span class="op">)</span>, <span class="va">rp_fit</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">rp_draws</span></span>
 <span><span class="co">#&gt;   ndraws converged   logLik       mean        sd     se_sd</span></span>
-<span><span class="co">#&gt; 1     50      TRUE -294.253 -0.5235857 0.5163452 0.5943831</span></span>
-<span><span class="co">#&gt; 2    100      TRUE -294.262 -0.5296093 0.4808545 0.5679274</span></span>
-<span><span class="co">#&gt; 3    200      TRUE -294.269 -0.5315672 0.4565646 0.5644011</span></span></code></pre></div>
+<span><span class="co">#&gt; 1     50      TRUE -294.177 -0.5708183 0.5124562 0.4916367</span></span>
+<span><span class="co">#&gt; 2    100      TRUE -294.278 -0.5321927 0.4309691 0.5723279</span></span>
+<span><span class="co">#&gt; 3    200      TRUE -294.293 -0.5278457 0.4168919 0.5763524</span></span></code></pre></div>
 <p>The estimated standard deviation of the random parameter changes with
 the draws by an amount that is small relative to its standard error
 here, but it has not settled. Choose the number of draws by this kind of
@@ -424,15 +426,12 @@ studies belong in scripts outside of a vignette build.</p>
 <span>                     rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="op">-</span><span class="fl">1</span> <span class="op">+</span> <span class="va">speed50</span>,</span>
 <span>                     rpardists <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>speed50 <span class="op">=</span> <span class="st">"ln"</span><span class="op">)</span>, data <span class="op">=</span> <span class="va">sub</span>,</span>
 <span>                     family <span class="op">=</span> <span class="st">"NB2"</span>, ndraws <span class="op">=</span> <span class="fl">100</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
-<span><span class="co">#&gt; errors of speed50:St.Dev are NA. The estimate may be on the boundary of the</span></span>
-<span><span class="co">#&gt; parameter space or not at a maximum.</span></span>
 <span><span class="va">nd</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>lnaadt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">5000</span><span class="op">)</span>, lnlength <span class="op">=</span> <span class="fl">0</span>, speed50 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">rp_ln</span>, newdata <span class="op">=</span> <span class="va">nd</span>, method <span class="op">=</span> <span class="st">"Exact"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: 1 prediction(s) are infinite: the expected value does not exist for a</span></span>
 <span><span class="co">#&gt; lognormal random parameter with a positive x, or a gamma random parameter with</span></span>
 <span><span class="co">#&gt; x * sigma^2 / mu &gt;= 1. See ?countreg_rp.</span></span>
-<span><span class="co">#&gt; [1] 1.5748    Inf</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 1.574824      Inf</span></span></code></pre></div>
 <ol style="list-style-type: decimal">
 <li><p><strong>The expectation does not exist.</strong> With a lognormal
 random parameter
@@ -467,7 +466,7 @@ and is used only to show the message:</p>
 <span>        method <span class="op">=</span> <span class="st">"Exact"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: 1 Exact prediction(s) exist but exceed the largest representable</span></span>
 <span><span class="co">#&gt; number (overflow); they are Inf.</span></span>
-<span><span class="co">#&gt; [1] 1.168687      Inf</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 1.140991      Inf</span></span></code></pre></div>
 </li>
 <li>
 <p><strong>A valid quantity was not approximated.</strong> Tolerance

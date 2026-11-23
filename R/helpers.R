@@ -313,56 +313,106 @@ generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params,
                                   het_form = c("additive", "legacy")) {
   het_form <- match.arg(het_form)
   n_obs <- nrow(X_rand)
-  n_draws <- nrow(hdraws)
   n_params <- length(rpar)
   if (is.null(rpardists)) rpardists <- rep("n", n_params)
-  
+  dr <- .fcr_prepare_draws(hdraws, rpardists, n_obs, correlated)
+  n_draws <- dr$R
+
   loc <- .fcr_rp_locations(random_coefs_means, rpardists, n_obs,
                            het_mean_coefs, X_het_mean, het_var_coefs,
                            X_het_var, het_form)
   mu_mat <- loc$mu_mat
   var_multiplier <- loc$var_multiplier
-  
+
   if (correlated) {
     # --- Correlated (normal only) ---
+    # sum_k x_k v (L z)_k = sum_l [(X v) L]_l z_l
     L <- .fcr_chol_unpack(rand_var_params, n_params)
-    corr_draws <- stats::qnorm(hdraws[, seq_len(n_params), drop = FALSE]) %*%
-      t(L)
-    xb_deterministic <- rowSums(X_rand * mu_mat)
-    xb_stochastic <- (X_rand * var_multiplier) %*% t(corr_draws)
-    return(list(xb_rand_mat = xb_stochastic + xb_deterministic))
+    XL <- (X_rand * var_multiplier) %*% L
+    xb_rand_mat <- matrix(rowSums(X_rand * mu_mat), n_obs, n_draws)
+    for (l in seq_len(n_params)) {
+      xb_rand_mat <- xb_rand_mat + XL[, l] * dr$Z[[l]]
+    }
+    return(list(xb_rand_mat = xb_rand_mat))
   }
-  
+
   # --- Uncorrelated ---
   xb_rand_mat <- matrix(0, nrow = n_obs, ncol = n_draws)
   for (k in seq_len(n_params)) {
     mu_i <- mu_mat[, k]
     sd_i <- abs(rand_var_params[k]) * var_multiplier
-    u <- hdraws[, k]
-    dist_type <- rpardists[k]
-    
-    if (dist_type == "g") {
+    if (rpardists[k] == "g") {
       shape_vec <- (mu_i^2) / (sd_i^2)
       rate_vec <- mu_i / (sd_i^2)
-      param_draws <- matrix(0, nrow = n_obs, ncol = n_draws)
-      for (d in seq_len(n_draws)) {
-        param_draws[, d] <- suppressWarnings(
-          stats::qgamma(u[d], shape = shape_vec, rate = rate_vec))
-      }
+      param_draws <- matrix(suppressWarnings(
+        stats::qgamma(dr$U[[k]], shape = shape_vec, rate = rate_vec)),
+        n_obs, n_draws)
     } else {
-      std_draws <- switch(dist_type,
-                          "n" = stats::qnorm(u),
-                          "ln" = stats::qnorm(u),
-                          "t" = qtri(u, 0, 1),
-                          "u" = 2 * u - 1,
-                          stop("Unknown random-parameter distribution: ",
-                               dist_type, call. = FALSE))
-      param_draws <- outer(mu_i, rep(1, n_draws)) + outer(sd_i, std_draws)
-      if (dist_type == "ln") param_draws <- exp(param_draws)
+      param_draws <- mu_i + sd_i * dr$Z[[k]]
+      if (rpardists[k] == "ln") param_draws <- exp(param_draws)
     }
     xb_rand_mat <- xb_rand_mat + X_rand[, k] * param_draws
   }
   list(xb_rand_mat = xb_rand_mat)
+}
+
+# Per-unit uniform draws for the random parameters (Train 2009, Sec. 9.3.3).
+# Unit u gets draws (u - 1) R + 1, ..., u R of a K-dimensional Halton
+# sequence whose first `burn` points are discarded, so every unit (panel,
+# or row without panels) has its own draws and the simulation errors of
+# different units are not correlated. `unit` gives each row's unit number;
+# rows of the same unit share its draws. Returns a list of K (rows x R)
+# matrices of class "fcr_unit_draws".
+.fcr_unit_halton <- function(unit, R, K, scrambled = FALSE, seed = NULL,
+                             burn = 10L) {
+  unit <- as.integer(unit)
+  n_units <- max(unit)
+  h <- .fcr_halton(burn + n_units * R, K, scrambled, seed)
+  h <- h[burn + seq_len(n_units * R), , drop = FALSE]
+  idx <- (unit - 1L) * R + rep(seq_len(R), each = length(unit))
+  structure(lapply(seq_len(K), function(k)
+    matrix(h[idx, k], length(unit), R)), class = "fcr_unit_draws")
+}
+
+# Rows of per-unit draws.
+.fcr_draw_rows <- function(hdraws, rows) {
+  if (!inherits(hdraws, "fcr_unit_draws")) return(hdraws)
+  structure(lapply(hdraws, function(m) m[rows, , drop = FALSE]),
+            class = "fcr_unit_draws")
+}
+
+# Draws for generate_random_draws() and the RP score: per random parameter,
+# the uniform draws U (gamma parameters, which use their quantiles) and the
+# standardized draws Z (normal and lognormal: qnorm(U); triangular on
+# [-1, 1]; uniform 2 U - 1), as (rows x R) matrices. `hdraws` is an
+# (R x K) matrix shared by every row, per-unit draws from
+# .fcr_unit_halton(), or draws already prepared (returned unchanged).
+.fcr_prepare_draws <- function(hdraws, rpardists, n_obs, correlated = FALSE) {
+  if (inherits(hdraws, "fcr_prepared_draws")) return(hdraws)
+  K <- length(rpardists)
+  U <- if (inherits(hdraws, "fcr_unit_draws")) {
+    unclass(hdraws)[seq_len(K)]
+  } else {
+    lapply(seq_len(K), function(k)
+      matrix(hdraws[, k], n_obs, nrow(hdraws), byrow = TRUE))
+  }
+  Z <- lapply(seq_len(K), function(k) {
+    dist <- if (correlated) "n" else rpardists[k]
+    u <- U[[k]]
+    switch(dist,
+           "n" = , "ln" = stats::qnorm(u),
+           # Symmetric triangular quantile on [-1, 1]
+           "t" = ifelse(u < 0.5, sqrt(2 * u) - 1, 1 - sqrt(2 * (1 - u))),
+           "u" = 2 * u - 1,
+           "g" = NULL,
+           stop("Unknown random-parameter distribution: ", dist,
+                call. = FALSE))
+  })
+  keep_u <- !correlated & rpardists == "g"
+  U[!keep_u] <- list(NULL)
+  R <- if (inherits(hdraws, "fcr_unit_draws")) ncol(hdraws[[1]]) else
+    nrow(hdraws)
+  structure(list(U = U, Z = Z, R = R), class = "fcr_prepared_draws")
 }
 
 # Per-observation locations (N x K matrix; log scale for "ln") and scale
@@ -905,14 +955,12 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
 # changing the caller's random-number stream, so the same draws can be
 # generated again for prediction.
 .fcr_halton <- function(n, dim, scrambled = FALSE, seed = NULL) {
-  if (!scrambled || is.null(seed)) {
-    return(as.matrix(randtoolbox::halton(n, dim, mixed = scrambled)))
-  }
-  old <- if (exists(".Random.seed", envir = globalenv()))
-    get(".Random.seed", envir = globalenv())
-  on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
-    assign(".Random.seed", old, envir = globalenv()))
-  set.seed(seed)
+  if (!scrambled) return(as.matrix(randtoolbox::halton(n, dim)))
+  # The scrambling uses randtoolbox's own generator, which R's set.seed()
+  # does not reach: setSeed() fixes it (without touching R's random numbers).
+  # Fits with draw_version < 3 never set it, so they used randtoolbox's
+  # default, seed 0; seed = NULL gives those draws.
+  randtoolbox::setSeed(if (is.null(seed)) 0 else seed)
   as.matrix(randtoolbox::halton(n, dim, mixed = TRUE))
 }
 

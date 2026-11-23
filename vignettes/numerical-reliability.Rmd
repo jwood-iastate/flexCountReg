@@ -205,7 +205,7 @@ different kinds, controlled by different arguments:
 | Model | Integral | Control |
 |---|---|---|
 | `countreg()` with PLN, PGE, PW or PLL | the mixing distribution of the family (inner) | `engine`: `"quadrature"` (default, adaptive; `ndraws` is not used) or `"halton"` (`ndraws` draws) |
-| `countreg_rp()` | the random parameters (outer) | `ndraws` Halton draws (`scrambled` for scrambled draws) |
+| `countreg_rp()` | the random parameters (outer) | `ndraws` Halton draws for each panel (`draws = "per_unit"`, default) or the same draws for every panel (`draws = "shared"`); `scrambled` for scrambled draws |
 | `countreg_rp()` with PLN, PGE, PW or PLL | the mixing distribution, inside each outer draw | `engine`; `mix_draws` only with `engine = "halton"` |
 
 ### Inner integrals: the Poisson-lognormal family

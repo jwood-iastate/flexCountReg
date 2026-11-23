@@ -45,6 +45,16 @@ test_that("the analytic RP score matches the numeric one for every draw type", {
   expect_scores_match(rp_scores(
     f, rpar_formula = ~ -1 + lnlength, data = w, family = "NB1",
     rpardists = c(lnlength = "g"), start.vals = c(-6, 0.7, 0.8, 0.3, -1)))
+  # Draws shared by every panel (the default is one set per panel)
+  expect_scores_match(rp_scores(
+    f, rpar_formula = ~ -1 + speed50 + lnlength + z, data = w,
+    family = "NB2", group_var = "ID", draws = "shared",
+    rpardists = c(speed50 = "ln", lnlength = "g", z = "t"),
+    start.vals = c(-6, 0.7, -1, 0.8, 0.1, 0.2, 0.3, 0.2, -1)))
+  expect_scores_match(rp_scores(
+    f, rpar_formula = ~ -1 + speed50 + lnlength, data = w, family = "NB2",
+    correlated = TRUE, draws = "shared",
+    start.vals = c(-6, 0.7, 0.1, 0.8, 0.3, 0.1, 0.2, -1)))
 })
 
 test_that("the analytic RP score covers correlation and heterogeneity", {
@@ -156,7 +166,14 @@ test_that("fits agree with the analytic and the numeric gradient", {
     n <- fit("numeric", method)
     expect_equal(as.numeric(logLik(a)), as.numeric(logLik(n)),
                  tolerance = 1e-6)
-    expect_equal(coef(a), coef(n), tolerance = 1e-3)
+    # The likelihood depends on |sigma|, so a standard deviation's sign is
+    # not identified
+    sd_abs <- function(b) {
+      sd <- grepl("St.Dev", names(b))
+      b[sd] <- abs(b[sd])
+      b
+    }
+    expect_equal(sd_abs(coef(a)), sd_abs(coef(n)), tolerance = 1e-3)
   }
 })
 

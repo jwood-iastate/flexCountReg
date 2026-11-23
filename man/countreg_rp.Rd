@@ -31,7 +31,8 @@ countreg_rp(
   keep_data = TRUE,
   panel_id = NULL,
   mix_draws = NULL,
-  weight_type = c("frequency", "sampling")
+  weight_type = c("frequency", "sampling"),
+  draws = c("per_unit", "shared")
 )
 }
 \arguments{
@@ -91,8 +92,8 @@ parameters.}
 
 \item{scrambled}{if the Halton draws should be scrambled. Scrambled
 draws are generated from a random seed that is stored in the fit, so
-predictions reuse the same draws (and \code{set.seed()} before fitting
-makes the fit reproducible).}
+predictions reuse the same draws, \code{set.seed()} before fitting
+makes the fit reproducible, and different seeds give different draws.}
 
 \item{correlated}{if the random parameters should be correlated.
 If TRUE, only normal distributions are used.}
@@ -165,6 +166,16 @@ rescaled; the number of units is the number of panels (rows without \code{group_
 positive weight; bootstrap standard errors are not available; and LR
 tests, AIC and BIC are not valid (they are reported, with a note, by
 \code{summary()} and are refused by \code{regCompTest()}).}
+
+\item{draws}{\code{"per_unit"} (default): each unit (panel, or row when
+there is no \code{group_var}) has its own \code{ndraws} draws, a
+consecutive block of one Halton sequence after its first 10 points
+(Train 2009, Sec. 9.3.3), so the simulation errors of different units
+are independent. \code{"shared"}: the same draws for every unit, as in
+earlier versions. Empirical Bayes predictions
+(\code{method = "Individual"}) regenerate each estimation unit's own
+draws, matched by panel id (by row position without panels); units not
+in the estimation data get new draws.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:
@@ -278,6 +289,9 @@ summary(rp_poisson)
 
 }
 \references{
+Train, K. (2009). \emph{Discrete Choice Methods with Simulation}, 2nd ed.
+Cambridge University Press.
+
 Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and interpretation for
 random parameter generalized linear models. \emph{Accident Analysis and
 Prevention}, 220, 108147.

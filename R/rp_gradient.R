@@ -64,7 +64,7 @@
   }
   mu_fixed <- exp(as.vector(d$X_Fixed %*% pp$fixed) + d$X_offset)
 
-  draws_info <- generate_random_draws(hdraws = d$hdraws,
+  draws_info <- generate_random_draws(hdraws = d$draws,
                                       random_coefs_means = pp$rand_means,
                                       rand_var_params = pp$rand_vars,
                                       rpardists = d$rpardists,
@@ -150,9 +150,9 @@
   }
 
   if (d$correlated) {
-    Z <- stats::qnorm(d$hdraws[, seq_len(K), drop = FALSE])
     L <- .fcr_chol_unpack(pp$rand_vars, K)
-    AZ <- A %*% Z
+    AZ <- vapply(d$draws$Z, function(Z) rowSums(A * Z), numeric(N))
+    AZ <- matrix(AZ, N, K)
     ci <- .fcr_chol_index(K)
     var_cols <- X_rand[, ci[, 1], drop = FALSE] * v *
       AZ[, ci[, 2], drop = FALSE]
@@ -162,25 +162,20 @@
     C <- matrix(0, N, K)        # sum_r A d beta_tkr / d sd_tk
     s_k <- pp$rand_vars
     for (k in seq_len(K)) {
-      u <- d$hdraws[, k]
       sd_i <- abs(s_k[k]) * v
       dist <- d$rpardists[k]
       if (dist == "g") {
-        g <- .fcr_rp_gamma_derivs(u, loc$mu_mat[, k], sd_i)
+        g <- .fcr_rp_gamma_derivs(d$draws$U[[k]], loc$mu_mat[, k], sd_i)
         M[, k] <- rowSums(A * g$dmu)
         C[, k] <- rowSums(A * g$dsd)
       } else {
-        z <- switch(dist,
-                    "n" = stats::qnorm(u),
-                    "ln" = stats::qnorm(u),
-                    "t" = qtri(u, 0, 1),
-                    "u" = 2 * u - 1)
+        Z <- d$draws$Z[[k]]
         if (dist == "ln") {
-          AB <- A * exp(outer(loc$mu_mat[, k], rep(1, R)) + outer(sd_i, z))
+          AB <- A * exp(loc$mu_mat[, k] + sd_i * Z)
           M[, k] <- rowSums(AB)
-          C[, k] <- as.vector(AB %*% z)
+          C[, k] <- rowSums(AB * Z)
         } else {
-          C[, k] <- as.vector(A %*% z)
+          C[, k] <- rowSums(A * Z)
         }
       }
     }
@@ -215,21 +210,17 @@
 }
 
 # Derivatives of gamma random-parameter draws beta = qgamma(u, a, b), with
-# shape a = mu^2 / sd^2 and rate b = mu / sd^2, in mu and sd (N x R each).
-# Only d qgamma / d shape has no closed form; it uses central differences.
-.fcr_rp_gamma_derivs <- function(u, mu, sd) {
+# shape a = mu^2 / sd^2 and rate b = mu / sd^2, in mu and sd (N x R each;
+# U is the N x R matrix of uniform draws). Only d qgamma / d shape has no
+# closed form; it uses central differences.
+.fcr_rp_gamma_derivs <- function(U, mu, sd) {
   a <- mu^2 / sd^2
   b <- mu / sd^2
   h <- .Machine$double.eps^(1 / 3) * a
-  q <- function(shape) suppressWarnings(
-    vapply(u, function(ur) stats::qgamma(ur, shape = shape),
-           numeric(length(mu))))
+  q <- function(shape) matrix(suppressWarnings(
+    stats::qgamma(U, shape = shape)), nrow(U), ncol(U))
   Q <- q(a)
   dQ <- (q(a + h) - q(a - h)) / (2 * h)
-  if (!is.matrix(Q)) {
-    Q <- matrix(Q, nrow = length(mu))
-    dQ <- matrix(dQ, nrow = length(mu))
-  }
   beta <- Q / b
   list(dmu = 2 * dQ - beta / mu,
        dsd = 2 * (beta - mu * dQ) / sd)

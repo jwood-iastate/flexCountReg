@@ -48,8 +48,8 @@
 #'        parameters.
 #' @param scrambled if the Halton draws should be scrambled. Scrambled
 #'   draws are generated from a random seed that is stored in the fit, so
-#'   predictions reuse the same draws (and \code{set.seed()} before fitting
-#'   makes the fit reproducible).
+#'   predictions reuse the same draws, \code{set.seed()} before fitting
+#'   makes the fit reproducible, and different seeds give different draws.
 #' @param mix_draws with \code{engine = "halton"}, the number of Halton
 #'   draws for integrating over the mixing distribution of the PLN, PGE, PLL
 #'   and PW families (inside each random-parameter draw). The default is
@@ -89,6 +89,15 @@
 #'   positive weight; bootstrap standard errors are not available; and LR
 #'   tests, AIC and BIC are not valid (they are reported, with a note, by
 #'   \code{summary()} and are refused by \code{regCompTest()}).
+#' @param draws \code{"per_unit"} (default): each unit (panel, or row when
+#'   there is no \code{group_var}) has its own \code{ndraws} draws, a
+#'   consecutive block of one Halton sequence after its first 10 points
+#'   (Train 2009, Sec. 9.3.3), so the simulation errors of different units
+#'   are independent. \code{"shared"}: the same draws for every unit, as in
+#'   earlier versions. Empirical Bayes predictions
+#'   (\code{method = "Individual"}) regenerate each estimation unit's own
+#'   draws, matched by panel id (by row position without panels); units not
+#'   in the estimation data get new draws.
 #' @param method optimization method passed to \code{\link[maxLik]{maxLik}}:
 #'   \code{"BFGS"} (default), \code{"NR"}, \code{"BHHH"}, \code{"BFGSR"},
 #'   \code{"CG"}, \code{"NM"} or \code{"SANN"}. BFGS uses the analytic
@@ -161,6 +170,9 @@
 #' marked as not converged, with a warning.
 #'
 #' @references
+#' Train, K. (2009). \emph{Discrete Choice Methods with Simulation}, 2nd ed.
+#' Cambridge University Press.
+#'
 #' Wood, J.S., Gayah, V. (2025). Out-of-sample prediction and interpretation for
 #' random parameter generalized linear models. \emph{Accident Analysis and
 #' Prevention}, 220, 108147.
@@ -242,9 +254,11 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
                          stderr = "normal", bootstraps = NULL,
                          engine = "quadrature", keep_data = TRUE,
                          panel_id = NULL, mix_draws = NULL,
-                         weight_type = c("frequency", "sampling")) {
+                         weight_type = c("frequency", "sampling"),
+                         draws = c("per_unit", "shared")) {
   
   print.level <- if (verbose) 2 else 0
+  draws <- match.arg(draws)
   stderr_missing <- missing(stderr)
   if (!is.null(panel_id)) {
     .fcr_deprecated_arg("countreg_rp", "panel_id", "group_var")
@@ -401,8 +415,15 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   if (is.null(mix_draws)) mix_draws <- min(ndraws, 200)
   .fcr_check_controls(ndraws = mix_draws)
   draw_seed <- if (scrambled) sample.int(.Machine$integer.max, 1L)
-  hdraws <- .fcr_halton(ndraws, N_rand + 1, scrambled,
-                        draw_seed)[, seq_len(N_rand), drop = FALSE]
+  # Random-parameter draws: each unit (panel, or row without panels) gets
+  # its own draws by default; "shared" uses the same draws for every unit
+  hdraws <- if (draws == "per_unit") {
+    .fcr_unit_halton(as.integer(panel_group), ndraws, N_rand, scrambled,
+                     draw_seed)
+  } else {
+    .fcr_halton(ndraws, N_rand + 1, scrambled,
+                draw_seed)[, seq_len(N_rand), drop = FALSE]
+  }
   dist_haltons <- .fcr_halton(mix_draws, N_rand + 1, scrambled,
                               draw_seed)[, N_rand + 1]
   normed_dist_haltons <- stats::qnorm(dist_haltons)
@@ -481,7 +502,8 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
     N_fixed = N_fixed, N_rand = N_rand, n_var_params = n_var_params,
     N_het_mean = N_het_mean, N_het_var = N_het_var,
     N_dis_1 = N_dis_1, N_dis_2 = N_dis_2,
-    hdraws = hdraws, rpardists = rpardists, rpar = rpar,
+    draws = .fcr_prepare_draws(hdraws, rpardists, N_obs, correlated),
+    rpardists = rpardists, rpar = rpar,
     correlated = correlated, dist_haltons = dist_haltons,
     normed_dist_haltons = normed_dist_haltons,
     panel_group = panel_group, panel_idx = as.integer(panel_group),
@@ -541,6 +563,10 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$ndraws <- ndraws
   fit$mix_draws <- mix_draws
   fit$draw_seed <- draw_seed
+  fit$draws <- draws
+  # Units in the order of their draws, so Empirical Bayes predictions can
+  # regenerate each unit's draws
+  if (draws == "per_unit") fit$draw_units <- levels(panel_group)
   fit$scrambled <- scrambled
   fit$correlated <- correlated
   fit$panel_id <- panel_id 
@@ -553,7 +579,9 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   # [mu - sigma, mu + sigma], additive heterogeneity in means with one
   # coefficient per random parameter, separate Halton dimension for the
   # mixing distribution. Fits without this field used the older conventions.
-  fit$draw_version <- 2L
+  # Version 3 (flexCountReg >= 0.1.2): scrambled draws generated from
+  # draw_seed (earlier fits used randtoolbox's default scrambling seed 0)
+  fit$draw_version <- 3L
   fit$blueprint <- prep$blueprint
   fit$y <- y
   fit$nobs <- N_obs
@@ -603,7 +631,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
                          het_mean_formula = het_mean_formula,
                          het_var_formula = het_var_formula,
                          ndraws = ndraws, scrambled = scrambled,
-                         mix_draws = mix_draws,
+                         mix_draws = mix_draws, draws = draws,
                          correlated = correlated,
                          group_var = boot_id,
                          weights = w_r,

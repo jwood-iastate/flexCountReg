@@ -329,6 +329,26 @@
   coefficient matrix, or `tibble::as_tibble(summary(m))` for the tibble that
   `summary()` returned before. The offset is shown as a note, not as a
   coefficient row.
+* `countreg_rp()` gives each unit (panel, or row without `group_var`) its
+  own simulation draws by default: new argument `draws = c("per_unit",
+  "shared")`. Unit u uses draws (u - 1) R + 1 to u R of one Halton sequence,
+  after its first 10 points (Train 2009, Sec. 9.3.3). With shared draws, as
+  before, draw r is the same for every panel, so simulation errors are
+  correlated across panels and do not average out as panels are added. On
+  `washington_roads` (NB2, random `speed50` and `lnlength`, 12 scrambling
+  seeds), per-unit draws cut the error of the random-parameter means and
+  standard deviations by a factor of 2 to 5 at 50 and 200 draws. The
+  intercept and the log-likelihood varied more across seeds than with shared
+  draws. Empirical Bayes predictions regenerate each estimation panel's own
+  draws (by panel id), and new panels get new draws. `draws = "shared"`
+  reproduces earlier fits.
+* Scrambled Halton draws (`scrambled = TRUE` in `countreg_rp()`, and in
+  interval simulations) now depend on their seed. `randtoolbox` scrambles
+  with its own generator, which `set.seed()` does not reach. So every
+  "scrambled" fit used the same scrambling (randtoolbox's default, seed 0),
+  whatever the stored `draw_seed`, and different seeds gave identical
+  results. Fits made before this change still predict with the draws they
+  were estimated with.
 * `countreg_rp()` now uses `method = "BFGS"` by default (it was `"BHHH"`).
   With the analytic gradient, BFGS reached the maximum in each of six test
   models. BHHH failed on two of the six. On a 500-draw NB2 model with three

@@ -140,7 +140,9 @@ mod_data_server <- function(id, state) {
         keep <- file.path(state$session_dir,
                           paste0("upload-", length(state$uploads) + 1,
                                  ".csv"))
-        file.copy(f$datapath, keep, overwrite = TRUE)
+        if (!isTRUE(file.copy(f$datapath, keep, overwrite = TRUE))) {
+          stop("Could not keep a copy of the uploaded file.", call. = FALSE)
+        }
         app_load_data(state, "upload", f$name, upload_path = keep,
                       title = paste("Uploaded file", f$name))
       }

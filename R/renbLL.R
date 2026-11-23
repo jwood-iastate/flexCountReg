@@ -66,22 +66,42 @@ renb_ll <- function(y, mu, a, b, panels) {
   out
 }
 
+# sum over k = 0, ..., d - 1 of f(x, k) for each element (whole d >= 0),
+# vectorized over the elements: pass k adds f(x, k) to the elements with
+# d > k, so there are max(d) passes over a shrinking set instead of one R
+# call per element, and the terms are added in the same order.
+.fcr_finite_sum <- function(x, d, f) {
+  out <- numeric(length(x))
+  act <- which(d > 0)
+  k <- 0
+  while (length(act)) {
+    out[act] <- out[act] + f(x[act], k)
+    k <- k + 1
+    act <- act[d[act] > k]
+  }
+  out
+}
+
 # lgamma(x + d) - lgamma(x) - d * log(x): tends to 0 as x -> Inf (the
 # Poisson limit of negative binomial panel terms with x = 1 / alpha), where
 # the direct expression loses all significant digits. For whole d (counts)
 # it is the finite sum of log1p(k / x), k = 0, ..., d - 1, which is accurate
-# for every x; otherwise a Stirling series is used for large x.
+# and smooth in x everywhere (numeric Hessians difference it twice, so a
+# switch to the direct form, whose absolute error is about eps x log(x),
+# made them noisy); the sums are vectorized. For other d a Stirling series
+# is used for large x.
 .fcr_lgamma_diff_rel <- function(x, d) {
   if (!length(x) || !length(d)) return(numeric(0))
   n <- max(length(x), length(d))
   x <- rep_len(x, n); d <- rep_len(d, n)
-  out <- lgamma(x + d) - lgamma(x) - d * log(x)
+  # x = Inf (alpha underflowed to 0): the Poisson limit 0
+  lim <- !is.na(x) & x == Inf & is.finite(d)
+  out <- suppressWarnings(lgamma(x + d) - lgamma(x) - d * log(x))
+  out[lim] <- 0
   int <- is.finite(x) & x > 0 & is.finite(d) & d >= 0 & d == round(d) &
     d <= 1e5
   if (any(int)) {
-    out[int] <- vapply(which(int), function(i) {
-      if (d[i] == 0) 0 else sum(log1p((0:(d[i] - 1)) / x[i]))
-    }, numeric(1))
+    out[int] <- .fcr_finite_sum(x[int], d[int], function(x, k) log1p(k / x))
   }
   big <- !int & is.finite(x) & x > 1e4 * (1 + d^2)
   if (any(big)) {
@@ -93,18 +113,19 @@ renb_ll <- function(y, mu, a, b, panels) {
   out
 }
 
-# digamma(x + d) - digamma(x): the finite sum of 1 / (x + k) for whole d,
-# otherwise a series for large x
+# digamma(x + d) - digamma(x): the vectorized finite sum of 1 / (x + k) for
+# whole d, otherwise a series for large x
 .fcr_digamma_diff <- function(x, d) {
   n <- max(length(x), length(d))
   x <- rep_len(x, n); d <- rep_len(d, n)
-  out <- digamma(x + d) - digamma(x)
+  # x = Inf (alpha underflowed to 0): the Poisson limit 0, not Inf - Inf
+  lim <- !is.na(x) & x == Inf & is.finite(d)
+  out <- suppressWarnings(digamma(x + d) - digamma(x))
+  out[lim] <- 0
   int <- is.finite(x) & x > 0 & is.finite(d) & d >= 0 & d == round(d) &
     d <= 1e5
   if (any(int)) {
-    out[int] <- vapply(which(int), function(i) {
-      if (d[i] == 0) 0 else sum(1 / (x[i] + 0:(d[i] - 1)))
-    }, numeric(1))
+    out[int] <- .fcr_finite_sum(x[int], d[int], function(x, k) 1 / (x + k))
   }
   big <- !int & is.finite(x) & x > 1e4 * (1 + d^2)
   if (any(big)) {

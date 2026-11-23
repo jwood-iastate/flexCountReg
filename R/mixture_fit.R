@@ -368,18 +368,7 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
            "panel (a weight is the number of copies of the whole panel).",
            call. = FALSE)
     }
-    if (!is.null(des$Z)) {
-      Zu <- des$Z[first, , drop = FALSE]
-      dif <- abs(des$Z - Zu[unit, , drop = FALSE])
-      bad <- colnames(des$Z)[colSums(dif > 1e-10 * pmax(1, abs(des$Z))) > 0]
-      if (length(bad)) {
-        stop("Mixing (membership) variables must be constant within each ",
-             "panel, because the whole panel belongs to one class. ",
-             "Not constant: ", toString(bad), ". Use a panel-level summary ",
-             "(e.g. the panel mean) as a new column if that is what you ",
-             "intend.", call. = FALSE)
-      }
-    }
+    if (!is.null(des$Z)) Zu <- .fcr_fm_panel_design(des$Z, unit, n_u)
   }
   if (!is.null(Zu)) .fcr_check_design(Zu, "mixing_formula")
   map <- .fcr_fm_map(st$families, des$X, prep$blueprint$terms, des$D1,
@@ -906,7 +895,6 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
   st <- spec$st
   map <- spec$map
   d_used <- data[spec$prep$rows_used, , drop = FALSE]
-  perms <- .fcr_fm_allowed_perms(map$families, spec$fixed_mixing)
   V0 <- tryCatch(solve(-H), error = function(e) NULL)
   scale <- if (!is.null(V0)) sqrt(pmax(diag(V0), 0)) else rep(1, length(theta))
   scale[!is.finite(scale) | scale <= 0] <- 1
@@ -936,15 +924,11 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
                         sample.int(.Machine$integer.max, 1L),
                         start.vals = theta)
     est <- s$fit$estimate
-    # Align labels with the original estimates
-    dist <- apply(perms, 1, function(p) {
-      sum(((.fcr_fm_permute(est, map, p) - theta) / scale)^2)
-    })
-    o <- order(dist)
-    if (length(o) > 1L && dist[o[2]] < 1.5 * dist[o[1]]) {
-      n_amb <<- n_amb + 1L
-    }
-    est <- .fcr_fm_permute(est, map, perms[o[1], ])
+    # Align labels with the original estimates (an optimal assignment, so
+    # any number of components can be aligned)
+    al <- .fcr_fm_align(est, theta, map, scale, spec$fixed_mixing)
+    if (isTRUE(al$second < 1.5 * al$dist)) n_amb <<- n_amb + 1L
+    est <- .fcr_fm_permute(est, map, al$perm)
     names(est) <- map$names
     .fcr_refit_result(est, s$fit$converged)
   }

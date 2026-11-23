@@ -39,11 +39,14 @@ rinvgaus <- function(n, mean = 1, shape = 1) {
   m <- mean
   lambda <- shape
   
-  x <- m +
-    (m^2 * v) / (2 * lambda) -
-    (m / (2 * lambda)) *
-    sqrt(4 * m * lambda * v + m^2 * v^2)
-  
+  # Smaller root, m + m^2 v / (2 lambda) - (m / (2 lambda)) sqrt(4 m lambda v
+  # + m^2 v^2), written without the subtraction: with t = m v / (2 lambda) it
+  # equals m / (1 + t + sqrt(t (t + 2))). The subtracted form cancels when
+  # t is large and returned values <= 0 for a small shape; sqrt(t) *
+  # sqrt(t + 2) also avoids overflowing t^2.
+  t <- m * v / (2 * lambda)
+  x <- m / (1 + t + sqrt(t) * sqrt(t + 2))
+
   u <- runif(n)
   
   ifelse(
@@ -159,12 +162,20 @@ dpinvgaus <- function(x, mu = 1, eta = 1, form = "Type 1", log = FALSE) {
   if (log) lp else exp(lp)
 }
 
+# log P(0) of the Poisson-inverse-Gaussian (Type 1 scale), mu / eta *
+# (1 - sqrt(1 + 2 eta)), written as -2 mu / (1 + sqrt(1 + 2 eta)). The two are
+# equal, but the first cancels catastrophically as eta -> 0: at eta = 1e-16,
+# 1 + 2 eta rounds to 1 and log P(0) becomes 0 (P(0) = 1), so the PMF no
+# longer sums to one and a likelihood can exceed 0. The second form tends to
+# the Poisson value -mu.
+.fcr_pig_logp0 <- function(mu, eta) -2 * mu / (1 + sqrt(1 + 2 * eta))
+
 # Log PMF of the Poisson-inverse-Gaussian, computed with lgamma() and
 # log-sum-exp so it stays finite for large counts.
 .ldpinvgaus <- function(x, mu, eta, form = "Type 1") {
   if (form == "Type 2") eta <- eta * mu
   l1 <- log1p(2 * eta)
-  out <- mu / eta * (1 - sqrt(1 + 2 * eta))          # log P(0)
+  out <- .fcr_pig_logp0(mu, eta)                      # log P(0)
   for (i in which(is.finite(x) & x > 0 & mu > 0 & eta > 0)) {
     j <- 0:(x[i] - 1)
     terms <- lgamma(x[i] + j) - lgamma(x[i] - j) - lgamma(j + 1) +
@@ -215,12 +226,11 @@ ppinvgaus <- function(q, mu=1, eta=1, form="Type 1",
       eta_adj <- if(form == "Type 2") eta_i * mu_i else eta_i
       
       log_pmf <- numeric(q_i + 1)
-      sqrt_term <- sqrt(1 + 2 * eta_adj)
-      log_p0 <- mu_i / eta_adj * (1 - sqrt_term)
+      log_p0 <- .fcr_pig_logp0(mu_i, eta_adj)
       log_pmf[1] <- log_p0
-      
+
       if(q_i > 0) {
-        log_1p2e <- log(1 + 2 * eta_adj)
+        log_1p2e <- log1p(2 * eta_adj)
         
         for(y in 1:q_i) {
           j_seq <- 0:(y - 1)

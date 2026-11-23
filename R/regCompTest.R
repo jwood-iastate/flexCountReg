@@ -47,11 +47,20 @@
   d <- pc$data
   d$.fcr_y <- pc$y
   d$.fcr_off <- pc$offset
+  tt <- stats::delete.response(stats::terms(formula))
   rhs <- if (intercept_only) "1" else
-    paste(attr(stats::delete.response(stats::terms(formula)), "term.labels"),
-          collapse = " + ")
+    paste(attr(tt, "term.labels"), collapse = " + ")
   if (!nzchar(rhs)) rhs <- "1"
-  f <- stats::as.formula(paste(".fcr_y ~", rhs))
+  # With the model's variables, keep its intercept choice: a model without
+  # an intercept is compared with a base model without one (pc$X, the
+  # Poisson base's design, has no intercept column either)
+  if (!intercept_only && attr(tt, "intercept") == 0L) {
+    rhs <- paste(rhs, "- 1")
+  }
+  # In the model formula's environment, so functions it uses (such as a
+  # user's transformation) are found as in the original fit
+  f <- stats::as.formula(paste(".fcr_y ~", rhs),
+                         env = environment(formula) %||% parent.frame())
   args <- list(...)
   if (is.null(args$method)) args$method <- "BFGS"
   fit <- suppressWarnings(do.call(countreg, c(list(
@@ -393,6 +402,11 @@ regCompTest <- function(
       nest <- list(nested = FALSE, reason = paste(
         "the model's mean design does not contain an intercept, so the",
         "intercept-only base model is not nested in it"))
+    }
+    if (nest$nested && identical(model$model$weight_type, "sampling")) {
+      nest <- list(nested = FALSE, reason = paste(
+        "the model uses sampling weights, so its log-likelihood is a",
+        "pseudo-likelihood"))
     }
     if (nest$nested && !isTRUE(model$model$converged)) {
       nest <- list(nested = FALSE, reason = paste(

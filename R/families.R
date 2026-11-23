@@ -32,10 +32,32 @@
 
 .fcr_family <- function(params, dens, variance = NULL, rand = NULL,
                         mean_adj = function(alpha, sigma) 1, start = 0,
-                        mean = NULL, cdf = NULL, start_rp = NULL) {
+                        mean = NULL, cdf = NULL, start_rp = NULL,
+                        valid = NULL) {
   list(params = params, dens = dens, variance = variance, rand = rand,
        mean_adj = mean_adj, start = start, mean = mean, cdf = cdf,
-       start_rp = start_rp)
+       start_rp = start_rp, valid = valid)
+}
+
+# Is the distribution defined at each row's parameters (on the registry's
+# scale)? Every family needs a finite positive mean parameter and finite
+# positive distribution parameters; a family's `valid` hook adds coupled
+# conditions (GP2: 1 + (alpha - 1) mu > 0). This is not the same as a zero
+# probability: a valid underdispersed GP2 gives probability 0 to counts
+# beyond its support, while an invalid one has no distribution at all, and
+# .fcr_quiet_dens() would otherwise turn its NaN densities into zeros.
+.fcr_family_valid <- function(family, mu, alpha = NULL, sigma = NULL) {
+  n <- max(length(mu), length(alpha), length(sigma))
+  pos <- function(v) if (is.null(v)) rep(TRUE, n) else
+    rep_len(is.finite(v) & v > 0, n)
+  ok <- pos(mu) & pos(alpha) & pos(sigma)
+  hook <- .fcr_family_registry[[family]]$valid
+  if (!is.null(hook) && any(ok)) {
+    r <- .fcr_recycle(mu, alpha %||% NA_real_, sigma %||% NA_real_)
+    h <- hook(r[[1]], if (!is.null(alpha)) r[[2]], if (!is.null(sigma)) r[[3]])
+    ok <- ok & !is.na(h) & h
+  }
+  ok
 }
 
 # Density values for the likelihood: parameter values outside the valid
@@ -124,7 +146,9 @@
     variance = function(mu, alpha, sigma)
       .gp1_moments(mu, (alpha - 1) * mu)$var,
     mean = function(mu, alpha, sigma) .gp1_moments(mu, (alpha - 1) * mu)$mean,
-    rand = function(n, mu, alpha, sigma) rgp2(n, mu = mu, alpha = alpha - 1)),
+    rand = function(n, mu, alpha, sigma) rgp2(n, mu = mu, alpha = alpha - 1),
+    # phi = (alpha - 1) mu must exceed -1
+    valid = function(mu, alpha, sigma) 1 + (alpha - 1) * mu > 0),
 
   NB1 = .fcr_family(
     params = list("ln(alpha)", NULL),
@@ -277,8 +301,11 @@
               log = log),
     variance = function(mu, alpha, sigma) {
       gam <- log(alpha)
-      cc <- besselK(1 / sigma, gam + 1) / besselK(1 / sigma, gam)
-      mu + mu^2 * (2 * sigma * (gam + 1) / cc + 1 / cc^2 - 1)
+      # Ratio of Bessel functions on the log scale: besselK(1 / sigma, .)
+      # underflows to 0 for small sigma, and 0 / 0 gave NaN
+      cc <- exp(.fcr_log_besselK(1 / sigma, gam + 1) -
+                  .fcr_log_besselK(1 / sigma, gam))
+      mu + mu^2 * pmax(2 * sigma * (gam + 1) / cc + 1 / cc^2 - 1, 0)
     },
     rand = function(n, mu, alpha, sigma)
       rsichel(n, mu = mu, sigma = sigma, gamma = log(alpha)),

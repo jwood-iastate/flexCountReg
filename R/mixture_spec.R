@@ -380,25 +380,144 @@ print.fcr_mixture_control <- function(x, ...) {
   A
 }
 
-# Permutations that keep every component's family (all of them when the
-# components are exchangeable). Fixed mixing probabilities must also agree.
-.fcr_fm_allowed_perms <- function(families, fixed = NULL) {
-  K <- length(families)
-  perms <- .fcr_fm_all_perms(K)
-  ok <- apply(perms, 1, function(p) {
-    identical(families[p], families) &&
-      (is.null(fixed) || isTRUE(all.equal(fixed[p], fixed)))
-  })
-  perms[ok, , drop = FALSE]
+# ---- Relabeling ----------------------------------------------------------------
+#
+# A bootstrap refit is aligned with the original estimates theta by the
+# relabeling p that minimizes the scaled squared distance
+#   d(p) = sum_i ((permute(est, p)_i - theta_i) / scale_i)^2
+# over the permutations that keep each component's family (and fixed
+# mixing probability). Enumerating all K! permutations is only feasible for
+# a few components, but d(p) separates once the reference component is
+# fixed: shared coefficients add a constant, the component-specific
+# coefficients of new component k depend only on p[k], and so do its mixing
+# coefficients gamma[p[k]] - gamma[p[K]] once p[K] = r is fixed. The
+# optimum is therefore the best of at most K linear assignment problems of
+# size K - 1 (a single problem of size K for fixed or one-component mixing),
+# each solved exactly by the Hungarian algorithm in O(K^3).
+
+# Hungarian algorithm (shortest augmenting paths with potentials) for a
+# square matrix of finite costs W: the assignment perm (row i to column
+# perm[i]) minimizing sum_i W[i, perm[i]]. Vectors are indexed from 1 with
+# position 1 standing for the algorithm's dummy column 0.
+.fcr_fm_hungarian <- function(W) {
+  n <- nrow(W)
+  u <- numeric(n + 1L)
+  v <- numeric(n + 1L)
+  p <- integer(n + 1L)
+  way <- integer(n + 1L)
+  for (i in seq_len(n)) {
+    p[1L] <- i
+    j0 <- 0L
+    minv <- rep(Inf, n + 1L)
+    used <- rep(FALSE, n + 1L)
+    repeat {
+      used[j0 + 1L] <- TRUE
+      i0 <- p[j0 + 1L]
+      free <- which(!used[-1L])
+      cur <- W[i0, free] - u[i0 + 1L] - v[free + 1L]
+      better <- cur < minv[free + 1L]
+      minv[free[better] + 1L] <- cur[better]
+      way[free[better] + 1L] <- j0
+      m <- which.min(minv[free + 1L])
+      delta <- minv[free[m] + 1L]
+      j1 <- free[m]
+      uj <- which(used)
+      u[p[uj] + 1L] <- u[p[uj] + 1L] + delta
+      v[uj] <- v[uj] - delta
+      minv[!used] <- minv[!used] - delta
+      j0 <- j1
+      if (p[j0 + 1L] == 0L) break
+    }
+    repeat {
+      j1 <- way[j0 + 1L]
+      p[j0 + 1L] <- p[j1 + 1L]
+      j0 <- j1
+      if (j0 == 0L) break
+    }
+  }
+  perm <- integer(n)
+  perm[p[-1L]] <- seq_len(n)
+  perm
 }
 
-.fcr_fm_all_perms <- function(K) {
-  if (K == 1L) return(matrix(1L, 1, 1))
-  if (K > 7L) {
-    stop("Relabeling is limited to at most 7 components.", call. = FALSE)
+# Optimal linear assignment for a square cost matrix C whose non-finite
+# entries are forbidden pairs. Returns the assignment, its cost (Inf when
+# no assignment avoids the forbidden pairs) and, with second = TRUE, the
+# cost of the second-best assignment: every other assignment leaves out at
+# least one pair of the best, so it is the best of the n problems that each
+# forbid one of those pairs.
+.fcr_fm_lap <- function(C, second = FALSE) {
+  n <- nrow(C)
+  if (n == 0L) return(list(perm = integer(0), cost = 0, second = Inf))
+  fin <- is.finite(C)
+  if (!any(fin)) return(list(perm = seq_len(n), cost = Inf, second = Inf))
+  # Forbidden pairs get a cost larger than any assignment of allowed pairs,
+  # so they are used only when nothing else is possible
+  W <- C
+  W[!fin] <- 1 + 2 * n * max(abs(C[fin]))
+  perm <- .fcr_fm_hungarian(W)
+  cost <- sum(C[cbind(seq_len(n), perm)])
+  if (is.na(cost)) cost <- Inf
+  out <- list(perm = perm, cost = cost, second = Inf)
+  if (second && n > 1L && is.finite(cost)) {
+    out$second <- min(vapply(seq_len(n), function(i) {
+      C2 <- C
+      C2[i, perm[i]] <- Inf
+      .fcr_fm_lap(C2)$cost
+    }, numeric(1)))
   }
-  sub <- .fcr_fm_all_perms(K - 1L)
-  do.call(rbind, lapply(seq_len(K), function(i) {
-    cbind(i, matrix(setdiff(seq_len(K), i)[sub], ncol = K - 1L))
-  }))
+  out
+}
+
+# Relabeling of the refit `est` closest to `theta` (see above): the
+# permutation (for .fcr_fm_permute()), its distance d and the distance of
+# the second-best allowed relabeling (Inf when there is none).
+.fcr_fm_align <- function(est, theta, map, scale, fixed = NULL) {
+  K <- map$K
+  ident <- list(perm = seq_len(K), dist = NA_real_, second = Inf)
+  if (K == 1L || !all(is.finite(est))) return(ident)
+  zsq <- function(v, i) sum(((v - theta[i]) / scale[i])^2)
+  # allowed[k, j]: old component j may become new component k
+  allowed <- outer(map$families, map$families, "==")
+  if (!is.null(fixed)) {
+    # Fixed probabilities are positive; equal up to rounding
+    allowed <- allowed & abs(outer(fixed, fixed, "-")) <=
+      1.5e-8 * outer(fixed, fixed, pmax)
+  }
+  cs <- map$comp_specific
+  C <- matrix(Inf, K, K)
+  for (k in seq_len(K)) for (j in which(allowed[k, ])) {
+    C[k, j] <- zsq(est[cs[[j]]], cs[[k]])
+  }
+  shared <- setdiff(map$comp_par, unlist(cs))
+  c0 <- zsq(est[shared], shared)
+  if (is.null(map$mix_idx)) {
+    a <- .fcr_fm_lap(C, second = TRUE)
+    return(list(perm = a$perm, dist = c0 + a$cost, second = c0 + a$second))
+  }
+  G <- .fcr_fm_unpack(est, map)$gamma
+  G0 <- .fcr_fm_unpack(theta, map)$gamma
+  S <- matrix(scale[map$mix_idx], nrow = K - 1L)
+  best <- NULL
+  totals <- numeric(0)
+  for (r in which(allowed[K, ])) {
+    cols <- setdiff(seq_len(K), r)
+    # Mixing cost of new component k (< K) taking old component j, with r
+    # the new reference
+    M <- vapply(cols, function(j) {
+      vapply(seq_len(K - 1L), function(k)
+        sum(((G[, j] - G[, r] - G0[, k]) / S[k, ])^2), numeric(1))
+    }, numeric(K - 1L))
+    M <- matrix(M, nrow = K - 1L)
+    a <- .fcr_fm_lap(C[-K, cols, drop = FALSE] + M, second = TRUE)
+    base <- c0 + C[K, r]
+    totals <- c(totals, base + a$cost, base + a$second)
+    if (is.null(best) || base + a$cost < best$dist) {
+      best <- list(perm = c(cols[a$perm], r), dist = base + a$cost)
+    }
+  }
+  # The second-best relabeling is either the best one with another
+  # reference or the second best with the same reference
+  best$second <- if (length(totals) > 1L) sort(totals)[2L] else Inf
+  best
 }

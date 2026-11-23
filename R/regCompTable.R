@@ -81,8 +81,15 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
   # create an initial tibble with a column of the coefficient names and other
   # stats
   vars <- c() # names of estimated coefficients
+  # Column names: the list names, with "Model k" for unnamed entries (an
+  # unnamed list gave a table without model columns), made unique
   modNames <- names(models)
-  for (i in seq_along(models)){
+  if (is.null(modNames)) modNames <- rep("", Nmodels)
+  modNames[is.na(modNames) | !nzchar(modNames)] <-
+    paste("Model", seq_len(Nmodels))[is.na(modNames) | !nzchar(modNames)]
+  modNames <- make.unique(modNames, sep = " ")
+  # The coefficient rows are included only with coefs = TRUE
+  for (i in seq_along(models)[isTRUE(coefs)]){
     coef_names_i <- names(models[[i]]$model$estimate) # Coefficient names
     for (item in coef_names_i) { # Add any new, unique, variables/coefficient names
       if (!(item %in% vars)) {
@@ -123,11 +130,11 @@ regCompTable <- function(models, coefs=TRUE, AIC=TRUE, BIC=TRUE, RSquare=TRUE,
     rsq <- round(.mcfadden_r2(LL, LLbase), digits)
     Nobs <- stats::nobs(m_i)
     
-    coefs <- stats::coef(m_i)
-    coefNames <- names(coefs)
+    est <- stats::coef(m_i)
+    coefNames <- names(est)
     se <- .fcr_se(stats::vcov(m_i))
-    t <- abs(coefs / se)
-    coefsRounded <- round(coefs, digits)
+    t <- abs(est / se)
+    coefsRounded <- round(est, digits)
     seRounded <- round(se, digits)
     tablecoefs <- c()
     

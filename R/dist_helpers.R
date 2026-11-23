@@ -61,11 +61,14 @@
   if (is.na(p)) return(NA_real_)
   if (p < 0 || p > 1) return(NaN)
   if (p == 1) return(Inf)
+  # Tolerance for rounding in the summed CDF near 1. It is relative for small
+  # p: an absolute 1e-12 would return 0 for every p below 1e-12.
+  tol <- min(1e-12, 1e-8 * p)
   K <- 32
   repeat {
     cdf <- cdf_at(0:K)
     if (all(is.nan(cdf))) return(NaN)      # invalid parameters
-    hit <- which(cdf >= p - 1e-12)
+    hit <- which(cdf >= p - tol)
     if (length(hit)) return(hit[1] - 1)
     if (K >= max_y || all(is.na(cdf))) return(NA_real_)
     K <- min(2 * K, max_y)

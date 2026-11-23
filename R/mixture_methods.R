@@ -26,7 +26,8 @@
 }
 
 # Row log-probabilities of observed counts y under each component
-# (n x K; NA where y or the parameters are missing).
+# (n x K; NA where y or the parameters are missing, and where a component
+# is undefined at the row's parameters).
 .fcr_fm_row_logpmf <- function(r, y) {
   LP <- matrix(NA_real_, r$n, r$ps$K)
   for (k in seq_len(r$ps$K)) {
@@ -38,6 +39,21 @@
     LP[ok, k] <- .fcr_fm_logpmf(r$ps, sv, r$ps$families[k], y[ok])
   }
   LP
+}
+
+# Rows that carry no outcome information: a missing outcome, or a missing
+# covariate value of some component. These rows are left out of the class
+# updates. They are told apart from rows whose component is undefined at
+# valid inputs (NA in .fcr_fm_row_logpmf() too), which make their panel's
+# probabilities NA instead of being dropped quietly.
+.fcr_fm_row_missing <- function(r, y) {
+  miss <- is.na(y)
+  for (cv in r$cvs) {
+    miss <- miss | is.na(cv$mu)
+    if (!is.null(cv$alpha)) miss <- miss | is.na(cv$alpha)
+    if (!is.null(cv$sigma)) miss <- miss | is.na(cv$sigma)
+  }
+  miss
 }
 
 # Panel identifiers of the rows of `data` (NULL for cross-sectional fits).
@@ -58,36 +74,54 @@
 #   posterior - updated with the outcomes of `data` itself (retrospective);
 #   history   - updated with the outcomes in `history` (earlier rows of the
 #               same panels), never with the rows being predicted.
+# For panel models the membership probability belongs to the panel, so it
+# is computed once per panel from the validated panel membership design
+# (.fcr_fm_panel_design()), never from whichever row happens to come first:
+# the result does not depend on the row order of `data` or `history`. The
+# prior target of a panel model also works without the panel identifiers
+# (each row is then treated as its own unit); with them, the membership
+# variables are checked as in fitting.
 .fcr_fm_log_class <- function(object, r, data, conditioning,
                               history = NULL) {
   K <- r$ps$K
-  if (conditioning == "prior" || K == 1L) return(r$logpi)
+  if (K == 1L) return(r$logpi)
+  gv <- object$model$group_var
+  if (conditioning == "history" && is.null(gv)) {
+    stop("`conditioning = \"history\"` needs a panel model (`group_var`): ",
+         "without panels, earlier outcomes carry no information about the ",
+         "class of a new row.", call. = FALSE)
+  }
+  if (conditioning == "prior" &&
+      (is.null(gv) || !all(gv %in% names(data)))) {
+    return(r$logpi)
+  }
   update <- function(logpi_u, A_u) {
     lc <- logpi_u + A_u
     lc - .fcr_lse_rows(lc)
   }
+  y <- NULL
   if (conditioning == "posterior") {
     y <- .fcr_response(object, data)
     if (is.null(y)) {
       stop("`conditioning = \"posterior\"` needs the outcome in the data.",
            call. = FALSE)
     }
+    if (is.null(gv)) return(update(r$logpi, .fcr_fm_row_logpmf(r, y)))
+  }
+  g <- .fcr_fm_group_ids(object, data)
+  if (conditioning != "history") {
+    ug <- unique(g)
+    gi <- match(g, ug)
+    G <- length(ug)
+    Zu <- .fcr_fm_panel_design(r$des$Z, gi, G, " (in the new data)")
+    logpi_u <- .fcr_fm_logprior(r$ps, r$pars, Zu, G)
+    if (conditioning == "prior") return(logpi_u[gi, , drop = FALSE])
     LP <- .fcr_fm_row_logpmf(r, y)
-    g <- .fcr_fm_group_ids(object, data)
-    if (is.null(g)) return(update(r$logpi, LP))
-    LP[is.na(LP) & !is.na(r$logpi[, 1])] <- 0
-    gi <- match(g, unique(g))
+    LP[.fcr_fm_row_missing(r, y), ] <- 0
     A <- rowsum(LP, gi, reorder = TRUE)
-    first <- match(seq_len(max(gi)), gi)
-    post <- update(r$logpi[first, , drop = FALSE], A)
-    return(post[gi, , drop = FALSE])
+    return(update(logpi_u, A)[gi, , drop = FALSE])
   }
   # history
-  if (is.null(object$model$group_var)) {
-    stop("`conditioning = \"history\"` needs a panel model (`group_var`): ",
-         "without panels, earlier outcomes carry no information about the ",
-         "class of a new row.", call. = FALSE)
-  }
   if (is.null(history)) {
     stop("`conditioning = \"history\"` needs `history`: the earlier rows ",
          "(with outcomes) of the panels being predicted.", call. = FALSE)
@@ -96,35 +130,38 @@
   rh <- .fcr_fm_rows(object, history)
   yh <- .fcr_response(object, history)
   if (is.null(yh)) stop("`history` must contain the outcome.", call. = FALSE)
-  LPh <- .fcr_fm_row_logpmf(rh, yh)
   gh <- .fcr_fm_group_ids(object, history)
-  usable <- stats::complete.cases(LPh)
-  if (any(!usable)) {
-    warning(sum(!usable), " history row(s) with missing values are not ",
+  ug <- unique(c(g, gh))
+  gi <- match(g, ug)
+  hi <- match(gh, ug)
+  G <- length(ug)
+  # One membership design per panel: consistent within the target rows,
+  # within the history rows, and between the two
+  .fcr_fm_panel_design(r$des$Z, gi, G, " (in the new data)")
+  .fcr_fm_panel_design(rh$des$Z, hi, G, " (in `history`)")
+  Zu <- .fcr_fm_panel_design(rbind(r$des$Z, rh$des$Z), c(gi, hi), G,
+                             " (between the new data and `history`)")
+  logpi_u <- .fcr_fm_logprior(r$ps, r$pars, Zu, G)
+  # Missing history: rows with a missing outcome or covariate are dropped
+  # (with a warning); a panel with no usable history row keeps its prior,
+  # like a panel absent from `history`.
+  LPh <- .fcr_fm_row_logpmf(rh, yh)
+  miss <- .fcr_fm_row_missing(rh, yh)
+  if (any(miss)) {
+    warning(sum(miss), " history row(s) with missing values are not ",
             "used.", call. = FALSE)
   }
-  gh <- gh[usable]
-  LPh <- LPh[usable, , drop = FALSE]
-  logpih <- rh$logpi[usable, , drop = FALSE]
-  ug <- unique(gh)
-  gi <- match(gh, ug)
-  A <- rowsum(LPh, gi, reorder = TRUE)
-  prior_h <- logpih[match(seq_along(ug), gi), , drop = FALSE]
-  g <- .fcr_fm_group_ids(object, data)
-  m <- match(g, ug)
-  out <- r$logpi
-  has <- which(!is.na(m))
-  if (length(has)) {
-    dif <- abs(r$logpi[has, , drop = FALSE] - prior_h[m[has], , drop = FALSE])
-    if (any(dif > 1e-8, na.rm = TRUE)) {
-      stop("The membership variables of the target rows differ from those ",
-           "of their panels' history rows; a panel has one membership ",
-           "probability.", call. = FALSE)
-    }
-    out[has, ] <- update(prior_h[m[has], , drop = FALSE],
-                         A[m[has], , drop = FALSE])
+  A <- matrix(0, G, K)
+  if (any(!miss)) {
+    As <- rowsum(LPh[!miss, , drop = FALSE], hi[!miss], reorder = TRUE)
+    A[as.integer(rownames(As)), ] <- As
   }
-  attr(out, "n_history_panels") <- length(unique(m[has]))
+  with_hist <- seq_len(G) %in% hi[!miss]
+  post <- logpi_u
+  post[with_hist, ] <- update(logpi_u[with_hist, , drop = FALSE],
+                              A[with_hist, , drop = FALSE])
+  out <- post[gi, , drop = FALSE]
+  attr(out, "n_history_panels") <- length(unique(gi[with_hist[gi]]))
   out
 }
 
@@ -204,7 +241,11 @@
 #'   }
 #' @param history for `conditioning = "history"`: a data frame of earlier
 #'   rows of the panels in `newdata`, with outcomes and the panel
-#'   identifier.
+#'   identifier. History rows with a missing outcome or covariate are
+#'   dropped with a warning; a panel without usable history rows keeps its
+#'   prior. For panel models the membership variables must be constant
+#'   within each panel (in `newdata`, in `history` and between the two), as
+#'   in fitting, so the class probabilities never depend on the row order.
 #' @param interval only `"none"`: confidence, prediction and tolerance
 #'   intervals are not yet available for mixture models.
 #' @param level unused (for compatibility).
@@ -262,7 +303,8 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
   }
   M <- .fcr_fm_comp_means(r)
   if (type == "component") return(M)
-  P <- exp(.fcr_fm_log_class(object, r, data, conditioning, history))
+  LC <- .fcr_fm_log_class(object, r, data, conditioning, history)
+  P <- exp(LC)
   if (type == "response") return(.fcr_fm_wsum(P, M))
   if (type == "variance") {
     V <- .fcr_fm_comp_vars(r)
@@ -282,10 +324,28 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
   }
   Pr <- .fcr_fm_prob_rows(r, P, max_count)
   if (isTRUE(dots$overflow)) {
-    Pr <- cbind(Pr, pmax(0, 1 - rowSums(Pr)))
+    # P(Y > max_count) from the components' own upper tails, not as
+    # 1 - sum(P): the subtraction loses all relative accuracy once the tail
+    # is below the rounding error of 1 (Poisson(1): P(Y > 20) = 7.5e-21
+    # would become 0).
+    Pr <- cbind(Pr, exp(.fcr_fm_log_tail(r, LC, rep(max_count, r$n),
+                                         lower.tail = FALSE)))
     colnames(Pr)[ncol(Pr)] <- paste0(">", max_count)
   }
   Pr
+}
+
+# log P(Y <= q) (lower.tail = TRUE) or log P(Y > q) of the mixture with log
+# class probabilities LC (n x K): the log-sum-exp of log pi_k plus each
+# component's direct log tail probability. Components with probability 0
+# do not count, even where their tail is undefined.
+.fcr_fm_log_tail <- function(r, LC, q, lower.tail) {
+  L <- vapply(seq_len(r$ps$K), function(k)
+    .fcr_fm_logcdf(r$ps, r$cvs[[k]], r$ps$families[k], q, lower.tail),
+    numeric(r$n))
+  M <- LC + matrix(L, nrow = r$n)
+  M[!is.na(LC) & LC == -Inf] <- -Inf
+  .fcr_lse_rows(M)
 }
 
 # Count probabilities of the mixture for k = 0..max_count.
@@ -419,28 +479,37 @@ residuals.countreg_mix <- function(object,
 }
 
 # Randomized quantile residuals from the mixture distribution function
-# F(y) = sum_k pi_k F_k(y), computed on the log scale.
+# F(y) = sum_k pi_k F_k(y), computed entirely on the log scale. With
+# lp = log P(Y = y), U = F(y - 1) + u P(Y = y) and 1 - U = S(y) +
+# (1 - u) P(Y = y), where S(y) = P(Y > y) comes from the components' own
+# upper tails. Both are kept as logarithms, and the normal quantile is
+# taken from the smaller of the two tails: an outcome far in the upper tail
+# then gives a large finite residual instead of qnorm(1) = Inf.
 .fcr_fm_quantile_residuals <- function(object, d, y, u = NULL) {
   r <- .fcr_fm_rows(object, d)
   n <- length(y)
   if (is.null(u)) u <- stats::runif(n)
-  logF <- function(q) {
-    L <- vapply(seq_len(r$ps$K), function(k)
-      .fcr_fm_logcdf(r$ps, r$cvs[[k]], r$ps$families[k], q, TRUE),
-      numeric(n))
-    L <- matrix(L, nrow = n)
-    .fcr_lse_rows(r$logpi + L)
-  }
-  upper <- exp(pmin(logF(y), 0))
-  lower <- exp(pmin(logF(y - 1), 0))
-  bad <- is.na(lower) | is.na(upper) | lower > upper + 1e-12
+  LC <- r$logpi
+  log_lo <- .fcr_fm_log_tail(r, LC, y - 1, lower.tail = TRUE)
+  log_s <- .fcr_fm_log_tail(r, LC, y, lower.tail = FALSE)
+  M <- LC + .fcr_fm_row_logpmf(r, y)
+  M[!is.na(LC) & LC == -Inf] <- -Inf
+  lp <- .fcr_lse_rows(M)
+  log_u <- pmin(.fcr_logadd(log_lo, log(u) + lp), 0)
+  log_1mu <- pmin(.fcr_logadd(log_s, log1p(-u) + lp), 0)
+  # F(y - 1) and P(Y > y) come from the same distribution function, so
+  # F(y - 1) + P(Y > y) <= 1 (the old lower <= upper check)
+  bad <- is.na(log_u) | is.na(log_1mu) |
+    exp(log_lo) + exp(log_s) > 1 + 1e-12
   if (any(bad)) {
     warning(sum(bad), " row(s) have invalid fitted probabilities; their ",
             "quantile residuals are NA.", call. = FALSE)
   }
-  lower <- pmin(lower, upper)
-  out <- stats::qnorm(lower + u * (upper - lower))
-  out[bad] <- NA
+  low <- !bad & log_u <= log(0.5)
+  out <- rep(NA_real_, n)
+  out[low] <- stats::qnorm(log_u[low], log.p = TRUE)
+  up <- !bad & !low
+  out[up] <- stats::qnorm(log_1mu[up], lower.tail = FALSE, log.p = TRUE)
   out
 }
 

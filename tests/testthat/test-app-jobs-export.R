@@ -126,11 +126,17 @@ test_that("uploaded data: the script names the file, the bundle can hold it", {
     dir.create(dir2)
     files2 <- write_bundle(state, dir2, include_data = FALSE)
   })
-  expect_setequal(files, c("analysis.R", "settings.json", "my data.csv",
+  # The upload is written to its own path in the bundle (named after its
+  # object, not its file name); the manifest gives the original name
+  expect_setequal(files, c("analysis.R", "settings.json", "data/data_1.csv",
                            "manifest.txt"))
-  expect_false("my data.csv" %in% files2)
+  expect_false("data/data_1.csv" %in% files2)
   expect_match(readLines(file.path(dir2, "analysis.R")),
-               "data_1_file <- \"my data.csv\"", all = FALSE, fixed = TRUE)
+               "data_1_file <- \"data/data_1.csv\"", all = FALSE,
+               fixed = TRUE)
+  expect_match(readLines(file.path(dir2, "manifest.txt")),
+               "data/data_1.csv <- uploaded as \"my data.csv\"", all = FALSE,
+               fixed = TRUE)
   out <- callr::r(function(dir) {
     setwd(dir)
     env <- new.env()
@@ -281,7 +287,8 @@ test_that("new data get the fit's variable creations, anchored to training", {
     write_bundle(state, dir, include_data = TRUE)
     local <- r$value$expected_count
   })
-  expect_match(script, "newdata_1_file <- \"new roads.csv\"", fixed = TRUE)
+  expect_match(script, "newdata_1_file <- \"data/newdata_1.csv\"",
+               fixed = TRUE)
   expect_match(script, "mean(data_1[[\"lnaadt\"]], na.rm = TRUE)",
                fixed = TRUE)
   out <- callr::r(function(dir) {

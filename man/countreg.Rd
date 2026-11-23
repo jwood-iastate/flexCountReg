@@ -24,7 +24,8 @@ countreg(
   engine = "quadrature",
   keep_data = TRUE,
   zero_formula = NULL,
-  zero_type = c("inflated", "hurdle")
+  zero_type = c("inflated", "hurdle"),
+  weight_type = c("frequency", "sampling")
 )
 }
 \arguments{
@@ -45,7 +46,8 @@ summed. Alternatively, an offset can be given in the formula with
 error.}
 
 \item{weights}{the name of a variable in the data frame, or a numeric vector
-with one value per row of \code{data}, to be used as frequency weights.}
+with one value per row of \code{data}, to be used as weights (see
+\code{weight_type}).}
 
 \item{verbose}{an optional parameter. If \code{TRUE}, the function will print out
 the progress of the model fitting. Default is \code{FALSE}.}
@@ -126,6 +128,19 @@ family: \eqn{P(0) = \pi + (1 - \pi) f(0)} and
 \eqn{q = logit^{-1}(z\gamma)} is the probability of a positive count and
 positive counts follow the zero-truncated family:
 \eqn{P(0) = 1 - q} and \eqn{P(y) = q f(y) / (1 - f(0))}.}
+
+\item{weight_type}{\code{"frequency"} (default): each weight is the number of
+independent observations a row stands for, so the log-likelihood, LR
+tests, AIC and BIC are those of the expanded data. \code{"sampling"}: survey or
+inverse-probability weights, which only set how much each unit counts.
+The weighted log-likelihood is then a pseudo-likelihood: standard errors
+default to the robust sandwich with meat sum((w s)(w s)') and the
+small-sample factor G / (G - 1) for G units, so they do not change when
+all weights are
+rescaled; the number of units is the number of rows (panels) with a
+positive weight; bootstrap standard errors are not available; and LR
+tests, AIC and BIC are not valid (they are reported, with a note, by
+\code{summary()} and are refused by \code{regCompTest()}).}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

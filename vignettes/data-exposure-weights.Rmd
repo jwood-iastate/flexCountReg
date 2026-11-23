@@ -198,12 +198,17 @@ expanded data. BIC uses the represented observations
   with a larger expected count; it belongs in the offset. A weight of 2
   claims two independent observations with the same outcome.
 * **Not survey weights.** Sampling weights reweight the population, but the
-  rows are not repeated observations. `stderr = "robust"` gives sandwich
-  standard errors that are valid for non-integer weights under the
-  model's independence assumptions; it is not a full design-based survey
-  analysis (strata, clusters and finite-population corrections are not
-  modelled). Bootstrap standard errors require whole-number frequency
-  weights and refuse other weights.
+  rows are not repeated observations. Declare them with
+  `weight_type = "sampling"` in `countreg()` or `countreg_rp()`: the
+  standard errors are then the robust sandwich for weighted scores,
+  sum((w s)(w s)') with a G / (G - 1) factor, which does not change when
+  all weights are multiplied by a constant. (With the default frequency
+  weights, multiplying every weight by 100 claims 100 times the data and
+  shrinks the standard errors 10-fold.) The weighted log-likelihood is a
+  pseudo-likelihood, so LR tests, AIC and BIC are not valid. This is not a
+  full design-based survey analysis (strata, clusters and
+  finite-population corrections are not modelled). Bootstrap standard
+  errors require whole-number frequency weights and refuse other weights.
 * **Not numbers of trials.** "3 events out of 10 animals" is a bounded count
   with a known number of trials, which needs a binomial-type model; neither
   a weight of 10 nor an exposure of 10 represents it.

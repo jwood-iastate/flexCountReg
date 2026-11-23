@@ -126,3 +126,26 @@ label_choices <- function(x) {
 
 # A small helper for help text under a control
 help_text <- function(...) shiny::p(class = "form-text small", ...)
+
+# What an output result `r` reports beside it: how it was obtained
+# (r$details: uncertainty method, bootstrap refits accepted, seed), the
+# warnings raised while it ran (r$warnings) and its messages (r$messages).
+# Warnings are shown as on the Fit page's Messages tab, not only in the
+# console.
+output_notes <- function(r) {
+  if (is.null(r)) return(NULL)
+  li <- function(x) shiny::tags$ul(lapply(x, shiny::tags$li))
+  shiny::tagList(
+    if (length(r$details)) {
+      shiny::p(class = "small text-muted",
+               paste(r$details, collapse = "; "), ".")
+    },
+    if (length(r$warnings)) {
+      shiny::div(class = "alert alert-warning small", role = "alert",
+                 shiny::strong("Warnings"), li(r$warnings))
+    },
+    if (length(r$messages)) {
+      shiny::div(class = "small text-muted", shiny::strong("Messages"),
+                 li(r$messages))
+    })
+}

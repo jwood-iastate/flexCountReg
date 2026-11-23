@@ -18,7 +18,7 @@
   n <- length(parts$mu_link)
   P <- matrix(NA_real_, n, K + 1)
   mean_par <- parts$mu_link * parts$p_report
-  ok <- !is.na(mean_par)
+  ok <- .fcr_parts_valid(parts)
   if (any(ok)) {
     no <- sum(ok)
     rk <- function(v) if (!is.null(v)) rep(v[ok], K + 1)
@@ -43,6 +43,20 @@
     }
   }
   P
+}
+
+# Rows of a parts object at which the count distribution is defined: no
+# missing mean, distribution, reporting or zero-model parameter, and
+# parameters inside the family's domain (.fcr_family_valid()). Other rows
+# have no distribution, so their probabilities are NA rather than the zeros
+# the likelihood's quiet densities would give.
+.fcr_parts_valid <- function(parts) {
+  mean_par <- parts$mu_link * parts$p_report
+  ok <- !is.na(mean_par)
+  for (nm in c("alpha", "sigma", "zero_prob")) {
+    if (!is.null(parts[[nm]])) ok <- ok & !is.na(parts[[nm]])
+  }
+  ok & .fcr_family_valid(parts$family, mean_par, parts$alpha, parts$sigma)
 }
 
 # PMF on 0..K with K large enough that the omitted mass P(Y > K) is below
@@ -174,28 +188,43 @@
   M <- nrow(pd$draws)
   n <- length(fit)
   a <- (1 - level) / 2
+  # Each draw is used only for the rows where its parameters define a
+  # distribution (for example GP2's coupled domain): other draws are
+  # rejected for that row and counted, never treated as zero mass
+  parts_j <- function(j) suppressWarnings(.fcr_parts_from_lp(
+    object, .fcr_countreg_lp(object, fd, pd$draws[j, ])))
+  accepted <- numeric(n)
+  unresolved <- rep(FALSE, n)
   if (interval == "confidence") {
-    vals <- vapply(seq_len(M), function(j) {
-      pj <- .fcr_parts_from_lp(object, .fcr_countreg_lp(object, fd,
-                                                         pd$draws[j, ]))
-      if (type == "response") pj$response else pj$mu_true
-    }, numeric(n))
-    vals <- matrix(vals, n, M)
+    vals <- matrix(NA_real_, n, M)
+    for (j in seq_len(M)) {
+      pj <- parts_j(j)
+      okj <- .fcr_parts_valid(pj)
+      v <- if (type == "response") pj$response else pj$mu_true
+      v[!okj] <- NA
+      vals[, j] <- v
+      accepted <- accepted + (okj & !is.na(v))
+    }
     lwr <- apply(vals, 1, stats::quantile, probs = a, na.rm = TRUE,
                  names = FALSE)
     upr <- apply(vals, 1, stats::quantile, probs = 1 - a, na.rm = TRUE,
                  names = FALSE)
   } else {
-    # Predictive distribution: the observed-count PMF averaged over draws
+    # Predictive distribution: the observed-count PMF averaged over the
+    # draws accepted for each row
     S <- matrix(0, n, 1)
     for (j in seq_len(M)) {
-      pj <- .fcr_parts_from_lp(object, .fcr_countreg_lp(object, fd,
-                                                         pd$draws[j, ]))
-      Pj <- .fcr_pmf_resolved(object, pj, max_count)$P
+      pj <- parts_j(j)
+      res <- .fcr_pmf_resolved(object, pj, max_count)
+      Pj <- res$P
+      okj <- !is.na(Pj[, 1])
+      Pj[!okj, ] <- 0
+      accepted <- accepted + okj
+      unresolved <- unresolved | (okj & !res$resolved)
       if (ncol(Pj) > ncol(S)) S <- cbind(S, matrix(0, n, ncol(Pj) - ncol(S)))
       S[, seq_len(ncol(Pj))] <- S[, seq_len(ncol(Pj))] + Pj
     }
-    Fbar <- t(apply(S / M, 1, cumsum))
+    Fbar <- t(apply(S / accepted, 1, cumsum))
     if (n == 1) Fbar <- matrix(Fbar, 1)
     q <- function(prob) apply(Fbar, 1, function(f) {
       k <- which(f >= prob - 1e-12)
@@ -203,7 +232,27 @@
     })
     lwr <- q(a)
     upr <- q(1 - a)
+    # An upper limit beyond the largest count evaluated is unknown, not
+    # absent: say so
+    cut <- !is.na(fit) & accepted > 0 & is.na(upr)
+    if (any(cut)) {
+      warning("The upper prediction limit of ", sum(cut), " row(s) lies ",
+              "above max_count = ", max_count, " (the predictive ",
+              "distribution was not resolved there); it is NA. Increase ",
+              "`max_count`.", call. = FALSE)
+    }
   }
+  # Rows without a distribution at the estimates (missing parameters) are NA
+  # for that reason, not because of rejected draws
+  low_acc <- !is.na(fit) & .fcr_parts_valid(est) & accepted < 0.9 * M
+  if (any(low_acc)) {
+    warning("For ", sum(low_acc), " row(s), fewer than 90% of the ", M,
+            " parameter draws give a valid distribution (the others fall ",
+            "outside the family's parameter space and were rejected); the ",
+            "interval may be unreliable.", call. = FALSE)
+  }
+  lwr[accepted == 0] <- NA
+  upr[accepted == 0] <- NA
   na <- is.na(fit)
   lwr[na] <- NA
   upr[na] <- NA
@@ -211,7 +260,8 @@
   attr(out, "interval") <- list(
     interval = interval, level = level, type = type,
     uncertainty = pd$uncertainty, draws = M, requested = pd$requested,
-    failures = pd$failures)
+    failures = pd$failures, accepted_by_row = accepted,
+    unresolved = if (interval == "prediction") unresolved)
   out
 }
 
@@ -403,11 +453,14 @@ tolerance_interval <- function(object, newdata = NULL, content = 0.95,
     A <- .fcr_ti_A(comps, i, names(theta))
     off <- comps$offset[i]
     if (is.null(pd)) {
-      df <- if (scope == "pointwise") nrow(A) else k
-      cutoff <- stats::qchisq(confidence, df)
       eta_hat <- as.vector(A %*% theta)
       Ve <- A %*% V %*% t(A)
       ev <- eigen(Ve, symmetric = TRUE)
+      # The ellipsoid lives in the span of A V A': its dimension is the rank
+      # (a predictor direction with no uncertainty, such as x = 0 in a model
+      # without an intercept, is known exactly and adds no degree of freedom)
+      df <- if (scope == "pointwise") .fcr_psd_rank(ev$values) else k
+      cutoff <- stats::qchisq(confidence, df)
       Lf <- ev$vectors %*% diag(sqrt(pmax(ev$values, 0)), nrow(A))
       u <- .fcr_ball_points(nrow(A), npoints)
       eta <- sweep(sqrt(cutoff) * u %*% t(Lf), 2, eta_hat, `+`)
@@ -415,20 +468,29 @@ tolerance_interval <- function(object, newdata = NULL, content = 0.95,
       eta_b <- pd$draws %*% t(A)
       eta_hat <- as.vector(A %*% theta)
       dist <- if (scope == "pointwise") {
-        stats::mahalanobis(eta_b, eta_hat, stats::cov(eta_b))
+        .fcr_mahalanobis_psd(eta_b, eta_hat, stats::cov(eta_b))
       } else {
-        stats::mahalanobis(pd$draws, theta, stats::cov(pd$draws))
+        .fcr_mahalanobis_psd(pd$draws, theta, stats::cov(pd$draws))
       }
       keep <- dist <= stats::quantile(dist, confidence, names = FALSE)
       eta <- rbind(eta_b[keep, , drop = FALSE], eta_hat)
     }
     lp <- .fcr_ti_lp(comps, eta, off)
-    parts <- .fcr_parts_from_lp(object, lp)
+    parts <- suppressWarnings(.fcr_parts_from_lp(object, lp))
     res <- .fcr_pmf_resolved(object, parts, max_count)
-    C <- t(apply(res$P, 1, cumsum))
-    if (nrow(res$P) == 1) C <- matrix(C, 1)
+    # Points of the confidence set outside the family's parameter space
+    # (NA rows) define no distribution and are dropped; the estimate itself
+    # (the last row) must be valid
+    valid <- !is.na(res$P[, 1])
+    if (!valid[length(valid)]) {
+      out$status[i] <- "invalid parameters at the estimate"
+      next
+    }
+    Pv <- res$P[valid, , drop = FALSE]
+    C <- t(apply(Pv, 1, cumsum))
+    if (nrow(Pv) == 1) C <- matrix(C, 1)
     lu <- .fcr_ti_search(C, content, side, method, centre = nrow(C))
-    if (any(!res$resolved) && side != "lower") {
+    if (any(!res$resolved[valid]) && side != "lower") {
       out$status[i] <- paste0("upper tail not resolved within max_count = ",
                               max_count)
       next
@@ -446,6 +508,25 @@ tolerance_interval <- function(object, newdata = NULL, content = 0.95,
   }
   attr(out, "tolerance") <- settings
   .fcr_ti_class(out)
+}
+
+# Rank of a positive semidefinite matrix from its eigenvalues
+.fcr_psd_rank <- function(values) {
+  sum(values > max(values, 0) * 1e-10)
+}
+
+# Mahalanobis distances with a possibly singular covariance matrix S: the
+# distance in the span of S (its positive-eigenvalue directions). With rank
+# 0 every point is at the centre (distance 0). stats::mahalanobis() fails on
+# a singular S, as happens for bootstrap draws of a linear predictor that
+# does not vary in some direction.
+.fcr_mahalanobis_psd <- function(X, center, S) {
+  X <- sweep(as.matrix(X), 2, center)
+  e <- eigen(S, symmetric = TRUE)
+  keep <- e$values > max(e$values, 0) * 1e-10
+  if (!any(keep)) return(rep(0, nrow(X)))
+  Z <- X %*% e$vectors[, keep, drop = FALSE]
+  rowSums(sweep(Z^2, 2, e$values[keep], `/`))
 }
 
 .fcr_ti_class <- function(out) {

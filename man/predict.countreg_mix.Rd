@@ -65,7 +65,11 @@ being "predicted" were used.}
 
 \item{history}{for \code{conditioning = "history"}: a data frame of earlier
 rows of the panels in \code{newdata}, with outcomes and the panel
-identifier.}
+identifier. History rows with a missing outcome or covariate are
+dropped with a warning; a panel without usable history rows keeps its
+prior. For panel models the membership variables must be constant
+within each panel (in \code{newdata}, in \code{history} and between the two), as
+in fitting, so the class probabilities never depend on the row order.}
 
 \item{interval}{only \code{"none"}: confidence, prediction and tolerance
 intervals are not yet available for mixture models.}

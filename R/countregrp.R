@@ -73,9 +73,22 @@
 #' @param offset the name of a variable, or vector of variable names, to be
 #'   used as an offset (summed when several are given). An offset can instead
 #'   be given with \code{offset()} in \code{formula}; use only one of the two.
-#' @param weights the name of a variable, or a numeric vector, of frequency
-#'   weights. With \code{panel_id}, weights apply to whole panels (the panel
-#'   log-likelihood is weighted), so they should be constant within a panel.
+#' @param weights the name of a variable, or a numeric vector, of weights
+#'   (see \code{weight_type}). With \code{group_var}, weights apply to whole
+#'   panels (the panel log-likelihood is weighted), so they should be
+#'   constant within a panel.
+#' @param weight_type `"frequency"` (default): each weight is the number of
+#'   independent observations a row stands for, so the log-likelihood, LR
+#'   tests, AIC and BIC are those of the expanded data. `"sampling"`: survey or
+#'   inverse-probability weights, which only set how much each unit counts.
+#'   The weighted log-likelihood is then a pseudo-likelihood: standard errors
+#'   default to the robust sandwich with meat sum((w s)(w s)') and the
+#'   small-sample factor G / (G - 1) for G units, so they do not change when
+#'   all weights are
+#'   rescaled; the number of units is the number of panels (rows without `group_var`) with a
+#'   positive weight; bootstrap standard errors are not available; and LR
+#'   tests, AIC and BIC are not valid (they are reported, with a note, by
+#'   \code{summary()} and are refused by \code{regCompTest()}).
 #' @param method optimization method (e.g., "BHHH", "BFGS", "NM").
 #' @param max.iters maximum number of iterations.
 #' @param engine the numerical method for the mixed Poisson families PLN, PGE, PW
@@ -202,15 +215,21 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
                          start.vals = NULL, verbose = FALSE,
                          stderr = "normal", bootstraps = NULL,
                          engine = "quadrature", keep_data = TRUE,
-                         panel_id = NULL, mix_draws = NULL) {
+                         panel_id = NULL, mix_draws = NULL,
+                         weight_type = c("frequency", "sampling")) {
   
   print.level <- if (verbose) 2 else 0
+  stderr_missing <- missing(stderr)
   if (!is.null(panel_id)) {
     .fcr_deprecated_arg("countreg_rp", "panel_id", "group_var")
     if (is.null(group_var)) group_var <- panel_id
   }
   panel_id <- group_var
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
+  wt <- .fcr_resolve_weight_type(weight_type, weights, stderr,
+                                 stderr_missing && is.null(bootstraps))
+  weight_type <- wt$weight_type
+  stderr <- wt$stderr
   
   # --- 1. Family, method and argument checks ---
   family <- toupper(gsub("[^[:alnum:]]", "", family))
@@ -231,6 +250,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   # Panel id: a column name, or a vector with one value per row
   data <- as.data.frame(data)
   group_var <- NULL
+  group_from_vector <- FALSE
   if (!is.null(panel_id)) {
     if (is.character(panel_id) && length(panel_id) == 1L) {
       if (!panel_id %in% names(data)) {
@@ -239,8 +259,13 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
       }
       group_var <- panel_id
     } else if (length(panel_id) == nrow(data)) {
+      # Stored as a column of the (stored) data, so predictions and refits
+      # match panels by id, never by row position (a reordered or subset
+      # `newdata` would otherwise get another panel's draw weights)
       data$.fcr_panel_id <- panel_id
       group_var <- ".fcr_panel_id"
+      panel_id <- group_var
+      group_from_vector <- TRUE
     } else {
       stop("`group_var` must be a column name in `data` or a vector with ",
            "one value per row of `data`.", call. = FALSE)
@@ -291,9 +316,9 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   w_panel <- as.numeric(w_panel[levels(panel_group)])
   if (!is.null(weights) &&
       any(tapply(w_obs, panel_group, function(v) diff(range(v))) > 0)) {
-    stop("`weights` vary within panels. Weights are frequency weights of ",
-         "the panels (the independent units), so they must be constant ",
-         "within each panel.", call. = FALSE)
+    stop("`weights` vary within panels. Weights apply to whole panels ",
+         "(the independent units), so they must be constant within each ",
+         "panel.", call. = FALSE)
   }
   if (stderr == "boot" && !is.null(weights)) {
     .fcr_check_boot_freq(w_panel, length(w_panel))
@@ -525,6 +550,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$correlated <- correlated
   fit$panel_id <- panel_id 
   fit$group_var <- panel_id
+  fit$group_from_vector <- group_from_vector
   fit$offset <- prep$blueprint$offset_label
   fit$engine <- engine
   fit$rpardists <- rpardists
@@ -539,7 +565,9 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$n_groups <- nlevels(panel_group)
   # Independent units for BIC: the panels, counted with their frequency
   # weights
-  fit$n_bic <- sum(w_panel)
+  fit$n_bic <- if (weight_type == "sampling") sum(w_panel > 0) else
+    sum(w_panel)
+  fit$weight_type <- weight_type
   # Panel of each analysis row (the independent units), for refits
   fit$panel_index <- if (!is.null(prep$group)) as.integer(panel_group)
   # Sample evidence for likelihood-ratio comparisons
@@ -597,7 +625,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   } else if (stderr == "robust") {
     # One log-likelihood contribution per panel: cluster-robust sandwich,
     # with frequency weights per panel
-    V <- .fcr_robust_vcov(fit, w_panel)
+    V <- .fcr_robust_vcov(fit, w_panel, weight_type)
     vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)

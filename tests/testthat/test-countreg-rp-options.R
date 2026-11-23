@@ -13,11 +13,18 @@ test_that("a panel-id vector is equivalent to a panel-id column", {
   expect_equal(coef(a), coef(b))
   expect_equal(b$model$n_groups, length(unique(d$ID)))
   expect_error(fit_rp(group_var = d$ID[1:10]), "one value per row")
-  # Empirical Bayes predictions work with a vector panel id on the same rows
-  eb <- predict(b, newdata = d, method = "Individual")
+  # Empirical Bayes predictions match panels by the stored id column
+  # (.fcr_panel_id), never by row position
+  eb <- predict(b, method = "Individual")
   expect_length(eb, nrow(d))
+  expect_equal(as.vector(predict(a, newdata = d, method = "Individual")),
+               as.vector(eb), tolerance = 1e-6)
+  rev_rows <- rev(seq_len(nrow(d)))
+  expect_equal(as.vector(predict(b, newdata = b$data[rev_rows, ],
+                                 method = "Individual")),
+               as.vector(eb)[rev_rows], tolerance = 1e-12)
   expect_error(predict(b, newdata = d[1:10, ], method = "Individual"),
-               "same rows")
+               "group_var")
 })
 
 test_that("correlated random parameters: Cholesky terms and Exact = Simulated", {

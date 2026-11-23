@@ -11,7 +11,8 @@ new_app_state <- function(session_dir = tempfile("fcr-app-")) {
     counters = list(),      # numbering of data, fits and outputs
     data = NULL,            # the current data frame
     data_meta = NULL,       # list(source, name, title, object, ...)
-    uploads = list(),       # uploaded files, by data object
+    uploads = list(),       # uploaded files, by data object: list(path,
+                            # name, file = path in the bundle, md5)
     transforms = list(),    # variables created, by data object
     newdata = character(),  # new-data objects for predictions
     outputs = list(),       # results of background output jobs, by id
@@ -33,11 +34,28 @@ new_app_state <- function(session_dir = tempfile("fcr-app-")) {
   n
 }
 
-# Append an entry to the session log
-app_log <- function(state, title, display, kind, ref = NULL) {
+# Append an entry to the session log. `warnings` (raised while the code
+# ran) and `details` (settings of the result, e.g. the uncertainty method
+# and seed of an interval) are kept with the entry for the manifest of the
+# export.
+app_log <- function(state, title, display, kind, ref = NULL,
+                    warnings = NULL, details = NULL) {
   state$log <- c(state$log, list(list(title = title, display = display,
                                       kind = kind, ref = ref,
+                                      warnings = warnings, details = details,
                                       time = Sys.time())))
+  invisible(NULL)
+}
+
+# Record an uploaded file of data object `obj`: the app's copy (`path`), the
+# name it was uploaded with, its path in the exported bundle (see
+# .app_upload_file()) and its MD5 checksum, which the export checks and
+# lists in the manifest
+.app_record_upload <- function(state, obj, name, path) {
+  up <- state$uploads
+  up[[obj]] <- list(path = path, name = name, file = .app_upload_file(obj),
+                    md5 = unname(tools::md5sum(path)))
+  state$uploads <- up
   invisible(NULL)
 }
 
@@ -53,13 +71,12 @@ app_load_data <- function(state, source, name, upload_path = NULL,
   obj <- paste0("data_", k)
   code <- compile_data_load(source, name, obj)
   env <- state$env
-  if (!identical(source, "bundled")) {
-    assign(paste0(obj, "_file"), upload_path, envir = env)
-    up <- state$uploads
-    up[[obj]] <- list(path = upload_path, name = name)
-    state$uploads <- up
-  }
+  upload <- !identical(source, "bundled")
+  if (upload) assign(paste0(obj, "_file"), upload_path, envir = env)
   run_compiled(code$run, env)
+  # Recorded only once it has been read, so a file that fails to load is
+  # not exported
+  if (upload) .app_record_upload(state, obj, name, upload_path)
   state$data <- env[[obj]]
   state$data_meta <- list(source = source, name = name, title = title,
                           object = obj, response = response, group = group)
@@ -75,10 +92,8 @@ app_load_newdata <- function(state, name, upload_path) {
   code <- compile_data_load("upload", name, obj)
   env <- state$env
   assign(paste0(obj, "_file"), upload_path, envir = env)
-  up <- state$uploads
-  up[[obj]] <- list(path = upload_path, name = name)
-  state$uploads <- up
   run_compiled(code$run, env)
+  .app_record_upload(state, obj, name, upload_path)
   state$newdata <- c(state$newdata, stats::setNames(obj, paste0(
     obj, ": ", name, " (", nrow(get(obj, envir = env)), " rows)")))
   app_log(state, paste0("New data ", k, ": ", name), code$display, "data",
@@ -125,13 +140,16 @@ record_finished_job <- function(state, j) {
       assign(nm, j$result$objects[[nm]], envir = env)
     }
     if (identical(j$kind, "output")) {
-      app_log(state, j$label, j$exprs, j$type, j$out)
+      details <- output_details(env, j$out, j$seed)
+      app_log(state, j$label, j$exprs, j$type, j$out,
+              warnings = j$result$warnings, details = details)
       ol <- state$outputs
       ol[[j$id]] <- list(out = j$out, exprs = j$exprs, type = j$type,
                          value = get(j$out, envir = env),
                          fit = state$fits[[j$fit_id]],
                          messages = j$result$messages,
-                         warnings = j$result$warnings)
+                         warnings = j$result$warnings,
+                         details = details, seed = j$seed)
       state$outputs <- ol
       return(invisible(j$status))
     }
@@ -160,20 +178,94 @@ app_fit_object <- function(state, id) {
 # Short object-name stems of the outputs
 .app_out_stem <- c(rootogram = "rootogram", quantile = "qresid",
                    cure = "cure", predict = "pred", tolerance = "tol",
-                   compare = "comparison")
+                   compare = "comparison", margeff = "margeff")
 
 # Run an output request on a fit (or a comparison of fits): compile it,
 # evaluate it in the session environment (plots go to a null device; the
-# page redraws them), log it, and return its object name and code.
+# page redraws them), log it, and return its object name and code. Warnings
+# and messages are collected (as the background worker does) and returned
+# with the result, so the page can show them beside the output; warnings
+# and the result's details also go into the log for the export.
 app_run_output <- function(state, req, fit_id = NULL) {
   o <- app_prepare_output(state, req, fit_id)
   env <- state$env
+  warnings <- character(0)
+  messages <- character(0)
   grDevices::pdf(NULL)
   on.exit(grDevices::dev.off(), add = TRUE)
-  run_compiled(o$exprs, env)
-  app_log(state, o$title, o$exprs, req$type, o$out)
+  withCallingHandlers(
+    run_compiled(o$exprs, env),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    },
+    message = function(m) {
+      messages <<- c(messages, trimws(conditionMessage(m)))
+      invokeRestart("muffleMessage")
+    })
+  warnings <- unique(warnings)
+  details <- output_details(env, o$out, o$seed)
+  app_log(state, o$title, o$exprs, req$type, o$out, warnings = warnings,
+          details = details)
   list(out = o$out, exprs = o$exprs, value = get(o$out, envir = env),
-       fit = o$fit, type = req$type)
+       fit = o$fit, type = req$type, warnings = warnings,
+       messages = unique(messages), details = details, seed = o$seed)
+}
+
+# Does an output request draw random numbers? Intervals can fall back to a
+# parametric bootstrap (when the covariance matrix of the estimates is not
+# positive definite), which simulates responses; bootstrap standard errors
+# of marginal effects resample the data.
+.app_output_is_random <- function(req) {
+  identical(req$type, "tolerance") ||
+    (identical(req$type, "predict") &&
+       !identical(req$interval %||% "none", "none")) ||
+    (identical(req$type, "margeff") && identical(req$se, "bootstrap"))
+}
+
+# A new seed for an output request, drawn once when the request is made
+.app_new_seed <- function() sample.int(.Machine$integer.max, 1L)
+
+# Short lines describing how an interval result was obtained: the
+# uncertainty method, the bootstrap refits accepted of those requested and
+# the seed. Read from the "interval" attribute of `<out>_interval` (a
+# prediction interval) or the "tolerance" attribute of `<out>` (a tolerance
+# interval) in `env`; for marginal effects, the measure and standard
+# errors from the "effect_info" attribute. Empty for other outputs.
+output_details <- function(env, out, seed = NULL) {
+  ei <- attr(get0(out, envir = env, inherits = FALSE), "effect_info")
+  if (!is.null(ei)) {
+    return(c(
+      paste0("Measure: ", ei$measure, "; indicator variables: ",
+             gsub("_", " ", ei$indicator)),
+      paste0("Standard errors: ", if (identical(ei$se, "bootstrap"))
+        paste0("bootstrap (", ei$bootstraps, " resamples)") else
+          "delta method"),
+      if (!is.null(seed)) paste0("Seed: ", seed)))
+  }
+  ti <- attr(get0(out, envir = env, inherits = FALSE), "tolerance")
+  iv <- attr(get0(paste0(out, "_interval"), envir = env, inherits = FALSE),
+             "interval")
+  s <- ti %||% iv
+  if (is.null(s)) return(character(0))
+  unc <- s$uncertainty %||% "unknown"
+  # Accepted and requested bootstrap refits: `accepted`/`bootstraps` in a
+  # tolerance interval, `draws`/`requested` in a prediction interval
+  acc <- if (!is.null(ti)) s$accepted else s$draws
+  n_req <- if (!is.null(ti)) s$bootstraps else s$requested
+  c(paste0("Uncertainty method: ", switch(unc,
+      normal = "normal approximation of the estimates",
+      bootstrap = "parametric bootstrap",
+      exact = "exact method (no parameter uncertainty points)", unc)),
+    if (identical(unc, "bootstrap") && !is.null(acc)) {
+      paste0("Bootstrap refits accepted: ", acc, " of ", n_req)
+    } else if (identical(unc, "normal") && !is.null(n_req %||% s$npoints)) {
+      paste0("Parameter points: ", n_req %||% s$npoints)
+    },
+    if (!is.null(seed)) {
+      paste0("Seed: ", seed, if (!identical(unc, "bootstrap"))
+        " (used only if a parametric bootstrap is needed)")
+    })
 }
 
 # Compile an output request: its object name, code and log title. Problems
@@ -196,6 +288,11 @@ app_prepare_output <- function(state, req, fit_id = NULL) {
   n <- .app_next(state, req$type)
   out <- paste0(.app_out_stem[[req$type]], "_", n)
   req$title <- req$title %||% (if (!is.null(b)) b$label)
+  # Freeze the seed now, before the code is run here or in a worker, so the
+  # code that runs, the session script and the manifest share it
+  if (.app_output_is_random(req) && is.null(req$seed)) {
+    req$seed <- .app_new_seed()
+  }
   if (!is.null(req$newdata)) {
     req$prep <- compile_prediction_data(b$spec, fit_name, tr, req$newdata,
                                         paste0(out, "_data"))
@@ -205,8 +302,9 @@ app_prepare_output <- function(state, req, fit_id = NULL) {
                   rootogram = "Rootogram", quantile = "Quantile residuals",
                   cure = "CURE plot", predict = "Predictions",
                   tolerance = "Tolerance intervals",
-                  compare = "Model comparison")
-  list(out = out, exprs = exprs, fit = b, type = req$type,
+                  compare = "Model comparison",
+                  margeff = "Marginal effects")
+  list(out = out, exprs = exprs, fit = b, type = req$type, seed = req$seed,
        title = paste0(title, " ", n, if (!is.null(b))
          paste0(" (", b$label, ")")))
 }
@@ -233,6 +331,7 @@ app_start_output_job <- function(state, req, fit_id) {
   job$out <- o$out
   job$type <- o$type
   job$fit_id <- fit_id
+  job$seed <- o$seed
   jl <- state$jobs
   jl[[job$id]] <- job
   state$jobs <- jl

@@ -274,23 +274,33 @@ rpoisweibull <- function(n, lambda=NULL, alpha = NULL, sigma = NULL,
 }
 
 
-# Helper function to calculate alpha and sigma from mean and standard deviation
+# Weibull shape (alpha) and scale (sigma) with a given mean and standard
+# deviation. The coefficient of variation cv = sd / mean depends only on the
+# shape: log1p(cv^2) = lgamma(1 + 2 / alpha) - 2 lgamma(1 + 1 / alpha), which
+# decreases in alpha. It is solved in log(alpha) with an expanding bracket,
+# so any positive cv is reached (a search restricted to alpha in [0.1, 5]
+# returned 5 for small cv, for example sd 0.229 instead of 0.01 at mean 1).
 calculate_params <- function(mean_value = NULL, sd_value = NULL) {
   if (!is.null(mean_value) && !is.null(sd_value)) {
-    # Function to minimize
-    objective_function <- function(alpha, mean_value, sd_value) {
-      sigma <- mean_value / gamma(1 + 1/alpha)
-      calculated_mean <- sigma * gamma(1 + 1/alpha)
-      calculated_var <- sigma^2 * (gamma(1 + 2/alpha) - (gamma(1 + 1/alpha))^2)
-      (calculated_mean - mean_value)^2 + (sqrt(calculated_var) - sd_value)^2
+    if (!is.numeric(mean_value) || !is.numeric(sd_value) ||
+        length(mean_value) != 1L || length(sd_value) != 1L ||
+        !is.finite(mean_value) || !is.finite(sd_value) ||
+        mean_value <= 0 || sd_value <= 0) {
+      stop("`mean_value` and `sd_value` must be single positive numbers.",
+           call. = FALSE)
     }
-    
-    res <- 
-      optimize(objective_function, 
-               c(0.1, 5), 
-               mean_value = mean_value, 
-               sd_value = sd_value)
-    alpha <- res$minimum
+    target <- log1p((sd_value / mean_value)^2)
+    f <- function(la) {
+      a <- exp(la)
+      lgamma(1 + 2 / a) - 2 * lgamma(1 + 1 / a) - target
+    }
+    root <- stats::uniroot(f, c(-1, 1), extendInt = "downX",
+                           tol = 1e-12, maxiter = 1000)
+    alpha <- exp(root$root)
+    if (!is.finite(alpha) || abs(root$f.root) > 1e-8 * max(1, target)) {
+      stop("No Weibull shape matches the mean and standard deviation.",
+           call. = FALSE)
+    }
     sigma <- mean_value / gamma(1 + 1/alpha)
     c(alpha, sigma)
   } else {

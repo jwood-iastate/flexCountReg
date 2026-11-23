@@ -214,8 +214,9 @@ NULL
       any(abs(freq - round(freq)) > 1e-8) || sum(freq) < 1) {
     stop("Bootstrap standard errors with `weights` need frequency weights: ",
          "nonnegative whole numbers (each row stands for that many ",
-         "independent observations) with a positive total. Use ",
-         "stderr = \"robust\" for other weights.", call. = FALSE)
+         "independent observations) with a positive total. For survey or ",
+         "inverse-probability weights, use weight_type = \"sampling\" with ",
+         "stderr = \"robust\".", call. = FALSE)
   }
   invisible(TRUE)
 }
@@ -595,6 +596,34 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
   if (isTRUE(verbose)) 2L else 0L
 }
 
+# Validate weight_type and the standard errors it allows. Sampling weights
+# make the log-likelihood a pseudo-likelihood: the Hessian alone does not
+# give valid standard errors, so the default becomes the robust sandwich,
+# and the frequency bootstrap does not apply.
+.fcr_resolve_weight_type <- function(weight_type, weights, stderr,
+                                     stderr_missing) {
+  weight_type <- match.arg(weight_type, c("frequency", "sampling"))
+  if (is.null(weights) || weight_type == "frequency") {
+    return(list(weight_type = if (is.null(weights)) "frequency" else
+      weight_type, stderr = stderr))
+  }
+  if (stderr == "boot") {
+    stop("Bootstrap standard errors resample frequency weights; with ",
+         "weight_type = \"sampling\" use stderr = \"robust\".",
+         call. = FALSE)
+  }
+  if (stderr == "normal") {
+    if (stderr_missing) {
+      stderr <- "robust"
+    } else {
+      warning("With weight_type = \"sampling\", Hessian-based standard ",
+              "errors are not valid; use stderr = \"robust\".",
+              call. = FALSE)
+    }
+  }
+  list(weight_type = weight_type, stderr = stderr)
+}
+
 # Validate stderr; `bootstraps` given without `stderr` means bootstrap, as in
 # earlier versions.
 .fcr_resolve_stderr <- function(stderr, stderr_missing, bootstraps) {
@@ -669,18 +698,31 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
   } else {
     delta <- p[kx + seq_len(ncol(W_alpha))]
     alpha <- exp(as.vector(W_alpha %*% delta))
+    # Near the Poisson limit (size r -> Inf) the terms of the ln(alpha) score
+    # are O(y) but cancel to O(alpha y^2), so the direct form loses about
+    # log10(1 / c) digits, with c = max(y, mu) / r, and is NaN once alpha
+    # underflows to 0. There the leading term of the series is used: for a
+    # variance mu + alpha g(mu), the score is
+    #   alpha g(mu) ((y - mu)^2 - y) / (2 mu^2),
+    # with g = mu^2 (NB2) or g = mu (NB1). The two errors balance at
+    # c = 1e-8, where each is about 1e-8 relative.
     if (family == "NB2") {
       r <- 1 / alpha
       d_eta <- (y - mu) / (1 + alpha * mu)
-      d_r <- digamma(y + r) - digamma(r) + log(r / (r + mu)) +
-        (mu - y) / (r + mu)
+      d_r <- .fcr_digamma_diff(r, y) - log1p(mu / r) + (mu - y) / (r + mu)
       d_lnalpha <- -r * d_r                      # dr / dln(alpha) = -r
+      lim <- which(alpha * pmax(y, mu) < 1e-8)
+      d_lnalpha[lim] <- (alpha * ((y - mu)^2 - y) /
+                           (2 * (1 + alpha * mu)^2))[lim]
     } else {                                     # NB1: size r = mu / alpha
       r <- mu / alpha
-      psi <- digamma(y + r) - digamma(r)
+      psi <- .fcr_digamma_diff(r, y)
       d_eta <- r * (psi - log1p(alpha))
       d_lnalpha <- -r * (psi - log1p(alpha)) - r * alpha / (1 + alpha) +
         y / (1 + alpha)
+      lim <- which(alpha * pmax(y, mu) / mu < 1e-8)
+      d_eta[lim] <- (y - mu)[lim]
+      d_lnalpha[lim] <- (alpha * ((y - mu)^2 - y) / (2 * mu))[lim]
     }
     G <- cbind(d_eta * X, d_lnalpha * W_alpha)
   }
@@ -721,11 +763,23 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
 # scores are then w_i s_i, and the meat must be sum_i w_i s_i s_i' (as for
 # the expanded data), not sum_i w_i^2 s_i s_i'. With w = 1 this is
 # sandwich::sandwich(fit).
-.fcr_robust_vcov <- function(fit, w = NULL) {
+#
+# With weight_type = "sampling" (survey or inverse-probability weights), each
+# row or panel is one independent unit whose score is w_i s_i, so the meat is
+# sum_i (w_i s_i)(w_i s_i)' with the small-sample factor G / (G - 1), G the
+# number of units with positive weight. The result is then unchanged when
+# all weights are multiplied by a constant, as it must be for weights that
+# only say how much each unit counts relative to the others.
+.fcr_robust_vcov <- function(fit, w = NULL, weight_type = "frequency") {
   G <- sandwich::estfun(fit)
   if (is.null(w)) w <- rep(1, nrow(G))
   keep <- w > 0
-  meat <- crossprod(G[keep, , drop = FALSE] / sqrt(w[keep]))
+  if (identical(weight_type, "sampling")) {
+    g <- sum(keep)
+    meat <- crossprod(G[keep, , drop = FALSE]) * (if (g > 1) g / (g - 1) else 1)
+  } else {
+    meat <- crossprod(G[keep, , drop = FALSE] / sqrt(w[keep]))
+  }
   bread <- .fcr_hessian_vcov(fit)
   V <- bread %*% meat %*% bread
   dimnames(V) <- dimnames(bread)

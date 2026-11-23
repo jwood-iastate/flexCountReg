@@ -26,8 +26,9 @@
 #' \code{coef()} returns all estimated parameters, including distribution,
 #' underreporting, random-parameter and heterogeneity parameters, named as in
 #' \code{summary()}. \code{vcov()} returns the covariance matrix chosen at
-#' fit time: Hessian-based, robust (sandwich) or bootstrapped (see the
-#' \code{stderr} argument of each estimator).
+#' fit time: Hessian-based, robust (sandwich), cluster-robust or
+#' bootstrapped (see the \code{stderr} argument of each estimator); see
+#' \code{\link{vcov.flexCountReg}} to recompute it after the fit.
 #'
 #' \code{nobs()} is the number of rows used in estimation. For panel models
 #' (\code{renb()}, \code{poisLind.re()}, \code{repois()}, \code{negmultinom()}
@@ -68,12 +69,6 @@ NULL
 #' @export
 coef.flexCountReg <- function(object, ...) {
   object$model[["estimate"]]
-}
-
-#' @rdname flexCountReg-methods
-#' @export
-vcov.flexCountReg <- function(object, ...) {
-  object$model[["vcov"]]
 }
 
 #' @rdname flexCountReg-methods
@@ -243,7 +238,7 @@ print.flexCountReg <- function(x, digits = max(3L, getOption("digits") - 3L),
                                ...) {
   m <- x$model
   cat("flexCountReg model:", class(x)[1])
-  if (!is.null(m$family)) cat(" | family:", m$family)
+  if (!is.null(m$family)) cat(" | family:", .fcr_family_label(m$family))
   cat("\n")
   if (!is.null(x$call)) {
     cat("Call: ")

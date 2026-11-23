@@ -78,6 +78,7 @@ summary.flexCountReg <- function(object, level = 0.95, ...) {
     vcov_type = m[["vcov_type"]],
     n_boot_ok = m[["n_boot_ok"]],
     bootstraps = m[["bootstraps"]],
+    n_clusters = m[["n_clusters"]],
     logLik = as.numeric(ll),
     AIC = stats::AIC(object),
     BIC = stats::BIC(object),
@@ -98,7 +99,7 @@ print.summary.flexCountReg <- function(x, digits = x$digits, ...) {
   cat("Call:\n")
   if (!is.null(x$call)) print(x$call) else print(x$formula)
   cat("\nModel:", x$model_type)
-  if (!is.null(x$family)) cat(" | family:", x$family)
+  if (!is.null(x$family)) cat(" | family:", .fcr_family_label(x$family))
   if (!is.null(x$method)) cat(" | optimizer:", x$method)
   cat("\n")
   if (!is.null(x$iterations)) cat("Iterations:", x$iterations, "\n")
@@ -110,6 +111,10 @@ print.summary.flexCountReg <- function(x, digits = x$digits, ...) {
   se_label <- switch(x$vcov_type %||% "hessian",
                      hessian = "Hessian-based",
                      robust = "robust (sandwich)",
+                     cluster = paste0("cluster-robust (",
+                                      paste(x$n_clusters, "clusters of",
+                                            names(x$n_clusters),
+                                            collapse = "; "), ")"),
                      bootstrap = paste0("bootstrapped (", x$n_boot_ok,
                                         " of ", x$bootstraps,
                                         " replicates)"),

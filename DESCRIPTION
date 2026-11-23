@@ -87,6 +87,7 @@ Suggests:
     parsnip,
     pscl,
     AER,
+    lmtest,
     rmarkdown,
     testthat (>= 3.0.0), 
     poilog

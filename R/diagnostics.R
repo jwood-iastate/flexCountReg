@@ -59,7 +59,7 @@
   upp[neg] <- 0
   todo <- which(!is.na(q) & q >= 0 & !is.na(parts$mu_link))
   if (!length(todo)) return(list(lower = low, upper = upp))
-  fam <- .fcr_family_registry[[parts$family]]
+  fam <- .fcr_family_or_null(parts$family)
   sub <- function(nm, i) if (!is.null(parts[[nm]])) parts[[nm]][i]
   mean_par <- parts$mu_link * parts$p_report
   if (!is.null(fam$cdf)) {

@@ -1,0 +1,237 @@
+---
+title: "Fitting your own count distribution"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fitting your own count distribution}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+flexCountReg has many count distributions built in (see `?count_families`).
+When the one you need is not among them, you can define it yourself with
+`new_count_family()` and use it with `countreg()`, `countreg_rp()` and
+`countreg_mix()`, exactly like a built-in family. You write one function, the
+log probability mass function; everything else (fitting, predictions,
+residuals, rootograms, simulation) works from it.
+
+This article builds a distribution that is not in the package, checks it,
+fits it, and compares it with the built-in negative binomial.
+
+```{r setup}
+library(flexCountReg)
+data("washington_roads")
+```
+
+## 1. The distribution
+
+As an example, take a **one-inflated negative binomial**: a negative
+binomial (NB2) with an extra probability $\omega$ of a count of exactly one,
+
+$$
+P(Y = y) = (1 - \omega)\, f_{NB}(y \mid \mu, \alpha) + \omega\, [y = 1],
+$$
+
+where $f_{NB}$ has mean $\mu$ and variance $\mu + \alpha\mu^2$. Excess ones
+appear in data where a first event changes what follows (for example, a
+site that is treated after its first crash, or repeat-offense counts).
+The distribution has two parameters besides $\mu$: the dispersion
+$\alpha > 0$ and the probability $\omega \in (0, 1)$. Its mean is
+$(1 - \omega)\mu + \omega$, so $\mu$ is *not* the mean.
+
+## 2. Define the family
+
+A family needs a name, its parameters and the log PMF. Each parameter has a
+link, which sets the scale of its linear predictor: `"log"` for a positive
+parameter, `"logit"` for a probability and `"identity"` for any real value.
+`start` is the starting value on that scale.
+
+```{r define}
+oinb <- new_count_family(
+  name = "OINB",
+  params = list(alpha = count_param("log", start = -1),
+                omega = count_param("logit", start = -3)),
+  logpmf = function(y, mu, par) {
+    lnb <- dnbinom(y, size = 1 / par$alpha, mu = mu, log = TRUE)
+    ifelse(y == 1,
+           log((1 - par$omega) * exp(lnb) + par$omega),
+           log1p(-par$omega) + lnb)
+  },
+  mean_is_mu = FALSE,
+  mean = function(mu, par) (1 - par$omega) * mu + par$omega,
+  variance = function(mu, par) {
+    m <- (1 - par$omega) * mu + par$omega
+    ey2 <- (1 - par$omega) * (mu + par$alpha * mu^2 + mu^2) + par$omega
+    ey2 - m^2
+  })
+oinb
+```
+
+`logpmf` receives vectors `y` and `mu` and a list `par` with one vector per
+parameter, all of the same length, and must return one log-probability per
+element. Only `logpmf` is required:
+
+* without `mean` (and with `mean_is_mu = FALSE`) and without `variance`, the
+  moments are computed by summing the PMF;
+* without `cdf`, the CDF is the cumulative sum of the PMF;
+* without `rand`, random draws are made by inverting that CDF.
+
+Giving them is faster, and `check_count_family()` checks them against the
+PMF. Parameter values outside their space should give `-Inf` or `NaN`
+(errors are caught too); `valid = function(mu, par)` can state the
+parameter space explicitly.
+
+## 3. Check it before fitting
+
+`check_count_family()` evaluates the family over a grid of means and
+parameter values: the probabilities must sum to one, the mean and variance
+functions must agree with the PMF, the function must be vectorized, and
+missing or invalid inputs must not cause errors.
+
+```{r check}
+chk <- check_count_family(oinb, mu = c(0.2, 2, 20),
+                          par = list(alpha = c(0.2, 2),
+                                     omega = c(0.05, 0.5)))
+```
+
+A family that fails a check gives a warning naming the failed checks. For
+example, a variance that scales the negative binomial variance by
+$1 - \omega$ and ignores the extra ones:
+
+```{r check-bad}
+wrong <- oinb
+wrong$variance <- function(mu, par) (1 - par$omega) * (mu + par$alpha * mu^2)
+chk <- check_count_family(wrong, mu = c(0.2, 2, 20),
+                          par = list(alpha = c(0.2, 2),
+                                     omega = c(0.05, 0.5)))
+```
+
+## 4. Fit it
+
+Pass the family object as `family`. The coefficients of the distribution
+parameters are labelled by their link: `ln(alpha)` and `logit(omega)`.
+
+```{r fit}
+f <- Total_crashes ~ lnaadt + lnlength + speed50
+m_oinb <- countreg(f, data = washington_roads, family = oinb,
+                   method = "BFGS")
+summary(m_oinb)
+```
+
+Compare it with the built-in negative binomial, which is the special case
+$\omega = 0$:
+
+```{r compare}
+m_nb2 <- countreg(f, data = washington_roads, family = "NB2",
+                  method = "BFGS")
+c(NB2 = AIC(m_nb2), OINB = AIC(m_oinb))
+```
+
+These road segments have no excess ones. The estimate of $\omega$ is
+`r signif(plogis(coef(m_oinb)[["logit(omega)"]]), 2)`, at the boundary of
+its space, so its standard error is not available (the warning above), and
+the AIC prefers the negative binomial. The frequency table in Section 5
+shows why: there are fewer ones than the negative binomial predicts, not
+more.
+
+When the extra ones are there, the family finds them. Here 20% of the
+counts of a negative binomial sample are replaced by ones:
+
+```{r simulated}
+set.seed(42)
+n <- 2000
+sim <- data.frame(x = rnorm(n))
+sim$y <- rnbinom(n, size = 2, mu = exp(0.8 + 0.5 * sim$x))
+sim$y[runif(n) < 0.2] <- 1
+s_oinb <- countreg(y ~ x, data = sim, family = oinb, method = "BFGS")
+s_nb2 <- countreg(y ~ x, data = sim, family = "NB2", method = "BFGS")
+c(NB2 = AIC(s_nb2), OINB = AIC(s_oinb))
+# omega (true 0.2) and alpha (true 0.5)
+c(omega = plogis(coef(s_oinb)[["logit(omega)"]]),
+  alpha = exp(coef(s_oinb)[["ln(alpha)"]]))
+```
+
+As with the built-in families, each distribution parameter can have its own
+regression: `dis_param_formula_1` models the first parameter ($\alpha$) and
+`dis_param_formula_2` the second ($\omega$), on their link scales.
+
+```{r dis-formula}
+m_oinb2 <- countreg(f, data = washington_roads, family = oinb,
+                    dis_param_formula_2 = ~ speed50, method = "BFGS")
+coef(m_oinb2)[c("logit(omega):(Intercept)", "logit(omega):speed50")]
+```
+
+## 5. Everything else works from the PMF
+
+Predictions of the mean use the family's `mean` function; probabilities,
+quantile residuals, rootograms and simulation use the PMF.
+
+```{r methods}
+nd <- washington_roads[1:3, ]
+predict(m_oinb, newdata = nd)                      # E[Y]
+round(predict(m_oinb, newdata = nd, type = "prob")[, 1:5], 3)
+head(residuals(m_oinb, type = "quantile"))
+sims <- simulate(m_oinb, nsim = 2, seed = 1)
+```
+
+Observed and expected frequencies of the small counts show whether extra
+ones are needed. For the road data both models predict more ones than were
+observed:
+
+```{r frequencies}
+expected <- function(m) {
+  colSums(predict(m, newdata = washington_roads, type = "prob")[, 1:5])
+}
+rbind(observed = tabulate(washington_roads$Total_crashes + 1, 5),
+      NB2 = round(expected(m_nb2), 1),
+      OINB = round(expected(m_oinb), 1))
+```
+
+The family also works in random-parameter models and finite mixtures:
+
+```{r rp}
+m_rp <- countreg_rp(Total_crashes ~ lnaadt + lnlength,
+                    rpar_formula = ~ -1 + speed50,
+                    data = washington_roads, family = oinb,
+                    group_var = "ID", ndraws = 50)
+coef(m_rp)
+```
+
+## 6. Saving and sharing a fitted model
+
+The fitted model stores the family, so it can be saved and used in another
+R session, on another computer, or in parallel workers, without defining
+the family again:
+
+```{r save}
+path <- tempfile(fileext = ".rds")
+saveRDS(m_oinb, path)
+m_again <- readRDS(path)
+predict(m_again, newdata = nd)
+```
+
+Two families with the same `name` but different definitions are kept
+apart: each is identified by its name and a hash of its definition.
+
+## 7. What a user family can and cannot do
+
+| Feature | Available |
+|:--|:--|
+| `countreg()`, with distribution-parameter formulas | yes |
+| zero-inflated and hurdle models (`zero_formula`) | yes |
+| `countreg_rp()` (random parameters, panels) | yes |
+| `countreg_mix()` and `countreg_lc()` | yes, slower than built-in NB and Poisson mixtures |
+| predictions, probabilities, residuals, rootograms, `simulate()` | yes |
+| robust and cluster-robust standard errors, `vcov(type = "cluster")` | yes |
+| underreporting (`underreport_formula`) | no: a user family is not known to be closed under binomial thinning |
+| more than two distribution parameters | not yet |
+
+The gradient for a user family is computed by finite differences of the log
+PMF in the mean and in each distribution parameter. That is accurate and
+needs only two extra PMF evaluations per parameter, but a closed-form
+built-in family is faster. If a distribution is widely useful, it can be
+added to the package as a built-in family; `vignette("extending-count-distributions")`
+explains how.

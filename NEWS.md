@@ -13,6 +13,89 @@
   or panels; the bootstrap is refused; `summary()` notes that LR tests, AIC
   and BIC are not valid; and `regCompTest()` runs no LR test.
 
+## Faster random-parameter estimation
+
+* `countreg_rp()` now gives the optimizer the analytic gradient of the
+  simulated log-likelihood instead of a numeric one. Each panel's score is
+  the posterior-weighted average over draws of the family's score in the
+  log mean times the derivative of the log mean in each parameter. This
+  covers fixed coefficients; normal, lognormal, uniform, triangular and
+  gamma random parameters; correlated (Cholesky) parameters; heterogeneity
+  in means and in variances; and distribution-parameter formulas.
+  Poisson, NB1, NB2 and NBP have closed-form scores. The other families use
+  central differences in the log mean and in each distribution parameter,
+  which take two density evaluations per distribution parameter whatever
+  the number of regression parameters. On `washington_roads` with three
+  random parameters (9 parameters), a 500-draw NB2 fit by BFGS takes 8.6 s
+  instead of 41 s, and a 100-draw fit by BHHH takes 6 s instead of 38 s,
+  with the same log-likelihood. Newton-Raphson's Hessian is now the
+  numeric derivative of the analytic gradient, which is faster and more
+  accurate than second differences of the log-likelihood.
+  `options(flexCountReg.rp_gradient = "numeric")` restores the numeric
+  gradient.
+* `countreg_rp()` no longer reports convergence where the optimizer only
+  stopped because the log-likelihood changed little between iterations.
+  BHHH, NR and BFGSR stop on that test, and a crawling BHHH also meets it
+  far from the maximum. On `washington_roads`, a 100-draw NB2 fit with
+  three random parameters started from the matching `countreg()` fit
+  "converged" at -1086.9, 21.6 below the maximum. The fit now checks the
+  Newton decrement g'(-H)^-1 g at the estimates, which is twice the gain a
+  Newton step predicts. Above 0.1 it sets `converged = FALSE` and warns
+  with the predicted gain. Fits with `max.iters = 0` by BFGS, which `optim()`
+  reported as converged, are flagged the same way. The decrement is stored
+  as `model$newton_decrement`.
+* Families can declare a `score` function in the internal registry; the
+  NB1, NB2 and NBP scores are shared by `countreg()` and `countreg_rp()`.
+
+## Cluster-robust standard errors and the sandwich package
+
+* `countreg()` and `countreg_rp()` gain `stderr = "cluster"` with
+  `cluster = ~ corridor` (or column names, or a vector of ids). Two or more
+  variables (`~ corridor + year`) give multiway clustering (Cameron, Gelbach
+  and Miller 2011). The scores of the independent units (rows, or panels)
+  are summed within clusters, with the factor G / (G - 1). Clusters may be
+  coarser than the panels (sites within corridors) but may not split a
+  panel. Giving `cluster` alone selects cluster-robust standard errors.
+  With frequency weights, a row's copies are in its cluster.
+  `summary()` reports the number of clusters.
+* `vcov()` gains `type = c("fit", "hessian", "robust", "cluster")` and
+  `cluster`, which recompute the covariance matrix from the stored scores
+  without refitting. This works for `countreg()`, `countreg_rp()`, `renb()`,
+  `repois()` and `poislind_re()` fits. With `keep_data = FALSE`, the
+  clusters are given as a vector.
+* New `estfun()` and `bread()` methods for the sandwich package, so
+  `sandwich::vcovCL()`, `vcovHC()`, `sandwich()`, `lmtest::coeftest()` and
+  tools built on them work with flexCountReg fits. One-way and two-way
+  cluster covariances equal `sandwich::vcovCL(type = "HC0")` to 1e-10.
+
+## User-defined count distributions
+
+* New `new_count_family()` and `count_param()` define a count distribution
+  from its log PMF, with up to two parameters, each with a log, logit or
+  identity link. The family object can be passed as `family` to
+  `countreg()`, `countreg_rp()`, `countreg_mix()` and `countreg_lc()`. It
+  works with distribution-parameter formulas, zero-inflated and hurdle
+  models, predictions, quantile residuals, rootograms, `simulate()` and
+  robust or cluster-robust standard errors.
+  * Optional `mean`, `variance`, `cdf`, `rand` and `valid` functions can be
+    given. Without them, the moments and the CDF come from summing the PMF,
+    and random draws from inverting the CDF.
+  * A user NB2 reproduces the built-in NB2 in fixed, random-parameter,
+    hurdle and mixture fits. A user zero-inflated NB2 reproduces
+    `zero_formula = ~ 1`.
+  * Each family is registered under its name and a hash of its definition,
+    so two families with the same name do not collide.
+  * The fit stores the family, so a model saved with `saveRDS()` works in a
+    new R session.
+  * Underreporting is not available for user families.
+* New `check_count_family()` checks a family over a grid of means and
+  parameter values. It tests that the PMF sums to one, that `mean`,
+  `variance`, `cdf` and `rand` agree with the PMF, that the function is
+  vectorized, and that missing or invalid values cause no errors.
+* New vignette, "Fitting your own count distribution"
+  (`vignette("user-defined-count-distributions")`), with a one-inflated
+  negative binomial as the worked example.
+
 ## Interactive app
 
 * New `launch_app()` opens an interactive interface to flexCountReg in a
@@ -295,6 +378,42 @@
   coefficient matrix, or `tibble::as_tibble(summary(m))` for the tibble that
   `summary()` returned before. The offset is shown as a note, not as a
   coefficient row.
+* Hessian-based, robust and cluster-robust covariances use the symmetric
+  part of the numeric Hessian. In poorly conditioned fits the inverse
+  amplified the Hessian's small asymmetry. For example, a `renb()` fit by
+  Nelder-Mead on `washington_roads` had a negative robust variance for
+  ln(a-1); it is now 0.036. In well-conditioned fits the change is
+  negligible.
+* `countreg_rp()` gives each unit (panel, or row without `group_var`) its
+  own simulation draws by default: new argument `draws = c("per_unit",
+  "shared")`. Unit u uses draws (u - 1) R + 1 to u R of one Halton sequence,
+  after its first 10 points (Train 2009, Sec. 9.3.3). With shared draws, as
+  before, draw r is the same for every panel, so simulation errors are
+  correlated across panels and do not average out as panels are added. On
+  `washington_roads` (NB2, random `speed50` and `lnlength`, 12 scrambling
+  seeds), per-unit draws cut the error of the random-parameter means and
+  standard deviations by a factor of 2 to 5 at 50 and 200 draws. The
+  intercept and the log-likelihood varied more across seeds than with shared
+  draws. Empirical Bayes predictions regenerate each estimation panel's own
+  draws (by panel id), and new panels get new draws. `draws = "shared"`
+  reproduces earlier fits.
+* Scrambled Halton draws (`scrambled = TRUE` in `countreg_rp()`, and in
+  interval simulations) now depend on their seed. `randtoolbox` scrambles
+  with its own generator, which `set.seed()` does not reach. So every
+  "scrambled" fit used the same scrambling (randtoolbox's default, seed 0),
+  whatever the stored `draw_seed`, and different seeds gave identical
+  results. Fits made before this change still predict with the draws they
+  were estimated with.
+* `countreg_rp()` now uses `method = "BFGS"` by default (it was `"BHHH"`).
+  With the analytic gradient, BFGS reached the maximum in each of six test
+  models. BHHH failed on two of the six. On a 500-draw NB2 model with three
+  random parameters it was still at -1093 after 200 iterations, while BFGS
+  reached -1065.5 in about 10 s. On the same model with 100 draws it
+  reported convergence at the Poisson boundary (ln(alpha) = -167), 0.08
+  below the maximum, where no gradient method can recover. BHHH remains
+  available and is often faster on simple models. Code that relies on the
+  default can give different estimates; pass `method = "BHHH"` to
+  reproduce earlier fits.
 * Fitted objects no longer keep the optimizer's log-likelihood function
   (`maxLik::objectiveFn(fit$model)` is unavailable): its closure held the
   data, design matrices and draws, so fits were several times larger than

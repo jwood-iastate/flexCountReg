@@ -23,6 +23,11 @@
 #   start_rp  optional starting value(s) of the distribution parameters in
 #             countreg_rp() (default: -2, near the Poisson limit of most
 #             families).
+#   score     optional function(y, mu, alpha, sigma) returning
+#             list(eta, alpha, sigma): the derivatives of log P(Y = y) with
+#             respect to log(mu), log(alpha) and log(sigma) (NULL for a
+#             parameter the family does not have). Families without it use
+#             central differences of `dens` (see .fcr_family_score()).
 #
 # A complete family also needs public distribution functions, moments,
 # simulation and tests; the families added in 0.1.2 have their helpers in
@@ -33,10 +38,10 @@
 .fcr_family <- function(params, dens, variance = NULL, rand = NULL,
                         mean_adj = function(alpha, sigma) 1, start = 0,
                         mean = NULL, cdf = NULL, start_rp = NULL,
-                        valid = NULL) {
+                        valid = NULL, score = NULL) {
   list(params = params, dens = dens, variance = variance, rand = rand,
        mean_adj = mean_adj, start = start, mean = mean, cdf = cdf,
-       start_rp = start_rp, valid = valid)
+       start_rp = start_rp, valid = valid, score = score)
 }
 
 # Is the distribution defined at each row's parameters (on the registry's
@@ -51,7 +56,7 @@
   pos <- function(v) if (is.null(v)) rep(TRUE, n) else
     rep_len(is.finite(v) & v > 0, n)
   ok <- pos(mu) & pos(alpha) & pos(sigma)
-  hook <- .fcr_family_registry[[family]]$valid
+  hook <- .fcr_family_or_null(family)$valid
   if (!is.null(hook) && any(ok)) {
     r <- .fcr_recycle(mu, alpha %||% NA_real_, sigma %||% NA_real_)
     h <- hook(r[[1]], if (!is.null(alpha)) r[[2]], if (!is.null(sigma)) r[[3]])
@@ -124,7 +129,8 @@
     rand = function(n, mu, alpha, sigma) stats::rpois(n, mu),
     # Closed-form CDF (log scale, either tail) for quantile residuals
     cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
-      stats::ppois(q, predicted, lower.tail = lower.tail, log.p = TRUE)),
+      stats::ppois(q, predicted, lower.tail = lower.tail, log.p = TRUE),
+    score = function(y, mu, alpha, sigma) list(eta = y - mu)),
 
   GP1 = .fcr_family(
     params = list("ln(phi+1)", NULL),
@@ -160,7 +166,8 @@
       stats::rnbinom(n, size = mu / alpha, mu = mu),
     cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
       stats::pnbinom(q, size = predicted / alpha, mu = predicted,
-                     lower.tail = lower.tail, log.p = TRUE)),
+                     lower.tail = lower.tail, log.p = TRUE),
+    score = function(y, mu, alpha, sigma) .fcr_nb_score("NB1", y, mu, alpha)),
 
   NB2 = .fcr_family(
     params = list("ln(alpha)", NULL),
@@ -172,7 +179,8 @@
       stats::rnbinom(n, size = 1 / alpha, mu = mu),
     cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
       stats::pnbinom(q, size = 1 / alpha, mu = predicted,
-                     lower.tail = lower.tail, log.p = TRUE)),
+                     lower.tail = lower.tail, log.p = TRUE),
+    score = function(y, mu, alpha, sigma) .fcr_nb_score("NB2", y, mu, alpha)),
 
   NBP = .fcr_family(
     params = list("ln(alpha)", "ln(p)"),
@@ -184,7 +192,9 @@
       stats::rnbinom(n, size = mu^(2 - sigma) / alpha, mu = mu),
     cdf = function(q, predicted, alpha, sigma, lower.tail = TRUE)
       stats::pnbinom(q, size = predicted^(2 - sigma) / alpha, mu = predicted,
-                     lower.tail = lower.tail, log.p = TRUE)),
+                     lower.tail = lower.tail, log.p = TRUE),
+    score = function(y, mu, alpha, sigma)
+      .fcr_nb_score("NBP", y, mu, alpha, sigma)),
 
   PLN = .fcr_family(
     params = list("ln(sigma)", NULL),
@@ -445,13 +455,33 @@
 .fcr_families <- names(.fcr_family_registry)
 
 .fcr_get_family <- function(family) {
-  f <- .fcr_family_registry[[family]]
+  f <- .fcr_family_or_null(family)
   if (is.null(f)) {
+    if (is.character(family) && length(family) == 1L &&
+        startsWith(family, "user:")) {
+      stop("The user-defined family \"", .fcr_family_label(family),
+           "\" is not available in this R session. Use the fitted model ",
+           "(which stores it), or pass the family object again.",
+           call. = FALSE)
+    }
     stop("Unknown `family` \"", family, "\". Must be one of: ",
          toString(.fcr_families), ".", call. = FALSE)
   }
   f
 }
+
+# Registry entry of a built-in or registered user family (user families
+# saved with a fit are registered again when needed); NULL if unknown.
+.fcr_family_or_null <- function(family) {
+  if (!is.character(family) || length(family) != 1L || is.na(family)) {
+    return(NULL)
+  }
+  .fcr_family_registry[[family]] %||% .fcr_user_families[[family]] %||%
+    .fcr_recover_family(family)
+}
+
+# Is `family` a known family key (built-in or user)?
+.fcr_is_family <- function(family) !is.null(.fcr_family_or_null(family))
 
 # Parameter labels: list(<parameter 1>, <parameter 2>)
 # Errors for distribution-parameter formulas a family cannot use.
@@ -475,17 +505,17 @@
 }
 
 get_params <- function(family) {
-  .fcr_family_registry[[family]]$params
+  .fcr_family_or_null(family)$params
 }
 
 # Probability function P(Y = y | ...)
 get_probFunc <- function(family) {
-  .fcr_family_registry[[family]]$dens
+  .fcr_family_or_null(family)$dens
 }
 
 # Variance at mean parameter mu (NULL when not available)
 .fcr_family_variance <- function(family, mu, alpha = NULL, sigma = NULL) {
-  v <- .fcr_family_registry[[family]]$variance
+  v <- .fcr_family_or_null(family)$variance
   if (is.null(v)) NULL else v(mu, alpha, sigma)
 }
 
@@ -522,6 +552,12 @@ get_probFunc <- function(family) {
 
 .fcr_check_thinning <- function(family) {
   if (!family %in% .fcr_thinning_families) {
+    if (startsWith(family, "user:")) {
+      stop("Underreporting models are not available for the user-defined ",
+           "family \"", .fcr_family_label(family), "\": it is not known to ",
+           "be closed under binomial thinning. Available families: ",
+           toString(.fcr_thinning_families), ".", call. = FALSE)
+    }
     stop("Underreporting models are not available for family \"", family,
          "\": the distribution of the reported counts (binomial thinning of ",
          "the true counts) is not of the same family. Available families: ",
@@ -548,7 +584,7 @@ get_probFunc <- function(family) {
 # Mean of the family at mean parameter mu: E[Y] (mu times the mean
 # adjustment, or the family's own mean function)
 .fcr_family_mean <- function(family, mu, alpha = NULL, sigma = NULL) {
-  f <- .fcr_family_registry[[family]]
+  f <- .fcr_family_or_null(family)
   if (!is.null(f$mean)) {
     m <- f$mean(mu, alpha, sigma)
     bad <- is.nan(m) & !is.na(mu)
@@ -573,7 +609,7 @@ get_probFunc <- function(family) {
 
 # Ratio of the mean to exp(X beta)
 .fcr_mean_adjust <- function(family, vec_1, vec_2) {
-  f <- .fcr_family_registry[[family]]
+  f <- .fcr_family_or_null(family)
   if (is.null(f)) return(1)
   a <- f$mean_adj(vec_1, vec_2)
   if (length(a) == 0) 1 else a

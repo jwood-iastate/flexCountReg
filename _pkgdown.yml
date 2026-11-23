@@ -31,6 +31,7 @@ articles:
   contents:
   - numerical-reliability
   - simulation-studies
+  - user-defined-count-distributions
   - extending-count-distributions
 
 reference:
@@ -63,6 +64,8 @@ reference:
   contents:
   - summary.flexCountReg
   - flexCountReg-methods
+  - vcov.flexCountReg
+  - estfun.flexCountReg
   - flexCountReg-tidiers
   - predict.flexCountReg
 
@@ -87,6 +90,14 @@ reference:
   contents:
   - count_reg
   - count_family
+
+- title: User-defined count distributions
+  desc: Define a count distribution from its log probability function and
+    use it in any of the models.
+  contents:
+  - new_count_family
+  - count_param
+  - check_count_family
 
 - title: Count distributions
   contents:

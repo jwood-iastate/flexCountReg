@@ -9,10 +9,10 @@ test_that("F22: inner mixing draws are separate, scrambled draws reproducible", 
                      data = d, family = "PLN", ndraws = 30, mix_draws = 10,
                      method = "BFGS", max.iters = 10))["elapsed"]
   expect_equal(a$model$mix_draws, 10)
-  expect_equal(countreg_rp(Total_crashes ~ lnaadt,
-                           rpar_formula = ~ -1 + speed50, data = d,
-                           family = "PLN", ndraws = 300, max.iters = 0,
-                           method = "BFGS")$model$mix_draws, 200)
+  expect_equal(suppressWarnings(countreg_rp(
+    Total_crashes ~ lnaadt, rpar_formula = ~ -1 + speed50, data = d,
+    family = "PLN", ndraws = 300, max.iters = 0,
+    method = "BFGS"))$model$mix_draws, 200)
   # Scrambled draws: predictions reuse the fit's draws and leave the
   # caller's random-number stream unchanged
   set.seed(4)

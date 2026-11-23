@@ -24,10 +24,12 @@ knitr::opts_chunk$set(
 The goal of flexCountReg is to provide functions that allow the analyst to estimate count regression models that can handle multiple analysis issues, including:
 
 - many count distributions beyond the Poisson and negative binomial (see the list below), with any distribution parameter modeled as a function of variables (generalized count models);
+- your own count distributions, defined from a log probability function with `new_count_family()` and usable in every model;
 - underreporting, and zero-inflated or hurdle versions of every distribution;
-- random parameters, with heterogeneity in their means and variances, and exact, simulated and Empirical Bayes (observation-specific) predictions;
+- random parameters, with heterogeneity in their means and variances, analytic gradients, separate simulation draws for each panel, and exact, simulated and Empirical Bayes (observation-specific) predictions;
 - random-effects panel models (negative binomial, Poisson-Lindley, negative multinomial);
 - finite mixtures and latent-class count regressions, with constant, covariate-dependent or known class proportions, shared or class-specific parameters, different families in different classes, and one class per panel;
+- inference with Hessian-based, robust, cluster-robust (one-way or multiway) or bootstrap standard errors, frequency or sampling weights, and methods for the sandwich and lmtest packages;
 - model comparison and diagnostics: likelihood-ratio tests, comparison tables, marginal effects, CURE plots, rootograms and randomized quantile residuals;
 - an interactive app (`launch_app()`) for the whole workflow, from data to a downloadable R script that reproduces the analysis.
 
@@ -61,13 +63,15 @@ The app opens in a web browser, with one tab for each step of an analysis:
   factors).
 - **Build**: choose the model (count regression, random parameters,
   random-effects panel models, finite mixtures or latent classes), the
-  count distribution, response, predictors, exposure or offset, frequency
-  weights and panel identifier, and the model-specific options. The draft
-  is checked before it can be estimated.
+  count distribution, response, predictors, interactions between
+  predictors, exposure or offset, frequency weights and panel identifier,
+  and the model-specific options. The draft is checked before it can be
+  estimated.
 - **Fit**: models are estimated in the background, so the app stays
   responsive and long fits can be canceled. The tab shows the summary,
-  coefficients, numerical checks (convergence, gradient, conditioning of
-  the information matrix) and, for mixtures, class sizes and starts.
+  coefficients, marginal effects (or elasticities) with standard errors,
+  numerical checks (convergence, gradient, conditioning of the information
+  matrix) and, for mixtures, class sizes and starts.
 - **Diagnose**: rootograms, randomized quantile residuals and CURE plots
   for any of the fitted models, with the plots saved as JPEG files at the
   size and resolution you choose (for papers and reports).
@@ -111,13 +115,14 @@ to install any that are missing. Uploaded data stay on your computer.
 
 **Model Estimation Functions**
 
-- `countreg()` estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models.
-- `countreg_rp()` estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters.
+- `countreg()` estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models, with Hessian-based, robust, cluster-robust (`cluster = ~ site`) or bootstrap standard errors.
+- `countreg_rp()` estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters. Fits use the analytic gradient of the simulated likelihood and, by default, separate Halton draws for each panel.
 - `countreg_mix()` and `countreg_lc()` estimate finite-mixture and latent-class count models (the same engine under two vocabularies), with several reproducible starts, and `component_probs()` / `class_probs()` give prior or posterior class probabilities.
 - `renb()` estimates the random effects negative binomial regression model.
 - `poisLind.re()` (also `poislind_re()`) estimates the random effects Poisson-Lindley model.
 - `negmultinom()` estimates negative multinomial (random effects) panel models (NM1, NM2 and NM-P).
 - `repois()` estimates the random effects Poisson model with a gamma random effect.
+- `new_count_family()` defines a count distribution from its log probability function (with optional mean, variance, CDF and random-draw functions) for use as `family` in `countreg()`, `countreg_rp()`, `countreg_mix()` and `countreg_lc()`; `check_count_family()` tests it numerically. See `vignette("user-defined-count-distributions", package = "flexCountReg")`.
 - `count_reg()` is a [parsnip](https://parsnip.tidymodels.org/) model specification with a `"flexCountReg"` engine, for use with tidymodels (the distribution can be tuned with `count_family()`).
 
 **Working with Fitted Models**
@@ -126,6 +131,7 @@ to install any that are missing. Uploaded data stay on your computer.
 - `predict()` gives expected counts (one per row of `newdata`, `NA` for incomplete rows), the probability of each count, and the components of underreporting and zero models. For `countreg()` models it also gives confidence intervals for the expected count and prediction intervals for a new count (`interval = "confidence"` or `"prediction"`). For random parameters models it offers exact, simulated and Empirical Bayes (`"Individual"`) predictions.
 - `tolerance_interval()` gives content tolerance intervals for `countreg()` models: count ranges intended to contain at least a stated share of the outcome distribution with a stated confidence.
 - `coef()`, `vcov()`, `confint()`, `logLik()`, `AIC()`, `BIC()`, `nobs()`, `fitted()`, `residuals()` (response, Pearson and randomized quantile), `simulate()` and `update()` work as for other R models.
+- `vcov(m, type = "cluster", cluster = ~ corridor)` recomputes cluster-robust (one-way or multiway) covariances after the fit, without refitting; `type = "robust"` and `"hessian"` are also available. `estfun()` and `bread()` methods let `sandwich::vcovCL()`, `sandwich::vcovHC()` and `lmtest::coeftest()` work with flexCountReg models.
 - `tidy()`, `glance()` and `augment()` return tibbles in the broom format.
 
 **Model Evaluation, Comparison, and Convenience Functions**

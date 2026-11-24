@@ -11,6 +11,7 @@ predict(
   newdata = NULL,
   type = c("counts", "prob", "total", "total_positive"),
   conditional = FALSE,
+  random = c("marginal", "posterior"),
   ...
 )
 ```
@@ -41,6 +42,15 @@ predict(
   unconditional expected counts, also for a fit with `truncated = TRUE`
   (whose estimated distribution is that of the untruncated total).
 
+- random:
+
+  for fits with random parameters: `"marginal"` (default) averages over
+  the distribution of the random parameters (the prediction for a new
+  unit); `"posterior"` averages over each unit's posterior distribution
+  given its counts in the estimation data (Empirical Bayes; units not in
+  the estimation data get the marginal prediction). `newdata` then needs
+  the `group_var` column(s).
+
 - ...:
 
   unused.
@@ -48,4 +58,6 @@ predict(
 ## Value
 
 A matrix with one column per category (`"counts"`, `"prob"`), or a
-vector (`"total"`, `"total_positive"`).
+vector (`"total"`, `"total_positive"`). With random parameters, `"prob"`
+is the average allocation probability and `"counts"` the average
+expected count over the draws.

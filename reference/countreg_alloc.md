@@ -31,7 +31,14 @@ countreg_alloc(
   start.vals = NULL,
   ndraws = 1500,
   engine = "quadrature",
-  verbose = FALSE
+  verbose = FALSE,
+  rpar_total = NULL,
+  rpar_alloc = NULL,
+  rpar_threshold = NULL,
+  correlation = c("none", "within", "across"),
+  rpar_draws = 500,
+  seed = NULL,
+  .setup_only = FALSE
 )
 ```
 
@@ -122,6 +129,44 @@ countreg_alloc(
   integration settings of families without a closed form, as in
   [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md).
 
+- rpar_total, rpar_alloc, rpar_threshold:
+
+  one-sided formulas of random parameters in the total's mean, the
+  allocation propensity and the gaps between thresholds. Each term adds
+  a normal random deviation, with mean zero, to the corresponding
+  coefficient, so the coefficient in the equation's own formula is the
+  mean (`~ 1` in `rpar_alloc` is a random intercept of the propensity,
+  even though its fixed intercept is absorbed by the thresholds).
+  `rpar_threshold` shifts the log gaps of all thresholds above the first
+  by one common random amount, so it changes the share of the middle
+  categories (a common shift of all thresholds would be the same as a
+  random propensity intercept). For `link = "mnl"`, `rpar_alloc` gives
+  each category but the first its own random coefficients. The random
+  coefficients are drawn once per unit of `group_var` (shared by all its
+  rows, such as the years of a site), or once per row without
+  `group_var`.
+
+- correlation:
+
+  correlation of the random parameters: `"none"` (independent),
+  `"within"` (correlated within each equation) or `"across"` (correlated
+  within and across the total and the allocation, which lets a unit's
+  unobserved crash frequency and its severity propensity be correlated).
+
+- rpar_draws:
+
+  the number of simulation draws per unit (randomly shifted Halton
+  points, a separate block and shift for each unit).
+
+- seed:
+
+  seed of the random shifts of the draws (stored in the fit, so
+  predictions use the same draws); random by default.
+
+- .setup_only:
+
+  internal use: return the model setup without fitting.
+
 ## Value
 
 An object of class `"countreg_alloc"`, with methods
@@ -170,6 +215,18 @@ v'\theta_1\\ and \\\psi_k = \psi\_{k-1} + \exp(v'\theta_k)\\, which
 keeps them ordered for every \\v\\. The coefficients `Threshold1:` are
 on the scale of the latent propensity and `Threshold<k>:` (k \>= 2) on
 the log scale of the gap between thresholds.
+
+**Random parameters.** With `rpar_total`, `rpar_alloc` or
+`rpar_threshold`, the likelihood of a unit is the average over
+`rpar_draws` draws of its coefficients of the product of its rows'
+likelihoods (maximum simulated likelihood), with analytic gradients. The
+random coefficients are \\b = L u\\, with \\u\\ standard normal and
+\\L\\ lower triangular; its elements are reported as `sd:` (the
+diagonal) and `chol:` (below the diagonal), and
+[`summary()`](https://rdrr.io/r/base/summary.html) shows the implied
+standard deviations and correlations. With the fractional likelihood the
+integrand is the product of the rows' quasi-likelihoods, as in Shabab et
+al. (2026).
 
 Time-varying effects
 ([`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md))

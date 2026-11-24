@@ -221,12 +221,98 @@ works in every formula of
 including the allocation and threshold formulas. See
 [`vignette("temporal-instability")`](https://jwood-iastate.github.io/flexCountReg/articles/temporal-instability.md).
 
-## 7. What is next
+## 7. Random parameters
 
-The next version adds random parameters in each equation. Those are
-correlated within and across the total and the allocation, and shared
-heterogeneity at the site and the site-year level, as in the model of
-Shabab et al. (2026).
+Sites differ in ways the covariates do not capture: some have more
+crashes than their traffic and speed limit predict, and some have more
+severe crashes. `rpar_total` and `rpar_alloc` add random parameters to
+the total and to the severity propensity. With `group_var = "ID"`, each
+road segment gets one draw of its random parameters, shared by its three
+years. `correlation = "across"` lets the two be correlated:
+
+``` r
+
+mr <- countreg_alloc(cbind(pdo, injury, fatal) ~ lnaadt + speed50 +
+                       offset(lnlength), alloc_formula = ~ lnaadt + speed50,
+                     data = w, family = "POISSON", group_var = "ID",
+                     rpar_total = ~ 1, rpar_alloc = ~ 1,
+                     correlation = "across", rpar_draws = 200, seed = 1)
+summary(mr)
+#> Total-plus-allocation count model
+#> 
+#> Total:       POISSON 
+#> Allocation:  ordered_probit with multinomial likelihood
+#> Categories:  pdo < injury < fatal 
+#> Units:      507 (1501 rows, 1101 with a zero total)
+#> Std. errors: normal 
+#> 
+#> Total:
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept) -8.93059    0.50334 -17.743  < 2e-16 ***
+#> lnaadt       1.10937    0.05881  18.864  < 2e-16 ***
+#> speed50     -0.59187    0.13227  -4.475 7.65e-06 ***
+#> 
+#> Allocation:
+#>                    Estimate Std. Error z value Pr(>|z|)   
+#> Allocation:lnaadt  -0.23373    0.07423  -3.149  0.00164 **
+#> Allocation:speed50 -0.41417    0.20392  -2.031  0.04225 * 
+#> 
+#> Thresholds:
+#>                        Estimate Std. Error z value Pr(>|z|)
+#> Threshold1:(Intercept)  -0.7951     0.6437  -1.235    0.217
+#> Threshold2:(Intercept)   0.1443     0.1442   1.001    0.317
+#> 
+#> Random parameters (Cholesky factor):
+#>                                               Estimate Std. Error z value
+#> sd:Total:(Intercept)                           0.64050    0.06507   9.843
+#> chol:Allocation:(Intercept)|Total:(Intercept) -0.19673    0.10527  -1.869
+#> sd:Allocation:(Intercept)                     -0.11052    0.27038  -0.409
+#>                                               Pr(>|z|)    
+#> sd:Total:(Intercept)                            <2e-16 ***
+#> chol:Allocation:(Intercept)|Total:(Intercept)   0.0617 .  
+#> sd:Allocation:(Intercept)                       0.6827    
+#> 
+#> Random parameters: standard deviations and correlations
+#>                           SD Total:(Intercept)
+#> Total:(Intercept)      0.640                  
+#> Allocation:(Intercept) 0.226            -0.872
+#> (200 draws per unit of ID; 507 units)
+#> 
+#> Log-likelihood: -1252.9034  AIC: 2525.8068  BIC: 2578.9457
+AIC(m, mr)
+#>    df      AIC
+#> m   8 2567.414
+#> mr 10 2525.807
+```
+
+The random intercepts fit much better than the NB2 model without them.
+The segment effect on the total (a Poisson-lognormal total) takes over
+the role of the NB2 overdispersion. The negative correlation says that
+segments with more crashes than their covariates predict tend to have
+relatively less severe crashes.
+
+The likelihood is simulated: each segment’s likelihood is averaged over
+`rpar_draws` draws of its random parameters (randomly shifted Halton
+points), with analytic gradients. `rpar_threshold` adds a random term to
+the gaps between thresholds, which changes the share of the middle
+categories. Random slopes are more terms in the same formulas, such as
+`rpar_total = ~ 1 + lnaadt`.
+
+Predictions for a new segment average over the random parameters
+(`random = "marginal"`, the default). For a segment in the estimation
+data, `random = "posterior"` uses its own crash history (Empirical
+Bayes):
+
+``` r
+
+nd <- w[w$ID == w$ID[1], ]
+round(cbind(predict(mr, newdata = nd),
+            predict(mr, newdata = nd, random = "posterior")), 3)
+#>        pdo injury fatal   pdo injury fatal
+#> 1    0.754  0.028 0.001 0.535  0.025 0.001
+#> 502  0.750  0.028 0.001 0.532  0.025 0.001
+#> 1002 0.791  0.029 0.001 0.561  0.026 0.001
+```
 
 ## Reference
 

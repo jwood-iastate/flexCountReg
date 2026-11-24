@@ -273,12 +273,91 @@ version. It is a quasi-likelihood, so:</p>
 formulas. See <code><a href="../articles/temporal-instability.html">vignette("temporal-instability")</a></code>.</p>
 </div>
 <div class="section level2">
-<h2 id="what-is-next">7. What is next<a class="anchor" aria-label="anchor" href="#what-is-next"></a>
+<h2 id="random-parameters">7. Random parameters<a class="anchor" aria-label="anchor" href="#random-parameters"></a>
 </h2>
-<p>The next version adds random parameters in each equation. Those are
-correlated within and across the total and the allocation, and shared
-heterogeneity at the site and the site-year level, as in the model of
-Shabab et al. (2026).</p>
+<p>Sites differ in ways the covariates do not capture: some have more
+crashes than their traffic and speed limit predict, and some have more
+severe crashes. <code>rpar_total</code> and <code>rpar_alloc</code> add
+random parameters to the total and to the severity propensity. With
+<code>group_var = "ID"</code>, each road segment gets one draw of its
+random parameters, shared by its three years.
+<code>correlation = "across"</code> lets the two be correlated:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_alloc.html">countreg_alloc</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pdo</span>, <span class="va">injury</span>, <span class="va">fatal</span><span class="op">)</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span>
+<span>                       <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span>, alloc_formula <span class="op">=</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span>,</span>
+<span>                     data <span class="op">=</span> <span class="va">w</span>, family <span class="op">=</span> <span class="st">"POISSON"</span>, group_var <span class="op">=</span> <span class="st">"ID"</span>,</span>
+<span>                     rpar_total <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>, rpar_alloc <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>,</span>
+<span>                     correlation <span class="op">=</span> <span class="st">"across"</span>, rpar_draws <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mr</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Total-plus-allocation count model</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Total:       POISSON </span></span>
+<span><span class="co">#&gt; Allocation:  ordered_probit with multinomial likelihood</span></span>
+<span><span class="co">#&gt; Categories:  pdo &lt; injury &lt; fatal </span></span>
+<span><span class="co">#&gt; Units:      507 (1501 rows, 1101 with a zero total)</span></span>
+<span><span class="co">#&gt; Std. errors: normal </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Total:</span></span>
+<span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span><span class="co">#&gt; (Intercept) -8.93059    0.50334 -17.743  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; lnaadt       1.10937    0.05881  18.864  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; speed50     -0.59187    0.13227  -4.475 7.65e-06 ***</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Allocation:</span></span>
+<span><span class="co">#&gt;                    Estimate Std. Error z value Pr(&gt;|z|)   </span></span>
+<span><span class="co">#&gt; Allocation:lnaadt  -0.23373    0.07423  -3.149  0.00164 **</span></span>
+<span><span class="co">#&gt; Allocation:speed50 -0.41417    0.20392  -2.031  0.04225 * </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Thresholds:</span></span>
+<span><span class="co">#&gt;                        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span><span class="co">#&gt; Threshold1:(Intercept)  -0.7951     0.6437  -1.235    0.217</span></span>
+<span><span class="co">#&gt; Threshold2:(Intercept)   0.1443     0.1442   1.001    0.317</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Random parameters (Cholesky factor):</span></span>
+<span><span class="co">#&gt;                                               Estimate Std. Error z value</span></span>
+<span><span class="co">#&gt; sd:Total:(Intercept)                           0.64050    0.06507   9.843</span></span>
+<span><span class="co">#&gt; chol:Allocation:(Intercept)|Total:(Intercept) -0.19673    0.10527  -1.869</span></span>
+<span><span class="co">#&gt; sd:Allocation:(Intercept)                     -0.11052    0.27038  -0.409</span></span>
+<span><span class="co">#&gt;                                               Pr(&gt;|z|)    </span></span>
+<span><span class="co">#&gt; sd:Total:(Intercept)                            &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; chol:Allocation:(Intercept)|Total:(Intercept)   0.0617 .  </span></span>
+<span><span class="co">#&gt; sd:Allocation:(Intercept)                       0.6827    </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Random parameters: standard deviations and correlations</span></span>
+<span><span class="co">#&gt;                           SD Total:(Intercept)</span></span>
+<span><span class="co">#&gt; Total:(Intercept)      0.640                  </span></span>
+<span><span class="co">#&gt; Allocation:(Intercept) 0.226            -0.872</span></span>
+<span><span class="co">#&gt; (200 draws per unit of ID; 507 units)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Log-likelihood: -1252.9034  AIC: 2525.8068  BIC: 2578.9457</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">mr</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    df      AIC</span></span>
+<span><span class="co">#&gt; m   8 2567.414</span></span>
+<span><span class="co">#&gt; mr 10 2525.807</span></span></code></pre></div>
+<p>The random intercepts fit much better than the NB2 model without
+them. The segment effect on the total (a Poisson-lognormal total) takes
+over the role of the NB2 overdispersion. The negative correlation says
+that segments with more crashes than their covariates predict tend to
+have relatively less severe crashes.</p>
+<p>The likelihood is simulated: each segment’s likelihood is averaged
+over <code>rpar_draws</code> draws of its random parameters (randomly
+shifted Halton points), with analytic gradients.
+<code>rpar_threshold</code> adds a random term to the gaps between
+thresholds, which changes the share of the middle categories. Random
+slopes are more terms in the same formulas, such as
+<code>rpar_total = ~ 1 + lnaadt</code>.</p>
+<p>Predictions for a new segment average over the random parameters
+(<code>random = "marginal"</code>, the default). For a segment in the
+estimation data, <code>random = "posterior"</code> uses its own crash
+history (Empirical Bayes):</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">nd</span> <span class="op">&lt;-</span> <span class="va">w</span><span class="op">[</span><span class="va">w</span><span class="op">$</span><span class="va">ID</span> <span class="op">==</span> <span class="va">w</span><span class="op">$</span><span class="va">ID</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="op">]</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mr</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span>,</span>
+<span>            <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mr</span>, newdata <span class="op">=</span> <span class="va">nd</span>, random <span class="op">=</span> <span class="st">"posterior"</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span><span class="co">#&gt;        pdo injury fatal   pdo injury fatal</span></span>
+<span><span class="co">#&gt; 1    0.754  0.028 0.001 0.535  0.025 0.001</span></span>
+<span><span class="co">#&gt; 502  0.750  0.028 0.001 0.532  0.025 0.001</span></span>
+<span><span class="co">#&gt; 1002 0.791  0.029 0.001 0.561  0.026 0.001</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a>

@@ -51,6 +51,7 @@
 <span>  newdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"counts"</span>, <span class="st">"prob"</span>, <span class="st">"total"</span>, <span class="st">"total_positive"</span><span class="op">)</span>,</span>
 <span>  conditional <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  random <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"marginal"</span>, <span class="st">"posterior"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -83,6 +84,15 @@ with <code>truncated = TRUE</code> (whose estimated distribution is that of the
 untruncated total).</p></dd>
 
 
+<dt id="arg-random">random<a class="anchor" aria-label="anchor" href="#arg-random"></a></dt>
+<dd><p>for fits with random parameters: <code>"marginal"</code> (default)
+averages over the distribution of the random parameters (the
+prediction for a new unit); <code>"posterior"</code> averages over each unit's
+posterior distribution given its counts in the estimation data
+(Empirical Bayes; units not in the estimation data get the marginal
+prediction). <code>newdata</code> then needs the <code>group_var</code> column(s).</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>unused.</p></dd>
 
@@ -90,7 +100,9 @@ untruncated total).</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A matrix with one column per category (<code>"counts"</code>, <code>"prob"</code>), or
-a vector (<code>"total"</code>, <code>"total_positive"</code>).</p>
+a vector (<code>"total"</code>, <code>"total_positive"</code>). With random parameters,
+<code>"prob"</code> is the average allocation probability and <code>"counts"</code> the
+average expected count over the draws.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -2,11 +2,13 @@
 
 Fits a joint model of a total count and its allocation across
 categories, such as the number of crashes at a site and their split by
-severity. The total follows any count family of the package (with
-covariates in its mean and distribution parameters), and the split
-follows an ordered probit, ordered logit or multinomial logit model,
-with covariates in the propensity and, for the ordered links, in the
-thresholds (generalized thresholds).
+severity (ordered categories) or by crash type (unordered categories).
+The total follows any count family of the package (with covariates in
+its mean and distribution parameters). The split follows an ordered
+probit or ordered logit model for ordered categories, with covariates in
+the propensity and in the thresholds (generalized thresholds), or a
+multinomial logit model (`link = "mnl"`) for unordered categories, with
+covariates whose effects differ by category.
 
 ## Usage
 
@@ -38,6 +40,9 @@ countreg_alloc(
   correlation = c("none", "within", "across"),
   rpar_draws = 500,
   seed = NULL,
+  shared_formula = NULL,
+  shared_in = c("total", "alloc"),
+  shared_nodes = 20,
   .setup_only = FALSE
 )
 ```
@@ -47,11 +52,12 @@ countreg_alloc(
 - formula:
 
   a formula with the category counts on the left, as
-  `cbind(cat_1, ..., cat_J)` from the lowest to the highest category
-  (for the ordered links), and the total's mean model on the right. The
-  total is the sum of the categories. An
-  [`offset()`](https://rdrr.io/r/stats/offset.html) term (an exposure)
-  belongs here.
+  `cbind(cat_1, ..., cat_J)`, and the total's mean model on the right.
+  For the ordered links the columns go from the lowest to the highest
+  category; for `"mnl"` the first column is the base category and the
+  order of the others does not matter. The total is the sum of the
+  categories. An [`offset()`](https://rdrr.io/r/stats/offset.html) term
+  (an exposure) belongs here.
 
 - data:
 
@@ -78,9 +84,10 @@ countreg_alloc(
 
 - link:
 
-  `"ordered_probit"` (default), `"ordered_logit"` or `"mnl"`
-  (multinomial logit, for unordered categories; the first category is
-  the base).
+  `"ordered_probit"` (default) or `"ordered_logit"` for ordered
+  categories such as severity levels; `"mnl"` (multinomial logit) for
+  unordered categories such as crash types, collision types or vehicle
+  types. See Details.
 
 - likelihood:
 
@@ -163,6 +170,30 @@ countreg_alloc(
   seed of the random shifts of the draws (stored in the fit, so
   predictions use the same draws); random by default.
 
+- shared_formula:
+
+  optional one-sided formula of a shared site-year (row-level) random
+  term: one standard normal draw \\u\\ per row that enters each equation
+  in `shared_in` with a loading \\s'\kappa_e\\, where \\s\\ are the
+  variables of `shared_formula` (`~ 1` for a constant loading) and
+  \\\kappa_e\\ its coefficients in equation \\e\\. It correlates a row's
+  total with its split (the term \\\eta\_{it}\\ of Shabab et al. 2026);
+  see Details.
+
+- shared_in:
+
+  the equations the shared term enters: any of `"total"` (the log mean),
+  `"alloc"` (the propensity; for `"mnl"`, each category but the first)
+  and `"threshold"` (the log gaps between thresholds). Default
+  `c("total", "alloc")`.
+
+- shared_nodes:
+
+  the number of Gauss-Hermite nodes for the integral over the shared
+  term of each row. After the fit, the log-likelihood is recomputed with
+  twice the nodes, with a warning if it changes by more than 0.05 (large
+  loadings, above about 1 in the total, can need 40 or more nodes).
+
 - .setup_only:
 
   internal use: return the model setup without fitting.
@@ -210,6 +241,21 @@ estimates are consistent, but standard errors must come from the
 sandwich (the default), and likelihood-ratio tests, AIC and BIC are not
 available.
 
+**Unordered categories.** With `link = "mnl"` the categories are types
+with no order (crash types, collision types, vehicle types) and \\\pi_j
+= \exp(z'\delta_j) / \sum_k \exp(z'\delta_k)\\, with \\\delta_1 = 0\\
+for the first category (the base). Each other category has its own
+coefficients, named `Allocation[<category>]:`, the effects on the log
+odds of that category against the base; a different base gives the same
+fit. With a Poisson total and the count model's covariates in
+`alloc_formula`, the model is the same as independent Poisson
+regressions of the categories; with an overdispersed total (such as NB2)
+the categories share the total's unobserved heterogeneity. The split
+assumes independence of irrelevant alternatives; random coefficients in
+`rpar_alloc` (one set for each category but the first) relax it. The
+threshold options (`threshold_formula`, `rpar_threshold`,
+`shared_in = "threshold"`) are for the ordered links only.
+
 **Thresholds.** For the ordered links the thresholds are \\\psi_1 =
 v'\theta_1\\ and \\\psi_k = \psi\_{k-1} + \exp(v'\theta_k)\\, which
 keeps them ordered for every \\v\\. The coefficients `Threshold1:` are
@@ -227,6 +273,30 @@ diagonal) and `chol:` (below the diagonal), and
 standard deviations and correlations. With the fractional likelihood the
 integrand is the product of the rows' quasi-likelihoods, as in Shabab et
 al. (2026).
+
+**Shared site-year term.** Random parameters drawn per unit of
+`group_var` are shared by all the rows (years) of the unit. A row's own
+total and split can also share an unobserved factor: `shared_formula`
+adds \\\lambda\_{e,it} u\_{it}\\ to each equation \\e\\ in `shared_in`,
+with \\u\_{it}\\ standard normal and drawn anew for each row, and
+loading \\\lambda\_{e,it} = s\_{it}'\kappa_e\\. The covariance of the
+term in two equations is \\\lambda\_{e}\lambda\_{e'}\\: equal signs of
+the loadings mean that a site-year with more events than expected also
+has a more severe split (with the ordered links), opposite signs a less
+severe one. Changing the signs of all loadings gives the same model, so
+only their relative signs are identified. Shabab et al. (2026) use one
+loading for all equations, \\\eta\_{it} = k's\_{it}\\, so their
+correlation is always positive; separate loadings include that model and
+allow a negative one. The integral over \\u\_{it}\\ is computed by
+Gauss-Hermite quadrature within each draw of the unit's random
+parameters, adapted to each row (the nodes are centred and scaled at the
+row's posterior mean and standard deviation of \\u\_{it}\\). A shared
+term in the total also adds overdispersion to it, so with a family that
+has its own dispersion parameter (such as NB2) the two compete and can
+be weakly identified. With `truncated = TRUE` the row's likelihood is
+divided by its marginal probability of a positive total, \\\int (1 -
+P_0(u))\\\phi(u)\\du\\, as the selection on a positive total happens
+after \\u\_{it}\\ is drawn.
 
 Time-varying effects
 ([`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md))
@@ -251,48 +321,82 @@ Accident Research*, 51, 100440.
 # \donttest{
 data("washington_roads")
 w <- washington_roads
-# Illustrative split of the total crashes into three categories
-set.seed(1)
-sp <- t(vapply(w$Total_crashes, function(n)
-  stats::rmultinom(1, n, c(0.6, 0.3, 0.1)), numeric(3)))
-w$pdo <- sp[, 1]; w$minor <- sp[, 2]; w$severe <- sp[, 3]
-m <- countreg_alloc(cbind(pdo, minor, severe) ~ lnaadt + offset(lnlength),
-                    alloc_formula = ~ speed50, data = w, family = "NB2")
+# Ordered categories: crashes by severity
+w$pdo <- w$Total_crashes - w$Injury_crashes - w$Fatal_crashes
+m <- countreg_alloc(cbind(pdo, Injury_crashes, Fatal_crashes) ~ lnaadt +
+                      offset(lnlength), alloc_formula = ~ speed50,
+                    data = w, family = "NB2")
 summary(m)
 #> Total-plus-allocation count model
 #> 
 #> Total:       NB2 
 #> Allocation:  ordered_probit with multinomial likelihood
-#> Categories:  pdo < minor < severe 
+#> Categories:  pdo < Injury_crashes < Fatal_crashes 
 #> Units:      1501 (1101 with a zero total)
 #> Std. errors: normal 
 #> 
 #> Total:
 #>             Estimate Std. Error z value Pr(>|z|)    
 #> (Intercept) -9.38253    0.45195  -20.76   <2e-16 ***
-#> lnaadt       1.16465    0.05252   22.18   <2e-16 ***
+#> lnaadt       1.16464    0.05252   22.18   <2e-16 ***
 #> 
 #> Distribution:
 #>           Estimate Std. Error z value Pr(>|z|)    
 #> ln(alpha)  -0.7771     0.2133  -3.644 0.000269 ***
 #> 
 #> Allocation:
-#>                    Estimate Std. Error z value Pr(>|z|)
-#> Allocation:speed50   0.1289     0.1129   1.141    0.254
+#>                    Estimate Std. Error z value Pr(>|z|)  
+#> Allocation:speed50  -0.3610     0.1932  -1.868   0.0617 .
 #> 
 #> Thresholds:
 #>                        Estimate Std. Error z value Pr(>|z|)    
-#> Threshold1:(Intercept)  0.28603    0.05307   5.390 7.05e-08 ***
-#> Threshold2:(Intercept)  0.09164    0.06049   1.515     0.13    
+#> Threshold1:(Intercept)  1.28728    0.07255  17.743   <2e-16 ***
+#> Threshold2:(Intercept)  0.10665    0.14192   0.751    0.452    
 #> 
-#> Log-likelihood: -1585.6988  AIC: 3183.3975  BIC: 3215.2809 
+#> Log-likelihood: -1294.2632  AIC: 2600.5263  BIC: 2632.4097 
 head(predict(m))
-#>         pdo     minor     severe
-#> 1 0.6964770 0.4117047 0.13011486
-#> 2 0.6154913 0.3638321 0.11498522
-#> 3 1.0204198 0.6031953 0.19063340
-#> 4 0.2267600 0.1340434 0.04236298
-#> 5 0.7288713 0.4308538 0.13616671
-#> 6 0.3401399 0.2010651 0.06354447
+#>         pdo Injury_crashes Fatal_crashes
+#> 1 1.1768124     0.05791328   0.003570153
+#> 2 1.0399738     0.05117918   0.003155019
+#> 3 1.7241671     0.08484969   0.005230689
+#> 4 0.3831482     0.01885549   0.001162375
+#> 5 1.2315479     0.06060692   0.003736206
+#> 6 0.5747224     0.02828323   0.001743563
+# Unordered categories: crashes by type, other crashes as the base
+w$other <- w$Total_crashes - w$Animal - w$Rollover
+mt <- countreg_alloc(cbind(other, Animal, Rollover) ~ lnaadt +
+                       offset(lnlength), alloc_formula = ~ lnaadt,
+                     link = "mnl", data = w, family = "NB2")
+summary(mt)
+#> Total-plus-allocation count model
+#> 
+#> Total:       NB2 
+#> Allocation:  mnl with multinomial likelihood
+#> Categories:  other, Animal, Rollover (unordered; base: other )
+#> Units:      1501 (1101 with a zero total)
+#> Std. errors: normal 
+#> 
+#> Total:
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept) -9.38260    0.45195  -20.76   <2e-16 ***
+#> lnaadt       1.16465    0.05252   22.18   <2e-16 ***
+#> 
+#> Distribution:
+#>           Estimate Std. Error z value Pr(>|z|)    
+#> ln(alpha)  -0.7772     0.2133  -3.644 0.000269 ***
+#> 
+#> Allocation:
+#>                                   Estimate Std. Error z value Pr(>|z|)   
+#> Allocation[Animal]:(Intercept)   -0.003171   1.046819  -0.003  0.99758   
+#> Allocation[Animal]:lnaadt        -0.222864   0.121159  -1.839  0.06585 . 
+#> Allocation[Rollover]:(Intercept)  1.607992   1.647893   0.976  0.32917   
+#> Allocation[Rollover]:lnaadt      -0.571248   0.198816  -2.873  0.00406 **
+#> 
+#> Log-likelihood: -1408.7772  AIC: 2831.5545  BIC: 2868.7517 
+predict(mt, newdata = w[c(1, 50, 200), ], type = "prob")
+#>          other    Animal   Rollover
+#> [1,] 0.8583601 0.1160507 0.02558911
+#> [2,] 0.7413005 0.1713395 0.08736004
+#> [3,] 0.8814390 0.1012544 0.01730666
 # }
 ```

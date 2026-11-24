@@ -23,7 +23,8 @@ issues, including:
   and
   [`temporal_tests()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_tests.md);
 - total-plus-allocation models of a count and its split across
-  categories (such as crashes by severity) with
+  categories (such as crashes by severity, or by crash type with a
+  multinomial logit split) with
   [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md);
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;

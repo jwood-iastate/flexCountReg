@@ -49,7 +49,9 @@ predict(
   unit); `"posterior"` averages over each unit's posterior distribution
   given its counts in the estimation data (Empirical Bayes; units not in
   the estimation data get the marginal prediction). `newdata` then needs
-  the `group_var` column(s).
+  the `group_var` column(s). The shared site-year term
+  (`shared_formula`) is always averaged over its distribution, as it is
+  new for every row.
 
 - ...:
 

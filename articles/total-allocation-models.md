@@ -1,16 +1,23 @@
 # Total-plus-allocation models: counts by severity
 
-Crash counts often come by severity: property damage only (PDO), injury
-and fatal crashes at each site. One way to model them is to describe two
-things:
+Crash counts often come in categories at each site. The categories can
+be:
+
+- **ordered**, such as severity levels: property damage only (PDO),
+  injury and fatal crashes;
+- **unordered**, such as crash types: animal, rollover and other
+  crashes, or collision types, or vehicle types.
+
+One way to model them is to describe two things:
 
 - how many crashes happen (the **total**);
-- how they **split** across the severity levels.
+- how they **split** across the categories.
 
 [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
 fits both parts jointly. The total follows any count family of the
-package. The split follows an ordered probit, ordered logit or
-multinomial logit model, and each part has its own covariates.
+package, and each part has its own covariates. The split follows an
+ordered probit or ordered logit model for ordered categories (sections 1
+to 4), or a multinomial logit model for unordered ones (section 5).
 
 ``` r
 
@@ -27,16 +34,17 @@ colSums(w[, c("pdo", "injury", "fatal")])
 
 ## 1. The model
 
-For a site with category counts \\y_1, \dots, y_J\\ (from the least to
-the most severe) and total \\c = \sum_j y_j\\:
+For a site with category counts \\y_1, \dots, y_J\\ and total \\c =
+\sum_j y_j\\:
 
 \\ P(y_1, \dots, y_J) = P(c) \times \frac{c!}{\prod_j y_j!} \prod_j
 \pi_j^{y_j}. \\
 
 \\P(c)\\ is the count model of the total, here NB2 with mean \\\mu =
-\exp(x'\beta)\\. The \\\pi_j\\ are the allocation probabilities. With an
-ordered probit they come from a latent severity propensity \\z'\gamma\\
-and thresholds \\\psi_k\\:
+\exp(x'\beta)\\. The \\\pi_j\\ are the allocation probabilities. For
+severity levels, ordered from the least to the most severe, an ordered
+probit gives them from a latent severity propensity \\z'\gamma\\ and
+thresholds \\\psi_k\\:
 
 \\ \pi_j = \Phi(\psi_j - z'\gamma) - \Phi(\psi\_{j-1} - z'\gamma). \\
 
@@ -158,7 +166,7 @@ predict(m, newdata = nd, type = "prob")
 counts: a total from the count model, then its split from the
 multinomial distribution.
 
-## 4. Generalized thresholds and the multinomial logit
+## 4. Generalized thresholds
 
 `threshold_formula` lets the thresholds depend on covariates, so a
 variable can change the shares of the middle categories differently from
@@ -176,11 +184,110 @@ AIC(m, mg)
 #> mg  9 2568.491
 ```
 
-For categories without an order, such as crash types, use
-`link = "mnl"`. Each category except the first then has its own
-coefficients.
+## 5. Unordered categories: counts by crash type
 
-## 5. Multinomial or fractional likelihood
+Crash types have no order: an animal crash is not “more” than a
+rollover. For such categories, `link = "mnl"` splits the total with a
+multinomial logit:
+
+\\ \pi_j = \frac{\exp(z'\delta_j)}{\sum_k \exp(z'\delta_k)}, \qquad
+\delta_1 = 0. \\
+
+The first column of [`cbind()`](https://rdrr.io/r/base/cbind.html) is
+the base category. Every other category has its own coefficients
+\\\delta_j\\, so a variable can shift crashes toward one type and away
+from another. The order of the other columns does not matter, and a
+different base gives the same fit with coefficients relative to that
+base.
+
+`washington_roads` counts animal and rollover crashes; the rest of the
+total are other crashes:
+
+``` r
+
+w$other <- w$Total_crashes - w$Animal - w$Rollover
+colSums(w[, c("other", "Animal", "Rollover")])
+#>    other   Animal Rollover 
+#>      587       85       23
+mty <- countreg_alloc(cbind(other, Animal, Rollover) ~ lnaadt + speed50 +
+                        offset(lnlength), alloc_formula = ~ lnaadt + speed50,
+                      link = "mnl", data = w, family = "NB2")
+summary(mty)
+#> Total-plus-allocation count model
+#> 
+#> Total:       NB2 
+#> Allocation:  mnl with multinomial likelihood
+#> Categories:  other, Animal, Rollover (unordered; base: other )
+#> Units:      1501 (1101 with a zero total)
+#> Std. errors: normal 
+#> 
+#> Total:
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept) -8.89582    0.44648 -19.924  < 2e-16 ***
+#> lnaadt       1.12441    0.05141  21.870  < 2e-16 ***
+#> speed50     -0.56772    0.11020  -5.152 2.58e-07 ***
+#> 
+#> Distribution:
+#>           Estimate Std. Error z value Pr(>|z|)    
+#> ln(alpha)  -0.9126     0.2279  -4.005 6.21e-05 ***
+#> 
+#> Allocation:
+#>                                  Estimate Std. Error z value Pr(>|z|)   
+#> Allocation[Animal]:(Intercept)     0.1246     1.0560   0.118  0.90605   
+#> Allocation[Animal]:lnaadt         -0.2327     0.1214  -1.917  0.05520 . 
+#> Allocation[Animal]:speed50        -0.2234     0.3049  -0.733  0.46377   
+#> Allocation[Rollover]:(Intercept)   1.7220     1.6447   1.047  0.29508   
+#> Allocation[Rollover]:lnaadt       -0.5778     0.1974  -2.926  0.00343 **
+#> Allocation[Rollover]:speed50      -0.3054     0.5628  -0.543  0.58736   
+#> 
+#> Log-likelihood: -1394.5601  AIC: 2809.1201  BIC: 2862.259
+```
+
+`Allocation[Rollover]:lnaadt` is the effect of log traffic on the log
+odds of a rollover rather than an other crash. It is negative: busier
+segments have more crashes in total, but a smaller share of them are
+rollovers. The animal-crash share falls with traffic too, but that
+evidence is weak (p about 0.06). The predicted probabilities are the
+expected shares of each type:
+
+``` r
+
+predict(mty, newdata = nd, type = "prob")
+#>          other    Animal   Rollover
+#> [1,] 0.8805247 0.0990260 0.02044926
+#> [2,] 0.7751093 0.1526090 0.07228169
+#> [3,] 0.8777534 0.1041112 0.01813543
+predict(mty, newdata = nd)
+#>           other     Animal    Rollover
+#> [1,] 0.70105912 0.07884285 0.016281360
+#> [2,] 0.08921174 0.01756464 0.008319311
+#> [3,] 0.71755344 0.08510973 0.014825506
+```
+
+How does this compare with a separate count model for each type?
+
+- With a **Poisson** total and the count model’s covariates in
+  `alloc_formula`, the model is the same as independent Poisson
+  regressions of each type, with the same log-likelihood.
+- With an **overdispersed** total (such as NB2), the types share the
+  total’s unobserved heterogeneity: a segment with more crashes than
+  expected has more of every type. Separate NB models cannot capture
+  that.
+- The split has its own covariates, so a variable can affect how many
+  crashes happen without changing their mix, or the reverse.
+
+The multinomial logit assumes independence of irrelevant alternatives:
+the ratio of the shares of two types does not depend on the other types.
+Random parameters in `rpar_alloc` (section 8) relax this. They give each
+category but the first its own random coefficients, a mixed logit split.
+The other options also work with `link = "mnl"`: `truncated`,
+[`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md),
+`likelihood = "fractional"` and the shared site-year term (section 9),
+which gets a loading for each category but the first. The threshold
+options (`threshold_formula`, `rpar_threshold`,
+`shared_in = "threshold"`) apply only to the ordered links.
+
+## 6. Multinomial or fractional likelihood
 
 The default likelihood raises each \\\pi_j\\ to the category **count**
 \\y_j\\. That makes it a proper likelihood of the category counts, so
@@ -213,7 +320,7 @@ cbind(multinomial = coef(m), fractional = coef(mf))
 #> Threshold2:(Intercept)   0.1196582  0.08127466
 ```
 
-## 6. Effects that change over time
+## 7. Effects that change over time
 
 [`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
 works in every formula of
@@ -221,7 +328,7 @@ works in every formula of
 including the allocation and threshold formulas. See
 [`vignette("temporal-instability")`](https://jwood-iastate.github.io/flexCountReg/articles/temporal-instability.md).
 
-## 7. Random parameters
+## 8. Random parameters
 
 Sites differ in ways the covariates do not capture: some have more
 crashes than their traffic and speed limit predict, and some have more
@@ -313,6 +420,87 @@ round(cbind(predict(mr, newdata = nd),
 #> 502  0.750  0.028 0.001 0.532  0.025 0.001
 #> 1002 0.791  0.029 0.001 0.561  0.026 0.001
 ```
+
+## 9. A shared site-year term
+
+Random parameters drawn per segment are shared by all its years. A
+segment-year can also have its own unobserved conditions (a wet winter,
+roadwork) that change both how many crashes happen that year and how
+severe they are. `shared_formula` adds one standard normal draw
+\\u\_{it}\\ per row to the equations in `shared_in`, each with its own
+loading \\s\_{it}'\kappa_e\\:
+
+\\ \log \mu\_{it} = x\_{it}'\beta + \lambda\_{\text{total},it}\\
+u\_{it}, \qquad z\_{it}'\gamma + \lambda\_{\text{alloc},it}\\ u\_{it}.
+\\
+
+This is the term \\\eta\_{it}\\ of Shabab et al. (2026). They use one
+loading for all equations, which makes the correlation positive. With a
+loading for each equation the correlation has the sign of
+\\\lambda\_{\text{total}} \lambda\_{\text{alloc}}\\. Changing the signs
+of all loadings gives the same model, so only their relative sign is
+identified.
+
+``` r
+
+ms <- countreg_alloc(cbind(pdo, injury, fatal) ~ lnaadt + speed50 +
+                       offset(lnlength), alloc_formula = ~ lnaadt + speed50,
+                     data = w, family = "POISSON", shared_formula = ~ 1)
+summary(ms)
+#> Total-plus-allocation count model
+#> 
+#> Total:       POISSON 
+#> Allocation:  ordered_probit with multinomial likelihood
+#> Categories:  pdo < injury < fatal 
+#> Units:      1501 (1101 with a zero total)
+#> Std. errors: normal 
+#> 
+#> Total:
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept) -9.03209    0.44980 -20.080  < 2e-16 ***
+#> lnaadt       1.11961    0.05182  21.606  < 2e-16 ***
+#> speed50     -0.58737    0.11152  -5.267 1.39e-07 ***
+#> 
+#> Allocation:
+#>                    Estimate Std. Error z value Pr(>|z|)   
+#> Allocation:lnaadt  -0.22218    0.07233  -3.072  0.00213 **
+#> Allocation:speed50 -0.40385    0.20247  -1.995  0.04609 * 
+#> 
+#> Thresholds:
+#>                        Estimate Std. Error z value Pr(>|z|)
+#> Threshold1:(Intercept)  -0.7095     0.6275  -1.131    0.258
+#> Threshold2:(Intercept)   0.1389     0.1431   0.970    0.332
+#> 
+#> Shared site-year term (loadings):
+#>                               Estimate Std. Error z value Pr(>|z|)    
+#> shared:Total:(Intercept)       0.61195    0.06763   9.049   <2e-16 ***
+#> shared:Allocation:(Intercept) -0.19883    0.15109  -1.316    0.188    
+#> 
+#> Shared site-year term: one standard normal draw per row in total, alloc (20 adaptive Gauss-Hermite nodes)
+#> 
+#> Log-likelihood: -1274.4689  AIC: 2566.9378  BIC: 2614.7627
+AIC(m, ms)
+#>    df      AIC
+#> m   8 2567.414
+#> ms  9 2566.938
+```
+
+The loading in the total plays the role of the NB2 overdispersion (a
+Poisson total with this term alone is the Poisson-lognormal model), and
+the fit is as good as the NB2 model. The loading in the propensity has
+the opposite sign, but it is not significant: these data show no clear
+year-to-year link between a segment’s crash count and its severity
+split.
+
+`shared_formula = ~ lnaadt` would let the loadings depend on traffic,
+and `shared_in` can include `"threshold"`. The integral over \\u\_{it}\\
+uses adaptive Gauss-Hermite quadrature (`shared_nodes`, centred on each
+row), and
+[`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+warns when doubling the nodes changes the log-likelihood noticeably.
+With random parameters, the quadrature runs inside each draw of the
+segment’s parameters, which multiplies the cost of the fit by the number
+of nodes.
 
 ## Reference
 

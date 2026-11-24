@@ -337,7 +337,7 @@ rbind(Poisson = glance(update(zip, zero_formula = NULL)),
 
 With tidymodels (requires the parsnip package):
 
-```{r tidymodels, eval = FALSE}
+```{r tidymodels, eval = requireNamespace("parsnip", quietly = TRUE)}
 library(parsnip)
 spec <- count_reg(family = "NB2") |> set_engine("flexCountReg", method = "BFGS")
 fit <- fit(spec, Total_crashes ~ lnaadt + lnlength + speed50,

@@ -110,12 +110,16 @@ test_that("scrambled draws follow their seed and keep R's random numbers", {
   a <- .fcr_halton(5, 2, TRUE, seed = 1)
   expect_identical(.fcr_halton(5, 2, TRUE, seed = 1), a)
   expect_false(isTRUE(all.equal(.fcr_halton(5, 2, TRUE, seed = 2), a)))
-  # No seed: randtoolbox's default scrambling (seed 0), as used by fits with
-  # draw_version < 3
+  # Randomly shifted plain Halton points, one shift per dimension
+  set.seed(1)
+  sh <- stats::runif(2)
+  expect_equal(a, sweep(as.matrix(randtoolbox::halton(5, 2)), 2, sh, `+`) %% 1)
+  # "mixed" with no seed: randtoolbox's default scrambling (seed 0), as used
+  # by fits with draw_version < 3
   randtoolbox::setSeed(0)
   def <- as.matrix(randtoolbox::halton(5, 2, mixed = TRUE))
   expect_identical(.fcr_halton(5, 2, TRUE, seed = 9), .fcr_halton(5, 2, TRUE, 9))
-  expect_identical(.fcr_halton(5, 2, TRUE), def)
+  expect_identical(.fcr_halton(5, 2, TRUE, scramble = "mixed"), def)
   set.seed(5)
   r1 <- stats::runif(2)
   set.seed(5)
@@ -126,11 +130,69 @@ test_that("scrambled draws follow their seed and keep R's random numbers", {
   m1 <- rp_fit(scrambled = TRUE)
   set.seed(2)
   m2 <- rp_fit(scrambled = TRUE)
-  expect_identical(m1$model$draw_version, 3L)
+  expect_identical(m1$model$draw_version, 4L)
   expect_false(isTRUE(all.equal(coef(m1), coef(m2))))
   data("washington_roads", package = "flexCountReg")
   expect_identical(predict(m1, newdata = washington_roads,
                            method = "Individual"),
                    predict(m1, newdata = washington_roads,
                            method = "Individual"))
+})
+
+test_that("scrambled per-unit draws shift each unit's block by its own amount", {
+  u <- .fcr_unit_halton(c(2, 1, 2, 3), R = 5, K = 2, scrambled = TRUE,
+                        seed = 4)
+  p <- .fcr_unit_halton(c(2, 1, 2, 3), R = 5, K = 2)
+  sh <- matrix(.fcr_seeded_runif(3 * 2, 4), 3, 2)
+  for (k in 1:2) expect_equal(u[[k]], (p[[k]] + sh[c(2, 1, 2, 3), k]) %% 1)
+  expect_identical(u[[1]][1, ], u[[1]][3, ])
+  # The old "mixed" scrambling is kept for fits with draw_version < 4
+  m <- .fcr_unit_halton(c(2, 1, 2, 3), R = 5, K = 2, scrambled = TRUE,
+                        seed = 4, scramble = "mixed")
+  randtoolbox::setSeed(4)
+  h <- randtoolbox::halton(10 + 3 * 5, 2, mixed = TRUE)
+  expect_equal(m[[2]][4, ], h[10 + 11:15, 2])
+})
+
+test_that("fits with draw_version 3 predict with their mixed draws", {
+  set.seed(1)
+  m <- rp_fit(scrambled = TRUE)
+  data("washington_roads", package = "flexCountReg")
+  w <- washington_roads[1:50, ]
+  p4 <- predict(m, newdata = w, method = "Individual")
+  old <- m
+  old$model$draw_version <- 3L
+  p3 <- predict(old, newdata = w, method = "Individual")
+  expect_false(isTRUE(all.equal(p3, p4)))
+  # The two scramblings give different draws from the same seed
+  hd <- .fcr_unit_halton(.fcr_rp_draw_units(m$model, w), m$model$ndraws, 1,
+                         TRUE, m$model$draw_seed, scramble = "mixed")
+  hn <- .fcr_unit_halton(.fcr_rp_draw_units(m$model, w), m$model$ndraws, 1,
+                         TRUE, m$model$draw_seed)
+  expect_false(isTRUE(all.equal(hd[[1]], hn[[1]])))
+})
+
+test_that("scrambled draws converge to the exact random-intercept likelihood", {
+  skip_on_cran()
+  # Poisson random intercept: the exact maximum log-likelihood, -1069.365,
+  # is from adaptive Gauss-Hermite quadrature (countreg_hier(), equal to
+  # lme4::glmer(nAGQ = 9)). Scrambled per-unit draws from randtoolbox's
+  # "mixed" sequence gave -1069.054 at 2000 draws, a bias that more draws
+  # did not remove.
+  data("washington_roads", package = "flexCountReg")
+  exact <- -1069.365
+  fit <- function(R, seed) {
+    set.seed(seed)
+    suppressWarnings(countreg_rp(
+      Total_crashes ~ -1 + lnaadt + speed50 + offset(lnlength),
+      rpar_formula = ~ 1, group_var = "ID", family = "POISSON",
+      rpardists = c("(Intercept)" = "n"), data = washington_roads,
+      ndraws = R, scrambled = TRUE))
+  }
+  err <- sapply(1:2, function(s) as.numeric(logLik(fit(2000, s))) - exact)
+  expect_true(all(abs(err) < 0.06), info = paste(err, collapse = ", "))
+  # Fewer draws: larger simulation error
+  err100 <- as.numeric(logLik(fit(100, 1))) - exact
+  expect_true(abs(err100) < 1.5)
+
 })

@@ -46,10 +46,18 @@
 #'   all random parameters. The intercept is dropped.
 #' @param ndraws the number of Halton draws to use for estimating the random 
 #'        parameters.
-#' @param scrambled if the Halton draws should be scrambled. Scrambled
-#'   draws are generated from a random seed that is stored in the fit, so
-#'   predictions reuse the same draws, \code{set.seed()} before fitting
-#'   makes the fit reproducible, and different seeds give different draws.
+#' @param scrambled if the Halton draws should be randomized. The Halton
+#'   points (each unit's own block with \code{draws = "per_unit"}) are
+#'   shifted by a uniform random amount per dimension,
+#'   modulo 1 (a Cranley-Patterson rotation, i.e. randomized quasi-Monte
+#'   Carlo), which keeps their even spread and leaves each unit's simulated
+#'   likelihood unbiased. The shifts are generated from a random seed that
+#'   is stored in the fit, so predictions reuse the same draws,
+#'   \code{set.seed()} before fitting makes the fit reproducible, and
+#'   different seeds give different draws. Earlier fits
+#'   (\code{model$draw_version} below 4) used randtoolbox's scrambled
+#'   ("mixed") Halton sequence, whose consecutive per-unit blocks biased the
+#'   simulated log-likelihood; their predictions still use those draws.
 #' @param mix_draws with \code{engine = "halton"}, the number of Halton
 #'   draws for integrating over the mixing distribution of the PLN, PGE, PLL
 #'   and PW families (inside each random-parameter draw). The default is
@@ -724,9 +732,11 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   # [mu - sigma, mu + sigma], additive heterogeneity in means with one
   # coefficient per random parameter, separate Halton dimension for the
   # mixing distribution. Fits without this field used the older conventions.
-  # Version 3 (flexCountReg >= 0.1.2): scrambled draws generated from
-  # draw_seed (earlier fits used randtoolbox's default scrambling seed 0)
-  fit$draw_version <- 3L
+  # Version 3: scrambled ("mixed") draws generated from draw_seed (earlier
+  # fits used randtoolbox's default scrambling seed 0).
+  # Version 4 (flexCountReg >= 0.1.2): scrambled draws are randomly shifted
+  # plain Halton points (Cranley-Patterson rotation), shifts from draw_seed.
+  fit$draw_version <- 4L
   fit$blueprint <- prep$blueprint
   fit$y <- y
   fit$nobs <- N_obs

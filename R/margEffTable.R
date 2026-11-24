@@ -331,7 +331,11 @@ print.flexEffectTable <- function(x, ...) {
   }
   term_vars <- unique(c(term_vars, do.call(.fcr_vars, aux)))
   
-  special_vars <- character(0)
+  # Time variables of tv() terms: the periods are fixed at their training
+  # values, so the time variable is not a marginal-effect candidate
+  special_vars <- .fcr_tv_time_vars(c(list(form), aux,
+                                      list(m$dis_param_formula_1,
+                                           m$dis_param_formula_2)))
   if (!is.null(object$model)) {
     if (!is.null(object$model[["offset"]])) {
       special_vars <- c(special_vars, object$model[["offset"]])

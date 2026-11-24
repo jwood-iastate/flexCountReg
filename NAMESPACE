@@ -38,6 +38,7 @@ S3method(residuals,flexCountReg)
 S3method(simulate,countreg_hier)
 S3method(simulate,countreg_mix)
 S3method(simulate,flexCountReg)
+S3method(stats::makepredictcall,tv)
 S3method(summary,countreg_hier)
 S3method(summary,countreg_mix)
 S3method(summary,flexCountReg)
@@ -194,8 +195,11 @@ export(rtri)
 export(smooth_check)
 export(smooth_derivatives)
 export(smooth_estimates)
+export(temporal_effects)
+export(temporal_tests)
 export(tidy)
 export(tolerance_interval)
+export(tv)
 importFrom(MASS,glm.nb)
 importFrom(Rcpp,sourceCpp)
 importFrom(cureplots,
@@ -249,6 +253,7 @@ importFrom(stats,
   formula,
   glm,
   glm.fit,
+  makepredictcall,
   model.frame,
   model.matrix,
   model.offset,

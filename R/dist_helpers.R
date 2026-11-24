@@ -32,6 +32,22 @@
   if (!any(ok)) return(out)
   z <- z[ok]
   v <- v[ok]
+  # Large orders: the uniform asymptotic expansion, whose cost does not grow
+  # with the order (the recurrence below takes one step per unit of order,
+  # so an order of 1e6, as when 1/eta is large, would take 1e6 steps)
+  big <- v > .fcr_besselK_debye_order
+  if (any(big)) {
+    res_big <- .fcr_log_besselK_debye(z[big], v[big])
+    if (all(big)) {
+      out[ok] <- res_big
+      return(out)
+    }
+    out_ok <- rep(NA_real_, length(z))
+    out_ok[big] <- res_big
+    out_ok[!big] <- .fcr_log_besselK(z[!big], v[!big])
+    out[ok] <- out_ok
+    return(out)
+  }
   m <- floor(v)
   a <- v - m
   lk0 <- log(besselK(z, a, expon.scaled = TRUE)) - z
@@ -51,6 +67,31 @@
   }
   out[ok] <- res
   out
+}
+
+# Order above which .fcr_log_besselK() uses the uniform asymptotic
+# expansion; with four terms its relative error there is about 1e-10.
+.fcr_besselK_debye_order <- 100
+
+# log K_v(z) for large v by the uniform asymptotic (Debye) expansion
+# (Abramowitz and Stegun 9.7.8; DLMF 10.41.4): with w = z / v,
+# s = sqrt(1 + w^2), t = 1 / s and eta = s + log(w / (1 + s)),
+#   K_v(v w) ~ sqrt(pi / (2 v)) exp(-v eta) / s^(1/2) *
+#              sum_k (-1)^k u_k(t) / v^k.
+.fcr_log_besselK_debye <- function(z, v) {
+  w <- z / v
+  s <- sqrt(1 + w^2)
+  t <- 1 / s
+  eta <- s + log(w) - log1p(s)
+  t2 <- t * t
+  u1 <- t * (3 - 5 * t2) / 24
+  u2 <- t2 * (81 - 462 * t2 + 385 * t2^2) / 1152
+  u3 <- t * t2 * (30375 - 369603 * t2 + 765765 * t2^2 - 425425 * t2^3) /
+    414720
+  u4 <- t2^2 * (4465125 - 94121676 * t2 + 349922430 * t2^2 -
+                  446185740 * t2^3 + 185910725 * t2^4) / 39813120
+  series <- 1 - u1 / v + u2 / v^2 - u3 / v^3 + u4 / v^4
+  0.5 * log(pi / (2 * v)) - v * eta - 0.5 * log(s) + log(series)
 }
 
 # Quantile of a discrete distribution on 0, 1, 2, ... for one probability p.

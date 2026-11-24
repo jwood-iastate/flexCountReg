@@ -1,0 +1,171 @@
+---
+title: "Time-varying effects: temporal instability"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Time-varying effects: temporal instability}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+With several years of data, the effect of a variable may change over time:
+vehicles, enforcement and driver behavior change while the roads stay the
+same. This is **temporal instability**. `tv(x, time = year)` in a model
+formula gives `x` one effect per year, and `temporal_effects()` and
+`temporal_tests()` report and test those effects.
+
+```{r setup}
+library(flexCountReg)
+data("washington_roads")
+w <- washington_roads
+table(w$Year)
+```
+
+## 1. One effect per year
+
+```{r step}
+m <- countreg(Total_crashes ~ tv(lnaadt, time = Year) + speed50 +
+                offset(lnlength), data = w, family = "NB2",
+              method = "BFGS")
+coef(m)
+```
+
+The default **step** basis has two kinds of coefficients:
+
+* `lnaadt:Year2016` is the effect in the first year;
+* `lnaadt:Year_step2017` and `lnaadt:Year_step2018` are the changes from
+  the year before.
+
+A change near zero means the effect is the same in two adjacent years.
+`temporal_effects()` gives the effect in each year, with its standard error
+and confidence interval:
+
+```{r effects}
+temporal_effects(m)
+```
+
+`temporal_tests()` tests whether the effects are all equal, and whether
+each adjacent pair of years differs:
+
+```{r tests}
+temporal_tests(m)
+```
+
+Here the effect of traffic is stable over the three years.
+
+## 2. Choosing the basis
+
+The basis decides what each coefficient means. The fit and the year
+effects are the same for every basis.
+
+| `basis` | effect in year $t$ | a zero coefficient means |
+| --- | --- | --- |
+| `"step"` (default) | $\beta_1 + \sum_{k=2}^t \Delta_k$ | no change between years $k-1$ and $k$ |
+| `"level"` | $\beta_t$ | no effect in year $t$ |
+| `"hinge"` | $\sum_k \max(t-k+1, 0)\,\delta_k$ | the earlier trend continues at year $k$ |
+| `"smooth"` | $\beta(t)$, a penalized spline | (the smoothness is estimated) |
+
+```{r bases}
+fit_basis <- function(b) {
+  countreg(stats::as.formula(paste0(
+    "Total_crashes ~ tv(lnaadt, time = Year, basis = '", b,
+    "') + speed50 + offset(lnlength)")),
+    data = w, family = "NB2", method = "BFGS")
+}
+mh <- fit_basis("hinge")
+c(step = logLik(m), hinge = logLik(mh))
+cbind(step = temporal_effects(m)$estimate,
+      hinge = temporal_effects(mh)$estimate)
+```
+
+### A caution about the hinge basis
+
+The **hinge** basis is the "spline indicator" model of Shabab et al.
+(2026). Its columns are cumulative: the indicator for year $k$ is
+$\max(t - k + 1, 0)$. As a result, $\delta_2 = \beta_2 - 2\beta_1$. It is
+not $\beta_2 - \beta_1$.
+
+Dropping a hinge coefficient that is not significant therefore does not
+make two years equal. It continues the trend of the earlier years. With
+the paper's own AADT estimates:
+
+| year | separate effects | dropping $\delta_2$ imposes |
+| --- | --- | --- |
+| 1 | 0.122 | 0.122 |
+| 2 | 0.215 | $2 \times 0.122 = 0.244$ |
+
+Equal effects in years 1 and 2 would be 0.122 in both. The basis also numbers the years from 1, so the restriction depends on
+which year comes first. To find years with equal effects, use the step
+basis, where a zero coefficient means exactly that, or `temporal_tests()`,
+which tests the year effects themselves.
+
+### A smooth path over time
+
+With many years, `basis = "smooth"` fits the effect as a penalized spline
+in time, the varying-coefficient smooth `s(Year, by = lnaadt)` of mgcv.
+The data then choose between a constant effect, a linear trend and a
+flexible path:
+
+```{r smooth}
+msm <- fit_basis("smooth")
+temporal_effects(msm)
+```
+
+## 3. Time-varying intercepts and distribution parameters
+
+`tv(1, time = Year)` lets the intercept vary by year. With an intercept in
+the model, the intercept is the first year's level and the `tv()` columns
+are the changes after it. `tv()` also works in the formulas of the
+distribution parameters, here a separate NB2 overdispersion for each year:
+
+```{r intercept}
+mi <- countreg(Total_crashes ~ tv(1, time = Year) + lnaadt +
+                 offset(lnlength), data = w, family = "NB2",
+               dis_param_formula_1 = ~ tv(1, time = Year, basis = "level"),
+               method = "BFGS")
+temporal_effects(mi)
+```
+
+## 4. Prediction for new years
+
+`predict()` uses the years of the estimation data. A year that was not
+estimated is an error by default, because no effect was estimated for it.
+`tv(x, time = Year, new_time = "nearest")` uses the nearest year's effect
+instead, for example the last year's effect when forecasting:
+
+```{r predict}
+mn <- countreg(Total_crashes ~ tv(lnaadt, time = Year, new_time = "nearest") +
+                 speed50 + offset(lnlength), data = w, family = "NB2",
+               method = "BFGS")
+nd <- w[1:3, ]
+nd$Year <- 2019
+predict(mn, newdata = nd)
+```
+
+## 5. Other models
+
+`tv()` works in the formulas of every estimator: `countreg()`,
+`countreg_rp()`, `countreg_hier()`, `countreg_fe()`, `renb()`, `repois()`,
+`poislind_re()` and `countreg_mix()`. Here the effect of traffic varies
+by year in a random-parameters model:
+
+```{r rp}
+r <- countreg_rp(Total_crashes ~ tv(lnaadt, time = Year) + offset(lnlength),
+                 rpar_formula = ~ -1 + speed50, data = w, family = "NB2",
+                 ndraws = 100, method = "BFGS", group_var = "ID")
+temporal_effects(r)
+```
+
+`tv()` can also appear in `rpar_formula`. `temporal_effects()` then
+reports the year effects of the random parameters' means, and each basis
+column has its own standard deviation.
+
+## Reference
+
+Shabab, K. R., Bhowmik, T., Zaki, M. H. and Eluru, N. (2026). A joint count
+and generalized ordered fractional split approach for addressing temporal
+instability in road safety analysis. *Analytic Methods in Accident
+Research*, 51, 100440.

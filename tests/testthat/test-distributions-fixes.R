@@ -95,3 +95,27 @@ test_that("GP1 and GP2 near phi = 0 from below are fast and Poisson-like", {
   # GP2(mu, alpha) is GP1(mu, phi = alpha * mu)
   expect_equal(dgp2(0:15, mu = 3, alpha = -0.1), dgp1(0:15, mu = 3, phi = -0.3))
 })
+
+test_that("log Bessel K is fast and accurate at large orders", {
+  # Large orders use the uniform asymptotic expansion: the recurrence took
+  # one step per unit of order, so a small PIG eta (order ~ 1/eta) could
+  # take minutes in a bootstrap refit
+  lk <- flexCountReg:::.fcr_log_besselK
+  z <- c(0.01, 0.5, 2, 10, 50, 200, 1000)
+  for (v in c(100.3, 150.7, 400, 1000)) {
+    ref <- log(besselK(z, v, expon.scaled = TRUE)) - z
+    ok <- is.finite(ref)
+    expect_equal(lk(z[ok], v), ref[ok], tolerance = 1e-10)
+  }
+  # Continuous at the switch, and fast for a huge order
+  expect_equal(lk(c(0.1, 3, 30), 100 + 1e-9), lk(c(0.1, 3, 30), 100),
+               tolerance = 1e-8)
+  t0 <- proc.time()[["elapsed"]]
+  expect_true(all(is.finite(lk(rep(3, 1500), 1e9))))
+  expect_lt(proc.time()[["elapsed"]] - t0, 1)
+  # The PIG tends to the Poisson as eta goes to 0
+  expect_equal(dpinvgamma(0:20, mu = 3, eta = 1e-6), dpois(0:20, 3),
+               tolerance = 1e-5)
+  expect_equal(sum(dpinvgamma(0:200, mu = 3, eta = 1e-4)), 1,
+               tolerance = 1e-10)
+})

@@ -23,6 +23,9 @@ issues, including:
   `te()` terms of mgcv in the mean, the distribution parameters, the
   zero model and random-parameter heterogeneity, with automatic
   smoothing and `plot_smooths()`;
+- effects that change over time (temporal instability) with `tv()`, with
+  period-by-period effects and tests from `temporal_effects()` and
+  `temporal_tests()`;
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;
 - random parameters, with heterogeneity in their means and variances,
@@ -661,6 +664,8 @@ The vignettes cover the main workflows. Start with
   `vignette("distribution-parameter-regression", package = "flexCountReg")`
 - Smooth effects: generalized additive count models:
   `vignette("smooth-effects", package = "flexCountReg")`
+- Time-varying effects: temporal instability:
+  `vignette("temporal-instability", package = "flexCountReg")`
 - Understanding zeros, hurdles and the sampling process:
   `vignette("zeros-hurdles-and-sampling", package = "flexCountReg")`
 - Underreporting: observed counts, true counts and identification:

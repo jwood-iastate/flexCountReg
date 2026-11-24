@@ -1,5 +1,30 @@
 # flexCountReg 0.1.2 (development)
 
+## Time-varying effects (temporal instability)
+
+* New formula term `tv(x, time = year)` gives `x` one effect per period, in
+  the formulas of every estimator: the mean, the distribution parameters,
+  zero and underreporting models, `countreg_rp()`'s `rpar_formula`, and the
+  fixed parts of `countreg_hier()`, `countreg_fe()`, `countreg_mix()` and the
+  random-effects models. `tv(1, time = year)` gives a time-varying intercept.
+  Four bases: `"step"` (default; the first period's effect and the change at
+  each later period, so a zero coefficient means equal effects in adjacent
+  periods), `"level"` (one effect per period), `"hinge"` (the cumulative
+  "spline indicators" of Shabab et al. 2026, AMAR 51:100440, where a zero
+  coefficient continues the earlier trend instead of keeping the effect
+  equal) and `"smooth"` (the varying-coefficient smooth `s(time, by = x)`).
+  The step, level and hinge bases give the same fit. The periods are stored
+  for prediction; a period not in the estimation data is an error, or uses
+  the nearest period with `new_time = "nearest"`.
+* New `temporal_effects()` gives each period's effect with its standard
+  error (A V A') and confidence interval, and `temporal_tests()` gives Wald
+  tests that the effects are equal in all periods and of each change between
+  adjacent periods. Both work for every basis, give the same results for the
+  step, level and hinge bases, and accept a robust `vcov`.
+* `margEffTable()` does not treat the time variable of a `tv()` term as a
+  predictor.
+* New vignette "Time-varying effects: temporal instability".
+
 ## Sampling weights
 
 * `countreg()` and `countreg_rp()` gain `weight_type = c("frequency",
@@ -725,6 +750,14 @@
   0 with a warning, and invalid parameters give `NaN` with a warning.
 
 ## Bug fixes
+
+* The Poisson-inverse-gamma density (`dpinvgamma()` and the PIG family)
+  could take minutes, or effectively hang, when the optimizer tried a small
+  `eta`. Its log Bessel function took one recurrence step per unit of
+  order, and the order is about 1/eta. Orders above 100 now use the uniform
+  asymptotic expansion (accurate to about 1e-10 there), so the cost no
+  longer grows with the order. A bootstrap refit that took 12 seconds now
+  takes 0.2 seconds.
 
 * `dpinvgaus()`, `ppinvgaus()` and the PIG1/PIG2 families: P(0) was
   computed as `exp(mu / eta * (1 - sqrt(1 + 2 * eta)))`, which cancels as

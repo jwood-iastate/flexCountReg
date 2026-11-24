@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Time-varying effects: temporal instability</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Time-varying effects: temporal
+instability</h1>
+
+
+
+<p>With several years of data, the effect of a variable may change over
+time: vehicles, enforcement and driver behavior change while the roads
+stay the same. This is <strong>temporal instability</strong>.
+<code>tv(x, time = year)</code> in a model formula gives <code>x</code>
+one effect per year, and <code>temporal_effects()</code> and
+<code>temporal_tests()</code> report and test those effects.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>w <span class="ot">&lt;-</span> washington_roads</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">table</span>(w<span class="sc">$</span>Year)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt; 2016 2017 2018 </span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt;  501  500  500</span></span></code></pre></div>
+<div id="one-effect-per-year" class="section level2">
+<h2>1. One effect per year</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">countreg</span>(Total_crashes <span class="sc">~</span> <span class="fu">tv</span>(lnaadt, <span class="at">time =</span> Year) <span class="sc">+</span> speed50 <span class="sc">+</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>                <span class="fu">offset</span>(lnlength), <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>              <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">coef</span>(m)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;          (Intercept)      lnaadt:Year2016 lnaadt:Year_step2017 </span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;          -8.89992454           1.13027036          -0.00657049 </span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; lnaadt:Year_step2018              speed50            ln(alpha) </span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;          -0.00318521          -0.56770930          -0.92122379</span></span></code></pre></div>
+<p>The default <strong>step</strong> basis has two kinds of
+coefficients:</p>
+<ul>
+<li><code>lnaadt:Year2016</code> is the effect in the first year;</li>
+<li><code>lnaadt:Year_step2017</code> and
+<code>lnaadt:Year_step2018</code> are the changes from the year
+before.</li>
+</ul>
+<p>A change near zero means the effect is the same in two adjacent
+years. <code>temporal_effects()</code> gives the effect in each year,
+with its standard error and confidence interval:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">temporal_effects</span>(m)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt;   part   term time basis period estimate  std.error conf.low conf.high</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; 1 mean lnaadt Year  step   2016 1.130270 0.05200214 1.028348  1.232193</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; 2 mean lnaadt Year  step   2017 1.123700 0.05201507 1.021752  1.225648</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; 3 mean lnaadt Year  step   2018 1.120515 0.05185510 1.018881  1.222149</span></span></code></pre></div>
+<p><code>temporal_tests()</code> tests whether the effects are all
+equal, and whether each adjacent pair of years differs:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">temporal_tests</span>(m)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt;   part   term         test    estimate  std.error  statistic df   p.value</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; 1 mean lnaadt    all equal          NA         NA  0.5951265  2 0.7426256</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; 2 mean lnaadt 2017 vs 2016 -0.00657049 0.01297047 -0.5065731  1 0.6124544</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 3 mean lnaadt 2018 vs 2017 -0.00318521 0.01308643 -0.2433979  1 0.8076972</span></span></code></pre></div>
+<p>Here the effect of traffic is stable over the three years.</p>
+</div>
+<div id="choosing-the-basis" class="section level2">
+<h2>2. Choosing the basis</h2>
+<p>The basis decides what each coefficient means. The fit and the year
+effects are the same for every basis.</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th><code>basis</code></th>
+<th>effect in year <span class="math inline">\(t\)</span></th>
+<th>a zero coefficient means</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>&quot;step&quot;</code> (default)</td>
+<td><span class="math inline">\(\beta_1 + \sum_{k=2}^t
+\Delta_k\)</span></td>
+<td>no change between years <span class="math inline">\(k-1\)</span> and
+<span class="math inline">\(k\)</span></td>
+</tr>
+<tr class="even">
+<td><code>&quot;level&quot;</code></td>
+<td><span class="math inline">\(\beta_t\)</span></td>
+<td>no effect in year <span class="math inline">\(t\)</span></td>
+</tr>
+<tr class="odd">
+<td><code>&quot;hinge&quot;</code></td>
+<td><span class="math inline">\(\sum_k \max(t-k+1,
+0)\,\delta_k\)</span></td>
+<td>the earlier trend continues at year <span class="math inline">\(k\)</span></td>
+</tr>
+<tr class="even">
+<td><code>&quot;smooth&quot;</code></td>
+<td><span class="math inline">\(\beta(t)\)</span>, a penalized
+spline</td>
+<td>(the smoothness is estimated)</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>fit_basis <span class="ot">&lt;-</span> <span class="cf">function</span>(b) {</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="fu">countreg</span>(stats<span class="sc">::</span><span class="fu">as.formula</span>(<span class="fu">paste0</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>    <span class="st">&quot;Total_crashes ~ tv(lnaadt, time = Year, basis = &#39;&quot;</span>, b,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>    <span class="st">&quot;&#39;) + speed50 + offset(lnlength)&quot;</span>)),</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>    <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>}</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>mh <span class="ot">&lt;-</span> <span class="fu">fit_basis</span>(<span class="st">&quot;hinge&quot;</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="fu">c</span>(<span class="at">step =</span> <span class="fu">logLik</span>(m), <span class="at">hinge =</span> <span class="fu">logLik</span>(mh))</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt;      step     hinge </span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; -1090.263 -1090.263</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">step =</span> <span class="fu">temporal_effects</span>(m)<span class="sc">$</span>estimate,</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>      <span class="at">hinge =</span> <span class="fu">temporal_effects</span>(mh)<span class="sc">$</span>estimate)</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt;          step    hinge</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; [1,] 1.130270 1.130270</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; [2,] 1.123700 1.123699</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; [3,] 1.120515 1.120514</span></span></code></pre></div>
+<div id="a-caution-about-the-hinge-basis" class="section level3">
+<h3>A caution about the hinge basis</h3>
+<p>The <strong>hinge</strong> basis is the “spline indicator” model of
+Shabab et al. (2026). Its columns are cumulative: the indicator for year
+<span class="math inline">\(k\)</span> is <span class="math inline">\(\max(t - k + 1, 0)\)</span>. As a result, <span class="math inline">\(\delta_2 = \beta_2 - 2\beta_1\)</span>. It is not
+<span class="math inline">\(\beta_2 - \beta_1\)</span>.</p>
+<p>Dropping a hinge coefficient that is not significant therefore does
+not make two years equal. It continues the trend of the earlier years.
+With the paper’s own AADT estimates:</p>
+<table>
+<thead>
+<tr class="header">
+<th>year</th>
+<th>separate effects</th>
+<th>dropping <span class="math inline">\(\delta_2\)</span> imposes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>0.122</td>
+<td>0.122</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>0.215</td>
+<td><span class="math inline">\(2 \times 0.122 = 0.244\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>Equal effects in years 1 and 2 would be 0.122 in both. The basis also
+numbers the years from 1, so the restriction depends on which year comes
+first. To find years with equal effects, use the step basis, where a
+zero coefficient means exactly that, or <code>temporal_tests()</code>,
+which tests the year effects themselves.</p>
+</div>
+<div id="a-smooth-path-over-time" class="section level3">
+<h3>A smooth path over time</h3>
+<p>With many years, <code>basis = &quot;smooth&quot;</code> fits the effect as a
+penalized spline in time, the varying-coefficient smooth
+<code>s(Year, by = lnaadt)</code> of mgcv. The data then choose between
+a constant effect, a linear trend and a flexible path:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>msm <span class="ot">&lt;-</span> <span class="fu">fit_basis</span>(<span class="st">&quot;smooth&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">temporal_effects</span>(msm)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;   part   term time  basis period estimate  std.error conf.low conf.high</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; 1 mean lnaadt Year smooth   2016 1.129769 0.05189659 1.028053  1.231484</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 2 mean lnaadt Year smooth   2017 1.124881 0.05141355 1.024112  1.225650</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; 3 mean lnaadt Year smooth   2018 1.119993 0.05174021 1.018584  1.221402</span></span></code></pre></div>
+</div>
+</div>
+<div id="time-varying-intercepts-and-distribution-parameters" class="section level2">
+<h2>3. Time-varying intercepts and distribution parameters</h2>
+<p><code>tv(1, time = Year)</code> lets the intercept vary by year. With
+an intercept in the model, the intercept is the first year’s level and
+the <code>tv()</code> columns are the changes after it.
+<code>tv()</code> also works in the formulas of the distribution
+parameters, here a separate NB2 overdispersion for each year:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>mi <span class="ot">&lt;-</span> <span class="fu">countreg</span>(Total_crashes <span class="sc">~</span> <span class="fu">tv</span>(<span class="dv">1</span>, <span class="at">time =</span> Year) <span class="sc">+</span> lnaadt <span class="sc">+</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>                 <span class="fu">offset</span>(lnlength), <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>               <span class="at">dis_param_formula_1 =</span> <span class="sc">~</span> <span class="fu">tv</span>(<span class="dv">1</span>, <span class="at">time =</span> Year, <span class="at">basis =</span> <span class="st">&quot;level&quot;</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>               <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">temporal_effects</span>(mi)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;        part        term time basis period   estimate std.error   conf.low</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; 1      mean (Intercept) Year  step   2016 -9.3636110 0.4574756 -10.260247</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; 2      mean (Intercept) Year  step   2017 -9.4307156 0.4588819 -10.330108</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; 3      mean (Intercept) Year  step   2018 -9.4248184 0.4570932 -10.320705</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; 4 ln(alpha) (Intercept) Year level   2016 -0.8703054 0.3746837  -1.604672</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; 5 ln(alpha) (Intercept) Year level   2017 -1.1701419 0.4819031  -2.114655</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; 6 ln(alpha) (Intercept) Year level   2018 -0.4144498 0.3105474  -1.023112</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;    conf.high</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; 1 -8.4669754</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 2 -8.5313236</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; 3 -8.5289323</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; 4 -0.1359388</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; 5 -0.2256291</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; 6  0.1942120</span></span></code></pre></div>
+</div>
+<div id="prediction-for-new-years" class="section level2">
+<h2>4. Prediction for new years</h2>
+<p><code>predict()</code> uses the years of the estimation data. A year
+that was not estimated is an error by default, because no effect was
+estimated for it. <code>tv(x, time = Year, new_time = &quot;nearest&quot;)</code>
+uses the nearest year’s effect instead, for example the last year’s
+effect when forecasting:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>mn <span class="ot">&lt;-</span> <span class="fu">countreg</span>(Total_crashes <span class="sc">~</span> <span class="fu">tv</span>(lnaadt, <span class="at">time =</span> Year, <span class="at">new_time =</span> <span class="st">&quot;nearest&quot;</span>) <span class="sc">+</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>                 speed50 <span class="sc">+</span> <span class="fu">offset</span>(lnlength), <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>               <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>nd <span class="ot">&lt;-</span> w[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>nd<span class="sc">$</span>Year <span class="ot">&lt;-</span> <span class="dv">2019</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">predict</span>(mn, <span class="at">newdata =</span> nd)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.7657030 0.6766678 1.1218439</span></span></code></pre></div>
+</div>
+<div id="other-models" class="section level2">
+<h2>5. Other models</h2>
+<p><code>tv()</code> works in the formulas of every estimator:
+<code>countreg()</code>, <code>countreg_rp()</code>,
+<code>countreg_hier()</code>, <code>countreg_fe()</code>,
+<code>renb()</code>, <code>repois()</code>, <code>poislind_re()</code>
+and <code>countreg_mix()</code>. Here the effect of traffic varies by
+year in a random-parameters model:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>r <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> <span class="fu">tv</span>(lnaadt, <span class="at">time =</span> Year) <span class="sc">+</span> <span class="fu">offset</span>(lnlength),</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>                 <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50, <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                 <span class="at">ndraws =</span> <span class="dv">100</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="fu">temporal_effects</span>(r)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;   part   term time basis period estimate  std.error conf.low conf.high</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; 1 mean lnaadt Year  step   2016 1.130707 0.05300066 1.026827  1.234586</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; 2 mean lnaadt Year  step   2017 1.123370 0.05302431 1.019444  1.227296</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; 3 mean lnaadt Year  step   2018 1.121112 0.05277747 1.017670  1.224554</span></span></code></pre></div>
+<p><code>tv()</code> can also appear in <code>rpar_formula</code>.
+<code>temporal_effects()</code> then reports the year effects of the
+random parameters’ means, and each basis column has its own standard
+deviation.</p>
+</div>
+<div id="reference" class="section level2">
+<h2>Reference</h2>
+<p>Shabab, K. R., Bhowmik, T., Zaki, M. H. and Eluru, N. (2026). A joint
+count and generalized ordered fractional split approach for addressing
+temporal instability in road safety analysis. <em>Analytic Methods in
+Accident Research</em>, 51, 100440.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -28,15 +28,19 @@
 #'
 #' Fits a joint model of a total count and its allocation across
 #' categories, such as the number of crashes at a site and their split by
-#' severity. The total follows any count family of the package (with
-#' covariates in its mean and distribution parameters), and the split
-#' follows an ordered probit, ordered logit or multinomial logit model,
-#' with covariates in the propensity and, for the ordered links, in the
-#' thresholds (generalized thresholds).
+#' severity (ordered categories) or by crash type (unordered categories).
+#' The total follows any count family of the package (with covariates in
+#' its mean and distribution parameters). The split follows an ordered
+#' probit or ordered logit model for ordered categories, with covariates
+#' in the propensity and in the thresholds (generalized thresholds), or a
+#' multinomial logit model (`link = "mnl"`) for unordered categories, with
+#' covariates whose effects differ by category.
 #'
 #' @param formula a formula with the category counts on the left, as
-#'   `cbind(cat_1, ..., cat_J)` from the lowest to the highest category (for
-#'   the ordered links), and the total's mean model on the right. The total
+#'   `cbind(cat_1, ..., cat_J)`, and the total's mean model on the right.
+#'   For the ordered links the columns go from the lowest to the highest
+#'   category; for `"mnl"` the first column is the base category and the
+#'   order of the others does not matter. The total
 #'   is the sum of the categories. An `offset()` term (an exposure) belongs
 #'   here.
 #' @param data a data frame.
@@ -48,9 +52,10 @@
 #' @param threshold_formula a one-sided formula for the thresholds of the
 #'   ordered links (generalized thresholds). Default `~ 1`, fixed
 #'   thresholds. It must have an intercept.
-#' @param link `"ordered_probit"` (default), `"ordered_logit"` or `"mnl"`
-#'   (multinomial logit, for unordered categories; the first category is
-#'   the base).
+#' @param link `"ordered_probit"` (default) or `"ordered_logit"` for
+#'   ordered categories such as severity levels; `"mnl"` (multinomial
+#'   logit) for unordered categories such as crash types, collision types
+#'   or vehicle types. See Details.
 #' @param likelihood `"multinomial"` (default) or `"fractional"`; see
 #'   Details.
 #' @param dis_param_formula_1,dis_param_formula_2 formulas for the total's
@@ -96,6 +101,22 @@
 #'   shifted Halton points, a separate block and shift for each unit).
 #' @param seed seed of the random shifts of the draws (stored in the fit,
 #'   so predictions use the same draws); random by default.
+#' @param shared_formula optional one-sided formula of a shared site-year
+#'   (row-level) random term: one standard normal draw \eqn{u} per row that
+#'   enters each equation in `shared_in` with a loading \eqn{s'\kappa_e},
+#'   where \eqn{s} are the variables of `shared_formula` (`~ 1` for a
+#'   constant loading) and \eqn{\kappa_e} its coefficients in equation
+#'   \eqn{e}. It correlates a row's total with its split (the term
+#'   \eqn{\eta_{it}} of Shabab et al. 2026); see Details.
+#' @param shared_in the equations the shared term enters: any of
+#'   `"total"` (the log mean), `"alloc"` (the propensity; for `"mnl"`, each
+#'   category but the first) and `"threshold"` (the log gaps between
+#'   thresholds). Default `c("total", "alloc")`.
+#' @param shared_nodes the number of Gauss-Hermite nodes for the integral
+#'   over the shared term of each row. After the fit, the log-likelihood is
+#'   recomputed with twice the nodes, with a warning if it changes by more
+#'   than 0.05 (large loadings, above about 1 in the total, can need 40 or
+#'   more nodes).
 #' @param .setup_only internal use: return the model setup without
 #'   fitting.
 #'
@@ -128,6 +149,22 @@
 #' must come from the sandwich (the default), and likelihood-ratio tests,
 #' AIC and BIC are not available.
 #'
+#' **Unordered categories.** With `link = "mnl"` the categories are types
+#' with no order (crash types, collision types, vehicle types) and
+#' \eqn{\pi_j = \exp(z'\delta_j) / \sum_k \exp(z'\delta_k)}, with
+#' \eqn{\delta_1 = 0} for the first category (the base). Each other
+#' category has its own coefficients, named `Allocation[<category>]:`, the
+#' effects on the log odds of that category against the base; a different
+#' base gives the same fit. With a Poisson total and the count model's
+#' covariates in `alloc_formula`, the model is the same as independent
+#' Poisson regressions of the categories; with an overdispersed total
+#' (such as NB2) the categories share the total's unobserved
+#' heterogeneity. The split assumes independence of irrelevant
+#' alternatives; random coefficients in `rpar_alloc` (one set for each
+#' category but the first) relax it. The threshold options
+#' (`threshold_formula`, `rpar_threshold`, `shared_in = "threshold"`) are
+#' for the ordered links only.
+#'
 #' **Thresholds.** For the ordered links the thresholds are
 #' \eqn{\psi_1 = v'\theta_1} and \eqn{\psi_k = \psi_{k-1} +
 #' \exp(v'\theta_k)}, which keeps them ordered for every \eqn{v}. The
@@ -144,6 +181,31 @@
 #' implied standard deviations and correlations. With the fractional
 #' likelihood the integrand is the product of the rows' quasi-likelihoods,
 #' as in Shabab et al. (2026).
+#'
+#' **Shared site-year term.** Random parameters drawn per unit of
+#' `group_var` are shared by all the rows (years) of the unit. A row's own
+#' total and split can also share an unobserved factor:
+#' `shared_formula` adds \eqn{\lambda_{e,it} u_{it}} to each equation
+#' \eqn{e} in `shared_in`, with \eqn{u_{it}} standard normal and drawn
+#' anew for each row, and loading \eqn{\lambda_{e,it} = s_{it}'\kappa_e}.
+#' The covariance of the term in two equations is
+#' \eqn{\lambda_{e}\lambda_{e'}}: equal signs of the loadings mean that
+#' a site-year with more events than expected also has a more severe split
+#' (with the ordered links), opposite signs a less severe one. Changing the
+#' signs of all loadings gives the same model, so only their relative
+#' signs are identified. Shabab et al. (2026) use one loading for all
+#' equations, \eqn{\eta_{it} = k's_{it}}, so their correlation is always
+#' positive; separate loadings include that model and allow a negative
+#' one. The integral over \eqn{u_{it}} is computed by Gauss-Hermite
+#' quadrature within each draw of the unit's random parameters, adapted to
+#' each row (the nodes are centred and scaled at the row's posterior mean
+#' and standard deviation of \eqn{u_{it}}). A shared
+#' term in the total also adds overdispersion to it, so with a family that
+#' has its own dispersion parameter (such as NB2) the two compete and can
+#' be weakly identified. With `truncated = TRUE` the row's likelihood is
+#' divided by its marginal probability of a positive total,
+#' \eqn{\int (1 - P_0(u))\,\phi(u)\,du}, as the selection on a positive
+#' total happens after \eqn{u_{it}} is drawn.
 #'
 #' Time-varying effects ([tv()]) can be used in every formula.
 #'
@@ -162,15 +224,20 @@
 #' \donttest{
 #' data("washington_roads")
 #' w <- washington_roads
-#' # Illustrative split of the total crashes into three categories
-#' set.seed(1)
-#' sp <- t(vapply(w$Total_crashes, function(n)
-#'   stats::rmultinom(1, n, c(0.6, 0.3, 0.1)), numeric(3)))
-#' w$pdo <- sp[, 1]; w$minor <- sp[, 2]; w$severe <- sp[, 3]
-#' m <- countreg_alloc(cbind(pdo, minor, severe) ~ lnaadt + offset(lnlength),
-#'                     alloc_formula = ~ speed50, data = w, family = "NB2")
+#' # Ordered categories: crashes by severity
+#' w$pdo <- w$Total_crashes - w$Injury_crashes - w$Fatal_crashes
+#' m <- countreg_alloc(cbind(pdo, Injury_crashes, Fatal_crashes) ~ lnaadt +
+#'                       offset(lnlength), alloc_formula = ~ speed50,
+#'                     data = w, family = "NB2")
 #' summary(m)
 #' head(predict(m))
+#' # Unordered categories: crashes by type, other crashes as the base
+#' w$other <- w$Total_crashes - w$Animal - w$Rollover
+#' mt <- countreg_alloc(cbind(other, Animal, Rollover) ~ lnaadt +
+#'                        offset(lnlength), alloc_formula = ~ lnaadt,
+#'                      link = "mnl", data = w, family = "NB2")
+#' summary(mt)
+#' predict(mt, newdata = w[c(1, 50, 200), ], type = "prob")
 #' }
 #' @export
 countreg_alloc <- function(formula, data, family = "NB2",
@@ -188,6 +255,9 @@ countreg_alloc <- function(formula, data, family = "NB2",
                            rpar_threshold = NULL,
                            correlation = c("none", "within", "across"),
                            rpar_draws = 500, seed = NULL,
+                           shared_formula = NULL,
+                           shared_in = c("total", "alloc"),
+                           shared_nodes = 20,
                            .setup_only = FALSE) {
   cl <- match.call()
   link <- match.arg(link)
@@ -230,7 +300,23 @@ countreg_alloc <- function(formula, data, family = "NB2",
   }
   has_rpar <- !is.null(rpar_total) || !is.null(rpar_alloc) ||
     !is.null(rpar_threshold)
-  for (nm in c("rpar_total", "rpar_alloc", "rpar_threshold")) {
+  has_shared <- !is.null(shared_formula)
+  if (has_shared) {
+    shared_in <- unique(match.arg(shared_in, c("total", "alloc", "threshold"),
+                                  several.ok = TRUE))
+    if (!ordered && "threshold" %in% shared_in) {
+      stop("`shared_in = \"threshold\"` applies only to the ordered links.",
+           call. = FALSE)
+    }
+    if (!is.numeric(shared_nodes) || length(shared_nodes) != 1L ||
+        is.na(shared_nodes) || shared_nodes < 2 ||
+        shared_nodes != round(shared_nodes)) {
+      stop("`shared_nodes` must be a whole number of at least 2.",
+           call. = FALSE)
+    }
+  }
+  for (nm in c("rpar_total", "rpar_alloc", "rpar_threshold",
+               "shared_formula")) {
     f <- get(nm)
     if (!is.null(f) && .fcr_has_formula_offset(f)) {
       stop("`", nm, "` cannot have an offset.", call. = FALSE)
@@ -282,7 +368,8 @@ countreg_alloc <- function(formula, data, family = "NB2",
                         alloc = alloc_formula,
                         thr = if (ordered) threshold_formula,
                         rp_total = rpar_total, rp_alloc = rpar_alloc,
-                        rp_thr = rpar_threshold),
+                        rp_thr = rpar_threshold,
+                        shared = shared_formula),
     offset = offset, weights = weights, group_var = group_var)
   if (prep$n_dropped > 0) {
     message(prep$n_dropped, " row(s) with missing values were removed.")
@@ -315,6 +402,10 @@ countreg_alloc <- function(formula, data, family = "NB2",
     stop("`rpar_threshold` needs three or more categories (it acts on the ",
          "gaps between thresholds).", call. = FALSE)
   }
+  if (has_shared && "threshold" %in% shared_in && J < 3L) {
+    stop("`shared_in = \"threshold\"` needs three or more categories (it ",
+         "acts on the gaps between thresholds).", call. = FALSE)
+  }
 
   # ---- Parameter layout -----------------------------------------------------
   S <- .fcr_alloc_layout(family, params, X, W1, W2, Z, V, J, categories,
@@ -334,6 +425,16 @@ countreg_alloc <- function(formula, data, family = "NB2",
             w = w, X = X, off = prep$offset, W1 = W1, W2 = W2, Z = Z, V = V,
             J = J, S = S, truncated = truncated, dens_args = dens_args,
             categories = categories)
+
+  # ---- Shared site-year term ------------------------------------------------
+  if (has_shared) {
+    E$Sm <- prep$aux$shared
+    S$SH <- .fcr_alloc_shlayout(E$Sm, shared_in, categories, ordered,
+                                length(S$names))
+    S$names <- c(S$names, S$SH$names)
+    E$GH <- .fcr_gh_rule(as.integer(shared_nodes))
+    E$S <- S
+  }
 
   # ---- Random parameters ----------------------------------------------------
   RS <- NULL
@@ -356,6 +457,8 @@ countreg_alloc <- function(formula, data, family = "NB2",
     S$RS <- RS
     E$S <- S
   }
+  # The rows repeated once per quadrature node of the shared term
+  if (has_shared) E$Erep <- .fcr_alloc_rep(E)
 
   if (.setup_only) return(E)
 
@@ -379,6 +482,22 @@ countreg_alloc <- function(formula, data, family = "NB2",
   if (!conv) {
     warning("The optimizer did not report convergence: ", fit$message,
             call. = FALSE)
+  }
+  # Accuracy of the quadrature over the shared term: the log-likelihood
+  # with twice the nodes
+  shared_check <- NULL
+  if (has_shared) {
+    E2 <- E
+    E2$GH <- .fcr_gh_rule(2L * as.integer(shared_nodes))
+    E2$Erep <- .fcr_alloc_rep(E2)
+    ll2 <- sum(if (has_rpar) .fcr_alloc_sim_ll(est, E2)$ll else
+      .fcr_alloc_ll(est, E2)$ll)
+    shared_check <- ll2 - sum(fn(est))
+    if (is.finite(shared_check) && abs(shared_check) > 0.05) {
+      warning("The log-likelihood changes by ", signif(shared_check, 2),
+              " with twice the Gauss-Hermite nodes of the shared term; ",
+              "increase `shared_nodes`.", call. = FALSE)
+    }
   }
   U <- gr(est)
   colnames(U) <- S$names
@@ -419,6 +538,9 @@ countreg_alloc <- function(formula, data, family = "NB2",
       correlation = correlation, draws = rpar_draws, seed = draw_seed,
       units = E$units, unit_of_row = E$g,
       posterior = .fcr_alloc_sim_ll(est, E, grad = TRUE)$W),
+    shared = if (has_shared) list(formula = shared_formula, equations =
+                                    shared_in, nodes = as.integer(shared_nodes),
+                                  check = shared_check),
     y = Y, total = ctot, weights = w, offset = prep$offset,
     rows_used = prep$rows_used, blueprint = prep$blueprint,
     data_used = data[prep$rows_used, setdiff(names(data), tot_name),
@@ -426,7 +548,7 @@ countreg_alloc <- function(formula, data, family = "NB2",
     engine = engine, ndraws = ndraws,
     fitted.values = NULL)
   class(out) <- "countreg_alloc"
-  out$fitted.values <- if (has_rpar) {
+  out$fitted.values <- if (has_rpar || has_shared) {
     predict(out, newdata = out$data_used)
   } else .fcr_alloc_predict_core(est, E)$counts
   out
@@ -653,12 +775,27 @@ countreg_alloc <- function(formula, data, family = "NB2",
     }
   }
   if (S$ordered) G[, S$idx_t] <- pt$thrG
+  SH <- S$SH
+  if (!is.null(SH)) {
+    if (length(SH$idx$total)) G[, SH$idx$total] <- pt$sh_eta * E$Sm
+    if (length(SH$idx$alloc)) {
+      if (S$ordered) {
+        G[, SH$idx$alloc] <- pt$sh_xb * E$Sm
+      } else {
+        for (j in 2:S$J) {
+          cols <- SH$idx$alloc[(j - 2L) * SH$ks + seq_len(SH$ks)]
+          G[, cols] <- pt$sh_xb[, j - 1L] * E$Sm
+        }
+      }
+    }
+    if (length(SH$idx$gap)) G[, SH$idx$gap] <- pt$sh_gap * E$Sm
+  }
   G
 }
 
 # Log-likelihood without random parameters: one contribution per row.
 .fcr_alloc_ll <- function(p, E, grad = FALSE) {
-  pt <- .fcr_alloc_rowparts(p, E, grad = grad)
+  pt <- .fcr_alloc_rowparts2(p, E, grad = grad)
   ll <- pt$ll
   ll[!is.finite(ll)] <- if (grad) 0 else NA_real_
   if (!grad) return(list(ll = ll))
@@ -782,7 +919,7 @@ countreg_alloc <- function(formula, data, family = "NB2",
   LL <- matrix(NA_real_, G, R)
   for (r in seq_len(R)) {
     B <- (matrix(E$UA[, , r], G, RS$K) %*% t(L))[g, , drop = FALSE]
-    ll <- .fcr_alloc_rowparts(p, E, .fcr_alloc_add(B, E), grad = FALSE)$ll
+    ll <- .fcr_alloc_rowparts2(p, E, .fcr_alloc_add(B, E), grad = FALSE)$ll
     LL[, r] <- rowsum(ll, g, reorder = TRUE)[, 1L]
   }
   LL[is.nan(LL)] <- -Inf
@@ -802,7 +939,7 @@ countreg_alloc <- function(formula, data, family = "NB2",
     if (!any(W[, r] > 1e-12)) next
     Ug <- matrix(E$UA[, , r], G, RS$K)
     B <- (Ug %*% t(L))[g, , drop = FALSE]
-    pt <- .fcr_alloc_rowparts(p, E, .fcr_alloc_add(B, E), grad = TRUE)
+    pt <- .fcr_alloc_rowparts2(p, E, .fcr_alloc_add(B, E), grad = TRUE)
     Gr <- .fcr_alloc_fixed_grad(pt, E, np)
     Db <- .fcr_alloc_rand_deriv(pt, E)
     Urow <- Ug[g, , drop = FALSE]
@@ -813,6 +950,247 @@ countreg_alloc <- function(formula, data, family = "NB2",
   }
   lg[!is.finite(lg)] <- 0
   list(ll = lg, G = Gg, W = W)
+}
+
+# ---- Shared site-year term ---------------------------------------------------
+
+# Layout of the loadings of the shared term: a block of coefficients (one
+# per column of the loading design) for each equation it enters.
+.fcr_alloc_shlayout <- function(Sm, shared_in, categories, ordered, offset) {
+  cn <- colnames(Sm)
+  blocks <- list()
+  if ("total" %in% shared_in) blocks$total <- paste0("shared:Total:", cn)
+  if ("alloc" %in% shared_in) {
+    blocks$alloc <- if (ordered) paste0("shared:Allocation:", cn) else
+      unlist(lapply(categories[-1L], function(ct)
+        paste0("shared:Allocation[", ct, "]:", cn)))
+  }
+  if ("threshold" %in% shared_in) {
+    blocks$gap <- paste0("shared:Threshold gaps:", cn)
+  }
+  idx <- list()
+  pos <- offset
+  for (b in names(blocks)) {
+    idx[[b]] <- pos + seq_along(blocks[[b]])
+    pos <- pos + length(blocks[[b]])
+  }
+  list(names = unlist(blocks, use.names = FALSE), idx = idx, ks = length(cn),
+       all = offset + seq_len(pos - offset), equations = shared_in)
+}
+
+# Loadings of the shared term in each equation, for every row.
+.fcr_alloc_loadings <- function(p, E) {
+  S <- E$S
+  SH <- S$SH
+  out <- list()
+  if (length(SH$idx$total)) {
+    out$total <- as.vector(E$Sm %*% p[SH$idx$total])
+  }
+  if (length(SH$idx$alloc)) {
+    out$alloc <- if (S$ordered) as.vector(E$Sm %*% p[SH$idx$alloc]) else
+      E$Sm %*% matrix(p[SH$idx$alloc], SH$ks, S$J - 1L)
+  }
+  if (length(SH$idx$gap)) out$gap <- as.vector(E$Sm %*% p[SH$idx$gap])
+  out
+}
+
+# Add the shared term u (one value per row) with loadings `lam` to the
+# random terms `add` (see .fcr_alloc_add()).
+.fcr_alloc_shared_add <- function(add, lam, u) {
+  add <- add %||% list()
+  if (!is.null(lam$total)) add$eta <- (add$eta %||% 0) + lam$total * u
+  if (!is.null(lam$alloc)) add$xb <- (add$xb %||% 0) + lam$alloc * u
+  if (!is.null(lam$gap)) add$gap <- (add$gap %||% 0) + lam$gap * u
+  add
+}
+
+# The design with each row repeated once per quadrature node (node-major),
+# so all nodes are evaluated in one call.
+.fcr_alloc_rep <- function(E) {
+  n <- nrow(E$X)
+  Q <- length(E$GH$z)
+  idx <- rep(seq_len(n), Q)
+  sub <- function(M) {
+    if (is.null(M)) NULL else if (is.matrix(M)) M[idx, , drop = FALSE] else
+      M[idx]
+  }
+  Er <- E
+  for (nm in c("y", "R", "const", "w", "X", "off", "W1", "W2", "Z", "V",
+               "Sm")) {
+    if (!is.null(E[[nm]])) Er[[nm]] <- sub(E[[nm]])
+  }
+  Er$Erep <- NULL
+  Er$truncated <- FALSE
+  Er$idx <- idx
+  Er$u <- rep(E$GH$z, each = n)
+  Er
+}
+
+# log P(total = 0) of every row and its derivatives with respect to the
+# count's log mean and log distribution parameters (unweighted).
+.fcr_alloc_zero_parts <- function(p, E, eta_add = NULL, grad = TRUE) {
+  S <- E$S
+  n <- length(E$y)
+  fam <- .fcr_get_family(E$family)
+  lp <- as.vector(E$X %*% p[S$idx_beta]) + E$off
+  if (!is.null(eta_add)) lp <- lp + eta_add
+  mu <- exp(lp)
+  dp <- .fcr_alloc_dispar(p, S, E$W1, E$W2, n)
+  y0 <- rep(0, n)
+  l0 <- tryCatch(.fcr_quiet_dens(as.vector(do.call(fam$dens, c(
+    list(y = y0, predicted = mu, alpha = dp$alpha, sigma = dp$sigma),
+    E$dens_args, list(log = TRUE)))), log = TRUE),
+    error = function(e) rep(NA_real_, n))
+  l0[!.fcr_family_valid(E$family, mu, dp$alpha, dp$sigma)] <- -Inf
+  if (!grad) return(list(l0 = l0))
+  sc <- .fcr_family_score(E$family, y0, mu, dp$alpha, dp$sigma,
+                          dens_args = E$dens_args)
+  list(l0 = l0, eta = sc$eta, alpha = sc$alpha, sigma = sc$sigma)
+}
+
+# Row contributions as .fcr_alloc_rowparts(), integrated over the shared
+# term by adaptive Gauss-Hermite quadrature. A first pass with the plain
+# nodes gives each row's posterior mean m and standard deviation s of u;
+# the nodes are then m + s z_q, with weights
+# omega_q phi(m + s z_q) s / phi(z_q), so that
+#   ll = w log sum_q omega*_q f(row | u_q)
+# (less w log sum_q omega_q (1 - P0(z_q)) for a truncated total, from the
+# plain nodes: 1 - P0 is smooth). The derivative pieces are the
+# posterior-weighted averages over the adapted nodes (the derivative of
+# the integral; the centring is held fixed), plus sh_eta, sh_xb and sh_gap,
+# the derivatives with respect to the loadings in each equation (before
+# multiplying by the loading design).
+.fcr_alloc_rowparts2 <- function(p, E, add = NULL, grad = TRUE) {
+  if (is.null(E$S$SH)) return(.fcr_alloc_rowparts(p, E, add, grad))
+  n <- length(E$y)
+  Er <- E$Erep %||% .fcr_alloc_rep(E)
+  Q <- length(E$GH$z)
+  idx <- Er$idx
+  zq <- Er$u
+  lw <- rep(log(E$GH$w), each = n)
+  ar0 <- lapply(add, function(a) {
+    if (is.matrix(a)) a[idx, , drop = FALSE] else a[idx]
+  })
+  lam <- .fcr_alloc_loadings(p, Er)
+  w <- E$w
+  wr <- ifelse(w > 0, w, 1)
+  # log sum_q exp(M_q) by row, and the normalized weights
+  lse_rows <- function(M) {
+    M[is.nan(M)] <- -Inf
+    mx <- apply(M, 1L, max)
+    mx[!is.finite(mx)] <- 0
+    lse <- mx + log(rowSums(exp(M - mx)))
+    V <- exp(M - lse)
+    V[!is.finite(V)] <- 0
+    list(lse = lse, V = V)
+  }
+  # Pass 1: plain nodes, for the centring
+  pt0 <- .fcr_alloc_rowparts(p, Er, .fcr_alloc_shared_add(ar0, lam, zq),
+                             grad = FALSE)
+  P1 <- lse_rows(matrix(pt0$ll, n, Q) / wr + lw)
+  zm <- matrix(zq, n, Q)
+  m <- rowSums(P1$V * zm)
+  sd <- sqrt(pmax(rowSums(P1$V * zm^2) - m^2, 0))
+  bad <- !is.finite(m) | !is.finite(sd) | sd < 1e-3 | w == 0
+  m[bad] <- 0
+  sd[bad] <- 1
+  adapt <- function(m, sd) {
+    uq <- m[idx] + sd[idx] * zq
+    list(uq = uq, lwa = lw + stats::dnorm(uq, log = TRUE) -
+           stats::dnorm(zq, log = TRUE) + log(sd[idx]))
+  }
+  # Refine the centring with the moments over the adapted nodes
+  for (it in seq_len(.fcr_alloc_agh_refine)) {
+    A <- adapt(m, sd)
+    pr <- .fcr_alloc_rowparts(p, Er, .fcr_alloc_shared_add(ar0, lam, A$uq),
+                              grad = FALSE)
+    Pr <- lse_rows(matrix(pr$ll, n, Q) / wr + matrix(A$lwa, n, Q))
+    um <- matrix(A$uq, n, Q)
+    m2 <- rowSums(Pr$V * um)
+    sd2 <- sqrt(pmax(rowSums(Pr$V * um^2) - m2^2, 0))
+    ok <- !bad & is.finite(m2) & is.finite(sd2) & sd2 >= 1e-3
+    m[ok] <- m2[ok]
+    sd[ok] <- sd2[ok]
+  }
+  # Final pass: adapted nodes
+  A <- adapt(m, sd)
+  uq <- A$uq
+  lwa <- A$lwa
+  pt <- .fcr_alloc_rowparts(p, Er, .fcr_alloc_shared_add(ar0, lam, uq),
+                            grad = grad)
+  P2 <- lse_rows(matrix(pt$ll, n, Q) / wr + lwa)
+  lD <- 0
+  if (E$truncated) {
+    eta0 <- .fcr_alloc_shared_add(ar0, lam, zq)$eta
+    z0 <- .fcr_alloc_zero_parts(p, Er, eta0, grad = grad)
+    P0 <- matrix(exp(z0$l0), n, Q)
+    D <- rowSums((1 - P0) * matrix(exp(lw), n, Q))
+    lD <- log(D)
+  }
+  ll <- w * (P2$lse - lD)
+  ll[w == 0] <- 0
+  if (!grad) return(list(ll = ll))
+  Vv <- as.vector(P2$V)
+  comb <- function(x, wt = Vv) {
+    if (is.null(x)) return(NULL)
+    x[!is.finite(x)] <- 0
+    r <- rowsum(x * wt, idx, reorder = TRUE)
+    if (is.null(dim(x))) as.vector(r) else {
+      dimnames(r) <- NULL
+      r
+    }
+  }
+  out <- list(ll = ll, s_eta = comb(pt$s_eta), s_a = comb(pt$s_a),
+              s_s = comb(pt$s_s), dxb = comb(pt$dxb), thrG = comb(pt$thrG),
+              dgap = comb(pt$dgap), sh_eta = comb(pt$s_eta * uq),
+              sh_xb = comb(pt$dxb * uq),
+              sh_gap = if (!is.null(pt$dgap)) comb(pt$dgap * uq))
+  if (E$truncated) {
+    # d log D = -sum_q omega_q P0_q d log P0_q / D
+    Tv <- as.vector(P0 * matrix(exp(lw), n, Q) / D)
+    out$s_eta <- out$s_eta + w * comb(z0$eta, Tv)
+    out$sh_eta <- out$sh_eta + w * comb(z0$eta * zq, Tv)
+    if (!is.null(z0$alpha)) out$s_a <- out$s_a + w * comb(z0$alpha, Tv)
+    if (!is.null(z0$sigma)) out$s_s <- out$s_s + w * comb(z0$sigma, Tv)
+  }
+  out
+}
+
+# Number of times the centring of the adaptive quadrature is refined: one
+# refinement makes 12 nodes exact to about 1e-8 at typical loadings; the
+# fit checks the result with twice the nodes.
+.fcr_alloc_agh_refine <- 1L
+
+# Predictions averaged over the shared term's quadrature nodes (or plain
+# predictions without it), with the probability of a zero total when
+# `need_p0`.
+.fcr_alloc_predict_mix <- function(object, p, E, add = NULL,
+                                   need_p0 = FALSE) {
+  if (is.null(E$S$SH)) {
+    pc <- .fcr_alloc_predict_core(p, E, add)
+    if (need_p0) pc$p0 <- .fcr_alloc_p0(object, pc, E)
+    return(pc)
+  }
+  n <- nrow(E$X)
+  Er <- E$Erep %||% .fcr_alloc_rep(E)
+  idx <- Er$idx
+  ar <- lapply(add, function(a) {
+    if (is.matrix(a)) a[idx, , drop = FALSE] else a[idx]
+  })
+  ar <- .fcr_alloc_shared_add(ar, .fcr_alloc_loadings(p, Er), Er$u)
+  pc <- .fcr_alloc_predict_core(p, Er, ar)
+  wv <- rep(E$GH$w, each = n)
+  avg <- function(x) {
+    r <- rowsum(x * wv, idx, reorder = TRUE)
+    if (is.null(dim(x))) as.vector(r) else {
+      dimnames(r) <- list(NULL, colnames(x))
+      r
+    }
+  }
+  out <- list(counts = avg(pc$counts), prob = avg(pc$prob),
+              total = avg(pc$total))
+  if (need_p0) out$p0 <- avg(.fcr_alloc_p0(object, pc, Er))
+  out
 }
 
 # Standard normal draws for each unit: G x K x R, from randomly shifted
@@ -874,6 +1252,15 @@ countreg_alloc <- function(formula, data, family = "NB2",
       }
     }
   }
+  SH <- S$SH
+  if (!is.null(SH)) {
+    # A small loading in each equation: at zero the likelihood is flat in
+    # the loadings (a saddle point)
+    for (b in names(SH$idx)) {
+      first <- SH$idx[[b]][(seq_along(SH$idx[[b]]) - 1L) %% SH$ks == 0L]
+      st[first] <- 0.1
+    }
+  }
   if (!is.null(E$RS)) {
     dg <- E$RS$pairs[, "k"] == E$RS$pairs[, "l"]
     st[E$RS$idx] <- ifelse(dg, 0.1, 0)
@@ -916,7 +1303,9 @@ countreg_alloc <- function(formula, data, family = "NB2",
                         normed_haltons = stats::qnorm(haltons),
                         engine = object$engine),
        y = rep(0, nrow(fd$X)), Xr = fd$aux$rp_total, Zr = fd$aux$rp_alloc,
-       Vr = fd$aux$rp_thr, RS = object$rpar$layout)
+       Vr = fd$aux$rp_thr, RS = object$rpar$layout, Sm = fd$aux$shared,
+       GH = if (!is.null(S$SH)) .fcr_gh_rule(object$shared$nodes),
+       w = rep(1, nrow(fd$X)))
 }
 
 # P(total = 0) at the predictions `pc` of .fcr_alloc_predict_core().
@@ -950,7 +1339,9 @@ countreg_alloc <- function(formula, data, family = "NB2",
 #'   prediction for a new unit); `"posterior"` averages over each unit's
 #'   posterior distribution given its counts in the estimation data
 #'   (Empirical Bayes; units not in the estimation data get the marginal
-#'   prediction). `newdata` then needs the `group_var` column(s).
+#'   prediction). `newdata` then needs the `group_var` column(s). The shared
+#'   site-year term (`shared_formula`) is always averaged over its
+#'   distribution, as it is new for every row.
 #' @param ... unused.
 #' @return A matrix with one column per category (`"counts"`, `"prob"`), or
 #'   a vector (`"total"`, `"total_positive"`). With random parameters,
@@ -972,8 +1363,13 @@ predict.countreg_alloc <- function(object, newdata = NULL,
   p <- object$coefficients
   need_p0 <- type == "total_positive" || (type == "counts" && conditional)
   if (is.null(object$rpar)) {
-    pc <- .fcr_alloc_predict_core(p, E)
-    p0 <- if (need_p0) .fcr_alloc_p0(object, pc, E)
+    if (random == "posterior" && !is.null(object$shared)) {
+      stop("Posterior predictions need unit-level random parameters ",
+           "(`rpar_total`, `rpar_alloc` or `rpar_threshold`); the shared ",
+           "site-year term is new for every row.", call. = FALSE)
+    }
+    pc <- .fcr_alloc_predict_mix(object, p, E, need_p0 = need_p0)
+    p0 <- pc$p0
     return(switch(type,
       counts = if (conditional) pc$counts / (1 - p0) else pc$counts,
       prob = pc$prob,
@@ -1015,12 +1411,13 @@ predict.countreg_alloc <- function(object, newdata = NULL,
     if (random == "posterior" && any(seen)) {
       B[seen, ] <- (matrix(UA[ui[seen], , r], sum(seen), RS$K)) %*% t(L)
     }
-    pc <- .fcr_alloc_predict_core(p, E, .fcr_alloc_add(B, E))
+    pc <- .fcr_alloc_predict_mix(object, p, E, .fcr_alloc_add(B, E),
+                                 need_p0 = need_p0)
     wr <- Wrow[, r]
     acc$counts <- acc$counts + wr * pc$counts
     acc$prob <- acc$prob + wr * pc$prob
     acc$total <- acc$total + wr * pc$total
-    if (need_p0) acc$p0 <- acc$p0 + wr * .fcr_alloc_p0(object, pc, E)
+    if (need_p0) acc$p0 <- acc$p0 + wr * pc$p0
   }
   colnames(acc$counts) <- colnames(acc$prob) <- object$categories
   switch(type,
@@ -1094,6 +1491,7 @@ summary.countreg_alloc <- function(object, ...) {
   if (!is.null(rp)) {
     part[rp$layout$idx] <- "Random parameters (Cholesky factor)"
   }
+  if (!is.null(S$SH)) part[S$SH$all] <- "Shared site-year term (loadings)"
   structure(list(table = tab, part = part, object = object),
             class = "summary.countreg_alloc")
 }
@@ -1105,7 +1503,12 @@ print.summary.countreg_alloc <- function(x, digits = 4, ...) {
   cat("Total:      ", .fcr_family_label(o$family),
       if (o$truncated) "(zero-truncated)", "\n")
   cat("Allocation: ", o$link, "with", o$likelihood, "likelihood\n")
-  cat("Categories: ", paste(o$categories, collapse = " < "), "\n")
+  if (o$link == "mnl") {
+    cat("Categories: ", paste(o$categories, collapse = ", "),
+        "(unordered; base:", o$categories[1L], ")\n")
+  } else {
+    cat("Categories: ", paste(o$categories, collapse = " < "), "\n")
+  }
   nz <- sum(o$total == 0 & o$weights > 0)
   if (is.null(o$rpar)) {
     cat("Units:      ", o$n_units, " (", nz, " with a zero total)\n", sep = "")
@@ -1136,6 +1539,11 @@ print.summary.countreg_alloc <- function(x, digits = 4, ...) {
           paste0("unit of ", toString(o$group_var)),
         "; ", o$n_units, " units)\n\n", sep = "")
   }
+  if (!is.null(o$shared)) {
+    cat("Shared site-year term: one standard normal draw per row in ",
+        toString(o$shared$equations), " (", o$shared$nodes,
+        " adaptive Gauss-Hermite nodes)\n\n", sep = "")
+  }
   if (o$likelihood == "multinomial") {
     k <- length(o$coefficients)
     cat("Log-likelihood:", format(o$loglik, digits = 8), " AIC:",
@@ -1165,7 +1573,8 @@ tidy.countreg_alloc <- function(x, conf.int = FALSE, conf.level = 0.95,
   s <- summary(x)
   out <- data.frame(term = rownames(s$table),
                     component = ifelse(startsWith(s$part, "Random"), "random",
-                       tolower(s$part)),
+                       ifelse(startsWith(s$part, "Shared"), "shared",
+                              tolower(s$part))),
                     estimate = s$table[, 1], std.error = s$table[, 2],
                     statistic = s$table[, 3], p.value = s$table[, 4],
                     stringsAsFactors = FALSE, row.names = NULL)
@@ -1204,17 +1613,23 @@ simulate.countreg_alloc <- function(object, nsim = 1, seed = NULL,
     as.integer(factor(interaction(newdata[, object$group_var, drop = FALSE],
                                   drop = TRUE, sep = ":")))
   } else seq_len(n)
+  # The shared site-year term: a new standard normal draw for every row
+  lam <- if (!is.null(object$shared)) .fcr_alloc_loadings(p, E)
   pc_draw <- function() {
-    if (is.null(object$rpar)) return(.fcr_alloc_predict_core(p, E))
-    RS <- object$rpar$layout
-    L <- .fcr_alloc_chol(p, RS)
-    Bu <- matrix(stats::rnorm(max(unit) * RS$K), max(unit), RS$K) %*% t(L)
-    .fcr_alloc_predict_core(p, E, .fcr_alloc_add(Bu[unit, , drop = FALSE],
-                                                 E))
+    add <- NULL
+    if (!is.null(object$rpar)) {
+      RS <- object$rpar$layout
+      L <- .fcr_alloc_chol(p, RS)
+      Bu <- matrix(stats::rnorm(max(unit) * RS$K), max(unit), RS$K) %*% t(L)
+      add <- .fcr_alloc_add(Bu[unit, , drop = FALSE], E)
+    }
+    if (!is.null(lam)) add <- .fcr_alloc_shared_add(add, lam, stats::rnorm(n))
+    .fcr_alloc_predict_core(p, E, add)
   }
+  random_draws <- !is.null(object$rpar) || !is.null(object$shared)
   pc <- pc_draw()
   one <- function() {
-    if (!is.null(object$rpar)) pc <- pc_draw()
+    if (random_draws) pc <- pc_draw()
     tot <- .fcr_family_r(object$family, n, pc$mu, pc$alpha, pc$sigma)
     if (object$truncated) {
       for (i in seq_len(100L)) {

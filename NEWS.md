@@ -5,8 +5,10 @@
 * New `countreg_alloc()` fits a total count jointly with its allocation
   across categories, such as crashes by severity: the total follows any
   count family (with distribution-parameter formulas), and the split
-  follows an ordered probit, ordered logit or multinomial logit model,
-  with generalized thresholds (`threshold_formula`) for the ordered links.
+  follows an ordered probit or ordered logit model for ordered categories
+  (such as severity), with generalized thresholds (`threshold_formula`),
+  or a multinomial logit model (`link = "mnl"`) for unordered categories
+  (such as crash types), with category-specific coefficients.
   The default multinomial likelihood is a proper joint likelihood of the
   category counts (likelihood-ratio tests, AIC and BIC are valid); with a
   Poisson total the categories are independent Poissons, and with an NB2
@@ -36,6 +38,18 @@
   for units in the estimation data; `simulate()` draws new coefficients
   for each unit; `summary()` shows the standard deviations and
   correlations.
+* `countreg_alloc()` has a shared site-year term (`shared_formula`): one
+  standard normal draw per row that enters the total, the propensity
+  and/or the threshold gaps (`shared_in`) with covariate-dependent
+  loadings, so a row's total and its split share an unobserved factor
+  (the term eta of Shabab et al. 2026, with a loading for each equation,
+  which allows a negative correlation too). It is integrated by
+  adaptive Gauss-Hermite quadrature (`shared_nodes`, centred and scaled for
+  each row; the fit warns if twice the nodes change the log-likelihood) inside the draws of the
+  unit-level random parameters, with analytic gradients. With
+  `truncated = TRUE` each row's likelihood is divided by its marginal
+  probability of a positive total. A Poisson total with the term only in
+  the total reproduces the Poisson-lognormal (`PLN`) fit.
 * New vignette "Total-plus-allocation models: counts by severity".
 
 ## Time-varying effects (temporal instability)

@@ -27,7 +27,8 @@ issues, including:
   period-by-period effects and tests from `temporal_effects()` and
   `temporal_tests()`;
 - total-plus-allocation models of a count and its split across
-  categories (such as crashes by severity) with `countreg_alloc()`;
+  categories (such as crashes by severity, or by crash type with a
+  multinomial logit split) with `countreg_alloc()`;
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;
 - random parameters, with heterogeneity in their means and variances,

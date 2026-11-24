@@ -31,13 +31,18 @@ countreg_alloc(
   correlation = c("none", "within", "across"),
   rpar_draws = 500,
   seed = NULL,
+  shared_formula = NULL,
+  shared_in = c("total", "alloc"),
+  shared_nodes = 20,
   .setup_only = FALSE
 )
 }
 \arguments{
 \item{formula}{a formula with the category counts on the left, as
-\code{cbind(cat_1, ..., cat_J)} from the lowest to the highest category (for
-the ordered links), and the total's mean model on the right. The total
+\code{cbind(cat_1, ..., cat_J)}, and the total's mean model on the right.
+For the ordered links the columns go from the lowest to the highest
+category; for \code{"mnl"} the first column is the base category and the
+order of the others does not matter. The total
 is the sum of the categories. An \code{offset()} term (an exposure) belongs
 here.}
 
@@ -54,9 +59,10 @@ the ordered links its intercept is dropped (the thresholds absorb it).}
 ordered links (generalized thresholds). Default \code{~ 1}, fixed
 thresholds. It must have an intercept.}
 
-\item{link}{\code{"ordered_probit"} (default), \code{"ordered_logit"} or \code{"mnl"}
-(multinomial logit, for unordered categories; the first category is
-the base).}
+\item{link}{\code{"ordered_probit"} (default) or \code{"ordered_logit"} for
+ordered categories such as severity levels; \code{"mnl"} (multinomial
+logit) for unordered categories such as crash types, collision types
+or vehicle types. See Details.}
 
 \item{likelihood}{\code{"multinomial"} (default) or \code{"fractional"}; see
 Details.}
@@ -116,6 +122,25 @@ shifted Halton points, a separate block and shift for each unit).}
 \item{seed}{seed of the random shifts of the draws (stored in the fit,
 so predictions use the same draws); random by default.}
 
+\item{shared_formula}{optional one-sided formula of a shared site-year
+(row-level) random term: one standard normal draw \eqn{u} per row that
+enters each equation in \code{shared_in} with a loading \eqn{s'\kappa_e},
+where \eqn{s} are the variables of \code{shared_formula} (\code{~ 1} for a
+constant loading) and \eqn{\kappa_e} its coefficients in equation
+\eqn{e}. It correlates a row's total with its split (the term
+\eqn{\eta_{it}} of Shabab et al. 2026); see Details.}
+
+\item{shared_in}{the equations the shared term enters: any of
+\code{"total"} (the log mean), \code{"alloc"} (the propensity; for \code{"mnl"}, each
+category but the first) and \code{"threshold"} (the log gaps between
+thresholds). Default \code{c("total", "alloc")}.}
+
+\item{shared_nodes}{the number of Gauss-Hermite nodes for the integral
+over the shared term of each row. After the fit, the log-likelihood is
+recomputed with twice the nodes, with a warning if it changes by more
+than 0.05 (large loadings, above about 1 in the total, can need 40 or
+more nodes).}
+
 \item{.setup_only}{internal use: return the model setup without
 fitting.}
 }
@@ -127,11 +152,13 @@ An object of class \code{"countreg_alloc"}, with methods \code{coef()},
 \description{
 Fits a joint model of a total count and its allocation across
 categories, such as the number of crashes at a site and their split by
-severity. The total follows any count family of the package (with
-covariates in its mean and distribution parameters), and the split
-follows an ordered probit, ordered logit or multinomial logit model,
-with covariates in the propensity and, for the ordered links, in the
-thresholds (generalized thresholds).
+severity (ordered categories) or by crash type (unordered categories).
+The total follows any count family of the package (with covariates in
+its mean and distribution parameters). The split follows an ordered
+probit or ordered logit model for ordered categories, with covariates
+in the propensity and in the thresholds (generalized thresholds), or a
+multinomial logit model (\code{link = "mnl"}) for unordered categories, with
+covariates whose effects differ by category.
 }
 \details{
 \strong{The two parts.} With \eqn{c = \sum_j y_j} the total, the multinomial
@@ -162,6 +189,22 @@ quasi-likelihood: the estimates are consistent, but standard errors
 must come from the sandwich (the default), and likelihood-ratio tests,
 AIC and BIC are not available.
 
+\strong{Unordered categories.} With \code{link = "mnl"} the categories are types
+with no order (crash types, collision types, vehicle types) and
+\eqn{\pi_j = \exp(z'\delta_j) / \sum_k \exp(z'\delta_k)}, with
+\eqn{\delta_1 = 0} for the first category (the base). Each other
+category has its own coefficients, named \verb{Allocation[<category>]:}, the
+effects on the log odds of that category against the base; a different
+base gives the same fit. With a Poisson total and the count model's
+covariates in \code{alloc_formula}, the model is the same as independent
+Poisson regressions of the categories; with an overdispersed total
+(such as NB2) the categories share the total's unobserved
+heterogeneity. The split assumes independence of irrelevant
+alternatives; random coefficients in \code{rpar_alloc} (one set for each
+category but the first) relax it. The threshold options
+(\code{threshold_formula}, \code{rpar_threshold}, \code{shared_in = "threshold"}) are
+for the ordered links only.
+
 \strong{Thresholds.} For the ordered links the thresholds are
 \eqn{\psi_1 = v'\theta_1} and \eqn{\psi_k = \psi_{k-1} +
 \exp(v'\theta_k)}, which keeps them ordered for every \eqn{v}. The
@@ -179,21 +222,51 @@ implied standard deviations and correlations. With the fractional
 likelihood the integrand is the product of the rows' quasi-likelihoods,
 as in Shabab et al. (2026).
 
+\strong{Shared site-year term.} Random parameters drawn per unit of
+\code{group_var} are shared by all the rows (years) of the unit. A row's own
+total and split can also share an unobserved factor:
+\code{shared_formula} adds \eqn{\lambda_{e,it} u_{it}} to each equation
+\eqn{e} in \code{shared_in}, with \eqn{u_{it}} standard normal and drawn
+anew for each row, and loading \eqn{\lambda_{e,it} = s_{it}'\kappa_e}.
+The covariance of the term in two equations is
+\eqn{\lambda_{e}\lambda_{e'}}: equal signs of the loadings mean that
+a site-year with more events than expected also has a more severe split
+(with the ordered links), opposite signs a less severe one. Changing the
+signs of all loadings gives the same model, so only their relative
+signs are identified. Shabab et al. (2026) use one loading for all
+equations, \eqn{\eta_{it} = k's_{it}}, so their correlation is always
+positive; separate loadings include that model and allow a negative
+one. The integral over \eqn{u_{it}} is computed by Gauss-Hermite
+quadrature within each draw of the unit's random parameters, adapted to
+each row (the nodes are centred and scaled at the row's posterior mean
+and standard deviation of \eqn{u_{it}}). A shared
+term in the total also adds overdispersion to it, so with a family that
+has its own dispersion parameter (such as NB2) the two compete and can
+be weakly identified. With \code{truncated = TRUE} the row's likelihood is
+divided by its marginal probability of a positive total,
+\eqn{\int (1 - P_0(u))\,\phi(u)\,du}, as the selection on a positive
+total happens after \eqn{u_{it}} is drawn.
+
 Time-varying effects (\code{\link[=tv]{tv()}}) can be used in every formula.
 }
 \examples{
 \donttest{
 data("washington_roads")
 w <- washington_roads
-# Illustrative split of the total crashes into three categories
-set.seed(1)
-sp <- t(vapply(w$Total_crashes, function(n)
-  stats::rmultinom(1, n, c(0.6, 0.3, 0.1)), numeric(3)))
-w$pdo <- sp[, 1]; w$minor <- sp[, 2]; w$severe <- sp[, 3]
-m <- countreg_alloc(cbind(pdo, minor, severe) ~ lnaadt + offset(lnlength),
-                    alloc_formula = ~ speed50, data = w, family = "NB2")
+# Ordered categories: crashes by severity
+w$pdo <- w$Total_crashes - w$Injury_crashes - w$Fatal_crashes
+m <- countreg_alloc(cbind(pdo, Injury_crashes, Fatal_crashes) ~ lnaadt +
+                      offset(lnlength), alloc_formula = ~ speed50,
+                    data = w, family = "NB2")
 summary(m)
 head(predict(m))
+# Unordered categories: crashes by type, other crashes as the base
+w$other <- w$Total_crashes - w$Animal - w$Rollover
+mt <- countreg_alloc(cbind(other, Animal, Rollover) ~ lnaadt +
+                       offset(lnlength), alloc_formula = ~ lnaadt,
+                     link = "mnl", data = w, family = "NB2")
+summary(mt)
+predict(mt, newdata = w[c(1, 50, 200), ], type = "prob")
 }
 }
 \references{

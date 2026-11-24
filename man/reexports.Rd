@@ -20,7 +20,7 @@ below to see their documentation.
 \describe{
   \item{generics}{\code{\link[generics:augment]{augment()}}, \code{\link[generics:glance]{glance()}}, \code{\link[generics:tidy]{tidy()}}}
 
-  \item{nlme}{\code{\link[nlme:fixef]{fixef()}}, \code{\link[nlme:ranef]{ranef()}}, \code{\link[nlme:VarCorr]{VarCorr()}}}
+  \item{nlme}{\code{\link[nlme:VarCorr]{VarCorr()}}, \code{\link[nlme:fixef]{fixef()}}, \code{\link[nlme:ranef]{ranef()}}}
 
   \item{tibble}{\code{\link[tibble:as_tibble]{as_tibble()}}}
 }}

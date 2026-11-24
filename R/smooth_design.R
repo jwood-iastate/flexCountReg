@@ -25,6 +25,10 @@
     if (!is.call(e)) return(FALSE)
     fn <- e[[1]]
     if (is.name(fn) && as.character(fn) %in% .fcr_smooth_fns) return(TRUE)
+    if (.fcr_is_tv(e) &&
+        identical(.fcr_tv_basis_of(.fcr_tv_match(e)), "smooth")) {
+      return(TRUE)
+    }
     any(vapply(as.list(e)[-1], walk, logical(1)))
   }
   walk(stats::as.formula(fml))
@@ -33,7 +37,8 @@
 # Split a formula into its parametric formula and smooth specifications.
 .fcr_smooth_split <- function(fml) {
   rlang::check_installed("mgcv", reason = "for smooth terms (s(), te()).")
-  g <- mgcv::interpret.gam(stats::as.formula(fml))
+  fml <- .fcr_tv_smooth_rewrite(fml)
+  g <- mgcv::interpret.gam(fml)
   pf <- g$pf
   environment(pf) <- environment(stats::as.formula(fml))
   list(pf = pf, specs = g$smooth.spec)

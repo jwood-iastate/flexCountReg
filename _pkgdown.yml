@@ -19,6 +19,7 @@ articles:
   - choosing-a-count-distribution
   - distribution-parameter-regression
   - smooth-effects
+  - temporal-instability
   - zeros-hurdles-and-sampling
   - underreporting-and-identification
   - random-parameters-and-panels
@@ -59,6 +60,13 @@ reference:
   - poisLindRE
   - repois
   - negmultinom
+
+- title: Time-varying effects
+  desc: Effects that change over time (temporal instability).
+  contents:
+  - tv
+  - temporal_effects
+  - temporal_tests
 
 - title: Finite mixtures and latent classes
   desc: Mixtures of count distributions and latent-class count regression.

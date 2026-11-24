@@ -14,9 +14,21 @@ test_that("a user can run an analysis and download a working script", {
   skip_if_not_installed("shinytest2")
   skip_if(is.null(tryCatch(chromote::find_chrome(), error = function(e) NULL)),
           "no Chrome")
+  # Chrome leaves a profile folder in the temporary directory (R CMD check
+  # reports it) and keeps running after the app stops (a test worker then
+  # does not exit): close it and remove the folders it created
+  tmp <- Sys.getenv("TMPDIR", tempdir())
+  chrome_dirs <- function() {
+    Sys.glob(file.path(c(tmp, tempdir()), "com.google.Chrome.*"))
+  }
+  before <- chrome_dirs()
+  on.exit({
+    try(chromote::default_chromote_object()$close(), silent = TRUE)
+    unlink(setdiff(chrome_dirs(), before), recursive = TRUE)
+  }, add = TRUE)
   app <- shinytest2::AppDriver$new(app_object(), name = "workflow",
                                    load_timeout = 60000, timeout = 60000)
-  on.exit(app$stop(), add = TRUE)
+  on.exit(app$stop(), add = TRUE, after = FALSE)
   status <- function() app$get_value(output = "status_bar")
   wait_for_result <- function(text) {
     app$wait_for_js(paste0(

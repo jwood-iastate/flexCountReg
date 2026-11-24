@@ -34,7 +34,8 @@ NULL
   tt <- if (inherits(fml, "terms")) fml else
     stats::delete.response(stats::terms(stats::as.formula(fml)))
   mf <- .fcr_model_frame_xlev(tt, mf_data, xlev)
-  X <- stats::model.matrix(tt, mf, contrasts.arg = contrasts)
+  X <- .fcr_tv_finish(stats::model.matrix(tt, mf, contrasts.arg = contrasts),
+                      tt)
   ctr <- attr(X, "contrasts")
   if (drop_intercept) X <- X[, colnames(X) != "(Intercept)", drop = FALSE]
   attr(X, "xlevels") <- stats::.getXlevels(tt, mf)
@@ -57,10 +58,12 @@ NULL
     })
 }
 
-# Expand a `.` in a formula against the columns of `data` (as lm() does).
+# Expand a `.` in a formula against the columns of `data` (as lm() does),
+# and rewrite tv(..., basis = "smooth") as a smooth (see R/temporal.R).
 .fcr_expand_dot <- function(fml, data) {
   if (is.null(fml)) return(NULL)
   fml <- stats::as.formula(fml)
+  if (.fcr_has_tv_smooth(fml)) fml <- .fcr_tv_smooth_rewrite(fml, data)
   if (!"." %in% all.vars(fml)) return(fml)
   out <- stats::formula(stats::terms(fml, data = data))
   environment(out) <- environment(fml)
@@ -155,7 +158,7 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   }
   if (!is.null(y)) .fcr_check_counts(y)
   tt <- stats::terms(mf)
-  X <- stats::model.matrix(tt, mf)
+  X <- .fcr_tv_finish(stats::model.matrix(tt, mf), tt)
   .fcr_check_design(X, "formula")
   smooth <- list(main = list(), aux = list())
   if (length(main_specs)) {
@@ -252,7 +255,8 @@ forge_new_data <- function(blueprint, new_data) {
   }
 
   mf <- .fcr_model_frame_xlev(tt, new_data, blueprint$xlevels)
-  X <- stats::model.matrix(tt, mf, contrasts.arg = blueprint$contrasts)
+  X <- .fcr_tv_finish(
+    stats::model.matrix(tt, mf, contrasts.arg = blueprint$contrasts), tt)
   if (length(blueprint$smooth$main)) {
     X <- cbind(X, .fcr_smooth_predict(blueprint$smooth$main, new_data))
   }

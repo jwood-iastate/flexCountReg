@@ -26,6 +26,7 @@ The goal of flexCountReg is to provide functions that allow the analyst to estim
 - many count distributions beyond the Poisson and negative binomial (see the list below), with any distribution parameter modeled as a function of variables (generalized count models);
 - your own count distributions, defined from a log probability function with `new_count_family()` and usable in every model;
 - smooth (generalized additive) effects with the penalized `s()` and `te()` terms of mgcv in the mean, the distribution parameters, the zero model and random-parameter heterogeneity, with automatic smoothing and `plot_smooths()`;
+- effects that change over time (temporal instability) with `tv()`, with period-by-period effects and tests from `temporal_effects()` and `temporal_tests()`;
 - underreporting, and zero-inflated or hurdle versions of every distribution;
 - random parameters, with heterogeneity in their means and variances, analytic gradients, separate simulation draws for each panel, and exact, simulated and Empirical Bayes (observation-specific) predictions;
 - hierarchical (mixed-effects) models with normal random effects at several levels, nested or crossed, for every count family (`countreg_hier()`, with lme4-style terms such as `(1 + lnaadt | county) + (1 | year)`);

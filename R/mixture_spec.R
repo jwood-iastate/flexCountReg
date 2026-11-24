@@ -202,10 +202,11 @@ print.fcr_mixture_control <- function(x, ...) {
     stop("`shared` must be a list with elements `mean`, `dis1` and `dis2`.",
          call. = FALSE)
   }
-  bad <- setdiff(names(shared), c("mean", "dis1", "dis2"))
+  bad <- setdiff(names(shared), c("mean", "dis1", "dis2", "rpar"))
   if (length(bad) || (length(shared) && is.null(names(shared)))) {
     stop("Unknown element(s) of `shared`: ", toString(bad), ". Use `mean` ",
-         "(term names), `dis1` and `dis2` (TRUE or FALSE).", call. = FALSE)
+         "(term names), `dis1`, `dis2` and `rpar` (TRUE or FALSE).",
+         call. = FALSE)
   }
   flag <- function(v, nm) {
     if (is.null(v)) return(FALSE)
@@ -215,15 +216,19 @@ print.fcr_mixture_control <- function(x, ...) {
     v
   }
   list(mean = as.character(shared$mean %||% character(0)),
-       dis1 = flag(shared$dis1, "dis1"), dis2 = flag(shared$dis2, "dis2"))
+       dis1 = flag(shared$dis1, "dis1"), dis2 = flag(shared$dis2, "dis2"),
+       rpar = flag(shared$rpar, "rpar"))
 }
 
 # Build the map. D1, D2: design matrices of the distribution parameters (a
 # column of ones when the parameter has no formula); d1_formula, d2_formula:
 # whether a formula was given (for the coefficient names). Z: mixing design
-# at the unit level (NULL for fixed mixing or K = 1).
+# at the unit level (NULL for fixed mixing or K = 1). rp: the random
+# parameters (NULL without them): their names and whether they are
+# correlated; each component gets their scales (`SD:` or, correlated, the
+# packed Cholesky factor `Chol:`), unless shared$rpar.
 .fcr_fm_map <- function(families, X, tt, D1, D2, d1_formula, d2_formula, Z,
-                        shared) {
+                        shared, rp = NULL) {
   K <- length(families)
   xn <- colnames(X)
   p <- length(xn)
@@ -247,7 +252,8 @@ print.fcr_mixture_control <- function(x, ...) {
     }
   }
   if (K > 1L && length(unique(families)) == 1L && all(sh_cols) &&
-      (!has1[1] || isTRUE(shared$dis1)) && (!has2[1] || isTRUE(shared$dis2))) {
+      (!has1[1] || isTRUE(shared$dis1)) && (!has2[1] || isTRUE(shared$dis2)) &&
+      (is.null(rp) || isTRUE(shared$rpar))) {
     stop("Every parameter is shared, so all components are identical and ",
          "the mixing probabilities are not identified. Leave some ",
          "coefficients component-specific.", call. = FALSE)
@@ -269,6 +275,12 @@ print.fcr_mixture_control <- function(x, ...) {
   mean_idx <- lapply(seq_len(K), function(k) integer(p))
   d1_idx <- lapply(seq_len(K), function(k) integer(0))
   d2_idx <- d1_idx
+  rv_idx <- d1_idx
+  rv_names <- if (!is.null(rp)) {
+    if (rp$correlated) sub("^Chol:", "Chol:", .fcr_chol_names(rp$names)) else
+      paste0("SD:", rp$names)
+  }
+  rp_shared <- !is.null(rp) && (isTRUE(shared$rpar) || K == 1L)
   comp_specific <- d1_idx          # component-specific positions, in order
   for (k in seq_len(K)) {
     pre <- paste0("Component", k, ":")
@@ -286,8 +298,20 @@ print.fcr_mixture_control <- function(x, ...) {
         add(dis_name(pre, params[[k]][[2]], D2, j, d2_formula), "dis2", k,
             colnames(D2)[j], params[[k]][[2]], families[k]), integer(1))
     }
+    if (!is.null(rp) && !rp_shared) {
+      rv_idx[[k]] <- vapply(rv_names, function(v)
+        add(paste0(pre, v), "rpar", k, sub("^(SD|Chol):", "", v),
+            sub(":.*", "", v), families[k]), integer(1), USE.NAMES = FALSE)
+    }
     comp_specific[[k]] <- c(mean_idx[[k]][!sh_cols], d1_idx[[k]],
-                            d2_idx[[k]])
+                            d2_idx[[k]], rv_idx[[k]])
+  }
+  if (rp_shared) {
+    i <- vapply(rv_names, function(v)
+      add(if (K > 1L) paste0("Shared:", v) else paste0("Component1:", v),
+          "rpar", if (K > 1L) NA_integer_ else 1L, sub("^(SD|Chol):", "", v),
+          sub(":.*", "", v), families[1]), integer(1), USE.NAMES = FALSE)
+    for (k in seq_len(K)) rv_idx[[k]] <- i
   }
   for (j in which(sh_cols)) {
     i <- add(paste0("Shared:Mean:", xn[j]), "mean", NA_integer_, xn[j],
@@ -324,12 +348,13 @@ print.fcr_mixture_control <- function(x, ...) {
   comp_par <- which(info$block != "mixing")
   list(K = K, families = families, names = nm, n_par = length(nm),
        info = info, mean_idx = mean_idx, d1_idx = d1_idx, d2_idx = d2_idx,
-       mix_idx = mix_idx, comp_specific = comp_specific,
+       rv_idx = rv_idx, mix_idx = mix_idx, comp_specific = comp_specific,
        comp_par = comp_par, shared_mean = sh_cols,
        shared = shared, has1 = has1, has2 = has2,
        any_shared = any(sh_cols) || (K > 1L &&
                                        (isTRUE(shared$dis1) ||
-                                          isTRUE(shared$dis2))))
+                                          isTRUE(shared$dis2) ||
+                                          (!is.null(rp) && rp_shared))))
 }
 
 # Split theta into component and mixing parameters.
@@ -342,6 +367,8 @@ print.fcr_mixture_control <- function(x, ...) {
   list(beta = lapply(map$mean_idx, function(i) theta[i]),
        d1 = lapply(map$d1_idx, function(i) if (length(i)) theta[i]),
        d2 = lapply(map$d2_idx, function(i) if (length(i)) theta[i]),
+       rv = lapply(map$rv_idx %||% vector("list", K), function(i)
+         if (length(i)) theta[i]),
        gamma = gamma)
 }
 

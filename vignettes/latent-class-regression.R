@@ -118,6 +118,22 @@ all.equal(pred_hist,
           predict(pfit, newdata = target_changed, conditioning = "history",
                   history = history))
 
+## ----lcrp-data----------------------------------------------------------------
+set.seed(31)
+G <- 200; Tt <- 5
+rd <- data.frame(id = rep(seq_len(G), each = Tt))
+cls <- ifelse(runif(G) < 0.6, 1, 2)[rd$id]
+rd$x <- rnorm(nrow(rd))
+slope <- c(0.5, -0.3)[cls] + rnorm(G)[rd$id] * c(0.5, 0.3)[cls]
+rd$y <- rpois(nrow(rd), exp(c(0.2, 1.5)[cls] + slope * rd$x))
+lcrp <- countreg_lc(y ~ x, data = rd, classes = 2, group_var = "id",
+                    rpar_formula = ~ x, rpar_draws = 80, n_starts = 3,
+                    seed = 1)
+lcfix <- countreg_lc(y ~ x, data = rd, classes = 2, group_var = "id",
+                     n_starts = 3, seed = 1)
+round(coef(lcrp), 3)
+AIC(lcfix, lcrp)
+
 ## ----diagnostics, fig.height = 3.5--------------------------------------------
 oldpar <- par(mfrow = c(1, 2))
 rootogram(lc_sd, main = "Two-class NB2")

@@ -30,7 +30,11 @@ countreg_mix(
   keep_data = TRUE,
   verbose = FALSE,
   control = mixture_control(),
-  sp = NULL
+  sp = NULL,
+  rpar_formula = NULL,
+  rpardists = NULL,
+  correlated = FALSE,
+  rpar_draws = 200
 )
 
 countreg_lc(
@@ -58,7 +62,11 @@ countreg_lc(
   keep_data = TRUE,
   verbose = FALSE,
   control = lc_control(),
-  sp = NULL
+  sp = NULL,
+  rpar_formula = NULL,
+  rpardists = NULL,
+  correlated = FALSE,
+  rpar_draws = 200
 )
 }
 \arguments{
@@ -155,6 +163,29 @@ term is penalized once. The search over starts is unpenalized; the
 selected solution is then refitted by penalized likelihood with the
 smoothing parameters selected as in \code{\link[=countreg]{countreg()}}. Standard errors are
 Bayesian by default; the bootstrap is not available with smooths.}
+
+\item{rpar_formula}{optional one-sided formula of random parameters
+within the components (classes): \code{~ x} makes the coefficient of \code{x}
+random, \code{~ 1} (or \code{~ 1 + x}) the intercept as well (an implicit
+intercept does not count). The variables must also be in \code{formula}:
+each component's coefficient of a random variable is the mean of its
+random parameter (the location, for lognormal parameters), so the
+classes differ in the means of the random parameters, and also in
+their scales (\verb{Component<k>:SD:<variable>}) unless
+\code{shared = list(rpar = TRUE)} gives all classes the same scales
+(\verb{Shared:SD:<variable>}). See "Random parameters within classes" below.}
+
+\item{rpardists}{distributions of the random parameters, as in
+\code{\link[=countreg_rp]{countreg_rp()}}: \code{"n"} (normal, the default), \code{"ln"}, \code{"t"}, \code{"u"} or
+\code{"g"}, by name or one value for all.}
+
+\item{correlated}{\code{TRUE} for correlated (normal) random parameters, with
+a Cholesky factor (\verb{Chol:}) in each class.}
+
+\item{rpar_draws}{the number of simulation draws of the random
+parameters for each unit (randomly shifted Halton points, a separate
+block for each unit, the same draws for every class). They are
+generated from a seed derived from \code{seed}.}
 }
 \value{
 An object of class \code{c("countreg_mix", "flexCountReg")}
@@ -226,6 +257,35 @@ The usual chi-square likelihood-ratio test does \strong{not} apply to
 comparing numbers of components (K versus K + 1); compare such models
 with AIC/BIC on the same sample, start stability and held-out
 log scores. \code{\link[=regCompTest]{regCompTest()}} refuses mixture models for this reason.
+}
+
+\subsection{Random parameters within classes}{
+
+With \code{rpar_formula}, the coefficients of some variables also vary
+within each class, from unit to unit (a latent-class random-parameters
+model). For unit \eqn{u} (a panel with \code{group_var}, otherwise a row),
+\deqn{L_u = \sum_k \pi_{uk} \int \prod_{i \in u} f_k(y_i \mid x_i,
+\beta_k + b)\, dF_k(b),}
+with \eqn{F_k} the distribution of the random deviations in class
+\eqn{k}: mean zero, and the class's scales. The latent classes capture
+discrete groups of units, and the random parameters the continuous
+variation within each. The integral is simulated with \code{rpar_draws} draws
+per unit, with analytic gradients through the posterior weights of the
+draws. Each start runs at most 25 EM iterations (EM converges slowly
+here) before the direct maximization finishes it. Every class uses the
+same draws of a unit (common random numbers): the class likelihoods stay
+unbiased, their simulation errors largely cancel in the posterior class
+probabilities, and relabeling the classes leaves the simulated
+likelihood unchanged. Different units have independent draws. Predictions and probabilities integrate over the random
+parameters (\code{predict()}, \code{component_probs()}, \code{rootogram()}, residuals);
+\code{simulate()} draws new coefficients for every unit. Smooth terms are not
+yet available with random parameters.
+
+Random parameters and classes can both explain heterogeneity, so the
+fit can be weakly identified: a class can stand in for a tail of a
+random parameter, and a large scale for a missing class. Shared scales
+(\code{shared = list(rpar = TRUE)}) are the more stable choice; compare the
+models with AIC/BIC and check the start table.
 }
 
 \subsection{Interpretation}{

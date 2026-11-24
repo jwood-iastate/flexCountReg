@@ -89,6 +89,25 @@
 #'   selected solution is then refitted by penalized likelihood with the
 #'   smoothing parameters selected as in [countreg()]. Standard errors are
 #'   Bayesian by default; the bootstrap is not available with smooths.
+#' @param rpar_formula optional one-sided formula of random parameters
+#'   within the components (classes): `~ x` makes the coefficient of `x`
+#'   random, `~ 1` (or `~ 1 + x`) the intercept as well (an implicit
+#'   intercept does not count). The variables must also be in `formula`:
+#'   each component's coefficient of a random variable is the mean of its
+#'   random parameter (the location, for lognormal parameters), so the
+#'   classes differ in the means of the random parameters, and also in
+#'   their scales (`Component<k>:SD:<variable>`) unless
+#'   `shared = list(rpar = TRUE)` gives all classes the same scales
+#'   (`Shared:SD:<variable>`). See "Random parameters within classes" below.
+#' @param rpardists distributions of the random parameters, as in
+#'   [countreg_rp()]: `"n"` (normal, the default), `"ln"`, `"t"`, `"u"` or
+#'   `"g"`, by name or one value for all.
+#' @param correlated `TRUE` for correlated (normal) random parameters, with
+#'   a Cholesky factor (`Chol:`) in each class.
+#' @param rpar_draws the number of simulation draws of the random
+#'   parameters for each unit (randomly shifted Halton points, a separate
+#'   block for each unit, the same draws for every class). They are
+#'   generated from a seed derived from `seed`.
 #'
 #' @details
 #' ## Estimation
@@ -128,6 +147,33 @@
 #' comparing numbers of components (K versus K + 1); compare such models
 #' with AIC/BIC on the same sample, start stability and held-out
 #' log scores. [regCompTest()] refuses mixture models for this reason.
+#'
+#' ## Random parameters within classes
+#' With `rpar_formula`, the coefficients of some variables also vary
+#' within each class, from unit to unit (a latent-class random-parameters
+#' model). For unit \eqn{u} (a panel with `group_var`, otherwise a row),
+#' \deqn{L_u = \sum_k \pi_{uk} \int \prod_{i \in u} f_k(y_i \mid x_i,
+#' \beta_k + b)\, dF_k(b),}
+#' with \eqn{F_k} the distribution of the random deviations in class
+#' \eqn{k}: mean zero, and the class's scales. The latent classes capture
+#' discrete groups of units, and the random parameters the continuous
+#' variation within each. The integral is simulated with `rpar_draws` draws
+#' per unit, with analytic gradients through the posterior weights of the
+#' draws. Each start runs at most 25 EM iterations (EM converges slowly
+#' here) before the direct maximization finishes it. Every class uses the
+#' same draws of a unit (common random numbers): the class likelihoods stay
+#' unbiased, their simulation errors largely cancel in the posterior class
+#' probabilities, and relabeling the classes leaves the simulated
+#' likelihood unchanged. Different units have independent draws. Predictions and probabilities integrate over the random
+#' parameters (`predict()`, `component_probs()`, `rootogram()`, residuals);
+#' `simulate()` draws new coefficients for every unit. Smooth terms are not
+#' yet available with random parameters.
+#'
+#' Random parameters and classes can both explain heterogeneity, so the
+#' fit can be weakly identified: a class can stand in for a tail of a
+#' random parameter, and a large scale for a missing class. Shared scales
+#' (`shared = list(rpar = TRUE)`) are the more stable choice; compare the
+#' models with AIC/BIC and check the start table.
 #'
 #' ## Interpretation
 #' Classes are a modeling device. A good fit with two components does not
@@ -196,7 +242,8 @@ countreg_mix <- function(formula, data, family = "POISSON", components = 2L,
                          bootstraps = NULL, ndraws = 1500,
                          engine = "quadrature", keep_data = TRUE,
                          verbose = FALSE, control = mixture_control(),
-                         sp = NULL) {
+                         sp = NULL, rpar_formula = NULL, rpardists = NULL,
+                         correlated = FALSE, rpar_draws = 200) {
   .fcr_fm_fit(
     entry = "countreg_mix", call = match.call(), formula = formula,
     data = data, family = family, components = components,
@@ -208,7 +255,8 @@ countreg_mix <- function(formula, data, family = "POISSON", components = 2L,
     max.iters = max.iters, start.vals = start.vals, n_starts = n_starts,
     seed = seed, stderr = stderr, bootstraps = bootstraps, ndraws = ndraws,
     engine = engine, keep_data = keep_data, verbose = verbose,
-    control = control, sp = sp)
+    control = control, sp = sp, rpar_formula = rpar_formula,
+    rpardists = rpardists, correlated = correlated, rpar_draws = rpar_draws)
 }
 
 #' @rdname countreg_mix
@@ -223,7 +271,8 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
                         bootstraps = NULL, ndraws = 1500,
                         engine = "quadrature", keep_data = TRUE,
                         verbose = FALSE, control = lc_control(),
-                        sp = NULL) {
+                        sp = NULL, rpar_formula = NULL, rpardists = NULL,
+                        correlated = FALSE, rpar_draws = 200) {
   .fcr_fm_fit(
     entry = "countreg_lc", call = match.call(), formula = formula,
     data = data, family = family, components = classes,
@@ -235,7 +284,8 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     max.iters = max.iters, start.vals = start.vals, n_starts = n_starts,
     seed = seed, stderr = stderr, bootstraps = bootstraps, ndraws = ndraws,
     engine = engine, keep_data = keep_data, verbose = verbose,
-    control = control, sp = sp)
+    control = control, sp = sp, rpar_formula = rpar_formula,
+    rpardists = rpardists, correlated = correlated, rpar_draws = rpar_draws)
 }
 
 # Evaluate expr with a fixed seed without changing the caller's
@@ -332,6 +382,7 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
                                 !length(a$group_var))) {
     stop("`group_var` must be column name(s).", call. = FALSE)
   }
+  rp <- .fcr_fm_rp_settings(a)
   list(entry = a$entry, formula = stats::as.formula(a$formula),
        families = fam$families, labels = fam$labels, K = K,
        family_spec = fam$specs,
@@ -340,7 +391,7 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
        dis1 = f1, dis2 = f2, offset = a$offset, weights = a$weights,
        group_var = a$group_var, ndraws = a$ndraws, engine = engine,
        method = .fcr_check_method(a$method), max.iters = a$max.iters,
-       n_starts = as.integer(n_starts), control = a$control)
+       n_starts = as.integer(n_starts), control = a$control, rp = rp)
 }
 
 # Build the training problem from the settings and data.
@@ -348,7 +399,8 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
   K <- st$K
   aux <- list(dis1 = st$dis1, dis2 = st$dis2,
               mixing = if (st$mix_mode %in% c("constant", "covariate"))
-                st$mixing_formula)
+                st$mixing_formula,
+              rpar = st$rp$formula)
   prep <- prepare_model_data(st$formula, data, aux_formulas = aux,
                              offset = st$offset, weights = st$weights,
                              group_var = st$group_var)
@@ -383,16 +435,18 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     if (!is.null(des$Z)) Zu <- .fcr_fm_panel_design(des$Z, unit, n_u)
   }
   if (!is.null(Zu)) .fcr_check_design(Zu, "mixing_formula")
+  rp <- .fcr_fm_rp_setup(st, prep, des$X, unit)
   map <- .fcr_fm_map(st$families, des$X, prep$blueprint$terms, des$D1,
                      des$D2, !is.null(st$dis1), !is.null(st$dis2), Zu,
-                     st$shared)
+                     st$shared, rp)
   haltons <- randtoolbox::halton(st$ndraws)
   list(st = st, prep = prep, des = des, y = as.numeric(prep$y), n = n,
+       rp = rp,
        unit = unit, unit_ids = unit_ids, n_u = n_u, Zu = Zu, w_row = w,
        w_unit = w_unit, K = K, map = map, mix_mode = st$mix_mode,
        fixed_mixing = st$fixed_mixing, haltons = haltons,
        normed_haltons = stats::qnorm(haltons), engine = st$engine,
-       analytic = .fcr_fm_analytic(st$families),
+       analytic = !is.null(rp) || .fcr_fm_analytic(st$families),
        blueprint = prep$blueprint)
 }
 
@@ -430,6 +484,7 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
       theta[idx] <- v
     }
   }
+  if (!is.null(spec$rp)) theta <- .fcr_fm_rp_start(theta, spec)
   list(theta = theta, mu = pm$fitted.values)
 }
 
@@ -490,7 +545,13 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
   status <- "iteration limit"
   conv <- FALSE
   it <- 0L
-  while (it < control$em_maxit) {
+  # With random parameters EM converges slowly (the classes and the random
+  # parameters both absorb heterogeneity) and each iteration is costly; a
+  # few iterations find the basin, and the direct maximization with the
+  # analytic gradient finishes
+  maxit <- if (!is.null(spec$rp)) min(control$em_maxit, .fcr_fm_rp_em_maxit)
+    else control$em_maxit
+  while (it < maxit) {
     it <- it + 1L
     th <- .fcr_fm_mstep_mix(theta, spec, e$tau, max(50L, control$mstep_maxit))
     if (is.null(th)) {
@@ -651,6 +712,7 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
 
 # Average expected count of each component over the training rows.
 .fcr_fm_comp_avg_mean <- function(theta, spec) {
+  if (!is.null(spec$rp)) return(.fcr_fm_rp_avg_mean(theta, spec))
   pars <- .fcr_fm_unpack(theta, spec$map)
   w <- spec$w_row
   vapply(seq_len(spec$K), function(k) {
@@ -682,7 +744,8 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
                         offset, weights, group_var, method, max.iters,
                         start.vals, n_starts, seed, stderr, bootstraps,
                         ndraws, engine, keep_data, verbose, control,
-                        sp = NULL) {
+                        sp = NULL, rpar_formula = NULL, rpardists = NULL,
+                        correlated = FALSE, rpar_draws = 200) {
   stderr <- match.arg(tolower(stderr[1]), c("normal", "robust", "boot"))
   if (stderr == "boot") {
     if (is.null(bootstraps)) bootstraps <- 200L
@@ -701,8 +764,16 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     dis_param_formula_2 = dis_param_formula_2, offset = offset,
     weights = weights, group_var = group_var, method = method,
     max.iters = max.iters, n_starts = n_starts, seed = seed,
-    ndraws = ndraws, engine = engine, control = control))
+    ndraws = ndraws, engine = engine, control = control,
+    rpar_formula = rpar_formula, rpardists = rpardists,
+    correlated = correlated, rpar_draws = rpar_draws))
   data <- as.data.frame(data)
+  if (is.null(seed)) seed <- sample.int(.Machine$integer.max, 1L)
+  # The random-parameter draws come from their own seed, derived from
+  # `seed`, so bootstrap refits and predictions regenerate them
+  if (!is.null(st$rp)) {
+    st$rp$seed <- .fcr_with_seed(seed, sample.int(.Machine$integer.max, 2L))[2]
+  }
   spec <- .fcr_fm_setup(st, data)
   prep <- spec$prep
   # Keep the formulas with `.` expanded
@@ -730,7 +801,6 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
   }
   if (!is.null(start.vals)) start.vals <- .fcr_check_start(start.vals,
                                                            spec$map$names)
-  if (is.null(seed)) seed <- sample.int(.Machine$integer.max, 1L)
 
   # ---- Search ----
   search <- .fcr_fm_search(spec, st$n_starts, seed, start.vals, verbose,
@@ -760,6 +830,18 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     if (!is.null(H)) H <- t(Ainv) %*% H %*% Ainv
     if (!is.null(gO)) gO <- gO %*% Ainv
     if (!is.null(g)) g <- as.vector(g %*% Ainv)
+  }
+  # Random-parameter scales: only their absolute values (and, correlated,
+  # the signs of the Cholesky factor's columns) are identified; report
+  # positive standard deviations (a positive diagonal)
+  if (!is.null(spec$rp)) {
+    sg <- .fcr_fm_rp_signs(theta, spec)
+    if (any(sg < 0)) {
+      theta <- theta * sg
+      if (!is.null(H)) H <- H * outer(sg, sg)
+      if (!is.null(gO)) gO <- sweep(gO, 2, sg, `*`)
+      if (!is.null(g)) g <- g * sg
+    }
   }
   names(theta) <- spec$map$names
   if (!is.null(H)) dimnames(H) <- list(spec$map$names, spec$map$names)
@@ -940,7 +1022,11 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     smooth_converged = fit$smooth_converged,
     smooth_iterations = fit$smooth_iterations,
     smooth_coefs = fit$smooth_coefs, edf = fit$edf,
-    df_total = fit$df_total)
+    df_total = fit$df_total,
+    rpar = if (!is.null(spec$rp)) list(
+      formula = st$rp$formula, names = spec$rp$names, dists = spec$rp$dists,
+      correlated = spec$rp$correlated, draws = spec$rp$R,
+      seed = spec$rp$seed, shared = isTRUE(st$shared$rpar)))
   .createFlexCountReg(model = out, data = data, call = call,
                       keep_data = keep_data)
 }

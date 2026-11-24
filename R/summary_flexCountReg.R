@@ -145,20 +145,7 @@ print.summary.flexCountReg <- function(x, digits = x$digits, ...) {
     cat("Offset:", paste(x$offset, collapse = " + "),
         "(coefficient fixed at 1)\n")
   }
-  if (!is.null(x$smooth_table)) {
-    st <- x$smooth_table
-    cat("\nSmooth terms (approximate tests):\n")
-    tb <- data.frame(edf = round(st$edf, 2), k = st$k,
-                     lambda = st$lambda,
-                     `Chi.sq` = round(st$chisq, 2),
-                     `p-value` = format.pval(st$p.value, digits = 3),
-                     check.names = FALSE)
-    rownames(tb) <- ifelse(st$parameter == "mean", st$term,
-                           paste0(st$parameter, ": ", st$term))
-    print(tb)
-    cat("Total effective degrees of freedom:",
-        format(round(x$edf_total, 2)), "\n")
-  }
+  .fcr_print_smooth_table(x)
 
   cat("\nLog-likelihood:", format(round(x$logLik, digits)),
       "| AIC:", format(round(x$AIC, digits)),
@@ -232,4 +219,22 @@ as_tibble.summary.flexCountReg <- function(x, ...) {
   if (is.na(test$LR)) return(NULL)
   list(statistic = test$LR, df = nest$df, p.value = test$p,
        logLik_poisson = ll0, boundary = nest$type == "boundary")
+}
+
+# The smooth-term table of a summary (nothing without smooth terms).
+.fcr_print_smooth_table <- function(x) {
+  st <- x$smooth_table
+  if (is.null(st)) return(invisible(NULL))
+  cat("\nSmooth terms (approximate tests):\n")
+  tb <- data.frame(edf = round(st$edf, 2), k = st$k,
+                   lambda = st$lambda,
+                   `Chi.sq` = round(st$chisq, 2),
+                   `p-value` = format.pval(st$p.value, digits = 3),
+                   check.names = FALSE)
+  rownames(tb) <- ifelse(st$parameter == "mean", st$term,
+                         paste0(st$parameter, ": ", st$term))
+  print(tb)
+  cat("Total effective degrees of freedom:",
+      format(round(x$edf_total, 2)), "\n")
+  invisible(NULL)
 }

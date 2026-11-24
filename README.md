@@ -149,12 +149,14 @@ computer.
   with several reproducible starts, and `component_probs()` /
   `class_probs()` give prior or posterior class probabilities.
 - Smooth terms such as `s(lnaadt)` or `te(lnaadt, lnlength)` can be used
-  in the formulas of `countreg()`, `countreg_rp()`, `countreg_fe()` and
-  the random-effects panel models (`renb()`, `repois()`,
-  `poislind_re()`, `negmultinom()`); the smoothing parameters are
-  selected automatically, `summary()` reports each smooth’s effective
-  degrees of freedom, and `smooth_estimates()` and `plot_smooths()` show
-  the estimated curves with pointwise and simultaneous bands. See
+  in the formulas of every model: `countreg()`, `countreg_rp()`,
+  `countreg_fe()`, the random-effects panel models (`renb()`,
+  `repois()`, `poislind_re()`, `negmultinom()`), and finite mixtures and
+  latent classes (`countreg_mix()`, `countreg_lc()`, including smooth
+  class membership); the smoothing parameters are selected
+  automatically, `summary()` reports each smooth’s effective degrees of
+  freedom, and `smooth_estimates()` and `plot_smooths()` show the
+  estimated curves with pointwise and simultaneous bands. See
   `vignette("smooth-effects", package = "flexCountReg")`.
 - `countreg_fe()` estimates fixed-effects count models: Poisson by the
   conditional likelihood (one dimension) or IRLS with alternating

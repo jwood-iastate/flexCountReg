@@ -29,7 +29,8 @@ countreg_mix(
   engine = "quadrature",
   keep_data = TRUE,
   verbose = FALSE,
-  control = mixture_control()
+  control = mixture_control(),
+  sp = NULL
 )
 
 countreg_lc(
@@ -56,7 +57,8 @@ countreg_lc(
   engine = "quadrature",
   keep_data = TRUE,
   verbose = FALSE,
-  control = lc_control()
+  control = lc_control(),
+  sp = NULL
 )
 }
 \arguments{
@@ -143,6 +145,16 @@ are unrelated to the number of components.}
 \item{verbose}{logical; report the progress of each start.}
 
 \item{control}{a \code{\link[=mixture_control]{mixture_control()}} object.}
+
+\item{sp}{optional fixed smoothing parameters for smooth terms
+(\code{s()}, \code{te()}, ...) in the formulas. Smooth terms may enter the mean,
+the distribution-parameter formulas and the mixing (membership)
+formula. Each component's copy of a smooth (and each membership
+logit's) has its own smoothing parameter; a smooth in a \code{shared} mean
+term is penalized once. The search over starts is unpenalized; the
+selected solution is then refitted by penalized likelihood with the
+smoothing parameters selected as in \code{\link[=countreg]{countreg()}}. Standard errors are
+Bayesian by default; the bootstrap is not available with smooths.}
 }
 \value{
 An object of class \code{c("countreg_mix", "flexCountReg")}

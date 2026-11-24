@@ -95,16 +95,3 @@
     e
   })
 }
-
-# Estimators without penalized fitting would treat smooth bases as ordinary
-# unpenalized columns; they refuse smooth terms instead.
-.fcr_refuse_smooth <- function(fun, ...) {
-  fs <- list(...)
-  if (any(vapply(fs, .fcr_has_smooth, logical(1)))) {
-    stop("Smooth terms (s(), te(), ...) are not yet available in ", fun,
-         "(). They are available in countreg(), countreg_rp(), countreg_fe(), ",
-         "renb(), repois(), poislind_re() and negmultinom().",
-         call. = FALSE)
-  }
-  invisible(NULL)
-}

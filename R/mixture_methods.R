@@ -622,6 +622,8 @@ summary.countreg_mix <- function(object, level = 0.95, ...) {
   s$mix_mode <- m$mix_mode
   s$fixed_mixing <- m$fixed_mixing
   s$info <- m$map$info
+  # Smooth terms are summarized by term (as in summary.flexCountReg())
+  if (length(m$smooth_coefs)) s$info <- s$info[-m$smooth_coefs, , drop = FALSE]
   s$n_units <- m$n_units
   s$latent_class <- inherits(object, "countreg_lc")
   s$n_boot_ambiguous <- m$n_boot_ambiguous
@@ -676,6 +678,7 @@ print.summary.countreg_mix <- function(x, digits = x$digits, ...) {
 
   se_label <- switch(x$vcov_type %||% "hessian",
                      hessian = "observed information (Hessian)",
+                     bayesian = "Bayesian (penalized Hessian)",
                      robust = "robust (sandwich, unit-level scores)",
                      bootstrap = paste0("bootstrapped (", x$n_boot_ok,
                                         " of ", x$bootstraps,
@@ -702,6 +705,7 @@ print.summary.countreg_mix <- function(x, digits = x$digits, ...) {
     cat("Offset:", paste(x$offset, collapse = " + "),
         "(coefficient fixed at 1, all components)\n")
   }
+  .fcr_print_smooth_table(x)
 
   cl <- x$classes
   cat("\n", unit_word, " sizes:\n", sep = "")

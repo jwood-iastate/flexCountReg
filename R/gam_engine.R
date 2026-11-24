@@ -247,7 +247,7 @@
   for (t in gam$terms) {
     key <- paste(t$component, t$smooth, sep = "\r")
     if (!is.null(bases[[key]])) next
-    cmp <- base_cmp(t$component)
+    cmp <- t$base %||% base_cmp(t$component)
     es <- ents[[cmp]]
     e <- es[[which(vapply(es, `[[`, "", "label") == t$smooth)[1]]]
     bases[[key]] <- mats[[cmp]][, e$cols, drop = FALSE]

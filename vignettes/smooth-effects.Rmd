@@ -154,6 +154,18 @@ Fixed-effects models (`countreg_fe()`) accept smooths of variables that
 change within units, such as `s(lnaadt)`. A smooth of a variable that is
 constant within units is absorbed by the fixed effects, and is refused.
 
+Finite mixtures and latent-class models (`countreg_mix()`, `countreg_lc()`)
+give each component its own smooth, and the class membership can also be
+smooth (`mixing_formula = ~ s(x)`, or `membership_formula` in
+`countreg_lc()`):
+
+```{r mixture}
+mx <- countreg_mix(Total_crashes ~ s(lnaadt, k = 8) + offset(lnlength),
+                   data = washington_roads, family = "POISSON",
+                   components = 2, n_starts = 3, seed = 1)
+mx$model$smooth_table[, c("parameter", "term", "edf", "lambda")]
+```
+
 ## 6. Inference and agreement with mgcv
 
 Standard errors are Bayesian by default: the covariance of the estimates is
@@ -175,8 +187,7 @@ freedom are the EDF without the smoothing-parameter correction that
 
 ## 7. Not yet available
 
-Smooth terms in finite mixtures (`countreg_mix()`, `countreg_lc()`); bootstrap standard errors with smooth terms; smooths with
-a `by` variable
+Bootstrap standard errors with smooth terms; smooths with a `by` variable
 in `smooth_estimates()`; random-effect, factor-smooth and spatial bases
 (`bs = "re"`, `"fs"`, `"mrf"`); and the smooth diagnostics (basis-dimension
 checks, concurvity, derivatives) are planned.

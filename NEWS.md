@@ -96,9 +96,18 @@
 * Penalized fits are finished with Newton steps on the penalized Hessian.
   BFGS stopped short of the optimum in directions of low curvature, by
   about 4e-4 in the coefficients of a weakly penalized smooth.
-* `countreg_mix()` and `countreg_lc()` do not yet support smooth terms. They
-  give an error, because they would otherwise fit the bases without a
-  penalty.
+* `countreg_mix()` and `countreg_lc()` accept smooth terms in the mean, the
+  distribution-parameter formulas and the mixing (membership) formula.
+  * Each component's copy of a smooth, and each membership logit's, has its
+    own smoothing parameter.
+  * The multi-start search is unpenalized; the selected, label-aligned
+    solution is then refitted by penalized likelihood.
+  * One component reproduces `countreg()` exactly.
+  * In a simulated two-component Poisson mixture (a sine-shaped and a
+    linear component), the smooths recovered both shapes: a correlation of
+    1.000 with the sine, and a slope of 0.296 for a true 0.3. The class
+    shares were 0.386 and 0.614, for true 0.4 and 0.6.
+  * Every estimator of the package now accepts smooth terms.
 * Not yet available with smooths: bootstrap standard errors, smooths with
   `by` variables in `smooth_estimates()`, the `"re"`, `"fs"` and `"mrf"`
   bases, and smooth diagnostics.

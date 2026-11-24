@@ -219,14 +219,38 @@ test_that("smooths in fixed-effects models match mgcv with dummies", {
                "jackknife")
 })
 
-test_that("estimators without penalized fitting refuse smooth terms", {
+test_that("smooths in finite mixtures and latent classes", {
+  skip_on_cran()
+  skip_if_not_installed("mgcv")
   w <- gam_data()
-  f <- Total_crashes ~ s(lnaadt)
-  expect_error(countreg_mix(f, data = w, family = "POISSON"), "countreg_mix")
-  expect_error(countreg_mix(Total_crashes ~ lnaadt, data = w,
-                            family = "NB2",
-                            dis_param_formula_1 = ~ s(lnaadt)),
-               "countreg_mix")
+  f <- Total_crashes ~ s(lnaadt, k = 8) + offset(lnlength)
+  # One component is the countreg() model
+  m1 <- suppressMessages(countreg_mix(f, data = w, family = "NB2",
+                                      components = 1, n_starts = 1,
+                                      seed = 1))
+  cr <- countreg(f, data = w, family = "NB2")
+  expect_equal(as.numeric(logLik(m1)), as.numeric(logLik(cr)),
+               tolerance = 1e-6)
+  expect_equal(m1$model$smooth_table$edf, cr$model$smooth_table$edf,
+               tolerance = 1e-4)
+  m2 <- suppressMessages(suppressWarnings(countreg_mix(
+    f, data = w, family = "POISSON", components = 2, n_starts = 2,
+    seed = 1)))
+  st <- m2$model$smooth_table
+  expect_identical(st$parameter, c("Component1:mean", "Component2:mean"))
+  expect_identical(m2$model$vcov_type, "bayesian")
+  expect_equal(attr(logLik(m2), "df"), m2$model$df_total)
+  rows <- c(4, 90, 1300)
+  expect_equal(predict(m2, newdata = w[rows, ]), predict(m2)[rows])
+  expect_output(print(summary(m2)), "Smooth terms")
+  lc <- suppressMessages(suppressWarnings(countreg_lc(
+    Total_crashes ~ lnaadt + offset(lnlength), data = w, family = "POISSON",
+    classes = 2, membership_formula = ~ s(lnlength, k = 5), n_starts = 2,
+    seed = 1)))
+  expect_match(lc$model$smooth_table$parameter, "^Mixing:")
+  expect_error(suppressMessages(countreg_mix(
+    f, data = w, family = "POISSON", components = 2, n_starts = 1, seed = 1,
+    stderr = "boot", bootstraps = 3)), "not yet available")
 })
 
 test_that("only calls are smooth terms, not variables named s", {

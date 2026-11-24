@@ -79,6 +79,9 @@ summary.flexCountReg <- function(object, level = 0.95, ...) {
     n_boot_ok = m[["n_boot_ok"]],
     bootstraps = m[["bootstraps"]],
     n_clusters = m[["n_clusters"]],
+    fe_label = m[["fe_method_label"]],
+    fe_dropped = if (!is.null(m[["fe_method_label"]]))
+      sum(lengths(m[["dropped"]] %||% list())),
     logLik = as.numeric(ll),
     AIC = stats::AIC(object),
     BIC = stats::BIC(object),
@@ -102,6 +105,13 @@ print.summary.flexCountReg <- function(x, digits = x$digits, ...) {
   if (!is.null(x$family)) cat(" | family:", .fcr_family_label(x$family))
   if (!is.null(x$method)) cat(" | optimizer:", x$method)
   cat("\n")
+  if (!is.null(x$fe_label)) {
+    cat(x$fe_label, "\n")
+    if (isTRUE(x$fe_dropped > 0)) {
+      cat("Groups dropped (all-zero counts or one observation):",
+          x$fe_dropped, "\n")
+    }
+  }
   if (!is.null(x$iterations)) cat("Iterations:", x$iterations, "\n")
   if (!is.null(x$message)) cat("Convergence:", trimws(x$message), "\n")
   if (isFALSE(x$converged)) {

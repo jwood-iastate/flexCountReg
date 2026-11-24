@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Fixed-effects count models</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Fixed-effects count models</h1>
+
+
+
+<p>Panel count data, such as crashes on the same road segments over
+several years, contain differences between units that the regressors do
+not capture: driver populations, geometry, enforcement. Random-effects
+models (<code>renb()</code>, <code>repois()</code>,
+<code>countreg_rp()</code> with a random intercept) treat these
+differences as draws from a distribution that is independent of the
+regressors. When that is doubtful (busier roads may also be different
+roads) a <strong>fixed-effects</strong> model gives each unit its own
+intercept, so the slopes are estimated only from changes <em>within</em>
+units.</p>
+<p><code>countreg_fe()</code> estimates fixed-effects count models. This
+article shows when to use it, what it can and cannot estimate, and how
+its results compare with pooled and random-effects models.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span></code></pre></div>
+<div id="the-model" class="section level2">
+<h2>1. The model</h2>
+<p>For unit <span class="math inline">\(i\)</span> (here a road segment)
+in period <span class="math inline">\(t\)</span>,</p>
+<p><span class="math display">\[
+E[y_{it} \mid x_{it}, \alpha_i] = \exp(\alpha_i + x_{it}&#39;\beta +
+o_{it}),
+\]</span></p>
+<p>with a fixed effect <span class="math inline">\(\alpha_i\)</span> for
+each unit and an optional offset <span class="math inline">\(o_{it}\)</span>. Nothing is assumed about how
+<span class="math inline">\(\alpha_i\)</span> relates to <span class="math inline">\(x_{it}\)</span>.</p>
+<p><code>countreg_fe()</code> chooses the estimator from the family and
+the number of fixed-effect dimensions:</p>
+<table>
+<colgroup>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Family</th>
+<th align="left">Fixed effects</th>
+<th align="left">Method</th>
+<th align="left">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Poisson</td>
+<td align="left">one (<code>~ site</code>)</td>
+<td align="left">conditional likelihood</td>
+<td align="left">the effects are conditioned out; consistent for fixed T
+with only a correct mean (Wooldridge 1999)</td>
+</tr>
+<tr class="even">
+<td align="left">Poisson</td>
+<td align="left">several (<code>~ site + year</code>)</td>
+<td align="left">IRLS with alternating projections</td>
+<td align="left">the method of <code>fixest::fepois()</code></td>
+</tr>
+<tr class="odd">
+<td align="left">any other</td>
+<td align="left">one</td>
+<td align="left">concentrated likelihood</td>
+<td align="left">each unit’s intercept is solved for given slopes;
+small-T bias in the dispersion</td>
+</tr>
+</tbody>
+</table>
+<p>Poisson fixed effects are the usual first choice: the slopes are
+consistent even when the counts are overdispersed or not Poisson at all,
+as long as the mean is right, and the default cluster-robust standard
+errors account for the overdispersion.</p>
+</div>
+<div id="site-fixed-effects" class="section level2">
+<h2>2. Site fixed effects</h2>
+<p>Here <code>washington_roads</code> has 507 segments, most observed in
+three years. Traffic volume (<code>lnaadt</code>) changes from year to
+year within a segment, but the speed indicator <code>speed50</code> does
+not:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>fe <span class="ot">&lt;-</span> <span class="fu">countreg_fe</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span> <span class="fu">offset</span>(lnlength),</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>                  <span class="at">fixef =</span> <span class="sc">~</span> ID, <span class="at">data =</span> washington_roads)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; 804 row(s) in 273 group(s) with all-zero counts or a single observation were dropped: they carry no information on the slopes.</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; Warning: Regressor(s) without variation within the fixed-effect groups are not</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; identified and were removed: speed50.</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="fu">summary</span>(fe)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; countreg_fe(formula = Total_crashes ~ lnaadt + speed50 + offset(lnlength), </span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;     fixef = ~ID, data = washington_roads)</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; Model: countreg_fe | family: POISSON | optimizer: conditional</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Poisson fixed effects (conditional likelihood) </span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; Groups dropped (all-zero counts or one observation): 273 </span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; Iterations: 4 </span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; Convergence: converged </span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; Coefficients (standard errors: cluster-robust (234 clusters of ID)):</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt;        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; lnaadt   -0.543      0.491    -1.1     0.27</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; Offset: offset(lnlength) (coefficient fixed at 1)</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -735.347 | AIC: 1940.695 | BIC: 3009.189 </span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; N: 697 | panels: 234</span></span></code></pre></div>
+<p>Two things happened before estimation, and both are reported:</p>
+<ul>
+<li><strong>Segments with no crashes in any year were dropped.</strong>
+Their fixed effect would be <span class="math inline">\(-\infty\)</span>; they carry no information on the
+slopes. So were segments observed only once.</li>
+<li><strong><code>speed50</code> was removed.</strong> A regressor that
+is constant within every unit is absorbed by the unit’s fixed effect, so
+its coefficient is not identified. Time-invariant characteristics can
+only be studied with random-effects or pooled models.</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">length</span>(fe<span class="sc">$</span>model<span class="sc">$</span>dropped<span class="sc">$</span>ID)     <span class="co"># segments dropped</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; [1] 273</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>fe<span class="sc">$</span>model<span class="sc">$</span>not_identified         <span class="co"># regressors removed</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;speed50&quot;</span></span></code></pre></div>
+<p>The standard errors are cluster-robust by segment
+(<code>stderr = &quot;cluster&quot;</code>, the default). Other covariance
+matrices are available after the fit:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(fe)))                      <span class="co"># clustered by segment</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt;    lnaadt </span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; 0.4912069</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(fe, <span class="at">type =</span> <span class="st">&quot;hessian&quot;</span>)))    <span class="co"># Poisson model-based</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;    lnaadt </span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 0.6052379</span></span></code></pre></div>
+<p>The model-based standard error is much smaller: it assumes the
+Poisson variance, which these counts exceed.</p>
+</div>
+<div id="site-and-year-fixed-effects" class="section level2">
+<h2>3. Site and year fixed effects</h2>
+<p>Crash counts often share year-to-year changes (weather, reporting,
+the economy). A second fixed-effect dimension absorbs them:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>fe2 <span class="ot">&lt;-</span> <span class="fu">countreg_fe</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> <span class="fu">offset</span>(lnlength),</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                   <span class="at">fixef =</span> <span class="sc">~</span> ID <span class="sc">+</span> Year, <span class="at">data =</span> washington_roads)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; 804 row(s) in 273 group(s) with all-zero counts or a single observation were dropped: they carry no information on the slopes.</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">summary</span>(fe2)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; countreg_fe(formula = Total_crashes ~ lnaadt + offset(lnlength), </span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;     fixef = ~ID + Year, data = washington_roads)</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; Model: countreg_fe | family: POISSON | optimizer: demean</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; Poisson fixed effects (IRLS with alternating projections) </span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Groups dropped (all-zero counts or one observation): 273 </span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; Iterations: 5 </span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; Convergence: converged </span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; Coefficients (standard errors: cluster-robust (234 clusters of ID)):</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt;        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; lnaadt   -0.576      0.483   -1.19     0.23</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; Offset: offset(lnlength) (coefficient fixed at 1)</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -735.118 | AIC: 1944.236 | BIC: 3021.824 </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; N: 697 | panels: 234</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a>fe2<span class="sc">$</span>model<span class="sc">$</span>fixef<span class="sc">$</span>fe2                       <span class="co"># year effects</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt;        2016        2017        2018 </span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt;  0.01735905 -0.03685296  0.01987559</span></span></code></pre></div>
+<p>With few levels, a dimension like <code>Year</code> can also enter
+the formula as a factor; with several high-dimensional effects (sites
+and corridor-years, say), the alternating projections keep the
+computation fast.</p>
+</div>
+<div id="comparison-with-pooled-and-random-effects-models" class="section level2">
+<h2>4. Comparison with pooled and random-effects models</h2>
+<p>The elasticity of crashes with respect to traffic volume from the
+pooled, random-effects and fixed-effects Poisson models:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>f <span class="ot">&lt;-</span> Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> <span class="fu">offset</span>(lnlength)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>pooled <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> washington_roads, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                   <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>, <span class="at">cluster =</span> <span class="sc">~</span> ID)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>re <span class="ot">&lt;-</span> <span class="fu">repois</span>(f, <span class="at">data =</span> washington_roads, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>est <span class="ot">&lt;-</span> <span class="cf">function</span>(m) <span class="fu">c</span>(<span class="at">estimate =</span> <span class="fu">coef</span>(m)[[<span class="st">&quot;lnaadt&quot;</span>]],</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>                     <span class="at">se =</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(m)))[[<span class="st">&quot;lnaadt&quot;</span>]])</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">rbind</span>(<span class="at">pooled =</span> <span class="fu">est</span>(pooled), <span class="at">random_effects =</span> <span class="fu">est</span>(re),</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>            <span class="at">fixed_effects =</span> <span class="fu">est</span>(fe2)), <span class="dv">3</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;                estimate    se</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; pooled            1.196 0.078</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; random_effects    1.144 0.065</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; fixed_effects    -0.576 0.483</span></span></code></pre></div>
+<p>The pooled and random-effects estimates use the differences
+<em>between</em> segments in traffic volume, which are large; the
+fixed-effects estimate uses only the changes <em>within</em> segments
+over three years, which are small, so its standard error is much larger.
+A big gap between the random-effects and fixed-effects estimates
+suggests that the segment effects are related to traffic volume, which
+would bias the random-effects estimate.</p>
+</div>
+<div id="other-families" class="section level2">
+<h2>5. Other families</h2>
+<p>Any family of <code>countreg()</code> (and any family made with
+<code>new_count_family()</code>) can be used with one fixed-effect
+dimension. The negative binomial (NB2) fixed-effects model is the
+dummy-variable NB2, with the unit intercepts concentrated out.</p>
+<p>For the road segments, NB2 fixed effects reduce to the Poisson model:
+once each segment has its own intercept, no overdispersion remains in
+three years of counts, and the estimate of <span class="math inline">\(\alpha\)</span> goes to 0 (the fit warns that the
+likelihood is flat in <code>ln(alpha)</code>). The Poisson fixed-effects
+model of Section 2 is then the right one.</p>
+<p>To show the NB2 model where it matters, simulate 300 units observed
+for 5 periods, with unit effects correlated with <code>x1</code> and
+overdispersed counts (NB2 with <span class="math inline">\(\alpha =
+0.5\)</span>):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">11</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>G <span class="ot">&lt;-</span> <span class="dv">300</span>; n_t <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>sim <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">id =</span> <span class="fu">rep</span>(<span class="fu">seq_len</span>(G), <span class="at">each =</span> n_t),</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>                  <span class="at">t =</span> <span class="fu">rep</span>(<span class="fu">seq_len</span>(n_t), G))</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>a_i <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(G, <span class="dv">0</span>, <span class="fl">0.7</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>sim<span class="sc">$</span>x1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fu">nrow</span>(sim)) <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> a_i[sim<span class="sc">$</span>id]</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>sim<span class="sc">$</span>x2 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fu">nrow</span>(sim))</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>sim<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(<span class="fu">nrow</span>(sim), <span class="at">size =</span> <span class="dv">2</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>                 <span class="at">mu =</span> <span class="fu">exp</span>(<span class="fl">0.5</span> <span class="sc">+</span> a_i[sim<span class="sc">$</span>id] <span class="sc">+</span> <span class="fl">0.6</span> <span class="sc">*</span> sim<span class="sc">$</span>x1 <span class="sc">-</span> <span class="fl">0.4</span> <span class="sc">*</span> sim<span class="sc">$</span>x2))</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>fe_nb <span class="ot">&lt;-</span> <span class="fu">countreg_fe</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2, <span class="at">fixef =</span> <span class="sc">~</span> id, <span class="at">data =</span> sim, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; 55 row(s) in 11 group(s) with all-zero counts or a single observation were dropped: they carry no information on the slopes.</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>fe_nb_jk <span class="ot">&lt;-</span> <span class="fu">countreg_fe</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2, <span class="at">fixef =</span> <span class="sc">~</span> id, <span class="at">data =</span> sim,</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>                        <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">jackknife =</span> <span class="cn">TRUE</span>, <span class="at">time =</span> <span class="st">&quot;t&quot;</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 55 row(s) in 11 group(s) with all-zero counts or a single observation were dropped: they carry no information on the slopes.</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">rbind</span>(<span class="at">truth =</span> <span class="fu">c</span>(<span class="fl">0.6</span>, <span class="sc">-</span><span class="fl">0.4</span>, <span class="fu">log</span>(<span class="fl">0.5</span>)),</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>            <span class="at">NB2_FE =</span> <span class="fu">coef</span>(fe_nb),</span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>            <span class="at">jackknife =</span> <span class="fu">coef</span>(fe_nb_jk)), <span class="dv">3</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;              x1     x2 ln(alpha)</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; truth     0.600 -0.400    -0.693</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; NB2_FE    0.555 -0.416    -1.238</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; jackknife 0.550 -0.420    -0.707</span></span></code></pre></div>
+<p>The slopes are close to the truth, but the dispersion <span class="math inline">\(\ln\alpha\)</span> is underestimated, because the
+fixed effects absorb much of the variation between units. Two cautions
+apply to non-Poisson fixed effects in short panels:</p>
+<ul>
+<li>The slopes have a small bias of order <span class="math inline">\(1/T\)</span> (Allison and Waterman 2002); the
+dispersion has a large one.</li>
+<li><code>jackknife = TRUE</code> applies the split-panel jackknife of
+Dhaene and Jochmans (2015). In simulations like this one, with 200
+units, it removed most of the dispersion bias with 5 or 10 periods but
+did not improve the slopes, and with 3 periods its half-panels are too
+short (a warning is given below 4 periods).</li>
+</ul>
+<p>The Hausman, Hall and Griliches “conditional negative binomial” is a
+different model, whose fixed effect enters the dispersion, not the mean;
+it is not provided.</p>
+</div>
+<div id="predictions" class="section level2">
+<h2>6. Predictions</h2>
+<p>Predictions for a known segment use its estimated fixed effect. A
+segment that was not in the estimation data has no fixed effect, so its
+prediction is <code>NA</code> unless you ask for the mean effect
+explicitly:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> washington_roads[washington_roads<span class="sc">$</span>ID <span class="sc">%in%</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>                         <span class="fu">names</span>(fe2<span class="sc">$</span>model<span class="sc">$</span>fixef<span class="sc">$</span>fe1)[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], ]</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">predict</span>(fe2, <span class="at">newdata =</span> nd)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.3414432 0.3402894 0.3244072 0.3233158 0.3341496 0.3363948</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>new_site <span class="ot">&lt;-</span> nd[<span class="dv">1</span>, ]</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>new_site<span class="sc">$</span>ID <span class="ot">&lt;-</span> <span class="st">&quot;not-in-data&quot;</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">predict</span>(fe2, <span class="at">newdata =</span> new_site)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; 1 row(s) belong to groups not in the estimation data, which have no fixed effect: their predictions are NA (use newgroup = &quot;mean_fe&quot; to use the mean effect).</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="fu">predict</span>(fe2, <span class="at">newdata =</span> new_site, <span class="at">newgroup =</span> <span class="st">&quot;mean_fe&quot;</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; [1] 0.5565084</span></span></code></pre></div>
+</div>
+<div id="agreement-with-other-software" class="section level2">
+<h2>7. Agreement with other software</h2>
+<p>The Poisson estimates, log-likelihoods and dropped groups equal those
+of <code>fixest::fepois()</code>, and the NB2 estimates those of
+<code>fixest::fenegbin()</code> and of <code>MASS::glm.nb()</code> with
+segment dummies. The cluster-robust standard errors use the factor <span class="math inline">\(G/(G-1)\)</span> for <span class="math inline">\(G\)</span> clusters; they equal fixest’s with
+<code>ssc(adj = FALSE)</code>, as fixest by default also multiplies the
+variance by <span class="math inline">\((n-1)/(n-K)\)</span>.</p>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Allison, P.D. and Waterman, R.P. (2002). Fixed-effects negative
+binomial regression models. <em>Sociological Methodology</em>, 32,
+247-265.</p>
+<p>Dhaene, G. and Jochmans, K. (2015). Split-panel jackknife estimation
+of fixed-effect models. <em>Review of Economic Studies</em>, 82(3),
+991-1030.</p>
+<p>Wooldridge, J.M. (1999). Distribution-free estimation of some
+nonlinear panel data models. <em>Journal of Econometrics</em>, 90(1),
+77-97.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

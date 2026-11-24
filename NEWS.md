@@ -47,6 +47,35 @@
 * Families can declare a `score` function in the internal registry; the
   NB1, NB2 and NBP scores are shared by `countreg()` and `countreg_rp()`.
 
+## Fixed-effects count models
+
+* New `countreg_fe()` estimates count models with fixed effects for one or
+  more grouping variables (`fixef = ~ site` or `~ site + year`). It chooses
+  among three estimators:
+  * Poisson with one dimension: the conditional likelihood.
+  * Poisson with several dimensions: IRLS with alternating projections, as
+    in `fixest::fepois()`.
+  * Any other family, including families from `new_count_family()`, with
+    one dimension: the dummy-variable likelihood with the group intercepts
+    concentrated out.
+* Groups with all-zero counts or a single observation are dropped and
+  reported, and regressors without variation within groups are removed
+  with a warning.
+* Standard errors are cluster-robust by the first fixed-effect variable by
+  default. The log-likelihood is that of the dummy-variable model, with
+  degrees of freedom that count the fixed effects.
+* `jackknife = TRUE` applies the split-panel jackknife of Dhaene and
+  Jochmans (2015). In simulations with 200 units it removed most of the NB2
+  dispersion bias with 5 or 10 periods, but did not improve the slopes, and
+  it is unreliable below 4 periods, where a warning is given.
+* `predict()` uses each known group's effect. Groups not in the
+  estimation data give `NA` unless `newgroup = "mean_fe"`.
+* Estimates, log-likelihoods and dropped groups equal those of
+  `fixest::fepois()` (one and two ways) and `fixest::fenegbin()`. The
+  cluster-robust standard errors equal fixest's with `ssc(adj = FALSE)`.
+* New vignette, "Fixed-effects count models"
+  (`vignette("fixed-effects-count-models")`).
+
 ## Cluster-robust standard errors and the sandwich package
 
 * `countreg()` and `countreg_rp()` gain `stderr = "cluster"` with
@@ -834,6 +863,11 @@ Changed results are marked **(changed)**.
   misclassified).
 
 ## Documentation
+
+* The pkgdown site renders mathematics with MathJax
+  (`template: math-rendering: mathjax`). The equations of help pages
+  (`\eqn{}`, `\deqn{}`) and articles were shown as raw LaTeX, for example
+  in `?countreg_mix`.
 
 * The package description (DESCRIPTION) now summarizes the current
   scope: the 28 count families and their distribution functions,

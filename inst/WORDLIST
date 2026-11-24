@@ -23,6 +23,7 @@ CMD
 CMRG
 Cawthorn
 Conde
+Correia
 Countr
 DELAPORTE
 DPO
@@ -34,6 +35,7 @@ Demetrio
 Deprecations
 Desmognathus
 Dev
+Dhaene
 Drayer
 EB
 Econometrica
@@ -55,6 +57,7 @@ Gelbach
 Gourieroux
 Griliches
 Grün
+Guimaraes
 Gyrinophilus
 HSIS
 HYPERPOIS
@@ -73,6 +76,7 @@ ICTCT
 IG
 IRLS
 Jackman
+Jochmans
 Jorgensen
 Kharrat
 Klakattawi
@@ -92,6 +96,7 @@ MCSEs
 MGF
 MGFs
 MSLE
+MathJax
 McHale
 McLachlan
 Modelling
@@ -153,10 +158,12 @@ Underreporting
 Vail
 Vinciotti
 Vose
+Waterman
 Wedel
 Weizhen
 Willmot
 Winkelmann
+Wooldridge
 Yu
 ZINB
 Zamani
@@ -165,6 +172,7 @@ Zhang
 Zhao
 Zou
 Zvi
+Zylkin
 aap
 additively
 al
@@ -208,6 +216,8 @@ et
 exponentiate
 extrema
 favour
+fixest
+fixest's
 flexCountReg's
 fuscus
 ge

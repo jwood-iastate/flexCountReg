@@ -240,6 +240,15 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     modtype <- "countreg" 
   }
   
+  if (modtype == "countreg_fe") {
+    if (type != "response" || interval != "none") {
+      stop("countreg_fe() models give type = \"response\" predictions ",
+           "without intervals.", call. = FALSE)
+    }
+    return(.fcr_fe_predict(object, data,
+                           additional_args$newgroup %||% "none"))
+  }
+
   if (interval != "none") {
     if (modtype != "countreg") {
       stop("Intervals are available for countreg() models.", call. = FALSE)

@@ -185,12 +185,82 @@ ignore the uncertainty in $\lambda$), and the log-likelihood's degrees of
 freedom are the EDF without the smoothing-parameter correction that
 `mgcv::logLik.gam()` adds.
 
-## 7. Not yet available
+## 7. More kinds of smooth
 
-Bootstrap standard errors with smooth terms; smooths with a `by` variable
-in `smooth_estimates()`; random-effect, factor-smooth and spatial bases
-(`bs = "re"`, `"fs"`, `"mrf"`); and the smooth diagnostics (basis-dimension
-checks, concurvity, derivatives) are planned.
+Any smooth class of mgcv can be used. Some that are often useful for count
+data:
+
+* `s(lnaadt, by = speed_group)`, with a factor `by`: a separate curve for
+  each level (include the factor itself as a main effect);
+* `s(year, by = lnaadt)`, with a numeric `by`: a **varying coefficient**,
+  the effect of `lnaadt` changing smoothly over the years;
+* `s(site, bs = "re")`: Gaussian random intercepts for the levels of a
+  factor, written as a penalized smooth;
+* `s(lnaadt, corridor, bs = "fs")`: each corridor's own curve, shrunk
+  towards a common one;
+* `s(zone, bs = "mrf", xt = list(nb = nb))`: a spatial effect of areas that
+  is smoothed between neighboring areas (`nb` lists each area's
+  neighbors).
+
+```{r by}
+washington_roads$speed_group <- factor(washington_roads$speed50,
+                                       labels = c("other", "50 mph"))
+mb <- countreg(Total_crashes ~ s(lnaadt, by = speed_group, k = 6) +
+                 speed_group + offset(lnlength),
+               data = washington_roads, family = "NB2")
+mb$model$smooth_table[, c("term", "edf", "p.value")]
+```
+
+```{r by-plot, fig.width = 7, fig.height = 3.5}
+op <- par(mfrow = c(1, 2))
+plot_smooths(mb)
+par(op)
+```
+
+## 8. Checking smooth terms
+
+**Basis dimension.** Each smooth has a maximum flexibility set by `k`.
+`smooth_check()` compares the residuals of neighboring observations,
+ordered by the smooth's covariate, with the overall residual variance. It
+uses the randomized quantile residuals, which are standard normal for a
+correct count model. A k-index clearly below 1 with a small p-value means
+the residuals still follow the covariate, and a larger `k` should be tried:
+
+```{r check}
+small <- countreg(Total_crashes ~ s(lnaadt, k = 4) + offset(lnlength),
+                  data = washington_roads, family = "NB2")
+smooth_check(small)
+```
+
+**Concurvity.** `concurvity_fcr()` reports how much of each smooth the
+other terms of its linear predictor can reproduce (0 to 1). Values near 1
+mean the smooth's shape is poorly determined.
+
+```{r concurvity}
+concurvity_fcr(m2)
+```
+
+**Derivatives.** `plot_derivatives()` shows where a smooth is increasing or
+decreasing, with pointwise and simultaneous bands:
+
+```{r derivatives}
+plot_derivatives(m)
+```
+
+**Calibration.** A smooth can fit the mean and still miss the zeros or the
+dispersion. `calibration_by()` compares observed and predicted means,
+probabilities of zero and variances within quantile groups of a covariate:
+
+```{r calibration}
+calibration_by(m, "lnaadt", groups = 5)
+```
+
+Two-variable smooths can be drawn as surfaces masked away from the data
+with `plot_surface()`.
+
+## 9. Not yet available
+
+Bootstrap standard errors with smooth terms are not yet available.
 
 ## References
 

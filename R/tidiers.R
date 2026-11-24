@@ -92,6 +92,7 @@ generics::augment
   set(":(St\\.Dev|Spread)$", "random_scale")
   set("^Chol:", "random_cholesky")
   set("^Het(Mean|Var):", "heterogeneity")
+  set("^(sd|cor)_.*\\|", "random_effects")
   out
 }
 

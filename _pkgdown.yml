@@ -22,6 +22,7 @@ articles:
   - zeros-hurdles-and-sampling
   - underreporting-and-identification
   - random-parameters-and-panels
+  - hierarchical-count-models
   - fixed-effects-count-models
 - title: Finite mixtures and latent classes
   contents:
@@ -45,6 +46,12 @@ reference:
   contents:
   - countreg
   - countreg_rp
+  - countreg_hier
+  - countreg_hier-effects
+  - predict.countreg_hier
+  - simulate.countreg_hier
+  - confint.countreg_hier
+  - re_lrtest
   - countreg_fe
   - cre_test
   - count_families
@@ -72,6 +79,12 @@ reference:
   - flexCountReg-methods
   - smooth_estimates
   - plot_smooths
+  - smooth_derivatives
+  - plot_derivatives
+  - plot_surface
+  - smooth_check
+  - concurvity_fcr
+  - calibration_by
   - vcov.flexCountReg
   - estfun.flexCountReg
   - flexCountReg-tidiers

@@ -22,6 +22,7 @@ CBO
 CMD
 CMRG
 Cawthorn
+Concurvity
 Conde
 Correia
 Countr
@@ -107,6 +108,7 @@ Morina
 Multiway
 Muncy
 Mundlak
+Mundlak's
 NBGE
 NBL
 NBP
@@ -195,6 +197,7 @@ codecov
 collinear
 concurvity
 countreg
+covariate's
 cureplots
 dcom
 df
@@ -227,12 +230,15 @@ fixest
 fixest's
 flexCountReg's
 fuscus
+gamm
 ge
+glmmTMB's
 grey
 gsl
 halton
 headwater
 hermite
+ij
 indvar
 infty
 integrand
@@ -244,6 +250,7 @@ lage
 lamW
 lbase
 le
+lme
 lmtest
 ln
 logLik
@@ -263,6 +270,7 @@ monticola
 multiway
 nd
 ndraws
+nlme
 noninteger
 nonlinearly
 nonpositive

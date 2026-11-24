@@ -29,6 +29,10 @@ issues, including:
   analytic gradients, separate simulation draws for each panel, and
   exact, simulated and Empirical Bayes (observation-specific)
   predictions;
+- hierarchical (mixed-effects) models with normal random effects at
+  several levels, nested or crossed, for every count family
+  (`countreg_hier()`, with lme4-style terms such as
+  `(1 + lnaadt | county) + (1 | year)`);
 - random-effects panel models (negative binomial, Poisson-Lindley,
   negative multinomial) and fixed-effects models (`countreg_fe()`:
   Poisson with any number of fixed-effect dimensions, or any family with
@@ -155,8 +159,10 @@ computer.
   latent classes (`countreg_mix()`, `countreg_lc()`, including smooth
   class membership); the smoothing parameters are selected
   automatically, `summary()` reports each smooth’s effective degrees of
-  freedom, and `smooth_estimates()` and `plot_smooths()` show the
-  estimated curves with pointwise and simultaneous bands. See
+  freedom, `smooth_estimates()` and `plot_smooths()` show the estimated
+  curves with pointwise and simultaneous bands, and `smooth_check()`,
+  `concurvity_fcr()`, `plot_derivatives()`, `plot_surface()` and
+  `calibration_by()` check them. See
   `vignette("smooth-effects", package = "flexCountReg")`.
 - `countreg_fe()` estimates fixed-effects count models: Poisson by the
   conditional likelihood (one dimension) or IRLS with alternating
@@ -653,6 +659,8 @@ The vignettes cover the main workflows. Start with
   `vignette("underreporting-and-identification", package = "flexCountReg")`
 - Random parameters and panel models:
   `vignette("random-parameters-and-panels", package = "flexCountReg")`
+- Hierarchical count models:
+  `vignette("hierarchical-count-models", package = "flexCountReg")`
 - Fixed-effects count models:
   `vignette("fixed-effects-count-models", package = "flexCountReg")`
 

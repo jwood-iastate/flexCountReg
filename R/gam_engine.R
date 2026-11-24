@@ -252,8 +252,8 @@
     e <- es[[which(vapply(es, `[[`, "", "label") == t$smooth)[1]]]
     bases[[key]] <- mats[[cmp]][, e$cols, drop = FALSE]
     info[[key]] <- list(term = t$smooth, parameter = t$label,
-                        component = t$component, idx = t$idx, sm = e$sm,
-                        vars = e$vars, by = e$by)
+                        component = t$component, base = cmp, idx = t$idx,
+                        sm = e$sm, vars = e$vars, by = e$by)
   }
   list(table = .fcr_smooth_table(gam, bases), info = unname(info))
 }

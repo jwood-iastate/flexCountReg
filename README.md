@@ -155,8 +155,10 @@ computer.
   latent classes (`countreg_mix()`, `countreg_lc()`, including smooth
   class membership); the smoothing parameters are selected
   automatically, `summary()` reports each smooth’s effective degrees of
-  freedom, and `smooth_estimates()` and `plot_smooths()` show the
-  estimated curves with pointwise and simultaneous bands. See
+  freedom, `smooth_estimates()` and `plot_smooths()` show the estimated
+  curves with pointwise and simultaneous bands, and `smooth_check()`,
+  `concurvity_fcr()`, `plot_derivatives()`, `plot_surface()` and
+  `calibration_by()` check them. See
   `vignette("smooth-effects", package = "flexCountReg")`.
 - `countreg_fe()` estimates fixed-effects count models: Poisson by the
   conditional likelihood (one dimension) or IRLS with alternating

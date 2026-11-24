@@ -57,9 +57,11 @@
     `het_var_formula` and the distribution-parameter formulas.
   * Smooth bases are built once on the estimation rows and rebuilt for new
     data with the same knots.
-* Fitting is by penalized maximum likelihood. The smoothing parameters are
-  selected by generalized Fellner-Schall updates (Wood and Fasiolo 2017),
-  or fixed with the new argument `sp`.
+* Fitting is by penalized maximum likelihood, finished with Newton steps
+  on the penalized Hessian so that weakly penalized smooths reach the
+  optimum. The smoothing parameters are selected by generalized
+  Fellner-Schall updates (Wood and Fasiolo 2017), or fixed with the new
+  argument `sp`.
 * Standard errors are Bayesian, (H + S_lambda)^-1, by default; robust and
   cluster-robust versions are available.
 * `summary()` reports each smooth by its effective degrees of freedom, with
@@ -93,9 +95,6 @@
   * With the same smoothing parameters, the estimates equal
     `mgcv::gam()` with group dummies: to 1e-8 for one dimension, 1e-14 for
     two, and 1e-5 for NB2 with the dispersion fixed.
-* Penalized fits are finished with Newton steps on the penalized Hessian.
-  BFGS stopped short of the optimum in directions of low curvature, by
-  about 4e-4 in the coefficients of a weakly penalized smooth.
 * `countreg_mix()` and `countreg_lc()` accept smooth terms in the mean, the
   distribution-parameter formulas and the mixing (membership) formula.
   * Each component's copy of a smooth, and each membership logit's, has its
@@ -108,11 +107,29 @@
     1.000 with the sine, and a slope of 0.296 for a true 0.3. The class
     shares were 0.386 and 0.614, for true 0.4 and 0.6.
   * Every estimator of the package now accepts smooth terms.
-* Not yet available with smooths: bootstrap standard errors, smooths with
-  `by` variables in `smooth_estimates()`, the `"re"`, `"fs"` and `"mrf"`
-  bases, and smooth diagnostics.
+* All mgcv smooth classes can be used, among them `by` smooths (factor
+  `by` gives a curve per level; numeric `by` gives a varying coefficient),
+  random-effect (`bs = "re"`), factor-smooth (`bs = "fs"`) and Markov
+  random field (`bs = "mrf"`, with `xt = list(nb = nb)`) smooths. With
+  fixed smoothing parameters they reproduce `mgcv::gam()`.
+  * Objects in a smooth's arguments, such as the neighborhood list, are
+    taken from the formula's environment, not from the data.
+  * `smooth_estimates()` and `plot_smooths()` show every smooth type: curves
+    per level, factor effects with intervals, and the coefficient of a
+    numeric `by`.
+* New diagnostics for smooth terms:
+  * `smooth_check()`: a basis-dimension check (a k-index with a permutation
+    p-value) computed from randomized quantile residuals.
+  * `concurvity_fcr()`: the share of each smooth that the other terms can
+    reproduce, observed and worst case.
+  * `smooth_derivatives()` and `plot_derivatives()`: derivatives with
+    pointwise and simultaneous bands.
+  * `plot_surface()`: two-variable smooths, masked away from the data.
+  * `calibration_by()`: observed and predicted means, probabilities of zero
+    and variances by quantile groups of a covariate.
 * New vignette, "Smooth effects: generalized additive count models"
   (`vignette("smooth-effects")`).
+* Bootstrap standard errors are not yet available with smooth terms.
 
 ## Fixed-effects count models
 
@@ -367,7 +384,7 @@
 
 ## New regression families
 
-* `countreg()` and `countreg.rp()` gain the families `"DW"`, `"DPO"`,
+* `countreg()` and `countreg_rp()` gain the families `"DW"`, `"DPO"`,
   `"DELAPORTE"`, `"HERMITE"` (order 2), `"HERMITE3"`, `"HERMITE4"`,
   `"HYPERPOIS"`, `"GAMMACOUNT"`, `"PA"` (Poisson-Tweedie with power 1.5) and
   `"NBGE"`. All are parameterized by the mean, so coefficients are effects on
@@ -382,7 +399,7 @@
   Poisson are reported for DPO, HYPERPOIS and GAMMACOUNT (interior
   restriction). Underreporting (binomial thinning) is available for
   DELAPORTE, NBGE, HERMITE and PA.
-* `countreg.rp()` uses family-specific starting values for the distribution
+* `countreg_rp()` uses family-specific starting values for the distribution
   parameters when the registry provides them (the new families start at
   their Poisson or geometric limit rather than at log-scale -2).
 
@@ -580,7 +597,7 @@
   (usually closer to the optimum).
 * `predict()` errors when an offset column used in fitting is missing from
   `newdata`, instead of silently setting the offset to 0.
-* `countreg.rp()`: heterogeneity in means now follows Wood and Gayah (2025,
+* `countreg_rp()`: heterogeneity in means now follows Wood and Gayah (2025,
   Eq. 2). Each random parameter has its own coefficient for each variable in
   `het_mean_formula` (named `HetMean:<parameter>:<variable>`), and the effect
   is additive (on the log scale for lognormal parameters; multiplicative for
@@ -588,19 +605,19 @@
   coefficient vector multiplied every random parameter's mean. Estimates from
   models with `het_mean_formula` change; saved fits still predict with their
   original specification.
-* `countreg.rp()`: uniform random parameters now span mu +/- St.Dev (draws
+* `countreg_rp()`: uniform random parameters now span mu +/- St.Dev (draws
   `2u - 1`), matching the paper and the Exact prediction. Previously the draws
   spanned mu +/- St.Dev/2, so estimated uniform St.Dev values are now half as
   large. `predict()` converts saved uniform fits automatically (with a
   one-time message).
-* `countreg.rp()`: `rpardists` is matched to the random parameters by name
+* `countreg_rp()`: `rpardists` is matched to the random parameters by name
   (not position) and validated. An intercept in both `formula` and
   `rpar_formula` (an unidentified model) is an error; the intercept implied by
   `rpar_formula` is not a random parameter unless the fixed formula has no
   intercept. An invalid `panel_id`, `family` or `method` is an error.
-* `countreg.rp()`: `weights` now weight the panel log-likelihood (frequency
+* `countreg_rp()`: `weights` now weight the panel log-likelihood (frequency
   weights for whole panels) instead of each row's probability.
-* `countreg.rp()`: the mixing distribution of PLN, PGE, PLL and PW families
+* `countreg_rp()`: the mixing distribution of PLN, PGE, PLL and PW families
   uses its own Halton dimension; it previously reused the first random
   parameter's draws, which made the two perfectly correlated.
 * `predict(method = "Exact")` returns `Inf` (with a warning) where the
@@ -672,7 +689,7 @@
 * `predict()` sums multiple offset columns and uses formula offsets.
 * `predict()` for PLL models now includes the exp(sigma^2 / 2) lognormal mean
   factor, as it already did for PLN.
-* `countreg.rp()` now stores its offset, so `predict()` uses it. Simulated
+* `countreg_rp()` now stores its offset, so `predict()` uses it. Simulated
   predictions now include heterogeneity in means and variances.
 
 ## Bug fixes (distributions and panel models)
@@ -696,11 +713,11 @@
   missing values are removed consistently, formula offsets work (giving both a
   formula offset and `offset` is an error), and starting values use the
   offset.
-* `countreg.rp()` uses the shared data preparation (formula offsets, missing
+* `countreg_rp()` uses the shared data preparation (formula offsets, missing
   values, numeric weights), starts gamma random parameters from a positive
   mean, averages panel likelihoods over draws on the log scale, and reports
   convergence.
-* `predict(method = "Exact")` for `countreg.rp()` includes heterogeneity in
+* `predict(method = "Exact")` for `countreg_rp()` includes heterogeneity in
   means and variances.
 
 ## Further bug fixes and changed results
@@ -708,7 +725,7 @@
 Changed results are marked **(changed)**.
 
 * **Weights for the panel estimators.** `renb()` and `poisLind.re()` accept
-  `weights`, as `countreg()` and `countreg.rp()` do.
+  `weights`, as `countreg()` and `countreg_rp()` do.
   In panel models these are frequency weights of the panels (constant
   within a panel): a panel with weight w counts as w independent panels in
   the log-likelihood, the robust covariance, BIC and the bootstrap. Fits
@@ -738,7 +755,7 @@ Changed results are marked **(changed)**.
 * **Mixture families (changed).** The PLN, PGE, PW and PLL probabilities
   are computed on the log scale by deterministic adaptive quadrature over the
   log of the mixing variable (`engine = "quadrature"`, the new default of
-  the d/p/q functions, `countreg()` and `countreg.rp()`). Averaging over
+  the d/p/q functions, `countreg()` and `countreg_rp()`). Averaging over
   1500 Halton draws was badly biased in the tails: for PGE with shape 1
   (geometric with mean 1) and y = 1000 it gave log P = -3847 instead of
   -693.8. The new values agree with exact special cases (PGE with shape 1
@@ -829,7 +846,7 @@ Changed results are marked **(changed)**.
   starting values, the likelihood and predictions now use one packing.
   Estimates and predictions of earlier fits were internally consistent;
   only their labels were wrong.
-* `countreg.rp()` rejects a variable in both `formula` and `rpar_formula`
+* `countreg_rp()` rejects a variable in both `formula` and `rpar_formula`
   when its random parameter is normal, uniform or triangular (only the sum
   of the fixed coefficient and the random mean is identified). Lognormal
   and gamma random parameters with a fixed shift are still allowed.
@@ -846,7 +863,7 @@ Changed results are marked **(changed)**.
 * Frequency weights now give the same results as expanding the data: the
   robust (sandwich) covariance uses sum(w s s') instead of sum(w^2 s s'),
   and BIC uses the sum of the weights (of rows, or of panels in panel
-  models) as the sample size. `countreg.rp()` weights that vary within a
+  models) as the sample size. `countreg_rp()` weights that vary within a
   panel are an error (they were silently replaced by the first weight of
   the panel).
 * All count p-functions (`pplind()`, `ppinvgaus()`, `ppinvgamma()`,
@@ -874,7 +891,7 @@ Changed results are marked **(changed)**.
   finite average of draws. `rp_mgf()` handles zero-scale lognormal and gamma
   coefficients exactly and computes uniform and triangular MGFs on the log
   scale.
-* `countreg.rp()` has a `mix_draws` argument for the inner integration of
+* `countreg_rp()` has a `mix_draws` argument for the inner integration of
   the PLN, PGE, PLL and PW families (default `min(ndraws, 200)`), so the
   cost is proportional to `ndraws * mix_draws` instead of `ndraws^2`.
   Scrambled Halton draws are generated from a seed stored in the fit, so
@@ -959,7 +976,7 @@ Changed results are marked **(changed)**.
   parameter descriptions, the RENB density, the Sichel reference (Zou, Lord
   and Zhang, 2012) and several typos. `?countreg` no longer claims that an LR
   test is printed; see `regCompTest()`.
-* `?countreg.rp` documents each random-parameter distribution's scale, the
+* `?countreg_rp` documents each random-parameter distribution's scale, the
   heterogeneity specification and the lognormal caveat.
 * `?renb` states that the marginal variance exists only for a > 2 (it is
   infinite for the legal values 1 < a <= 2).
@@ -1009,7 +1026,7 @@ Changed results are marked **(changed)**.
 * Internally, each count family is defined once in a family registry
   (`R/families.R`), which makes adding a family a one-file change.
 
-* `predict(method = "Individual")` (alias `"EB"`) for `countreg.rp()` models
+* `predict(method = "Individual")` (alias `"EB"`) for `countreg_rp()` models
   now computes Empirical Bayes observation-specific predictions following
   Wood and Gayah (2025), weighting each draw by the likelihood of the unit's
   observed outcomes. Previously it returned the simulated predictions.
@@ -1043,14 +1060,14 @@ Changed results are marked **(changed)**.
 * `simulate()` draws responses from fitted `countreg()` models (all
   families, including underreporting).
 * Every estimator stores one covariance matrix (`vcov()`), and `renb()`,
-  `poisLind.re()` and `countreg.rp()` gain `stderr = c("normal",
+  `poisLind.re()` and `countreg_rp()` gain `stderr = c("normal",
   "robust", "boot")`. Robust standard errors of panel models are clustered by
-  panel; bootstraps resample whole panels. `countreg.rp()` gains
+  panel; bootstraps resample whole panels. `countreg_rp()` gains
   `bootstraps`.
 * All estimators gain `keep_data`; `keep_data = FALSE` does not store the
   training data.
 * `countreg_rp()` and `poislind_re()` are snake_case names for
-  `countreg.rp()` and `poisLind.re()`.
+  `countreg_rp()` and `poisLind.re()`.
 * For fitted models, `AIC()` and `BIC()` replace `myAIC()` and `myBIC()`.
 
 # flexCountReg 0.1.1

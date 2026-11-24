@@ -72,6 +72,12 @@ reference:
   - flexCountReg-methods
   - smooth_estimates
   - plot_smooths
+  - smooth_derivatives
+  - plot_derivatives
+  - plot_surface
+  - smooth_check
+  - concurvity_fcr
+  - calibration_by
   - vcov.flexCountReg
   - estfun.flexCountReg
   - flexCountReg-tidiers

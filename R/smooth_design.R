@@ -95,3 +95,16 @@
     e
   })
 }
+
+# Data columns a formula needs: for a formula with smooth terms, those of
+# its parametric part and the smooths' variables and `by` variables (not
+# objects in their arguments, such as the neighborhood list in
+# s(region, bs = "mrf", xt = list(nb = nb))).
+.fcr_formula_vars <- function(fml) {
+  if (is.null(fml)) return(character(0))
+  if (!.fcr_has_smooth(fml)) return(all.vars(stats::as.formula(fml)))
+  sp <- .fcr_smooth_split(fml)
+  sv <- unlist(lapply(sp$specs, function(s) c(s$term,
+    if (!identical(s$by, "NA")) s$by)))
+  unique(c(all.vars(sp$pf), sv))
+}

@@ -15,7 +15,7 @@ NULL
 # All variable names used in a set of (possibly NULL) formulas.
 .fcr_vars <- function(...) {
   fs <- Filter(Negate(is.null), list(...))
-  unique(unlist(lapply(fs, function(f) all.vars(stats::as.formula(f)))))
+  unique(unlist(lapply(fs, .fcr_formula_vars)))
 }
 
 # TRUE when a formula contains an offset() term.
@@ -130,7 +130,7 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
     }
   }
 
-  vars <- unique(c(all.vars(formula),
+  vars <- unique(c(.fcr_formula_vars(formula),
                    do.call(.fcr_vars, unname(aux_formulas)),
                    offset, w_col, group_var))
   miss <- setdiff(vars, names(data))
@@ -244,7 +244,7 @@ forge_new_data <- function(blueprint, new_data) {
   new_data <- as.data.frame(new_data)
   tt <- stats::delete.response(blueprint$terms)
   need <- unique(c(all.vars(tt), blueprint$offset_cols,
-                   unlist(lapply(blueprint$aux_formulas, all.vars))))
+                   unlist(lapply(blueprint$aux_formulas, .fcr_formula_vars))))
   miss <- setdiff(need, names(new_data))
   if (length(miss)) {
     stop("`newdata` is missing required column(s): ", toString(miss),

@@ -64,25 +64,15 @@ smooth_estimates <- function(object, term = NULL, n = 100, level = 0.95,
     set.seed(seed)
   }
   out <- lapply(info, function(s) {
-    vars <- s$vars
-    if (length(vars) > 2L || !is.null(s$by)) {
-      warning("Skipping ", s$term, ": only smooths of one or two ",
-              "variables without `by` are evaluated.", call. = FALSE)
-      return(NULL)
-    }
     if (is.null(d)) {
       stop("The model was fitted with `keep_data = FALSE`; the observed ",
            "range of the smooth variables is not available.", call. = FALSE)
     }
-    rng <- lapply(vars, function(v) range(d[[v]], na.rm = TRUE))
-    grid <- if (length(vars) == 1L) {
-      stats::setNames(data.frame(seq(rng[[1]][1], rng[[1]][2],
-                                     length.out = n)), vars)
-    } else {
-      m <- round(sqrt(n) * 3)
-      g <- expand.grid(seq(rng[[1]][1], rng[[1]][2], length.out = m),
-                       seq(rng[[2]][1], rng[[2]][2], length.out = m))
-      stats::setNames(g, vars)
+    grid <- .fcr_smooth_grid(s, d, n)
+    if (is.null(grid)) {
+      warning("Skipping ", s$term, ": smooths of more than two numeric ",
+              "variables are not evaluated.", call. = FALSE)
+      return(NULL)
     }
     Xg <- mgcv::PredictMat(s$sm, grid)
     bi <- b[s$idx]
@@ -94,8 +84,10 @@ smooth_estimates <- function(object, term = NULL, n = 100, level = 0.95,
     sims <- L %*% matrix(stats::rnorm(length(bi) * nsim), length(bi))
     dev <- abs(Xg %*% sims) / pmax(se, .Machine$double.eps)
     crit <- stats::quantile(apply(dev, 2, max), level, names = FALSE)
-    data.frame(parameter = s$parameter, term = s$term, grid,
-               fit = fit, se = se, lwr = fit - z * se, upr = fit + z * se,
+    keep <- intersect(c(s$vars, s$by), names(grid))
+    data.frame(parameter = s$parameter, term = s$term,
+               grid[keep], fit = fit, se = se,
+               lwr = fit - z * se, upr = fit + z * se,
                slwr = fit - crit * se, supr = fit + crit * se,
                stringsAsFactors = FALSE, check.names = FALSE)
   })
@@ -144,33 +136,104 @@ plot_smooths <- function(object, term = NULL, n = 100, level = 0.95,
     s <- Filter(function(z) z$term == keys$term[r] &&
                   z$parameter == keys$parameter[r], info)[[1]]
     vars <- s$vars
+    is_fac <- vapply(vars, function(v) !is.numeric(e[[v]]), logical(1))
+    num <- vars[!is_fac]
     ylab <- if (keys$parameter[r] == "mean") "Effect on log mean" else
       paste("Effect on", keys$parameter[r])
+    # A numeric `by` variable: the curve is that variable's coefficient
+    if (!is.null(s$by) && is.numeric(d[[s$by]])) {
+      ylab <- paste("Coefficient of", s$by)
+    }
     main <- if (keys$parameter[r] == "mean") keys$term[r] else
       paste0(keys$parameter[r], ": ", keys$term[r])
-    if (length(vars) == 1L) {
-      x <- e[[vars]]
+    if (length(num) == 0L) {
+      # Random effects or a Markov random field: estimates by level
+      lev <- as.character(e[[vars[1]]])
+      o <- order(e$fit)
+      yy <- seq_along(o)
+      graphics::plot(e$fit[o], yy, xlim = range(e$lwr, e$upr, finite = TRUE),
+                     yaxt = "n", pch = 19, xlab = ylab, ylab = "",
+                     main = main, ...)
+      graphics::segments(e$lwr[o], yy, e$upr[o], yy)
+      graphics::abline(v = 0, lty = 3)
+      if (length(lev) <= 40L) {
+        graphics::axis(2, at = yy, labels = lev[o], las = 1,
+                       cex.axis = 0.7)
+      }
+    } else if (length(num) == 1L && any(is_fac)) {
+      # Factor-smooth interaction: one curve per level
+      fv <- vars[is_fac][1]
+      levs <- unique(as.character(e[[fv]]))
+      cols <- grDevices::hcl.colors(length(levs), "Dark 3")
+      graphics::plot(e[[num]], e$fit, type = "n",
+                     ylim = range(e$fit, finite = TRUE), xlab = num,
+                     ylab = ylab, main = main, ...)
+      for (j in seq_along(levs)) {
+        sel <- as.character(e[[fv]]) == levs[j]
+        graphics::lines(e[[num]][sel], e$fit[sel], col = cols[j], lwd = 2)
+      }
+      if (length(levs) <= 10L) {
+        graphics::legend("topleft", legend = levs, col = cols, lwd = 2,
+                         bty = "n", cex = 0.8, title = fv)
+      }
+    } else if (length(num) == 1L) {
+      x <- e[[num]]
       graphics::plot(x, e$fit, type = "n",
                      ylim = range(e$slwr, e$supr, finite = TRUE),
-                     xlab = vars, ylab = ylab, main = main, ...)
+                     xlab = num, ylab = ylab, main = main, ...)
       graphics::polygon(c(x, rev(x)), c(e$lwr, rev(e$upr)),
                         col = grDevices::adjustcolor("steelblue", 0.3),
                         border = NA)
       graphics::lines(x, e$slwr, lty = 2)
       graphics::lines(x, e$supr, lty = 2)
       graphics::lines(x, e$fit, lwd = 2)
-      if (!is.null(d)) graphics::rug(d[[vars]])
+      if (!is.null(d)) graphics::rug(d[[num]])
     } else {
-      u1 <- sort(unique(e[[vars[1]]]))
-      u2 <- sort(unique(e[[vars[2]]]))
-      z <- matrix(e$fit, length(u1), length(u2))
-      graphics::contour(u1, u2, z, xlab = vars[1], ylab = vars[2],
-                        main = main, ...)
-      if (!is.null(d)) {
-        graphics::points(d[[vars[1]]], d[[vars[2]]], pch = ".",
-                         col = "grey50")
-      }
+      plot_surface(object, term = keys$term[r],
+                   parameter = keys$parameter[r], est = e, ...)
     }
   }
   invisible(est)
+}
+
+# Evaluation grid of one smooth over the observed data `d`: numeric
+# variables on a sequence over their range (one variable: n points; two:
+# about 3 sqrt(n) per variable), factor variables at each level (random
+# effects, Markov random fields, factor-smooth interactions). A numeric
+# `by` variable is set to 1, so the term is the varying coefficient itself;
+# a factor `by` is set to the smooth's own level. NULL for smooths of more
+# than two numeric variables.
+.fcr_smooth_grid <- function(s, d, n) {
+  vars <- s$vars
+  is_fac <- vapply(vars, function(v) is.factor(d[[v]]) ||
+                     is.character(d[[v]]), logical(1))
+  num <- vars[!is_fac]
+  if (length(num) > 2L) return(NULL)
+  vals <- list()
+  m <- if (length(num) == 2L) round(sqrt(n) * 3) else n
+  for (v in num) {
+    r <- range(d[[v]], na.rm = TRUE)
+    vals[[v]] <- seq(r[1], r[2], length.out = m)
+  }
+  for (v in vars[is_fac]) {
+    lev <- if (is.factor(d[[v]])) levels(d[[v]]) else
+      sort(unique(as.character(d[[v]])))
+    vals[[v]] <- factor(lev, levels = lev)
+  }
+  grid <- expand.grid(vals[vars], KEEP.OUT.ATTRS = FALSE,
+                      stringsAsFactors = FALSE)
+  for (v in vars[is_fac]) {
+    if (is.character(d[[v]])) grid[[v]] <- as.character(grid[[v]])
+  }
+  if (!is.null(s$by)) {
+    bv <- d[[s$by]]
+    if (is.numeric(bv)) {
+      grid[[s$by]] <- 1
+    } else {
+      lev <- s$sm$by.level
+      grid[[s$by]] <- if (is.factor(bv)) factor(lev, levels = levels(bv)) else
+        lev
+    }
+  }
+  grid
 }

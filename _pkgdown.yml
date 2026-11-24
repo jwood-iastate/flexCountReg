@@ -26,6 +26,7 @@ articles:
   - hierarchical-count-models
   - fixed-effects-count-models
   - total-allocation-models
+  - multivariate-count-models
 - title: Finite mixtures and latent classes
   contents:
   - finite-mixture-getting-started
@@ -58,6 +59,8 @@ reference:
   - cre_test
   - countreg_alloc
   - predict.countreg_alloc
+  - countreg_mv
+  - predict.countreg_mv
   - count_families
   - renb
   - poisLindRE

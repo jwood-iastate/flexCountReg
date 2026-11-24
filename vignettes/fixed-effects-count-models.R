@@ -52,6 +52,13 @@ round(rbind(truth = c(0.6, -0.4, log(0.5)),
             NB2_FE = coef(fe_nb),
             jackknife = coef(fe_nb_jk)), 3)
 
+## ----cre----------------------------------------------------------------------
+cre <- repois(Total_crashes ~ lnaadt + offset(lnlength), group_var = "ID",
+              data = washington_roads, cre = ~ lnaadt, method = "BFGS",
+              stderr = "robust")
+round(coef(cre)[c("lnaadt", "mean_lnaadt")], 3)
+cre_test(cre)
+
 ## ----predict------------------------------------------------------------------
 nd <- washington_roads[washington_roads$ID %in%
                          names(fe2$model$fixef$fe1)[1:2], ]

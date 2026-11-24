@@ -63,6 +63,7 @@ Halton
 Hauer
 Hausman
 Hensher
+Hessians
 Higueras
 Hilbe
 Hinde
@@ -124,6 +125,7 @@ Polya
 Pseudotriton
 Puig
 README
+README's
 RENB
 Ramaswamy
 Raphson
@@ -230,6 +232,7 @@ ln
 logLik
 mathrm
 maxLik
+maxLik's
 misalign
 misclassified
 misspecified

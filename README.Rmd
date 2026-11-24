@@ -119,6 +119,7 @@ to install any that are missing. Uploaded data stay on your computer.
 - `countreg_rp()` estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters. Fits use the analytic gradient of the simulated likelihood and, by default, separate Halton draws for each panel.
 - `countreg_mix()` and `countreg_lc()` estimate finite-mixture and latent-class count models (the same engine under two vocabularies), with several reproducible starts, and `component_probs()` / `class_probs()` give prior or posterior class probabilities.
 - `countreg_fe()` estimates fixed-effects count models: Poisson by the conditional likelihood (one dimension) or IRLS with alternating projections (site and year, ...), and any other family, including user-defined ones, by the concentrated dummy-variable likelihood, with an optional split-panel jackknife. Standard errors are cluster-robust by default; estimates equal those of `fixest::fepois()` and `fixest::fenegbin()`.
+- `cre = ~ x` in `countreg_rp()`, `renb()` and `repois()` adds the means of time-varying regressors within each unit (correlated random effects, Mundlak 1978), and `cre_test()` tests random against fixed effects.
 - `renb()` estimates the random effects negative binomial regression model.
 - `poisLind.re()` (also `poislind_re()`) estimates the random effects Poisson-Lindley model.
 - `negmultinom()` estimates negative multinomial (random effects) panel models (NM1, NM2 and NM-P).

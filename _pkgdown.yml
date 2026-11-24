@@ -45,6 +45,7 @@ reference:
   - countreg
   - countreg_rp
   - countreg_fe
+  - cre_test
   - count_families
   - renb
   - poisLindRE

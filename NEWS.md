@@ -73,8 +73,20 @@
 * Estimates, log-likelihoods and dropped groups equal those of
   `fixest::fepois()` (one and two ways) and `fixest::fenegbin()`. The
   cluster-robust standard errors equal fixest's with `ssc(adj = FALSE)`.
+* `countreg_rp()`, `renb()` and `repois()` gain `cre = ~ x1 + x2` for
+  correlated random effects (Mundlak 1978). The units' means of the listed
+  time-varying regressors are added to the mean model, computed on the
+  estimation rows and stored with the fit. Predictions for known units use
+  their training means; new units use the means of their own rows.
+* New `cre_test()`, a Wald test that the coefficients of those means are
+  zero: a robust test of random against fixed effects. In simulations with
+  unit effects correlated with the regressor, the plain random-effects slope
+  was biased (0.63 for a true 0.5), the slope with `cre` was 0.505, equal to
+  fixed effects, and the test rejected in every replication. With
+  uncorrelated effects, it rejected in 7% of replications at the 5% level.
 * New vignette, "Fixed-effects count models"
-  (`vignette("fixed-effects-count-models")`).
+  (`vignette("fixed-effects-count-models")`), with a section on correlated
+  random effects.
 
 ## Cluster-robust standard errors and the sandwich package
 

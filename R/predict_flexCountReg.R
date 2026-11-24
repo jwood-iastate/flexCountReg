@@ -231,6 +231,8 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   }
   
   model <- object$model
+  # Correlated random effects: the group-mean columns of `newdata`
+  if (!is.null(model$cre)) data <- .fcr_cre_newdata(model$cre, data)
   
   if (!is.null(object$modelType)) {
     modtype <- object$modelType

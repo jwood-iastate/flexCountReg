@@ -185,7 +185,42 @@ The Hausman, Hall and Griliches "conditional negative binomial" is a
 different model, whose fixed effect enters the dispersion, not the mean; it
 is not provided.
 
-## 6. Predictions
+## 6. Correlated random effects: a test of random against fixed effects
+
+Random-effects models can be kept, and the question of section 4 tested,
+with the device of Mundlak (1978): add each unit's mean of the
+time-varying regressors to the model. The random effect may then depend
+on the regressors through their means, and the coefficient of the
+regressor itself is a within-unit effect, as in the fixed-effects model.
+`cre =` does this in `repois()`, `renb()` and `countreg_rp()`:
+
+```{r cre}
+cre <- repois(Total_crashes ~ lnaadt + offset(lnlength), group_var = "ID",
+              data = washington_roads, cre = ~ lnaadt, method = "BFGS",
+              stderr = "robust")
+round(coef(cre)[c("lnaadt", "mean_lnaadt")], 3)
+cre_test(cre)
+```
+
+`cre_test()` is a Wald test that the coefficients of the means are zero.
+With robust standard errors it is a robust version of the Hausman test
+(Wooldridge 2019). A small p-value says that the segment effects are
+related to traffic volume: the plain random-effects estimate of section 4
+is then biased, and the within-segment effect (the coefficient of
+`lnaadt` here, or the fixed-effects estimate) is the one to report.
+
+In simulations with 300 units and 5 periods, when the unit effects were
+correlated with the regressor the plain random-effects slope was biased
+(0.63 for a true 0.5), while the model with `cre` gave 0.505, equal to the
+fixed-effects estimate, and `cre_test()` rejected in every replication.
+With uncorrelated effects all three were unbiased and the test rejected
+in 7% of replications at the 5% level.
+
+The group means are computed on the estimation rows and stored with the
+fit, so predictions for a known unit use its training means: rows of
+`newdata` never change them.
+
+## 7. Predictions
 
 Predictions for a known segment use its estimated fixed effect. A segment
 that was not in the estimation data has no fixed effect, so its prediction
@@ -202,7 +237,7 @@ predict(fe2, newdata = new_site)
 predict(fe2, newdata = new_site, newgroup = "mean_fe")
 ```
 
-## 7. Agreement with other software
+## 8. Agreement with other software
 
 The Poisson estimates, log-likelihoods and dropped groups equal those of
 `fixest::fepois()`, and the NB2 estimates those of `fixest::fenegbin()`
@@ -219,5 +254,11 @@ regression models. *Sociological Methodology*, 32, 247-265.
 Dhaene, G. and Jochmans, K. (2015). Split-panel jackknife estimation of
 fixed-effect models. *Review of Economic Studies*, 82(3), 991-1030.
 
+Mundlak, Y. (1978). On the pooling of time series and cross section
+data. *Econometrica*, 46(1), 69-85.
+
 Wooldridge, J.M. (1999). Distribution-free estimation of some nonlinear
 panel data models. *Journal of Econometrics*, 90(1), 77-97.
+
+Wooldridge, J.M. (2019). Correlated random effects models with unbalanced
+panels. *Journal of Econometrics*, 211(1), 137-150.

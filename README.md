@@ -151,6 +151,10 @@ computer.
   an optional split-panel jackknife. Standard errors are cluster-robust
   by default; estimates equal those of `fixest::fepois()` and
   `fixest::fenegbin()`.
+- `cre = ~ x` in `countreg_rp()`, `renb()` and `repois()` adds the means
+  of time-varying regressors within each unit (correlated random
+  effects, Mundlak 1978), and `cre_test()` tests random against fixed
+  effects.
 - `renb()` estimates the random effects negative binomial regression
   model.
 - `poisLind.re()` (also `poislind_re()`) estimates the random effects

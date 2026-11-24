@@ -126,12 +126,53 @@ test_that("plot_smooths draws every smooth", {
   expect_error(smooth_estimates(m0), "no smooth terms")
 })
 
+test_that("smooths in the random-effects panel models", {
+  skip_on_cran()
+  skip_if_not_installed("mgcv")
+  w <- gam_data()
+  f <- Total_crashes ~ s(lnaadt, k = 8) + speed50 + offset(lnlength)
+  rp <- repois(f, group_var = "ID", data = w)
+  nm <- suppressWarnings(negmultinom(f, group_var = "ID", data = w,
+                                     family = "NM2"))
+  # NM2 and the Poisson-gamma random-effects model are the same model
+  expect_equal(nm$model$smooth_table$edf, rp$model$smooth_table$edf,
+               tolerance = 1e-3)
+  expect_equal(unname(coef(nm)[1:9]), unname(coef(rp)[1:9]),
+               tolerance = 1e-3)
+  rn <- suppressWarnings(renb(f, group_var = "ID", data = w))
+  for (m in list(rp, nm, rn)) {
+    expect_identical(m$model$smooth_table$term, "s(lnaadt)")
+    expect_identical(m$model$vcov_type, "bayesian")
+    rows <- c(4, 80, 1200)
+    expect_equal(predict(m, newdata = w[rows, ]),
+                 predict(m, newdata = w)[rows])
+  }
+  expect_error(repois(f, group_var = "ID", data = w, stderr = "boot",
+                      bootstraps = 3), "not yet available")
+  w$site_len <- stats::ave(w$lnlength, w$ID)
+  nd <- suppressWarnings(negmultinom(
+    Total_crashes ~ lnaadt + offset(lnlength), group_var = "ID", data = w,
+    dis_param_formula_1 = ~ s(site_len, k = 5), stderr = "robust"))
+  expect_identical(nd$model$smooth_table$parameter, "ln(alpha)")
+})
+
+test_that("the analytic repois score matches the numeric one", {
+  w <- gam_data()
+  p <- prepare_model_data(Total_crashes ~ lnaadt + speed50 + offset(lnlength),
+                          w, group_var = "ID")
+  cl <- split(seq_along(p$y), p$group, drop = TRUE)
+  par <- c(-8, 1, -0.3, -1.2)
+  set.seed(1)
+  wt <- sample(1:3, length(cl), TRUE)
+  a <- .repois_grad(par, p$y, p$X, p$offset, cl, wt)
+  n <- maxLik::numericGradient(function(b)
+    .repois_loglik(b, p$y, p$X, p$offset, cl, wt), par)
+  expect_lt(max(abs(a - n)) / max(abs(n)), 1e-7)
+})
+
 test_that("estimators without penalized fitting refuse smooth terms", {
   w <- gam_data()
   f <- Total_crashes ~ s(lnaadt)
-  expect_error(renb(f, group_var = "ID", data = w), "not yet available in renb")
-  expect_error(repois(f, group_var = "ID", data = w), "repois")
-  expect_error(poislind_re(f, group_var = "ID", data = w), "poislind_re")
   expect_error(countreg_fe(f, fixef = ~ ID, data = w), "countreg_fe")
   expect_error(countreg_mix(f, data = w, family = "POISSON"), "countreg_mix")
   expect_error(countreg_mix(Total_crashes ~ lnaadt, data = w,

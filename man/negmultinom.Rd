@@ -19,7 +19,8 @@ negmultinom(
   bootstraps = NULL,
   verbose = FALSE,
   keep_data = TRUE,
-  weights = NULL
+  weights = NULL,
+  sp = NULL
 )
 }
 \arguments{
@@ -80,6 +81,13 @@ value per row of \code{data}, of frequency weights of the panels: a panel with
 weight w counts as w independent panels in the log-likelihood, the robust
 covariance, BIC and the bootstrap. Weights must be constant within each
 panel. Bootstrap standard errors need whole-number weights.}
+
+\item{sp}{optional fixed smoothing parameters for smooth terms
+(\code{s()}, \code{te()}, ...) in the formula(s); by default they are
+selected automatically. Smooth terms are fitted by penalized maximum
+likelihood with Bayesian standard errors (see the "Smooth terms"
+section of \code{\link{countreg}}); bootstrap standard errors are not
+available with them.}
 }
 \value{
 An object of class \code{flexCountReg}, a list with components:

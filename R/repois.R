@@ -10,6 +10,12 @@
 #'   individual ID or other panel ID variables).
 #' @param data a dataframe that has all of the variables in the \code{formula}.
 #' @param offset an optional offset term provided as a string.
+#' @param sp optional fixed smoothing parameters for smooth terms
+#'   (\code{s()}, \code{te()}, ...) in the formula(s); by default they are
+#'   selected automatically. Smooth terms are fitted by penalized maximum
+#'   likelihood with Bayesian standard errors (see the "Smooth terms"
+#'   section of \code{\link{countreg}}); bootstrap standard errors are not
+#'   available with them.
 #' @param weights the name of a column of `data`, or a numeric vector with one
 #'   value per row of `data`, of frequency weights of the panels: a panel with
 #'   weight w counts as w independent panels in the log-likelihood, the robust
@@ -100,10 +106,10 @@ repois <- function(formula,
                    weights = NULL,
                    keep_data = TRUE,
                    print.level = NULL,
-                   cre = NULL) {
+                   cre = NULL,
+                   sp = NULL) {
   
   call <- match.call()
-  .fcr_refuse_smooth("repois", formula)
   print.level <- .fcr_print_level("repois", verbose, print.level)
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   if (stderr == "boot" && is.null(bootstraps)) {
@@ -148,6 +154,8 @@ repois <- function(formula,
   }
   x_names <- c(colnames(X), "lnalpha")
   
+  has_smooth <- .fcr_prep_has_smooth(prep)
+  if (has_smooth) .fcr_smooth_no_boot(stderr)
   fit <- .repois_fit_engine(
     y = y,
     X = X,
@@ -157,7 +165,9 @@ repois <- function(formula,
     max.iters = max.iters,
     print.level = print.level,
     bootstraps = NULL,
-    w = w_panel
+    w = w_panel,
+    smooth = if (has_smooth) list(ents = list(main = prep$smooth$main),
+                                  sp = sp)
   )
   names(fit$estimate) <- x_names
   
@@ -210,7 +220,9 @@ repois <- function(formula,
   fit$vcov <- V
   fit$se <- .fcr_se(V)
   fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
-  fit$vcov_type <- switch(stderr, normal = "hessian", robust = "robust",
+  fit$vcov_type <- switch(stderr,
+                          normal = if (has_smooth) "bayesian" else "hessian",
+                          robust = "robust",
                           boot = "bootstrap")
   fit$cre <- cre_info
   
@@ -305,7 +317,8 @@ repois <- function(formula,
                                print.level = 0,
                                bootstraps = NULL,
                                compute_vcov = TRUE,
-                               w = NULL) {
+                               w = NULL,
+                               smooth = NULL) {
   if (!requireNamespace("maxLik", quietly = TRUE)) {
     stop("Package `maxLik` is required for `repois()`.")
   }
@@ -321,17 +334,30 @@ repois <- function(formula,
     printLevel = print.level
   )
   
-  fit_ml <- maxLik::maxLik(
-    logLik = .repois_loglik,
-    start = start,
-    method = method_opt,
-    control = control,
-    y = y,
-    X = X,
-    offset_vec = offset_vec,
-    cluster_list = cluster_list,
-    w = w
-  )
+  if (!is.null(smooth)) {
+    names(start) <- c(colnames(X), "lnalpha")
+    fit_ml <- .fcr_smooth_fit(
+      smooth$ents,
+      function(p) .repois_loglik(p, y = y, X = X, offset_vec = offset_vec,
+                                 cluster_list = cluster_list, w = w),
+      function(p) .repois_grad(p, y = y, X = X, offset_vec = offset_vec,
+                               cluster_list = cluster_list, w = w),
+      start, method_opt, max.iters, smooth$sp, list(main = 0),
+      list(main = "mean"), list(main = X))
+    method_opt <- fit_ml$method
+  } else {
+    fit_ml <- maxLik::maxLik(
+      logLik = .repois_loglik,
+      start = start,
+      method = method_opt,
+      control = control,
+      y = y,
+      X = X,
+      offset_vec = offset_vec,
+      cluster_list = cluster_list,
+      w = w
+    )
+  }
   
   par <- fit_ml$estimate
   names(par) <- c(colnames(X), "lnalpha")
@@ -407,6 +433,12 @@ repois <- function(formula,
     maximum = fit_ml$maximum,
     maxLik_object = fit_ml
   )
+  if (!is.null(smooth)) {
+    keep <- c("smooth_table", "smooth_info", "smooth_lambda",
+              "smooth_converged", "smooth_iterations", "smooth_coefs", "edf",
+              "df_total", "gradientObs")
+    out[keep] <- fit_ml[keep]
+  }
   
   if (isTRUE(compute_vcov) && all(is.finite(vcov_mat))) {
     out$se <- .fcr_se(vcov_mat)
@@ -420,3 +452,28 @@ repois <- function(formula,
 
 
 `%||%` <- function(a, b) if (!is.null(a)) a else b
+
+# Analytic per-cluster scores of .repois_loglik() (rows: clusters, in the
+# order of cluster_list; columns: beta, ln(alpha)). With r = 1 / alpha,
+# S = sum(mu) and Y = sum(y) over a cluster,
+#   d/d beta      = sum(y x) - (Y + r) alpha / (1 + alpha S) sum(mu x)
+#   d/d ln(alpha) = Y - r [psi(Y + r) - psi(r)] + r log1p(alpha S)
+#                   - (Y + r) alpha S / (1 + alpha S).
+.repois_grad <- function(par, y, X, offset_vec, cluster_list, w = NULL) {
+  p <- ncol(X)
+  alpha <- exp(par[p + 1L])
+  r <- 1 / alpha
+  g <- integer(length(y))
+  for (k in seq_along(cluster_list)) g[cluster_list[[k]]] <- k
+  mu <- exp(drop(X %*% par[seq_len(p)]) + offset_vec)
+  S <- as.numeric(rowsum(mu, g, reorder = TRUE))
+  Y <- as.numeric(rowsum(y, g, reorder = TRUE))
+  f <- (Y + r) * alpha / (1 + alpha * S)
+  d_b <- rowsum(y * X, g, reorder = TRUE) - f * rowsum(mu * X, g,
+                                                       reorder = TRUE)
+  d_a <- Y - r * .fcr_digamma_diff(r, Y) + r * log1p(alpha * S) -
+    (Y + r) * alpha * S / (1 + alpha * S)
+  G <- unname(cbind(d_b, d_a))
+  if (!is.null(w)) G <- G * w
+  G
+}

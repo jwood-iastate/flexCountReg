@@ -17,7 +17,8 @@ renb(
   weights = NULL,
   keep_data = TRUE,
   print.level = NULL,
-  cre = NULL
+  cre = NULL,
+  sp = NULL
 )
 }
 \arguments{
@@ -76,6 +77,13 @@ stored with the fit: predictions for a group in the estimation data use
 its training means, and a new group uses the means of its own rows in
 \code{newdata}. \code{\link{cre_test}()} tests random against fixed
 effects.}
+
+\item{sp}{optional fixed smoothing parameters for smooth terms
+(\code{s()}, \code{te()}, ...) in the formula(s); by default they are
+selected automatically. Smooth terms are fitted by penalized maximum
+likelihood with Bayesian standard errors (see the "Smooth terms"
+section of \code{\link{countreg}}); bootstrap standard errors are not
+available with them.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

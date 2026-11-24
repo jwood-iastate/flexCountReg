@@ -18,7 +18,8 @@ poisLind.re(
   offset = NULL,
   weights = NULL,
   keep_data = TRUE,
-  print.level = NULL
+  print.level = NULL,
+  sp = NULL
 )
 }
 \arguments{
@@ -69,6 +70,13 @@ in the fitted object (saving memory). \code{predict()} then needs
 \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
 
 \item{print.level}{deprecated; use \code{verbose}.}
+
+\item{sp}{optional fixed smoothing parameters for smooth terms
+(\code{s()}, \code{te()}, ...) in the formula(s); by default they are
+selected automatically. Smooth terms are fitted by penalized maximum
+likelihood with Bayesian standard errors (see the "Smooth terms"
+section of \code{\link{countreg}}); bootstrap standard errors are not
+available with them.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

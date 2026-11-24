@@ -95,7 +95,8 @@
   fs <- list(...)
   if (any(vapply(fs, .fcr_has_smooth, logical(1)))) {
     stop("Smooth terms (s(), te(), ...) are not yet available in ", fun,
-         "(). They are available in countreg() and countreg_rp().",
+         "(). They are available in countreg(), countreg_rp(), renb(), ",
+         "repois(), poislind_re() and negmultinom().",
          call. = FALSE)
   }
   invisible(NULL)

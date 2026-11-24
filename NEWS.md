@@ -75,10 +75,17 @@
 * New `smooth_estimates()` and `plot_smooths()` evaluate and plot each
   smooth with pointwise and simultaneous confidence bands. Their values
   equal mgcv's term predictions.
-* `renb()`, `repois()`, `poislind_re()`, `negmultinom()`, `countreg_fe()`,
-  `countreg_mix()` and `countreg_lc()` do not yet support smooth terms. They
-  give an error, because they would otherwise fit the bases without a
-  penalty.
+* The random-effects panel models `renb()`, `repois()`, `poislind_re()`
+  and `negmultinom()` also accept smooth terms, in the mean and, for
+  `negmultinom()`, in the panel-level dispersion formulas. They have the
+  same penalized fitting, `sp` argument and Bayesian standard errors.
+  `negmultinom()` with family NM2 and `repois()` are the same model, and
+  give the same smooth.
+* `repois()` gains an analytic score for its penalized fits, which made a
+  smooth fit about 10 times faster (46 s to 4 s on `washington_roads`).
+* `countreg_fe()`, `countreg_mix()` and `countreg_lc()` do not yet support
+  smooth terms. They give an error, because they would otherwise fit the
+  bases without a penalty.
 * Not yet available with smooths: bootstrap standard errors, smooths with
   `by` variables in `smooth_estimates()`, the `"re"`, `"fs"` and `"mrf"`
   bases, and smooth diagnostics.

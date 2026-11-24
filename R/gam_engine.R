@@ -217,3 +217,58 @@
   }
   list(table = .fcr_smooth_table(gam, bases), info = unname(info))
 }
+
+# Does a prepare_model_data() result have smooth terms?
+.fcr_prep_has_smooth <- function(prep) {
+  length(prep$smooth$main) > 0 || length(prep$smooth$aux) > 0
+}
+
+# A penalized fit with the fields of a maxLik fit, for the estimators whose
+# covariance and summaries work from maxLik objects.
+#   ents     component -> smooth entries; offsets, labels, mats as in
+#            .fcr_pen_terms() and .fcr_smooth_outputs()
+#   fn, grad the (weighted) log-likelihood contributions and their scores
+# The returned fit has the penalized estimates, the unpenalized maximum,
+# the Hessian of the penalized objective (so the Hessian-based covariance
+# is the Bayesian V_b), the unpenalized scores (for robust covariances) and
+# the smooth summaries.
+.fcr_smooth_fit <- function(ents, fn, grad, start, method, max.iters, sp,
+                            offsets, labels, mats) {
+  pen <- .fcr_pen_terms(ents, offsets, labels)
+  if (method %in% c("NM", "SANN", "BHHH", "NR", "BFGSR")) method <- "BFGS"
+  gam <- .fcr_gam_fit(fn, grad, start, pen, method = method,
+                      iterlim = max.iters, lambda = sp)
+  fit <- gam$fit
+  fit$estimate <- gam$theta
+  fit$maximum <- sum(fn(gam$theta))
+  fit$hessian <- gam$hessian
+  fit$gradientObs <- if (!is.null(grad)) grad(gam$theta) else
+    maxLik::numericGradient(fn, gam$theta)
+  colnames(fit$gradientObs) <- names(start)
+  fit$hessian_accuracy <- gam$accuracy
+  so <- .fcr_smooth_outputs(gam, ents, mats)
+  fit$smooth_table <- so$table
+  fit$smooth_info <- so$info
+  fit$smooth_lambda <- gam$lambda
+  fit$smooth_converged <- gam$converged
+  fit$smooth_iterations <- gam$iterations
+  fit$smooth_coefs <- unique(unlist(lapply(gam$terms, `[[`, "idx")))
+  fit$edf <- gam$edf
+  fit$df_total <- sum(gam$edf)
+  fit$code <- if (isTRUE(gam$converged) || !is.null(sp)) 0L else 1L
+  fit$method <- method
+  if (!isTRUE(gam$converged) && is.null(sp)) {
+    warning("The smoothing parameters did not converge in ",
+            gam$iterations - 1, " Fellner-Schall iterations.", call. = FALSE)
+  }
+  fit
+}
+
+# Bootstrap refits would re-select the smoothing parameters; not yet.
+.fcr_smooth_no_boot <- function(stderr) {
+  if (identical(stderr, "boot")) {
+    stop("Bootstrap standard errors are not yet available with smooth ",
+         "terms; use stderr = \"normal\" (Bayesian) or \"robust\".",
+         call. = FALSE)
+  }
+}

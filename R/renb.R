@@ -9,6 +9,12 @@
 #' @param offset an optional character vector of offset column names (summed
 #'   when several are given; on the log scale). An offset can instead be given
 #'   with \code{offset()} in \code{formula}; use only one of the two.
+#' @param sp optional fixed smoothing parameters for smooth terms
+#'   (\code{s()}, \code{te()}, ...) in the formula(s); by default they are
+#'   selected automatically. Smooth terms are fitted by penalized maximum
+#'   likelihood with Bayesian standard errors (see the "Smooth terms"
+#'   section of \code{\link{countreg}}); bootstrap standard errors are not
+#'   available with them.
 #' @param weights the name of a column of `data`, or a numeric vector with one
 #'   value per row of `data`, of frequency weights of the panels: a panel with
 #'   weight w counts as w independent panels in the log-likelihood, the robust
@@ -122,8 +128,7 @@
 renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
                  verbose = FALSE, stderr = "normal", bootstraps = NULL,
                  offset = NULL, weights = NULL, keep_data = TRUE,
-                 print.level = NULL, cre = NULL) {
-  .fcr_refuse_smooth("renb", formula)
+                 print.level = NULL, cre = NULL, sp = NULL) {
   print.level <- .fcr_print_level("renb", verbose, print.level)
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   
@@ -249,17 +254,29 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
     G
   }
 
-  # Main model fit
-  fit <- maxLik::maxLik(ll_w, grad = gr_w,
-                        start = full_start,
-                        y = y,
-                        X = X,
-                        group = group,
-                        offset_vec = offset_vec,
-                        w = w_panel,
-                        method = method,
-                        control = list(iterlim = max.iters, 
-                                       printLevel = print.level))
+  # Main model fit (penalized when the formula has smooth terms)
+  has_smooth <- .fcr_prep_has_smooth(prep)
+  if (has_smooth) {
+    .fcr_smooth_no_boot(stderr)
+    fit <- .fcr_smooth_fit(
+      list(main = prep$smooth$main),
+      function(b) ll_w(b, y, X, group, offset_vec, w_panel),
+      function(b) gr_w(b, y, X, group, offset_vec, w_panel),
+      full_start, method, max.iters, sp, list(main = 0),
+      list(main = "mean"), list(main = X))
+    method <- fit$method
+  } else {
+    fit <- maxLik::maxLik(ll_w, grad = gr_w,
+                          start = full_start,
+                          y = y,
+                          X = X,
+                          group = group,
+                          offset_vec = offset_vec,
+                          w = w_panel,
+                          method = method,
+                          control = list(iterlim = max.iters, 
+                                         printLevel = print.level))
+  }
   
   if (is.null(fit$estimate) || length(fit$estimate) != length(full_start) ||
       any(!is.finite(fit$estimate))) {
@@ -299,6 +316,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$offset <- prep$blueprint$offset_label
   fit$offset_values <- offset_vec
   fit$cre <- cre_info
+
   
   obj <- .createFlexCountReg(model = fit, 
                              data = data, keep_data = keep_data, 

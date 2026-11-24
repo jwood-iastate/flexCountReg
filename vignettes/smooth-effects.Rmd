@@ -138,7 +138,19 @@ deviations with and without the smooth. Smooth terms are not allowed in
 `rpar_formula`: a random coefficient on each basis column is not a
 penalized smooth.
 
-## 5. Inference and agreement with mgcv
+## 5. Smooths in random-effects panel models
+
+The random-effects panel models `renb()`, `repois()`, `poislind_re()` and
+`negmultinom()` accept smooth terms in the same way, with the panels as
+the independent units:
+
+```{r panel}
+re <- repois(Total_crashes ~ s(lnaadt, k = 8) + speed50 + offset(lnlength),
+             group_var = "ID", data = washington_roads)
+re$model$smooth_table[, c("term", "edf", "lambda", "p.value")]
+```
+
+## 6. Inference and agreement with mgcv
 
 Standard errors are Bayesian by default: the covariance of the estimates is
 $(H + S_\lambda)^{-1}$, with $H$ the negative Hessian of the log-likelihood
@@ -157,9 +169,11 @@ ignore the uncertainty in $\lambda$), and the log-likelihood's degrees of
 freedom are the EDF without the smoothing-parameter correction that
 `mgcv::logLik.gam()` adds.
 
-## 6. Not yet available
+## 7. Not yet available
 
-Bootstrap standard errors with smooth terms; smooths with a `by` variable
+Smooth terms in `countreg_fe()` and in finite mixtures (`countreg_mix()`,
+`countreg_lc()`); bootstrap standard errors with smooth terms; smooths with
+a `by` variable
 in `smooth_estimates()`; random-effect, factor-smooth and spatial bases
 (`bs = "re"`, `"fs"`, `"mrf"`); and the smooth diagnostics (basis-dimension
 checks, concurvity, derivatives) are planned.

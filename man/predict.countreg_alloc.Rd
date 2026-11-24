@@ -9,6 +9,7 @@
   newdata = NULL,
   type = c("counts", "prob", "total", "total_positive"),
   conditional = FALSE,
+  random = c("marginal", "posterior"),
   ...
 )
 }
@@ -29,11 +30,20 @@ default is \code{FALSE}, the unconditional expected counts, also for a fit
 with \code{truncated = TRUE} (whose estimated distribution is that of the
 untruncated total).}
 
+\item{random}{for fits with random parameters: \code{"marginal"} (default)
+averages over the distribution of the random parameters (the
+prediction for a new unit); \code{"posterior"} averages over each unit's
+posterior distribution given its counts in the estimation data
+(Empirical Bayes; units not in the estimation data get the marginal
+prediction). \code{newdata} then needs the \code{group_var} column(s).}
+
 \item{...}{unused.}
 }
 \value{
 A matrix with one column per category (\code{"counts"}, \code{"prob"}), or
-a vector (\code{"total"}, \code{"total_positive"}).
+a vector (\code{"total"}, \code{"total_positive"}). With random parameters,
+\code{"prob"} is the average allocation probability and \code{"counts"} the
+average expected count over the draws.
 }
 \description{
 Predictions from total-plus-allocation models

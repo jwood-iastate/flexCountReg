@@ -96,6 +96,8 @@ Suggests:
     reformulas,
     lme4,
     glmmTMB,
+    nnet,
+    numDeriv,
     rmarkdown,
     testthat (>= 3.0.0), 
     poilog

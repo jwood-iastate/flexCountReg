@@ -64,6 +64,7 @@ test_that("the ordered model recovers the truth and matches polr and countreg", 
 })
 
 test_that("the analytic gradient matches numeric differences", {
+  skip_if_not_installed("numDeriv")
   d <- sim_alloc(600)
   for (link in c("ordered_probit", "ordered_logit", "mnl")) {
     thr <- if (link == "mnl") ~ 1 else ~ v
@@ -207,4 +208,119 @@ test_that("input errors", {
                               stderr = "cluster"), "group_var")
   d$a[1] <- 0.5
   expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d), "whole numbers")
+})
+
+# ---- Random parameters ------------------------------------------------------
+
+sim_alloc_rp <- function(G = 200, Tn = 4, rho = 0.5, seed = 1) {
+  set.seed(seed)
+  n <- G * Tn
+  d <- data.frame(site = rep(seq_len(G), each = Tn), x = rnorm(n),
+                  z = rnorm(n))
+  S <- matrix(c(0.25, rho * 0.3, rho * 0.3, 0.36), 2)
+  b <- matrix(rnorm(2 * G), G, 2) %*% chol(S)
+  tot <- stats::rnbinom(n, size = 3, mu = exp(0.8 + 0.5 * d$x + b[d$site, 1]))
+  xb <- 0.6 * d$z + b[d$site, 2]
+  pr <- cbind(stats::pnorm(-0.2 - xb),
+              stats::pnorm(0.8 - xb) - stats::pnorm(-0.2 - xb),
+              1 - stats::pnorm(0.8 - xb))
+  Y <- t(vapply(seq_len(n), function(i)
+    as.numeric(stats::rmultinom(1, tot[i], pr[i, ])), numeric(3)))
+  d$a <- Y[, 1]
+  d$b <- Y[, 2]
+  d$c <- Y[, 3]
+  d
+}
+
+test_that("the simulated likelihood has the right analytic gradient", {
+  skip_if_not_installed("numDeriv")
+  d <- sim_alloc_rp(G = 40, Tn = 3)
+  cases <- list(
+    list(rpar_total = ~ 1, rpar_alloc = ~ 1, correlation = "across"),
+    list(rpar_total = ~ 1 + x, rpar_alloc = ~ 1, correlation = "within"),
+    list(rpar_alloc = ~ 1 + z, rpar_threshold = ~ 1,
+         correlation = "across"),
+    list(rpar_total = ~ 1, rpar_alloc = ~ 1, link = "mnl",
+         correlation = "across"),
+    list(rpar_total = ~ 1, rpar_alloc = ~ 1, likelihood = "fractional",
+         correlation = "across", stderr = "robust"),
+    list(rpar_total = ~ 1, truncated = FALSE, family = "POISSON"))
+  for (cs in cases) {
+    args <- utils::modifyList(list(
+      formula = cbind(a, b, c) ~ x, data = d, family = "NB2",
+      alloc_formula = ~ z, group_var = "site", rpar_draws = 15, seed = 3,
+      .setup_only = TRUE), cs)
+    E <- do.call(countreg_alloc, args)
+    set.seed(2)
+    p <- flexCountReg:::.fcr_alloc_start(E) +
+      stats::runif(length(E$S$names), -0.1, 0.1)
+    f <- function(q) sum(flexCountReg:::.fcr_alloc_sim_ll(q, E)$ll)
+    ana <- colSums(flexCountReg:::.fcr_alloc_sim_ll(p, E, grad = TRUE)$G)
+    expect_equal(ana, numDeriv::grad(f, p), tolerance = 1e-6,
+                 info = paste(names(cs), collapse = ","))
+  }
+})
+
+test_that("the simulated likelihood approaches the exact integral", {
+  d <- sim_alloc_rp(G = 150)
+  m <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "NB2",
+                      alloc_formula = ~ z, group_var = "site",
+                      rpar_alloc = ~ 1, rpar_draws = 300, seed = 3)
+  p <- coef(m)
+  E <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "NB2",
+                      alloc_formula = ~ z, .setup_only = TRUE)
+  k <- length(p)
+  sdv <- abs(p[k])
+  gh <- flexCountReg:::.fcr_gh_rule(60)
+  LLq <- vapply(seq_along(gh$z), function(q) {
+    ll <- flexCountReg:::.fcr_alloc_rowparts(
+      p[-k], E, list(xb = rep(sdv * gh$z[q], nrow(d))), grad = FALSE)$ll
+    rowsum(ll, d$site)[, 1]
+  }, numeric(150))
+  mx <- apply(LLq, 1, max)
+  exact <- sum(mx + log(colSums(t(exp(LLq - mx)) * gh$w)))
+  expect_equal(m$loglik, exact, tolerance = 0.2 / abs(exact))
+})
+
+test_that("correlated random parameters are recovered", {
+  skip_on_cran()
+  d <- sim_alloc_rp(G = 400, Tn = 5, seed = 11)
+  m <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "NB2",
+                      alloc_formula = ~ z, group_var = "site",
+                      rpar_total = ~ 1, rpar_alloc = ~ 1,
+                      correlation = "across", rpar_draws = 200, seed = 5)
+  expect_true(m$converged)
+  vc <- flexCountReg:::.fcr_alloc_varcorr(m)
+  expect_equal(sqrt(diag(vc)), c(0.5, 0.6), tolerance = 0.2,
+               ignore_attr = TRUE)
+  expect_equal(stats::cov2cor(vc)[2, 1], 0.5, tolerance = 0.4)
+  expect_equal(unname(coef(m)[c("x", "Allocation:z")]), c(0.5, 0.6),
+               tolerance = 0.1)
+  expect_equal(m$n_units, 400)
+  expect_output(print(summary(m)), "standard deviations and correlations")
+  expect_true("random" %in% tidy(m)$component)
+  # Predictions: marginal for new units, posterior for estimated ones
+  pm <- predict(m, newdata = d[1:6, ])
+  pp <- predict(m, newdata = d[1:6, ], random = "posterior")
+  expect_equal(dim(pp), c(6, 3))
+  expect_false(isTRUE(all.equal(pm, pp)))
+  nd <- d[1:2, ]
+  nd$site <- -1
+  expect_equal(predict(m, newdata = nd, random = "posterior"),
+               predict(m, newdata = nd))
+  expect_error(predict(m, newdata = d[1:2, c("x", "z")],
+                       random = "posterior"), "grouping column")
+  s <- simulate(m, seed = 1)[[1]]
+  expect_equal(colMeans(s), colMeans(d[, c("a", "b", "c")]),
+               tolerance = 0.15, ignore_attr = TRUE)
+})
+
+test_that("random-parameter input errors", {
+  d <- sim_alloc_rp(G = 20)
+  expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d, link = "mnl",
+                              rpar_threshold = ~ 1), "ordered links")
+  expect_error(countreg_alloc(cbind(a, b) ~ x, data = d,
+                              rpar_threshold = ~ 1), "three or more")
+  expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d,
+                              rpar_total = ~ offset(x)), "offset")
 })

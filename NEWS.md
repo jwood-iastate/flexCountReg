@@ -21,6 +21,21 @@
   expected total or counts given at least one event; `simulate()`,
   `summary()`, `tidy()`, `glance()` and `confint()` work, and `tv()` can be
   used in every formula. Analytic gradients for all parts.
+* `countreg_alloc()` has random parameters in each equation:
+  `rpar_total`, `rpar_alloc` (the propensity) and `rpar_threshold` (a
+  common random term in the gaps between thresholds) add normal random
+  deviations to the coefficients, drawn once per unit of `group_var` and
+  shared by its rows (the years of a site), with `correlation = "none"`,
+  `"within"` (each equation) or `"across"` (between the total and the
+  allocation). The likelihood is simulated with randomly shifted Halton
+  draws (`rpar_draws`, a stored `seed`) and has analytic gradients through
+  the draws' posterior weights. Checked against exact Gauss-Hermite
+  quadrature (within 0.05 of the log-likelihood with 500 draws) and by
+  recovering correlated random intercepts. `predict()` gives marginal
+  predictions and, with `random = "posterior"`, Empirical Bayes predictions
+  for units in the estimation data; `simulate()` draws new coefficients
+  for each unit; `summary()` shows the standard deviations and
+  correlations.
 * New vignette "Total-plus-allocation models: counts by severity".
 
 ## Time-varying effects (temporal instability)

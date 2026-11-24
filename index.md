@@ -16,6 +16,12 @@ issues, including:
   zero model and random-parameter heterogeneity, with automatic
   smoothing and
   [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md);
+- effects that change over time (temporal instability) with
+  [`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md),
+  with period-by-period effects and tests from
+  [`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
+  and
+  [`temporal_tests()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_tests.md);
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;
 - random parameters, with heterogeneity in their means and variances,
@@ -766,6 +772,8 @@ The vignettes cover the main workflows. Start with
   [`vignette("distribution-parameter-regression", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/distribution-parameter-regression.md)
 - Smooth effects: generalized additive count models:
   [`vignette("smooth-effects", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.md)
+- Time-varying effects: temporal instability:
+  [`vignette("temporal-instability", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/temporal-instability.md)
 - Understanding zeros, hurdles and the sampling process:
   [`vignette("zeros-hurdles-and-sampling", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/zeros-hurdles-and-sampling.md)
 - Underreporting: observed counts, true counts and identification:

@@ -20,10 +20,11 @@ articles:
   random-parameters-and-panels: random-parameters-and-panels.html
   simulation-studies: simulation-studies.html
   smooth-effects: smooth-effects.html
+  temporal-instability: temporal-instability.html
   underreporting-and-identification: underreporting-and-identification.html
   user-defined-count-distributions: user-defined-count-distributions.html
   zeros-hurdles-and-sampling: zeros-hurdles-and-sampling.html
-last_built: 2026-11-24T16:55Z
+last_built: 2026-11-24T18:16Z
 urls:
   reference: https://jwood-iastate.github.io/flexCountReg/reference
   article: https://jwood-iastate.github.io/flexCountReg/articles

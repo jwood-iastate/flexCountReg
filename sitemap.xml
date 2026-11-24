@@ -22,6 +22,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/simulation-studies.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/articles/temporal-instability.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/underreporting-and-identification.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/user-defined-count-distributions.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/zeros-hurdles-and-sampling.html</loc></url>
@@ -110,7 +111,10 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/stream_salamanders.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/summary.countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/temporal_tests.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/tv.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/washington_roads.html</loc></url>
 </urlset>

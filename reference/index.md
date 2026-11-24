@@ -41,6 +41,17 @@ random parameters, random effects and fixed effects.
 - [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
   : Negative Multinomial Family Panel Regression (NM1, NM2, NM-P)
 
+## Time-varying effects
+
+Effects that change over time (temporal instability).
+
+- [`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
+  : Time-varying effects in model formulas
+- [`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
+  : Period effects of time-varying terms
+- [`temporal_tests()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_tests.md)
+  : Tests of time-varying effects
+
 ## Finite mixtures and latent classes
 
 Mixtures of count distributions and latent-class count regression.

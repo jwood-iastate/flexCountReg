@@ -412,15 +412,18 @@ failures:</p>
 <code>method</code>, or simplify the model. If fewer than two succeed,
 the standard errors are <code>NA</code>.</p>
 <p><strong>Weights.</strong> Every estimator takes <code>weights</code>,
-which are frequency weights: a row with weight 3 counts as three
-independent observations. The estimates, log-likelihood, robust
+which are frequency weights by default: a row with weight 3 counts as
+three independent observations. The estimates, log-likelihood, robust
 covariance and BIC are those of the expanded data. In panel models the
 weights belong to the panels (a panel with weight 3 counts as three
 independent panels), so they must be constant within a panel. The
 bootstrap resamples the expanded observations: it draws new frequencies
 from a multinomial distribution and refits with them in place of the
-weights, so it needs whole-number weights (use
-<code>stderr = &quot;robust&quot;</code> for other weights).</p>
+weights, so it needs whole-number weights. Survey or inverse-probability
+weights are declared with <code>weight_type = &quot;sampling&quot;</code> (in
+<code>countreg()</code> and <code>countreg_rp()</code>): robust standard
+errors are then the default and do not depend on the scale of the
+weights, and LR tests, AIC and BIC are flagged as not valid.</p>
 </div>
 <div id="marginal-effects" class="section level2">
 <h2>Marginal effects</h2>
@@ -434,12 +437,12 @@ count.</p>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; Method: delta </span></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt;      term variable_type           effect_metric estimate std_error t_value</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;    lnaadt    continuous Average marginal effect   0.4989    0.0349 14.2833</span></span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;  lnlength    continuous Average marginal effect   0.3511    0.0372  9.4294</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;    lnaadt    continuous Average marginal effect   0.4989    0.0350 14.2620</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;  lnlength    continuous Average marginal effect   0.3511    0.0373  9.4042</span></span>
 <span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   speed50     indicator   Pseudo-elasticity (%) -41.5527    6.3016 -6.5940</span></span>
 <span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;  p_value sig lower_ci upper_ci n_obs successful_bootstraps</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;        0 ***   0.4305   0.5674  1501                    NA</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;        0 ***   0.2781   0.4241  1501                    NA</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;        0 ***   0.4304   0.5675  1501                    NA</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;        0 ***   0.2779   0.4243  1501                    NA</span></span>
 <span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;        0 *** -53.9035 -29.2018  1501                    NA</span></span></code></pre></div>
 <p>The bootstrap of <code>margEffTable()</code> resamples the model’s
 independent units (rows, or panels for panel models, or the clusters in
@@ -627,18 +630,15 @@ weights when weights are used.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>po <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>nb1 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;NB1&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>pl <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, d, <span class="at">family =</span> <span class="st">&quot;PL&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; errors of ln(theta) are NA. The estimate may be on the boundary of the</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; parameter space or not at a maximum.</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">list</span>(<span class="at">Poisson =</span> po, <span class="at">NB1 =</span> nb1, <span class="at">NB2 =</span> nb_h, <span class="at">PL =</span> pl),</span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>                      <span class="cf">function</span>(m) <span class="fu">glance</span>(m)[, <span class="fu">c</span>(<span class="st">&quot;logLik&quot;</span>, <span class="st">&quot;AIC&quot;</span>, <span class="st">&quot;BIC&quot;</span>)]))</span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 × 3</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;   logLik   AIC   BIC</span></span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; *  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; 1 -1101. 2209. 2230.</span></span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; 2 -1089. 2188. 2215.</span></span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; 3 -1085. 2180. 2206.</span></span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; 4 -1086. 2182. 2209.</span></span></code></pre></div>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="fu">do.call</span>(rbind, <span class="fu">lapply</span>(<span class="fu">list</span>(<span class="at">Poisson =</span> po, <span class="at">NB1 =</span> nb1, <span class="at">NB2 =</span> nb_h, <span class="at">PL =</span> pl),</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                      <span class="cf">function</span>(m) <span class="fu">glance</span>(m)[, <span class="fu">c</span>(<span class="st">&quot;logLik&quot;</span>, <span class="st">&quot;AIC&quot;</span>, <span class="st">&quot;BIC&quot;</span>)]))</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; # A tibble: 4 × 3</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;   logLik   AIC   BIC</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; *  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; 1 -1101. 2209. 2230.</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; 2 -1089. 2188. 2215.</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; 3 -1085. 2180. 2206.</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; 4 -1086. 2182. 2209.</span></span></code></pre></div>
 </div>
 <div id="likelihood-ratio-tests" class="section level3">
 <h3>Likelihood-ratio tests</h3>

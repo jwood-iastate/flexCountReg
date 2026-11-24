@@ -2,6 +2,38 @@
 
 ## flexCountReg 0.1.2 (development)
 
+### Total-plus-allocation models
+
+- New
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  fits a total count jointly with its allocation across categories, such
+  as crashes by severity: the total follows any count family (with
+  distribution-parameter formulas), and the split follows an ordered
+  probit, ordered logit or multinomial logit model, with generalized
+  thresholds (`threshold_formula`) for the ordered links. The default
+  multinomial likelihood is a proper joint likelihood of the category
+  counts (likelihood-ratio tests, AIC and BIC are valid); with a Poisson
+  total the categories are independent Poissons, and with an NB2 total
+  and no covariates the fit equals
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md).
+  `likelihood = "fractional"` gives the share-weighted quasi-likelihood
+  of Shabab et al. (2026, AMAR 51:100440), with sandwich standard errors
+  and no AIC. Zero totals are part of the model (they contribute P(c
+  = 0) and nothing about the split); `truncated = TRUE` fits a
+  zero-truncated total for data that hold only units with at least one
+  event, and a message points to it when the data have no zero totals.
+  [`predict()`](https://rdrr.io/r/stats/predict.html) gives the expected
+  counts by category, the probabilities, the total, and the expected
+  total or counts given at least one event;
+  [`simulate()`](https://rdrr.io/r/stats/simulate.html),
+  [`summary()`](https://rdrr.io/r/base/summary.html),
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html),
+  [`glance()`](https://generics.r-lib.org/reference/glance.html) and
+  [`confint()`](https://rdrr.io/r/stats/confint.html) work, and
+  [`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
+  can be used in every formula. Analytic gradients for all parts.
+- New vignette “Total-plus-allocation models: counts by severity”.
+
 ### Time-varying effects (temporal instability)
 
 - New formula term `tv(x, time = year)` gives `x` one effect per period,

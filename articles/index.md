@@ -36,6 +36,8 @@
   models](https://jwood-iastate.github.io/flexCountReg/articles/hierarchical-count-models.md):
 - [Fixed-effects count
   models](https://jwood-iastate.github.io/flexCountReg/articles/fixed-effects-count-models.md):
+- [Total-plus-allocation models: counts by
+  severity](https://jwood-iastate.github.io/flexCountReg/articles/total-allocation-models.md):
 
 ### Finite mixtures and latent classes
 

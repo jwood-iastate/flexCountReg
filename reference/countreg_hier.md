@@ -244,11 +244,11 @@ summary(h)
 #> (Intercept) -9.00121    0.50404 -17.858  < 2e-16 ***
 #> lnaadt       1.11659    0.05893  18.948  < 2e-16 ***
 #> speed50     -0.57519    0.13021  -4.417 9.99e-06 ***
-#> ln(alpha)   -6.80676   47.43429  -0.143    0.886    
+#> ln(alpha)   -6.80660   47.40990  -0.144    0.886    
 #> 
 #> Random-effect standard deviations and correlations (Wald SEs):
 #>                   Estimate Std. Error
-#> sd_(Intercept)|ID   0.6388    0.06619
+#> sd_(Intercept)|ID   0.6388    0.06618
 #> 
 #> Log-likelihood: -1069.365   AIC: 2148.73   BIC: 2175.30
 VarCorr(h)

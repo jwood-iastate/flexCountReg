@@ -28,6 +28,10 @@ random parameters, random effects and fixed effects.
   : Fixed-effects count regression
 - [`cre_test()`](https://jwood-iastate.github.io/flexCountReg/reference/cre_test.md)
   : Test of correlated random effects (random against fixed effects)
+- [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  : Total-plus-allocation count models
+- [`predict(`*`<countreg_alloc>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_alloc.md)
+  : Predictions from total-plus-allocation models
 - [`count_families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
   [`count-families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
   : Count Families for countreg() and countreg_rp()

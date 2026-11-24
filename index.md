@@ -22,6 +22,9 @@ issues, including:
   [`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
   and
   [`temporal_tests()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_tests.md);
+- total-plus-allocation models of a count and its split across
+  categories (such as crashes by severity) with
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md);
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;
 - random parameters, with heterogeneity in their means and variances,
@@ -784,6 +787,8 @@ The vignettes cover the main workflows. Start with
   [`vignette("hierarchical-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/hierarchical-count-models.md)
 - Fixed-effects count models:
   [`vignette("fixed-effects-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/fixed-effects-count-models.md)
+- Total-plus-allocation models: counts by severity:
+  [`vignette("total-allocation-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/total-allocation-models.md)
 
 *Finite mixtures and latent classes*
 

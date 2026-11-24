@@ -552,15 +552,15 @@ summary(gen.nbp)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>                       Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)            -7.7637     0.5697  -13.63  < 2e-16 ***
-#> lnaadt                  0.9382     0.0669   14.03  < 2e-16 ***
-#> lnlength                0.8362     0.0692   12.08  < 2e-16 ***
-#> speed50                -0.3843     0.1126   -3.41  0.00064 ***
-#> ShouldWidth04           0.2578     0.0922    2.80  0.00514 ** 
-#> AADT10kplus             0.6893     0.1318    5.23  1.7e-07 ***
-#> ln(alpha):(Intercept)  -1.4960     0.7251   -2.06  0.03908 *  
-#> ln(alpha):lnlength     -0.1673     0.4685   -0.36  0.72096    
-#> ln(p)                   0.5247     0.2286    2.30  0.02169 *  
+#> (Intercept)            -7.7637     0.4934  -15.74  < 2e-16 ***
+#> lnaadt                  0.9382     0.0577   16.26  < 2e-16 ***
+#> lnlength                0.8362     0.0696   12.02  < 2e-16 ***
+#> speed50                -0.3843     0.1108   -3.47  0.00052 ***
+#> ShouldWidth04           0.2578     0.0923    2.79  0.00522 ** 
+#> AADT10kplus             0.6893     0.1331    5.18  2.2e-07 ***
+#> ln(alpha):(Intercept)  -1.4960     0.5539   -2.70  0.00692 ** 
+#> ln(alpha):lnlength     -0.1673     0.4558   -0.37  0.71357    
+#> ln(p)                   0.5247     0.1832    2.86  0.00418 ** 
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
@@ -587,16 +587,16 @@ regCompTable(list("Generalized NB-2" = gen.nb2, "Generalized NB-P" = gen.nbp))
 #> # A tibble: 15 × 3
 #>    Parameter             `Generalized NB-2` `Generalized NB-P`
 #>    <chr>                 <chr>              <chr>             
-#>  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.57)***  
-#>  2 lnaadt                0.93 (0.057)***    0.938 (0.067)***  
-#>  3 lnlength              0.853 (0.07)***    0.836 (0.069)***  
-#>  4 speed50               -0.4 (0.109)***    -0.384 (0.113)*** 
+#>  1 (Intercept)           -7.676 (0.488)***  -7.764 (0.493)*** 
+#>  2 lnaadt                0.93 (0.057)***    0.938 (0.058)***  
+#>  3 lnlength              0.853 (0.07)***    0.836 (0.07)***   
+#>  4 speed50               -0.4 (0.109)***    -0.384 (0.111)*** 
 #>  5 ShouldWidth04         0.261 (0.092)**    0.258 (0.092)**   
-#>  6 AADT10kplus           5.961 (4.512)      0.689 (0.132)***  
+#>  6 AADT10kplus           5.961 (4.512)      0.689 (0.133)***  
 #>  7 I(AADT10kplus/lnaadt) -50.138 (43.002)   ---               
-#>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.725)*   
-#>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.468)    
-#> 10 ln(p)                 ---                0.525 (0.229)*    
+#>  8 ln(alpha):(Intercept) -1.913 (0.665)**   -1.496 (0.554)**  
+#>  9 ln(alpha):lnlength    -0.43 (0.499)      -0.167 (0.456)    
+#> 10 ln(p)                 ---                0.525 (0.183)**   
 #> 11 N Obs.                1501               1501              
 #> 12 LL                    -1061.914          -1062.195         
 #> 13 AIC                   2141.828           2142.389          
@@ -638,18 +638,15 @@ mean(washington_roads$Animal == 0)
 #> [1] 0.9540306
 zip <- countreg(Animal ~ lnaadt + lnlength, data = washington_roads,
                 family = "Poisson", zero_formula = ~ speed50, method = "NR")
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of (Intercept), lnaadt are NA. The estimate may be on the boundary of
-#> the parameter space or not at a maximum.
 tidy(zip)
 #> # A tibble: 5 × 6
-#>   term             component estimate std.error statistic   p.value
-#>   <chr>            <chr>        <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 (Intercept)      mean        -8.64     NA        NA     NA       
-#> 2 lnaadt           mean         0.976    NA        NA     NA       
-#> 3 lnlength         mean         1.53      0.207     7.40   1.35e-13
-#> 4 Zero:(Intercept) zero        -0.116     0.399    -0.290  7.72e- 1
-#> 5 Zero:speed50     zero         1.51      0.458     3.30   9.74e- 4
+#>   term             component estimate std.error statistic  p.value
+#>   <chr>            <chr>        <dbl>     <dbl>     <dbl>    <dbl>
+#> 1 (Intercept)      mean        -8.64      1.18     -7.32  2.44e-13
+#> 2 lnaadt           mean         0.976     0.136     7.20  6.00e-13
+#> 3 lnlength         mean         1.53      0.212     7.21  5.47e-13
+#> 4 Zero:(Intercept) zero        -0.116     0.478    -0.242 8.09e- 1
+#> 5 Zero:speed50     zero         1.51      0.477     3.17  1.55e- 3
 rbind(Poisson = glance(update(zip, zero_formula = NULL)),
       ZIP = glance(zip))[, c("logLik", "AIC", "BIC")]
 #> # A tibble: 2 × 3

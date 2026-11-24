@@ -140,9 +140,6 @@ do not by themselves call for a separate zero process.
 
 zinb_const <- countreg(f, data = b, family = "NB2", zero_formula = ~ 1,
                        method = "BFGS")
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of Zero:(Intercept) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 zinb <- countreg(f, data = b, family = "NB2",
                  zero_formula = ~ ment + kid5, method = "BFGS")
 hnb <- countreg(f, data = b, family = "NB2",
@@ -158,7 +155,7 @@ its standard error is `NA`:
 
 summary(zinb_const)$coefficients["Zero:(Intercept)", 1:2]
 #>   Estimate Std. Error 
-#>  -12.32427         NA
+#>  -12.32427   67.71443
 plogis(coef(zinb_const)[["Zero:(Intercept)"]])
 #> [1] 4.442605e-06
 ```
@@ -177,17 +174,17 @@ zc <- function(m) {
 }
 zc(zinb)
 #>                    Estimate Std. Error
-#> Zero:(Intercept) -0.8786574  0.4028556
-#> Zero:ment        -0.6113860  0.2464432
-#> Zero:kid5         0.1564024  0.3569711
+#> Zero:(Intercept) -0.8786574  0.4036952
+#> Zero:ment        -0.6113860  0.2458692
+#> Zero:kid5         0.1564024  0.3617611
 zc(hnb)
 #>                     Estimate Std. Error
-#> Zero:(Intercept)  0.23680758 0.29553208
-#> Zero:femWomen    -0.25115052 0.15905687
-#> Zero:marMarried   0.32623628 0.18064477
-#> Zero:kid5        -0.28525098 0.11127637
-#> Zero:phd          0.02221526 0.07968591
-#> Zero:ment         0.08012173 0.01301641
+#> Zero:(Intercept)  0.23680758 0.29551909
+#> Zero:femWomen    -0.25115052 0.15910530
+#> Zero:marMarried   0.32623628 0.18081834
+#> Zero:kid5        -0.28525098 0.11113046
+#> Zero:phd          0.02221526 0.07955718
+#> Zero:ment         0.08012173 0.01301809
 ```
 
 flexCountReg’s likelihoods and zero-model coefficients agree with those

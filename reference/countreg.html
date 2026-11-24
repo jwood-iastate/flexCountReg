@@ -976,7 +976,6 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-in"><span>                  data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"PLN"</span>, engine<span class="op">=</span><span class="st">"poilog"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">pln</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The Hessian is not negative definite at the estimates, so the standard errors of (Intercept), lnaadt, ln(sigma) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> countreg(formula = Total_crashes ~ lnaadt + lnlength + speed50 + </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     AADT10kplus, data = washington_roads, family = "PLN", engine = "poilog")</span>
@@ -987,12 +986,12 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)   -7.507         NA      NA       NA    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt         0.910         NA      NA       NA    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength       0.847      0.112    7.58  3.5e-14 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50       -0.459      0.106   -4.34  1.4e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus    0.809      0.133    6.07  1.3e-09 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(sigma)     -0.734         NA      NA       NA    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.5072     0.4717  -15.92  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.9101     0.0564   16.13  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8474     0.0701   12.09  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4588     0.1075   -4.27  2.0e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.8089     0.1306    6.19  5.9e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(sigma)    -0.7343     0.1504   -4.88  1.0e-06 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1020,15 +1019,15 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                            Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                 -6.6923     1.2044   -5.56  2.7e-08 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt                       0.9358     0.0562   16.66  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength                     0.8517     0.0698   12.21  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50                      0.5700     1.0308    0.55     0.58    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus                  0.1580     0.8404    0.19     0.85    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha)                   -1.5854     0.3837   -4.13  3.6e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:(Intercept)  -0.2370     1.1619   -0.20     0.84    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:speed50      -0.8505     0.9645   -0.88     0.38    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:AADT10kplus   0.7909     0.7482    1.06     0.29    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)                 -6.6923     1.1088   -6.04  1.6e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt                       0.9358     0.0565   16.56  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength                     0.8517     0.0696   12.24  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50                      0.5700     0.9254    0.62     0.54    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus                  0.1580     0.8062    0.20     0.84    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha)                   -1.5854     0.3739   -4.24  2.2e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:(Intercept)  -0.2370     1.0470   -0.23     0.82    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:speed50      -0.8505     0.8172   -1.04     0.30    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Underreporting:AADT10kplus   0.7909     0.7622    1.04     0.30    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1050,12 +1049,12 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.4230     0.4677  -15.87  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.9127     0.0565   16.16  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8400     0.0668   12.58  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4451     0.1031   -4.32  1.6e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.7872     0.1259    6.25  4.1e-10 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(nu)       -0.6199     0.1715   -3.62    3e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.4230     0.6246  -11.88  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.9127     0.0770   11.86  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8400     0.0734   11.45  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4451     0.1079   -4.13  3.7e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.7872     0.1355    5.81  6.2e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(nu)       -0.6199     0.2086   -2.97    0.003 ** </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1078,12 +1077,12 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.2956     0.4747  -15.37  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.8963     0.0565   15.86  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8200     0.0616   13.30  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4448     0.0976   -4.56  5.2e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.7684     0.1093    7.03  2.0e-12 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(phi+1)     0.0875     0.0277    3.16   0.0016 ** </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.2956     0.4728  -15.43  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.8963     0.0561   15.97  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8200     0.0669   12.26  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4448     0.1067   -4.17  3.1e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.7684     0.1175    6.54  6.2e-11 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(phi+1)     0.0875     0.0274    3.19   0.0014 ** </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -1106,12 +1105,12 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.3820     0.4606  -16.03  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.9088     0.0558   16.28  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8470     0.0692   12.23  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4599     0.1027   -4.48  7.5e-06 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.8123     0.1350    6.02  1.8e-09 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha+1)   0.1056     0.0284    3.72    2e-04 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.3820     0.4730  -15.61  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.9088     0.0567   16.02  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8470     0.0701   12.08  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4599     0.1065   -4.32  1.6e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.8123     0.1321    6.15  7.8e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha+1)   0.1056     0.0292    3.61    3e-04 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

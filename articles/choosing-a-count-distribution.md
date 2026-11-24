@@ -112,8 +112,8 @@ share and shape parameters have large standard errors here:
 
 summary(models$DELAPORTE)$coefficients[c("logit(rho)", "ln(k)"), 1:2]
 #>              Estimate Std. Error
-#> logit(rho)  0.6671856  0.9616704
-#> ln(k)      -0.0253976  0.7495974
+#> logit(rho)  0.6671856  1.2832908
+#> ln(k)      -0.0253976  0.9906041
 ```
 
 The data do not separate the Poisson and negative binomial components of

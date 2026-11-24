@@ -123,26 +123,26 @@ fits <- lapply(designs, function(g) {
            method = "BFGS")
 })
 #> Warning: The underreporting model is weakly identified: the estimates of
-#> Underreporting:(Intercept) and (Intercept) have correlation -0.993. The data
+#> Underreporting:(Intercept) and (Intercept) have correlation -0.994. The data
 #> barely separate the true count mean from the reporting probability; interpret
 #> the true-count estimates with caution, and consider reporting variables that do
 #> not affect the true counts or external validation data.
 lapply(fits, function(m) round(summary(m)$coefficients[, 1:2], 3))
 #> $weak
 #>                            Estimate Std. Error
-#> (Intercept)                   1.089      0.323
+#> (Intercept)                   1.089      0.337
 #> x                             0.541      0.024
-#> ln(alpha)                    -0.711      0.074
-#> Underreporting:(Intercept)    1.201      1.180
-#> Underreporting:w             -1.936      0.796
+#> ln(alpha)                    -0.711      0.075
+#> Underreporting:(Intercept)    1.201      1.236
+#> Underreporting:w             -1.936      0.836
 #> 
 #> $strong
 #>                            Estimate Std. Error
 #> (Intercept)                   0.988      0.063
 #> x                             0.517      0.025
 #> ln(alpha)                    -0.694      0.076
-#> Underreporting:(Intercept)    3.182      0.499
-#> Underreporting:w             -5.234      0.543
+#> Underreporting:(Intercept)    3.182      0.493
+#> Underreporting:w             -5.234      0.535
 ```
 
 The truth is $`\beta_0 = 1`$, $`\beta_x = 0.5`$ and
@@ -200,10 +200,10 @@ recovery_table <- do.call(rbind, lapply(names(designs), function(k) {
 recovery_table[, 4:6] <- round(recovery_table[, 4:6], 3)
 recovery_table
 #>   design       parameter truth   mean median    sd converged warned
-#> 1   weak     (Intercept)   1.0  1.167  1.019 0.525        20     10
-#> 2   weak               x   0.5  0.501  0.505 0.024        20     10
-#> 3   weak Rep:(Intercept)   1.5  1.498  1.295 1.571        20     10
-#> 4   weak           Rep:w  -2.0 -2.214 -1.820 1.061        20     10
+#> 1   weak     (Intercept)   1.0  1.167  1.019 0.525        20     11
+#> 2   weak               x   0.5  0.501  0.505 0.024        20     11
+#> 3   weak Rep:(Intercept)   1.5  1.498  1.295 1.571        20     11
+#> 4   weak           Rep:w  -2.0 -2.214 -1.820 1.061        20     11
 #> 5 strong     (Intercept)   1.0  0.990  0.974 0.084        20      0
 #> 6 strong               x   0.5  0.504  0.508 0.024        20      0
 #> 7 strong Rep:(Intercept)   3.0  3.102  2.977 0.671        20      0
@@ -213,7 +213,7 @@ recovery_table
 The summaries use all converged fits; `warned` counts the fits for which
 flexCountReg warned that the underreporting model is weakly identified.
 In the strong design, 0 of 20 fits gave that warning and the estimates
-centre on the truth. In the weak design 10 of 20 fits gave it, and the
+centre on the truth. In the weak design 11 of 20 fits gave it, and the
 reporting intercept has a standard deviation of 1.6 logit units across
 replicates: the estimates are unstable even though $`w`$ is a valid
 exclusion restriction. (Discarding the warned fits would not help: the
@@ -323,24 +323,21 @@ both <- withCallingHandlers(
     message("Warning: ", conditionMessage(w))
     invokeRestart("muffleWarning")
   })
-#> Warning: The Hessian is not negative definite at the estimates, so the standard errors of (Intercept), w, Underreporting:(Intercept), Underreporting:w are NA. The estimate may be on the boundary of the parameter space or not at a maximum.
-#> Warning: The underreporting model is weakly identified: the covariance matrix of the estimates is not positive definite (a flat likelihood ridge). The data do not separate the true count mean from the reporting probability; interpret the true-count estimates with caution, and consider reporting variables that do not affect the true counts or external validation data.
+#> Warning: The underreporting model is weakly identified: the estimates of Underreporting:(Intercept) and (Intercept) have correlation -0.999. The data barely separate the true count mean from the reporting probability; interpret the true-count estimates with caution, and consider reporting variables that do not affect the true counts or external validation data.
 round(summary(both)$coefficients[, 1:2], 3)
 #>                            Estimate Std. Error
-#> (Intercept)                   5.237         NA
+#> (Intercept)                   5.237      1.202
 #> x                             0.518      0.025
-#> w                            -6.300         NA
+#> w                            -6.300      1.246
 #> ln(alpha)                    -0.695      0.076
-#> Underreporting:(Intercept)   -4.224         NA
-#> Underreporting:w              5.800         NA
+#> Underreporting:(Intercept)   -4.224      1.190
+#> Underreporting:w              5.800      0.943
 round(cov2cor(vcov(both))[c("(Intercept)", "w"),
                           c("Underreporting:(Intercept)",
                             "Underreporting:w")], 3)
-#> Warning in cov2cor(vcov(both)): diag(V) had non-positive or NA entries; the
-#> non-finite result may be dubious
 #>             Underreporting:(Intercept) Underreporting:w
-#> (Intercept)                        NaN              NaN
-#> w                                  NaN              NaN
+#> (Intercept)                     -0.999            0.946
+#> w                                0.995           -0.972
 ```
 
 The data were generated with no effect of $`w`$ on the true count and

@@ -119,10 +119,10 @@ summary(m)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  -9.2125     0.4442  -20.74  < 2e-16 ***
-#> lnaadt        1.1159     0.0529   21.10  < 2e-16 ***
+#> (Intercept)  -9.2125     0.4445  -20.73  < 2e-16 ***
+#> lnaadt        1.1159     0.0529   21.09  < 2e-16 ***
 #> lnlength      0.7441     0.0696   10.69  < 2e-16 ***
-#> ln(theta)     0.9162     0.2335    3.92  8.7e-05 ***
+#> ln(theta)     0.9162     0.2337    3.92  8.8e-05 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

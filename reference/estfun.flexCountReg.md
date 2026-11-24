@@ -59,7 +59,7 @@ m <- countreg(Total_crashes ~ lnaadt + lnlength, data = washington_roads,
               family = "NB2", method = "BFGS")
 sandwich::vcovCL(m, cluster = washington_roads$ID, type = "HC0")
 #>              (Intercept)        lnaadt      lnlength    ln(alpha)
-#> (Intercept)  0.343855392 -3.923457e-02  7.031254e-03  0.022182837
+#> (Intercept)  0.343855393 -3.923457e-02  7.031254e-03  0.022182837
 #> lnaadt      -0.039234573  4.610843e-03  3.194782e-05 -0.002843661
 #> lnlength     0.007031254  3.194782e-05  7.591455e-03 -0.001220079
 #> ln(alpha)    0.022182837 -2.843661e-03 -1.220079e-03  0.058516309

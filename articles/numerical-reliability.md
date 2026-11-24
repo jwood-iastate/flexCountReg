@@ -65,6 +65,9 @@ washington_roads$aadt <- exp(washington_roads$lnaadt)
 washington_roads$aadt_10k <- washington_roads$aadt / 1e4
 fits$NM_raw_aadt <- countreg(Total_crashes ~ aadt + speed50,
                              data = washington_roads, family = "NB2")
+#> Warning: The numerical Hessian is uncertain: standard errors change by up to
+#> 5.4% between differencing steps. Some parameters may be weakly identified (a
+#> nearly flat log-likelihood); treat their standard errors with care.
 fits$NM_aadt_10k <- countreg(Total_crashes ~ aadt_10k + speed50,
                              data = washington_roads, family = "NB2")
 status_table <- do.call(rbind, lapply(fits, fit_status))
@@ -73,14 +76,14 @@ status_table
 #> NM               TRUE    0        446 -1084.942         7.50e-02      5.09
 #> BFGS             TRUE    0         34 -1084.942         3.48e-04      5.09
 #> NR               TRUE    1          3 -1084.942         1.06e-08      5.09
-#> BHHH             TRUE    8          5 -1084.942         3.42e-02      6.06
-#> NM_raw_aadt      TRUE    0        217 -1159.276         7.06e+02     34.60
+#> BHHH             TRUE    8          5 -1084.942         3.42e-02      5.09
+#> NM_raw_aadt      TRUE    0        217 -1159.276         7.06e+02     34.70
 #> NM_aadt_10k      TRUE    0        119 -1159.277         8.15e-02     33.40
 #>             condition
 #> NM           7.64e+03
 #> BFGS         7.64e+03
 #> NR           7.64e+03
-#> BHHH         6.46e+03
+#> BHHH         7.64e+03
 #> NM_raw_aadt  7.41e+08
 #> NM_aadt_10k  1.94e+01
 #>                                                                         message
@@ -140,7 +143,7 @@ round(boundary, 3)
 #> 1    -3.451  1.454         1      0        0
 #> 2    -3.705  1.809         1      0        0
 #> 3    -2.680  0.724         1      0        0
-#> 4   -11.233 60.273         1      0        0
+#> 4   -11.233 60.270         1      0        0
 #> 5    -6.181 20.512         1      0        0
 #> 6    -6.908  6.702         1      0        1
 #> 7    -3.722  1.703         1      0        0
@@ -148,10 +151,10 @@ round(boundary, 3)
 #> 9    -3.977  2.366         1      0        0
 #> 10   -3.515  1.705         1      0        0
 #> 11   -3.368  1.295         1      0        0
-#> 12  -10.750 53.641         1      0        0
+#> 12  -10.750 53.640         1      0        0
 #> 13   -6.908  7.080         1      0        1
 #> 14   -2.627  0.754         1      0        0
-#> 15  -11.319 48.728         1      0        0
+#> 15  -11.319 48.727         1      0        0
 #> 16   -6.908  7.839         1      0        1
 #> 17   -3.164  1.183         1      0        0
 #> 18   -6.908  6.052         1      0        1
@@ -271,13 +274,13 @@ halton <- do.call(rbind, lapply(c(25, 50, 100, 200, 400),
                                 function(r) pln("halton", r)))
 rbind(quad, halton)
 #>       engine ndraws    logLik   ln_sigma se_ln_sigma
-#> 1 quadrature     50 -294.4796 -0.5551128   0.2282297
-#> 2 quadrature   1500 -294.4796 -0.5551128   0.2282297
-#> 3     halton     25 -294.4376 -0.3531253   0.2339105
-#> 4     halton     50 -294.4294 -0.4321822   0.2292423
-#> 5     halton    100 -294.4224 -0.4745107   0.2282395
-#> 6     halton    200 -294.4255 -0.5017463   0.2272242
-#> 7     halton    400 -294.4333 -0.5200564   0.2268687
+#> 1 quadrature     50 -294.4796 -0.5551128   0.2282893
+#> 2 quadrature   1500 -294.4796 -0.5551128   0.2282893
+#> 3     halton     25 -294.4376 -0.3531253   0.2340590
+#> 4     halton     50 -294.4294 -0.4321822   0.2294705
+#> 5     halton    100 -294.4224 -0.4745107   0.2281815
+#> 6     halton    200 -294.4255 -0.5017463   0.2273157
+#> 7     halton    400 -294.4333 -0.5200564   0.2268872
 ```
 
 The two quadrature fits are identical: quadrature ignores `ndraws`, and

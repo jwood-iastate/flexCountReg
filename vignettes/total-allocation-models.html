@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Total-plus-allocation models: counts by severity</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Total-plus-allocation models: counts by
+severity</h1>
+
+
+
+<p>Crash counts often come in categories at each site. The categories
+can be:</p>
+<ul>
+<li><strong>ordered</strong>, such as severity levels: property damage
+only (PDO), injury and fatal crashes;</li>
+<li><strong>unordered</strong>, such as crash types: animal, rollover
+and other crashes, or collision types, or vehicle types.</li>
+</ul>
+<p>One way to model them is to describe two things:</p>
+<ul>
+<li>how many crashes happen (the <strong>total</strong>);</li>
+<li>how they <strong>split</strong> across the categories.</li>
+</ul>
+<p><code>countreg_alloc()</code> fits both parts jointly. The total
+follows any count family of the package, and each part has its own
+covariates. The split follows an ordered probit or ordered logit model
+for ordered categories (sections 1 to 4), or a multinomial logit model
+for unordered ones (section 5).</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>w <span class="ot">&lt;-</span> washington_roads</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>w<span class="sc">$</span>pdo <span class="ot">&lt;-</span> w<span class="sc">$</span>Total_crashes <span class="sc">-</span> w<span class="sc">$</span>Injury_crashes <span class="sc">-</span> w<span class="sc">$</span>Fatal_crashes</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>w<span class="sc">$</span>injury <span class="ot">&lt;-</span> w<span class="sc">$</span>Injury_crashes</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>w<span class="sc">$</span>fatal <span class="ot">&lt;-</span> w<span class="sc">$</span>Fatal_crashes</span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">colSums</span>(w[, <span class="fu">c</span>(<span class="st">&quot;pdo&quot;</span>, <span class="st">&quot;injury&quot;</span>, <span class="st">&quot;fatal&quot;</span>)])</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt;    pdo injury  fatal </span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt;    633     57      5</span></span></code></pre></div>
+<div id="the-model" class="section level2">
+<h2>1. The model</h2>
+<p>For a site with category counts <span class="math inline">\(y_1,
+\dots, y_J\)</span> and total <span class="math inline">\(c = \sum_j
+y_j\)</span>:</p>
+<p><span class="math display">\[
+P(y_1, \dots, y_J) = P(c) \times \frac{c!}{\prod_j y_j!}
+\prod_j \pi_j^{y_j}.
+\]</span></p>
+<p><span class="math inline">\(P(c)\)</span> is the count model of the
+total, here NB2 with mean <span class="math inline">\(\mu =
+\exp(x&#39;\beta)\)</span>. The <span class="math inline">\(\pi_j\)</span> are the allocation probabilities.
+For severity levels, ordered from the least to the most severe, an
+ordered probit gives them from a latent severity propensity <span class="math inline">\(z&#39;\gamma\)</span> and thresholds <span class="math inline">\(\psi_k\)</span>:</p>
+<p><span class="math display">\[
+\pi_j = \Phi(\psi_j - z&#39;\gamma) - \Phi(\psi_{j-1} - z&#39;\gamma).
+\]</span></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">countreg_alloc</span>(<span class="fu">cbind</span>(pdo, injury, fatal) <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>                      <span class="fu">offset</span>(lnlength),</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>                    <span class="at">alloc_formula =</span> <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>                    <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">summary</span>(m)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; Total-plus-allocation count model</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; Total:       NB2 </span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt; Allocation:  ordered_probit with multinomial likelihood</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt; Categories:  pdo &lt; injury &lt; fatal </span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; Units:      1501 (1101 with a zero total)</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; Std. errors: normal </span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt; Total:</span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; (Intercept) -8.89586    0.44648 -19.924  &lt; 2e-16 ***</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; lnaadt       1.12442    0.05141  21.870  &lt; 2e-16 ***</span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; speed50     -0.56771    0.11020  -5.152 2.58e-07 ***</span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; Distribution:</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt;           Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; ln(alpha)  -0.9126     0.2279  -4.005 6.21e-05 ***</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; Allocation:</span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt;                    Estimate Std. Error z value Pr(&gt;|z|)   </span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt; Allocation:lnaadt  -0.21819    0.06993  -3.120  0.00181 **</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; Allocation:speed50 -0.42783    0.19748  -2.166  0.03028 * </span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt; Thresholds:</span></span>
+<span id="cb2-30"><a href="#cb2-30" tabindex="-1"></a><span class="co">#&gt;                        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb2-31"><a href="#cb2-31" tabindex="-1"></a><span class="co">#&gt; Threshold1:(Intercept)  -0.5968     0.6035  -0.989    0.323</span></span>
+<span id="cb2-32"><a href="#cb2-32" tabindex="-1"></a><span class="co">#&gt; Threshold2:(Intercept)   0.1197     0.1410   0.849    0.396</span></span>
+<span id="cb2-33"><a href="#cb2-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-34"><a href="#cb2-34" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1275.7071  AIC: 2567.4143  BIC: 2609.9254</span></span></code></pre></div>
+<p>A positive allocation coefficient shifts crashes toward the more
+severe categories.</p>
+<p>The thresholds are <span class="math inline">\(\psi_1\)</span>
+(<code>Threshold1</code>) and the log of the gap <span class="math inline">\(\psi_2 - \psi_1\)</span>
+(<code>Threshold2</code>). This keeps them in order.</p>
+</div>
+<div id="zero-totals-are-part-of-the-model" class="section level2">
+<h2>2. Zero totals are part of the model</h2>
+<p>Most segment-years have no crashes. Such a segment-year contributes
+<span class="math inline">\(P(c = 0)\)</span> to the likelihood and
+nothing about the split, since there are no crashes to split. The total
+is <strong>not truncated</strong> at one: zeros are ordinary
+observations of the count model.</p>
+<p>Data sometimes hold only units with at least one crash by
+construction, for example when they are built from crash records. There
+the total should follow the zero-truncated distribution <span class="math inline">\(P(c) / (1 - P(0))\)</span>, which
+<code>truncated = TRUE</code> gives. Fitting such data without it biases
+the count model, and <code>countreg_alloc()</code> says so when the data
+have no zero totals:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>pos <span class="ot">&lt;-</span> w[w<span class="sc">$</span>Total_crashes <span class="sc">&gt;</span> <span class="dv">0</span>, ]</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>f <span class="ot">&lt;-</span> <span class="fu">cbind</span>(pdo, injury, fatal) <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span> <span class="fu">offset</span>(lnlength)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>mt <span class="ot">&lt;-</span> <span class="fu">countreg_alloc</span>(f, <span class="at">alloc_formula =</span> <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">data =</span> pos,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>                     <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">truncated =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>mn <span class="ot">&lt;-</span> <span class="fu">countreg_alloc</span>(f, <span class="at">alloc_formula =</span> <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50, <span class="at">data =</span> pos,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>                     <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; No unit has a zero total. If the data hold only units with at least one event by construction, use `truncated = TRUE`; otherwise the untruncated total is right.</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>se <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="fu">sqrt</span>(<span class="fu">diag</span>(<span class="fu">vcov</span>(x)))[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">rbind</span>(<span class="at">all_rows =</span> <span class="fu">coef</span>(m)[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], <span class="at">se =</span> <span class="fu">se</span>(m),</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>            <span class="at">positive_truncated =</span> <span class="fu">coef</span>(mt)[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>], <span class="at">se =</span> <span class="fu">se</span>(mt),</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>            <span class="at">positive_not_truncated =</span> <span class="fu">coef</span>(mn)[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]), <span class="dv">3</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt;                        (Intercept) lnaadt speed50 ln(alpha)</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; all_rows                    -8.896  1.124  -0.568    -0.913</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; se                           0.446  0.051   0.110     0.228</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; positive_truncated         -10.945  1.342  -0.162    -0.946</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt; se                           1.092  0.120   0.196     0.462</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; positive_not_truncated      -3.491  0.569  -0.072    -3.509</span></span></code></pre></div>
+<p>On the 400 segment-years with crashes, the truncated fit estimates
+the same count model as the fit on all rows, but from much less
+information: its standard errors are more than twice as large, because
+the zeros carried information too, and its estimates differ from the
+full fit by up to about two of those standard errors. The untruncated
+fit on the same rows is badly biased: it mistakes the missing zeros for
+a much higher crash rate and almost no overdispersion.</p>
+<p>The expected totals of a truncated fit are those of the untruncated
+distribution. <code>type = &quot;total_positive&quot;</code> (or
+<code>conditional = TRUE</code> for the category counts) gives the
+expected count <em>given</em> at least one crash.</p>
+</div>
+<div id="predictions" class="section level2">
+<h2>3. Predictions</h2>
+<p><code>predict()</code> returns the expected count in each category,
+<span class="math inline">\(E[c]\,\pi_j\)</span>, by default.
+<code>type = &quot;prob&quot;</code> gives the probabilities <span class="math inline">\(\pi_j\)</span>, and <code>type = &quot;total&quot;</code>
+gives the expected total:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> w[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">50</span>, <span class="dv">200</span>), ]</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">predict</span>(m, <span class="at">newdata =</span> nd)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;           pdo     injury        fatal</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; 1   0.7667519 0.02801566 0.0014201332</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 50  0.1031854 0.01093792 0.0009719956</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 200 0.7648239 0.04933585 0.0033316044</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">predict</span>(m, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;           pdo     injury       fatal</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1   0.9630291 0.03518726 0.001783666</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 50  0.8965213 0.09503359 0.008445140</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; 200 0.9355743 0.06035031 0.004075400</span></span></code></pre></div>
+<p><code>simulate()</code> draws new category counts: a total from the
+count model, then its split from the multinomial distribution.</p>
+</div>
+<div id="generalized-thresholds" class="section level2">
+<h2>4. Generalized thresholds</h2>
+<p><code>threshold_formula</code> lets the thresholds depend on
+covariates, so a variable can change the shares of the middle categories
+differently from the extremes:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>mg <span class="ot">&lt;-</span> <span class="fu">countreg_alloc</span>(<span class="fu">cbind</span>(pdo, injury, fatal) <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                       <span class="fu">offset</span>(lnlength), <span class="at">alloc_formula =</span> <span class="sc">~</span> lnaadt,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>                     <span class="at">threshold_formula =</span> <span class="sc">~</span> speed50, <span class="at">data =</span> w,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>                     <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">AIC</span>(m, mg)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;    df      AIC</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; m   8 2567.414</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; mg  9 2568.491</span></span></code></pre></div>
+</div>
+<div id="unordered-categories-counts-by-crash-type" class="section level2">
+<h2>5. Unordered categories: counts by crash type</h2>
+<p>Crash types have no order: an animal crash is not “more” than a
+rollover. For such categories, <code>link = &quot;mnl&quot;</code> splits the
+total with a multinomial logit:</p>
+<p><span class="math display">\[
+\pi_j = \frac{\exp(z&#39;\delta_j)}{\sum_k \exp(z&#39;\delta_k)},
+\qquad \delta_1 = 0.
+\]</span></p>
+<p>The first column of <code>cbind()</code> is the base category. Every
+other category has its own coefficients <span class="math inline">\(\delta_j\)</span>, so a variable can shift crashes
+toward one type and away from another. The order of the other columns
+does not matter, and a different base gives the same fit with
+coefficients relative to that base.</p>
+<p><code>washington_roads</code> counts animal and rollover crashes; the
+rest of the total are other crashes:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>w<span class="sc">$</span>other <span class="ot">&lt;-</span> w<span class="sc">$</span>Total_crashes <span class="sc">-</span> w<span class="sc">$</span>Animal <span class="sc">-</span> w<span class="sc">$</span>Rollover</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">colSums</span>(w[, <span class="fu">c</span>(<span class="st">&quot;other&quot;</span>, <span class="st">&quot;Animal&quot;</span>, <span class="st">&quot;Rollover&quot;</span>)])</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt;    other   Animal Rollover </span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;      587       85       23</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>mty <span class="ot">&lt;-</span> <span class="fu">countreg_alloc</span>(<span class="fu">cbind</span>(other, Animal, Rollover) <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>                        <span class="fu">offset</span>(lnlength), <span class="at">alloc_formula =</span> <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50,</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>                      <span class="at">link =</span> <span class="st">&quot;mnl&quot;</span>, <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="fu">summary</span>(mty)</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Total-plus-allocation count model</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; Total:       NB2 </span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; Allocation:  mnl with multinomial likelihood</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; Categories:  other, Animal, Rollover (unordered; base: other )</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Units:      1501 (1101 with a zero total)</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; Std. errors: normal </span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; Total:</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; (Intercept) -8.89582    0.44648 -19.924  &lt; 2e-16 ***</span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; lnaadt       1.12441    0.05141  21.870  &lt; 2e-16 ***</span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; speed50     -0.56772    0.11020  -5.152 2.58e-07 ***</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Distribution:</span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt;           Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; ln(alpha)  -0.9126     0.2279  -4.005 6.21e-05 ***</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; Allocation:</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt;                                  Estimate Std. Error z value Pr(&gt;|z|)   </span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; Allocation[Animal]:(Intercept)     0.1246     1.0560   0.118  0.90605   </span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; Allocation[Animal]:lnaadt         -0.2327     0.1214  -1.917  0.05520 . </span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; Allocation[Animal]:speed50        -0.2234     0.3049  -0.733  0.46377   </span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; Allocation[Rollover]:(Intercept)   1.7220     1.6447   1.047  0.29508   </span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; Allocation[Rollover]:lnaadt       -0.5778     0.1974  -2.926  0.00343 **</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; Allocation[Rollover]:speed50      -0.3054     0.5628  -0.543  0.58736   </span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1394.5601  AIC: 2809.1201  BIC: 2862.259</span></span></code></pre></div>
+<p><code>Allocation[Rollover]:lnaadt</code> is the effect of log traffic
+on the log odds of a rollover rather than an other crash. It is
+negative: busier segments have more crashes in total, but a smaller
+share of them are rollovers. The animal-crash share falls with traffic
+too, but that evidence is weak (p about 0.06). The predicted
+probabilities are the expected shares of each type:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">predict</span>(mty, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;          other    Animal   Rollover</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1,] 0.8805247 0.0990260 0.02044926</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7751093 0.1526090 0.07228169</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [3,] 0.8777534 0.1041112 0.01813543</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">predict</span>(mty, <span class="at">newdata =</span> nd)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;           other     Animal    Rollover</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; [1,] 0.70105912 0.07884285 0.016281360</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [2,] 0.08921174 0.01756464 0.008319311</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; [3,] 0.71755344 0.08510973 0.014825506</span></span></code></pre></div>
+<p>How does this compare with a separate count model for each type?</p>
+<ul>
+<li>With a <strong>Poisson</strong> total and the count model’s
+covariates in <code>alloc_formula</code>, the model is the same as
+independent Poisson regressions of each type, with the same
+log-likelihood.</li>
+<li>With an <strong>overdispersed</strong> total (such as NB2), the
+types share the total’s unobserved heterogeneity: a segment with more
+crashes than expected has more of every type. Separate NB models cannot
+capture that.</li>
+<li>The split has its own covariates, so a variable can affect how many
+crashes happen without changing their mix, or the reverse.</li>
+</ul>
+<p>The multinomial logit assumes independence of irrelevant
+alternatives: the ratio of the shares of two types does not depend on
+the other types. Random parameters in <code>rpar_alloc</code> (section
+8) relax this. They give each category but the first its own random
+coefficients, a mixed logit split. The other options also work with
+<code>link = &quot;mnl&quot;</code>: <code>truncated</code>, <code>tv()</code>,
+<code>likelihood = &quot;fractional&quot;</code> and the shared site-year term
+(section 9), which gets a loading for each category but the first. The
+threshold options (<code>threshold_formula</code>,
+<code>rpar_threshold</code>, <code>shared_in = &quot;threshold&quot;</code>) apply
+only to the ordered links.</p>
+</div>
+<div id="multinomial-or-fractional-likelihood" class="section level2">
+<h2>6. Multinomial or fractional likelihood</h2>
+<p>The default likelihood raises each <span class="math inline">\(\pi_j\)</span> to the category
+<strong>count</strong> <span class="math inline">\(y_j\)</span>. That
+makes it a proper likelihood of the category counts, so likelihood-ratio
+tests, AIC and BIC are valid.</p>
+<p>Shabab et al. (2026) instead raise <span class="math inline">\(\pi_j\)</span> to the observed
+<strong>share</strong> <span class="math inline">\(y_j / c\)</span>.
+Then a site-year with one crash carries the same weight in the split as
+one with a hundred. <code>likelihood = &quot;fractional&quot;</code> gives that
+version. It is a quasi-likelihood, so:</p>
+<ul>
+<li>standard errors come from the sandwich, clustered by
+<code>group_var</code> when it is given;</li>
+<li>AIC, BIC and likelihood-ratio tests are not available.</li>
+</ul>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>mf <span class="ot">&lt;-</span> <span class="fu">countreg_alloc</span>(<span class="fu">cbind</span>(pdo, injury, fatal) <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>                       <span class="fu">offset</span>(lnlength), <span class="at">alloc_formula =</span> <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>                     <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">likelihood =</span> <span class="st">&quot;fractional&quot;</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>                     <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">multinomial =</span> <span class="fu">coef</span>(m), <span class="at">fractional =</span> <span class="fu">coef</span>(mf))</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;                        multinomial  fractional</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; (Intercept)             -8.8958570 -8.89587118</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; lnaadt                   1.1244164  1.12441836</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; speed50                 -0.5677125 -0.56771887</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; ln(alpha)               -0.9125921 -0.91257179</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; Allocation:lnaadt       -0.2181929 -0.13393479</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Allocation:speed50      -0.4278347 -0.35836783</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; Threshold1:(Intercept)  -0.5968112  0.14842063</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; Threshold2:(Intercept)   0.1196582  0.08127466</span></span></code></pre></div>
+</div>
+<div id="effects-that-change-over-time" class="section level2">
+<h2>7. Effects that change over time</h2>
+<p><code>tv()</code> works in every formula of
+<code>countreg_alloc()</code>, including the allocation and threshold
+formulas. See <code>vignette(&quot;temporal-instability&quot;)</code>.</p>
+</div>
+<div id="random-parameters" class="section level2">
+<h2>8. Random parameters</h2>
+<p>Sites differ in ways the covariates do not capture: some have more
+crashes than their traffic and speed limit predict, and some have more
+severe crashes. <code>rpar_total</code> and <code>rpar_alloc</code> add
+random parameters to the total and to the severity propensity. With
+<code>group_var = &quot;ID&quot;</code>, each road segment gets one draw of its
+random parameters, shared by its three years.
+<code>correlation = &quot;across&quot;</code> lets the two be correlated:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>mr <span class="ot">&lt;-</span> <span class="fu">countreg_alloc</span>(<span class="fu">cbind</span>(pdo, injury, fatal) <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>                       <span class="fu">offset</span>(lnlength), <span class="at">alloc_formula =</span> <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>                     <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>                     <span class="at">rpar_total =</span> <span class="sc">~</span> <span class="dv">1</span>, <span class="at">rpar_alloc =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                     <span class="at">correlation =</span> <span class="st">&quot;across&quot;</span>, <span class="at">rpar_draws =</span> <span class="dv">200</span>, <span class="at">seed =</span> <span class="dv">1</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">summary</span>(mr)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; Total-plus-allocation count model</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; Total:       POISSON </span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; Allocation:  ordered_probit with multinomial likelihood</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; Categories:  pdo &lt; injury &lt; fatal </span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; Units:      507 (1501 rows, 1101 with a zero total)</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; Std. errors: normal </span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; Total:</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; (Intercept) -8.93059    0.50334 -17.743  &lt; 2e-16 ***</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; lnaadt       1.10937    0.05881  18.864  &lt; 2e-16 ***</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; speed50     -0.59187    0.13227  -4.475 7.65e-06 ***</span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; Allocation:</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt;                    Estimate Std. Error z value Pr(&gt;|z|)   </span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; Allocation:lnaadt  -0.23373    0.07423  -3.149  0.00164 **</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; Allocation:speed50 -0.41417    0.20392  -2.031  0.04225 * </span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; Thresholds:</span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt;                        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; Threshold1:(Intercept)  -0.7951     0.6437  -1.235    0.217</span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; Threshold2:(Intercept)   0.1443     0.1442   1.001    0.317</span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; Random parameters (Cholesky factor):</span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt;                                               Estimate Std. Error z value</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; sd:Total:(Intercept)                           0.64050    0.06507   9.843</span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; chol:Allocation:(Intercept)|Total:(Intercept) -0.19673    0.10527  -1.869</span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; sd:Allocation:(Intercept)                     -0.11052    0.27038  -0.409</span></span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a><span class="co">#&gt;                                               Pr(&gt;|z|)    </span></span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a><span class="co">#&gt; sd:Total:(Intercept)                            &lt;2e-16 ***</span></span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a><span class="co">#&gt; chol:Allocation:(Intercept)|Total:(Intercept)   0.0617 .  </span></span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a><span class="co">#&gt; sd:Allocation:(Intercept)                       0.6827    </span></span>
+<span id="cb9-40"><a href="#cb9-40" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-41"><a href="#cb9-41" tabindex="-1"></a><span class="co">#&gt; Random parameters: standard deviations and correlations</span></span>
+<span id="cb9-42"><a href="#cb9-42" tabindex="-1"></a><span class="co">#&gt;                           SD Total:(Intercept)</span></span>
+<span id="cb9-43"><a href="#cb9-43" tabindex="-1"></a><span class="co">#&gt; Total:(Intercept)      0.640                  </span></span>
+<span id="cb9-44"><a href="#cb9-44" tabindex="-1"></a><span class="co">#&gt; Allocation:(Intercept) 0.226            -0.872</span></span>
+<span id="cb9-45"><a href="#cb9-45" tabindex="-1"></a><span class="co">#&gt; (200 draws per unit of ID; 507 units)</span></span>
+<span id="cb9-46"><a href="#cb9-46" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-47"><a href="#cb9-47" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1252.9034  AIC: 2525.8068  BIC: 2578.9457</span></span>
+<span id="cb9-48"><a href="#cb9-48" tabindex="-1"></a><span class="fu">AIC</span>(m, mr)</span>
+<span id="cb9-49"><a href="#cb9-49" tabindex="-1"></a><span class="co">#&gt;    df      AIC</span></span>
+<span id="cb9-50"><a href="#cb9-50" tabindex="-1"></a><span class="co">#&gt; m   8 2567.414</span></span>
+<span id="cb9-51"><a href="#cb9-51" tabindex="-1"></a><span class="co">#&gt; mr 10 2525.807</span></span></code></pre></div>
+<p>The random intercepts fit much better than the NB2 model without
+them. The segment effect on the total (a Poisson-lognormal total) takes
+over the role of the NB2 overdispersion. The negative correlation says
+that segments with more crashes than their covariates predict tend to
+have relatively less severe crashes.</p>
+<p>The likelihood is simulated: each segment’s likelihood is averaged
+over <code>rpar_draws</code> draws of its random parameters (randomly
+shifted Halton points), with analytic gradients.
+<code>rpar_threshold</code> adds a random term to the gaps between
+thresholds, which changes the share of the middle categories. Random
+slopes are more terms in the same formulas, such as
+<code>rpar_total = ~ 1 + lnaadt</code>.</p>
+<p>Predictions for a new segment average over the random parameters
+(<code>random = &quot;marginal&quot;</code>, the default). For a segment in the
+estimation data, <code>random = &quot;posterior&quot;</code> uses its own crash
+history (Empirical Bayes):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> w[w<span class="sc">$</span>ID <span class="sc">==</span> w<span class="sc">$</span>ID[<span class="dv">1</span>], ]</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cbind</span>(<span class="fu">predict</span>(mr, <span class="at">newdata =</span> nd),</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>            <span class="fu">predict</span>(mr, <span class="at">newdata =</span> nd, <span class="at">random =</span> <span class="st">&quot;posterior&quot;</span>)), <span class="dv">3</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;        pdo injury fatal   pdo injury fatal</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1    0.754  0.028 0.001 0.535  0.025 0.001</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 502  0.750  0.028 0.001 0.532  0.025 0.001</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; 1002 0.791  0.029 0.001 0.561  0.026 0.001</span></span></code></pre></div>
+</div>
+<div id="a-shared-site-year-term" class="section level2">
+<h2>9. A shared site-year term</h2>
+<p>Random parameters drawn per segment are shared by all its years. A
+segment-year can also have its own unobserved conditions (a wet winter,
+roadwork) that change both how many crashes happen that year and how
+severe they are. <code>shared_formula</code> adds one standard normal
+draw <span class="math inline">\(u_{it}\)</span> per row to the
+equations in <code>shared_in</code>, each with its own loading <span class="math inline">\(s_{it}&#39;\kappa_e\)</span>:</p>
+<p><span class="math display">\[
+\log \mu_{it} = x_{it}&#39;\beta + \lambda_{\text{total},it}\, u_{it},
+\qquad
+z_{it}&#39;\gamma + \lambda_{\text{alloc},it}\, u_{it}.
+\]</span></p>
+<p>This is the term <span class="math inline">\(\eta_{it}\)</span> of
+Shabab et al. (2026). They use one loading for all equations, which
+makes the correlation positive. With a loading for each equation the
+correlation has the sign of <span class="math inline">\(\lambda_{\text{total}}
+\lambda_{\text{alloc}}\)</span>. Changing the signs of all loadings
+gives the same model, so only their relative sign is identified.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>ms <span class="ot">&lt;-</span> <span class="fu">countreg_alloc</span>(<span class="fu">cbind</span>(pdo, injury, fatal) <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>                       <span class="fu">offset</span>(lnlength), <span class="at">alloc_formula =</span> <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>                     <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">shared_formula =</span> <span class="sc">~</span> <span class="dv">1</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="fu">summary</span>(ms)</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; Total-plus-allocation count model</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; Total:       POISSON </span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; Allocation:  ordered_probit with multinomial likelihood</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; Categories:  pdo &lt; injury &lt; fatal </span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; Units:      1501 (1101 with a zero total)</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; Std. errors: normal </span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; Total:</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; (Intercept) -9.03209    0.44980 -20.080  &lt; 2e-16 ***</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; lnaadt       1.11961    0.05182  21.606  &lt; 2e-16 ***</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; speed50     -0.58737    0.11152  -5.267 1.39e-07 ***</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; Allocation:</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt;                    Estimate Std. Error z value Pr(&gt;|z|)   </span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt; Allocation:lnaadt  -0.22218    0.07233  -3.072  0.00213 **</span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt; Allocation:speed50 -0.40385    0.20247  -1.995  0.04609 * </span></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt; Thresholds:</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt;                        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt; Threshold1:(Intercept)  -0.7095     0.6275  -1.131    0.258</span></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt; Threshold2:(Intercept)   0.1389     0.1431   0.970    0.332</span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt; Shared site-year term (loadings):</span></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a><span class="co">#&gt;                               Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co">#&gt; shared:Total:(Intercept)       0.61195    0.06763   9.049   &lt;2e-16 ***</span></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a><span class="co">#&gt; shared:Allocation:(Intercept) -0.19883    0.15109  -1.316    0.188    </span></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co">#&gt; Shared site-year term: one standard normal draw per row in total, alloc (20 adaptive Gauss-Hermite nodes)</span></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1274.4689  AIC: 2566.9378  BIC: 2614.7627</span></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a><span class="fu">AIC</span>(m, ms)</span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a><span class="co">#&gt;    df      AIC</span></span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a><span class="co">#&gt; m   8 2567.414</span></span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co">#&gt; ms  9 2566.938</span></span></code></pre></div>
+<p>The loading in the total plays the role of the NB2 overdispersion (a
+Poisson total with this term alone is the Poisson-lognormal model), and
+the fit is as good as the NB2 model. The loading in the propensity has
+the opposite sign, but it is not significant: these data show no clear
+year-to-year link between a segment’s crash count and its severity
+split.</p>
+<p><code>shared_formula = ~ lnaadt</code> would let the loadings depend
+on traffic, and <code>shared_in</code> can include
+<code>&quot;threshold&quot;</code>. The integral over <span class="math inline">\(u_{it}\)</span> uses adaptive Gauss-Hermite
+quadrature (<code>shared_nodes</code>, centred on each row), and
+<code>countreg_alloc()</code> warns when doubling the nodes changes the
+log-likelihood noticeably. With random parameters, the quadrature runs
+inside each draw of the segment’s parameters, which multiplies the cost
+of the fit by the number of nodes.</p>
+</div>
+<div id="reference" class="section level2">
+<h2>Reference</h2>
+<p>Shabab, K. R., Bhowmik, T., Zaki, M. H. and Eluru, N. (2026). A joint
+count and generalized ordered fractional split approach for addressing
+temporal instability in road safety analysis. <em>Analytic Methods in
+Accident Research</em>, 51, 100440.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

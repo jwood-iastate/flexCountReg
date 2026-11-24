@@ -26,6 +26,8 @@ issues, including:
 - effects that change over time (temporal instability) with `tv()`, with
   period-by-period effects and tests from `temporal_effects()` and
   `temporal_tests()`;
+- total-plus-allocation models of a count and its split across
+  categories (such as crashes by severity) with `countreg_alloc()`;
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;
 - random parameters, with heterogeneity in their means and variances,
@@ -676,6 +678,8 @@ The vignettes cover the main workflows. Start with
   `vignette("hierarchical-count-models", package = "flexCountReg")`
 - Fixed-effects count models:
   `vignette("fixed-effects-count-models", package = "flexCountReg")`
+- Total-plus-allocation models: counts by severity:
+  `vignette("total-allocation-models", package = "flexCountReg")`
 
 *Finite mixtures and latent classes*
 

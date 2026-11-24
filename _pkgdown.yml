@@ -25,6 +25,7 @@ articles:
   - random-parameters-and-panels
   - hierarchical-count-models
   - fixed-effects-count-models
+  - total-allocation-models
 - title: Finite mixtures and latent classes
   contents:
   - finite-mixture-getting-started
@@ -55,6 +56,8 @@ reference:
   - re_lrtest
   - countreg_fe
   - cre_test
+  - countreg_alloc
+  - predict.countreg_alloc
   - count_families
   - renb
   - poisLindRE

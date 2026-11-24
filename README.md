@@ -19,6 +19,10 @@ issues, including:
   of variables (generalized count models);
 - your own count distributions, defined from a log probability function
   with `new_count_family()` and usable in every model;
+- smooth (generalized additive) effects with the penalized `s()` and
+  `te()` terms of mgcv in the mean, the distribution parameters, the
+  zero model and random-parameter heterogeneity, with automatic
+  smoothing and `plot_smooths()`;
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;
 - random parameters, with heterogeneity in their means and variances,
@@ -144,6 +148,16 @@ computer.
   latent-class count models (the same engine under two vocabularies),
   with several reproducible starts, and `component_probs()` /
   `class_probs()` give prior or posterior class probabilities.
+- Smooth terms such as `s(lnaadt)` or `te(lnaadt, lnlength)` can be used
+  in the formulas of every model: `countreg()`, `countreg_rp()`,
+  `countreg_fe()`, the random-effects panel models (`renb()`,
+  `repois()`, `poislind_re()`, `negmultinom()`), and finite mixtures and
+  latent classes (`countreg_mix()`, `countreg_lc()`, including smooth
+  class membership); the smoothing parameters are selected
+  automatically, `summary()` reports each smooth’s effective degrees of
+  freedom, and `smooth_estimates()` and `plot_smooths()` show the
+  estimated curves with pointwise and simultaneous bands. See
+  `vignette("smooth-effects", package = "flexCountReg")`.
 - `countreg_fe()` estimates fixed-effects count models: Poisson by the
   conditional likelihood (one dimension) or IRLS with alternating
   projections (site and year, …), and any other family, including
@@ -629,6 +643,8 @@ The vignettes cover the main workflows. Start with
   `vignette("choosing-a-count-distribution", package = "flexCountReg")`
 - Modeling dispersion and other distribution parameters:
   `vignette("distribution-parameter-regression", package = "flexCountReg")`
+- Smooth effects: generalized additive count models:
+  `vignette("smooth-effects", package = "flexCountReg")`
 - Understanding zeros, hurdles and the sampling process:
   `vignette("zeros-hurdles-and-sampling", package = "flexCountReg")`
 - Underreporting: observed counts, true counts and identification:

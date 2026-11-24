@@ -18,7 +18,8 @@ countreg_fe(
   time = NULL,
   max.iters = 1000,
   tol = 1e-10,
-  keep_data = TRUE
+  keep_data = TRUE,
+  sp = NULL
 )
 }
 \arguments{
@@ -71,6 +72,9 @@ or of the deviance).}
 
 \item{keep_data}{logical; store the data in the fit (needed for
 predictions on the training rows without \code{newdata}).}
+
+\item{sp}{optional fixed smoothing parameters for smooth terms in
+\code{formula}; by default they are selected automatically.}
 }
 \value{
 An object of class \code{c("countreg_fe", "flexCountReg")}.
@@ -109,6 +113,17 @@ with \code{ssc(adj = FALSE)}; by default fixest also multiplies the
 variance by \eqn{(n-1)/(n-K)}. The log-likelihood is that of the dummy-variable model,
 and its degrees of freedom count the fixed effects, so AIC and BIC
 compare with models that estimate them.
+
+\strong{Smooth terms.} \code{formula} may contain smooth terms
+(\code{s(x)}, \code{te()}, ...) of variables that change within
+groups; a smooth of a variable that is constant within groups is
+absorbed by the fixed effects and gives an error. The fit is then
+penalized, with the smoothing parameters selected as in
+\code{\link{countreg}()}. The smooth bases are built on the rows used in
+estimation (after dropping all-zero and single-observation groups), so
+with fixed smoothing parameters the estimates equal those of
+\code{mgcv::gam()} with group dummies. The jackknife is not available
+with smooth terms.
 
 \code{predict()} uses each known group's estimated effect. A group not
 in the estimation data has no fixed effect: its prediction is

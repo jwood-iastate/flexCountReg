@@ -39,6 +39,12 @@
 #' @param offset optional character vector naming offset variable(s) in
 #'   \code{data}. Multiple offsets are summed. Do not also use \code{offset()}
 #'   in \code{formula} for the same variable.
+#' @param sp optional fixed smoothing parameters for smooth terms
+#'   (\code{s()}, \code{te()}, ...) in the formula(s); by default they are
+#'   selected automatically. Smooth terms are fitted by penalized maximum
+#'   likelihood with Bayesian standard errors (see the "Smooth terms"
+#'   section of \code{\link{countreg}}); bootstrap standard errors are not
+#'   available with them.
 #' @param weights the name of a column of `data`, or a numeric vector with one
 #'   value per row of `data`, of frequency weights of the panels: a panel with
 #'   weight w counts as w independent panels in the log-likelihood, the robust
@@ -245,7 +251,8 @@ negmultinom <- function(formula,
                         bootstraps = NULL,
                         verbose = FALSE,
                         keep_data = TRUE,
-                        weights = NULL) {
+                        weights = NULL,
+                        sp = NULL) {
 
   call <- match.call()
 
@@ -280,9 +287,13 @@ negmultinom <- function(formula,
   }
   names(start) <- prep$par_names
 
+  has_smooth <- .fcr_prep_has_smooth(prep)
+  if (has_smooth) .fcr_smooth_no_boot(stderr)
   fit <- .nm_fit_engine(prep = prep, start = start, family = family,
                         method = method, max.iters = max.iters,
-                        print.level = if (isTRUE(verbose)) 2L else 0L)
+                        print.level = if (isTRUE(verbose)) 2L else 0L,
+                        sp = sp)
+  if (has_smooth) method <- fit$method
 
   # ---- Standard errors -----------------------------------------------------
   k <- length(fit$estimate)
@@ -352,6 +363,9 @@ negmultinom <- function(formula,
   fit$family <- family
   fit$model <- family
   fit$modelType <- "NegMultinom"
+  if (has_smooth) {
+    fit$vcov_type <- switch(stderr, normal = "bayesian", robust = "robust")
+  }
   fit$method <- method
   fit$formula <- prep$formula
   fit$dis_param_formula_1 <- prep$aux_formulas$dis1
@@ -487,7 +501,7 @@ negmultinom <- function(formula,
     Y = as.numeric(rowsum(y, g, reorder = TRUE)),
     lgy = as.numeric(rowsum(lgamma(y + 1), g, reorder = TRUE)),
     rows_used = pr$rows_used, n_dropped = pr$n_dropped,
-    blueprint = pr$blueprint, formula = pr$formula,
+    blueprint = pr$blueprint, formula = pr$formula, smooth = pr$smooth,
     aux_formulas = pr$aux_formulas,
     # Panel frequency weights (NULL without `weights`) and row weights
     w = .fcr_panel_weights(pr, weights), row_w = pr$weights,
@@ -595,11 +609,23 @@ negmultinom <- function(formula,
 }
 
 .nm_fit_engine <- function(prep, start, family, method, max.iters,
-                           print.level = 0L) {
+                           print.level = 0L, sp = NULL) {
   ll0 <- .nm_loglik(start, prep, family)
   if (anyNA(ll0)) {
     stop("The log-likelihood is not finite at the starting values. ",
          "Try supplying `start.vals`.")
+  }
+  if (.fcr_prep_has_smooth(prep)) {
+    # Penalized smooth terms (mean and cluster-level dispersion designs
+    # keep the columns of the row-level designs)
+    return(.fcr_smooth_fit(
+      c(list(main = prep$smooth$main), prep$smooth$aux),
+      function(par) .nm_loglik(par, prep, family),
+      function(par) .nm_grad(par, prep, family),
+      start, method, max.iters, sp,
+      list(main = 0, dis1 = prep$n_beta, dis2 = prep$n_beta + prep$n_alpha),
+      list(main = "mean", dis1 = "ln(alpha)", dis2 = "p"),
+      list(main = prep$X, dis1 = prep$Zc, dis2 = prep$Wc)))
   }
   maxLik::maxLik(
     logLik = function(par) .nm_loglik(par, prep, family),

@@ -85,7 +85,16 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   aux_formulas <- lapply(Filter(Negate(is.null), aux_formulas),
                          .fcr_expand_dot, data = data)
 
-  formula_offset <- .fcr_has_formula_offset(formula)
+  # Smooth terms (s(), te(), ...): the parametric part goes through
+  # model.frame() as before; the smooths are set up below
+  main_specs <- NULL
+  formula_pf <- formula
+  if (.fcr_has_smooth(formula)) {
+    sp <- .fcr_smooth_split(formula)
+    formula_pf <- sp$pf
+    main_specs <- sp$specs
+  }
+  formula_offset <- .fcr_has_formula_offset(formula_pf)
   if (!is.null(offset) && formula_offset) {
     stop("Specify the offset either with offset() in the formula or with the ",
          "`offset` argument, not both.", call. = FALSE)
@@ -137,7 +146,7 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
 
   # Missing raw values were removed above; values made invalid by a
   # transformation (e.g. log of a negative) are reported by the checks below
-  mf <- stats::model.frame(formula, d, na.action = stats::na.pass)
+  mf <- stats::model.frame(formula_pf, d, na.action = stats::na.pass)
   y <- stats::model.response(mf)
   if (!is.null(y) && (!is.numeric(y) || is.matrix(y))) {
     stop("The response must be a numeric count vector, not ",
@@ -148,6 +157,14 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   tt <- stats::terms(mf)
   X <- stats::model.matrix(tt, mf)
   .fcr_check_design(X, "formula")
+  smooth <- list(main = list(), aux = list())
+  if (length(main_specs)) {
+    built <- .fcr_smooth_build(main_specs, d)
+    smooth$main <- .fcr_smooth_shift(built$smooths, ncol(X))
+    contr <- attr(X, "contrasts")
+    X <- cbind(X, built$B)
+    attr(X, "contrasts") <- contr
+  }
 
   off <- stats::model.offset(mf)
   if (is.null(off)) off <- rep(0, nrow(d))
@@ -161,10 +178,22 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   }
 
   het <- c("het_mean", "het_var")
-  aux <- Map(function(f, nm) .fcr_rhs_matrix(f, d,
-                                             drop_intercept = nm %in% het),
-             aux_formulas, names(aux_formulas))
-  for (nm in names(aux)) .fcr_check_design(aux[[nm]], nm)
+  aux <- Map(function(f, nm) {
+    if (!.fcr_has_smooth(f)) {
+      m <- .fcr_rhs_matrix(f, d, drop_intercept = nm %in% het)
+      .fcr_check_design(m, nm)
+      return(m)
+    }
+    sp <- .fcr_smooth_split(f)
+    m <- .fcr_rhs_matrix(sp$pf, d, drop_intercept = nm %in% het)
+    .fcr_check_design(m, nm)
+    built <- .fcr_smooth_build(sp$specs, d)
+    smooth$aux[[nm]] <<- .fcr_smooth_shift(built$smooths, ncol(m))
+    keep_attr <- attributes(m)[c("xlevels", "contrasts", "terms")]
+    m <- cbind(m, built$B)
+    attributes(m)[names(keep_attr)] <- keep_attr
+    m
+  }, aux_formulas, names(aux_formulas))
 
   w <- if (is.null(weights)) {
     rep(1, nrow(d))
@@ -195,7 +224,7 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   list(y = y, X = X, offset = off, weights = w,
        formula = formula, aux_formulas = aux_formulas,
        group = g, aux = aux, rows_used = which(keep),
-       n_dropped = sum(!keep),
+       n_dropped = sum(!keep), smooth = smooth,
        blueprint = list(terms = tt,
                         xlevels = stats::.getXlevels(tt, mf),
                         contrasts = attr(X, "contrasts"),
@@ -205,7 +234,8 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
                         aux_xlevels = lapply(aux, attr, "xlevels"),
                         aux_contrasts = lapply(aux, attr, "contrasts"),
                         aux_terms = lapply(aux, attr, "terms"),
-                        x_names = colnames(X)))
+                        x_names = colnames(X),
+                        smooth = smooth))
 }
 
 # Rebuild model matrices for new data from a blueprint. Returns matrices with
@@ -223,6 +253,9 @@ forge_new_data <- function(blueprint, new_data) {
 
   mf <- .fcr_model_frame_xlev(tt, new_data, blueprint$xlevels)
   X <- stats::model.matrix(tt, mf, contrasts.arg = blueprint$contrasts)
+  if (length(blueprint$smooth$main)) {
+    X <- cbind(X, .fcr_smooth_predict(blueprint$smooth$main, new_data))
+  }
   if (!identical(colnames(X), blueprint$x_names)) {
     stop("`newdata` produces different model columns than the training ",
          "data.", call. = FALSE)
@@ -243,6 +276,8 @@ forge_new_data <- function(blueprint, new_data) {
                          blueprint$aux_xlevels[[nm]], nm %in% het,
                          contrasts = blueprint$aux_contrasts[[nm]])
     attr(m, "terms") <- NULL
+    sm <- blueprint$smooth$aux[[nm]]
+    if (length(sm)) m <- cbind(m, .fcr_smooth_predict(sm, new_data))
     m
   }, blueprint$aux_formulas, names(blueprint$aux_formulas))
 

@@ -87,7 +87,8 @@ logLik.flexCountReg <- function(object, ...) {
   n_indep <- m[["n_bic"]] %||% m[["n_groups"]] %||% stats::nobs(object)
   # Fixed-effects fits also estimate their group effects
   structure(m[["maximum"]],
-            df = length(stats::coef(object)) + (m[["n_fe"]] %||% 0),
+            df = (m[["df_total"]] %||% length(stats::coef(object))) +
+              (m[["n_fe"]] %||% 0),
             nobs = n_indep, class = "logLik")
 }
 

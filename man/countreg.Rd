@@ -26,7 +26,8 @@ countreg(
   zero_formula = NULL,
   zero_type = c("inflated", "hurdle"),
   weight_type = c("frequency", "sampling"),
-  cluster = NULL
+  cluster = NULL,
+  sp = NULL
 )
 }
 \arguments{
@@ -151,6 +152,10 @@ names, or a vector with one cluster id per row of \code{data}. Given
 without \code{stderr}, it sets \code{stderr = "cluster"}. See
 \code{\link{vcov.flexCountReg}}, which also gives cluster-robust
 covariances after the fit.}
+
+\item{sp}{optional fixed smoothing parameters, one per penalty of the
+smooth terms (in the order of \code{model$smooth_table}); by default
+they are selected automatically.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:
@@ -199,6 +204,25 @@ codes, distribution parameters, variances, distribution functions and
 available model features.
 }
 \details{
+\strong{Smooth terms.} The formulas accept the penalized smooths of the
+mgcv package (\code{s()}, \code{te()}, \code{ti()}, \code{t2()}), for
+example \code{y ~ s(lnaadt) + speed50}, or
+\code{dis_param_formula_1 = ~ s(lnlength)} for a dispersion that varies
+smoothly. The model is then fitted by penalized maximum likelihood, with
+the smoothing parameters selected by generalized Fellner-Schall updates
+(Wood and Fasiolo 2017), which approximately maximize the restricted
+marginal likelihood; \code{sp} fixes them instead. Standard errors are
+Bayesian (\eqn{(H + S_\lambda)^{-1}}) by default, and robust or
+cluster-robust ones are available. \code{summary()} reports each smooth
+by its effective degrees of freedom with an approximate test, the
+log-likelihood's degrees of freedom are the total effective degrees of
+freedom, and \code{\link{smooth_estimates}()} and
+\code{\link{plot_smooths}()} show the estimated functions. With fixed
+smoothing parameters the estimates equal those of \code{mgcv::gam()};
+the selected smoothing parameters are close to mgcv's REML choice. Smooth
+terms need the mgcv package, and bootstrap standard errors are not yet
+available with them.
+
 The \code{family} codes are listed in \link{count_families}. Family names are not
 case-sensitive.
 

@@ -48,6 +48,8 @@ Equidispersion
 Eurycea
 Famoye
 Fariss
+Fasiolo
+Fellner
 FlexMix
 GAMMACOUNT
 GSL
@@ -140,9 +142,11 @@ Rigby
 Rootogram
 Rootograms
 Ruohonen
+Ruppert
 SHA
 SL
 Saez
+Schall
 Schucany
 Sichel
 Smyth
@@ -178,6 +182,7 @@ aap
 additively
 al
 asymptotics
+b'Sb
 bioChemists
 blacklip
 bslib
@@ -188,6 +193,7 @@ centred
 cirrigera
 codecov
 collinear
+concurvity
 countreg
 cureplots
 dcom
@@ -241,9 +247,12 @@ le
 lmtest
 ln
 logLik
+logit's
 mathrm
 maxLik
 maxLik's
+mgcv
+mgcv's
 misalign
 misclassified
 misspecified
@@ -255,6 +264,7 @@ multiway
 nd
 ndraws
 noninteger
+nonlinearly
 nonpositive
 nonregular
 optimizer's
@@ -319,8 +329,11 @@ rtri
 ruber
 rubra
 sd
+smooth's
 spp
 stringr
+tfrac
+th
 tibble
 tibbles
 tidymodels
@@ -332,5 +345,6 @@ underdispersion
 underreported
 underreporting
 vectorization
+wiggliness
 wools
 z'g

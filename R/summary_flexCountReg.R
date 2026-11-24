@@ -63,6 +63,10 @@ summary.flexCountReg <- function(object, level = 0.95, ...) {
   tab <- cbind(Estimate = cf, `Std. Error` = se, `z value` = z,
                `Pr(>|z|)` = 2 * stats::pnorm(-abs(z)), ci)
   rownames(tab) <- names(cf)
+  # Smooth terms are summarized by term, not by basis coefficient
+  if (length(m[["smooth_coefs"]])) {
+    tab <- tab[-m[["smooth_coefs"]], , drop = FALSE]
+  }
 
   ll <- stats::logLik(object)
   structure(list(
@@ -79,6 +83,8 @@ summary.flexCountReg <- function(object, level = 0.95, ...) {
     n_boot_ok = m[["n_boot_ok"]],
     bootstraps = m[["bootstraps"]],
     n_clusters = m[["n_clusters"]],
+    smooth_table = m[["smooth_table"]],
+    edf_total = m[["df_total"]],
     fe_label = m[["fe_method_label"]],
     fe_dropped = if (!is.null(m[["fe_method_label"]]))
       sum(lengths(m[["dropped"]] %||% list())),
@@ -91,7 +97,9 @@ summary.flexCountReg <- function(object, level = 0.95, ...) {
     converged = m[["converged"]],
     offset = m[["offset"]],
     weight_type = m[["weight_type"]],
-    lr_test = .fcr_lr_vs_poisson(object),
+    # Not for penalized fits: their smoothing parameters are selected
+    # separately, so the likelihood-ratio statistic has no chi-squared basis
+    lr_test = if (is.null(m[["smooth_table"]])) .fcr_lr_vs_poisson(object),
     digits = if (is.numeric(args$digits)) args$digits else 3
   ), class = "summary.flexCountReg")
 }
@@ -121,6 +129,7 @@ print.summary.flexCountReg <- function(x, digits = x$digits, ...) {
   se_label <- switch(x$vcov_type %||% "hessian",
                      hessian = "Hessian-based",
                      robust = "robust (sandwich)",
+                     bayesian = "Bayesian (penalized Hessian)",
                      cluster = paste0("cluster-robust (",
                                       paste(x$n_clusters, "clusters of",
                                             names(x$n_clusters),
@@ -136,6 +145,7 @@ print.summary.flexCountReg <- function(x, digits = x$digits, ...) {
     cat("Offset:", paste(x$offset, collapse = " + "),
         "(coefficient fixed at 1)\n")
   }
+  .fcr_print_smooth_table(x)
 
   cat("\nLog-likelihood:", format(round(x$logLik, digits)),
       "| AIC:", format(round(x$AIC, digits)),
@@ -209,4 +219,22 @@ as_tibble.summary.flexCountReg <- function(x, ...) {
   if (is.na(test$LR)) return(NULL)
   list(statistic = test$LR, df = nest$df, p.value = test$p,
        logLik_poisson = ll0, boundary = nest$type == "boundary")
+}
+
+# The smooth-term table of a summary (nothing without smooth terms).
+.fcr_print_smooth_table <- function(x) {
+  st <- x$smooth_table
+  if (is.null(st)) return(invisible(NULL))
+  cat("\nSmooth terms (approximate tests):\n")
+  tb <- data.frame(edf = round(st$edf, 2), k = st$k,
+                   lambda = st$lambda,
+                   `Chi.sq` = round(st$chisq, 2),
+                   `p-value` = format.pval(st$p.value, digits = 3),
+                   check.names = FALSE)
+  rownames(tb) <- ifelse(st$parameter == "mean", st$term,
+                         paste0(st$parameter, ": ", st$term))
+  print(tb)
+  cat("Total effective degrees of freedom:",
+      format(round(x$edf_total, 2)), "\n")
+  invisible(NULL)
 }

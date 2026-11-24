@@ -80,6 +80,15 @@
 #' @param keep_data logical; store the training data in the fitted object.
 #' @param verbose logical; report the progress of each start.
 #' @param control a [mixture_control()] object.
+#' @param sp optional fixed smoothing parameters for smooth terms
+#'   (`s()`, `te()`, ...) in the formulas. Smooth terms may enter the mean,
+#'   the distribution-parameter formulas and the mixing (membership)
+#'   formula. Each component's copy of a smooth (and each membership
+#'   logit's) has its own smoothing parameter; a smooth in a `shared` mean
+#'   term is penalized once. The search over starts is unpenalized; the
+#'   selected solution is then refitted by penalized likelihood with the
+#'   smoothing parameters selected as in [countreg()]. Standard errors are
+#'   Bayesian by default; the bootstrap is not available with smooths.
 #'
 #' @details
 #' ## Estimation
@@ -186,7 +195,8 @@ countreg_mix <- function(formula, data, family = "POISSON", components = 2L,
                          seed = NULL, stderr = c("normal", "robust", "boot"),
                          bootstraps = NULL, ndraws = 1500,
                          engine = "quadrature", keep_data = TRUE,
-                         verbose = FALSE, control = mixture_control()) {
+                         verbose = FALSE, control = mixture_control(),
+                         sp = NULL) {
   .fcr_fm_fit(
     entry = "countreg_mix", call = match.call(), formula = formula,
     data = data, family = family, components = components,
@@ -198,7 +208,7 @@ countreg_mix <- function(formula, data, family = "POISSON", components = 2L,
     max.iters = max.iters, start.vals = start.vals, n_starts = n_starts,
     seed = seed, stderr = stderr, bootstraps = bootstraps, ndraws = ndraws,
     engine = engine, keep_data = keep_data, verbose = verbose,
-    control = control)
+    control = control, sp = sp)
 }
 
 #' @rdname countreg_mix
@@ -212,7 +222,8 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
                         seed = NULL, stderr = c("normal", "robust", "boot"),
                         bootstraps = NULL, ndraws = 1500,
                         engine = "quadrature", keep_data = TRUE,
-                        verbose = FALSE, control = lc_control()) {
+                        verbose = FALSE, control = lc_control(),
+                        sp = NULL) {
   .fcr_fm_fit(
     entry = "countreg_lc", call = match.call(), formula = formula,
     data = data, family = family, components = classes,
@@ -224,7 +235,7 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     max.iters = max.iters, start.vals = start.vals, n_starts = n_starts,
     seed = seed, stderr = stderr, bootstraps = bootstraps, ndraws = ndraws,
     engine = engine, keep_data = keep_data, verbose = verbose,
-    control = control)
+    control = control, sp = sp)
 }
 
 # Evaluate expr with a fixed seed without changing the caller's
@@ -670,7 +681,8 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
                         shared, dis_param_formula_1, dis_param_formula_2,
                         offset, weights, group_var, method, max.iters,
                         start.vals, n_starts, seed, stderr, bootstraps,
-                        ndraws, engine, keep_data, verbose, control) {
+                        ndraws, engine, keep_data, verbose, control,
+                        sp = NULL) {
   stderr <- match.arg(tolower(stderr[1]), c("normal", "robust", "boot"))
   if (stderr == "boot") {
     if (is.null(bootstraps)) bootstraps <- 200L
@@ -751,8 +763,87 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
   }
   names(theta) <- spec$map$names
   if (!is.null(H)) dimnames(H) <- list(spec$map$names, spec$map$names)
+
+  # ---- Smooth terms: penalized fit from the selected solution ----
+  if (.fcr_prep_has_smooth(prep)) {
+    if (stderr == "boot") .fcr_smooth_no_boot(stderr)
+    sm <- .fcr_fm_smooth(spec, theta, max.iters, sp)
+    theta <- sm$theta
+    H <- sm$hessian
+    g <- sm$gradient
+    gO <- sm$gradientObs
+    fit$maximum <- sm$maximum
+    fit[names(sm$fields)] <- sm$fields
+  }
   .fcr_fm_finish(spec, theta, H, g, gO, fit, search, stderr, bootstraps,
                  seed, data, call, keep_data, entry)
+}
+
+# Penalized fit of a mixture with smooth terms, started at the selected
+# (label-aligned) unpenalized solution. Each component's copy of a mean or
+# distribution-parameter smooth has its own penalty and smoothing
+# parameter (a smooth shared by all components is penalized once), and so
+# does each membership logit's copy of a mixing smooth.
+.fcr_fm_smooth <- function(spec, theta, max.iters, sp) {
+  map <- spec$map
+  sm <- spec$prep$smooth
+  ents <- list(main = sm$main, dis1 = sm$aux$dis1, dis2 = sm$aux$dis2,
+               mixing = sm$aux$mixing)
+  mats <- list(main = spec$des$X, dis1 = spec$des$D1, dis2 = spec$des$D2,
+               mixing = spec$Zu)
+  labs <- spec$st$labels
+  terms <- list()
+  seen <- character(0)
+  add <- function(entries, idx_of, key, label, base) {
+    for (e in entries) {
+      idx <- idx_of[e$cols]
+      if (!length(idx) || any(is.na(idx)) || any(idx == 0L)) next
+      sig <- paste(paste(idx, collapse = ","), e$label)
+      if (sig %in% seen) next          # shared across components
+      seen <<- c(seen, sig)
+      for (m in seq_along(e$S)) {
+        terms[[length(terms) + 1L]] <<- list(
+          idx = idx, S = e$S[[m]], smooth = e$label, component = key,
+          label = label, which = m, base = base)
+      }
+    }
+  }
+  for (k in seq_len(spec$K)) {
+    add(ents$main, map$mean_idx[[k]], paste0("mean_", k),
+        paste0(labs[k], ":mean"), "main")
+    add(ents$dis1, map$d1_idx[[k]], paste0("dis1_", k),
+        paste0(labs[k], ":", get_params(map$families[k])[[1]] %||% ""),
+        "dis1")
+    add(ents$dis2, map$d2_idx[[k]], paste0("dis2_", k),
+        paste0(labs[k], ":", get_params(map$families[k])[[2]] %||% ""),
+        "dis2")
+  }
+  if (!is.null(map$mix_idx)) {
+    for (k in seq_len(spec$K - 1L)) {
+      add(ents$mixing, map$mix_idx[k, ], paste0("mixing_", k),
+          paste0("Mixing:", labs[k]), "mixing")
+    }
+  }
+  fn <- function(p) .fcr_fm_loglik_units(p, spec)
+  gr <- if (spec$analytic) function(p) .fcr_fm_grad_units(p, spec)
+  gam <- .fcr_gam_fit(fn, gr, theta, terms, method = "BFGS",
+                      iterlim = max.iters, lambda = sp)
+  th <- stats::setNames(gam$theta, map$names)
+  gO <- if (!is.null(gr)) gr(th) else maxLik::numericGradient(fn, th)
+  colnames(gO) <- map$names
+  so <- .fcr_smooth_outputs(gam, ents, mats)
+  if (!isTRUE(gam$converged) && is.null(sp)) {
+    warning("The smoothing parameters did not converge in ",
+            gam$iterations - 1, " Fellner-Schall iterations.", call. = FALSE)
+  }
+  list(theta = th, hessian = gam$hessian, gradient = gam$fit$gradient,
+       gradientObs = gO, maximum = sum(fn(th)),
+       fields = list(
+         smooth_table = so$table, smooth_info = so$info,
+         smooth_lambda = gam$lambda, smooth_converged = gam$converged,
+         smooth_iterations = gam$iterations,
+         smooth_coefs = unique(unlist(lapply(gam$terms, `[[`, "idx"))),
+         edf = gam$edf, df_total = sum(gam$edf)))
 }
 
 .fcr_fm_finish <- function(spec, theta, H, g, gO, fit, search, stderr,
@@ -768,7 +859,7 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     vcov_type <- "bootstrap"
   } else {
     V <- .fcr_hessian_vcov(list(hessian = H, estimate = theta))
-    vcov_type <- "hessian"
+    vcov_type <- if (!is.null(fit$smooth_table)) "bayesian" else "hessian"
     if (stderr == "robust") {
       keep <- spec$w_unit > 0
       meat <- crossprod(gO[keep, , drop = FALSE] / sqrt(spec$w_unit[keep]))
@@ -787,7 +878,7 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
   ent <- -sum(w * rowSums(ifelse(tau > 0, tau * log(tau), 0)))
   K <- spec$K
   n_bic <- sum(w)
-  n_par <- length(theta)
+  n_par <- fit$df_total %||% length(theta)
   bic <- -2 * fit$maximum + log(n_bic) * n_par
   modal <- max.col(tau, ties.method = "first")
   classes <- data.frame(
@@ -843,7 +934,13 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     ICL = bic + 2 * ent, starts = search$table, seed = seed,
     refined_from = fit$refined_from, identical_pairs = identical_pairs,
     n_starts = nrow(search$table), control = st$control,
-    ndraws = st$ndraws, engine = st$engine, numerical = numerical)
+    ndraws = st$ndraws, engine = st$engine, numerical = numerical,
+    smooth_table = fit$smooth_table, smooth_info = fit$smooth_info,
+    smooth_lambda = fit$smooth_lambda,
+    smooth_converged = fit$smooth_converged,
+    smooth_iterations = fit$smooth_iterations,
+    smooth_coefs = fit$smooth_coefs, edf = fit$edf,
+    df_total = fit$df_total)
   .createFlexCountReg(model = out, data = data, call = call,
                       keep_data = keep_data)
 }

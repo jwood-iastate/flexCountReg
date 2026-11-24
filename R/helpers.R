@@ -772,7 +772,10 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
     fit$vcov_type <- "robust"
   } else {
     V <- .fcr_hessian_vcov(fit)
-    fit$vcov_type <- "hessian"
+    # Penalized fits: the Hessian of the penalized objective gives the
+    # Bayesian covariance
+    fit$vcov_type <- if (!is.null(fit$smooth_table)) "bayesian" else
+      "hessian"
   }
   fit$stderr <- stderr
   dimnames(V) <- list(x_names, x_names)

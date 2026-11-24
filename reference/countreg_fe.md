@@ -26,7 +26,8 @@ countreg_fe(
   time = NULL,
   max.iters = 1000,
   tol = 1e-10,
-  keep_data = TRUE
+  keep_data = TRUE,
+  sp = NULL
 )
 ```
 
@@ -111,6 +112,11 @@ countreg_fe(
   logical; store the data in the fit (needed for predictions on the
   training rows without `newdata`).
 
+- sp:
+
+  optional fixed smoothing parameters for smooth terms in `formula`; by
+  default they are selected automatically.
+
 ## Value
 
 An object of class `c("countreg_fe", "flexCountReg")`. `model$fixef`
@@ -144,6 +150,18 @@ with `ssc(adj = FALSE)`; by default fixest also multiplies the variance
 by \\(n-1)/(n-K)\\. The log-likelihood is that of the dummy-variable
 model, and its degrees of freedom count the fixed effects, so AIC and
 BIC compare with models that estimate them.
+
+**Smooth terms.** `formula` may contain smooth terms (`s(x)`, `te()`,
+...) of variables that change within groups; a smooth of a variable that
+is constant within groups is absorbed by the fixed effects and gives an
+error. The fit is then penalized, with the smoothing parameters selected
+as in
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md).
+The smooth bases are built on the rows used in estimation (after
+dropping all-zero and single-observation groups), so with fixed
+smoothing parameters the estimates equal those of
+[`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html) with group
+dummies. The jackknife is not available with smooth terms.
 
 [`predict()`](https://rdrr.io/r/stats/predict.html) uses each known
 group's estimated effect. A group not in the estimation data has no

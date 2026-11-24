@@ -20,6 +20,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/predictive-validation.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/simulation-studies.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/underreporting-and-identification.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/user-defined-count-distributions.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/zeros-hurdles-and-sampling.html</loc></url>
@@ -80,6 +81,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/myBIC.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/new_count_family.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.html</loc></url>
@@ -91,6 +93,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/rinvgaus.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/rmse.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/rootogram.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/stream_salamanders.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/summary.countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/summary.flexCountReg.html</loc></url>

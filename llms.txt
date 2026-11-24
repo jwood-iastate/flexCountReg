@@ -11,6 +11,11 @@ issues, including:
   with
   [`new_count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/new_count_family.md)
   and usable in every model;
+- smooth (generalized additive) effects with the penalized `s()` and
+  `te()` terms of mgcv in the mean, the distribution parameters, the
+  zero model and random-parameter heterogeneity, with automatic
+  smoothing and
+  [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md);
 - underreporting, and zero-inflated or hurdle versions of every
   distribution;
 - random parameters, with heterogeneity in their means and variances,
@@ -164,6 +169,28 @@ computer.
   /
   [`class_probs()`](https://jwood-iastate.github.io/flexCountReg/reference/component_probs.md)
   give prior or posterior class probabilities.
+- Smooth terms such as `s(lnaadt)` or `te(lnaadt, lnlength)` can be used
+  in the formulas of every model:
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md),
+  the random-effects panel models
+  ([`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md),
+  [`poislind_re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md),
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)),
+  and finite mixtures and latent classes
+  ([`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
+  [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
+  including smooth class membership); the smoothing parameters are
+  selected automatically,
+  [`summary()`](https://rdrr.io/r/base/summary.html) reports each
+  smooth’s effective degrees of freedom, and
+  [`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md)
+  and
+  [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
+  show the estimated curves with pointwise and simultaneous bands. See
+  [`vignette("smooth-effects", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.md).
 - [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
   estimates fixed-effects count models: Poisson by the conditional
   likelihood (one dimension) or IRLS with alternating projections (site
@@ -716,6 +743,8 @@ The vignettes cover the main workflows. Start with
   [`vignette("choosing-a-count-distribution", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/choosing-a-count-distribution.md)
 - Modeling dispersion and other distribution parameters:
   [`vignette("distribution-parameter-regression", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/distribution-parameter-regression.md)
+- Smooth effects: generalized additive count models:
+  [`vignette("smooth-effects", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.md)
 - Understanding zeros, hurdles and the sampling process:
   [`vignette("zeros-hurdles-and-sampling", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/zeros-hurdles-and-sampling.md)
 - Underreporting: observed counts, true counts and identification:
@@ -820,6 +849,10 @@ Mixtures of count distributions and latent-class count regression.
   [`simulate(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   [`print(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   : Standard methods for flexCountReg models
+- [`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md)
+  : Estimated smooth functions
+- [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
+  : Plot estimated smooth functions
 - [`vcov(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md)
   : Covariance matrix of the estimates
 - [`estfun(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/estfun.flexCountReg.md)
@@ -1053,6 +1086,8 @@ in any of the models.
   distribution](https://jwood-iastate.github.io/flexCountReg/articles/choosing-a-count-distribution.md):
 - [Modeling dispersion and other distribution
   parameters](https://jwood-iastate.github.io/flexCountReg/articles/distribution-parameter-regression.md):
+- [Smooth effects: generalized additive count
+  models](https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.md):
 - [Understanding zeros, hurdles and the sampling
   process](https://jwood-iastate.github.io/flexCountReg/articles/zeros-hurdles-and-sampling.md):
 - [Underreporting: observed counts, true counts and

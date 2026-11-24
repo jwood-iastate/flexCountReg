@@ -108,7 +108,8 @@ the mixing (class-membership) probabilities. The log-likelihood is
 <span>  engine <span class="op">=</span> <span class="st">"quadrature"</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  control <span class="op">=</span> <span class="fu"><a href="mixture_control.html">mixture_control</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="mixture_control.html">mixture_control</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  sp <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">countreg_lc</span><span class="op">(</span></span>
@@ -135,7 +136,8 @@ the mixing (class-membership) probabilities. The log-likelihood is
 <span>  engine <span class="op">=</span> <span class="st">"quadrature"</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  control <span class="op">=</span> <span class="fu"><a href="mixture_control.html">lc_control</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  control <span class="op">=</span> <span class="fu"><a href="mixture_control.html">lc_control</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  sp <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -267,6 +269,18 @@ are unrelated to the number of components.</p></dd>
 
 <dt id="arg-control">control<a class="anchor" aria-label="anchor" href="#arg-control"></a></dt>
 <dd><p>a <code><a href="mixture_control.html">mixture_control()</a></code> object.</p></dd>
+
+
+<dt id="arg-sp">sp<a class="anchor" aria-label="anchor" href="#arg-sp"></a></dt>
+<dd><p>optional fixed smoothing parameters for smooth terms
+(<code>s()</code>, <code>te()</code>, ...) in the formulas. Smooth terms may enter the mean,
+the distribution-parameter formulas and the mixing (membership)
+formula. Each component's copy of a smooth (and each membership
+logit's) has its own smoothing parameter; a smooth in a <code>shared</code> mean
+term is penalized once. The search over starts is unpenalized; the
+selected solution is then refitted by penalized likelihood with the
+smoothing parameters selected as in <code><a href="countreg.html">countreg()</a></code>. Standard errors are
+Bayesian by default; the bootstrap is not available with smooths.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -443,25 +457,25 @@ Applied Econometrics</em>, 8(4), 397-411.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Class 1 (NB2):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                              Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:Mean:(Intercept)    2.0974     0.0143   146.4   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:Mean:shell_weight   0.9677     0.0430    22.5   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:ln(alpha)         -20.6986   209.9017    -0.1     0.92    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:Mean:(Intercept)    2.0974     0.0145  144.74   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:Mean:shell_weight   0.9677     0.0439   22.05   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component1:ln(alpha)         -20.6190   366.8057   -0.06     0.96    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Class 2 (NB2):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                              Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:Mean:(Intercept)    1.7141     0.0189   90.66   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:Mean:shell_weight   2.5623     0.1110   23.09   &lt;2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:ln(alpha)         -20.2632   380.0516   -0.05     0.96    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:Mean:(Intercept)    1.7141     0.0189   90.51   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:Mean:shell_weight   2.5623     0.1107   23.14   &lt;2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Component2:ln(alpha)         -20.2864   462.1310   -0.04     0.96    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Mixing (multinomial logit):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                               Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:(Intercept)    4.323      0.772    5.60  2.1e-08 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:sexI          -9.328      1.565   -5.96  2.5e-09 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:sexM           8.407    120.117    0.07     0.94    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:(Intercept)     4.32       1.16    3.74  0.00018 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:sexI           -9.33       1.57   -5.94  2.8e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Mixing:Component1:sexM            7.37      71.58    0.10  0.91799    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
@@ -473,12 +487,12 @@ Applied Econometrics</em>, 8(4), 397-411.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  effective_n: sum of posterior probabilities; modal_n: units whose most</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  probable class it is; mean_count: average expected count)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -9681.481 | AIC: 19380.96 | BIC: 19438 | ICL: 19701.21 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -9681.481 | AIC: 19380.96 | BIC: 19438 | ICL: 19701.38 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> N: 4177</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Entropy: 131.607 | relative entropy: 0.955 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Entropy: 131.692 | relative entropy: 0.955 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Starts: 5 | 1 reached the selected log-likelihood</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Note: only one start reached this solution; try more starts.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Observed information: singular | max |gradient|: 0.0019 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Observed information: singular | max |gradient|: 0.000289 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> No likelihood-ratio test of the number of classes is reported (non-standard distribution).</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>

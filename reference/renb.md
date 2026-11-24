@@ -18,7 +18,8 @@ renb(
   weights = NULL,
   keep_data = TRUE,
   print.level = NULL,
-  cre = NULL
+  cre = NULL,
+  sp = NULL
 )
 ```
 
@@ -110,6 +111,15 @@ renb(
   `newdata`.
   [`cre_test()`](https://jwood-iastate.github.io/flexCountReg/reference/cre_test.md)
   tests random against fixed effects.
+
+- sp:
+
+  optional fixed smoothing parameters for smooth terms (`s()`, `te()`,
+  ...) in the formula(s); by default they are selected automatically.
+  Smooth terms are fitted by penalized maximum likelihood with Bayesian
+  standard errors (see the "Smooth terms" section of
+  [`countreg`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md));
+  bootstrap standard errors are not available with them.
 
 ## Value
 

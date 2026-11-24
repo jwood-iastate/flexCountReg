@@ -162,7 +162,8 @@ available model features.</p>
 <span>  zero_formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  zero_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"inflated"</span>, <span class="st">"hurdle"</span><span class="op">)</span>,</span>
 <span>  weight_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"frequency"</span>, <span class="st">"sampling"</span><span class="op">)</span>,</span>
-<span>  cluster <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  cluster <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sp <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -335,6 +336,12 @@ without <code>stderr</code>, it sets <code>stderr = "cluster"</code>. See
 <code><a href="vcov.flexCountReg.html">vcov.flexCountReg</a></code>, which also gives cluster-robust
 covariances after the fit.</p></dd>
 
+
+<dt id="arg-sp">sp<a class="anchor" aria-label="anchor" href="#arg-sp"></a></dt>
+<dd><p>optional fixed smoothing parameters, one per penalty of the
+smooth terms (in the order of <code>model$smooth_table</code>); by default
+they are selected automatically.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -345,7 +352,25 @@ covariances after the fit.</p></dd>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The <code>family</code> codes are listed in <a href="count_families.html">count_families</a>. Family names are not
+    <p><strong>Smooth terms.</strong> The formulas accept the penalized smooths of the
+mgcv package (<code>s()</code>, <code>te()</code>, <code>ti()</code>, <code>t2()</code>), for
+example <code>y ~ s(lnaadt) + speed50</code>, or
+<code>dis_param_formula_1 = ~ s(lnlength)</code> for a dispersion that varies
+smoothly. The model is then fitted by penalized maximum likelihood, with
+the smoothing parameters selected by generalized Fellner-Schall updates
+(Wood and Fasiolo 2017), which approximately maximize the restricted
+marginal likelihood; <code>sp</code> fixes them instead. Standard errors are
+Bayesian (\((H + S_\lambda)^{-1}\)) by default, and robust or
+cluster-robust ones are available. <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports each smooth
+by its effective degrees of freedom with an approximate test, the
+log-likelihood's degrees of freedom are the total effective degrees of
+freedom, and <code><a href="smooth_estimates.html">smooth_estimates()</a></code> and
+<code><a href="plot_smooths.html">plot_smooths()</a></code> show the estimated functions. With fixed
+smoothing parameters the estimates equal those of <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code>;
+the selected smoothing parameters are close to mgcv's REML choice. Smooth
+terms need the mgcv package, and bootstrap standard errors are not yet
+available with them.</p>
+<p>The <code>family</code> codes are listed in <a href="count_families.html">count_families</a>. Family names are not
 case-sensitive.</p>
 <p>The <code>dis_param_formula_1</code> and <code>dis_param_formula_2</code> parameters are used to
 estimate the dispersion parameter or other parameters of the count
@@ -1058,8 +1083,8 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.4230     0.6246  -11.88  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.9127     0.0770   11.86  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8400     0.0734   11.45  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4451     0.1078   -4.13  3.6e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.7872     0.1356    5.81  6.4e-09 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4451     0.1079   -4.13  3.7e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.7872     0.1355    5.81  6.2e-09 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ln(nu)       -0.6199     0.2086   -2.97    0.003 ** </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
@@ -1083,11 +1108,11 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.2956     0.4723  -15.45  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.2956     0.4728  -15.43  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.8963     0.0561   15.97  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8200     0.0668   12.28  &lt; 2e-16 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4448     0.1069   -4.16  3.2e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.7684     0.1173    6.55  5.8e-11 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8200     0.0669   12.26  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4448     0.1067   -4.17  3.1e-05 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.7684     0.1175    6.54  6.2e-11 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ln(phi+1)     0.0875     0.0274    3.19   0.0014 ** </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
@@ -1111,11 +1136,11 @@ Accident Analysis &amp; Prevention, 45.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>             Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.3820     0.4731  -15.61  &lt; 2e-16 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.3820     0.4730  -15.61  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.9088     0.0567   16.02  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lnlength      0.8470     0.0701   12.08  &lt; 2e-16 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -0.4599     0.1065   -4.32  1.6e-05 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.8123     0.1321    6.15  7.9e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADT10kplus   0.8123     0.1321    6.15  7.8e-10 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ln(alpha+1)   0.1056     0.0292    3.61    3e-04 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>

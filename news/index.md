@@ -62,6 +62,104 @@
   and
   [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md).
 
+### Generalized additive count models (smooth terms)
+
+- [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  and
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  accept the penalized smooth terms of the mgcv package (`s()`, `te()`,
+  `ti()`, `t2()`) in their formulas:
+  - In
+    [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md):
+    the mean, the distribution-parameter formulas, the zero model and
+    the underreporting model.
+  - In
+    [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
+    the fixed part of the mean, `het_mean_formula`, `het_var_formula`
+    and the distribution-parameter formulas.
+  - Smooth bases are built once on the estimation rows and rebuilt for
+    new data with the same knots.
+- Fitting is by penalized maximum likelihood. The smoothing parameters
+  are selected by generalized Fellner-Schall updates (Wood and Fasiolo
+  2017), or fixed with the new argument `sp`.
+- Standard errors are Bayesian, (H + S_lambda)^-1, by default; robust
+  and cluster-robust versions are available.
+- [`summary()`](https://rdrr.io/r/base/summary.html) reports each smooth
+  by its effective degrees of freedom, with an approximate test (Wood
+  2013), instead of its basis coefficients.
+  [`logLik()`](https://rdrr.io/r/stats/logLik.html) counts the total
+  effective degrees of freedom, so
+  [`AIC()`](https://rdrr.io/r/stats/AIC.html) compares smooth and
+  parametric models.
+- Agreement with mgcv:
+  - With fixed smoothing parameters, the estimates, log-likelihood,
+    effective degrees of freedom and standard errors equal those of
+    [`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html) for Poisson
+    and NB2 (with the dispersion fixed).
+  - The selected smoothing parameters were within about 5% of mgcv’s
+    REML choice in the tests.
+- New
+  [`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md)
+  and
+  [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
+  evaluate and plot each smooth with pointwise and simultaneous
+  confidence bands. Their values equal mgcv’s term predictions.
+- The random-effects panel models
+  [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md),
+  [`poislind_re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
+  and
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+  also accept smooth terms, in the mean and, for
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md),
+  in the panel-level dispersion formulas. They have the same penalized
+  fitting, `sp` argument and Bayesian standard errors.
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+  with family NM2 and
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  are the same model, and give the same smooth.
+- [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  gains an analytic score for its penalized fits, which made a smooth
+  fit about 10 times faster (46 s to 4 s on `washington_roads`).
+- [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
+  accepts smooth terms of variables that change within groups, with all
+  three of its estimators. A smooth of a variable that is constant
+  within groups is absorbed by the fixed effects and gives an error.
+  - The multi-dimension Poisson estimator uses penalized IRLS.
+  - The bases are built on the rows used in estimation, after the
+    all-zero and single-observation groups are dropped.
+  - With the same smoothing parameters, the estimates equal
+    [`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html) with group
+    dummies: to 1e-8 for one dimension, 1e-14 for two, and 1e-5 for NB2
+    with the dispersion fixed.
+- Penalized fits are finished with Newton steps on the penalized
+  Hessian. BFGS stopped short of the optimum in directions of low
+  curvature, by about 4e-4 in the coefficients of a weakly penalized
+  smooth.
+- [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  and
+  [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  accept smooth terms in the mean, the distribution-parameter formulas
+  and the mixing (membership) formula.
+  - Each component’s copy of a smooth, and each membership logit’s, has
+    its own smoothing parameter.
+  - The multi-start search is unpenalized; the selected, label-aligned
+    solution is then refitted by penalized likelihood.
+  - One component reproduces
+    [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+    exactly.
+  - In a simulated two-component Poisson mixture (a sine-shaped and a
+    linear component), the smooths recovered both shapes: a correlation
+    of 1.000 with the sine, and a slope of 0.296 for a true 0.3. The
+    class shares were 0.386 and 0.614, for true 0.4 and 0.6.
+  - Every estimator of the package now accepts smooth terms.
+- Not yet available with smooths: bootstrap standard errors, smooths
+  with `by` variables in
+  [`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md),
+  the `"re"`, `"fs"` and `"mrf"` bases, and smooth diagnostics.
+- New vignette, “Smooth effects: generalized additive count models”
+  ([`vignette("smooth-effects")`](https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.md)).
+
 ### Fixed-effects count models
 
 - New

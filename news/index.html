@@ -54,6 +54,44 @@
 <li>Families can declare a <code>score</code> function in the internal registry; the NB1, NB2 and NBP scores are shared by <code><a href="../reference/countreg.html">countreg()</a></code> and <code><a href="../reference/countreg_rp.html">countreg_rp()</a></code>.</li>
 </ul></div>
 <div class="section level3">
+<h3 id="generalized-additive-count-models-smooth-terms-0-1-2">Generalized additive count models (smooth terms)<a class="anchor" aria-label="anchor" href="#generalized-additive-count-models-smooth-terms-0-1-2"></a></h3>
+<ul><li>
+<code><a href="../reference/countreg.html">countreg()</a></code> and <code><a href="../reference/countreg_rp.html">countreg_rp()</a></code> accept the penalized smooth terms of the mgcv package (<code>s()</code>, <code>te()</code>, <code>ti()</code>, <code>t2()</code>) in their formulas:
+<ul><li>In <code><a href="../reference/countreg.html">countreg()</a></code>: the mean, the distribution-parameter formulas, the zero model and the underreporting model.</li>
+<li>In <code><a href="../reference/countreg_rp.html">countreg_rp()</a></code>: the fixed part of the mean, <code>het_mean_formula</code>, <code>het_var_formula</code> and the distribution-parameter formulas.</li>
+<li>Smooth bases are built once on the estimation rows and rebuilt for new data with the same knots.</li>
+</ul></li>
+<li>Fitting is by penalized maximum likelihood. The smoothing parameters are selected by generalized Fellner-Schall updates (Wood and Fasiolo 2017), or fixed with the new argument <code>sp</code>.</li>
+<li>Standard errors are Bayesian, (H + S_lambda)^-1, by default; robust and cluster-robust versions are available.</li>
+<li>
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports each smooth by its effective degrees of freedom, with an approximate test (Wood 2013), instead of its basis coefficients. <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code> counts the total effective degrees of freedom, so <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC()</a></code> compares smooth and parametric models.</li>
+<li>Agreement with mgcv:
+<ul><li>With fixed smoothing parameters, the estimates, log-likelihood, effective degrees of freedom and standard errors equal those of <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code> for Poisson and NB2 (with the dispersion fixed).</li>
+<li>The selected smoothing parameters were within about 5% of mgcv’s REML choice in the tests.</li>
+</ul></li>
+<li>New <code><a href="../reference/smooth_estimates.html">smooth_estimates()</a></code> and <code><a href="../reference/plot_smooths.html">plot_smooths()</a></code> evaluate and plot each smooth with pointwise and simultaneous confidence bands. Their values equal mgcv’s term predictions.</li>
+<li>The random-effects panel models <code><a href="../reference/renb.html">renb()</a></code>, <code><a href="../reference/repois.html">repois()</a></code>, <code><a href="../reference/poisLindRE.html">poislind_re()</a></code> and <code><a href="../reference/negmultinom.html">negmultinom()</a></code> also accept smooth terms, in the mean and, for <code><a href="../reference/negmultinom.html">negmultinom()</a></code>, in the panel-level dispersion formulas. They have the same penalized fitting, <code>sp</code> argument and Bayesian standard errors. <code><a href="../reference/negmultinom.html">negmultinom()</a></code> with family NM2 and <code><a href="../reference/repois.html">repois()</a></code> are the same model, and give the same smooth.</li>
+<li>
+<code><a href="../reference/repois.html">repois()</a></code> gains an analytic score for its penalized fits, which made a smooth fit about 10 times faster (46 s to 4 s on <code>washington_roads</code>).</li>
+<li>
+<code><a href="../reference/countreg_fe.html">countreg_fe()</a></code> accepts smooth terms of variables that change within groups, with all three of its estimators. A smooth of a variable that is constant within groups is absorbed by the fixed effects and gives an error.
+<ul><li>The multi-dimension Poisson estimator uses penalized IRLS.</li>
+<li>The bases are built on the rows used in estimation, after the all-zero and single-observation groups are dropped.</li>
+<li>With the same smoothing parameters, the estimates equal <code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code> with group dummies: to 1e-8 for one dimension, 1e-14 for two, and 1e-5 for NB2 with the dispersion fixed.</li>
+</ul></li>
+<li>Penalized fits are finished with Newton steps on the penalized Hessian. BFGS stopped short of the optimum in directions of low curvature, by about 4e-4 in the coefficients of a weakly penalized smooth.</li>
+<li>
+<code><a href="../reference/countreg_mix.html">countreg_mix()</a></code> and <code><a href="../reference/countreg_mix.html">countreg_lc()</a></code> accept smooth terms in the mean, the distribution-parameter formulas and the mixing (membership) formula.
+<ul><li>Each component’s copy of a smooth, and each membership logit’s, has its own smoothing parameter.</li>
+<li>The multi-start search is unpenalized; the selected, label-aligned solution is then refitted by penalized likelihood.</li>
+<li>One component reproduces <code><a href="../reference/countreg.html">countreg()</a></code> exactly.</li>
+<li>In a simulated two-component Poisson mixture (a sine-shaped and a linear component), the smooths recovered both shapes: a correlation of 1.000 with the sine, and a slope of 0.296 for a true 0.3. The class shares were 0.386 and 0.614, for true 0.4 and 0.6.</li>
+<li>Every estimator of the package now accepts smooth terms.</li>
+</ul></li>
+<li>Not yet available with smooths: bootstrap standard errors, smooths with <code>by</code> variables in <code><a href="../reference/smooth_estimates.html">smooth_estimates()</a></code>, the <code>"re"</code>, <code>"fs"</code> and <code>"mrf"</code> bases, and smooth diagnostics.</li>
+<li>New vignette, “Smooth effects: generalized additive count models” (<code><a href="../articles/smooth-effects.html">vignette("smooth-effects")</a></code>).</li>
+</ul></div>
+<div class="section level3">
 <h3 id="fixed-effects-count-models-0-1-2">Fixed-effects count models<a class="anchor" aria-label="anchor" href="#fixed-effects-count-models-0-1-2"></a></h3>
 <ul><li>New <code><a href="../reference/countreg_fe.html">countreg_fe()</a></code> estimates count models with fixed effects for one or more grouping variables (<code>fixef = ~ site</code> or <code>~ site + year</code>). It chooses among three estimators:
 <ul><li>Poisson with one dimension: the conditional likelihood.</li>

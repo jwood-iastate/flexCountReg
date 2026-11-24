@@ -57,7 +57,8 @@
 <span>  offset <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  print.level <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  print.level <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sp <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -135,6 +136,15 @@ in the fitted object (saving memory). <code><a href="https://rdrr.io/r/stats/pre
 
 <dt id="arg-print-level">print.level<a class="anchor" aria-label="anchor" href="#arg-print-level"></a></dt>
 <dd><p>deprecated; use <code>verbose</code>.</p></dd>
+
+
+<dt id="arg-sp">sp<a class="anchor" aria-label="anchor" href="#arg-sp"></a></dt>
+<dd><p>optional fixed smoothing parameters for smooth terms
+(<code>s()</code>, <code>te()</code>, ...) in the formula(s); by default they are
+selected automatically. Smooth terms are fitted by penalized maximum
+likelihood with Bayesian standard errors (see the "Smooth terms"
+section of <code><a href="countreg.html">countreg</a></code>); bootstrap standard errors are not
+available with them.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -227,9 +237,9 @@ $$</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)     -9.623      1.426   -6.75  1.5e-11 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt           1.036      0.167    6.19  5.9e-10 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength         1.456      0.236    6.18  6.4e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)     -9.623      1.337   -7.20  6.2e-13 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt           1.036      0.157    6.61  3.8e-11 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength         1.456      0.236    6.17  6.9e-10 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> speed50         -0.855      0.335   -2.55    0.011 *  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ShouldWidth04   -0.434      0.291   -1.49    0.136    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k     -0.756      0.532   -1.42    0.155    </span>

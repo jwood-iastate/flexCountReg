@@ -111,7 +111,8 @@ cluster-level variables.</p>
 <span>  bootstraps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  weights <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sp <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -205,6 +206,15 @@ value per row of <code>data</code>, of frequency weights of the panels: a panel 
 weight w counts as w independent panels in the log-likelihood, the robust
 covariance, BIC and the bootstrap. Weights must be constant within each
 panel. Bootstrap standard errors need whole-number weights.</p></dd>
+
+
+<dt id="arg-sp">sp<a class="anchor" aria-label="anchor" href="#arg-sp"></a></dt>
+<dd><p>optional fixed smoothing parameters for smooth terms
+(<code>s()</code>, <code>te()</code>, ...) in the formula(s); by default they are
+selected automatically. Smooth terms are fitted by penalized maximum
+likelihood with Bayesian standard errors (see the "Smooth terms"
+section of <code><a href="countreg.html">countreg</a></code>); bootstrap standard errors are not
+available with them.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -34,7 +34,8 @@ countreg_rp(
   weight_type = c("frequency", "sampling"),
   draws = c("per_unit", "shared"),
   cluster = NULL,
-  cre = NULL
+  cre = NULL,
+  sp = NULL
 )
 ```
 
@@ -263,6 +264,12 @@ countreg_rp(
   [`cre_test()`](https://jwood-iastate.github.io/flexCountReg/reference/cre_test.md)
   tests random against fixed effects.
 
+- sp:
+
+  optional fixed smoothing parameters, one per penalty of the smooth
+  terms (in the order of `model$smooth_table`); by default they are
+  selected automatically.
+
 ## Value
 
 An object of class `flexCountReg` which is a list with the following
@@ -277,6 +284,34 @@ components:
 - formula: the formula used to fit the model.
 
 ## Details
+
+**Smooth terms.** The formulas accept the penalized smooths of the mgcv
+package (`s()`, `te()`, `ti()`, `t2()`), for example
+`y ~ s(lnaadt) + speed50`, or `dis_param_formula_1 = ~ s(lnlength)` for
+a dispersion that varies smoothly. The model is then fitted by penalized
+maximum likelihood, with the smoothing parameters selected by
+generalized Fellner-Schall updates (Wood and Fasiolo 2017), which
+approximately maximize the restricted marginal likelihood; `sp` fixes
+them instead. Standard errors are Bayesian (\\(H + S\_\lambda)^{-1}\\)
+by default, and robust or cluster-robust ones are available.
+[`summary()`](https://rdrr.io/r/base/summary.html) reports each smooth
+by its effective degrees of freedom with an approximate test, the
+log-likelihood's degrees of freedom are the total effective degrees of
+freedom, and
+[`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md)
+and
+[`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
+show the estimated functions. With fixed smoothing parameters the
+estimates equal those of
+[`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html); the selected
+smoothing parameters are close to mgcv's REML choice. Smooth terms need
+the mgcv package, and bootstrap standard errors are not yet available
+with them. In `countreg_rp()` smooths may enter `formula`,
+`het_mean_formula`, `het_var_formula` and the distribution-parameter
+formulas, but not `rpar_formula`: a random parameter is a coefficient
+that varies across units with an unknown distribution, a smooth is a
+function of an observed variable, and a smooth heterogeneity-in-means
+term lets a random parameter's mean vary smoothly with a unit attribute.
 
 `countreg.rp()` is the former name of `countreg_rp()`. It is deprecated
 (a name with a dot is easily mistaken for an S3 method): it still works,

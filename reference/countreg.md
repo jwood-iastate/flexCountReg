@@ -89,7 +89,8 @@ countreg(
   zero_formula = NULL,
   zero_type = c("inflated", "hurdle"),
   weight_type = c("frequency", "sampling"),
-  cluster = NULL
+  cluster = NULL,
+  sp = NULL
 )
 ```
 
@@ -264,6 +265,12 @@ countreg(
   [`vcov.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md),
   which also gives cluster-robust covariances after the fit.
 
+- sp:
+
+  optional fixed smoothing parameters, one per penalty of the smooth
+  terms (in the order of `model$smooth_table`); by default they are
+  selected automatically.
+
 ## Value
 
 An object of class `flexCountReg` which is a list with the following
@@ -278,6 +285,29 @@ components:
 - formula: the formula used to fit the model.
 
 ## Details
+
+**Smooth terms.** The formulas accept the penalized smooths of the mgcv
+package (`s()`, `te()`, `ti()`, `t2()`), for example
+`y ~ s(lnaadt) + speed50`, or `dis_param_formula_1 = ~ s(lnlength)` for
+a dispersion that varies smoothly. The model is then fitted by penalized
+maximum likelihood, with the smoothing parameters selected by
+generalized Fellner-Schall updates (Wood and Fasiolo 2017), which
+approximately maximize the restricted marginal likelihood; `sp` fixes
+them instead. Standard errors are Bayesian (\\(H + S\_\lambda)^{-1}\\)
+by default, and robust or cluster-robust ones are available.
+[`summary()`](https://rdrr.io/r/base/summary.html) reports each smooth
+by its effective degrees of freedom with an approximate test, the
+log-likelihood's degrees of freedom are the total effective degrees of
+freedom, and
+[`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md)
+and
+[`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
+show the estimated functions. With fixed smoothing parameters the
+estimates equal those of
+[`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html); the selected
+smoothing parameters are close to mgcv's REML choice. Smooth terms need
+the mgcv package, and bootstrap standard errors are not yet available
+with them.
 
 The `family` codes are listed in
 [count_families](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md).
@@ -995,8 +1025,8 @@ summary(com_model)
 #> (Intercept)  -7.4230     0.6246  -11.88  < 2e-16 ***
 #> lnaadt        0.9127     0.0770   11.86  < 2e-16 ***
 #> lnlength      0.8400     0.0734   11.45  < 2e-16 ***
-#> speed50      -0.4451     0.1078   -4.13  3.6e-05 ***
-#> AADT10kplus   0.7872     0.1356    5.81  6.4e-09 ***
+#> speed50      -0.4451     0.1079   -4.13  3.7e-05 ***
+#> AADT10kplus   0.7872     0.1355    5.81  6.2e-09 ***
 #> ln(nu)       -0.6199     0.2086   -2.97    0.003 ** 
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -1020,11 +1050,11 @@ summary(gp1_model)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  -7.2956     0.4723  -15.45  < 2e-16 ***
+#> (Intercept)  -7.2956     0.4728  -15.43  < 2e-16 ***
 #> lnaadt        0.8963     0.0561   15.97  < 2e-16 ***
-#> lnlength      0.8200     0.0668   12.28  < 2e-16 ***
-#> speed50      -0.4448     0.1069   -4.16  3.2e-05 ***
-#> AADT10kplus   0.7684     0.1173    6.55  5.8e-11 ***
+#> lnlength      0.8200     0.0669   12.26  < 2e-16 ***
+#> speed50      -0.4448     0.1067   -4.17  3.1e-05 ***
+#> AADT10kplus   0.7684     0.1175    6.54  6.2e-11 ***
 #> ln(phi+1)     0.0875     0.0274    3.19   0.0014 ** 
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
@@ -1048,11 +1078,11 @@ summary(gp2_model)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  -7.3820     0.4731  -15.61  < 2e-16 ***
+#> (Intercept)  -7.3820     0.4730  -15.61  < 2e-16 ***
 #> lnaadt        0.9088     0.0567   16.02  < 2e-16 ***
 #> lnlength      0.8470     0.0701   12.08  < 2e-16 ***
 #> speed50      -0.4599     0.1065   -4.32  1.6e-05 ***
-#> AADT10kplus   0.8123     0.1321    6.15  7.9e-10 ***
+#> AADT10kplus   0.8123     0.1321    6.15  7.8e-10 ***
 #> ln(alpha+1)   0.1056     0.0292    3.61    3e-04 ***
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1

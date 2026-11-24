@@ -68,6 +68,10 @@ Mixtures of count distributions and latent-class count regression.
   [`simulate(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   [`print(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.md)
   : Standard methods for flexCountReg models
+- [`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md)
+  : Estimated smooth functions
+- [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
+  : Plot estimated smooth functions
 - [`vcov(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md)
   : Covariance matrix of the estimates
 - [`estfun(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/estfun.flexCountReg.md)

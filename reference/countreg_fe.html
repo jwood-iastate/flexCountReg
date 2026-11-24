@@ -74,7 +74,8 @@ dummy-variable likelihood with the group effects concentrated out.</p>
 <span>  time <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max.iters <span class="op">=</span> <span class="fl">1000</span>,</span>
 <span>  tol <span class="op">=</span> <span class="fl">1e-10</span>,</span>
-<span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  sp <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -159,6 +160,11 @@ or of the deviance).</p></dd>
 <dd><p>logical; store the data in the fit (needed for
 predictions on the training rows without <code>newdata</code>).</p></dd>
 
+
+<dt id="arg-sp">sp<a class="anchor" aria-label="anchor" href="#arg-sp"></a></dt>
+<dd><p>optional fixed smoothing parameters for smooth terms in
+<code>formula</code>; by default they are selected automatically.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -190,6 +196,16 @@ with <code>ssc(adj = FALSE)</code>; by default fixest also multiplies the
 variance by \((n-1)/(n-K)\). The log-likelihood is that of the dummy-variable model,
 and its degrees of freedom count the fixed effects, so AIC and BIC
 compare with models that estimate them.</p>
+<p><strong>Smooth terms.</strong> <code>formula</code> may contain smooth terms
+(<code>s(x)</code>, <code>te()</code>, ...) of variables that change within
+groups; a smooth of a variable that is constant within groups is
+absorbed by the fixed effects and gives an error. The fit is then
+penalized, with the smoothing parameters selected as in
+<code><a href="countreg.html">countreg()</a></code>. The smooth bases are built on the rows used in
+estimation (after dropping all-zero and single-observation groups), so
+with fixed smoothing parameters the estimates equal those of
+<code><a href="https://rdrr.io/pkg/mgcv/man/gam.html" class="external-link">mgcv::gam()</a></code> with group dummies. The jackknife is not available
+with smooth terms.</p>
 <p><code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> uses each known group's estimated effect. A group not
 in the estimation data has no fixed effect: its prediction is
 <code>NA</code>, unless <code>newgroup = "mean_fe"</code> is given to use the

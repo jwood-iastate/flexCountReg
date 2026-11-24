@@ -64,7 +64,8 @@ version of this model can be estimated using the <code><a href="negmultinom.html
 <span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep_data <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  print.level <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cre <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  cre <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sp <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -145,6 +146,15 @@ stored with the fit: predictions for a group in the estimation data use
 its training means, and a new group uses the means of its own rows in
 <code>newdata</code>. <code><a href="cre_test.html">cre_test()</a></code> tests random against fixed
 effects.</p></dd>
+
+
+<dt id="arg-sp">sp<a class="anchor" aria-label="anchor" href="#arg-sp"></a></dt>
+<dd><p>optional fixed smoothing parameters for smooth terms
+(<code>s()</code>, <code>te()</code>, ...) in the formula(s); by default they are
+selected automatically. Smooth terms are fitted by penalized maximum
+likelihood with Bayesian standard errors (see the "Smooth terms"
+section of <code><a href="countreg.html">countreg</a></code>); bootstrap standard errors are not
+available with them.</p></dd>
 
 </dl></div>
     <div class="section level2">

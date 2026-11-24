@@ -22,6 +22,8 @@
   distribution](https://jwood-iastate.github.io/flexCountReg/articles/choosing-a-count-distribution.md):
 - [Modeling dispersion and other distribution
   parameters](https://jwood-iastate.github.io/flexCountReg/articles/distribution-parameter-regression.md):
+- [Smooth effects: generalized additive count
+  models](https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.md):
 - [Understanding zeros, hurdles and the sampling
   process](https://jwood-iastate.github.io/flexCountReg/articles/zeros-hurdles-and-sampling.md):
 - [Underreporting: observed counts, true counts and

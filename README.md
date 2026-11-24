@@ -622,6 +622,14 @@ spec <- count_reg(family = "NB2") |> set_engine("flexCountReg", method = "BFGS")
 fit <- fit(spec, Total_crashes ~ lnaadt + lnlength + speed50,
            data = washington_roads)
 predict(fit, new_data = washington_roads[1:5, ])
+#> # A tibble: 5 × 1
+#>   .pred
+#>   <dbl>
+#> 1 0.780
+#> 2 0.710
+#> 3 1.04 
+#> 4 0.332
+#> 5 0.807
 ```
 
 ## Learning more

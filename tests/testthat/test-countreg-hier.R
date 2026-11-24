@@ -135,7 +135,10 @@ test_that("NB1, NB2, crossed, nested and slope models match glmmTMB", {
   ha <- suppressMessages(suppressWarnings(
     countreg_hier(f, data = s, family = "POISSON", nAGQ = 1)))
   m <- tmb(f, poisson)
-  expect_equal(h$model$maximum, as.numeric(logLik(m)), tolerance = 1e-6)
+  # The slope variance is on the boundary: glmmTMB reports a convergence
+  # problem, and on some platforms its logLik() is NA, so compare with its
+  # optimizer objective
+  expect_equal(h$model$maximum, -m$fit$objective, tolerance = 1e-6)
   expect_equal(ha$model$maximum, h$model$maximum, tolerance = 1e-6)
 })
 

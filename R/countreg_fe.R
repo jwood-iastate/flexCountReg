@@ -65,6 +65,8 @@
 #'   or of the deviance).
 #' @param keep_data logical; store the data in the fit (needed for
 #'   predictions on the training rows without \code{newdata}).
+#' @param sp optional fixed smoothing parameters for smooth terms in
+#'   \code{formula}; by default they are selected automatically.
 #'
 #' @details Poisson fixed-effects estimates of the slopes are consistent
 #'   with fixed T and need only a correct conditional mean (Wooldridge
@@ -87,6 +89,17 @@
 #'   variance by \eqn{(n-1)/(n-K)}. The log-likelihood is that of the dummy-variable model,
 #'   and its degrees of freedom count the fixed effects, so AIC and BIC
 #'   compare with models that estimate them.
+#'
+#'   \strong{Smooth terms.} \code{formula} may contain smooth terms
+#'   (\code{s(x)}, \code{te()}, ...) of variables that change within
+#'   groups; a smooth of a variable that is constant within groups is
+#'   absorbed by the fixed effects and gives an error. The fit is then
+#'   penalized, with the smoothing parameters selected as in
+#'   \code{\link{countreg}()}. The smooth bases are built on the rows used in
+#'   estimation (after dropping all-zero and single-observation groups), so
+#'   with fixed smoothing parameters the estimates equal those of
+#'   \code{mgcv::gam()} with group dummies. The jackknife is not available
+#'   with smooth terms.
 #'
 #'   \code{predict()} uses each known group's estimated effect. A group not
 #'   in the estimation data has no fixed effect: its prediction is
@@ -126,8 +139,8 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
                                    "concentrated"),
                         stderr = c("cluster", "hessian"), cluster = NULL,
                         jackknife = FALSE, time = NULL,
-                        max.iters = 1000, tol = 1e-10, keep_data = TRUE) {
-  .fcr_refuse_smooth("countreg_fe", formula)
+                        max.iters = 1000, tol = 1e-10, keep_data = TRUE,
+                        sp = NULL) {
   method <- match.arg(method)
   stderr <- match.arg(stderr)
   family_spec <- if (inherits(family, "fcr_count_family")) family
@@ -209,6 +222,24 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
   }
   if (!any(keep)) stop("No groups with positive counts remain.", call. = FALSE)
   idx <- which(keep)
+  # Smooth bases are rebuilt on the rows used in estimation (the dropped
+  # groups do not enter the fit), so they span the data actually fitted;
+  # the blueprint keeps the rebuilt smooths for prediction
+  if (length(prep$smooth$main)) {
+    sm_specs <- .fcr_smooth_split(formula)$specs
+    built <- .fcr_smooth_build(sm_specs, data[rows[idx], , drop = FALSE])
+    old_cols <- unlist(lapply(prep$smooth$main, `[[`, "cols"))
+    p0 <- min(old_cols) - 1L
+    newB <- matrix(NA_real_, nrow(X), ncol(built$B),
+                   dimnames = list(NULL, colnames(built$B)))
+    newB[idx, ] <- built$B
+    Xfull <- prep$X
+    Xfull <- cbind(Xfull[, -old_cols, drop = FALSE], newB)
+    prep$smooth$main <- .fcr_smooth_shift(built$smooths, p0)
+    prep$blueprint$smooth$main <- prep$smooth$main
+    prep$X <- Xfull
+    X <- Xfull[, colnames(Xfull) != "(Intercept)", drop = FALSE]
+  }
   X <- X[idx, , drop = FALSE]
   y <- y[idx]
   off <- off[idx]
@@ -230,6 +261,20 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
   }
   flat <- vapply(seq_len(ncol(X)), function(j)
     within_sd(X[, j]) < 1e-9 * max(1, abs(X[, j])), logical(1))
+  # Smooth terms: a smooth of a variable that is constant within groups is
+  # absorbed by the fixed effects; its basis columns are never dropped one
+  # by one
+  sm_ents <- prep$smooth$main
+  sm_cols <- lapply(sm_ents, function(e) colnames(prep$X)[e$cols])
+  for (k in seq_along(sm_ents)) {
+    fl <- flat[colnames(X) %in% sm_cols[[k]]]
+    if (any(fl)) {
+      stop("The smooth ", sm_ents[[k]]$label, " has no variation within ",
+           "the fixed-effect groups, so it is absorbed by the fixed effects. ",
+           "Use smooths of variables that change within groups.",
+           call. = FALSE)
+    }
+  }
   not_identified <- colnames(X)[flat]
   if (any(flat)) {
     warning("Regressor(s) without variation within the fixed-effect groups ",
@@ -241,12 +286,25 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
     stop("No regressor varies within the fixed-effect groups.",
          call. = FALSE)
   }
+  smooth <- NULL
+  if (length(sm_ents)) {
+    if (isTRUE(jackknife)) {
+      stop("The split-panel jackknife is not available with smooth terms.",
+           call. = FALSE)
+    }
+    for (k in seq_along(sm_ents)) {
+      sm_ents[[k]]$cols <- match(sm_cols[[k]], colnames(X))
+    }
+    smooth <- list(ents = list(main = sm_ents), sp = sp)
+  }
 
   fit <- switch(method,
-    conditional = .fcr_fe_conditional(y, X, off, w, fe[[1]], max.iters, tol),
-    demean = .fcr_fe_demean(y, X, off, w, fe, max.iters, tol),
+    conditional = .fcr_fe_conditional(y, X, off, w, fe[[1]], max.iters, tol,
+                                      smooth = smooth),
+    demean = .fcr_fe_demean(y, X, off, w, fe, max.iters, tol,
+                            smooth = smooth),
     concentrated = .fcr_fe_concentrated(y, X, off, w, fe[[1]], family,
-                                        max.iters, tol))
+                                        max.iters, tol, smooth = smooth))
 
   # --- Split-panel jackknife -------------------------------------------------
   jk <- NULL
@@ -326,8 +384,14 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
   model <- list(
     estimate = fit$estimate, maximum = fit$loglik, hessian = fit$hessian,
     hessian_accuracy = fit$hessian_accuracy,
+    smooth_table = fit$smooth_table, smooth_info = fit$smooth_info,
+    smooth_lambda = fit$smooth_lambda,
+    smooth_converged = fit$smooth_converged,
+    smooth_iterations = fit$smooth_iterations,
+    smooth_coefs = fit$smooth_coefs, edf = fit$edf, df_total = fit$df_total,
     gradientObs = fit$gradientObs, vcov = V, se = .fcr_se(V),
-    vcov_type = if (stderr == "cluster") "cluster" else "hessian",
+    vcov_type = if (stderr == "cluster") "cluster" else
+      if (!is.null(smooth)) "bayesian" else "hessian",
     stderr = stderr, n_clusters = n_clusters,
     cluster = if (stderr == "cluster") names(cf),
     iterations = fit$iterations, converged = fit$converged,
@@ -359,7 +423,8 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
 #   score_i = sum_t w (y - S_i p / w) x = sum_t (w y - S_i p) x,
 #   Hessian = -sum_i S_i sum_t p (x - xbar_i)(x - xbar_i)',
 #   xbar_i = sum_t p x.
-.fcr_fe_conditional <- function(y, X, off, w, g, max.iters, tol) {
+.fcr_fe_conditional <- function(y, X, off, w, g, max.iters, tol,
+                                smooth = NULL) {
   gi <- as.integer(g)
   S <- as.vector(rowsum(w * y, gi))
   wy <- w * y
@@ -378,8 +443,24 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
     ll <- sum(wy * eta) - sum(S * (log(den) + as.vector(tapply(eta, gi, max))))
     list(ll = ll, U = Ug, H = H, eta = eta)
   }
+  sf <- NULL
+  if (!is.null(smooth)) {
+    # Penalized conditional likelihood: per-group contributions and scores
+    fn <- function(b) {
+      eta <- as.vector(X %*% b) + off
+      mg <- as.vector(tapply(eta, gi, max))
+      den <- as.vector(rowsum(w * exp(eta - mg[gi]), gi))
+      as.vector(rowsum(wy * eta, gi)) - S * (log(den) + mg)
+    }
+    gr <- function(b) unname(parts(b)$U)
+    sf <- .fcr_smooth_fit(smooth$ents, fn, gr, beta, "BFGS", max.iters,
+                          smooth$sp, list(main = 0), list(main = "mean"),
+                          list(main = X))
+    beta <- sf$estimate
+    max.iters <- 0L
+  }
   pr <- parts(beta)
-  conv <- FALSE
+  conv <- !is.null(sf) && sf$code == 0L
   it <- 0L
   while (it < max.iters) {
     it <- it + 1L
@@ -407,11 +488,13 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
   mu <- exp(alpha[gi] + pr$eta)
   ll_full <- sum(w * stats::dpois(y, mu, log = TRUE))
   names(alpha) <- levels(g)
-  H <- pr$H
+  H <- if (!is.null(sf)) sf$hessian else pr$H
   dimnames(H) <- list(names(beta), names(beta))
-  list(estimate = beta, loglik = ll_full, hessian = H, gradientObs = pr$U,
-       fixef = stats::setNames(list(alpha), "fe1"), iterations = it,
-       converged = conv)
+  .fcr_fe_with_smooth(
+    list(estimate = beta, loglik = ll_full, hessian = H, gradientObs = pr$U,
+         fixef = stats::setNames(list(alpha), "fe1"),
+         iterations = if (!is.null(sf)) sf$iterations else it,
+         converged = conv), sf)
 }
 
 # ---- Poisson: IRLS with alternating projections (any dimensions) -------------
@@ -431,7 +514,20 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
   M
 }
 
-.fcr_fe_demean <- function(y, X, off, w, fe, max.iters, tol) {
+.fcr_fe_demean <- function(y, X, off, w, fe, max.iters, tol, smooth = NULL) {
+  # With smooth terms: penalized IRLS, each weighted least-squares step
+  # solving (X'WX + S_lambda) b = X'Wz on the demeaned variables, inside
+  # Fellner-Schall updates of the smoothing parameters
+  P <- ncol(X)
+  terms <- if (!is.null(smooth))
+    .fcr_pen_terms(smooth$ents, list(main = 0), list(main = "mean"))
+  lambda <- if (is.null(smooth)) numeric(0) else
+    smooth$sp %||% rep(1, length(terms))
+  Sl <- if (is.null(smooth)) matrix(0, P, P) else
+    .fcr_pen_matrix(terms, lambda, P)
+  fs_it <- 0L
+  fs_conv <- is.null(smooth) || !is.null(smooth$sp)
+  repeat {
   mu <- (y + mean(y)) / 2
   eta <- log(mu)
   dev_old <- Inf
@@ -446,7 +542,8 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
     zt <- Zt[, 1]
     Xt <- Zt[, -1, drop = FALSE]
     beta <- stats::setNames(
-      as.vector(solve(crossprod(Xt * sqrt(W)), crossprod(Xt * W, zt))),
+      as.vector(solve(crossprod(Xt * sqrt(W)) + Sl,
+                      crossprod(Xt * W, zt))),
       colnames(X))
     e <- zt - as.vector(Xt %*% beta)
     eta <- z - e + off
@@ -460,7 +557,16 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
   }
   W <- w * mu
   Xt <- .fcr_fe_demean_cols(X, fe, W)
-  H <- -crossprod(Xt * sqrt(W))
+  Hn <- crossprod(Xt * sqrt(W))
+  if (fs_conv) break
+  fs_it <- fs_it + 1L
+  new <- .fcr_fs_step(beta, Hn, terms, lambda)
+  done <- max(abs(log(new) - log(lambda))) < 1e-3 || fs_it >= 200L
+  lambda <- new
+  Sl <- .fcr_pen_matrix(terms, lambda, P)
+  if (done) fs_conv <- TRUE
+  }
+  H <- -(Hn + Sl)
   dimnames(H) <- list(names(beta), names(beta))
   U <- (w * (y - mu)) * Xt
   # Effects of each dimension from the total effect eta - X beta - offset
@@ -488,13 +594,28 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
     }
   }
   names(alphas) <- paste0("fe", seq_along(fe))
-  list(estimate = beta, loglik = sum(w * stats::dpois(y, mu, log = TRUE)),
-       hessian = H, gradientObs = U, fixef = alphas, iterations = it,
-       converged = conv)
+  out <- list(estimate = beta,
+              loglik = sum(w * stats::dpois(y, mu, log = TRUE)),
+              hessian = H, gradientObs = U, fixef = alphas, iterations = it,
+              converged = conv)
+  if (is.null(smooth)) return(out)
+  Vb <- tryCatch(solve(Hn + Sl), error = function(e) MASS::ginv(Hn + Sl))
+  dimnames(Vb) <- dimnames(H)
+  gam <- list(theta = beta, Vb = Vb, edf = stats::setNames(diag(Vb %*% Hn),
+                                                          names(beta)),
+              lambda = lambda, terms = terms, converged = TRUE,
+              iterations = fs_it)
+  sf <- .fcr_smooth_outputs(gam, smooth$ents, list(main = X))
+  .fcr_fe_with_smooth(out, list(
+    smooth_table = sf$table, smooth_info = sf$info, smooth_lambda = lambda,
+    smooth_converged = fs_it < 200L, smooth_iterations = fs_it,
+    smooth_coefs = unique(unlist(lapply(terms, `[[`, "idx"))),
+    edf = gam$edf, df_total = sum(gam$edf)))
 }
 
 # ---- Any family: concentrated dummy-variable likelihood -----------------------
-.fcr_fe_concentrated <- function(y, X, off, w, g, family, max.iters, tol) {
+.fcr_fe_concentrated <- function(y, X, off, w, g, family, max.iters, tol,
+                                 smooth = NULL) {
   params <- get_params(family)
   n1 <- !is.null(params[[1]])
   n2 <- !is.null(params[[2]])
@@ -573,20 +694,39 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
     dimnames(out) <- NULL
     out
   }
-  ml <- maxLik::maxLik(fn, grad = gr, start = start, method = "BFGS",
-                       finalHessian = FALSE,
-                       control = list(iterlim = max.iters,
-                                      reltol = max(tol, 1e-12)))
-  ml <- .fcr_set_final_hessian(ml, fn, gr, "BFGS")
+  sf <- NULL
+  if (!is.null(smooth)) {
+    ml <- sf <- .fcr_smooth_fit(smooth$ents, fn, gr, start, "BFGS",
+                                max.iters, smooth$sp, list(main = 0),
+                                list(main = "mean"), list(main = X))
+  } else {
+    ml <- maxLik::maxLik(fn, grad = gr, start = start, method = "BFGS",
+                         finalHessian = FALSE,
+                         control = list(iterlim = max.iters,
+                                        reltol = max(tol, 1e-12)))
+    ml <- .fcr_set_final_hessian(ml, fn, gr, "BFGS")
+  }
   est <- ml$estimate
   names(est) <- names(start)
   s <- state(est)
   dimnames(ml$hessian) <- list(names(est), names(est))
   alpha <- stats::setNames(s$alpha, levels(g))
-  list(estimate = est, loglik = sum(s$ll), hessian = ml$hessian,
-       gradientObs = gr(est), fixef = list(fe1 = alpha),
-       iterations = ml$iterations, converged = ml$code %in% c(0L, 1L, 2L, 8L),
-       hessian_accuracy = ml$hessian_accuracy)
+  .fcr_fe_with_smooth(
+    list(estimate = est, loglik = sum(s$ll), hessian = ml$hessian,
+         gradientObs = gr(est), fixef = list(fe1 = alpha),
+         iterations = ml$iterations,
+         converged = ml$code %in% c(0L, 1L, 2L, 8L),
+         hessian_accuracy = ml$hessian_accuracy), sf)
+}
+
+# Copy the smooth summaries of a penalized fit `sf` into a FE fit list.
+.fcr_fe_with_smooth <- function(out, sf) {
+  if (is.null(sf)) return(out)
+  keep <- c("smooth_table", "smooth_info", "smooth_lambda",
+            "smooth_converged", "smooth_iterations", "smooth_coefs", "edf",
+            "df_total")
+  out[keep] <- sf[keep]
+  out
 }
 
 # Predictions of a countreg_fe() fit: exp(x'beta + offset + effects).

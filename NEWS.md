@@ -83,9 +83,22 @@
   give the same smooth.
 * `repois()` gains an analytic score for its penalized fits, which made a
   smooth fit about 10 times faster (46 s to 4 s on `washington_roads`).
-* `countreg_fe()`, `countreg_mix()` and `countreg_lc()` do not yet support
-  smooth terms. They give an error, because they would otherwise fit the
-  bases without a penalty.
+* `countreg_fe()` accepts smooth terms of variables that change within
+  groups, with all three of its estimators. A smooth of a variable that is
+  constant within groups is absorbed by the fixed effects and gives an
+  error.
+  * The multi-dimension Poisson estimator uses penalized IRLS.
+  * The bases are built on the rows used in estimation, after the all-zero
+    and single-observation groups are dropped.
+  * With the same smoothing parameters, the estimates equal
+    `mgcv::gam()` with group dummies: to 1e-8 for one dimension, 1e-14 for
+    two, and 1e-5 for NB2 with the dispersion fixed.
+* Penalized fits are finished with Newton steps on the penalized Hessian.
+  BFGS stopped short of the optimum in directions of low curvature, by
+  about 4e-4 in the coefficients of a weakly penalized smooth.
+* `countreg_mix()` and `countreg_lc()` do not yet support smooth terms. They
+  give an error, because they would otherwise fit the bases without a
+  penalty.
 * Not yet available with smooths: bootstrap standard errors, smooths with
   `by` variables in `smooth_estimates()`, the `"re"`, `"fs"` and `"mrf"`
   bases, and smooth diagnostics.

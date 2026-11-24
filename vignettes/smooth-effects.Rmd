@@ -150,6 +150,10 @@ re <- repois(Total_crashes ~ s(lnaadt, k = 8) + speed50 + offset(lnlength),
 re$model$smooth_table[, c("term", "edf", "lambda", "p.value")]
 ```
 
+Fixed-effects models (`countreg_fe()`) accept smooths of variables that
+change within units, such as `s(lnaadt)`. A smooth of a variable that is
+constant within units is absorbed by the fixed effects, and is refused.
+
 ## 6. Inference and agreement with mgcv
 
 Standard errors are Bayesian by default: the covariance of the estimates is
@@ -171,8 +175,7 @@ freedom are the EDF without the smoothing-parameter correction that
 
 ## 7. Not yet available
 
-Smooth terms in `countreg_fe()` and in finite mixtures (`countreg_mix()`,
-`countreg_lc()`); bootstrap standard errors with smooth terms; smooths with
+Smooth terms in finite mixtures (`countreg_mix()`, `countreg_lc()`); bootstrap standard errors with smooth terms; smooths with
 a `by` variable
 in `smooth_estimates()`; random-effect, factor-smooth and spatial bases
 (`bs = "re"`, `"fs"`, `"mrf"`); and the smooth diagnostics (basis-dimension

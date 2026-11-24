@@ -17,10 +17,17 @@
 
 .fcr_smooth_fns <- c("s", "te", "ti", "t2")
 
-# Does a formula contain smooth terms?
+# Does a formula contain smooth terms? Only calls count: a variable named
+# `s` (as in ~ x + s) is not a smooth.
 .fcr_has_smooth <- function(fml) {
-  !is.null(fml) && any(all.names(stats::as.formula(fml)) %in%
-                         .fcr_smooth_fns)
+  if (is.null(fml)) return(FALSE)
+  walk <- function(e) {
+    if (!is.call(e)) return(FALSE)
+    fn <- e[[1]]
+    if (is.name(fn) && as.character(fn) %in% .fcr_smooth_fns) return(TRUE)
+    any(vapply(as.list(e)[-1], walk, logical(1)))
+  }
+  walk(stats::as.formula(fml))
 }
 
 # Split a formula into its parametric formula and smooth specifications.
@@ -95,8 +102,8 @@
   fs <- list(...)
   if (any(vapply(fs, .fcr_has_smooth, logical(1)))) {
     stop("Smooth terms (s(), te(), ...) are not yet available in ", fun,
-         "(). They are available in countreg(), countreg_rp(), renb(), ",
-         "repois(), poislind_re() and negmultinom().",
+         "(). They are available in countreg(), countreg_rp(), countreg_fe(), ",
+         "renb(), repois(), poislind_re() and negmultinom().",
          call. = FALSE)
   }
   invisible(NULL)

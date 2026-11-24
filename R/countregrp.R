@@ -599,7 +599,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
          "coefficient on a basis column is not a penalized smooth); use ",
          "them in `formula` or `het_mean_formula`.", call. = FALSE)
   }
-  has_smooth <- length(smooths$main) > 0 || length(smooths$aux) > 0
+  has_smooth <- .fcr_prep_has_smooth(prep)
   if (has_smooth) {
     if (stderr == "boot") {
       stop("Bootstrap standard errors are not yet available with smooth ",

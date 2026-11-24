@@ -170,13 +170,72 @@ test_that("the analytic repois score matches the numeric one", {
   expect_lt(max(abs(a - n)) / max(abs(n)), 1e-7)
 })
 
+test_that("smooths in fixed-effects models match mgcv with dummies", {
+  skip_if_not_installed("mgcv")
+  set.seed(7)
+  G <- 150
+  Tn <- 5
+  d <- data.frame(id = factor(rep(seq_len(G), each = Tn)),
+                  t = factor(rep(seq_len(Tn), G)))
+  a_i <- stats::rnorm(G, 0, 0.6)
+  d$x <- stats::runif(nrow(d), -2, 2) + 0.3 * a_i[d$id]
+  d$z <- stats::rnorm(nrow(d))
+  d$y <- stats::rpois(nrow(d), exp(0.3 + a_i[d$id] + sin(1.5 * d$x) +
+                                     0.3 * d$z))
+  f <- y ~ s(x, k = 8) + z
+  a <- suppressMessages(countreg_fe(f, fixef = ~ id, data = d))
+  expect_gt(a$model$smooth_table$edf, 3)       # a curve, not a line
+  keep <- d$id %in% names(a$model$fixef$fe1)
+  dk <- droplevels(d[keep, ])
+  g <- mgcv::gam(y ~ s(x, k = 8) + z + id, data = dk,
+                 family = stats::poisson(), sp = a$model$smooth_lambda)
+  b <- names(coef(a))
+  expect_equal(coef(a), coef(g)[b], tolerance = 1e-6)
+  expect_equal(as.numeric(logLik(a)), as.numeric(logLik(g)),
+               tolerance = 1e-8)
+  # Demeaning gives the same fit; two ways match mgcv with both dummies
+  dm <- suppressMessages(countreg_fe(f, fixef = ~ id, data = d,
+                                     method = "demean",
+                                     sp = a$model$smooth_lambda))
+  expect_equal(coef(dm), coef(a), tolerance = 1e-6)
+  t2 <- suppressMessages(countreg_fe(f, fixef = ~ id + t, data = d,
+                                     sp = 1))
+  k2 <- d$id %in% names(t2$model$fixef$fe1)
+  g2 <- mgcv::gam(y ~ s(x, k = 8) + z + id + t, data = droplevels(d[k2, ]),
+                  family = stats::poisson(), sp = 1)
+  expect_equal(coef(t2), coef(g2)[b], tolerance = 1e-6)
+  # Predictions use the bases built on the estimation rows
+  expect_equal(predict(a, newdata = dk[c(3, 30), ]),
+               unname(fitted(g)[c(3, 30)]), tolerance = 1e-6)
+  e <- smooth_estimates(a, n = 20, nsim = 200, seed = 1)
+  expect_identical(unique(e$term), "s(x)")
+  # A smooth of a group-constant variable is absorbed by the fixed effects
+  d$xbar <- stats::ave(d$x, d$id)
+  expect_error(suppressMessages(countreg_fe(y ~ s(xbar) + z, fixef = ~ id,
+                                            data = d)),
+               "absorbed by the fixed effects")
+  expect_error(suppressMessages(countreg_fe(f, fixef = ~ id, data = d,
+                                            jackknife = TRUE)),
+               "jackknife")
+})
+
 test_that("estimators without penalized fitting refuse smooth terms", {
   w <- gam_data()
   f <- Total_crashes ~ s(lnaadt)
-  expect_error(countreg_fe(f, fixef = ~ ID, data = w), "countreg_fe")
   expect_error(countreg_mix(f, data = w, family = "POISSON"), "countreg_mix")
   expect_error(countreg_mix(Total_crashes ~ lnaadt, data = w,
                             family = "NB2",
                             dis_param_formula_1 = ~ s(lnaadt)),
                "countreg_mix")
+})
+
+test_that("only calls are smooth terms, not variables named s", {
+  expect_false(.fcr_has_smooth(~ -1 + s))
+  expect_false(.fcr_has_smooth(y ~ x + te))
+  expect_true(.fcr_has_smooth(~ s(x)))
+  expect_true(.fcr_has_smooth(y ~ log(x) + te(a, b)))
+  expect_false(.fcr_has_smooth(NULL))
+  d <- data.frame(y = rpois(50, 2), x = rnorm(50), s = runif(50))
+  p <- prepare_model_data(y ~ x + s, d, aux_formulas = list(dis1 = ~ s))
+  expect_false(.fcr_prep_has_smooth(p))
 })

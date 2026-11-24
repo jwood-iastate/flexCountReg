@@ -1087,7 +1087,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   
   # ---- Estimation ------------------------------------------------------------
   smooths <- prep$smooth
-  has_smooth <- length(smooths$main) > 0 || length(smooths$aux) > 0
+  has_smooth <- .fcr_prep_has_smooth(prep)
   if (has_smooth) {
     # Penalized smooth terms: penalized likelihood with smoothing
     # parameters selected by Fellner-Schall updates (or fixed by `sp`)

@@ -67,7 +67,66 @@
                         finalHessian = FALSE,
                         control = list(iterlim = iterlim, reltol = 1e-10))
   names(fit$estimate) <- names(start)
+  # Newton polish with the penalized Hessian: BFGS stops on a relative
+  # change of the objective, which leaves directions of low curvature
+  # (weakly penalized smooths) short of the optimum
+  if (!is.null(gr)) {
+    theta <- fit$estimate
+    f0 <- obj(theta)
+    for (it in 1:5) {
+      g <- gr(theta)
+      Hl <- .fcr_hessian_step(fn, theta, grad, 1e-4 * pmax(1, abs(theta)))
+      if (is.null(Hl) || !all(is.finite(g))) break
+      A <- -Hl + Sl
+      step <- tryCatch(solve(A, g), error = function(e) NULL)
+      if (is.null(step) || !all(is.finite(step))) break
+      s <- 1
+      repeat {
+        cand <- theta + s * step
+        f1 <- obj(cand)
+        if (is.finite(f1) && f1 >= f0 - 1e-12 * abs(f0)) break
+        s <- s / 2
+        if (s < 1e-8) break
+      }
+      if (s < 1e-8) break
+      theta <- cand
+      done <- abs(f1 - f0) < 1e-12 * max(1, abs(f0)) &&
+        max(abs(s * step)) < 1e-9
+      f0 <- f1
+      if (done) break
+    }
+    names(theta) <- names(start)
+    fit$estimate <- theta
+    fit$maximum <- f0
+    fit$gradient <- gr(theta)
+  }
   fit
+}
+
+# One generalized Fellner-Schall update of the smoothing parameters, at
+# estimates theta with H the negative Hessian of the unpenalized
+# log-likelihood.
+.fcr_fs_step <- function(theta, H, terms, lambda) {
+  P <- length(theta)
+  Sl <- .fcr_pen_matrix(terms, lambda, P)
+  V <- tryCatch(solve(H + Sl), error = function(e) MASS::ginv(H + Sl))
+  # S_lambda is block diagonal by smooth (only the penalties of one
+  # smooth, as in te(), share coefficients), so its generalized inverse
+  # is taken block by block: one inverse of the whole matrix would treat
+  # a weakly penalized block as zero next to a heavily penalized one
+  Slg <- matrix(0, P, P)
+  for (blk in unique(lapply(terms, `[[`, "idx"))) {
+    Slg[blk, blk] <- MASS::ginv(Sl[blk, blk, drop = FALSE])
+  }
+  new <- lambda
+  for (m in seq_along(terms)) {
+    i <- terms[[m]]$idx
+    Sm <- terms[[m]]$S
+    num <- sum(Slg[i, i] * Sm) - sum(V[i, i] * Sm)
+    den <- drop(crossprod(theta[i], Sm %*% theta[i]))
+    new[m] <- lambda[m] * max(num, 1e-12) / max(den, 1e-12)
+  }
+  pmin(pmax(new, 1e-8), 1e10)
 }
 
 # Fit with smoothing-parameter selection (or fixed `lambda`).
@@ -96,26 +155,7 @@
     h <- 1e-4 * pmax(1, abs(theta))
     Hl <- .fcr_hessian_step(fn, theta, grad, h)
     if (is.null(Hl)) break
-    H <- -Hl
-    Sl <- .fcr_pen_matrix(terms, lambda, P)
-    V <- tryCatch(solve(H + Sl), error = function(e) MASS::ginv(H + Sl))
-    # S_lambda is block diagonal by smooth (only the penalties of one
-    # smooth, as in te(), share coefficients), so its generalized inverse
-    # is taken block by block: one inverse of the whole matrix would treat
-    # a weakly penalized block as zero next to a heavily penalized one
-    Slg <- matrix(0, P, P)
-    for (blk in unique(lapply(terms, `[[`, "idx"))) {
-      Slg[blk, blk] <- MASS::ginv(Sl[blk, blk, drop = FALSE])
-    }
-    new <- lambda
-    for (m in seq_along(terms)) {
-      i <- terms[[m]]$idx
-      Sm <- terms[[m]]$S
-      num <- sum(Slg[i, i] * Sm) - sum(V[i, i] * Sm)
-      den <- drop(crossprod(theta[i], Sm %*% theta[i]))
-      new[m] <- lambda[m] * max(num, 1e-12) / max(den, 1e-12)
-    }
-    new <- pmin(pmax(new, 1e-8), 1e10)
+    new <- .fcr_fs_step(theta, -Hl, terms, lambda)
     hist <- rbind(hist, new)
     done <- max(abs(log(new) - log(lambda))) < fs_tol * 10 ||
       max(abs(new - lambda) / lambda) < fs_tol
@@ -220,7 +260,7 @@
 
 # Does a prepare_model_data() result have smooth terms?
 .fcr_prep_has_smooth <- function(prep) {
-  length(prep$smooth$main) > 0 || length(prep$smooth$aux) > 0
+  length(prep$smooth$main) > 0 || any(lengths(prep$smooth$aux) > 0)
 }
 
 # A penalized fit with the fields of a maxLik fit, for the estimators whose

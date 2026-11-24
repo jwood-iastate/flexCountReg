@@ -8,6 +8,11 @@ count regression
 ([`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)),
 random-parameter
 ([`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)),
+hierarchical
+([`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md):
+random intercepts and slopes, crossed or nested levels, normal or
+non-normal effects), fixed-effects
+([`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)),
 random-effects panel
 ([`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
 [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md),
@@ -16,14 +21,16 @@ random-effects panel
 finite-mixture and latent-class
 ([`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
 [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md))
-models; check their numerical status; diagnose them (rootograms,
-randomized quantile residuals, CURE plots); compare fits; compute
-predictions, confidence or prediction intervals and tolerance intervals
-for a table of scenarios or for uploaded new data (with the variables
-created on the Data tab, using the means, standard deviations and
-categories of the training data); save plots as JPEG files at a chosen
-size and resolution; and download the analysis. The Diagnose and Predict
-tabs work on any completed model.
+models, with smooth (nonlinear) effects `s(x)`, correlated random
+effects (`cre`), cluster-robust standard errors and sampling weights
+where the model allows them; check their numerical status; diagnose them
+(rootograms, randomized quantile residuals, CURE plots, smooth effects);
+compare fits; compute predictions, confidence or prediction intervals
+and tolerance intervals for a table of scenarios or for uploaded new
+data (with the variables created on the Data tab, using the means,
+standard deviations and categories of the training data); save plots as
+JPEG files at a chosen size and resolution; and download the analysis.
+The Diagnose and Predict tabs work on any completed model.
 
 ## Usage
 

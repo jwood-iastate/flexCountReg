@@ -10,10 +10,15 @@ browser, with a tab for each step: load data (a bundled example or a CSV
 file) and create new variables (logs, powers, standardized values,
 indicators, products, ratios, categories, factors); specify and estimate
 count regression (countreg()), random-parameter (countreg_rp()),
-random-effects panel (renb(), poisLind.re(), repois(),
-negmultinom()), finite-mixture and latent-class (countreg_mix(),
-countreg_lc()) models; check their numerical status; diagnose them
-(rootograms, randomized quantile residuals, CURE plots); compare fits;
+hierarchical (countreg_hier(): random intercepts and slopes, crossed
+or nested levels, normal or non-normal effects), fixed-effects
+(countreg_fe()), random-effects panel (renb(), poisLind.re(),
+repois(), negmultinom()), finite-mixture and latent-class
+(countreg_mix(), countreg_lc()) models, with smooth (nonlinear)
+effects s(x), correlated random effects (cre), cluster-robust
+standard errors and sampling weights where the model allows them; check
+their numerical status; diagnose them (rootograms, randomized quantile
+residuals, CURE plots, smooth effects); compare fits;
 compute predictions, confidence or prediction intervals and tolerance
 intervals for a table of scenarios or for uploaded new data (with the
 variables created on the Data tab, using the means, standard deviations
@@ -24,10 +29,15 @@ browser, with a tab for each step: load data (a bundled example or a CSV
 file) and create new variables (logs, powers, standardized values,
 indicators, products, ratios, categories, factors); specify and estimate
 count regression (countreg()), random-parameter (countreg_rp()),
-random-effects panel (renb(), poisLind.re(), repois(),
-negmultinom()), finite-mixture and latent-class (countreg_mix(),
-countreg_lc()) models; check their numerical status; diagnose them
-(rootograms, randomized quantile residuals, CURE plots); compare fits;
+hierarchical (countreg_hier(): random intercepts and slopes, crossed
+or nested levels, normal or non-normal effects), fixed-effects
+(countreg_fe()), random-effects panel (renb(), poisLind.re(),
+repois(), negmultinom()), finite-mixture and latent-class
+(countreg_mix(), countreg_lc()) models, with smooth (nonlinear)
+effects s(x), correlated random effects (cre), cluster-robust
+standard errors and sampling weights where the model allows them; check
+their numerical status; diagnose them (rootograms, randomized quantile
+residuals, CURE plots, smooth effects); compare fits;
 compute predictions, confidence or prediction intervals and tolerance
 intervals for a table of scenarios or for uploaded new data (with the
 variables created on the Data tab, using the means, standard deviations
@@ -73,10 +83,15 @@ browser, with a tab for each step: load data (a bundled example or a CSV
 file) and create new variables (logs, powers, standardized values,
 indicators, products, ratios, categories, factors); specify and estimate
 count regression (<code><a href="countreg.html">countreg()</a></code>), random-parameter (<code><a href="countreg_rp.html">countreg_rp()</a></code>),
-random-effects panel (<code><a href="renb.html">renb()</a></code>, <code><a href="poisLindRE.html">poisLind.re()</a></code>, <code><a href="repois.html">repois()</a></code>,
-<code><a href="negmultinom.html">negmultinom()</a></code>), finite-mixture and latent-class (<code><a href="countreg_mix.html">countreg_mix()</a></code>,
-<code><a href="countreg_mix.html">countreg_lc()</a></code>) models; check their numerical status; diagnose them
-(rootograms, randomized quantile residuals, CURE plots); compare fits;
+hierarchical (<code><a href="countreg_hier.html">countreg_hier()</a></code>: random intercepts and slopes, crossed
+or nested levels, normal or non-normal effects), fixed-effects
+(<code><a href="countreg_fe.html">countreg_fe()</a></code>), random-effects panel (<code><a href="renb.html">renb()</a></code>, <code><a href="poisLindRE.html">poisLind.re()</a></code>,
+<code><a href="repois.html">repois()</a></code>, <code><a href="negmultinom.html">negmultinom()</a></code>), finite-mixture and latent-class
+(<code><a href="countreg_mix.html">countreg_mix()</a></code>, <code><a href="countreg_mix.html">countreg_lc()</a></code>) models, with smooth (nonlinear)
+effects <code>s(x)</code>, correlated random effects (<code>cre</code>), cluster-robust
+standard errors and sampling weights where the model allows them; check
+their numerical status; diagnose them (rootograms, randomized quantile
+residuals, CURE plots, smooth effects); compare fits;
 compute predictions, confidence or prediction intervals and tolerance
 intervals for a table of scenarios or for uploaded new data (with the
 variables created on the Data tab, using the means, standard deviations

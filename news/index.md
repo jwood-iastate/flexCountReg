@@ -228,6 +228,12 @@
   [`ranef()`](https://rdrr.io/pkg/nlme/man/random.effects.html) and
   [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) are the nlme
   generics, so they work alongside lme4.
+- [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  works with
+  [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md)
+  (the grouping variables are not candidates, and delta-method standard
+  errors account for the fixed coefficients) and leaves out the
+  regressors a fixed-effects model removed as not identified.
 - New
   [`re_lrtest()`](https://jwood-iastate.github.io/flexCountReg/reference/re_lrtest.md):
   likelihood-ratio test of a random-effect term, with the
@@ -448,6 +454,23 @@
   bootstrap refits and seed; and stochastic requests (bootstrap
   intervals, tolerance intervals, bootstrap marginal effects) fix their
   seed when they are made, so the exported script replays them exactly.
+- The app runs the models added in this release: hierarchical models
+  ([`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md):
+  a grouping column, random slopes, correlated or uncorrelated, a second
+  level crossed with or nested in the first, and normal, gamma, uniform
+  or triangular effects) and fixed-effects models
+  ([`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md):
+  one or two dimensions, the split-panel jackknife, cluster-robust
+  standard errors by default). Any model can have smooth (nonlinear)
+  effects `s(x)` of numeric predictors, shown on the Diagnose page
+  (“Smooth effects”,
+  [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md));
+  random-parameter, hierarchical and random-effects models can add group
+  means of predictors (correlated random effects, `cre`); count
+  regression and random-parameter models offer cluster-robust standard
+  errors (with a cluster column) and sampling weights. Predictions for
+  hierarchical and fixed-effects models take the group of each scenario,
+  and settings files from earlier versions of the app still load.
 - The app’s packages (shiny, bslib, DT, callr, jsonlite, zip) are
   suggested, not imported: the statistical functions do not need them,
   and

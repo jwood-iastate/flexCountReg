@@ -44,7 +44,7 @@ issues, including:
 - finite mixtures and latent-class count regressions, with constant,
   covariate-dependent or known class proportions, shared or
   class-specific parameters, different families in different classes,
-  and one class per panel;
+  one class per panel, and random parameters within the classes;
 - inference with Hessian-based, robust, cluster-robust (one-way or
   multiway) or bootstrap standard errors, frequency or sampling weights,
   and methods for the sandwich and lmtest packages;

@@ -470,6 +470,69 @@ Panels without history rows use their prior probabilities. The model
 assumes rows are independent given the class; it does not let a panel
 change class over time.
 
+## Random parameters within classes
+
+Classes describe discrete groups of units. Units can also differ
+continuously within a class: the effect of `x` can vary from panel to
+panel around its class mean. `rpar_formula` adds random parameters
+within the classes (a latent-class random-parameters model):
+
+\\ L_g = \sum_k \pi_k \int \prod_t f_k(y_t \mid x_t, \beta_k + b)\\
+dF_k(b). \\
+
+Each class’s coefficient of a random variable is the mean of its random
+parameter, and each class has its own standard deviation (`SD:`), unless
+`shared = list(rpar = TRUE)` gives all classes the same one. Here the
+slope of `x` varies within each class:
+
+``` r
+
+set.seed(31)
+G <- 200; Tt <- 5
+rd <- data.frame(id = rep(seq_len(G), each = Tt))
+cls <- ifelse(runif(G) < 0.6, 1, 2)[rd$id]
+rd$x <- rnorm(nrow(rd))
+slope <- c(0.5, -0.3)[cls] + rnorm(G)[rd$id] * c(0.5, 0.3)[cls]
+rd$y <- rpois(nrow(rd), exp(c(0.2, 1.5)[cls] + slope * rd$x))
+lcrp <- countreg_lc(y ~ x, data = rd, classes = 2, group_var = "id",
+                    rpar_formula = ~ x, rpar_draws = 80, n_starts = 3,
+                    seed = 1)
+lcfix <- countreg_lc(y ~ x, data = rd, classes = 2, group_var = "id",
+                     n_starts = 3, seed = 1)
+round(coef(lcrp), 3)
+#>   Component1:Mean:(Intercept)             Component1:Mean:x 
+#>                         0.176                         0.499 
+#>               Component1:SD:x   Component2:Mean:(Intercept) 
+#>                         0.491                         1.509 
+#>             Component2:Mean:x               Component2:SD:x 
+#>                        -0.310                         0.251 
+#> Mixing:Component1:(Intercept) 
+#>                         0.446
+AIC(lcfix, lcrp)
+#>       df      AIC
+#> lcfix  5 4051.569
+#> lcrp   7 3854.371
+```
+
+The classes are found (true intercepts 0.2 and 1.5, mean slopes 0.5 and
+-0.3), and so are the standard deviations of the slope within them (0.5
+and 0.3). Without random parameters, the variation of the slopes within
+each class is left in the counts, and the fit is much worse.
+
+The likelihood is simulated with `rpar_draws` draws per panel (the same
+draws for every class), with analytic gradients. Predictions,
+probabilities, class probabilities and residuals integrate over the
+random parameters, and
+[`simulate()`](https://rdrr.io/r/stats/simulate.html) draws new
+coefficients for every panel. `rpardists` and `correlated` work as in
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md).
+
+Classes and random parameters can stand in for each other: a class can
+take the place of a tail of a random parameter, and a large standard
+deviation the place of a missing class. Shared standard deviations are
+the more stable choice, and the start table shows whether several starts
+reach the same solution.
+
 ## Diagnostics
 
 Diagnostics use the prior mixture (covariates only), so they do not use
@@ -614,6 +677,10 @@ coefficients are not.
 - Bootstrap standard errors of marginal effects (`se = "delta"` works).
 - A calibrated test of the number of classes.
 - Classes that change over time within a panel (hidden Markov models).
+- Smooth terms together with random parameters, and heterogeneity in the
+  means or variances of the random parameters (`het_mean_formula`,
+  `het_var_formula` of
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)).
 
 ## Reproducibility
 

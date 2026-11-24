@@ -68,6 +68,36 @@
   the total reproduces the Poisson-lognormal (`PLN`) fit.
 - New vignette “Total-plus-allocation models: counts by severity”.
 
+### Random parameters within latent classes
+
+- [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  and
+  [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  have random parameters within the components (classes), a latent-class
+  random-parameters model: `rpar_formula` makes the coefficients of some
+  variables vary from unit to unit (panel, or row) around their class
+  means, with class-specific scales (`Component<k>:SD:`) or scales
+  shared by all classes (`shared = list(rpar = TRUE)`), any of the
+  distributions of
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  (`rpardists`) or correlated normal parameters (`correlated = TRUE`),
+  and `rpar_draws` simulation draws per unit (the same draws for every
+  class, from a seed derived from `seed`). Each class’s simulated
+  likelihood is that of
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
+  with analytic gradients for the direct maximization and the EM steps
+  (at most 25 EM iterations per start, since EM converges slowly here).
+  Predictions, count probabilities, class probabilities (prior,
+  posterior and history), residuals,
+  [`rootogram()`](https://jwood-iastate.github.io/flexCountReg/reference/rootogram.md)
+  and
+  [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  integrate over the random parameters, and
+  [`simulate()`](https://rdrr.io/r/stats/simulate.html) draws new
+  coefficients for every unit. Checked against numerical derivatives,
+  against exact Gauss-Hermite quadrature, and by recovering two classes
+  with different random slopes.
+
 ### Time-varying effects (temporal instability)
 
 - New formula term `tv(x, time = year)` gives `x` one effect per period,

@@ -1,0 +1,124 @@
+---
+title: "Multivariate count models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Multivariate count models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Crash data often hold several counts for each site: crashes of each
+severity, or of each type. `countreg_mv()` fits one count regression for
+each outcome in one model. Each outcome has its own family, mean formula
+and distribution-parameter formulas.
+
+This is the direct way to model counts by category. A total and its split
+across categories is the other way; see
+`vignette("total-allocation-models")`.
+
+```{r setup}
+library(flexCountReg)
+data("washington_roads")
+w <- washington_roads
+w$pdo <- w$Total_crashes - w$Injury_crashes
+w$injury <- w$Injury_crashes
+colSums(w[, c("pdo", "injury")])
+```
+
+## 1. One family for each outcome
+
+Outcomes can behave differently. Property damage only (PDO) crashes are
+frequent; injury crashes are rarer and can be more skewed. So each
+outcome can have its own family:
+
+```{r fit}
+m <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
+                 data = w, family = c(pdo = "NB2", injury = "PIG"))
+summary(m)
+```
+
+The coefficients are named `<outcome>:<term>`. `family` takes one code for
+every outcome, or one per outcome. Different right-hand sides are given as
+a list of formulas, one per outcome:
+
+```{r formulas}
+m2 <- countreg_mv(list(pdo = pdo ~ lnaadt + speed50 + offset(lnlength),
+                       injury = injury ~ lnaadt + offset(lnlength)),
+                  data = w, family = c(pdo = "NB2", injury = "PIG"))
+AIC(m, m2)
+```
+
+`dis_param_formula_1` and `dis_param_formula_2` take one formula for every
+outcome or a list named by outcome, so the dispersion of one outcome can
+depend on covariates while the others stay constant.
+
+## 2. Choosing the families
+
+The equations are fitted together, but in this version they are
+independent given the covariates: the log-likelihood is the sum of the
+equations' log-likelihoods, and each equation's estimates equal those of a
+separate `countreg()` fit. So the family of each outcome can be chosen by
+comparing fits that change only that outcome's family:
+
+```{r families}
+fams <- list(c("NB2", "NB2"), c("NB2", "PIG"), c("NB2", "PLN"),
+             c("PIG", "PIG"))
+sapply(fams, function(f) {
+  fit <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 +
+                       offset(lnlength), data = w, family = f)
+  c(pdo = f[1], injury = f[2], AIC = round(AIC(fit), 1))
+})
+```
+
+Here the choices fit almost equally well (the AICs are within 0.3), so
+the simpler NB2 is a reasonable choice for both outcomes. With rarer or
+more skewed outcomes the differences between families are larger.
+
+## 3. Tests across equations
+
+One fit gives the covariance of all the estimates, so hypotheses that
+involve several equations can be tested. Is the effect of traffic the
+same for PDO and injury crashes?
+
+```{r wald}
+b <- coef(m)
+V <- vcov(m)
+a <- c("pdo:lnaadt", "injury:lnaadt")
+diff <- b[a[1]] - b[a[2]]
+se <- sqrt(V[a[1], a[1]] + V[a[2], a[2]] - 2 * V[a[1], a[2]])
+c(difference = unname(diff), z = unname(diff / se),
+  p = 2 * pnorm(-abs(unname(diff / se))))
+```
+
+Traffic increases PDO crashes clearly more than injury crashes
+(p < 0.001), so the share of injury crashes falls as traffic grows. The
+covariance between the two estimates is zero here, because the equations
+are independent; with correlated equations it would not be.
+
+## 4. Predictions
+
+`predict()` gives a matrix of expected counts, one column per outcome.
+`type = "prob"` gives, for each outcome, the probabilities of the counts
+0, 1, 2, ..., and `simulate()` draws all outcomes at once:
+
+```{r predict}
+nd <- w[c(1, 50, 200), ]
+predict(m, newdata = nd)
+lapply(predict(m, newdata = nd, type = "prob", max_count = 3), round, 3)
+```
+
+`tidy()` has an `outcome` column, and `residuals()`, `fitted()`,
+`confint()` and `glance()` work as for other models.
+
+## 5. Correlated outcomes
+
+The counts of different severity levels at a site are usually correlated:
+unobserved conditions that raise PDO crashes also raise injury crashes.
+This version treats the equations as independent given the covariates, so
+that correlation is not modeled. Multivariate models with shared random
+effects (correlated random parameters across equations) and copula models
+are planned.

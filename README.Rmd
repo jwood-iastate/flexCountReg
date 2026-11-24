@@ -27,6 +27,7 @@ The goal of flexCountReg is to provide functions that allow the analyst to estim
 - your own count distributions, defined from a log probability function with `new_count_family()` and usable in every model;
 - smooth (generalized additive) effects with the penalized `s()` and `te()` terms of mgcv in the mean, the distribution parameters, the zero model and random-parameter heterogeneity, with automatic smoothing and `plot_smooths()`;
 - effects that change over time (temporal instability) with `tv()`, with period-by-period effects and tests from `temporal_effects()` and `temporal_tests()`;
+- multivariate count models of several outcomes on the same units, each with its own family and formulas, with `countreg_mv()`;
 - total-plus-allocation models of a count and its split across categories (such as crashes by severity, or by crash type with a multinomial logit split) with `countreg_alloc()`;
 - underreporting, and zero-inflated or hurdle versions of every distribution;
 - random parameters, with heterogeneity in their means and variances, analytic gradients, separate simulation draws for each panel, and exact, simulated and Empirical Bayes (observation-specific) predictions;

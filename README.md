@@ -26,6 +26,8 @@ issues, including:
 - effects that change over time (temporal instability) with `tv()`, with
   period-by-period effects and tests from `temporal_effects()` and
   `temporal_tests()`;
+- multivariate count models of several outcomes on the same units, each
+  with its own family and formulas, with `countreg_mv()`;
 - total-plus-allocation models of a count and its split across
   categories (such as crashes by severity, or by crash type with a
   multinomial logit split) with `countreg_alloc()`;
@@ -681,6 +683,8 @@ The vignettes cover the main workflows. Start with
   `vignette("fixed-effects-count-models", package = "flexCountReg")`
 - Total-plus-allocation models: counts by severity:
   `vignette("total-allocation-models", package = "flexCountReg")`
+- Multivariate count models:
+  `vignette("multivariate-count-models", package = "flexCountReg")`
 
 *Finite mixtures and latent classes*
 

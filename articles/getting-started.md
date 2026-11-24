@@ -197,11 +197,11 @@ beyond the Poisson variance.
 ## Alternatives fitted to the same rows
 
 Two common extensions of the Poisson model add a dispersion parameter
-$`\alpha`$:
+\\\alpha\\:
 
-- NB2: $`Var(Y) = \mu + \alpha\mu^2`$ (extra variance grows with the
+- NB2: \\Var(Y) = \mu + \alpha\mu^2\\ (extra variance grows with the
   square of the mean);
-- NB1: $`Var(Y) = \mu(1 + \alpha)`$ (extra variance proportional to the
+- NB1: \\Var(Y) = \mu(1 + \alpha)\\ (extra variance proportional to the
   mean).
 
 Both keep the same mean model, so their coefficients have the same
@@ -229,7 +229,7 @@ summary(nb2)
 #> countreg(formula = count ~ spray, data = d, family = "NB2", method = "BFGS")
 #> 
 #> Model: countreg | family: NB2 | optimizer: BFGS
-#> Iterations: 14 
+#> Iterations: 15 
 #> Convergence: successful convergence 
 #> 
 #> Coefficients (standard errors: Hessian-based):

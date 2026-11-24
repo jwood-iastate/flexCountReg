@@ -9,6 +9,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/distribution-parameter-regression.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/extending-count-distributions.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/finite-mixture-getting-started.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/articles/fixed-effects-count-models.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/getting-started.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/index.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/inference-prediction-and-comparison.html</loc></url>
@@ -59,8 +60,10 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_reg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/count_reg_fit.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/cre_test.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/cureplot.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/estfun.flexCountReg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/flexCountReg-methods.html</loc></url>

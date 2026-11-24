@@ -30,10 +30,10 @@ meanings of their coefficients:
 
 |  | Zero-inflated | Hurdle |
 |----|----|----|
-| `Zero:` coefficients model (logit) | $`\pi`$ = probability of a structural zero | $`q`$ = probability of a *positive* count |
+| `Zero:` coefficients model (logit) | \\\pi\\ = probability of a structural zero | \\q\\ = probability of a *positive* count |
 | A positive `Zero:` coefficient means | more structural zeros | fewer zeros |
-| $`P(Y = 0)`$ | $`\pi + (1 - \pi) f(0)`$ | $`1 - q`$ |
-| `predict(type = "zero")` returns | $`\pi`$ | $`P(Y = 0) = 1 - q`$ |
+| \\P(Y = 0)\\ | \\\pi + (1 - \pi) f(0)\\ | \\1 - q\\ |
+| `predict(type = "zero")` returns | \\\pi\\ | \\P(Y = 0) = 1 - q\\ |
 
 These are the conventions of the pscl package (Zeileis et al., 2008).
 
@@ -155,9 +155,9 @@ its standard error is `NA`:
 
 summary(zinb_const)$coefficients["Zero:(Intercept)", 1:2]
 #>   Estimate Std. Error 
-#>  -12.32427   67.71443
+#>  -12.32361   67.69227
 plogis(coef(zinb_const)[["Zero:(Intercept)"]])
-#> [1] 4.442605e-06
+#> [1] 4.445507e-06
 ```
 
 With covariates, the zero model can describe *which* students have more
@@ -176,12 +176,12 @@ zc(zinb)
 #>                    Estimate Std. Error
 #> Zero:(Intercept) -0.8786574  0.4036952
 #> Zero:ment        -0.6113860  0.2458692
-#> Zero:kid5         0.1564024  0.3617611
+#> Zero:kid5         0.1564023  0.3617611
 zc(hnb)
 #>                     Estimate Std. Error
-#> Zero:(Intercept)  0.23680758 0.29551909
-#> Zero:femWomen    -0.25115052 0.15910530
-#> Zero:marMarried   0.32623628 0.18081834
+#> Zero:(Intercept)  0.23680759 0.29551911
+#> Zero:femWomen    -0.25115053 0.15910530
+#> Zero:marMarried   0.32623628 0.18081835
 #> Zero:kid5        -0.28525098 0.11113046
 #> Zero:phd          0.02221526 0.07955718
 #> Zero:ment         0.08012173 0.01301809
@@ -255,8 +255,8 @@ the fit, not proof of a particular mechanism.
 
 ### Which comparisons are valid
 
-The NB2 model is the zero-inflated NB2 model with $`\pi = 0`$, which is
-on the boundary of the parameter space (an intercept of $`-\infty`$ on
+The NB2 model is the zero-inflated NB2 model with \\\pi = 0\\, which is
+on the boundary of the parameter space (an intercept of \\-\infty\\ on
 the logit scale), so the usual likelihood-ratio test does not apply and
 flexCountReg does not report one. Compare such models with AIC or BIC on
 the same rows, or on held-out data
@@ -271,7 +271,7 @@ A *zero-truncated sampling design* says that zeros cannot be observed at
 all: for example, counts of visits recorded only for people who visited
 at least once. Having no zeros in the data, or few zeros by chance, is
 not the same as truncation. Under truncation the likelihood of each
-observation is $`f(y) / (1 - f(0))`$ for $`y \ge 1`$; this is the
+observation is \\f(y) / (1 - f(0))\\ for \\y \ge 1\\; this is the
 positive part of a hurdle model, but fitting a hurdle model to truncated
 data (where no zeros exist to estimate the binary part) is not a
 substitute. flexCountReg does not yet provide a zero-truncated

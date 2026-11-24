@@ -16,17 +16,14 @@ library(flexCountReg)
 
 ## 1. Design the study before generating data
 
-The estimand is the coefficient $`\beta_x`$ of a covariate $`x`$ in a
+The estimand is the coefficient \\\beta_x\\ of a covariate \\x\\ in a
 log-linear count model with an exposure offset:
 
-``` math
-E[Y_i] = t_i \exp(\beta_0 + \beta_x x_i), \quad
-\beta_0 = 0.5, \; \beta_x = 0.4, \;
-x_i \sim N(0, 1), \; t_i \sim U(0.5, 2).
-```
+\\E\[Y_i\] = t_i \exp(\beta_0 + \beta_x x_i), \quad \beta_0 = 0.5, \\
+\beta_x = 0.4, \\ x_i \sim N(0, 1), \\ t_i \sim U(0.5, 2).\\
 
-The counts are Poisson or NB2 with $`\alpha = 0.5`$, with $`n = 100`$ or
-$`400`$ independent rows. Two procedures are compared on every dataset:
+The counts are Poisson or NB2 with \\\alpha = 0.5\\, with \\n = 100\\ or
+\\400\\ independent rows. Two procedures are compared on every dataset:
 a Poisson model and an NB2 model, both with Hessian-based standard
 errors and 95% Wald intervals.
 
@@ -65,7 +62,7 @@ generate <- function(sc) {
 }
 ```
 
-Two checks against independent results. First, with $`\alpha = 1`$ the
+Two checks against independent results. First, with \\\alpha = 1\\ the
 NB2 distribution is geometric, so the generator’s frequencies must match
 [`dgeom()`](https://rdrr.io/r/stats/Geometric.html):
 
@@ -254,11 +251,11 @@ summary_table[, c("data", "n", "procedure", "attempted", "used")]
 ```
 
 On NB2 data, the Poisson procedure’s reported standard errors are much
-smaller than the actual spread of its estimates (for $`n = 400`$, a mean
+smaller than the actual spread of its estimates (for \\n = 400\\, a mean
 standard error of 0.034 against an empirical standard deviation of
 0.059), so its intervals cover the true value only 76% of the time (MCSE
 4.3 points). The NB2 procedure’s coverage is 92%. Both estimators are
-nearly unbiased: the Poisson estimator is consistent for $`\beta_x`$
+nearly unbiased: the Poisson estimator is consistent for \\\beta_x\\
 under NB2 data, but its standard errors are not.
 
 With 100 replicates, a coverage estimate near 95% has an MCSE of about
@@ -268,7 +265,7 @@ Differences smaller than about two MCSEs are not evidence of anything.
 0 of the 800 fits gave a warning. These are NB2 fits to Poisson data,
 where the dispersion approaches its boundary (see
 [`vignette("numerical-reliability", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.md)).
-They are kept in the summaries, because the coefficient of $`x`$ is
+They are kept in the summaries, because the coefficient of \\x\\ is
 still estimated well; a study whose target was the dispersion would have
 to treat them separately.
 
@@ -277,8 +274,8 @@ to treat them separately.
 With repeated measurements, the independent unit is the group, and the
 generator must give all rows of a group one shared effect. Here, 100
 units are each observed 5 times, with a gamma-distributed unit effect
-(mean 1, variance 0.5), a unit-level covariate $`z`$ and a row-level
-covariate $`x`$:
+(mean 1, variance 0.5), a unit-level covariate \\z\\ and a row-level
+covariate \\x\\:
 
 ``` r
 
@@ -295,7 +292,7 @@ generate_panel <- function(n_units = 100, T = 5, theta = 0.5) {
 The negative multinomial model of
 [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
 (family `"NM2"`, the default) matches this process: Poisson counts given
-a gamma unit effect with mean 1 and variance $`\alpha`$ (here 0.5),
+a gamma unit effect with mean 1 and variance \\\alpha\\ (here 0.5),
 shared by the rows of a unit. The pooled Poisson model ignores the
 grouping:
 
@@ -340,7 +337,7 @@ aggregate(estimate ~ procedure + term, data = panel, FUN = sd)
 #> 4       pooled Poisson    z 0.07446998
 ```
 
-The pooled model’s standard error for the unit-level covariate $`z`$ is
+The pooled model’s standard error for the unit-level covariate \\z\\ is
 far below the spread of its estimates, and its intervals undercover; the
 negative multinomial model accounts for the shared effect. Bootstrap or
 cross-validation in such a study must also resample whole units, never

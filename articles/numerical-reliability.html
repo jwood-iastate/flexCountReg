@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -124,9 +130,9 @@ both as it is and divided by 10,000:</p>
 <span><span class="va">washington_roads</span><span class="op">$</span><span class="va">aadt_10k</span> <span class="op">&lt;-</span> <span class="va">washington_roads</span><span class="op">$</span><span class="va">aadt</span> <span class="op">/</span> <span class="fl">1e4</span></span>
 <span><span class="va">fits</span><span class="op">$</span><span class="va">NM_raw_aadt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">aadt</span> <span class="op">+</span> <span class="va">speed50</span>,</span>
 <span>                             data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: The numerical Hessian is uncertain: standard errors change by up to</span></span>
-<span><span class="co">#&gt; 5.4% between differencing steps. Some parameters may be weakly identified (a</span></span>
-<span><span class="co">#&gt; nearly flat log-likelihood); treat their standard errors with care.</span></span>
+<span><span class="co">#&gt; Warning: The Hessian is not negative definite at the estimates, so the standard</span></span>
+<span><span class="co">#&gt; errors of aadt, ln(alpha) are NA. The estimate may be on the boundary of the</span></span>
+<span><span class="co">#&gt; parameter space or not at a maximum.</span></span>
 <span><span class="va">fits</span><span class="op">$</span><span class="va">NM_aadt_10k</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">aadt_10k</span> <span class="op">+</span> <span class="va">speed50</span>,</span>
 <span>                             data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span></span>
 <span><span class="va">status_table</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">fits</span>, <span class="va">fit_status</span><span class="op">)</span><span class="op">)</span></span>
@@ -136,14 +142,14 @@ both as it is and divided by 10,000:</p>
 <span><span class="co">#&gt; BFGS             TRUE    0         34 -1084.942         3.48e-04      5.09</span></span>
 <span><span class="co">#&gt; NR               TRUE    1          3 -1084.942         1.06e-08      5.09</span></span>
 <span><span class="co">#&gt; BHHH             TRUE    8          5 -1084.942         3.42e-02      5.09</span></span>
-<span><span class="co">#&gt; NM_raw_aadt      TRUE    0        217 -1159.276         7.06e+02     34.70</span></span>
+<span><span class="co">#&gt; NM_raw_aadt      TRUE    0        217 -1159.276         7.06e+02    -75.80</span></span>
 <span><span class="co">#&gt; NM_aadt_10k      TRUE    0        119 -1159.277         8.15e-02     33.40</span></span>
 <span><span class="co">#&gt;             condition</span></span>
 <span><span class="co">#&gt; NM           7.64e+03</span></span>
 <span><span class="co">#&gt; BFGS         7.64e+03</span></span>
 <span><span class="co">#&gt; NR           7.64e+03</span></span>
 <span><span class="co">#&gt; BHHH         7.64e+03</span></span>
-<span><span class="co">#&gt; NM_raw_aadt  7.41e+08</span></span>
+<span><span class="co">#&gt; NM_raw_aadt -1.73e+08</span></span>
 <span><span class="co">#&gt; NM_aadt_10k  1.94e+01</span></span>
 <span><span class="co">#&gt;                                                                         message</span></span>
 <span><span class="co">#&gt; NM                                                       successful convergence</span></span>
@@ -162,9 +168,9 @@ success for NM and BFGS, while NR and BHHH report success with codes 1,
 2 or 8 (<code>converged</code> already accounts for this).</p>
 <p>With volume in vehicles per day, Nelder-Mead reports convergence with
 a largest gradient of 706: a coefficient per vehicle is tiny, and the
-condition number of 7.41e+08 shows the poor scaling. Dividing the volume
-by 10,000 brings the condition number down to 19.4. Rescaling a variable
-changes only the units of its coefficient, not the model. More
+condition number of -1.73e+08 shows the poor scaling. Dividing the
+volume by 10,000 brings the condition number down to 19.4. Rescaling a
+variable changes only the units of its coefficient, not the model. More
 iterations would not have fixed the scaling problem.</p>
 </div>
 <div class="section level2">
@@ -173,13 +179,10 @@ iterations would not have fixed the scaling problem.</p>
 <div class="section level3">
 <h3 id="a-parameter-at-the-edge-of-its-space">A parameter at the edge of its space<a class="anchor" aria-label="anchor" href="#a-parameter-at-the-edge-of-its-space"></a>
 </h3>
-<p>When the data are close to Poisson, the NB2 dispersion
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-is close to 0, the edge of its space, and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\ln\alpha</annotation></semantics></math>
-drifts towards
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mi>∞</mi></mrow><annotation encoding="application/x-tex">-\infty</annotation></semantics></math>.
-Twenty samples of Poisson data, each fitted with NB2:</p>
+<p>When the data are close to Poisson, the NB2 dispersion <span class="math inline">\(\alpha\)</span> is close to 0, the edge of its
+space, and <span class="math inline">\(\ln\alpha\)</span> drifts towards
+<span class="math inline">\(-\infty\)</span>. Twenty samples of Poisson
+data, each fitted with NB2:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">boundary_fit</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">seed</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="va">seed</span><span class="op">)</span></span>
@@ -221,18 +224,15 @@ Twenty samples of Poisson data, each fitted with NB2:</p>
 <span><span class="co">#&gt; 19   -3.447  1.462         1      0        0</span></span>
 <span><span class="co">#&gt; 20   -6.908 11.390         1      0        1</span></span></code></pre></div>
 <p>Every fit reports convergence. The dispersion starts from a moment
-estimate clipped at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>3</mn></mrow></msup></mrow><annotation encoding="application/x-tex">\alpha = 10^{-3}</annotation></semantics></math>
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi><mo>=</mo><mi>−</mi><mn>6.908</mn></mrow><annotation encoding="application/x-tex">\ln\alpha = -6.908</annotation></semantics></math>),
-and 6 of the 20 fits stopped within 0.01 of it: at the edge of the space
-the likelihood is so flat that the gradient is below the optimizer’s
-tolerance. In 0 fits the Hessian is not negative definite, and
-flexCountReg warns that the standard error of <code>ln(alpha)</code> is
-<code>NA</code>. The remaining standard errors are large. In every case
-the right conclusion is that
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-is near 0: Poisson is adequate. Neither the estimate of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\ln\alpha</annotation></semantics></math>
+estimate clipped at <span class="math inline">\(\alpha =
+10^{-3}\)</span> (<span class="math inline">\(\ln\alpha =
+-6.908\)</span>), and 6 of the 20 fits stopped within 0.01 of it: at the
+edge of the space the likelihood is so flat that the gradient is below
+the optimizer’s tolerance. In 0 fits the Hessian is not negative
+definite, and flexCountReg warns that the standard error of
+<code>ln(alpha)</code> is <code>NA</code>. The remaining standard errors
+are large. In every case the right conclusion is that <span class="math inline">\(\alpha\)</span> is near 0: Poisson is adequate.
+Neither the estimate of <span class="math inline">\(\ln\alpha\)</span>
 nor its Wald standard error is meaningful there, and a likelihood-ratio
 test against Poisson needs the boundary-corrected reference distribution
 that <code><a href="../reference/regCompTest.html">regCompTest()</a></code> and <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> use.</p>
@@ -374,9 +374,8 @@ number:</p>
 <span><span class="co">#&gt; 7     halton    400 -294.4333 -0.5200564   0.2268872</span></span></code></pre></div>
 <p>The two quadrature fits are identical: quadrature ignores
 <code>ndraws</code>, and increasing it there only suggests a check that
-was not made. With Halton draws,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>σ</mi></mrow><annotation encoding="application/x-tex">\ln\sigma</annotation></semantics></math>
-moves steadily toward the quadrature value as the draws increase:</p>
+was not made. With Halton draws, <span class="math inline">\(\ln\sigma\)</span> moves steadily toward the
+quadrature value as the draws increase:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">halton</span><span class="op">$</span><span class="va">ndraws</span>, <span class="va">halton</span><span class="op">$</span><span class="va">ln_sigma</span>, type <span class="op">=</span> <span class="st">"b"</span>, log <span class="op">=</span> <span class="st">"x"</span>, pch <span class="op">=</span> <span class="fl">19</span>,</span>
 <span>     ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/range.html" class="external-link">range</a></span><span class="op">(</span><span class="va">halton</span><span class="op">$</span><span class="va">ln_sigma</span>, <span class="va">quad</span><span class="op">$</span><span class="va">ln_sigma</span><span class="op">)</span>,</span>
@@ -387,10 +386,9 @@ moves steadily toward the quadrature value as the draws increase:</p>
 <span>       pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">19</span>, <span class="cn">NA</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="numerical-reliability_files/figure-html/pln-plot-1.png" class="r-plt" alt="" width="672"></p>
 <p>A simulated likelihood with too few draws is biased, here toward a
-smaller
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>,
-and its log-likelihood is not comparable with the quadrature one. The
-Halton engine is kept to reproduce fits from earlier versions.</p>
+smaller <span class="math inline">\(\sigma\)</span>, and its
+log-likelihood is not comparable with the quadrature one. The Halton
+engine is kept to reproduce fits from earlier versions.</p>
 </div>
 <div class="section level3">
 <h3 id="outer-draws-random-parameters">Outer draws: random parameters<a class="anchor" aria-label="anchor" href="#outer-draws-random-parameters"></a>
@@ -437,29 +435,22 @@ studies belong in scripts outside of a vignette build.</p>
 <span><span class="co">#&gt; [1] 1.574824      Inf</span></span></code></pre></div>
 <ol style="list-style-type: decimal">
 <li><p><strong>The expectation does not exist.</strong> With a lognormal
-random parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>β</mi><annotation encoding="application/x-tex">\beta</annotation></semantics></math>,
-the expected count
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">[</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mi>β</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">E[\exp(x\beta)]</annotation></semantics></math>
-is infinite for every
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">x &gt; 0</annotation></semantics></math>:
-the lognormal distribution has no moment-generating function for
-positive arguments. flexCountReg returns <code>Inf</code> with a
-warning, for both <code>"Exact"</code> and <code>"Simulated"</code>
-predictions. This is a property of the model, not a numerical failure.
-(Here the fit also put the lognormal parameter at the edge of its space,
-with <code>NA</code> standard errors: a lognormal effect is positive,
-while the effect of <code>speed50</code> is negative.)</p></li>
+random parameter <span class="math inline">\(\beta\)</span>, the
+expected count <span class="math inline">\(E[\exp(x\beta)]\)</span> is
+infinite for every <span class="math inline">\(x &gt; 0\)</span>: the
+lognormal distribution has no moment-generating function for positive
+arguments. flexCountReg returns <code>Inf</code> with a warning, for
+both <code>"Exact"</code> and <code>"Simulated"</code> predictions. This
+is a property of the model, not a numerical failure. (Here the fit also
+put the lognormal parameter at the edge of its space, with
+<code>NA</code> standard errors: a lognormal effect is positive, while
+the effect of <code>speed50</code> is negative.)</p></li>
 <li>
 <p><strong>The expectation exists but exceeds the floating-point
-range.</strong> With a normal random parameter,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">[</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mi>β</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">]</mo><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mi>μ</mi><mo>+</mo><msup><mi>x</mi><mn>2</mn></msup><msup><mi>σ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">E[\exp(x\beta)] = \exp(x\mu + x^2\sigma^2/2)</annotation></semantics></math>
-is finite for every
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>,
-but it overflows for extreme
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>.
-The value below is far outside the data (<code>speed50</code> is 0 or 1)
-and is used only to show the message:</p>
+range.</strong> With a normal random parameter, <span class="math inline">\(E[\exp(x\beta)] = \exp(x\mu +
+x^2\sigma^2/2)\)</span> is finite for every <span class="math inline">\(x\)</span>, but it overflows for extreme <span class="math inline">\(x\)</span>. The value below is far outside the
+data (<code>speed50</code> is 0 or 1) and is used only to show the
+message:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rp_n</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_rp.html">countreg_rp</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span>
 <span>                    rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="op">-</span><span class="fl">1</span> <span class="op">+</span> <span class="va">speed50</span>, data <span class="op">=</span> <span class="va">sub</span>,</span>

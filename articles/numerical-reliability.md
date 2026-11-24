@@ -65,9 +65,9 @@ washington_roads$aadt <- exp(washington_roads$lnaadt)
 washington_roads$aadt_10k <- washington_roads$aadt / 1e4
 fits$NM_raw_aadt <- countreg(Total_crashes ~ aadt + speed50,
                              data = washington_roads, family = "NB2")
-#> Warning: The numerical Hessian is uncertain: standard errors change by up to
-#> 5.4% between differencing steps. Some parameters may be weakly identified (a
-#> nearly flat log-likelihood); treat their standard errors with care.
+#> Warning: The Hessian is not negative definite at the estimates, so the standard
+#> errors of aadt, ln(alpha) are NA. The estimate may be on the boundary of the
+#> parameter space or not at a maximum.
 fits$NM_aadt_10k <- countreg(Total_crashes ~ aadt_10k + speed50,
                              data = washington_roads, family = "NB2")
 status_table <- do.call(rbind, lapply(fits, fit_status))
@@ -77,14 +77,14 @@ status_table
 #> BFGS             TRUE    0         34 -1084.942         3.48e-04      5.09
 #> NR               TRUE    1          3 -1084.942         1.06e-08      5.09
 #> BHHH             TRUE    8          5 -1084.942         3.42e-02      5.09
-#> NM_raw_aadt      TRUE    0        217 -1159.276         7.06e+02     34.70
+#> NM_raw_aadt      TRUE    0        217 -1159.276         7.06e+02    -75.80
 #> NM_aadt_10k      TRUE    0        119 -1159.277         8.15e-02     33.40
 #>             condition
 #> NM           7.64e+03
 #> BFGS         7.64e+03
 #> NR           7.64e+03
 #> BHHH         7.64e+03
-#> NM_raw_aadt  7.41e+08
+#> NM_raw_aadt -1.73e+08
 #> NM_aadt_10k  1.94e+01
 #>                                                                         message
 #> NM                                                       successful convergence
@@ -106,18 +106,18 @@ accounts for this).
 
 With volume in vehicles per day, Nelder-Mead reports convergence with a
 largest gradient of 706: a coefficient per vehicle is tiny, and the
-condition number of 7.41e+08 shows the poor scaling. Dividing the volume
-by 10,000 brings the condition number down to 19.4. Rescaling a variable
-changes only the units of its coefficient, not the model. More
+condition number of -1.73e+08 shows the poor scaling. Dividing the
+volume by 10,000 brings the condition number down to 19.4. Rescaling a
+variable changes only the units of its coefficient, not the model. More
 iterations would not have fixed the scaling problem.
 
 ## Boundaries, weak identification and rank deficiency
 
 ### A parameter at the edge of its space
 
-When the data are close to Poisson, the NB2 dispersion $`\alpha`$ is
-close to 0, the edge of its space, and $`\ln\alpha`$ drifts towards
-$`-\infty`$. Twenty samples of Poisson data, each fitted with NB2:
+When the data are close to Poisson, the NB2 dispersion \\\alpha\\ is
+close to 0, the edge of its space, and \\\ln\alpha\\ drifts towards
+\\-\infty\\. Twenty samples of Poisson data, each fitted with NB2:
 
 ``` r
 
@@ -163,14 +163,14 @@ round(boundary, 3)
 ```
 
 Every fit reports convergence. The dispersion starts from a moment
-estimate clipped at $`\alpha = 10^{-3}`$ ($`\ln\alpha = -6.908`$), and 6
+estimate clipped at \\\alpha = 10^{-3}\\ (\\\ln\alpha = -6.908\\), and 6
 of the 20 fits stopped within 0.01 of it: at the edge of the space the
 likelihood is so flat that the gradient is below the optimizer’s
 tolerance. In 0 fits the Hessian is not negative definite, and
 flexCountReg warns that the standard error of `ln(alpha)` is `NA`. The
 remaining standard errors are large. In every case the right conclusion
-is that $`\alpha`$ is near 0: Poisson is adequate. Neither the estimate
-of $`\ln\alpha`$ nor its Wald standard error is meaningful there, and a
+is that \\\alpha\\ is near 0: Poisson is adequate. Neither the estimate
+of \\\ln\alpha\\ nor its Wald standard error is meaningful there, and a
 likelihood-ratio test against Poisson needs the boundary-corrected
 reference distribution that
 [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
@@ -285,7 +285,7 @@ rbind(quad, halton)
 
 The two quadrature fits are identical: quadrature ignores `ndraws`, and
 increasing it there only suggests a check that was not made. With Halton
-draws, $`\ln\sigma`$ moves steadily toward the quadrature value as the
+draws, \\\ln\sigma\\ moves steadily toward the quadrature value as the
 draws increase:
 
 ``` r
@@ -302,7 +302,7 @@ legend("bottomright", c("Halton", "adaptive quadrature"), lty = c(1, 2),
 ![](numerical-reliability_files/figure-html/pln-plot-1.png)
 
 A simulated likelihood with too few draws is biased, here toward a
-smaller $`\sigma`$, and its log-likelihood is not comparable with the
+smaller \\\sigma\\, and its log-likelihood is not comparable with the
 quadrature one. The Halton engine is kept to reproduce fits from earlier
 versions.
 
@@ -354,8 +354,8 @@ predict(rp_ln, newdata = nd, method = "Exact")
 ```
 
 1.  **The expectation does not exist.** With a lognormal random
-    parameter $`\beta`$, the expected count $`E[\exp(x\beta)]`$ is
-    infinite for every $`x > 0`$: the lognormal distribution has no
+    parameter \\\beta\\, the expected count \\E\[\exp(x\beta)\]\\ is
+    infinite for every \\x \> 0\\: the lognormal distribution has no
     moment-generating function for positive arguments. flexCountReg
     returns `Inf` with a warning, for both `"Exact"` and `"Simulated"`
     predictions. This is a property of the model, not a numerical
@@ -364,11 +364,10 @@ predict(rp_ln, newdata = nd, method = "Exact")
     positive, while the effect of `speed50` is negative.)
 
 2.  **The expectation exists but exceeds the floating-point range.**
-    With a normal random parameter,
-    $`E[\exp(x\beta)] = \exp(x\mu + x^2\sigma^2/2)`$ is finite for every
-    $`x`$, but it overflows for extreme $`x`$. The value below is far
-    outside the data (`speed50` is 0 or 1) and is used only to show the
-    message:
+    With a normal random parameter, \\E\[\exp(x\beta)\] = \exp(x\mu +
+    x^2\sigma^2/2)\\ is finite for every \\x\\, but it overflows for
+    extreme \\x\\. The value below is far outside the data (`speed50` is
+    0 or 1) and is used only to show the message:
 
     ``` r
 

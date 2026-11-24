@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -210,15 +216,12 @@ quantity:</p>
 </tr>
 <tr class="even">
 <td><code>"link"</code></td>
-<td>linear predictor
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi><mi>β</mi></mrow><annotation encoding="application/x-tex">X\beta</annotation></semantics></math>
-+ offset</td>
+<td>linear predictor <span class="math inline">\(X\beta\)</span> +
+offset</td>
 </tr>
 <tr class="odd">
 <td><code>"prob"</code></td>
-<td>matrix of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>=</mo><mi>k</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(Y = k)</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>k</mi><mo>=</mo><mn>0</mn><mo>,</mo><mi>…</mi><mo>,</mo></mrow><annotation encoding="application/x-tex">k = 0, \dots,</annotation></semantics></math><code>max_count</code>
+<td>matrix of <span class="math inline">\(P(Y = k)\)</span>, <span class="math inline">\(k = 0, \dots,\)</span> <code>max_count</code>
 </td>
 </tr>
 <tr class="even">
@@ -237,9 +240,7 @@ quantity:</p>
 <span><span class="co">#&gt; [1,] 0.502 0.307 0.127 0.044 0.014 0.006</span></span>
 <span><span class="co">#&gt; [2,] 0.531 0.301 0.116 0.037 0.011 0.004</span></span>
 <span><span class="co">#&gt; [3,] 0.411 0.314 0.162 0.070 0.028 0.015</span></span></code></pre></div>
-<p>With <code>overflow = TRUE</code> the last column holds
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>&gt;</mo></mrow><annotation encoding="application/x-tex">P(Y &gt;</annotation></semantics></math><code>max_count</code><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo stretchy="false" form="postfix">)</mo><annotation encoding="application/x-tex">)</annotation></semantics></math>,
-so each row sums to one.</p>
+<p>With <code>overflow = TRUE</code> the last column holds <span class="math inline">\(P(Y &gt;\)</span> <code>max_count</code><span class="math inline">\()\)</span>, so each row sums to one.</p>
 <p>For random-parameter models, <code>method</code> chooses how the
 random coefficients are handled:</p>
 <ul>
@@ -395,9 +396,9 @@ weights when weights are used.</p>
 <h3 id="likelihood-ratio-tests">Likelihood-ratio tests<a class="anchor" aria-label="anchor" href="#likelihood-ratio-tests"></a>
 </h3>
 <p>An LR test compares a restricted model with a larger one. The
-statistic
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2</mn><mo stretchy="false" form="prefix">(</mo><msub><mi>ℓ</mi><mtext mathvariant="normal">full</mtext></msub><mo>−</mo><msub><mi>ℓ</mi><mtext mathvariant="normal">restricted</mtext></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">2(\ell_\text{full} - \ell_\text{restricted})</annotation></semantics></math>
-has its usual chi-square distribution only when:</p>
+statistic <span class="math inline">\(2(\ell_\text{full} -
+\ell_\text{restricted})\)</span> has its usual chi-square distribution
+only when:</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>The models are nested.</strong> The restricted model is the
@@ -437,51 +438,43 @@ restricted model’s.</li>
 <td>Poisson</td>
 <td>NB1, NB2, PLN, PIG1, PIG2, PIG</td>
 <td>dispersion = 0</td>
-<td>50:50 mixture of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi><mo>−</mo><mn>1</mn></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df-1}</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df}</annotation></semantics></math>
+<td>50:50 mixture of <span class="math inline">\(\chi^2_{df-1}\)</span>
+and <span class="math inline">\(\chi^2_{df}\)</span>
 </td>
 </tr>
 <tr class="even">
 <td>Poisson</td>
 <td>GP1, GP2</td>
 <td>dispersion = 0</td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df}</annotation></semantics></math></td>
+<td><span class="math inline">\(\chi^2_{df}\)</span></td>
 </tr>
 <tr class="odd">
 <td>Poisson</td>
 <td>COM</td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ν</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\nu = 1</annotation></semantics></math></td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df}</annotation></semantics></math></td>
+<td><span class="math inline">\(\nu = 1\)</span></td>
+<td><span class="math inline">\(\chi^2_{df}\)</span></td>
 </tr>
 <tr class="even">
 <td>Poisson</td>
 <td>DPO, HYPERPOIS, GAMMACOUNT</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\phi = 1</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\gamma = 1</annotation></semantics></math>,
-shape
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">= 1</annotation></semantics></math>
+<span class="math inline">\(\phi = 1\)</span>, <span class="math inline">\(\gamma = 1\)</span>, shape <span class="math inline">\(= 1\)</span>
 </td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df}</annotation></semantics></math></td>
+<td><span class="math inline">\(\chi^2_{df}\)</span></td>
 </tr>
 <tr class="odd">
 <td>NB1, NB2</td>
 <td>NBP</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">P = 1</annotation></semantics></math>
-or
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">P = 2</annotation></semantics></math>
+<span class="math inline">\(P = 1\)</span> or <span class="math inline">\(P = 2\)</span>
 </td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>χ</mi><mrow><mi>d</mi><mi>f</mi></mrow><mn>2</mn></msubsup><annotation encoding="application/x-tex">\chi^2_{df}</annotation></semantics></math></td>
+<td><span class="math inline">\(\chi^2_{df}\)</span></td>
 </tr>
 <tr class="even">
 <td>PL</td>
 <td>PLG, PLL</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha = 0</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\sigma = 0</annotation></semantics></math>
+<span class="math inline">\(\alpha = 0\)</span>, <span class="math inline">\(\sigma = 0\)</span>
 </td>
 <td>50:50 mixture</td>
 </tr>
@@ -497,17 +490,11 @@ reported:</p>
 <li>
 <strong>Poisson vs PL, PLG or PLL.</strong> The Poisson-Lindley
 family does not contain the Poisson distribution: its variance is at
-least
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mo>+</mo><msup><mi>μ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">\mu + \mu^2/2</annotation></semantics></math>
-for every
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>.</li>
+least <span class="math inline">\(\mu + \mu^2/2\)</span> for every <span class="math inline">\(\theta\)</span>.</li>
 <li>
 <strong>Poisson vs NBP or SI.</strong> At the Poisson limit, NBP’s
-power
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>P</mi><annotation encoding="application/x-tex">P</annotation></semantics></math>
-and the Sichel
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>γ</mi><annotation encoding="application/x-tex">\gamma</annotation></semantics></math>
-are not identified, so the usual asymptotics fail.</li>
+power <span class="math inline">\(P\)</span> and the Sichel <span class="math inline">\(\gamma\)</span> are not identified, so the usual
+asymptotics fail.</li>
 <li>
 <strong>Poisson vs PW, PGE or GW.</strong> Their distributions
 approach Poisson only as a parameter goes to infinity.</li>
@@ -597,11 +584,11 @@ given.</p>
 <h3 id="mcfaddens-pseudo-r²">McFadden’s pseudo-R²<a class="anchor" aria-label="anchor" href="#mcfaddens-pseudo-r%C2%B2"></a>
 </h3>
 <p><code><a href="../reference/regCompTest.html">regCompTest()</a></code> and <code><a href="../reference/regCompTable.html">regCompTable()</a></code> report
-McFadden’s pseudo-R²,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>ℓ</mi><mi>/</mi><msub><mi>ℓ</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">1 - \ell / \ell_0</annotation></semantics></math>,
-against an intercept-only Poisson model on the same rows by default, so
-it is comparable across families. <code>basemodel</code> and
-<code>variables</code> choose another baseline.</p>
+McFadden’s pseudo-R², <span class="math inline">\(1 - \ell /
+\ell_0\)</span>, against an intercept-only Poisson model on the same
+rows by default, so it is comparable across families.
+<code>basemodel</code> and <code>variables</code> choose another
+baseline.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Poisson <span class="op">=</span> <span class="va">po</span>, NB2 <span class="op">=</span> <span class="va">nb_h</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 3</span></span></span>

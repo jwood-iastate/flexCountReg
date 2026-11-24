@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -78,23 +84,20 @@ below.</p>
 <div class="section level2">
 <h2 id="the-model">The model<a class="anchor" aria-label="anchor" href="#the-model"></a>
 </h2>
-<p>The true count
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Y</mi><annotation encoding="application/x-tex">Y</annotation></semantics></math>
-follows a count distribution with mean
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>X</mi><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mu = \exp(X\beta)</annotation></semantics></math>.
-Each event is reported independently with probability
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><mi>F</mi><mo stretchy="false" form="prefix">(</mo><mi>Z</mi><mi>γ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">p = F(Z\gamma)</annotation></semantics></math>,
-where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
-is the logistic (<code>underreport_family = "logit"</code>, the default)
-or normal (<code>"probit"</code>) distribution function. The reported
-count is a binomial thinning of the true count:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>Y</mi><mo>*</mo></msup><mo>∣</mo><mi>Y</mi><mo>∼</mo><mrow><mi mathvariant="normal">B</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">n</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">m</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">l</mi></mrow><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>,</mo><mi>p</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>E</mi><mo stretchy="false" form="prefix">[</mo><msup><mi>Y</mi><mo>*</mo></msup><mo stretchy="false" form="postfix">]</mo><mo>=</mo><mi>p</mi><mspace width="0.167em"></mspace><mi>μ</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">Y^* \mid Y \sim \mathrm{Binomial}(Y, p), \qquad E[Y^*] = p\,\mu.</annotation></semantics></math></p>
+<p>The true count <span class="math inline">\(Y\)</span> follows a count
+distribution with mean <span class="math inline">\(\mu =
+\exp(X\beta)\)</span>. Each event is reported independently with
+probability <span class="math inline">\(p = F(Z\gamma)\)</span>, where
+<span class="math inline">\(F\)</span> is the logistic
+(<code>underreport_family = "logit"</code>, the default) or normal
+(<code>"probit"</code>) distribution function. The reported count is a
+binomial thinning of the true count:</p>
+<p><span class="math display">\[Y^* \mid Y \sim \mathrm{Binomial}(Y, p),
+\qquad E[Y^*] = p\,\mu.\]</span></p>
 <p>For the families that allow it (<code><a href="../reference/count_families.html">?count_families</a></code> lists
 them and the variance of the reported counts), the reported counts
-follow the same family with mean
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>μ</mi></mrow><annotation encoding="application/x-tex">p\mu</annotation></semantics></math>.
-The fitted model reports three quantities:</p>
+follow the same family with mean <span class="math inline">\(p\mu\)</span>. The fitted model reports three
+quantities:</p>
 <table class="table">
 <thead><tr class="header">
 <th><code>predict(type = )</code></th>
@@ -103,20 +106,17 @@ The fitted model reports three quantities:</p>
 <tbody>
 <tr class="odd">
 <td><code>"response"</code></td>
-<td>expected reported count
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>μ</mi></mrow><annotation encoding="application/x-tex">p\mu</annotation></semantics></math>
+<td>expected reported count <span class="math inline">\(p\mu\)</span>
 </td>
 </tr>
 <tr class="even">
 <td><code>"true"</code></td>
-<td>expected true count
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
+<td>expected true count <span class="math inline">\(\mu\)</span>
 </td>
 </tr>
 <tr class="odd">
 <td><code>"prob_reported"</code></td>
-<td>reporting probability
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
+<td>reporting probability <span class="math inline">\(p\)</span>
 </td>
 </tr>
 </tbody>
@@ -128,11 +128,10 @@ be combined: both act on the zeros.</p>
 <h2 id="what-the-reported-counts-cannot-tell-apart">What the reported counts cannot tell apart<a class="anchor" aria-label="anchor" href="#what-the-reported-counts-cannot-tell-apart"></a>
 </h2>
 <p>The reported counts depend on the two parts only through the product
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>μ</mi></mrow><annotation encoding="application/x-tex">p\mu</annotation></semantics></math>.
-With a constant reporting probability,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mspace width="0.167em"></mspace><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>β</mi><mn>0</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">p\,\exp(\beta_0)</annotation></semantics></math>
-is all the data can identify: a lower true rate with complete reporting
-and a higher true rate with incomplete reporting give exactly the same
+<span class="math inline">\(p\mu\)</span>. With a constant reporting
+probability, <span class="math inline">\(p\,\exp(\beta_0)\)</span> is
+all the data can identify: a lower true rate with complete reporting and
+a higher true rate with incomplete reporting give exactly the same
 reported counts. flexCountReg refuses this model:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
@@ -160,8 +159,7 @@ subject knowledge;</li>
 <strong>the functional form</strong> of the link: with a logit or
 probit link, the reported mean is not log-linear in the reporting
 variables, and the curvature carries some information about the
-<em>level</em> of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>;</li>
+<em>level</em> of <span class="math inline">\(p\)</span>;</li>
 <li>
 <strong>external information</strong>, such as known reporting
 probabilities or a validation study of true counts.</li>
@@ -173,15 +171,12 @@ show.</p>
 <div class="section level2">
 <h2 id="a-simulation-with-known-truth">A simulation with known truth<a class="anchor" aria-label="anchor" href="#a-simulation-with-known-truth"></a>
 </h2>
-<p>The true count is NB2 with mean
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mn>0.5</mn><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(1 + 0.5x)</annotation></semantics></math>
-and dispersion
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\alpha = 0.5</annotation></semantics></math>.
-A reporting variable
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mo>∼</mo><mi>U</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">w \sim U(0, 1)</annotation></semantics></math>
-affects only the reporting probability,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>=</mo><msup><mrow><mi mathvariant="normal">l</mi><mi mathvariant="normal">o</mi><mi mathvariant="normal">g</mi><mi mathvariant="normal">i</mi><mi mathvariant="normal">t</mi></mrow><mrow><mi>−</mi><mn>1</mn></mrow></msup><mo stretchy="false" form="prefix">(</mo><msub><mi>γ</mi><mn>0</mn></msub><mo>+</mo><msub><mi>γ</mi><mn>1</mn></msub><mi>w</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">p = \mathrm{logit}^{-1}(\gamma_0 + \gamma_1 w)</annotation></semantics></math>.
-Two designs differ in how much the reporting probability varies:</p>
+<p>The true count is NB2 with mean <span class="math inline">\(\exp(1 +
+0.5x)\)</span> and dispersion <span class="math inline">\(\alpha =
+0.5\)</span>. A reporting variable <span class="math inline">\(w \sim
+U(0, 1)\)</span> affects only the reporting probability, <span class="math inline">\(p = \mathrm{logit}^{-1}(\gamma_0 + \gamma_1
+w)\)</span>. Two designs differ in how much the reporting probability
+varies:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">simulate_reports</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span>, <span class="va">seed</span>, <span class="va">gamma</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="va">seed</span><span class="op">)</span></span>
@@ -220,7 +215,7 @@ complete reporting, down to 0.12.</p>
 <span><span class="co">#&gt; (Intercept)                   1.089      0.337</span></span>
 <span><span class="co">#&gt; x                             0.541      0.024</span></span>
 <span><span class="co">#&gt; ln(alpha)                    -0.711      0.075</span></span>
-<span><span class="co">#&gt; Underreporting:(Intercept)    1.201      1.236</span></span>
+<span><span class="co">#&gt; Underreporting:(Intercept)    1.201      1.237</span></span>
 <span><span class="co">#&gt; Underreporting:w             -1.936      0.836</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; $strong</span></span>
@@ -230,27 +225,17 @@ complete reporting, down to 0.12.</p>
 <span><span class="co">#&gt; ln(alpha)                    -0.694      0.076</span></span>
 <span><span class="co">#&gt; Underreporting:(Intercept)    3.182      0.493</span></span>
 <span><span class="co">#&gt; Underreporting:w             -5.234      0.535</span></span></code></pre></div>
-<p>The truth is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mn>0</mn></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\beta_0 = 1</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mi>x</mi></msub><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\beta_x = 0.5</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>γ</mi><mn>0</mn></msub><mo>,</mo><msub><mi>γ</mi><mn>1</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(\gamma_0, \gamma_1)</annotation></semantics></math>
-= (1.5, -2) or (3, -5). In both designs, the effect of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
-on the true count is estimated precisely: it is identified whether or
-not the reporting model is right, because
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
-does not enter the reporting model. The split between the true-count
-level and the reporting level is the hard part. In the weak design the
-standard errors of the two intercepts are large: the logit curve over
-the range of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
-is close to log-linear, so a log-linear effect of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
-on the reported mean fits almost as well. In the strong design, the
-reporting probability approaches 1 for small
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>,
-and the flattening of the curve there pins down its level.</p>
+<p>The truth is <span class="math inline">\(\beta_0 = 1\)</span>, <span class="math inline">\(\beta_x = 0.5\)</span> and <span class="math inline">\((\gamma_0, \gamma_1)\)</span> = (1.5, -2) or (3,
+-5). In both designs, the effect of <span class="math inline">\(x\)</span> on the true count is estimated
+precisely: it is identified whether or not the reporting model is right,
+because <span class="math inline">\(x\)</span> does not enter the
+reporting model. The split between the true-count level and the
+reporting level is the hard part. In the weak design the standard errors
+of the two intercepts are large: the logit curve over the range of <span class="math inline">\(w\)</span> is close to log-linear, so a log-linear
+effect of <span class="math inline">\(w\)</span> on the reported mean
+fits almost as well. In the strong design, the reporting probability
+approaches 1 for small <span class="math inline">\(w\)</span>, and the
+flattening of the curve there pins down its level.</p>
 </div>
 <div class="section level3">
 <h3 id="recovery-over-replicates">Recovery over replicates<a class="anchor" aria-label="anchor" href="#recovery-over-replicates"></a>
@@ -296,8 +281,8 @@ a full simulation study):</p>
 <span><span class="co">#&gt;   design       parameter truth   mean median    sd converged warned</span></span>
 <span><span class="co">#&gt; 1   weak     (Intercept)   1.0  1.167  1.019 0.525        20     11</span></span>
 <span><span class="co">#&gt; 2   weak               x   0.5  0.501  0.505 0.024        20     11</span></span>
-<span><span class="co">#&gt; 3   weak Rep:(Intercept)   1.5  1.498  1.295 1.571        20     11</span></span>
-<span><span class="co">#&gt; 4   weak           Rep:w  -2.0 -2.214 -1.820 1.061        20     11</span></span>
+<span><span class="co">#&gt; 3   weak Rep:(Intercept)   1.5  1.501  1.295 1.573        20     11</span></span>
+<span><span class="co">#&gt; 4   weak           Rep:w  -2.0 -2.217 -1.820 1.063        20     11</span></span>
 <span><span class="co">#&gt; 5 strong     (Intercept)   1.0  0.990  0.974 0.084        20      0</span></span>
 <span><span class="co">#&gt; 6 strong               x   0.5  0.504  0.508 0.024        20      0</span></span>
 <span><span class="co">#&gt; 7 strong Rep:(Intercept)   3.0  3.102  2.977 0.671        20      0</span></span>
@@ -308,19 +293,16 @@ weakly identified. In the strong design, 0 of 20 fits gave that warning
 and the estimates centre on the truth. In the weak design 11 of 20 fits
 gave it, and the reporting intercept has a standard deviation of 1.6
 logit units across replicates: the estimates are unstable even though
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
-is a valid exclusion restriction. (Discarding the warned fits would not
-help: the remaining ones would be a selected, biased subset.)</p>
+<span class="math inline">\(w\)</span> is a valid exclusion restriction.
+(Discarding the warned fits would not help: the remaining ones would be
+a selected, biased subset.)</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="predictions-reported-counts-true-counts-and-reporting">Predictions: reported counts, true counts and reporting<a class="anchor" aria-label="anchor" href="#predictions-reported-counts-true-counts-and-reporting"></a>
 </h2>
-<p>For the strong-design fit, the three predictions at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">x = 0</annotation></semantics></math>
-across
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>,
-with the simulated truth as dashed lines:</p>
+<p>For the strong-design fit, the three predictions at <span class="math inline">\(x = 0\)</span> across <span class="math inline">\(w\)</span>, with the simulated truth as dashed
+lines:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="va">fits</span><span class="op">$</span><span class="va">strong</span></span>
 <span><span class="va">grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">0</span>, w <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, length.out <span class="op">=</span> <span class="fl">50</span><span class="op">)</span><span class="op">)</span></span>
@@ -352,12 +334,10 @@ reported data, while the true count cannot.</p>
 </h2>
 <p>Under the strong design, compare four analyses of the same sample:
 the logit and probit reporting models, a model that ignores
-underreporting (with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
-entering the mean), and a model that treats the reporting probabilities
-as known (an offset of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>p</mi></mrow><annotation encoding="application/x-tex">\log p</annotation></semantics></math>,
-as with external information):</p>
+underreporting (with <span class="math inline">\(w\)</span> entering the
+mean), and a model that treats the reporting probabilities as known (an
+offset of <span class="math inline">\(\log p\)</span>, as with external
+information):</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu">simulate_reports</span><span class="op">(</span><span class="fl">2000</span>, seed <span class="op">=</span> <span class="fl">8</span>, gamma <span class="op">=</span> <span class="va">designs</span><span class="op">$</span><span class="va">strong</span><span class="op">)</span></span>
 <span><span class="va">d</span><span class="op">$</span><span class="va">log_p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">p</span><span class="op">)</span></span>
@@ -387,36 +367,24 @@ as with external information):</p>
 <span><span class="co">#&gt; probit   0.518        2.687 0.97 0.109 6538.008</span></span>
 <span><span class="co">#&gt; ignore   0.519           NA   NA    NA 6586.763</span></span>
 <span><span class="co">#&gt; known_p  0.517           NA   NA    NA 6533.877</span></span></code></pre></div>
-<p>The true mean at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">x = 0</annotation></semantics></math>
-is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>e</mi><mn>1</mn></msup><mo>≈</mo><mn>2.718</mn></mrow><annotation encoding="application/x-tex">e^1 \approx 2.718</annotation></semantics></math>,
-and the true reporting probabilities are 0.953 at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">w = 0</annotation></semantics></math>
-and 0.119 at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">w = 1</annotation></semantics></math>.
-The
-known-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
-model has no reporting parameters (its true mean is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>β</mi><mn>0</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\beta_0)</annotation></semantics></math>
-= 2.719; the offset gives the reporting). Here the logit and probit
-links give similar answers because the reporting probability spans most
-of (0, 1); with less variation, the true-count level depends more on
-which link is assumed. The model that ignores underreporting estimates
-the effect of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
-just as well but says nothing about the true counts: its intercept and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
-coefficient describe <em>reported</em> counts.</p>
+<p>The true mean at <span class="math inline">\(x = 0\)</span> is <span class="math inline">\(e^1 \approx 2.718\)</span>, and the true reporting
+probabilities are 0.953 at <span class="math inline">\(w = 0\)</span>
+and 0.119 at <span class="math inline">\(w = 1\)</span>. The known-<span class="math inline">\(p\)</span> model has no reporting parameters (its
+true mean is <span class="math inline">\(\exp(\beta_0)\)</span> = 2.719;
+the offset gives the reporting). Here the logit and probit links give
+similar answers because the reporting probability spans most of (0, 1);
+with less variation, the true-count level depends more on which link is
+assumed. The model that ignores underreporting estimates the effect of
+<span class="math inline">\(x\)</span> just as well but says nothing
+about the true counts: its intercept and <span class="math inline">\(w\)</span> coefficient describe <em>reported</em>
+counts.</p>
 </div>
 <div class="section level2">
 <h2 id="a-failure-the-reporting-variable-also-affects-the-true-counts">A failure: the reporting variable also affects the true counts<a class="anchor" aria-label="anchor" href="#a-failure-the-reporting-variable-also-affects-the-true-counts"></a>
 </h2>
-<p>If
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
-also enters the count model, the exclusion restriction is gone, and only
-the functional form of the link remains. Fitted to the same
-strong-design sample:</p>
+<p>If <span class="math inline">\(w\)</span> also enters the count
+model, the exclusion restriction is gone, and only the functional form
+of the link remains. Fitted to the same strong-design sample:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">both</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">withCallingHandlers</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span> <span class="op">+</span> <span class="va">w</span>, data <span class="op">=</span> <span class="va">d</span>, family <span class="op">=</span> <span class="st">"NB2"</span>, underreport_formula <span class="op">=</span> <span class="op">~</span> <span class="va">w</span>,</span>
@@ -440,16 +408,12 @@ strong-design sample:</p>
 <span><span class="co">#&gt;             Underreporting:(Intercept) Underreporting:w</span></span>
 <span><span class="co">#&gt; (Intercept)                     -0.999            0.946</span></span>
 <span><span class="co">#&gt; w                                0.995           -0.972</span></span></code></pre></div>
-<p>The data were generated with no effect of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>w</mi><annotation encoding="application/x-tex">w</annotation></semantics></math>
-on the true count and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mn>0</mn></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\beta_0 = 1</annotation></semantics></math>.
-The estimates are far from that, and the near-perfect correlations
-between the count and reporting coefficients show the ridge along which
-the likelihood barely changes: a change in the true-count coefficients
-is almost exactly offset by a change in the reporting coefficients. The
-standard errors are finite, but they describe a curvature that comes
-only from the assumed link.</p>
+<p>The data were generated with no effect of <span class="math inline">\(w\)</span> on the true count and <span class="math inline">\(\beta_0 = 1\)</span>. The estimates are far from
+that, and the near-perfect correlations between the count and reporting
+coefficients show the ridge along which the likelihood barely changes: a
+change in the true-count coefficients is almost exactly offset by a
+change in the reporting coefficients. The standard errors are finite,
+but they describe a curvature that comes only from the assumed link.</p>
 <p>Do not report the true-count estimates of such a model. Either
 justify a variable that affects reporting only, or obtain external
 information on reporting, or analyze the reported counts as they
@@ -459,15 +423,9 @@ are.</p>
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <ul>
-<li>The reported counts identify
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>μ</mi></mrow><annotation encoding="application/x-tex">p\mu</annotation></semantics></math>.
-Separating
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
-from
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
-needs an exclusion restriction, the link’s functional form or external
-information, and the result is only as credible as those
-assumptions.</li>
+<li>The reported counts identify <span class="math inline">\(p\mu\)</span>. Separating <span class="math inline">\(p\)</span> from <span class="math inline">\(\mu\)</span> needs an exclusion restriction, the
+link’s functional form or external information, and the result is only
+as credible as those assumptions.</li>
 <li>Effects of variables that appear only in the count model are
 estimated well even when the split between true and reported counts is
 not.</li>

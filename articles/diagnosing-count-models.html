@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -92,25 +98,23 @@ one covariate <code>x</code>:</p>
 <tbody>
 <tr class="odd">
 <td><code>y_ok</code></td>
-<td>Poisson,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>μ</mi><mo>=</mo><mn>0.5</mn><mo>+</mo><mn>0.8</mn><mi>x</mi></mrow><annotation encoding="application/x-tex">\log\mu = 0.5 + 0.8x</annotation></semantics></math>
+<td>Poisson, <span class="math inline">\(\log\mu = 0.5 +
+0.8x\)</span>
 </td>
 <td>none (the reference case)</td>
 </tr>
 <tr class="even">
 <td><code>y_curve</code></td>
-<td>Poisson,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>μ</mi><mo>=</mo><mn>0.3</mn><mo>+</mo><mn>0.8</mn><mi>x</mi><mo>+</mo><mn>0.6</mn><msup><mi>x</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\log\mu = 0.3 + 0.8x + 0.6x^2</annotation></semantics></math>
+<td>Poisson, <span class="math inline">\(\log\mu = 0.3 + 0.8x +
+0.6x^2\)</span>
 </td>
-<td>the mean is missing the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>x</mi><mn>2</mn></msup><annotation encoding="application/x-tex">x^2</annotation></semantics></math>
+<td>the mean is missing the <span class="math inline">\(x^2\)</span>
 term</td>
 </tr>
 <tr class="odd">
 <td><code>y_disp</code></td>
-<td>NB2,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>μ</mi><mo>=</mo><mn>0.5</mn><mo>+</mo><mn>0.8</mn><mi>x</mi></mrow><annotation encoding="application/x-tex">\log\mu = 0.5 + 0.8x</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.8</mn></mrow><annotation encoding="application/x-tex">\alpha = 0.8</annotation></semantics></math>
+<td>NB2, <span class="math inline">\(\log\mu = 0.5 + 0.8x\)</span>,
+<span class="math inline">\(\alpha = 0.8\)</span>
 </td>
 <td>the variance is too small (overdispersion)</td>
 </tr>
@@ -153,8 +157,7 @@ diagnostics below separate the two.</p>
 <div class="section level2">
 <h2 id="residuals-against-a-predictor-is-the-mean-right">Residuals against a predictor: is the mean right?<a class="anchor" aria-label="anchor" href="#residuals-against-a-predictor-is-the-mean-right"></a>
 </h2>
-<p>Response residuals
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>−</mo><mover><mi>μ</mi><mo accent="true">̂</mo></mover></mrow><annotation encoding="application/x-tex">y - \hat\mu</annotation></semantics></math>)
+<p>Response residuals (<span class="math inline">\(y - \hat\mu\)</span>)
 plotted against a covariate should scatter around zero with no trend. A
 smooth curve through them (here <code><a href="https://rdrr.io/r/stats/lowess.html" class="external-link">lowess()</a></code>) makes a trend
 visible:</p>
@@ -180,10 +183,9 @@ after (right) adding x^2.
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>before <span class="op">=</span> <span class="fu">pearson</span><span class="op">(</span><span class="va">curve_lin</span><span class="op">)</span>, after <span class="op">=</span> <span class="fu">pearson</span><span class="op">(</span><span class="va">curve_quad</span><span class="op">)</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="co">#&gt; before  after </span></span>
 <span><span class="co">#&gt;   1.71   0.98</span></span></code></pre></div>
-<p>The U-shaped trend of the linear model disappears when
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>x</mi><mn>2</mn></msup><annotation encoding="application/x-tex">x^2</annotation></semantics></math>
-is added, and the Pearson dispersion returns to about 1: the
-“overdispersion” was a missing mean term, not extra variance.</p>
+<p>The U-shaped trend of the linear model disappears when <span class="math inline">\(x^2\)</span> is added, and the Pearson dispersion
+returns to about 1: the “overdispersion” was a missing mean term, not
+extra variance.</p>
 </div>
 <div class="section level2">
 <h2 id="rootograms-zeros-the-body-and-the-tail">Rootograms: zeros, the body and the tail<a class="anchor" aria-label="anchor" href="#rootograms-zeros-the-body-and-the-tail"></a>
@@ -273,8 +275,8 @@ Poisson (left) and NB2 (right).
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">op</span><span class="op">)</span></span></code></pre></div>
 <p>Under the Poisson model far more than 5% of the residuals lie outside
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>±</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">\pm 2</annotation></semantics></math>,
-at all fitted means; under NB2 they do not.</p>
+<span class="math inline">\(\pm 2\)</span>, at all fitted means; under
+NB2 they do not.</p>
 </div>
 <div class="section level2">
 <h2 id="zeros-and-exceedances-calibration-of-probabilities">Zeros and exceedances: calibration of probabilities<a class="anchor" aria-label="anchor" href="#zeros-and-exceedances-calibration-of-probabilities"></a>
@@ -400,9 +402,8 @@ models.
 </div>
 <p>The linear model’s cumulative residuals rise, fall and rise again and
 leave the bounds: it under-predicts at both ends of <code>x</code> and
-over-predicts in the middle, the signature of a missing
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>x</mi><mn>2</mn></msup><annotation encoding="application/x-tex">x^2</annotation></semantics></math>
-term. The quadratic model’s curve stays within the bounds.</p>
+over-predicts in the middle, the signature of a missing <span class="math inline">\(x^2\)</span> term. The quadratic model’s curve
+stays within the bounds.</p>
 </div>
 <div class="section level3">
 <h3 id="a-missing-indicator-a-change-of-direction-at-a-threshold">A missing indicator: a change of direction at a threshold<a class="anchor" aria-label="anchor" href="#a-missing-indicator-a-change-of-direction-at-a-threshold"></a>
@@ -475,12 +476,12 @@ CURE plot along lnaadt for the model without the high-volume indicator.
 <p>The curve stays within the bounds up to <code>lnaadt</code> of about
 8.8, then falls steeply below the lower bound until about 9.2 and climbs
 back above it: the model over-predicts crashes on segments just below
-about 10,000 vehicles per day
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>10000</mn><mo stretchy="false" form="postfix">)</mo><mo>≈</mo><mn>9.21</mn></mrow><annotation encoding="application/x-tex">\log(10000) \approx 9.21</annotation></semantics></math>)
-and under-predicts them above it. That suggests a threshold in traffic
-volume, so an indicator for segments with more than 10,000 vehicles per
-day (<code>AADT10kplus</code>) is added, and, to check whether the
-effect of volume also changes above the threshold, an interaction:</p>
+about 10,000 vehicles per day (<span class="math inline">\(\log(10000)
+\approx 9.21\)</span>) and under-predicts them above it. That suggests a
+threshold in traffic volume, so an indicator for segments with more than
+10,000 vehicles per day (<code>AADT10kplus</code>) is added, and, to
+check whether the effect of volume also changes above the threshold, an
+interaction:</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nb_ind</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span></span>
 <span>                     <span class="va">AADT10kplus</span>, data <span class="op">=</span> <span class="va">wa</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
@@ -600,8 +601,7 @@ calibration)</td>
 other explanations first</td>
 </tr>
 <tr class="odd">
-<td>Quantile residuals beyond
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>±</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">\pm 2</annotation></semantics></math>
+<td>Quantile residuals beyond <span class="math inline">\(\pm 2\)</span>
 more than about 5% of the time</td>
 <td>variance or tail misfit</td>
 <td>rootogram and calibration to locate it</td>

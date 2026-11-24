@@ -21,12 +21,10 @@ segment, a patient-year or a plot) observed for a known `exposure`, and
 `y` is the number of events during that exposure. The data are simulated
 from
 
-``` math
-Y_i \sim \text{Poisson}(\mu_i), \qquad
-  \mu_i = \text{exposure}_i \times \exp(-0.5 + 0.6\,x_i),
-```
+\\Y_i \sim \text{Poisson}(\mu_i), \qquad \mu_i = \text{exposure}\_i
+\times \exp(-0.5 + 0.6\\x_i),\\
 
-so the true rate per unit of exposure is $`\exp(-0.5 + 0.6x)`$.
+so the true rate per unit of exposure is \\\exp(-0.5 + 0.6x)\\.
 
 ``` r
 
@@ -50,9 +48,7 @@ head(d)
 
 Taking logs of the mean model gives
 
-``` math
-\log\mu_i = \log(\text{exposure}_i) + \beta_0 + \beta_1 x_i,
-```
+\\\log\mu_i = \log(\text{exposure}\_i) + \beta_0 + \beta_1 x_i,\\
 
 so the log exposure enters the linear predictor with a coefficient fixed
 at 1: an *offset*. There are two equivalent ways to supply it. Use one
@@ -132,7 +128,7 @@ tryCatch(countreg(I(y / exposure) ~ x, data = d, family = "POISSON",
 ```
 
 Keep the count as the response and put the exposure in the offset. The
-fitted model still describes the rate: $`\exp(\beta_0 + \beta_1 x)`$ is
+fitted model still describes the rate: \\\exp(\beta_0 + \beta_1 x)\\ is
 the expected count per unit of exposure.
 
 ### Pitfall: logging the exposure twice

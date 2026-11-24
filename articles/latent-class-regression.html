@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -76,29 +82,20 @@ without covariates are introduced in
 <div class="section level2">
 <h2 id="the-model">The model<a class="anchor" aria-label="anchor" href="#the-model"></a>
 </h2>
-<p>For unit
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
-with count predictors
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>x</mi><mi>i</mi></msub><annotation encoding="application/x-tex">x_i</annotation></semantics></math>
-and membership predictors
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>z</mi><mi>i</mi></msub><annotation encoding="application/x-tex">z_i</annotation></semantics></math>,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>Y</mi><mi>i</mi></msub><mo>=</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><msub><mi>π</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><msub><mi>f</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo>∣</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>θ</mi><mi>k</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>π</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>z</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>z</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mi>γ</mi><mi>k</mi></msub><mo stretchy="false" form="postfix">)</mo><mi minsize="180%" maxsize="180%" stretchy="true">/</mi><munder><mo>∑</mo><mi>h</mi></munder><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>z</mi><mi>i</mi><mi>⊤</mi></msubsup><msub><mi>γ</mi><mi>h</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="1.0em"></mspace><msub><mi>γ</mi><mi>K</mi></msub><mo>=</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>For unit <span class="math inline">\(i\)</span> with count predictors
+<span class="math inline">\(x_i\)</span> and membership predictors <span class="math inline">\(z_i\)</span>,</p>
+<p><span class="math display">\[
 P(Y_i = y) = \sum_{k=1}^K \pi_k(z_i)\, f_k(y \mid x_i, \theta_k), \qquad
 \pi_k(z_i) = \exp(z_i^\top\gamma_k) \Big/ \sum_h \exp(z_i^\top\gamma_h),
 \quad \gamma_K = 0 .
-</annotation></semantics></math></p>
-<p>Each class
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
-has its own count regression
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>f</mi><mi>k</mi></msub><annotation encoding="application/x-tex">f_k</annotation></semantics></math>
-(any family of <code><a href="../reference/countreg.html">countreg()</a></code>), and the class-membership
-probabilities follow a multinomial logit with the last class as
-reference. Count predictors and membership predictors play different
-roles:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
-changes the expected count <em>within</em> a class,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>z</mi><annotation encoding="application/x-tex">z</annotation></semantics></math>
-changes <em>which class</em> a unit is likely to belong to.</p>
+\]</span></p>
+<p>Each class <span class="math inline">\(k\)</span> has its own count
+regression <span class="math inline">\(f_k\)</span> (any family of
+<code><a href="../reference/countreg.html">countreg()</a></code>), and the class-membership probabilities follow
+a multinomial logit with the last class as reference. Count predictors
+and membership predictors play different roles: <span class="math inline">\(x\)</span> changes the expected count
+<em>within</em> a class, <span class="math inline">\(z\)</span> changes
+<em>which class</em> a unit is likely to belong to.</p>
 </div>
 <div class="section level2">
 <h2 id="simulated-data-with-two-pathways">Simulated data with two pathways<a class="anchor" aria-label="anchor" href="#simulated-data-with-two-pathways"></a>
@@ -117,9 +114,7 @@ membership predictor <code>z</code> only affects class membership.</p>
 <span><span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">x</span>, <span class="va">z</span><span class="op">)</span></span></code></pre></div>
 <p>Class 1 has low counts and a weak slope; class 2 has higher counts
 and a steeper slope. Units with <code>z = 1</code> are more likely to be
-in class 1. Both classes are NB2 with dispersion
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.25</mn></mrow><annotation encoding="application/x-tex">\alpha = 0.25</annotation></semantics></math>,
-i.e. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi><mo>=</mo><mi>−</mi><mn>1.39</mn></mrow><annotation encoding="application/x-tex">\ln\alpha = -1.39</annotation></semantics></math>.</p>
+in class 1. Both classes are NB2 with dispersion <span class="math inline">\(\alpha = 0.25\)</span>, i.e. <span class="math inline">\(\ln\alpha = -1.39\)</span>.</p>
 </div>
 <div class="section level2">
 <h2 id="two-interfaces-one-model">Two interfaces, one model<a class="anchor" aria-label="anchor" href="#two-interfaces-one-model"></a>
@@ -151,10 +146,8 @@ same estimation engine:</p>
 <p>By default every class has its own coefficients and dispersion. The
 <code>shared</code> argument estimates a parameter once for all classes:
 <code>dis1 = TRUE</code> shares the first distribution parameter (here
-the NB2
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi></mrow><annotation encoding="application/x-tex">\ln\alpha</annotation></semantics></math>),
-and <code>mean</code> names formula terms whose coefficients are
-common.</p>
+the NB2 <span class="math inline">\(\ln\alpha\)</span>), and
+<code>mean</code> names formula terms whose coefficients are common.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lc_sd</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_mix.html">countreg_lc</a></span><span class="op">(</span><span class="va">y</span> <span class="op">~</span> <span class="va">x</span>, data <span class="op">=</span> <span class="va">d</span>, family <span class="op">=</span> <span class="st">"NB2"</span>, classes <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>                     membership_formula <span class="op">=</span> <span class="op">~</span> <span class="va">z</span>,</span>
@@ -174,14 +167,12 @@ common.</p>
 <span><span class="co">#&gt; 2           shared dispersion -1328.742  7 2671.484 2702.263</span></span>
 <span><span class="co">#&gt; 3 shared dispersion and slope -1336.136  6 2684.273 2710.654</span></span></code></pre></div>
 <p>Sharing the dispersion costs almost nothing in log-likelihood (the
-data were generated with a common
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>),
-while forcing a common slope is clearly worse, as it should be. A shared
-factor is shared as a whole term, never as individual dummy columns.
-Distribution parameters can be shared only between classes of the same
-family, because the “same” label in two families (e.g.
-<code>ln(alpha)</code> in NB1 and NB2) does not have the same
-meaning.</p>
+data were generated with a common <span class="math inline">\(\alpha\)</span>), while forcing a common slope is
+clearly worse, as it should be. A shared factor is shared as a whole
+term, never as individual dummy columns. Distribution parameters can be
+shared only between classes of the same family, because the “same” label
+in two families (e.g. <code>ln(alpha)</code> in NB1 and NB2) does not
+have the same meaning.</p>
 </div>
 <div class="section level2">
 <h2 id="reading-the-summary">Reading the summary<a class="anchor" aria-label="anchor" href="#reading-the-summary"></a>
@@ -257,10 +248,9 @@ numbering of same-family classes is arbitrary).</li>
 <li>
 <strong>Entropy.</strong> How well the posterior probabilities
 separate the units. The relative entropy is 1 for a perfect
-classification and 0 when every unit has probabilities
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mi>K</mi></mrow><annotation encoding="application/x-tex">1/K</annotation></semantics></math>.
-Low entropy does not mean a bad model: the mixture can describe the
-counts well even when individual units cannot be classified.</li>
+classification and 0 when every unit has probabilities <span class="math inline">\(1/K\)</span>. Low entropy does not mean a bad
+model: the mixture can describe the counts well even when individual
+units cannot be classified.</li>
 <li>
 <strong>Starts</strong> and <strong>observed information</strong>
 (see
@@ -268,15 +258,8 @@ counts well even when individual units cannot be classified.</li>
 how many starts reached the selected solution, whether the information
 matrix is positive definite, and the largest gradient component.</li>
 </ul>
-<p>The estimates are close to the generating values (class 1:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.3</mn><mo>,</mo><mn>0.2</mn></mrow><annotation encoding="application/x-tex">0.3, 0.2</annotation></semantics></math>;
-class 2:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.6</mn><mo>,</mo><mn>0.6</mn></mrow><annotation encoding="application/x-tex">1.6, 0.6</annotation></semantics></math>;
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi><mo>=</mo><mi>−</mi><mn>1.39</mn></mrow><annotation encoding="application/x-tex">\ln\alpha = -1.39</annotation></semantics></math>;
-membership
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.8</mn><mo>,</mo><mn>1.6</mn></mrow><annotation encoding="application/x-tex">-0.8, 1.6</annotation></semantics></math>),
-with sampling error. The start table is in
-<code>lc_sd$model$starts</code>.</p>
+<p>The estimates are close to the generating values (class 1: <span class="math inline">\(0.3, 0.2\)</span>; class 2: <span class="math inline">\(1.6, 0.6\)</span>; <span class="math inline">\(\ln\alpha = -1.39\)</span>; membership <span class="math inline">\(-0.8, 1.6\)</span>), with sampling error. The
+start table is in <code>lc_sd$model$starts</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="how-many-classes">How many classes?<a class="anchor" aria-label="anchor" href="#how-many-classes"></a>
@@ -307,27 +290,21 @@ NB2 regression, but individual units cannot be assigned to a class with
 confidence, and ICL penalizes exactly that. Some caveats apply to any
 such table:</p>
 <ul>
-<li>No likelihood-ratio test of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-against
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>K</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">K + 1</annotation></semantics></math>
-is reported, and <code><a href="../reference/regCompTest.html">regCompTest()</a></code> refuses mixture models: the
-chi-square reference distribution does not hold when a class can vanish
-or two classes merge.</li>
-<li>ICL
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">BIC</mtext><mo>+</mo><mn>2</mn><mo>×</mo><mtext mathvariant="normal">entropy</mtext></mrow><annotation encoding="application/x-tex">\text{BIC} + 2 \times \text{entropy}</annotation></semantics></math>)
-favors well-separated classes. It answers a classification question, not
-“which model predicts best”; with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>K</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">K = 1</annotation></semantics></math>
-it equals BIC.</li>
+<li>No likelihood-ratio test of <span class="math inline">\(K\)</span>
+against <span class="math inline">\(K + 1\)</span> is reported, and
+<code><a href="../reference/regCompTest.html">regCompTest()</a></code> refuses mixture models: the chi-square
+reference distribution does not hold when a class can vanish or two
+classes merge.</li>
+<li>ICL (<span class="math inline">\(\text{BIC} + 2 \times
+\text{entropy}\)</span>) favors well-separated classes. It answers a
+classification question, not “which model predicts best”; with <span class="math inline">\(K = 1\)</span> it equals BIC.</li>
 <li>Information criteria are comparable only on the same rows and
 outcome. Held-out log scores (see
 <code><a href="../articles/predictive-validation.html">vignette("predictive-validation", package = "flexCountReg")</a></code>)
 are the more direct check of predictive value.</li>
-<li>Choosing
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-from the data and then reporting Wald intervals for the chosen model
-ignores the selection step.</li>
+<li>Choosing <span class="math inline">\(K\)</span> from the data and
+then reporting Wald intervals for the chosen model ignores the selection
+step.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -393,11 +370,11 @@ the mixture; <code>type = "link"</code> returns one per class.</p>
 </h2>
 <p>A predictor can change the mixture mean through the class means and
 through the class probabilities:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>∂</mi><msub><mi>m</mi><mi>i</mi></msub><mi>/</mi><mi>∂</mi><mi>v</mi><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>π</mi><mrow><mi>i</mi><mo>,</mo><mi>k</mi></mrow></msub><mspace width="0.167em"></mspace><mi>∂</mi><msub><mi>m</mi><mrow><mi>i</mi><mo>,</mo><mi>k</mi></mrow></msub><mi>/</mi><mi>∂</mi><mi>v</mi><mo>+</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>m</mi><mrow><mi>i</mi><mo>,</mo><mi>k</mi></mrow></msub><mspace width="0.167em"></mspace><mi>∂</mi><msub><mi>π</mi><mrow><mi>i</mi><mo>,</mo><mi>k</mi></mrow></msub><mi>/</mi><mi>∂</mi><mi>v</mi><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">\[
 \partial m_i / \partial v
 = \sum_k \pi_{i,k} \, \partial m_{i,k} / \partial v
 + \sum_k m_{i,k} \, \partial \pi_{i,k} / \partial v .
-</annotation></semantics></math></p>
+\]</span></p>
 <p><code><a href="../reference/margEffTable.html">margEffTable()</a></code> differentiates the full prediction, so
 both terms are included, and variables that enter only the membership
 model (here <code>z</code>) are listed:</p>
@@ -454,11 +431,10 @@ with a message that such mixtures are experimental.</p>
 <h2 id="panel-data-one-class-per-panel">Panel data: one class per panel<a class="anchor" aria-label="anchor" href="#panel-data-one-class-per-panel"></a>
 </h2>
 <p>With <code>group_var</code>, every row of a panel belongs to the same
-unknown class, so the panel likelihood is a mixture of products,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>k</mi></msub><msub><mi>π</mi><mi>k</mi></msub><msub><mo>∏</mo><mi>t</mi></msub><msub><mi>f</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>y</mi><mi>t</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\sum_k \pi_k \prod_{t} f_k(y_{t})</annotation></semantics></math>,
-not a product of mixtures. The panel is the independent unit (BIC uses
-the number of panels), and membership variables must be constant within
-each panel.</p>
+unknown class, so the panel likelihood is a mixture of products, <span class="math inline">\(\sum_k \pi_k \prod_{t} f_k(y_{t})\)</span>, not a
+product of mixtures. The panel is the independent unit (BIC uses the
+number of panels), and membership variables must be constant within each
+panel.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">202</span><span class="op">)</span></span>
 <span><span class="va">G</span> <span class="op">&lt;-</span> <span class="fl">120</span>; <span class="va">Tt</span> <span class="op">&lt;-</span> <span class="fl">6</span></span>

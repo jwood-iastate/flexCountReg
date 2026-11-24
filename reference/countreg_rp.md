@@ -33,7 +33,8 @@ countreg_rp(
   mix_draws = NULL,
   weight_type = c("frequency", "sampling"),
   draws = c("per_unit", "shared"),
-  cluster = NULL
+  cluster = NULL,
+  cre = NULL
 )
 ```
 
@@ -248,6 +249,19 @@ countreg_rp(
   `stderr = "cluster"`. See
   [`vcov.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md),
   which also gives cluster-robust covariances after the fit.
+
+- cre:
+
+  optional one-sided formula of time-varying regressors, e.g.
+  `~ x1 + x2`, for correlated random effects (Mundlak 1978): the group
+  means of these variables (columns `mean_x1`, ...) are added to the
+  mean model, so the random effect may depend on the regressors through
+  their means. The means are computed on the estimation rows and stored
+  with the fit: predictions for a group in the estimation data use its
+  training means, and a new group uses the means of its own rows in
+  `newdata`.
+  [`cre_test()`](https://jwood-iastate.github.io/flexCountReg/reference/cre_test.md)
+  tests random against fixed effects.
 
 ## Value
 

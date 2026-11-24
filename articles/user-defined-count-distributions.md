@@ -25,19 +25,18 @@ data("washington_roads")
 ## 1. The distribution
 
 As an example, take a **one-inflated negative binomial**: a negative
-binomial (NB2) with an extra probability $`\omega`$ of a count of
+binomial (NB2) with an extra probability \\\omega\\ of a count of
 exactly one,
 
-``` math
-P(Y = y) = (1 - \omega)\, f_{NB}(y \mid \mu, \alpha) + \omega\, [y = 1],
-```
+\\ P(Y = y) = (1 - \omega)\\ f\_{NB}(y \mid \mu, \alpha) + \omega\\ \[y
+= 1\], \\
 
-where $`f_{NB}`$ has mean $`\mu`$ and variance $`\mu + \alpha\mu^2`$.
+where \\f\_{NB}\\ has mean \\\mu\\ and variance \\\mu + \alpha\mu^2\\.
 Excess ones appear in data where a first event changes what follows (for
 example, a site that is treated after its first crash, or repeat-offense
-counts). The distribution has two parameters besides $`\mu`$: the
-dispersion $`\alpha > 0`$ and the probability $`\omega \in (0, 1)`$. Its
-mean is $`(1 - \omega)\mu + \omega`$, so $`\mu`$ is *not* the mean.
+counts). The distribution has two parameters besides \\\mu\\: the
+dispersion \\\alpha \> 0\\ and the probability \\\omega \in (0, 1)\\.
+Its mean is \\(1 - \omega)\mu + \omega\\, so \\\mu\\ is *not* the mean.
 
 ## 2. Define the family
 
@@ -110,7 +109,7 @@ chk <- check_count_family(oinb, mu = c(0.2, 2, 20),
 
 A family that fails a check gives a warning naming the failed checks.
 For example, a variance that scales the negative binomial variance by
-$`1 - \omega`$ and ignores the extra ones:
+\\1 - \omega\\ and ignores the extra ones:
 
 ``` r
 
@@ -164,7 +163,7 @@ summary(m_oinb)
 ```
 
 Compare it with the built-in negative binomial, which is the special
-case $`\omega = 0`$:
+case \\\omega = 0\\:
 
 ``` r
 
@@ -175,7 +174,7 @@ c(NB2 = AIC(m_nb2), OINB = AIC(m_oinb))
 #> 2179.884 2181.847
 ```
 
-These road segments have no excess ones. The estimate of $`\omega`$ is
+These road segments have no excess ones. The estimate of \\\omega\\ is
 0.0038, at the boundary of its space, so its standard error is not
 available (the warning above), and the AIC prefers the negative
 binomial. The frequency table in Section 5 shows why: there are fewer
@@ -205,7 +204,7 @@ c(omega = plogis(coef(s_oinb)[["logit(omega)"]]),
 
 As with the built-in families, each distribution parameter can have its
 own regression: `dis_param_formula_1` models the first parameter
-($`\alpha`$) and `dis_param_formula_2` the second ($`\omega`$), on their
+(\\\alpha\\) and `dis_param_formula_2` the second (\\\omega\\), on their
 link scales.
 
 ``` r
@@ -214,7 +213,7 @@ m_oinb2 <- countreg(f, data = washington_roads, family = oinb,
                     dis_param_formula_2 = ~ speed50, method = "BFGS")
 coef(m_oinb2)[c("logit(omega):(Intercept)", "logit(omega):speed50")]
 #> logit(omega):(Intercept)     logit(omega):speed50 
-#>                -4.749657                -3.187266
+#>                 -4.74966                 -3.18728
 ```
 
 ## 5. Everything else works from the PMF
@@ -267,7 +266,7 @@ coef(m_rp)
 #>    (Intercept)         lnaadt       lnlength   speed50:Mean speed50:St.Dev 
 #>     -8.8709961      1.0940735      0.7680520     -0.7064730      0.5809304 
 #>      ln(alpha)   logit(omega) 
-#>     -1.2604041     -5.5365437
+#>     -1.2604041     -5.5365436
 ```
 
 ## 6. Saving and sharing a fitted model

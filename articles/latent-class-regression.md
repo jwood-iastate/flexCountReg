@@ -16,21 +16,19 @@ library(flexCountReg)
 
 ## The model
 
-For unit $`i`$ with count predictors $`x_i`$ and membership predictors
-$`z_i`$,
+For unit \\i\\ with count predictors \\x_i\\ and membership predictors
+\\z_i\\,
 
-``` math
-P(Y_i = y) = \sum_{k=1}^K \pi_k(z_i)\, f_k(y \mid x_i, \theta_k), \qquad
-\pi_k(z_i) = \exp(z_i^\top\gamma_k) \Big/ \sum_h \exp(z_i^\top\gamma_h),
-\quad \gamma_K = 0 .
-```
+\\ P(Y_i = y) = \sum\_{k=1}^K \pi_k(z_i)\\ f_k(y \mid x_i, \theta_k),
+\qquad \pi_k(z_i) = \exp(z_i^\top\gamma_k) \Big/ \sum_h
+\exp(z_i^\top\gamma_h), \quad \gamma_K = 0 . \\
 
-Each class $`k`$ has its own count regression $`f_k`$ (any family of
+Each class \\k\\ has its own count regression \\f_k\\ (any family of
 [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)),
 and the class-membership probabilities follow a multinomial logit with
 the last class as reference. Count predictors and membership predictors
-play different roles: $`x`$ changes the expected count *within* a class,
-$`z`$ changes *which class* a unit is likely to belong to.
+play different roles: \\x\\ changes the expected count *within* a class,
+\\z\\ changes *which class* a unit is likely to belong to.
 
 ## Simulated data with two pathways
 
@@ -52,8 +50,8 @@ d <- data.frame(y, x, z)
 
 Class 1 has low counts and a weak slope; class 2 has higher counts and a
 steeper slope. Units with `z = 1` are more likely to be in class 1. Both
-classes are NB2 with dispersion $`\alpha = 0.25`$,
-i.e. $`\ln\alpha = -1.39`$.
+classes are NB2 with dispersion \\\alpha = 0.25\\, i.e. \\\ln\alpha =
+-1.39\\.
 
 ## Two interfaces, one model
 
@@ -86,7 +84,7 @@ printed labels differ (“Class” or “Component”).
 By default every class has its own coefficients and dispersion. The
 `shared` argument estimates a parameter once for all classes:
 `dis1 = TRUE` shares the first distribution parameter (here the NB2
-$`\ln\alpha`$), and `mean` names formula terms whose coefficients are
+\\\ln\alpha\\), and `mean` names formula terms whose coefficients are
 common.
 
 ``` r
@@ -111,7 +109,7 @@ data.frame(model = c("class-specific dispersion", "shared dispersion",
 ```
 
 Sharing the dispersion costs almost nothing in log-likelihood (the data
-were generated with a common $`\alpha`$), while forcing a common slope
+were generated with a common \\\alpha\\), while forcing a common slope
 is clearly worse, as it should be. A shared factor is shared as a whole
 term, never as individual dummy columns. Distribution parameters can be
 shared only between classes of the same family, because the “same” label
@@ -191,7 +189,7 @@ membership model. Below it:
   classes is arbitrary).
 - **Entropy.** How well the posterior probabilities separate the units.
   The relative entropy is 1 for a perfect classification and 0 when
-  every unit has probabilities $`1/K`$. Low entropy does not mean a bad
+  every unit has probabilities \\1/K\\. Low entropy does not mean a bad
   model: the mixture can describe the counts well even when individual
   units cannot be classified.
 - **Starts** and **observed information** (see
@@ -199,8 +197,8 @@ membership model. Below it:
   how many starts reached the selected solution, whether the information
   matrix is positive definite, and the largest gradient component.
 
-The estimates are close to the generating values (class 1: $`0.3, 0.2`$;
-class 2: $`1.6, 0.6`$; $`\ln\alpha = -1.39`$; membership $`-0.8, 1.6`$),
+The estimates are close to the generating values (class 1: \\0.3, 0.2\\;
+class 2: \\1.6, 0.6\\; \\\ln\alpha = -1.39\\; membership \\-0.8, 1.6\\),
 with sampling error. The start table is in `lc_sd$model$starts`.
 
 ## How many classes?
@@ -234,18 +232,18 @@ regression, but individual units cannot be assigned to a class with
 confidence, and ICL penalizes exactly that. Some caveats apply to any
 such table:
 
-- No likelihood-ratio test of $`K`$ against $`K + 1`$ is reported, and
+- No likelihood-ratio test of \\K\\ against \\K + 1\\ is reported, and
   [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
   refuses mixture models: the chi-square reference distribution does not
   hold when a class can vanish or two classes merge.
-- ICL ($`\text{BIC} + 2 \times \text{entropy}`$) favors well-separated
+- ICL (\\\text{BIC} + 2 \times \text{entropy}\\) favors well-separated
   classes. It answers a classification question, not “which model
-  predicts best”; with $`K = 1`$ it equals BIC.
+  predicts best”; with \\K = 1\\ it equals BIC.
 - Information criteria are comparable only on the same rows and outcome.
   Held-out log scores (see
   [`vignette("predictive-validation", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/predictive-validation.md))
   are the more direct check of predictive value.
-- Choosing $`K`$ from the data and then reporting Wald intervals for the
+- Choosing \\K\\ from the data and then reporting Wald intervals for the
   chosen model ignores the selection step.
 
 ## Class probabilities: prior and posterior
@@ -318,11 +316,8 @@ predictor of the mixture; `type = "link"` returns one per class.
 A predictor can change the mixture mean through the class means and
 through the class probabilities:
 
-``` math
-\partial m_i / \partial v
-= \sum_k \pi_{i,k} \, \partial m_{i,k} / \partial v
-+ \sum_k m_{i,k} \, \partial \pi_{i,k} / \partial v .
-```
+\\ \partial m_i / \partial v = \sum_k \pi\_{i,k} \\ \partial m\_{i,k} /
+\partial v + \sum_k m\_{i,k} \\ \partial \pi\_{i,k} / \partial v . \\
 
 [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
 differentiates the full prediction, so both terms are included, and
@@ -385,10 +380,10 @@ mixtures are experimental.
 ## Panel data: one class per panel
 
 With `group_var`, every row of a panel belongs to the same unknown
-class, so the panel likelihood is a mixture of products,
-$`\sum_k \pi_k \prod_{t} f_k(y_{t})`$, not a product of mixtures. The
-panel is the independent unit (BIC uses the number of panels), and
-membership variables must be constant within each panel.
+class, so the panel likelihood is a mixture of products, \\\sum_k \pi_k
+\prod\_{t} f_k(y\_{t})\\, not a product of mixtures. The panel is the
+independent unit (BIC uses the number of panels), and membership
+variables must be constant within each panel.
 
 ``` r
 

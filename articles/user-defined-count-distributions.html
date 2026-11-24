@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -81,30 +87,15 @@ it, fits it, and compares it with the built-in negative binomial.</p>
 </h2>
 <p>As an example, take a <strong>one-inflated negative
 binomial</strong>: a negative binomial (NB2) with an extra probability
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ω</mi><annotation encoding="application/x-tex">\omega</annotation></semantics></math>
-of a count of exactly one,</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>=</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>ω</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><msub><mi>f</mi><mrow><mi>N</mi><mi>B</mi></mrow></msub><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo>∣</mo><mi>μ</mi><mo>,</mo><mi>α</mi><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mi>ω</mi><mspace width="0.167em"></mspace><mo stretchy="false" form="prefix">[</mo><mi>y</mi><mo>=</mo><mn>1</mn><mo stretchy="false" form="postfix">]</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">
+<span class="math inline">\(\omega\)</span> of a count of exactly
+one,</p>
+<p><span class="math display">\[
 P(Y = y) = (1 - \omega)\, f_{NB}(y \mid \mu, \alpha) + \omega\, [y = 1],
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>f</mi><mrow><mi>N</mi><mi>B</mi></mrow></msub><annotation encoding="application/x-tex">f_{NB}</annotation></semantics></math>
-has mean
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
-and variance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mo>+</mo><mi>α</mi><msup><mi>μ</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\mu + \alpha\mu^2</annotation></semantics></math>.
-Excess ones appear in data where a first event changes what follows (for
-example, a site that is treated after its first crash, or repeat-offense
-counts). The distribution has two parameters besides
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>:
-the dispersion
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>&gt;</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha &gt; 0</annotation></semantics></math>
-and the probability
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ω</mi><mo>∈</mo><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\omega \in (0, 1)</annotation></semantics></math>.
-Its mean is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>ω</mi><mo stretchy="false" form="postfix">)</mo><mi>μ</mi><mo>+</mo><mi>ω</mi></mrow><annotation encoding="application/x-tex">(1 - \omega)\mu + \omega</annotation></semantics></math>,
-so
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
-is <em>not</em> the mean.</p>
+\]</span></p>
+<p>where <span class="math inline">\(f_{NB}\)</span> has mean <span class="math inline">\(\mu\)</span> and variance <span class="math inline">\(\mu + \alpha\mu^2\)</span>. Excess ones appear in
+data where a first event changes what follows (for example, a site that
+is treated after its first crash, or repeat-offense counts). The
+distribution has two parameters besides <span class="math inline">\(\mu\)</span>: the dispersion <span class="math inline">\(\alpha &gt; 0\)</span> and the probability <span class="math inline">\(\omega \in (0, 1)\)</span>. Its mean is <span class="math inline">\((1 - \omega)\mu + \omega\)</span>, so <span class="math inline">\(\mu\)</span> is <em>not</em> the mean.</p>
 </div>
 <div class="section level2">
 <h2 id="define-the-family">2. Define the family<a class="anchor" aria-label="anchor" href="#define-the-family"></a>
@@ -175,8 +166,8 @@ vectorized, and missing or invalid inputs must not cause errors.</p>
 <span><span class="co">#&gt;  invalid mean gives no error TRUE no error (the row is given probability 0)</span></span></code></pre></div>
 <p>A family that fails a check gives a warning naming the failed checks.
 For example, a variance that scales the negative binomial variance by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>ω</mi></mrow><annotation encoding="application/x-tex">1 - \omega</annotation></semantics></math>
-and ignores the extra ones:</p>
+<span class="math inline">\(1 - \omega\)</span> and ignores the extra
+ones:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">wrong</span> <span class="op">&lt;-</span> <span class="va">oinb</span></span>
 <span><span class="va">wrong</span><span class="op">$</span><span class="va">variance</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">mu</span>, <span class="va">par</span><span class="op">)</span> <span class="op">(</span><span class="fl">1</span> <span class="op">-</span> <span class="va">par</span><span class="op">$</span><span class="va">omega</span><span class="op">)</span> <span class="op">*</span> <span class="op">(</span><span class="va">mu</span> <span class="op">+</span> <span class="va">par</span><span class="op">$</span><span class="va">alpha</span> <span class="op">*</span> <span class="va">mu</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
@@ -225,20 +216,18 @@ the distribution parameters are labelled by their link:
 <span><span class="co">#&gt; Log-likelihood: -1084.923 | AIC: 2181.847 | BIC: 2213.73 </span></span>
 <span><span class="co">#&gt; N: 1501</span></span></code></pre></div>
 <p>Compare it with the built-in negative binomial, which is the special
-case
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ω</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\omega = 0</annotation></semantics></math>:</p>
+case <span class="math inline">\(\omega = 0\)</span>:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m_nb2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span>,</span>
 <span>                  method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>NB2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">m_nb2</span><span class="op">)</span>, OINB <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">m_oinb</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;      NB2     OINB </span></span>
 <span><span class="co">#&gt; 2179.884 2181.847</span></span></code></pre></div>
-<p>These road segments have no excess ones. The estimate of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ω</mi><annotation encoding="application/x-tex">\omega</annotation></semantics></math>
-is 0.0038, at the boundary of its space, so its standard error is not
-available (the warning above), and the AIC prefers the negative
-binomial. The frequency table in Section 5 shows why: there are fewer
-ones than the negative binomial predicts, not more.</p>
+<p>These road segments have no excess ones. The estimate of <span class="math inline">\(\omega\)</span> is 0.0038, at the boundary of its
+space, so its standard error is not available (the warning above), and
+the AIC prefers the negative binomial. The frequency table in Section 5
+shows why: there are fewer ones than the negative binomial predicts, not
+more.</p>
 <p>When the extra ones are there, the family finds them. Here 20% of the
 counts of a negative binomial sample are replaced by ones:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -259,17 +248,14 @@ counts of a negative binomial sample are replaced by ones:</p>
 <span><span class="co">#&gt; 0.2066053 0.5075688</span></span></code></pre></div>
 <p>As with the built-in families, each distribution parameter can have
 its own regression: <code>dis_param_formula_1</code> models the first
-parameter
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>)
-and <code>dis_param_formula_2</code> the second
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ω</mi><annotation encoding="application/x-tex">\omega</annotation></semantics></math>),
-on their link scales.</p>
+parameter (<span class="math inline">\(\alpha\)</span>) and
+<code>dis_param_formula_2</code> the second (<span class="math inline">\(\omega\)</span>), on their link scales.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m_oinb2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="va">oinb</span>,</span>
 <span>                    dis_param_formula_2 <span class="op">=</span> <span class="op">~</span> <span class="va">speed50</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">m_oinb2</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logit(omega):(Intercept)"</span>, <span class="st">"logit(omega):speed50"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; logit(omega):(Intercept)     logit(omega):speed50 </span></span>
-<span><span class="co">#&gt;                -4.749657                -3.187266</span></span></code></pre></div>
+<span><span class="co">#&gt;                 -4.74966                 -3.18728</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="everything-else-works-from-the-pmf">5. Everything else works from the PMF<a class="anchor" aria-label="anchor" href="#everything-else-works-from-the-pmf"></a>
@@ -314,7 +300,7 @@ mixtures:</p>
 <span><span class="co">#&gt;    (Intercept)         lnaadt       lnlength   speed50:Mean speed50:St.Dev </span></span>
 <span><span class="co">#&gt;     -8.8709961      1.0940735      0.7680520     -0.7064730      0.5809304 </span></span>
 <span><span class="co">#&gt;      ln(alpha)   logit(omega) </span></span>
-<span><span class="co">#&gt;     -1.2604041     -5.5365437</span></span></code></pre></div>
+<span><span class="co">#&gt;     -1.2604041     -5.5365436</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="saving-and-sharing-a-fitted-model">6. Saving and sharing a fitted model<a class="anchor" aria-label="anchor" href="#saving-and-sharing-a-fitted-model"></a>

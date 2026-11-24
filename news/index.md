@@ -62,6 +62,63 @@
   and
   [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md).
 
+### Fixed-effects count models
+
+- New
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
+  estimates count models with fixed effects for one or more grouping
+  variables (`fixef = ~ site` or `~ site + year`). It chooses among
+  three estimators:
+  - Poisson with one dimension: the conditional likelihood.
+  - Poisson with several dimensions: IRLS with alternating projections,
+    as in
+    [`fixest::fepois()`](https://lrberge.github.io/fixest/reference/feglm.html).
+  - Any other family, including families from
+    [`new_count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/new_count_family.md),
+    with one dimension: the dummy-variable likelihood with the group
+    intercepts concentrated out.
+- Groups with all-zero counts or a single observation are dropped and
+  reported, and regressors without variation within groups are removed
+  with a warning.
+- Standard errors are cluster-robust by the first fixed-effect variable
+  by default. The log-likelihood is that of the dummy-variable model,
+  with degrees of freedom that count the fixed effects.
+- `jackknife = TRUE` applies the split-panel jackknife of Dhaene and
+  Jochmans (2015). In simulations with 200 units it removed most of the
+  NB2 dispersion bias with 5 or 10 periods, but did not improve the
+  slopes, and it is unreliable below 4 periods, where a warning is
+  given.
+- [`predict()`](https://rdrr.io/r/stats/predict.html) uses each known
+  group’s effect. Groups not in the estimation data give `NA` unless
+  `newgroup = "mean_fe"`.
+- Estimates, log-likelihoods and dropped groups equal those of
+  [`fixest::fepois()`](https://lrberge.github.io/fixest/reference/feglm.html)
+  (one and two ways) and
+  [`fixest::fenegbin()`](https://lrberge.github.io/fixest/reference/femlm.html).
+  The cluster-robust standard errors equal fixest’s with
+  `ssc(adj = FALSE)`.
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
+  [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
+  and
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  gain `cre = ~ x1 + x2` for correlated random effects (Mundlak 1978).
+  The units’ means of the listed time-varying regressors are added to
+  the mean model, computed on the estimation rows and stored with the
+  fit. Predictions for known units use their training means; new units
+  use the means of their own rows.
+- New
+  [`cre_test()`](https://jwood-iastate.github.io/flexCountReg/reference/cre_test.md),
+  a Wald test that the coefficients of those means are zero: a robust
+  test of random against fixed effects. In simulations with unit effects
+  correlated with the regressor, the plain random-effects slope was
+  biased (0.63 for a true 0.5), the slope with `cre` was 0.505, equal to
+  fixed effects, and the test rejected in every replication. With
+  uncorrelated effects, it rejected in 7% of replications at the 5%
+  level.
+- New vignette, “Fixed-effects count models”
+  ([`vignette("fixed-effects-count-models")`](https://jwood-iastate.github.io/flexCountReg/articles/fixed-effects-count-models.md)),
+  with a section on correlated random effects.
+
 ### Cluster-robust standard errors and the sandwich package
 
 - [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
@@ -1152,12 +1209,19 @@ Changed results are marked **(changed)**.
 
 ### Documentation
 
+- The pkgdown site renders mathematics with MathJax
+  (`template: math-rendering: mathjax`). The equations of help pages
+  (`\eqn{}`, `\deqn{}`) and articles were shown as raw LaTeX, for
+  example in
+  [`?countreg_mix`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md).
+
 - The package description (DESCRIPTION) now summarizes the current
   scope: the 28 count families and their distribution functions,
   distribution-parameter, zero, underreporting, random-parameter,
   random-effects and finite-mixture models, the prediction, interval,
   effect and diagnostic tools, and references for latent-class
   regression, randomized quantile residuals and rootograms.
+
 - Corrected the parameter table in
   [`?countreg`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
   (PGE, Sichel), the Poisson-Lindley-Lognormal mean and parameter
@@ -1166,12 +1230,15 @@ Changed results are marked **(changed)**.
   [`?countreg`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
   no longer claims that an LR test is printed; see
   [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md).
+
 - [`?countreg.rp`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   documents each random-parameter distribution’s scale, the
   heterogeneity specification and the lognormal caveat.
+
 - [`?renb`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md)
   states that the marginal variance exists only for a \> 2 (it is
   infinite for the legal values 1 \< a \<= 2).
+
 - [`?washington_roads`](https://jwood-iastate.github.io/flexCountReg/reference/washington_roads.md)
   describes the panel structure; the `Rollover` label in the data is
   corrected. The README function list is corrected and completed.

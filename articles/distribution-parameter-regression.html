@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -79,10 +85,10 @@ model for a changing dispersion.</p>
 the counts differ between groups of units?</p>
 <p>To know the right answer, the data are simulated. A covariate
 <code>x</code> changes the mean; a binary covariate <code>z</code>
-changes only the NB2 dispersion
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mn>0.5</mn><mi>x</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><mi>α</mi><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mn>1</mn><mo>+</mo><mn>1.2</mn><mi>z</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><mtext mathvariant="normal">Var</mtext><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>μ</mi><mo>+</mo><mi>α</mi><msup><mi>μ</mi><mn>2</mn></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">\mu = \exp(1 + 0.5x), \qquad \alpha = \exp(-1 + 1.2z), \qquad
-  \text{Var}(Y) = \mu + \alpha\mu^2.</annotation></semantics></math></p>
+changes only the NB2 dispersion <span class="math inline">\(\alpha\)</span>:</p>
+<p><span class="math display">\[\mu = \exp(1 + 0.5x), \qquad \alpha =
+\exp(-1 + 1.2z), \qquad
+  \text{Var}(Y) = \mu + \alpha\mu^2.\]</span></p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">800</span></span>
@@ -94,10 +100,7 @@ changes only the NB2 dispersion
 <h2 id="a-constant-dispersion-then-a-dispersion-model">A constant dispersion, then a dispersion model<a class="anchor" aria-label="anchor" href="#a-constant-dispersion-then-a-dispersion-model"></a>
 </h2>
 <p><code>dis_param_formula_1</code> gives a formula for the first
-distribution parameter; for NB2 that is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>,
-modelled on the log scale:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi><mo>=</mo><mi>W</mi><mi>δ</mi></mrow><annotation encoding="application/x-tex">\ln\alpha = W\delta</annotation></semantics></math>.
+distribution parameter; for NB2 that is <span class="math inline">\(\alpha\)</span>, modelled on the log scale: <span class="math inline">\(\ln\alpha = W\delta\)</span>.
 (<code><a href="../reference/count_families.html">?count_families</a></code> lists the parameter and its link for every
 family.)</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -182,10 +185,9 @@ dispersion.
 </h2>
 <p>A dispersion model should not stand in for a sensible mean model.
 Here a binary covariate <code>g</code> raises the mean and the
-dispersion is constant
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>α</mi><mo>=</mo><mi>−</mi><mn>1</mn></mrow><annotation encoding="application/x-tex">\ln\alpha = -1</annotation></semantics></math>,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.37</mn></mrow><annotation encoding="application/x-tex">\alpha = 0.37</annotation></semantics></math>).
-The first model leaves <code>g</code> out of the mean but lets the
+dispersion is constant (<span class="math inline">\(\ln\alpha =
+-1\)</span>, <span class="math inline">\(\alpha = 0.37\)</span>). The
+first model leaves <code>g</code> out of the mean but lets the
 dispersion depend on it; the second puts <code>g</code> in the mean:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">4</span><span class="op">)</span></span>
@@ -206,16 +208,12 @@ dispersion depend on it; the second puts <code>g</code> in the mean:</p>
 <span><span class="co">#&gt; ln(alpha):g             -0.616      0.185   -0.023      0.191</span></span></code></pre></div>
 <p>With <code>g</code> missing from the mean, the counts in each
 <code>g</code> group are systematically above or below the fitted mean,
-and that misfit is read as extra variation: the estimated
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-for <code>g = 0</code> is 0.78 instead of 0.37, and the <code>g</code>
-coefficient of the dispersion is 3.3 standard errors from zero although
-the true dispersion does not depend on <code>g</code>. With
-<code>g</code> in the mean,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-is estimated at 0.36 and the <code>g</code> dispersion effect is 0.1
-standard errors from zero. Check the mean model first (residuals against
-covariates; see
+and that misfit is read as extra variation: the estimated <span class="math inline">\(\alpha\)</span> for <code>g = 0</code> is 0.78
+instead of 0.37, and the <code>g</code> coefficient of the dispersion is
+3.3 standard errors from zero although the true dispersion does not
+depend on <code>g</code>. With <code>g</code> in the mean, <span class="math inline">\(\alpha\)</span> is estimated at 0.36 and the
+<code>g</code> dispersion effect is 0.1 standard errors from zero. Check
+the mean model first (residuals against covariates; see
 <code><a href="../articles/diagnosing-count-models.html">vignette("diagnosing-count-models", package = "flexCountReg")</a></code>),
 then model the dispersion.</p>
 </div>
@@ -239,27 +237,19 @@ animals keeps the example fast):</p>
 underdispersion; two of them:</p>
 <ul>
 <li>
-<code>DPO</code>, the double Poisson, with precision
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ϕ</mi><annotation encoding="application/x-tex">\phi</annotation></semantics></math>:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\phi &gt; 1</annotation></semantics></math>
-is underdispersed,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\phi = 1</annotation></semantics></math>
-Poisson.</li>
+<code>DPO</code>, the double Poisson, with precision <span class="math inline">\(\phi\)</span>: <span class="math inline">\(\phi
+&gt; 1\)</span> is underdispersed, <span class="math inline">\(\phi =
+1\)</span> Poisson.</li>
 <li>
 <code>GAMMACOUNT</code>, the number of events of a renewal process
-with gamma waiting times of shape
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">a &gt; 1</annotation></semantics></math>
-(more regular than random arrivals) is underdispersed,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">a = 1</annotation></semantics></math>
-Poisson.</li>
+with gamma waiting times of shape <span class="math inline">\(a\)</span>: <span class="math inline">\(a &gt;
+1\)</span> (more regular than random arrivals) is underdispersed, <span class="math inline">\(a = 1\)</span> Poisson.</li>
 </ul>
-<p>In flexCountReg both are parameterized by their exact mean,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">[</mo><mi>Y</mi><mo stretchy="false" form="postfix">]</mo><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>X</mi><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">E[Y] = \exp(X\beta)</annotation></semantics></math>,
-so their coefficients mean the same as Poisson coefficients. Neither
-family has a closed-form mean, so the natural parameter is found for
-each observation by solving the mean equation numerically; these fits
-are slower than closed-form families.</p>
+<p>In flexCountReg both are parameterized by their exact mean, <span class="math inline">\(E[Y] = \exp(X\beta)\)</span>, so their
+coefficients mean the same as Poisson coefficients. Neither family has a
+closed-form mean, so the natural parameter is found for each observation
+by solving the mean equation numerically; these fits are slower than
+closed-form families.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ab_dpo</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f_ab</span>, data <span class="op">=</span> <span class="va">ab</span>, family <span class="op">=</span> <span class="st">"DPO"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">ab_gc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f_ab</span>, data <span class="op">=</span> <span class="va">ab</span>, family <span class="op">=</span> <span class="st">"GAMMACOUNT"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
@@ -275,11 +265,8 @@ are slower than closed-form families.</p>
 <span><span class="co">#&gt; 3 GAMMACOUNT -1357.233 2726.467 1.842923</span></span></code></pre></div>
 <p>Both estimate a shape parameter above 1 (underdispersion) and fit far
 better than the Poisson model. Poisson is a special case of both (at
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\phi = 1</annotation></semantics></math>
-and
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">a = 1</annotation></semantics></math>,
-interior points), so their summaries report a likelihood-ratio test
-against it:</p>
+<span class="math inline">\(\phi = 1\)</span> and <span class="math inline">\(a = 1\)</span>, interior points), so their
+summaries report a likelihood-ratio test against it:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">ab_dpo</span><span class="op">)</span><span class="op">$</span><span class="va">lr_test</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"statistic"</span>, <span class="st">"df"</span>, <span class="st">"p.value"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $statistic</span></span>

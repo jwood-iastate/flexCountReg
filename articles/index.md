@@ -28,6 +28,8 @@
   identification](https://jwood-iastate.github.io/flexCountReg/articles/underreporting-and-identification.md):
 - [Random parameters and panel
   models](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md):
+- [Fixed-effects count
+  models](https://jwood-iastate.github.io/flexCountReg/articles/fixed-effects-count-models.md):
 
 ### Finite mixtures and latent classes
 

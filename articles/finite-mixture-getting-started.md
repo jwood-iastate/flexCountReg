@@ -14,13 +14,11 @@ library(flexCountReg)
 
 ## What a finite mixture is
 
-A finite mixture with $`K`$ components draws an unobserved component
-$`C`$ with probabilities $`\pi_1, \dots, \pi_K`$ and then draws **one**
+A finite mixture with \\K\\ components draws an unobserved component
+\\C\\ with probabilities \\\pi_1, \dots, \pi_K\\ and then draws **one**
 count from that component’s distribution:
 
-``` math
-P(Y = y) = \sum_{k=1}^K \pi_k f_k(y).
-```
+\\ P(Y = y) = \sum\_{k=1}^K \pi_k f_k(y). \\
 
 Four ideas are easily confused:
 
@@ -28,11 +26,11 @@ Four ideas are easily confused:
   above. It can be used purely as a flexible description of a skewed,
   multimodal or heavy-tailed count distribution.
 - **Latent-class interpretation.** The same model, read as saying that
-  the population consists of $`K`$ unobserved groups. That reading is an
+  the population consists of \\K\\ unobserved groups. That reading is an
   extra substantive assumption; the likelihood is identical, and a good
   fit with two components does not prove that two real groups exist.
 - **Convolution (a sum of counts).** Adding independent counts from two
-  distributions, e.g. $`Y = Y_1 + Y_2`$, gives a different distribution.
+  distributions, e.g. \\Y = Y_1 + Y_2\\, gives a different distribution.
   A mixture *selects* one component; a convolution *adds* them.
 - **Within-family (continuous) mixing.** Families such as PLN, PGE and
   NBGE are themselves Poisson distributions mixed over a *continuous*
@@ -71,13 +69,10 @@ mixture of Poisson distributions with different means.
 
 For a mixture, the mean and variance are
 
-``` math
-m = \sum_k \pi_k m_k, \qquad
-V = \sum_k \pi_k (V_k + m_k^2) - m^2
-  = \sum_k \pi_k V_k + \sum_k \pi_k (m_k - m)^2 .
-```
+\\ m = \sum_k \pi_k m_k, \qquad V = \sum_k \pi_k (V_k + m_k^2) - m^2 =
+\sum_k \pi_k V_k + \sum_k \pi_k (m_k - m)^2 . \\
 
-For the generating model ($`\pi = (0.6, 0.4)`$, means 1 and 5, Poisson
+For the generating model (\\\pi = (0.6, 0.4)\\, means 1 and 5, Poisson
 variances equal to the means) this gives:
 
 ``` r
@@ -91,8 +86,8 @@ c(mean = m, variance = V)
 #>     2.60     6.44
 ```
 
-The variance $`6.44`$ is the within-component variance $`2.6`$ plus the
-between-component variance $`3.84`$. A mixture of Poisson distributions
+The variance \\6.44\\ is the within-component variance \\2.6\\ plus the
+between-component variance \\3.84\\. A mixture of Poisson distributions
 is therefore always at least equidispersed; mixtures of *underdispersed*
 families need not be.
 
@@ -148,7 +143,7 @@ summary(fit2)
 #> N: 500
 #> Entropy: 130.547 | relative entropy: 0.623 
 #> Starts: 5 | 5 reached the selected log-likelihood
-#> Observed information: positive definite (condition number 19.9 ) | max |gradient|: 7.72e-07 
+#> Observed information: positive definite (condition number 19.9 ) | max |gradient|: 1.4e-07 
 #> No likelihood-ratio test of the number of components is reported (non-standard distribution).
 ```
 
@@ -265,12 +260,12 @@ agree.
 
 ## Plotting the fitted distribution
 
-`predict(type = "prob")` returns the mixture probabilities $`P(Y = y)`$
+`predict(type = "prob")` returns the mixture probabilities \\P(Y = y)\\
 on a finite grid; `overflow = TRUE` adds the probability of the tail
 beyond the grid, so nothing is silently dropped. The weighted
-contributions $`\pi_k f_k(y)`$ of the components add up to the total.
-(Each $`f_k`$ alone sums to one; the weighted contributions sum to
-$`\pi_k`$.)
+contributions \\\pi_k f_k(y)\\ of the components add up to the total.
+(Each \\f_k\\ alone sums to one; the weighted contributions sum to
+\\\pi_k\\.)
 
 ``` r
 
@@ -305,7 +300,7 @@ legend("topright", c("mixture", "pi_1 f_1", "pi_2 f_2", "observed"),
 
 ![](finite-mixture-getting-started_files/figure-html/pmf-plot-1.png)
 
-The last bar is the tail bin $`Y > 12`$. Note that the component curves
+The last bar is the tail bin \\Y \> 12\\. Note that the component curves
 are weighted contributions; they are not the probabilities of class
 membership given a count. Those posterior probabilities are a different
 quantity:
@@ -356,14 +351,14 @@ data.frame(model = c("Poisson", "NB2", "2 Poisson components",
 #> 4 3 Poisson components -1031.950  5 2073.901 2094.974
 fit3$model$classes[, c("label", "prior_share", "mean_count")]
 #>                 label prior_share   mean_count
-#> Component1 Component1  0.03284512 2.046596e-05
+#> Component1 Component1  0.03284512 2.320771e-05
 #> Component2 Component2  0.59408926 1.127026e+00
 #> Component3 Component3  0.37306562 4.938665e+00
 ```
 
 No likelihood-ratio p-value is given for the number of components. The
 usual chi-square reference distribution does not apply when comparing
-$`K`$ with $`K + 1`$ components: under the smaller model, the extra
+\\K\\ with \\K + 1\\ components: under the smaller model, the extra
 component’s proportion is at the boundary (zero) or its parameters are
 not identified, which breaks the regularity conditions of the test.
 [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
@@ -410,7 +405,7 @@ the same data: that would use the data twice and understate uncertainty.
 
 ## Limitations
 
-- A mixture with $`K`$ components can describe a skewed or heavy-tailed
+- A mixture with \\K\\ components can describe a skewed or heavy-tailed
   distribution without the components corresponding to real groups.
   Interpreting components as subpopulations needs external evidence.
 - Components with similar means and small shares are weakly identified;

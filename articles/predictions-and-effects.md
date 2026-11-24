@@ -13,14 +13,14 @@ library(flexCountReg)
 
 ## Four quantities
 
-For a fitted mean $`\mu(x)`$ and a covariate $`x_j`$:
+For a fitted mean \\\mu(x)\\ and a covariate \\x_j\\:
 
 | Quantity | Definition | Units |
 |----|----|----|
-| Prediction | $`\mu(x)`$ at a stated profile $`x`$ | counts |
-| Contrast | $`\mu(x^{(1)}) - \mu(x^{(0)})`$ for two profiles (e.g. two levels of a factor) | counts |
-| Marginal effect | $`\partial\mu/\partial x_j`$ for a continuous $`x_j`$ | counts per unit of $`x_j`$ |
-| Elasticity | $`(\partial\mu/\partial x_j)(x_j/\mu)`$ | % change in the count per % change in $`x_j`$ |
+| Prediction | \\\mu(x)\\ at a stated profile \\x\\ | counts |
+| Contrast | \\\mu(x^{(1)}) - \mu(x^{(0)})\\ for two profiles (e.g. two levels of a factor) | counts |
+| Marginal effect | \\\partial\mu/\partial x_j\\ for a continuous \\x_j\\ | counts per unit of \\x_j\\ |
+| Elasticity | \\(\partial\mu/\partial x_j)(x_j/\mu)\\ | % change in the count per % change in \\x_j\\ |
 
 Each can be evaluated at one *profile* (a stated set of covariate
 values) or *averaged* over the units of a population. The two generally
@@ -75,8 +75,8 @@ the reference categories; the second averages the predictions over the
 
 ### Rate ratios and differences
 
-With a log link, $`\exp(\beta)`$ is a rate ratio, the same for every
-profile. For `Eth`, $`\exp(\beta)`$ = 0.566: children of non-Aboriginal
+With a log link, \\\exp(\beta)\\ is a rate ratio, the same for every
+profile. For `Eth`, \\\exp(\beta)\\ = 0.566: children of non-Aboriginal
 background are expected to have 43.4% fewer absent days, other
 categories held fixed. The *difference* in days depends on the profile:
 

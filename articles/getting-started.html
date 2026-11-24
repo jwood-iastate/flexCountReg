@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -231,13 +237,11 @@ beyond the Poisson variance.</p>
 <h2 id="alternatives-fitted-to-the-same-rows">Alternatives fitted to the same rows<a class="anchor" aria-label="anchor" href="#alternatives-fitted-to-the-same-rows"></a>
 </h2>
 <p>Two common extensions of the Poisson model add a dispersion parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>:</p>
+<span class="math inline">\(\alpha\)</span>:</p>
 <ul>
-<li>NB2:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mi>a</mi><mi>r</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>μ</mi><mo>+</mo><mi>α</mi><msup><mi>μ</mi><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">Var(Y) = \mu + \alpha\mu^2</annotation></semantics></math>
+<li>NB2: <span class="math inline">\(Var(Y) = \mu + \alpha\mu^2\)</span>
 (extra variance grows with the square of the mean);</li>
-<li>NB1:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mi>a</mi><mi>r</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>μ</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mi>α</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Var(Y) = \mu(1 + \alpha)</annotation></semantics></math>
+<li>NB1: <span class="math inline">\(Var(Y) = \mu(1 + \alpha)\)</span>
 (extra variance proportional to the mean).</li>
 </ul>
 <p>Both keep the same mean model, so their coefficients have the same
@@ -259,7 +263,7 @@ distributions:</p>
 <span><span class="co">#&gt; countreg(formula = count ~ spray, data = d, family = "NB2", method = "BFGS")</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model: countreg | family: NB2 | optimizer: BFGS</span></span>
-<span><span class="co">#&gt; Iterations: 14 </span></span>
+<span><span class="co">#&gt; Iterations: 15 </span></span>
 <span><span class="co">#&gt; Convergence: successful convergence </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>

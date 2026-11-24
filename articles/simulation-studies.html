@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -76,23 +82,18 @@ full-size study is included with the package (see the end).</p>
 <div class="section level2">
 <h2 id="design-the-study-before-generating-data">1. Design the study before generating data<a class="anchor" aria-label="anchor" href="#design-the-study-before-generating-data"></a>
 </h2>
-<p>The estimand is the coefficient
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mi>x</mi></msub><annotation encoding="application/x-tex">\beta_x</annotation></semantics></math>
-of a covariate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
-in a log-linear count model with an exposure offset:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>E</mi><mo stretchy="false" form="prefix">[</mo><msub><mi>Y</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">]</mo><mo>=</mo><msub><mi>t</mi><mi>i</mi></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mi>x</mi></msub><msub><mi>x</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="1.0em"></mspace><msub><mi>β</mi><mn>0</mn></msub><mo>=</mo><mn>0.5</mn><mo>,</mo><mspace width="0.278em"></mspace><msub><mi>β</mi><mi>x</mi></msub><mo>=</mo><mn>0.4</mn><mo>,</mo><mspace width="0.278em"></mspace><msub><mi>x</mi><mi>i</mi></msub><mo>∼</mo><mi>N</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="0.278em"></mspace><msub><mi>t</mi><mi>i</mi></msub><mo>∼</mo><mi>U</mi><mo stretchy="false" form="prefix">(</mo><mn>0.5</mn><mo>,</mo><mn>2</mn><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">E[Y_i] = t_i \exp(\beta_0 + \beta_x x_i), \quad
+<p>The estimand is the coefficient <span class="math inline">\(\beta_x\)</span> of a covariate <span class="math inline">\(x\)</span> in a log-linear count model with an
+exposure offset:</p>
+<p><span class="math display">\[E[Y_i] = t_i \exp(\beta_0 + \beta_x
+x_i), \quad
 \beta_0 = 0.5, \; \beta_x = 0.4, \;
-x_i \sim N(0, 1), \; t_i \sim U(0.5, 2).</annotation></semantics></math></p>
-<p>The counts are Poisson or NB2 with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">\alpha = 0.5</annotation></semantics></math>,
-with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mn>100</mn></mrow><annotation encoding="application/x-tex">n = 100</annotation></semantics></math>
-or
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>400</mn><annotation encoding="application/x-tex">400</annotation></semantics></math>
-independent rows. Two procedures are compared on every dataset: a
-Poisson model and an NB2 model, both with Hessian-based standard errors
-and 95% Wald intervals.</p>
+x_i \sim N(0, 1), \; t_i \sim U(0.5, 2).\]</span></p>
+<p>The counts are Poisson or NB2 with <span class="math inline">\(\alpha
+= 0.5\)</span>, with <span class="math inline">\(n = 100\)</span> or
+<span class="math inline">\(400\)</span> independent rows. Two
+procedures are compared on every dataset: a Poisson model and an NB2
+model, both with Hessian-based standard errors and 95% Wald
+intervals.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">scenarios</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span>family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"POISSON"</span>, <span class="st">"NB2"</span><span class="op">)</span>, n <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">100</span>, <span class="fl">400</span><span class="op">)</span>,</span>
 <span>                         stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -122,10 +123,9 @@ being evaluated:</p>
 <span>    <span class="fu"><a href="https://rdrr.io/r/stats/NegBinomial.html" class="external-link">rnbinom</a></span><span class="op">(</span><span class="va">sc</span><span class="op">$</span><span class="va">n</span>, size <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="va">sc</span><span class="op">$</span><span class="va">alpha</span>, mu <span class="op">=</span> <span class="va">mu</span><span class="op">)</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="va">y</span>, <span class="va">x</span>, log_t <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>
-<p>Two checks against independent results. First, with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1</annotation></semantics></math>
-the NB2 distribution is geometric, so the generator’s frequencies must
-match <code><a href="https://rdrr.io/r/stats/Geometric.html" class="external-link">dgeom()</a></code>:</p>
+<p>Two checks against independent results. First, with <span class="math inline">\(\alpha = 1\)</span> the NB2 distribution is
+geometric, so the generator’s frequencies must match
+<code><a href="https://rdrr.io/r/stats/Geometric.html" class="external-link">dgeom()</a></code>:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">draws</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/NegBinomial.html" class="external-link">rnbinom</a></span><span class="op">(</span><span class="fl">1e5</span>, size <span class="op">=</span> <span class="fl">1</span>, mu <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
@@ -297,14 +297,12 @@ and successful counts are shown so that the conditioning is visible.</p>
 <span><span class="co">#&gt; 3.POISSON POISSON 400   POISSON       100  100</span></span>
 <span><span class="co">#&gt; 4.POISSON     NB2 400   POISSON       100  100</span></span></code></pre></div>
 <p>On NB2 data, the Poisson procedure’s reported standard errors are
-much smaller than the actual spread of its estimates (for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo>=</mo><mn>400</mn></mrow><annotation encoding="application/x-tex">n = 400</annotation></semantics></math>,
-a mean standard error of 0.034 against an empirical standard deviation
-of 0.059), so its intervals cover the true value only 76% of the time
-(MCSE 4.3 points). The NB2 procedure’s coverage is 92%. Both estimators
-are nearly unbiased: the Poisson estimator is consistent for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mi>x</mi></msub><annotation encoding="application/x-tex">\beta_x</annotation></semantics></math>
-under NB2 data, but its standard errors are not.</p>
+much smaller than the actual spread of its estimates (for <span class="math inline">\(n = 400\)</span>, a mean standard error of 0.034
+against an empirical standard deviation of 0.059), so its intervals
+cover the true value only 76% of the time (MCSE 4.3 points). The NB2
+procedure’s coverage is 92%. Both estimators are nearly unbiased: the
+Poisson estimator is consistent for <span class="math inline">\(\beta_x\)</span> under NB2 data, but its standard
+errors are not.</p>
 <p>With 100 replicates, a coverage estimate near 95% has an MCSE of
 about 2.2 percentage points, too large to distinguish 93% from 95%.
 Differences smaller than about two MCSEs are not evidence of
@@ -312,10 +310,8 @@ anything.</p>
 <p>0 of the 800 fits gave a warning. These are NB2 fits to Poisson data,
 where the dispersion approaches its boundary (see
 <code><a href="../articles/numerical-reliability.html">vignette("numerical-reliability", package = "flexCountReg")</a></code>).
-They are kept in the summaries, because the coefficient of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
-is still estimated well; a study whose target was the dispersion would
-have to treat them separately.</p>
+They are kept in the summaries, because the coefficient of <span class="math inline">\(x\)</span> is still estimated well; a study whose
+target was the dispersion would have to treat them separately.</p>
 </div>
 <div class="section level2">
 <h2 id="panel-data-keep-the-independent-unit">6. Panel data: keep the independent unit<a class="anchor" aria-label="anchor" href="#panel-data-keep-the-independent-unit"></a>
@@ -323,10 +319,7 @@ have to treat them separately.</p>
 <p>With repeated measurements, the independent unit is the group, and
 the generator must give all rows of a group one shared effect. Here, 100
 units are each observed 5 times, with a gamma-distributed unit effect
-(mean 1, variance 0.5), a unit-level covariate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>z</mi><annotation encoding="application/x-tex">z</annotation></semantics></math>
-and a row-level covariate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>:</p>
+(mean 1, variance 0.5), a unit-level covariate <span class="math inline">\(z\)</span> and a row-level covariate <span class="math inline">\(x\)</span>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">generate_panel</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n_units</span> <span class="op">=</span> <span class="fl">100</span>, <span class="va">T</span> <span class="op">=</span> <span class="fl">5</span>, <span class="va">theta</span> <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">id</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n_units</span><span class="op">)</span>, each <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
@@ -338,10 +331,8 @@ and a row-level covariate
 <span><span class="op">}</span></span></code></pre></div>
 <p>The negative multinomial model of <code><a href="../reference/negmultinom.html">negmultinom()</a></code> (family
 <code>"NM2"</code>, the default) matches this process: Poisson counts
-given a gamma unit effect with mean 1 and variance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>α</mi><annotation encoding="application/x-tex">\alpha</annotation></semantics></math>
-(here 0.5), shared by the rows of a unit. The pooled Poisson model
-ignores the grouping:</p>
+given a gamma unit effect with mean 1 and variance <span class="math inline">\(\alpha\)</span> (here 0.5), shared by the rows of
+a unit. The pooled Poisson model ignores the grouping:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">panel_rep</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/assign.html" class="external-link">assign</a></span><span class="op">(</span><span class="st">".Random.seed"</span>, <span class="va">panel_streams</span><span class="op">[[</span><span class="va">r</span><span class="op">]</span><span class="op">]</span>, envir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/environment.html" class="external-link">globalenv</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
@@ -380,13 +371,11 @@ ignores the grouping:</p>
 <span><span class="co">#&gt; 2       pooled Poisson    x 0.05319242</span></span>
 <span><span class="co">#&gt; 3 negative multinomial    z 0.07529461</span></span>
 <span><span class="co">#&gt; 4       pooled Poisson    z 0.07446998</span></span></code></pre></div>
-<p>The pooled model’s standard error for the unit-level covariate
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>z</mi><annotation encoding="application/x-tex">z</annotation></semantics></math>
-is far below the spread of its estimates, and its intervals undercover;
-the negative multinomial model accounts for the shared effect. Bootstrap
-or cross-validation in such a study must also resample whole units,
-never rows (<code>stderr = "boot"</code> in the panel models does
-this).</p>
+<p>The pooled model’s standard error for the unit-level covariate <span class="math inline">\(z\)</span> is far below the spread of its
+estimates, and its intervals undercover; the negative multinomial model
+accounts for the shared effect. Bootstrap or cross-validation in such a
+study must also resample whole units, never rows
+(<code>stderr = "boot"</code> in the panel models does this).</p>
 </div>
 <div class="section level2">
 <h2 id="a-full-size-study">7. A full-size study<a class="anchor" aria-label="anchor" href="#a-full-size-study"></a>

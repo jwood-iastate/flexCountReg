@@ -158,8 +158,8 @@ models, `type` chooses the quantity:
 | `"response"` (default) | expected observed count |
 | `"true"` | expected true count (with underreporting) |
 | `"prob_reported"` | probability that a count is reported |
-| `"link"` | linear predictor $`X\beta`$ + offset |
-| `"prob"` | matrix of $`P(Y = k)`$, $`k = 0, \dots,`$`max_count` |
+| `"link"` | linear predictor \\X\beta\\ + offset |
+| `"prob"` | matrix of \\P(Y = k)\\, \\k = 0, \dots,\\ `max_count` |
 | `"zero"` | zero-model probability (zero-inflated or hurdle models) |
 
 ``` r
@@ -175,8 +175,8 @@ round(predict(nb_h, newdata = nd, type = "prob", max_count = 4,
 #> [3,] 0.411 0.314 0.162 0.070 0.028 0.015
 ```
 
-With `overflow = TRUE` the last column holds $`P(Y >`$`max_count`$`)`$,
-so each row sums to one.
+With `overflow = TRUE` the last column holds \\P(Y \>\\
+`max_count`\\)\\, so each row sums to one.
 
 For random-parameter models, `method` chooses how the random
 coefficients are handled:
@@ -317,7 +317,7 @@ do.call(rbind, lapply(list(Poisson = po, NB1 = nb1, NB2 = nb_h, PL = pl),
 ### Likelihood-ratio tests
 
 An LR test compares a restricted model with a larger one. The statistic
-$`2(\ell_\text{full} - \ell_\text{restricted})`$ has its usual
+\\2(\ell\_\text{full} - \ell\_\text{restricted})\\ has its usual
 chi-square distribution only when:
 
 1.  **The models are nested.** The restricted model is the larger model
@@ -338,12 +338,12 @@ The families nest as follows:
 
 | Restricted | Larger | Restriction | Null distribution |
 |----|----|----|----|
-| Poisson | NB1, NB2, PLN, PIG1, PIG2, PIG | dispersion = 0 | 50:50 mixture of $`\chi^2_{df-1}`$ and $`\chi^2_{df}`$ |
-| Poisson | GP1, GP2 | dispersion = 0 | $`\chi^2_{df}`$ |
-| Poisson | COM | $`\nu = 1`$ | $`\chi^2_{df}`$ |
-| Poisson | DPO, HYPERPOIS, GAMMACOUNT | $`\phi = 1`$, $`\gamma = 1`$, shape $`= 1`$ | $`\chi^2_{df}`$ |
-| NB1, NB2 | NBP | $`P = 1`$ or $`P = 2`$ | $`\chi^2_{df}`$ |
-| PL | PLG, PLL | $`\alpha = 0`$, $`\sigma = 0`$ | 50:50 mixture |
+| Poisson | NB1, NB2, PLN, PIG1, PIG2, PIG | dispersion = 0 | 50:50 mixture of \\\chi^2\_{df-1}\\ and \\\chi^2\_{df}\\ |
+| Poisson | GP1, GP2 | dispersion = 0 | \\\chi^2\_{df}\\ |
+| Poisson | COM | \\\nu = 1\\ | \\\chi^2\_{df}\\ |
+| Poisson | DPO, HYPERPOIS, GAMMACOUNT | \\\phi = 1\\, \\\gamma = 1\\, shape \\= 1\\ | \\\chi^2\_{df}\\ |
+| NB1, NB2 | NBP | \\P = 1\\ or \\P = 2\\ | \\\chi^2\_{df}\\ |
+| PL | PLG, PLL | \\\alpha = 0\\, \\\sigma = 0\\ | 50:50 mixture |
 
 For NB1, NB2 and the other families in the first row, a dispersion of 0
 is on the boundary of the parameter space (a dispersion cannot be
@@ -353,10 +353,10 @@ ordinary chi-square p-value would be twice too large.
 These comparisons are **not** valid, and no p-value is reported:
 
 - **Poisson vs PL, PLG or PLL.** The Poisson-Lindley family does not
-  contain the Poisson distribution: its variance is at least
-  $`\mu + \mu^2/2`$ for every $`\theta`$.
-- **Poisson vs NBP or SI.** At the Poisson limit, NBP’s power $`P`$ and
-  the Sichel $`\gamma`$ are not identified, so the usual asymptotics
+  contain the Poisson distribution: its variance is at least \\\mu +
+  \mu^2/2\\ for every \\\theta\\.
+- **Poisson vs NBP or SI.** At the Poisson limit, NBP’s power \\P\\ and
+  the Sichel \\\gamma\\ are not identified, so the usual asymptotics
   fail.
 - **Poisson vs PW, PGE or GW.** Their distributions approach Poisson
   only as a parameter goes to infinity.
@@ -452,7 +452,7 @@ not reach its maximum (check its convergence), and no p-value is given.
 [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md)
 and
 [`regCompTable()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTable.md)
-report McFadden’s pseudo-R², $`1 - \ell / \ell_0`$, against an
+report McFadden’s pseudo-R², \\1 - \ell / \ell_0\\, against an
 intercept-only Poisson model on the same rows by default, so it is
 comparable across families. `basemodel` and `variables` choose another
 baseline.

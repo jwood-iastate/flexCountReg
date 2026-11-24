@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -132,11 +138,11 @@ the meanings of their coefficients:</p>
 <td>
 <code>Zero:</code> coefficients model (logit)</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>π</mi><annotation encoding="application/x-tex">\pi</annotation></semantics></math>
-= probability of a structural zero</td>
+<span class="math inline">\(\pi\)</span> = probability of a
+structural zero</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
-= probability of a <em>positive</em> count</td>
+<span class="math inline">\(q\)</span> = probability of a
+<em>positive</em> count</td>
 </tr>
 <tr class="even">
 <td>A positive <code>Zero:</code> coefficient means</td>
@@ -144,15 +150,15 @@ the meanings of their coefficients:</p>
 <td>fewer zeros</td>
 </tr>
 <tr class="odd">
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>=</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(Y = 0)</annotation></semantics></math></td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>π</mi><mo>+</mo><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>π</mi><mo stretchy="false" form="postfix">)</mo><mi>f</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\pi + (1 - \pi) f(0)</annotation></semantics></math></td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>q</mi></mrow><annotation encoding="application/x-tex">1 - q</annotation></semantics></math></td>
+<td><span class="math inline">\(P(Y = 0)\)</span></td>
+<td><span class="math inline">\(\pi + (1 - \pi) f(0)\)</span></td>
+<td><span class="math inline">\(1 - q\)</span></td>
 </tr>
 <tr class="even">
 <td>
 <code>predict(type = "zero")</code> returns</td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>π</mi><annotation encoding="application/x-tex">\pi</annotation></semantics></math></td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>=</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn><mo>−</mo><mi>q</mi></mrow><annotation encoding="application/x-tex">P(Y = 0) = 1 - q</annotation></semantics></math></td>
+<td><span class="math inline">\(\pi\)</span></td>
+<td><span class="math inline">\(P(Y = 0) = 1 - q\)</span></td>
 </tr>
 </tbody>
 </table>
@@ -262,9 +268,9 @@ its standard error is <code>NA</code>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">zinb_const</span><span class="op">)</span><span class="op">$</span><span class="va">coefficients</span><span class="op">[</span><span class="st">"Zero:(Intercept)"</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">]</span></span>
 <span><span class="co">#&gt;   Estimate Std. Error </span></span>
-<span><span class="co">#&gt;  -12.32427   67.71443</span></span>
+<span><span class="co">#&gt;  -12.32361   67.69227</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">zinb_const</span><span class="op">)</span><span class="op">[[</span><span class="st">"Zero:(Intercept)"</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] 4.442605e-06</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] 4.445507e-06</span></span></code></pre></div>
 <p>With covariates, the zero model can describe <em>which</em> students
 have more zeros. In the zero-inflated model a negative
 <code>Zero:ment</code> coefficient means fewer structural zeros among
@@ -280,12 +286,12 @@ at least one article:</p>
 <span><span class="co">#&gt;                    Estimate Std. Error</span></span>
 <span><span class="co">#&gt; Zero:(Intercept) -0.8786574  0.4036952</span></span>
 <span><span class="co">#&gt; Zero:ment        -0.6113860  0.2458692</span></span>
-<span><span class="co">#&gt; Zero:kid5         0.1564024  0.3617611</span></span>
+<span><span class="co">#&gt; Zero:kid5         0.1564023  0.3617611</span></span>
 <span><span class="fu">zc</span><span class="op">(</span><span class="va">hnb</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                     Estimate Std. Error</span></span>
-<span><span class="co">#&gt; Zero:(Intercept)  0.23680758 0.29551909</span></span>
-<span><span class="co">#&gt; Zero:femWomen    -0.25115052 0.15910530</span></span>
-<span><span class="co">#&gt; Zero:marMarried   0.32623628 0.18081834</span></span>
+<span><span class="co">#&gt; Zero:(Intercept)  0.23680759 0.29551911</span></span>
+<span><span class="co">#&gt; Zero:femWomen    -0.25115053 0.15910530</span></span>
+<span><span class="co">#&gt; Zero:marMarried   0.32623628 0.18081835</span></span>
 <span><span class="co">#&gt; Zero:kid5        -0.28525098 0.11113046</span></span>
 <span><span class="co">#&gt; Zero:phd          0.02221526 0.07955718</span></span>
 <span><span class="co">#&gt; Zero:ment         0.08012173 0.01301809</span></span></code></pre></div>
@@ -348,13 +354,11 @@ the fit, not proof of a particular mechanism.</p>
 <div class="section level3">
 <h3 id="which-comparisons-are-valid">Which comparisons are valid<a class="anchor" aria-label="anchor" href="#which-comparisons-are-valid"></a>
 </h3>
-<p>The NB2 model is the zero-inflated NB2 model with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>π</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\pi = 0</annotation></semantics></math>,
-which is on the boundary of the parameter space (an intercept of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mi>∞</mi></mrow><annotation encoding="application/x-tex">-\infty</annotation></semantics></math>
-on the logit scale), so the usual likelihood-ratio test does not apply
-and flexCountReg does not report one. Compare such models with AIC or
-BIC on the same rows, or on held-out data
+<p>The NB2 model is the zero-inflated NB2 model with <span class="math inline">\(\pi = 0\)</span>, which is on the boundary of the
+parameter space (an intercept of <span class="math inline">\(-\infty\)</span> on the logit scale), so the usual
+likelihood-ratio test does not apply and flexCountReg does not report
+one. Compare such models with AIC or BIC on the same rows, or on
+held-out data
 (<code><a href="../articles/predictive-validation.html">vignette("predictive-validation", package = "flexCountReg")</a></code>).
 When a zero-model probability is estimated near 0 or 1, its Wald
 standard errors are unreliable, as the <code>NA</code> above shows.</p>
@@ -368,13 +372,11 @@ process. A <em>zero-truncated sampling design</em> says that zeros
 cannot be observed at all: for example, counts of visits recorded only
 for people who visited at least once. Having no zeros in the data, or
 few zeros by chance, is not the same as truncation. Under truncation the
-likelihood of each observation is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><mi>f</mi><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">f(y) / (1 - f(0))</annotation></semantics></math>
-for
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>≥</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y \ge 1</annotation></semantics></math>;
-this is the positive part of a hurdle model, but fitting a hurdle model
-to truncated data (where no zeros exist to estimate the binary part) is
-not a substitute. flexCountReg does not yet provide a zero-truncated
+likelihood of each observation is <span class="math inline">\(f(y) / (1
+- f(0))\)</span> for <span class="math inline">\(y \ge 1\)</span>; this
+is the positive part of a hurdle model, but fitting a hurdle model to
+truncated data (where no zeros exist to estimate the binary part) is not
+a substitute. flexCountReg does not yet provide a zero-truncated
 estimator.</p>
 </div>
 <div class="section level2">

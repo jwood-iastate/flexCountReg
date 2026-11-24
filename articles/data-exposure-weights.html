@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -80,10 +86,9 @@ events per unit of exposure. Each row is one independent unit (for
 example a road segment, a patient-year or a plot) observed for a known
 <code>exposure</code>, and <code>y</code> is the number of events during
 that exposure. The data are simulated from</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi>i</mi></msub><mo>∼</mo><mtext mathvariant="normal">Poisson</mtext><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>μ</mi><mi>i</mi></msub><mo>=</mo><msub><mtext mathvariant="normal">exposure</mtext><mi>i</mi></msub><mo>×</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mn>0.5</mn><mo>+</mo><mn>0.6</mn><mspace width="0.167em"></mspace><msub><mi>x</mi><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>,</mo></mrow><annotation encoding="application/x-tex">Y_i \sim \text{Poisson}(\mu_i), \qquad
-  \mu_i = \text{exposure}_i \times \exp(-0.5 + 0.6\,x_i),</annotation></semantics></math></p>
-<p>so the true rate per unit of exposure is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mn>0.5</mn><mo>+</mo><mn>0.6</mn><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(-0.5 + 0.6x)</annotation></semantics></math>.</p>
+<p><span class="math display">\[Y_i \sim \text{Poisson}(\mu_i), \qquad
+  \mu_i = \text{exposure}_i \times \exp(-0.5 + 0.6\,x_i),\]</span></p>
+<p>so the true rate per unit of exposure is <span class="math inline">\(\exp(-0.5 + 0.6x)\)</span>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">n</span> <span class="op">&lt;-</span> <span class="fl">400</span></span>
@@ -104,7 +109,8 @@ that exposure. The data are simulated from</p>
 <h2 id="exposure-belongs-in-an-offset">Exposure belongs in an offset<a class="anchor" aria-label="anchor" href="#exposure-belongs-in-an-offset"></a>
 </h2>
 <p>Taking logs of the mean model gives</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mi>μ</mi><mi>i</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mtext mathvariant="normal">exposure</mtext><mi>i</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo></mrow><annotation encoding="application/x-tex">\log\mu_i = \log(\text{exposure}_i) + \beta_0 + \beta_1 x_i,</annotation></semantics></math></p>
+<p><span class="math display">\[\log\mu_i = \log(\text{exposure}_i) +
+\beta_0 + \beta_1 x_i,\]</span></p>
 <p>so the log exposure enters the linear predictor with a coefficient
 fixed at 1: an <em>offset</em>. There are two equivalent ways to supply
 it. Use one or the other in a fit, not both:</p>
@@ -165,9 +171,8 @@ cannot be fitted to it; flexCountReg refuses:</p>
 <span>         error <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">e</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">conditionMessage</a></span><span class="op">(</span><span class="va">e</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "The response must be whole numbers (counts); 263 value(s) are not."</span></span></code></pre></div>
 <p>Keep the count as the response and put the exposure in the offset.
-The fitted model still describes the rate:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\beta_0 + \beta_1 x)</annotation></semantics></math>
-is the expected count per unit of exposure.</p>
+The fitted model still describes the rate: <span class="math inline">\(\exp(\beta_0 + \beta_1 x)\)</span> is the expected
+count per unit of exposure.</p>
 </div>
 <div class="section level3">
 <h3 id="pitfall-logging-the-exposure-twice">Pitfall: logging the exposure twice<a class="anchor" aria-label="anchor" href="#pitfall-logging-the-exposure-twice"></a>

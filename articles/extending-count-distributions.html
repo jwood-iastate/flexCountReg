@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -83,27 +89,20 @@ and are not part of the user-facing interface. Users only see the
 </h2>
 <p>Before writing code, state for the new family:</p>
 <ul>
-<li>its support (here, the counts
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>,</mo><mn>1</mn><mo>,</mo><mn>2</mn><mo>,</mo><mi>…</mi></mrow><annotation encoding="application/x-tex">0, 1, 2, \dots</annotation></semantics></math>);</li>
+<li>its support (here, the counts <span class="math inline">\(0, 1, 2,
+\dots\)</span>);</li>
 <li>its natural parameters and their spaces;</li>
-<li>how the regression enters: in flexCountReg the mean model is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>X</mi><mi>β</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mu = \exp(X\beta)</annotation></semantics></math>
-(times an offset), and each distribution parameter is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>W</mi><mi>δ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(W\delta)</annotation></semantics></math>
-of its own linear predictor, or a logistic function of it for a
-probability (labels such as <code>ln(alpha)</code> and
-<code>logit(rho)</code> show the scale);</li>
-<li>whether
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
-is the actual mean. It is for NB2. For the Poisson-lognormal family the
-mean is
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>μ</mi><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msup><mi>σ</mi><mn>2</mn></msup><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\mu \exp(\sigma^2/2)</annotation></semantics></math>;
-for the generalized Poisson with negative dispersion
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
-is a location parameter; for the double Poisson, hyper-Poisson, gamma
-count and discrete Weibull families flexCountReg solves numerically for
-the natural parameter that makes the mean equal to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>.</li>
+<li>how the regression enters: in flexCountReg the mean model is <span class="math inline">\(\mu = \exp(X\beta)\)</span> (times an offset), and
+each distribution parameter is <span class="math inline">\(\exp(W\delta)\)</span> of its own linear
+predictor, or a logistic function of it for a probability (labels such
+as <code>ln(alpha)</code> and <code>logit(rho)</code> show the
+scale);</li>
+<li>whether <span class="math inline">\(\mu\)</span> is the actual mean.
+It is for NB2. For the Poisson-lognormal family the mean is <span class="math inline">\(\mu \exp(\sigma^2/2)\)</span>; for the generalized
+Poisson with negative dispersion <span class="math inline">\(\mu\)</span> is a location parameter; for the
+double Poisson, hyper-Poisson, gamma count and discrete Weibull families
+flexCountReg solves numerically for the natural parameter that makes the
+mean equal to <span class="math inline">\(\mu\)</span>.</li>
 </ul>
 <p>These choices decide how coefficients are interpreted, so they belong
 in the documentation (<code><a href="../reference/count_families.html">?count_families</a></code>) as well as in the
@@ -264,17 +263,15 @@ the coefficient names; <code>NULL</code> for none</td>
 <tr class="even">
 <td><code>dens</code></td>
 <td>
-<code>function(y, predicted, alpha, sigma, ..., log)</code>:
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>=</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(Y = y)</annotation></semantics></math>
-given the mean parameter <code>predicted</code> and the distribution
-parameters on their natural scale; returns probability 0 (or
-<code>-Inf</code>) outside the parameter space, without warnings,
-because the optimizer tries such values</td>
+<code>function(y, predicted, alpha, sigma, ..., log)</code>: <span class="math inline">\(P(Y = y)\)</span> given the mean parameter
+<code>predicted</code> and the distribution parameters on their natural
+scale; returns probability 0 (or <code>-Inf</code>) outside the
+parameter space, without warnings, because the optimizer tries such
+values</td>
 </tr>
 <tr class="odd">
 <td><code>variance</code></td>
-<td>variance at mean parameter
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
+<td>variance at mean parameter <span class="math inline">\(\mu\)</span>
 (Pearson residuals, documentation tests)</td>
 </tr>
 <tr class="even">
@@ -290,8 +287,7 @@ because the optimizer tries such values</td>
 <td>
 <code>mean</code>, <code>mean_adj</code>
 </td>
-<td>the mean when it is not
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
+<td>the mean when it is not <span class="math inline">\(\mu\)</span>
 </td>
 </tr>
 <tr class="odd">
@@ -414,17 +410,13 @@ and <code>log.p</code>. For the double Poisson:</p>
 <code>.dpo_valid()</code> says which parameter values are in the
 parameter space;</li>
 <li>
-<code>.dpo_logpmf()</code> returns
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>=</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log P(Y = y)</annotation></semantics></math>,
-computed on the log scale;</li>
+<code>.dpo_logpmf()</code> returns <span class="math inline">\(\log
+P(Y = y)\)</span>, computed on the log scale;</li>
 <li>
-<code>.dpo_logcdf()</code> returns
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>≤</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log P(Y \le y)</annotation></semantics></math>
-or
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>&gt;</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log P(Y &gt; y)</annotation></semantics></math>,
-each computed directly, so that tiny upper-tail probabilities keep their
-relative precision (never as
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>≤</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">1 - P(Y \le y)</annotation></semantics></math>);</li>
+<code>.dpo_logcdf()</code> returns <span class="math inline">\(\log
+P(Y \le y)\)</span> or <span class="math inline">\(\log P(Y &gt;
+y)\)</span>, each computed directly, so that tiny upper-tail
+probabilities keep their relative precision (never as <span class="math inline">\(1 - P(Y \le y)\)</span>);</li>
 <li>
 <code>.dpo_qstart()</code> gives a rough starting point for the
 quantile search.</li>
@@ -453,9 +445,8 @@ distribution:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="../reference/Delaporte.html">ddelaporte</a></span><span class="op">(</span><span class="fl">2</span>, mu <span class="op">=</span> <span class="op">-</span><span class="fl">1</span>, rho <span class="op">=</span> <span class="va">rho</span>, k <span class="op">=</span> <span class="va">k</span><span class="op">)</span>,</span>
 <span>                   <span class="fu"><a href="../reference/Delaporte.html">ddelaporte</a></span><span class="op">(</span><span class="fl">2.5</span>, mu <span class="op">=</span> <span class="va">mu</span>, rho <span class="op">=</span> <span class="va">rho</span>, k <span class="op">=</span> <span class="va">k</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] NaN   0</span></span></code></pre></div>
-<p>The log upper tail at 150 is finite, where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>−</mo><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>≤</mo><mn>150</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">1 - P(Y \le 150)</annotation></semantics></math>
-would be 0 in floating point.</p>
+<p>The log upper tail at 150 is finite, where <span class="math inline">\(1 - P(Y \le 150)\)</span> would be 0 in floating
+point.</p>
 </div>
 <div class="section level2">
 <h2 id="through-a-fitted-model">5. Through a fitted model<a class="anchor" aria-label="anchor" href="#through-a-fitted-model"></a>
@@ -557,8 +548,7 @@ error, before it enters the likelihood.</p>
 <ol style="list-style-type: decimal">
 <li>
 <strong>Special cases</strong> against independent implementations,
-for example NB2 with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>→</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha \to 0</annotation></semantics></math>
+for example NB2 with <span class="math inline">\(\alpha \to 0\)</span>
 against <code><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">dpois()</a></code>, or a parameter value that gives a
 geometric distribution.</li>
 <li>
@@ -602,9 +592,8 @@ passes.</p>
 </h2>
 <ul class="task-list">
 <li><label><input type="checkbox">Support, parameters, links and the
-meaning of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>μ</mi><annotation encoding="application/x-tex">\mu</annotation></semantics></math>
-written down</label></li>
+meaning of <span class="math inline">\(\mu\)</span> written
+down</label></li>
 <li><label><input type="checkbox">Public
 <code>d</code>/<code>p</code>/<code>q</code>/<code>r</code> functions
 with roxygen documentation and examples, exported (roxygen writes

@@ -113,7 +113,7 @@ nrow(washington_roads)                # segment-years
 ## Random-parameter models
 
 In a random-parameter model, a coefficient varies across units:
-$`\beta_i = \mu + \sigma \upsilon_i`$. With `group_var`, all
+\\\beta_i = \mu + \sigma \upsilon_i\\. With `group_var`, all
 observations of a segment share one draw of the random parameter, which
 accounts for the panel structure. The model is estimated by maximum
 simulated likelihood with Halton draws; real analyses should use more
@@ -159,24 +159,24 @@ standard deviation of the coefficient:
 
 | `rpardists` | Coefficient | Actual mean | Actual SD |
 |----|----|----|----|
-| `"n"` normal | $`\beta = \mu + \sigma z`$ | $`\mu`$ | $`\sigma`$ |
-| `"ln"` lognormal | $`\beta = \exp(\mu + \sigma z)`$ | $`\exp(\mu + \sigma^2/2)`$ | $`\exp(\mu + \sigma^2/2)\sqrt{\exp(\sigma^2) - 1}`$ |
-| `"g"` gamma | gamma with mean $`\mu`$ and SD $`\sigma`$ | $`\mu`$ | $`\sigma`$ |
-| `"t"` triangular | $`\mu + \sigma T`$, $`T`$ triangular on $`[-1, 1]`$ | $`\mu`$ | $`\sigma/\sqrt{6}`$ |
-| `"u"` uniform | $`\mu + \sigma U`$, $`U`$ uniform on $`[-1, 1]`$ | $`\mu`$ | $`\sigma/\sqrt{3}`$ |
+| `"n"` normal | \\\beta = \mu + \sigma z\\ | \\\mu\\ | \\\sigma\\ |
+| `"ln"` lognormal | \\\beta = \exp(\mu + \sigma z)\\ | \\\exp(\mu + \sigma^2/2)\\ | \\\exp(\mu + \sigma^2/2)\sqrt{\exp(\sigma^2) - 1}\\ |
+| `"g"` gamma | gamma with mean \\\mu\\ and SD \\\sigma\\ | \\\mu\\ | \\\sigma\\ |
+| `"t"` triangular | \\\mu + \sigma T\\, \\T\\ triangular on \\\[-1, 1\]\\ | \\\mu\\ | \\\sigma/\sqrt{6}\\ |
+| `"u"` uniform | \\\mu + \sigma U\\, \\U\\ uniform on \\\[-1, 1\]\\ | \\\mu\\ | \\\sigma/\sqrt{3}\\ |
 
-For the lognormal, $`\mu`$ and $`\sigma`$ are the mean and SD of
-$`\log\beta`$, and the coefficient is positive; for a negative effect,
+For the lognormal, \\\mu\\ and \\\sigma\\ are the mean and SD of
+\\\log\beta\\, and the coefficient is positive; for a negative effect,
 enter the negative of the variable. For the triangular and uniform,
-`St.Dev` is a half-width: the coefficient lies in
-$`[\mu - \sigma, \mu + \sigma]`$.
+`St.Dev` is a half-width: the coefficient lies in \\\[\mu - \sigma,
+\mu + \sigma\]\\.
 
 ### Heterogeneity in means
 
 The mean of a random parameter can depend on covariates, following Wood
-and Gayah (2025, Eq. 2):
-$`\beta_i = \mu + z_i'\delta + \sigma\upsilon_i`$. Each random parameter
-gets its own coefficient for each heterogeneity variable:
+and Gayah (2025, Eq. 2): \\\beta_i = \mu + z_i'\delta +
+\sigma\upsilon_i\\. Each random parameter gets its own coefficient for
+each heterogeneity variable:
 
 ``` r
 
@@ -237,9 +237,9 @@ summary(attr(eb, "eb_coefficients")[, "speed50"])
 ```
 
 A caution about the expected count: with a random parameter the expected
-value of $`\exp(x\beta)`$ must exist. It is infinite when $`\beta`$ is
-lognormal and $`x > 0`$, and when $`\beta`$ is gamma and
-$`x\sigma^2/\mu \ge 1`$. In those cases `"Exact"` and `"Simulated"`
+value of \\\exp(x\beta)\\ must exist. It is infinite when \\\beta\\ is
+lognormal and \\x \> 0\\, and when \\\beta\\ is gamma and
+\\x\sigma^2/\mu \ge 1\\. In those cases `"Exact"` and `"Simulated"`
 predictions return `Inf` with a warning (a simulated average would
 otherwise depend on the number of draws without converging). This is a
 property of the model, not a numerical failure: changing the
@@ -273,9 +273,6 @@ re_models <- list(
 #> Warning: The Hessian is not negative definite at the estimates, so the standard
 #> errors of ln(a-1) are NA. The estimate may be on the boundary of the parameter
 #> space or not at a maximum.
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of ln(theta) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 do.call(rbind, lapply(names(re_models), function(nm) {
   cbind(model = nm,
         glance(re_models[[nm]])[, c("logLik", "AIC", "BIC", "nobs",
@@ -300,12 +297,12 @@ identified and is reported as `NA`:
 
 tidy(re_models$PoisLindRE)
 #> # A tibble: 4 × 6
-#>   term        component    estimate std.error statistic   p.value
-#>   <chr>       <chr>           <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 (Intercept) mean           -8.77     0.512     -17.1   1.22e-65
-#> 2 lnaadt      mean            1.11     0.0603     18.5   4.18e-76
-#> 3 speed50     mean           -0.561    0.132      -4.24  2.19e- 5
-#> 4 ln(theta)   distribution   -7.13    NA          NA    NA    
+#>   term        component    estimate std.error statistic  p.value
+#>   <chr>       <chr>           <dbl>     <dbl>     <dbl>    <dbl>
+#> 1 (Intercept) mean           -8.77     0.516     -17.0  9.97e-65
+#> 2 lnaadt      mean            1.11     0.0607     18.3  4.99e-75
+#> 3 speed50     mean           -0.561    0.132      -4.24 2.23e- 5
+#> 4 ln(theta)   distribution   -7.13     2.16       -3.30 9.56e- 4
 ```
 
 Its fit statistics are close to those of the other two models, but with
@@ -324,17 +321,14 @@ standard errors resample whole panels:
 re_robust <- poisLind.re(Total_crashes ~ lnaadt + speed50, group_var = "ID",
                          data = washington_roads, offset = "lnlength",
                          method = "BFGS", stderr = "robust")
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of ln(theta) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 tidy(re_robust)
 #> # A tibble: 4 × 6
 #>   term        component    estimate std.error statistic  p.value
 #>   <chr>       <chr>           <dbl>     <dbl>     <dbl>    <dbl>
-#> 1 (Intercept) mean           -8.77     0.599     -14.6  1.36e-48
-#> 2 lnaadt      mean            1.11     0.0702     15.9  1.41e-56
-#> 3 speed50     mean           -0.561    0.131      -4.29 1.79e- 5
-#> 4 ln(theta)   distribution   -7.13     0.0642   -111.   0    
+#> 1 (Intercept) mean           -8.77     0.607     -14.4  2.76e-47
+#> 2 lnaadt      mean            1.11     0.0712     15.6  4.96e-55
+#> 3 speed50     mean           -0.561    0.131      -4.28 1.85e- 5
+#> 4 ln(theta)   distribution   -7.13     0.594     -12.0  3.35e-33
 ```
 
 Cross-sectional models can also be fitted with `stderr = "robust"` or

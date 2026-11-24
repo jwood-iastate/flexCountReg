@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -74,17 +80,12 @@ latent-class version is in
 <div class="section level2">
 <h2 id="what-a-finite-mixture-is">What a finite mixture is<a class="anchor" aria-label="anchor" href="#what-a-finite-mixture-is"></a>
 </h2>
-<p>A finite mixture with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-components draws an unobserved component
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math>
-with probabilities
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>π</mi><mn>1</mn></msub><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>π</mi><mi>K</mi></msub></mrow><annotation encoding="application/x-tex">\pi_1, \dots, \pi_K</annotation></semantics></math>
-and then draws <strong>one</strong> count from that component’s
-distribution:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>=</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><msub><mi>π</mi><mi>k</mi></msub><msub><mi>f</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p>A finite mixture with <span class="math inline">\(K\)</span>
+components draws an unobserved component <span class="math inline">\(C\)</span> with probabilities <span class="math inline">\(\pi_1, \dots, \pi_K\)</span> and then draws
+<strong>one</strong> count from that component’s distribution:</p>
+<p><span class="math display">\[
 P(Y = y) = \sum_{k=1}^K \pi_k f_k(y).
-</annotation></semantics></math></p>
+\]</span></p>
 <p>Four ideas are easily confused:</p>
 <ul>
 <li>
@@ -94,17 +95,14 @@ description of a skewed, multimodal or heavy-tailed count
 distribution.</li>
 <li>
 <strong>Latent-class interpretation.</strong> The same model, read
-as saying that the population consists of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-unobserved groups. That reading is an extra substantive assumption; the
-likelihood is identical, and a good fit with two components does not
-prove that two real groups exist.</li>
+as saying that the population consists of <span class="math inline">\(K\)</span> unobserved groups. That reading is an
+extra substantive assumption; the likelihood is identical, and a good
+fit with two components does not prove that two real groups exist.</li>
 <li>
 <strong>Convolution (a sum of counts).</strong> Adding independent
-counts from two distributions,
-e.g. <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>=</mo><msub><mi>Y</mi><mn>1</mn></msub><mo>+</mo><msub><mi>Y</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">Y = Y_1 + Y_2</annotation></semantics></math>,
-gives a different distribution. A mixture <em>selects</em> one
-component; a convolution <em>adds</em> them.</li>
+counts from two distributions, e.g. <span class="math inline">\(Y = Y_1
++ Y_2\)</span>, gives a different distribution. A mixture
+<em>selects</em> one component; a convolution <em>adds</em> them.</li>
 <li>
 <strong>Within-family (continuous) mixing.</strong> Families such as
 PLN, PGE and NBGE are themselves Poisson distributions mixed over a
@@ -140,14 +138,14 @@ be for a mixture of Poisson distributions with different means.</p>
 <h2 id="mean-and-variance-of-a-mixture">Mean and variance of a mixture<a class="anchor" aria-label="anchor" href="#mean-and-variance-of-a-mixture"></a>
 </h2>
 <p>For a mixture, the mean and variance are</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>π</mi><mi>k</mi></msub><msub><mi>m</mi><mi>k</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><mi>V</mi><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>π</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>V</mi><mi>k</mi></msub><mo>+</mo><msubsup><mi>m</mi><mi>k</mi><mn>2</mn></msubsup><mo stretchy="false" form="postfix">)</mo><mo>−</mo><msup><mi>m</mi><mn>2</mn></msup><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>π</mi><mi>k</mi></msub><msub><mi>V</mi><mi>k</mi></msub><mo>+</mo><munder><mo>∑</mo><mi>k</mi></munder><msub><mi>π</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>m</mi><mi>k</mi></msub><mo>−</mo><mi>m</mi><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
+<p><span class="math display">\[
 m = \sum_k \pi_k m_k, \qquad
 V = \sum_k \pi_k (V_k + m_k^2) - m^2
   = \sum_k \pi_k V_k + \sum_k \pi_k (m_k - m)^2 .
-</annotation></semantics></math></p>
-<p>For the generating model
-(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>π</mi><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>0.6</mn><mo>,</mo><mn>0.4</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\pi = (0.6, 0.4)</annotation></semantics></math>,
-means 1 and 5, Poisson variances equal to the means) this gives:</p>
+\]</span></p>
+<p>For the generating model (<span class="math inline">\(\pi = (0.6,
+0.4)\)</span>, means 1 and 5, Poisson variances equal to the means) this
+gives:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.6</span>, <span class="fl">0.4</span><span class="op">)</span></span>
 <span><span class="va">m_k</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">5</span><span class="op">)</span></span>
@@ -156,15 +154,11 @@ means 1 and 5, Poisson variances equal to the means) this gives:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>mean <span class="op">=</span> <span class="va">m</span>, variance <span class="op">=</span> <span class="va">V</span><span class="op">)</span></span>
 <span><span class="co">#&gt;     mean variance </span></span>
 <span><span class="co">#&gt;     2.60     6.44</span></span></code></pre></div>
-<p>The variance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>6.44</mn><annotation encoding="application/x-tex">6.44</annotation></semantics></math>
-is the within-component variance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>2.6</mn><annotation encoding="application/x-tex">2.6</annotation></semantics></math>
-plus the between-component variance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>3.84</mn><annotation encoding="application/x-tex">3.84</annotation></semantics></math>.
-A mixture of Poisson distributions is therefore always at least
-equidispersed; mixtures of <em>underdispersed</em> families need not
-be.</p>
+<p>The variance <span class="math inline">\(6.44\)</span> is the
+within-component variance <span class="math inline">\(2.6\)</span> plus
+the between-component variance <span class="math inline">\(3.84\)</span>. A mixture of Poisson distributions
+is therefore always at least equidispersed; mixtures of
+<em>underdispersed</em> families need not be.</p>
 </div>
 <div class="section level2">
 <h2 id="fitting-a-two-component-poisson-mixture">Fitting a two-component Poisson mixture<a class="anchor" aria-label="anchor" href="#fitting-a-two-component-poisson-mixture"></a>
@@ -216,7 +210,7 @@ be.</p>
 <span><span class="co">#&gt; N: 500</span></span>
 <span><span class="co">#&gt; Entropy: 130.547 | relative entropy: 0.623 </span></span>
 <span><span class="co">#&gt; Starts: 5 | 5 reached the selected log-likelihood</span></span>
-<span><span class="co">#&gt; Observed information: positive definite (condition number 19.9 ) | max |gradient|: 7.72e-07 </span></span>
+<span><span class="co">#&gt; Observed information: positive definite (condition number 19.9 ) | max |gradient|: 1.4e-07 </span></span>
 <span><span class="co">#&gt; No likelihood-ratio test of the number of components is reported (non-standard distribution).</span></span></code></pre></div>
 <p>The component intercepts are on the log scale, so the estimated
 component means are <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code> of them; the mixing coefficient
@@ -322,15 +316,11 @@ inputs agree.</p>
 <h2 id="plotting-the-fitted-distribution">Plotting the fitted distribution<a class="anchor" aria-label="anchor" href="#plotting-the-fitted-distribution"></a>
 </h2>
 <p><code>predict(type = "prob")</code> returns the mixture probabilities
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>Y</mi><mo>=</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(Y = y)</annotation></semantics></math>
-on a finite grid; <code>overflow = TRUE</code> adds the probability of
-the tail beyond the grid, so nothing is silently dropped. The weighted
-contributions
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>π</mi><mi>k</mi></msub><msub><mi>f</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>y</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\pi_k f_k(y)</annotation></semantics></math>
-of the components add up to the total. (Each
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>f</mi><mi>k</mi></msub><annotation encoding="application/x-tex">f_k</annotation></semantics></math>
-alone sums to one; the weighted contributions sum to
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>π</mi><mi>k</mi></msub><annotation encoding="application/x-tex">\pi_k</annotation></semantics></math>.)</p>
+<span class="math inline">\(P(Y = y)\)</span> on a finite grid;
+<code>overflow = TRUE</code> adds the probability of the tail beyond the
+grid, so nothing is silently dropped. The weighted contributions <span class="math inline">\(\pi_k f_k(y)\)</span> of the components add up to
+the total. (Each <span class="math inline">\(f_k\)</span> alone sums to
+one; the weighted contributions sum to <span class="math inline">\(\pi_k\)</span>.)</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">max_count</span> <span class="op">&lt;-</span> <span class="fl">12</span></span>
 <span><span class="va">P</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit2</span>, newdata <span class="op">=</span> <span class="va">nd</span>, type <span class="op">=</span> <span class="st">"prob"</span>, max_count <span class="op">=</span> <span class="va">max_count</span>,</span>
@@ -360,11 +350,10 @@ alone sums to one; the weighted contributions sum to
 <span>       lty <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="cn">NA</span><span class="op">)</span>, lwd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">6</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="cn">NA</span><span class="op">)</span>, pch <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">19</span><span class="op">)</span>,</span>
 <span>       col <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"grey70"</span>, <span class="st">"black"</span>, <span class="st">"black"</span>, <span class="st">"firebrick"</span><span class="op">)</span>, bty <span class="op">=</span> <span class="st">"n"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="finite-mixture-getting-started_files/figure-html/pmf-plot-1.png" class="r-plt" alt="" width="672"></p>
-<p>The last bar is the tail bin
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>Y</mi><mo>&gt;</mo><mn>12</mn></mrow><annotation encoding="application/x-tex">Y &gt; 12</annotation></semantics></math>.
-Note that the component curves are weighted contributions; they are not
-the probabilities of class membership given a count. Those posterior
-probabilities are a different quantity:</p>
+<p>The last bar is the tail bin <span class="math inline">\(Y &gt;
+12\)</span>. Note that the component curves are weighted contributions;
+they are not the probabilities of class membership given a count. Those
+posterior probabilities are a different quantity:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">post</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/component_probs.html">component_probs</a></span><span class="op">(</span><span class="va">fit2</span>, conditioning <span class="op">=</span> <span class="st">"posterior"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>y <span class="op">=</span> <span class="va">y</span>, <span class="va">post</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/order.html" class="external-link">order</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">250</span>, <span class="fl">350</span>, <span class="fl">450</span>, <span class="fl">500</span><span class="op">)</span><span class="op">]</span>, <span class="op">]</span>, <span class="fl">3</span><span class="op">)</span></span>
@@ -404,21 +393,17 @@ mixture are compared on the same rows with information criteria:</p>
 <span><span class="co">#&gt; 4 3 Poisson components -1031.950  5 2073.901 2094.974</span></span>
 <span><span class="va">fit3</span><span class="op">$</span><span class="va">model</span><span class="op">$</span><span class="va">classes</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"label"</span>, <span class="st">"prior_share"</span>, <span class="st">"mean_count"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;                 label prior_share   mean_count</span></span>
-<span><span class="co">#&gt; Component1 Component1  0.03284512 2.046596e-05</span></span>
+<span><span class="co">#&gt; Component1 Component1  0.03284512 2.320771e-05</span></span>
 <span><span class="co">#&gt; Component2 Component2  0.59408926 1.127026e+00</span></span>
 <span><span class="co">#&gt; Component3 Component3  0.37306562 4.938665e+00</span></span></code></pre></div>
 <p>No likelihood-ratio p-value is given for the number of components.
 The usual chi-square reference distribution does not apply when
-comparing
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>K</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">K + 1</annotation></semantics></math>
-components: under the smaller model, the extra component’s proportion is
-at the boundary (zero) or its parameters are not identified, which
-breaks the regularity conditions of the test. <code><a href="../reference/regCompTest.html">regCompTest()</a></code>
-refuses mixture models for this reason. Use information criteria on the
-same sample, the stability of the solution across starts and,
-preferably, held-out log scores (see
+comparing <span class="math inline">\(K\)</span> with <span class="math inline">\(K + 1\)</span> components: under the smaller
+model, the extra component’s proportion is at the boundary (zero) or its
+parameters are not identified, which breaks the regularity conditions of
+the test. <code><a href="../reference/regCompTest.html">regCompTest()</a></code> refuses mixture models for this
+reason. Use information criteria on the same sample, the stability of
+the solution across starts and, preferably, held-out log scores (see
 <code><a href="../articles/predictive-validation.html">vignette("predictive-validation", package = "flexCountReg")</a></code>).
 Also look at what an extra component does. Here the third component has
 a share of about 3% and an expected count of practically zero: it is a
@@ -459,11 +444,10 @@ uncertainty.</p>
 <h2 id="limitations">Limitations<a class="anchor" aria-label="anchor" href="#limitations"></a>
 </h2>
 <ul>
-<li>A mixture with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
-components can describe a skewed or heavy-tailed distribution without
-the components corresponding to real groups. Interpreting components as
-subpopulations needs external evidence.</li>
+<li>A mixture with <span class="math inline">\(K\)</span> components can
+describe a skewed or heavy-tailed distribution without the components
+corresponding to real groups. Interpreting components as subpopulations
+needs external evidence.</li>
 <li>Components with similar means and small shares are weakly
 identified; their standard errors (from the observed information) may be
 unreliable. Check <code>fit$model$numerical</code>, the start table and,

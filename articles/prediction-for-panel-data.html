@@ -10,7 +10,13 @@
 <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- mathjax math --><script src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js" integrity="sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI=" crossorigin="anonymous"></script><script>
+  window.MathJax = {
+    chtml: {
+      fontURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/output/chtml/fonts/woff-v2"
+    }
+  };
+</script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -97,17 +103,13 @@ duplicated as an observation.</p>
 <div class="section level2">
 <h2 id="the-model">The model<a class="anchor" aria-label="anchor" href="#the-model"></a>
 </h2>
-<p>Each patient
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
-has a random intercept
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>b</mi><mi>i</mi></msub><mo>∼</mo><mi>N</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>μ</mi><mi>b</mi></msub><mo>,</mo><msubsup><mi>σ</mi><mi>b</mi><mn>2</mn></msubsup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">b_i \sim N(\mu_b, \sigma_b^2)</annotation></semantics></math>
-shared by their four periods
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
-and given
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>b</mi><mi>i</mi></msub><annotation encoding="application/x-tex">b_i</annotation></semantics></math>
-the counts are NB2 with mean</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>μ</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>b</mi><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">progabide</mtext><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mn>2</mn></msub><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">lbase</mtext><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mn>3</mn></msub><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">lage</mtext><mi>i</mi></msub><mo>+</mo><msub><mi>β</mi><mn>4</mn></msub><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">V4</mtext><mi>t</mi></msub><mo stretchy="false" form="postfix">)</mo><mi>.</mi></mrow><annotation encoding="application/x-tex">\mu_{it} = \exp(b_i + \beta_1\,\text{progabide}_i +
-\beta_2\,\text{lbase}_i + \beta_3\,\text{lage}_i + \beta_4\,\text{V4}_t).</annotation></semantics></math></p>
+<p>Each patient <span class="math inline">\(i\)</span> has a random
+intercept <span class="math inline">\(b_i \sim N(\mu_b,
+\sigma_b^2)\)</span> shared by their four periods <span class="math inline">\(t\)</span>, and given <span class="math inline">\(b_i\)</span> the counts are NB2 with mean</p>
+<p><span class="math display">\[\mu_{it} = \exp(b_i +
+\beta_1\,\text{progabide}_i +
+\beta_2\,\text{lbase}_i + \beta_3\,\text{lage}_i +
+\beta_4\,\text{V4}_t).\]</span></p>
 <p>The intercept is in <code>rpar_formula</code> and removed from
 <code>formula</code>, so the treatment enters as a 0/1 variable rather
 than a factor with both levels. <code>group_var = "subject"</code> makes

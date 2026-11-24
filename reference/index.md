@@ -3,12 +3,16 @@
 ## Count regression models
 
 Estimate count models with flexible distributions, underreporting,
-random parameters and random effects.
+random parameters, random effects and fixed effects.
 
 - [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
   : Count regression models
 - [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   : Random Parameters Count Regression Models
+- [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
+  : Fixed-effects count regression
+- [`cre_test()`](https://jwood-iastate.github.io/flexCountReg/reference/cre_test.md)
+  : Test of correlated random effects (random against fixed effects)
 - [`count_families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
   [`count-families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
   : Count Families for countreg() and countreg_rp()

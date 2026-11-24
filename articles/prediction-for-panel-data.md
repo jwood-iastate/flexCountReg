@@ -38,14 +38,13 @@ epil$progabide <- as.numeric(epil$trt == "progabide")
 
 ## The model
 
-Each patient $`i`$ has a random intercept
-$`b_i \sim N(\mu_b, \sigma_b^2)`$ shared by their four periods $`t`$,
-and given $`b_i`$ the counts are NB2 with mean
+Each patient \\i\\ has a random intercept \\b_i \sim N(\mu_b,
+\sigma_b^2)\\ shared by their four periods \\t\\, and given \\b_i\\ the
+counts are NB2 with mean
 
-``` math
-\mu_{it} = \exp(b_i + \beta_1\,\text{progabide}_i +
-\beta_2\,\text{lbase}_i + \beta_3\,\text{lage}_i + \beta_4\,\text{V4}_t).
-```
+\\\mu\_{it} = \exp(b_i + \beta_1\\\text{progabide}\_i +
+\beta_2\\\text{lbase}\_i + \beta_3\\\text{lage}\_i +
+\beta_4\\\text{V4}\_t).\\
 
 The intercept is in `rpar_formula` and removed from `formula`, so the
 treatment enters as a 0/1 variable rather than a factor with both

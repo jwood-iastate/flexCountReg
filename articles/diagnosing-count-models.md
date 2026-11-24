@@ -22,9 +22,9 @@ one covariate `x`:
 
 | Response | True model | Problem when fitting `y ~ x` with Poisson |
 |----|----|----|
-| `y_ok` | Poisson, $`\log\mu = 0.5 + 0.8x`$ | none (the reference case) |
-| `y_curve` | Poisson, $`\log\mu = 0.3 + 0.8x + 0.6x^2`$ | the mean is missing the $`x^2`$ term |
-| `y_disp` | NB2, $`\log\mu = 0.5 + 0.8x`$, $`\alpha = 0.8`$ | the variance is too small (overdispersion) |
+| `y_ok` | Poisson, \\\log\mu = 0.5 + 0.8x\\ | none (the reference case) |
+| `y_curve` | Poisson, \\\log\mu = 0.3 + 0.8x + 0.6x^2\\ | the mean is missing the \\x^2\\ term |
+| `y_disp` | NB2, \\\log\mu = 0.5 + 0.8x\\, \\\alpha = 0.8\\ | the variance is too small (overdispersion) |
 
 ``` r
 
@@ -67,7 +67,7 @@ separate the two.
 
 ## Residuals against a predictor: is the mean right?
 
-Response residuals ($`y - \hat\mu`$) plotted against a covariate should
+Response residuals (\\y - \hat\mu\\) plotted against a covariate should
 scatter around zero with no trend. A smooth curve through them (here
 [`lowess()`](https://rdrr.io/r/stats/lowess.html)) makes a trend
 visible:
@@ -101,7 +101,7 @@ round(c(before = pearson(curve_lin), after = pearson(curve_quad)), 2)
 #>   1.71   0.98
 ```
 
-The U-shaped trend of the linear model disappears when $`x^2`$ is added,
+The U-shaped trend of the linear model disappears when \\x^2\\ is added,
 and the Pearson dispersion returns to about 1: the “overdispersion” was
 a missing mean term, not extra variance.
 
@@ -217,7 +217,7 @@ par(op)
 ```
 
 Under the Poisson model far more than 5% of the residuals lie outside
-$`\pm 2`$, at all fitted means; under NB2 they do not.
+\\\pm 2\\, at all fitted means; under NB2 they do not.
 
 ## Zeros and exceedances: calibration of probabilities
 
@@ -313,7 +313,7 @@ models.
 
 The linear model’s cumulative residuals rise, fall and rise again and
 leave the bounds: it under-predicts at both ends of `x` and
-over-predicts in the middle, the signature of a missing $`x^2`$ term.
+over-predicts in the middle, the signature of a missing \\x^2\\ term.
 The quadratic model’s curve stays within the bounds.
 
 ### A missing indicator: a change of direction at a threshold
@@ -406,7 +406,7 @@ CURE plot along lnaadt for the model without the high-volume indicator.
 The curve stays within the bounds up to `lnaadt` of about 8.8, then
 falls steeply below the lower bound until about 9.2 and climbs back
 above it: the model over-predicts crashes on segments just below about
-10,000 vehicles per day ($`\log(10000) \approx 9.21`$) and
+10,000 vehicles per day (\\\log(10000) \approx 9.21\\) and
 under-predicts them above it. That suggests a threshold in traffic
 volume, so an indicator for segments with more than 10,000 vehicles per
 day (`AADT10kplus`) is added, and, to check whether the effect of volume
@@ -504,7 +504,7 @@ cross-validated splits are more reliable.
 | CURE trends differ between subgroups | missing interaction | interaction term; recheck |
 | Too few zeros and large counts expected (rootogram, calibration) | variance too small | dispersion-flexible family; compare on held-out data |
 | Too many zeros observed, rest fits | possible zero process | zero-inflated or hurdle model (`zero_formula`); check other explanations first |
-| Quantile residuals beyond $`\pm 2`$ more than about 5% of the time | variance or tail misfit | rootogram and calibration to locate it |
+| Quantile residuals beyond \\\pm 2\\ more than about 5% of the time | variance or tail misfit | rootogram and calibration to locate it |
 
 None of these patterns identifies a unique distribution: several
 families can produce the same rootogram, and excess zeros can come from

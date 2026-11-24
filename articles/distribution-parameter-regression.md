@@ -20,12 +20,10 @@ between groups of units?
 
 To know the right answer, the data are simulated. A covariate `x`
 changes the mean; a binary covariate `z` changes only the NB2 dispersion
-$`\alpha`$:
+\\\alpha\\:
 
-``` math
-\mu = \exp(1 + 0.5x), \qquad \alpha = \exp(-1 + 1.2z), \qquad
-  \text{Var}(Y) = \mu + \alpha\mu^2.
-```
+\\\mu = \exp(1 + 0.5x), \qquad \alpha = \exp(-1 + 1.2z), \qquad
+\text{Var}(Y) = \mu + \alpha\mu^2.\\
 
 ``` r
 
@@ -39,8 +37,8 @@ sim$y <- rnbinom(n, size = 1 / exp(-1 + 1.2 * sim$z),
 ## A constant dispersion, then a dispersion model
 
 `dis_param_formula_1` gives a formula for the first distribution
-parameter; for NB2 that is $`\alpha`$, modelled on the log scale:
-$`\ln\alpha = W\delta`$.
+parameter; for NB2 that is \\\alpha\\, modelled on the log scale:
+\\\ln\alpha = W\delta\\.
 ([`?count_families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
 lists the parameter and its link for every family.)
 
@@ -138,7 +136,7 @@ dispersion.
 
 A dispersion model should not stand in for a sensible mean model. Here a
 binary covariate `g` raises the mean and the dispersion is constant
-($`\ln\alpha = -1`$, $`\alpha = 0.37`$). The first model leaves `g` out
+(\\\ln\alpha = -1\\, \\\alpha = 0.37\\). The first model leaves `g` out
 of the mean but lets the dispersion depend on it; the second puts `g` in
 the mean:
 
@@ -164,10 +162,10 @@ round(cbind(wrong_mean = cw, right_mean = cr), 3)
 
 With `g` missing from the mean, the counts in each `g` group are
 systematically above or below the fitted mean, and that misfit is read
-as extra variation: the estimated $`\alpha`$ for `g = 0` is 0.78 instead
+as extra variation: the estimated \\\alpha\\ for `g = 0` is 0.78 instead
 of 0.37, and the `g` coefficient of the dispersion is 3.3 standard
 errors from zero although the true dispersion does not depend on `g`.
-With `g` in the mean, $`\alpha`$ is estimated at 0.36 and the `g`
+With `g` in the mean, \\\alpha\\ is estimated at 0.36 and the `g`
 dispersion effect is 0.1 standard errors from zero. Check the mean model
 first (residuals against covariates; see
 [`vignette("diagnosing-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/diagnosing-count-models.md)),
@@ -195,14 +193,14 @@ sum(residuals(ab_pois, type = "pearson")^2) / (nobs(ab_pois) - 5)
 The Pearson dispersion is well below 1. Several families allow
 underdispersion; two of them:
 
-- `DPO`, the double Poisson, with precision $`\phi`$: $`\phi > 1`$ is
-  underdispersed, $`\phi = 1`$ Poisson.
+- `DPO`, the double Poisson, with precision \\\phi\\: \\\phi \> 1\\ is
+  underdispersed, \\\phi = 1\\ Poisson.
 - `GAMMACOUNT`, the number of events of a renewal process with gamma
-  waiting times of shape $`a`$: $`a > 1`$ (more regular than random
-  arrivals) is underdispersed, $`a = 1`$ Poisson.
+  waiting times of shape \\a\\: \\a \> 1\\ (more regular than random
+  arrivals) is underdispersed, \\a = 1\\ Poisson.
 
-In flexCountReg both are parameterized by their exact mean,
-$`E[Y] = \exp(X\beta)`$, so their coefficients mean the same as Poisson
+In flexCountReg both are parameterized by their exact mean, \\E\[Y\] =
+\exp(X\beta)\\, so their coefficients mean the same as Poisson
 coefficients. Neither family has a closed-form mean, so the natural
 parameter is found for each observation by solving the mean equation
 numerically; these fits are slower than closed-form families.
@@ -225,7 +223,7 @@ data.frame(
 
 Both estimate a shape parameter above 1 (underdispersion) and fit far
 better than the Poisson model. Poisson is a special case of both (at
-$`\phi = 1`$ and $`a = 1`$, interior points), so their summaries report
+\\\phi = 1\\ and \\a = 1\\, interior points), so their summaries report
 a likelihood-ratio test against it:
 
 ``` r

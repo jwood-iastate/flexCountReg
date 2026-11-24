@@ -17,28 +17,26 @@ library(flexCountReg)
 
 ## The model
 
-The true count $`Y`$ follows a count distribution with mean
-$`\mu = \exp(X\beta)`$. Each event is reported independently with
-probability $`p = F(Z\gamma)`$, where $`F`$ is the logistic
+The true count \\Y\\ follows a count distribution with mean \\\mu =
+\exp(X\beta)\\. Each event is reported independently with probability
+\\p = F(Z\gamma)\\, where \\F\\ is the logistic
 (`underreport_family = "logit"`, the default) or normal (`"probit"`)
 distribution function. The reported count is a binomial thinning of the
 true count:
 
-``` math
-Y^* \mid Y \sim \mathrm{Binomial}(Y, p), \qquad E[Y^*] = p\,\mu.
-```
+\\Y^\* \mid Y \sim \mathrm{Binomial}(Y, p), \qquad E\[Y^\*\] = p\\\mu.\\
 
 For the families that allow it
 ([`?count_families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
 lists them and the variance of the reported counts), the reported counts
-follow the same family with mean $`p\mu`$. The fitted model reports
+follow the same family with mean \\p\mu\\. The fitted model reports
 three quantities:
 
 | `predict(type = )` | Quantity                         |
 |--------------------|----------------------------------|
-| `"response"`       | expected reported count $`p\mu`$ |
-| `"true"`           | expected true count $`\mu`$      |
-| `"prob_reported"`  | reporting probability $`p`$      |
+| `"response"`       | expected reported count \\p\mu\\ |
+| `"true"`           | expected true count \\\mu\\      |
+| `"prob_reported"`  | reporting probability \\p\\      |
 
 `zero_formula` and `underreport_formula` cannot be combined: both act on
 the zeros.
@@ -46,7 +44,7 @@ the zeros.
 ## What the reported counts cannot tell apart
 
 The reported counts depend on the two parts only through the product
-$`p\mu`$. With a constant reporting probability, $`p\,\exp(\beta_0)`$ is
+\\p\mu\\. With a constant reporting probability, \\p\\\exp(\beta_0)\\ is
 all the data can identify: a lower true rate with complete reporting and
 a higher true rate with incomplete reporting give exactly the same
 reported counts. flexCountReg refuses this model:
@@ -76,7 +74,7 @@ also act on the true counts. In practice that information comes from:
   knowledge;
 - **the functional form** of the link: with a logit or probit link, the
   reported mean is not log-linear in the reporting variables, and the
-  curvature carries some information about the *level* of $`p`$;
+  curvature carries some information about the *level* of \\p\\;
 - **external information**, such as known reporting probabilities or a
   validation study of true counts.
 
@@ -85,11 +83,10 @@ not by itself make the model identified, as the simulations below show.
 
 ## A simulation with known truth
 
-The true count is NB2 with mean $`\exp(1 + 0.5x)`$ and dispersion
-$`\alpha = 0.5`$. A reporting variable $`w \sim U(0, 1)`$ affects only
-the reporting probability,
-$`p = \mathrm{logit}^{-1}(\gamma_0 + \gamma_1 w)`$. Two designs differ
-in how much the reporting probability varies:
+The true count is NB2 with mean \\\exp(1 + 0.5x)\\ and dispersion
+\\\alpha = 0.5\\. A reporting variable \\w \sim U(0, 1)\\ affects only
+the reporting probability, \\p = \mathrm{logit}^{-1}(\gamma_0 + \gamma_1
+w)\\. Two designs differ in how much the reporting probability varies:
 
 ``` r
 
@@ -133,7 +130,7 @@ lapply(fits, function(m) round(summary(m)$coefficients[, 1:2], 3))
 #> (Intercept)                   1.089      0.337
 #> x                             0.541      0.024
 #> ln(alpha)                    -0.711      0.075
-#> Underreporting:(Intercept)    1.201      1.236
+#> Underreporting:(Intercept)    1.201      1.237
 #> Underreporting:w             -1.936      0.836
 #> 
 #> $strong
@@ -145,17 +142,17 @@ lapply(fits, function(m) round(summary(m)$coefficients[, 1:2], 3))
 #> Underreporting:w             -5.234      0.535
 ```
 
-The truth is $`\beta_0 = 1`$, $`\beta_x = 0.5`$ and
-$`(\gamma_0, \gamma_1)`$ = (1.5, -2) or (3, -5). In both designs, the
-effect of $`x`$ on the true count is estimated precisely: it is
-identified whether or not the reporting model is right, because $`x`$
-does not enter the reporting model. The split between the true-count
-level and the reporting level is the hard part. In the weak design the
-standard errors of the two intercepts are large: the logit curve over
-the range of $`w`$ is close to log-linear, so a log-linear effect of
-$`w`$ on the reported mean fits almost as well. In the strong design,
-the reporting probability approaches 1 for small $`w`$, and the
-flattening of the curve there pins down its level.
+The truth is \\\beta_0 = 1\\, \\\beta_x = 0.5\\ and \\(\gamma_0,
+\gamma_1)\\ = (1.5, -2) or (3, -5). In both designs, the effect of \\x\\
+on the true count is estimated precisely: it is identified whether or
+not the reporting model is right, because \\x\\ does not enter the
+reporting model. The split between the true-count level and the
+reporting level is the hard part. In the weak design the standard errors
+of the two intercepts are large: the logit curve over the range of \\w\\
+is close to log-linear, so a log-linear effect of \\w\\ on the reported
+mean fits almost as well. In the strong design, the reporting
+probability approaches 1 for small \\w\\, and the flattening of the
+curve there pins down its level.
 
 ### Recovery over replicates
 
@@ -202,8 +199,8 @@ recovery_table
 #>   design       parameter truth   mean median    sd converged warned
 #> 1   weak     (Intercept)   1.0  1.167  1.019 0.525        20     11
 #> 2   weak               x   0.5  0.501  0.505 0.024        20     11
-#> 3   weak Rep:(Intercept)   1.5  1.498  1.295 1.571        20     11
-#> 4   weak           Rep:w  -2.0 -2.214 -1.820 1.061        20     11
+#> 3   weak Rep:(Intercept)   1.5  1.501  1.295 1.573        20     11
+#> 4   weak           Rep:w  -2.0 -2.217 -1.820 1.063        20     11
 #> 5 strong     (Intercept)   1.0  0.990  0.974 0.084        20      0
 #> 6 strong               x   0.5  0.504  0.508 0.024        20      0
 #> 7 strong Rep:(Intercept)   3.0  3.102  2.977 0.671        20      0
@@ -215,14 +212,14 @@ flexCountReg warned that the underreporting model is weakly identified.
 In the strong design, 0 of 20 fits gave that warning and the estimates
 centre on the truth. In the weak design 11 of 20 fits gave it, and the
 reporting intercept has a standard deviation of 1.6 logit units across
-replicates: the estimates are unstable even though $`w`$ is a valid
+replicates: the estimates are unstable even though \\w\\ is a valid
 exclusion restriction. (Discarding the warned fits would not help: the
 remaining ones would be a selected, biased subset.)
 
 ## Predictions: reported counts, true counts and reporting
 
-For the strong-design fit, the three predictions at $`x = 0`$ across
-$`w`$, with the simulated truth as dashed lines:
+For the strong-design fit, the three predictions at \\x = 0\\ across
+\\w\\, with the simulated truth as dashed lines:
 
 ``` r
 
@@ -261,8 +258,8 @@ reported data, while the true count cannot.
 
 Under the strong design, compare four analyses of the same sample: the
 logit and probit reporting models, a model that ignores underreporting
-(with $`w`$ entering the mean), and a model that treats the reporting
-probabilities as known (an offset of $`\log p`$, as with external
+(with \\w\\ entering the mean), and a model that treats the reporting
+probabilities as known (an offset of \\\log p\\, as with external
 information):
 
 ``` r
@@ -297,20 +294,20 @@ round(sens, 3)
 #> known_p  0.517           NA   NA    NA 6533.877
 ```
 
-The true mean at $`x = 0`$ is $`e^1 \approx 2.718`$, and the true
-reporting probabilities are 0.953 at $`w = 0`$ and 0.119 at $`w = 1`$.
-The known-$`p`$ model has no reporting parameters (its true mean is
-$`\exp(\beta_0)`$ = 2.719; the offset gives the reporting). Here the
+The true mean at \\x = 0\\ is \\e^1 \approx 2.718\\, and the true
+reporting probabilities are 0.953 at \\w = 0\\ and 0.119 at \\w = 1\\.
+The known-\\p\\ model has no reporting parameters (its true mean is
+\\\exp(\beta_0)\\ = 2.719; the offset gives the reporting). Here the
 logit and probit links give similar answers because the reporting
 probability spans most of (0, 1); with less variation, the true-count
 level depends more on which link is assumed. The model that ignores
-underreporting estimates the effect of $`x`$ just as well but says
-nothing about the true counts: its intercept and $`w`$ coefficient
+underreporting estimates the effect of \\x\\ just as well but says
+nothing about the true counts: its intercept and \\w\\ coefficient
 describe *reported* counts.
 
 ## A failure: the reporting variable also affects the true counts
 
-If $`w`$ also enters the count model, the exclusion restriction is gone,
+If \\w\\ also enters the count model, the exclusion restriction is gone,
 and only the functional form of the link remains. Fitted to the same
 strong-design sample:
 
@@ -340,8 +337,8 @@ round(cov2cor(vcov(both))[c("(Intercept)", "w"),
 #> w                                0.995           -0.972
 ```
 
-The data were generated with no effect of $`w`$ on the true count and
-$`\beta_0 = 1`$. The estimates are far from that, and the near-perfect
+The data were generated with no effect of \\w\\ on the true count and
+\\\beta_0 = 1\\. The estimates are far from that, and the near-perfect
 correlations between the count and reporting coefficients show the ridge
 along which the likelihood barely changes: a change in the true-count
 coefficients is almost exactly offset by a change in the reporting
@@ -354,7 +351,7 @@ reporting, or analyze the reported counts as they are.
 
 ## Summary
 
-- The reported counts identify $`p\mu`$. Separating $`p`$ from $`\mu`$
+- The reported counts identify \\p\mu\\. Separating \\p\\ from \\\mu\\
   needs an exclusion restriction, the link’s functional form or external
   information, and the result is only as credible as those assumptions.
 - Effects of variables that appear only in the count model are estimated

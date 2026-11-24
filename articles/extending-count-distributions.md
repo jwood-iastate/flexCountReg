@@ -28,19 +28,19 @@ library(flexCountReg)
 
 Before writing code, state for the new family:
 
-- its support (here, the counts $`0, 1, 2, \dots`$);
+- its support (here, the counts \\0, 1, 2, \dots\\);
 - its natural parameters and their spaces;
-- how the regression enters: in flexCountReg the mean model is
-  $`\mu = \exp(X\beta)`$ (times an offset), and each distribution
-  parameter is $`\exp(W\delta)`$ of its own linear predictor, or a
-  logistic function of it for a probability (labels such as `ln(alpha)`
-  and `logit(rho)` show the scale);
-- whether $`\mu`$ is the actual mean. It is for NB2. For the
-  Poisson-lognormal family the mean is $`\mu \exp(\sigma^2/2)`$; for the
-  generalized Poisson with negative dispersion $`\mu`$ is a location
+- how the regression enters: in flexCountReg the mean model is \\\mu =
+  \exp(X\beta)\\ (times an offset), and each distribution parameter is
+  \\\exp(W\delta)\\ of its own linear predictor, or a logistic function
+  of it for a probability (labels such as `ln(alpha)` and `logit(rho)`
+  show the scale);
+- whether \\\mu\\ is the actual mean. It is for NB2. For the
+  Poisson-lognormal family the mean is \\\mu \exp(\sigma^2/2)\\; for the
+  generalized Poisson with negative dispersion \\\mu\\ is a location
   parameter; for the double Poisson, hyper-Poisson, gamma count and
   discrete Weibull families flexCountReg solves numerically for the
-  natural parameter that makes the mean equal to $`\mu`$.
+  natural parameter that makes the mean equal to \\\mu\\.
 
 These choices decide how coefficients are interpreted, so they belong in
 the documentation
@@ -96,11 +96,11 @@ The fields (documented at the top of `R/families.R`):
 | Field | Meaning |
 |----|----|
 | `params` | labels of the (up to two) distribution parameters, which are also the coefficient names; `NULL` for none |
-| `dens` | `function(y, predicted, alpha, sigma, ..., log)`: $`P(Y = y)`$ given the mean parameter `predicted` and the distribution parameters on their natural scale; returns probability 0 (or `-Inf`) outside the parameter space, without warnings, because the optimizer tries such values |
-| `variance` | variance at mean parameter $`\mu`$ (Pearson residuals, documentation tests) |
+| `dens` | `function(y, predicted, alpha, sigma, ..., log)`: \\P(Y = y)\\ given the mean parameter `predicted` and the distribution parameters on their natural scale; returns probability 0 (or `-Inf`) outside the parameter space, without warnings, because the optimizer tries such values |
+| `variance` | variance at mean parameter \\\mu\\ (Pearson residuals, documentation tests) |
 | `rand` | random draws ([`simulate()`](https://rdrr.io/r/stats/simulate.html), parametric bootstrap) |
 | `cdf` | optional log CDF or log survival function, computed directly (quantile residuals, intervals); without it the PMF is summed |
-| `mean`, `mean_adj` | the mean when it is not $`\mu`$ |
+| `mean`, `mean_adj` | the mean when it is not \\\mu\\ |
 | `start`, `start_rp` | starting values of the distribution parameters (on the linear-predictor scale) for [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md) and [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md) |
 
 The registry density must agree with an independent calculation:
@@ -217,10 +217,10 @@ body(qdpo)
 ```
 
 - `.dpo_valid()` says which parameter values are in the parameter space;
-- `.dpo_logpmf()` returns $`\log P(Y = y)`$, computed on the log scale;
-- `.dpo_logcdf()` returns $`\log P(Y \le y)`$ or $`\log P(Y > y)`$, each
-  computed directly, so that tiny upper-tail probabilities keep their
-  relative precision (never as $`1 - P(Y \le y)`$);
+- `.dpo_logpmf()` returns \\\log P(Y = y)\\, computed on the log scale;
+- `.dpo_logcdf()` returns \\\log P(Y \le y)\\ or \\\log P(Y \> y)\\,
+  each computed directly, so that tiny upper-tail probabilities keep
+  their relative precision (never as \\1 - P(Y \le y)\\);
 - `.dpo_qstart()` gives a rough starting point for the quantile search.
 
 The contract can be checked numerically. For the Delaporte distribution:
@@ -250,7 +250,7 @@ suppressWarnings(c(ddelaporte(2, mu = -1, rho = rho, k = k),
 #> [1] NaN   0
 ```
 
-The log upper tail at 150 is finite, where $`1 - P(Y \le 150)`$ would be
+The log upper tail at 150 is finite, where \\1 - P(Y \le 150)\\ would be
 0 in floating point.
 
 ## 5. Through a fitted model
@@ -348,7 +348,7 @@ the likelihood.
 At least four kinds of tests are needed:
 
 1.  **Special cases** against independent implementations, for example
-    NB2 with $`\alpha \to 0`$ against
+    NB2 with \\\alpha \to 0\\ against
     [`dpois()`](https://rdrr.io/r/stats/Poisson.html), or a parameter
     value that gives a geometric distribution.
 2.  **The distribution contract**: probabilities sum to 1, the CDF
@@ -391,7 +391,7 @@ by the standard errors, not tolerances tuned until the test passes.
 
 ## 8. Contributor checklist
 
-Support, parameters, links and the meaning of $`\mu`$ written down
+Support, parameters, links and the meaning of \\\mu\\ written down
 
 Public `d`/`p`/`q`/`r` functions with roxygen documentation and
 examples, exported (roxygen writes `NAMESPACE`)

@@ -287,14 +287,125 @@ of freedom are the EDF without the smoothing-parameter correction that
 [`mgcv::logLik.gam()`](https://rdrr.io/pkg/mgcv/man/logLik.gam.html)
 adds.
 
-## 7. Not yet available
+## 7. More kinds of smooth
 
-Bootstrap standard errors with smooth terms; smooths with a `by`
-variable in
-[`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md);
-random-effect, factor-smooth and spatial bases (`bs = "re"`, `"fs"`,
-`"mrf"`); and the smooth diagnostics (basis-dimension checks,
-concurvity, derivatives) are planned.
+Any smooth class of mgcv can be used. Some that are often useful for
+count data:
+
+- `s(lnaadt, by = speed_group)`, with a factor `by`: a separate curve
+  for each level (include the factor itself as a main effect);
+- `s(year, by = lnaadt)`, with a numeric `by`: a **varying
+  coefficient**, the effect of `lnaadt` changing smoothly over the
+  years;
+- `s(site, bs = "re")`: Gaussian random intercepts for the levels of a
+  factor, written as a penalized smooth;
+- `s(lnaadt, corridor, bs = "fs")`: each corridor’s own curve, shrunk
+  towards a common one;
+- `s(zone, bs = "mrf", xt = list(nb = nb))`: a spatial effect of areas
+  that is smoothed between neighboring areas (`nb` lists each area’s
+  neighbors).
+
+``` r
+
+washington_roads$speed_group <- factor(washington_roads$speed50,
+                                       labels = c("other", "50 mph"))
+mb <- countreg(Total_crashes ~ s(lnaadt, by = speed_group, k = 6) +
+                 speed_group + offset(lnlength),
+               data = washington_roads, family = "NB2")
+mb$model$smooth_table[, c("term", "edf", "p.value")]
+#>                          term      edf       p.value
+#> 1  s(lnaadt):speed_groupother 3.204187 1.033674e-103
+#> 2 s(lnaadt):speed_group50 mph 3.450732  2.108118e-13
+```
+
+``` r
+
+op <- par(mfrow = c(1, 2))
+plot_smooths(mb)
+```
+
+![](smooth-effects_files/figure-html/by-plot-1.png)
+
+``` r
+
+par(op)
+```
+
+## 8. Checking smooth terms
+
+**Basis dimension.** Each smooth has a maximum flexibility set by `k`.
+[`smooth_check()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_check.md)
+compares the residuals of neighboring observations, ordered by the
+smooth’s covariate, with the overall residual variance. It uses the
+randomized quantile residuals, which are standard normal for a correct
+count model. A k-index clearly below 1 with a small p-value means the
+residuals still follow the covariate, and a larger `k` should be tried:
+
+``` r
+
+small <- countreg(Total_crashes ~ s(lnaadt, k = 4) + offset(lnlength),
+                  data = washington_roads, family = "NB2")
+smooth_check(small)
+#>   parameter      term k      edf   k_index p_value residuals
+#> 1      mean s(lnaadt) 3 2.770066 0.9348829   0.005  quantile
+```
+
+**Concurvity.**
+[`concurvity_fcr()`](https://jwood-iastate.github.io/flexCountReg/reference/concurvity_fcr.md)
+reports how much of each smooth the other terms of its linear predictor
+can reproduce (0 to 1). Values near 1 mean the smooth’s shape is poorly
+determined.
+
+``` r
+
+concurvity_fcr(m2)
+#>   parameter                term     observed        worst
+#> 1      mean te(lnaadt,lnlength) 8.587255e-04 1.063128e-01
+#> 2 ln(alpha)         s(lnlength) 3.576806e-33 3.247650e-29
+```
+
+**Derivatives.**
+[`plot_derivatives()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_derivatives.md)
+shows where a smooth is increasing or decreasing, with pointwise and
+simultaneous bands:
+
+``` r
+
+plot_derivatives(m)
+```
+
+![](smooth-effects_files/figure-html/derivatives-1.png)
+
+**Calibration.** A smooth can fit the mean and still miss the zeros or
+the dispersion.
+[`calibration_by()`](https://jwood-iastate.github.io/flexCountReg/reference/calibration_by.md)
+compares observed and predicted means, probabilities of zero and
+variances within quantile groups of a covariate:
+
+``` r
+
+calibration_by(m, "lnaadt", groups = 5)
+#>         group   n observed_mean predicted_mean observed_p0 predicted_p0
+#> 1  [5.8,6.73] 301    0.14285714     0.13276194   0.8671096    0.8812940
+#> 2 (6.73,7.22] 301    0.08305648     0.08516662   0.9335548    0.9208793
+#> 3 (7.22,7.89] 299    0.24414716     0.25214260   0.8026756    0.7997339
+#> 4 (7.89,8.93] 317    0.51419558     0.51932265   0.6593060    0.6527419
+#> 5 (8.93,9.91] 283    1.38162544     1.41277532   0.3886926    0.4046796
+#>   observed_var predicted_var
+#> 1    0.1428571     0.1465752
+#> 2    0.1164120     0.0909499
+#> 3    0.2992525     0.3223760
+#> 4    0.7062852     0.7733261
+#> 5    2.8396612     3.5483789
+```
+
+Two-variable smooths can be drawn as surfaces masked away from the data
+with
+[`plot_surface()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_surface.md).
+
+## 9. Not yet available
+
+Bootstrap standard errors with smooth terms are not yet available.
 
 ## References
 

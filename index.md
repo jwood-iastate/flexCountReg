@@ -22,6 +22,10 @@ issues, including:
   analytic gradients, separate simulation draws for each panel, and
   exact, simulated and Empirical Bayes (observation-specific)
   predictions;
+- hierarchical (mixed-effects) models with normal random effects at
+  several levels, nested or crossed, for every count family
+  ([`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md),
+  with lme4-style terms such as `(1 + lnaadt | county) + (1 | year)`);
 - random-effects panel models (negative binomial, Poisson-Lindley,
   negative multinomial) and fixed-effects models
   ([`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md):
@@ -185,11 +189,18 @@ computer.
   including smooth class membership); the smoothing parameters are
   selected automatically,
   [`summary()`](https://rdrr.io/r/base/summary.html) reports each
-  smooth’s effective degrees of freedom, and
+  smooth’s effective degrees of freedom,
   [`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md)
   and
   [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
-  show the estimated curves with pointwise and simultaneous bands. See
+  show the estimated curves with pointwise and simultaneous bands, and
+  [`smooth_check()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_check.md),
+  [`concurvity_fcr()`](https://jwood-iastate.github.io/flexCountReg/reference/concurvity_fcr.md),
+  [`plot_derivatives()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_derivatives.md),
+  [`plot_surface()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_surface.md)
+  and
+  [`calibration_by()`](https://jwood-iastate.github.io/flexCountReg/reference/calibration_by.md)
+  check them. See
   [`vignette("smooth-effects", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.md).
 - [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
   estimates fixed-effects count models: Poisson by the conditional
@@ -753,6 +764,8 @@ The vignettes cover the main workflows. Start with
   [`vignette("underreporting-and-identification", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/underreporting-and-identification.md)
 - Random parameters and panel models:
   [`vignette("random-parameters-and-panels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md)
+- Hierarchical count models:
+  [`vignette("hierarchical-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/hierarchical-count-models.md)
 - Fixed-effects count models:
   [`vignette("fixed-effects-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/fixed-effects-count-models.md)
 

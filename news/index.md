@@ -79,9 +79,11 @@
     and the distribution-parameter formulas.
   - Smooth bases are built once on the estimation rows and rebuilt for
     new data with the same knots.
-- Fitting is by penalized maximum likelihood. The smoothing parameters
-  are selected by generalized Fellner-Schall updates (Wood and Fasiolo
-  2017), or fixed with the new argument `sp`.
+- Fitting is by penalized maximum likelihood, finished with Newton steps
+  on the penalized Hessian so that weakly penalized smooths reach the
+  optimum. The smoothing parameters are selected by generalized
+  Fellner-Schall updates (Wood and Fasiolo 2017), or fixed with the new
+  argument `sp`.
 - Standard errors are Bayesian, (H + S_lambda)^-1, by default; robust
   and cluster-robust versions are available.
 - [`summary()`](https://rdrr.io/r/base/summary.html) reports each smooth
@@ -132,10 +134,6 @@
     [`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html) with group
     dummies: to 1e-8 for one dimension, 1e-14 for two, and 1e-5 for NB2
     with the dispersion fixed.
-- Penalized fits are finished with Newton steps on the penalized
-  Hessian. BFGS stopped short of the optimum in directions of low
-  curvature, by about 4e-4 in the coefficients of a weakly penalized
-  smooth.
 - [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
   and
   [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
@@ -153,12 +151,117 @@
     of 1.000 with the sine, and a slope of 0.296 for a true 0.3. The
     class shares were 0.386 and 0.614, for true 0.4 and 0.6.
   - Every estimator of the package now accepts smooth terms.
-- Not yet available with smooths: bootstrap standard errors, smooths
-  with `by` variables in
-  [`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md),
-  the `"re"`, `"fs"` and `"mrf"` bases, and smooth diagnostics.
+- All mgcv smooth classes can be used, among them `by` smooths (factor
+  `by` gives a curve per level; numeric `by` gives a varying
+  coefficient), random-effect (`bs = "re"`), factor-smooth (`bs = "fs"`)
+  and Markov random field (`bs = "mrf"`, with `xt = list(nb = nb)`)
+  smooths. With fixed smoothing parameters they reproduce
+  [`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html).
+  - Objects in a smooth’s arguments, such as the neighborhood list, are
+    taken from the formula’s environment, not from the data.
+  - [`smooth_estimates()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_estimates.md)
+    and
+    [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
+    show every smooth type: curves per level, factor effects with
+    intervals, and the coefficient of a numeric `by`.
+- New diagnostics for smooth terms:
+  - [`smooth_check()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_check.md):
+    a basis-dimension check (a k-index with a permutation p-value)
+    computed from randomized quantile residuals.
+  - [`concurvity_fcr()`](https://jwood-iastate.github.io/flexCountReg/reference/concurvity_fcr.md):
+    the share of each smooth that the other terms can reproduce,
+    observed and worst case.
+  - [`smooth_derivatives()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_derivatives.md)
+    and
+    [`plot_derivatives()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_derivatives.md):
+    derivatives with pointwise and simultaneous bands.
+  - [`plot_surface()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_surface.md):
+    two-variable smooths, masked away from the data.
+  - [`calibration_by()`](https://jwood-iastate.github.io/flexCountReg/reference/calibration_by.md):
+    observed and predicted means, probabilities of zero and variances by
+    quantile groups of a covariate.
 - New vignette, “Smooth effects: generalized additive count models”
   ([`vignette("smooth-effects")`](https://jwood-iastate.github.io/flexCountReg/articles/smooth-effects.md)).
+- Bootstrap standard errors are not yet available with smooth terms.
+
+### Hierarchical count models
+
+- New
+  [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md)
+  fits count models with normally distributed random effects at any
+  number of grouping levels, nested or crossed, written as in lme4:
+  `(1 | site)`, `(1 + lnaadt | county)` (correlated intercepts and
+  slopes), `(lnaadt || county)` (uncorrelated), `(1 | county/segment)`
+  (nested) and `(1 | site) + (1 | year)` (crossed). Every count family
+  can be used, including user-defined ones, with distribution-parameter
+  formulas, offsets and frequency weights.
+- Two integration engines: adaptive Gauss-Hermite quadrature for one
+  grouping term (9 points per effect by default), and the Laplace
+  approximation with sparse matrices for any number of terms.
+  `engine = "auto"` chooses between them. Each covariance matrix is
+  estimated through its Cholesky factor with an unconstrained diagonal,
+  so a variance can be estimated as zero; such singular fits are
+  reported, and the Wald standard errors of that term’s variance
+  components are not. The derivatives of the log-density are analytic
+  for the Poisson, NB1 and NB2 families and numerical for the others.
+- Estimates, log-likelihoods and standard errors equal those of
+  [`lme4::glmer()`](https://rdrr.io/pkg/lme4/man/glmer.html) (Poisson,
+  Laplace and quadrature) and `glmmTMB` (Poisson, NB1 and NB2; random
+  intercepts and slopes, crossed and nested effects), with
+  log-likelihood differences of 1e-6 or less.
+- Methods: [`summary()`](https://rdrr.io/r/base/summary.html),
+  [`predict()`](https://rdrr.io/r/stats/predict.html) with `re.form`
+  (condition on all, some or none of the levels), `allow.new.levels` and
+  `marginal` (integrate the remaining effects out of the mean, exp(eta +
+  z’ Sigma z / 2)),
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html),
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html),
+  [`simulate()`](https://rdrr.io/r/stats/simulate.html) (with the
+  groups’ effects or new ones),
+  [`fixef()`](https://rdrr.io/pkg/nlme/man/fixed.effects.html),
+  [`ranef()`](https://rdrr.io/pkg/nlme/man/random.effects.html)
+  (conditional modes with posterior variances),
+  [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html),
+  [`tidy()`](https://generics.r-lib.org/reference/tidy.html) and
+  [`glance()`](https://generics.r-lib.org/reference/glance.html).
+  [`fixef()`](https://rdrr.io/pkg/nlme/man/fixed.effects.html),
+  [`ranef()`](https://rdrr.io/pkg/nlme/man/random.effects.html) and
+  [`VarCorr()`](https://rdrr.io/pkg/nlme/man/VarCorr.html) are the nlme
+  generics, so they work alongside lme4.
+- New
+  [`re_lrtest()`](https://jwood-iastate.github.io/flexCountReg/reference/re_lrtest.md):
+  likelihood-ratio test of a random-effect term, with the
+  boundary-corrected (chi-bar-squared) p-value.
+- New vignette, “Hierarchical count models”
+  ([`vignette("hierarchical-count-models")`](https://jwood-iastate.github.io/flexCountReg/articles/hierarchical-count-models.md)).
+- Smooth terms `s()` and `t2()` in the fixed part, fitted in their
+  mixed-model form (as in gamm4): the penalized part of each smooth is a
+  block of normal coefficients with variance 1 / lambda, so the
+  smoothing parameters are estimated by the marginal likelihood with the
+  variance components. Smoothing parameters, EDF and curves equal those
+  of `mgcv::gam(method = "ML")` with `bs = "re"` group effects. A
+  formula with smooths and no grouping term is a GAM fitted by marginal
+  likelihood.
+- `re_dist = "uniform"`, `"triangular"` or `"gamma"` (one grouping term)
+  gives non-normal random effects, fitted by maximum simulated
+  likelihood (`engine = "msl"`, `re_draws` randomly shifted Halton draws
+  per group). With `"gamma"` the multiplicative group effect is gamma
+  with mean 1; a Poisson model with gamma effects reproduces
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md).
+- `predict(history = )` estimates the effects of the groups from a
+  separate set of past counts, so a forecast never uses its own
+  outcomes.
+- `confint(method = "profile")` gives profile-likelihood intervals for
+  the random-effect standard deviations (and fixed coefficients); they
+  equal glmmTMB’s.
+- `cre` and `cre_group` add the group means of time-varying covariates
+  (correlated random effects), tested with
+  [`cre_test()`](https://jwood-iastate.github.io/flexCountReg/reference/cre_test.md).
+- Not yet available in
+  [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md):
+  non-normal random effects at more than one level, smooth terms in the
+  distribution-parameter formulas, and `te()`/`ti()` smooths (use
+  `t2()`).
 
 ### Fixed-effects count models
 
@@ -511,7 +614,7 @@
 
 - [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
   and
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   gain the families `"DW"`, `"DPO"`, `"DELAPORTE"`, `"HERMITE"` (order
   2), `"HERMITE3"`, `"HERMITE4"`, `"HYPERPOIS"`, `"GAMMACOUNT"`, `"PA"`
   (Poisson-Tweedie with power 1.5) and `"NBGE"`. All are parameterized
@@ -527,7 +630,7 @@
   Poisson are reported for DPO, HYPERPOIS and GAMMACOUNT (interior
   restriction). Underreporting (binomial thinning) is available for
   DELAPORTE, NBGE, HERMITE and PA.
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   uses family-specific starting values for the distribution parameters
   when the registry provides them (the new families start at their
   Poisson or geometric limit rather than at log-scale -2).
@@ -770,7 +873,7 @@
 - [`predict()`](https://rdrr.io/r/stats/predict.html) errors when an
   offset column used in fitting is missing from `newdata`, instead of
   silently setting the offset to 0.
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
   heterogeneity in means now follows Wood and Gayah (2025, Eq. 2). Each
   random parameter has its own coefficient for each variable in
   `het_mean_formula` (named `HetMean:<parameter>:<variable>`), and the
@@ -779,22 +882,22 @@
   Previously a single coefficient vector multiplied every random
   parameter’s mean. Estimates from models with `het_mean_formula`
   change; saved fits still predict with their original specification.
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
   uniform random parameters now span mu +/- St.Dev (draws `2u - 1`),
   matching the paper and the Exact prediction. Previously the draws
   spanned mu +/- St.Dev/2, so estimated uniform St.Dev values are now
   half as large. [`predict()`](https://rdrr.io/r/stats/predict.html)
   converts saved uniform fits automatically (with a one-time message).
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
   `rpardists` is matched to the random parameters by name (not position)
   and validated. An intercept in both `formula` and `rpar_formula` (an
   unidentified model) is an error; the intercept implied by
   `rpar_formula` is not a random parameter unless the fixed formula has
   no intercept. An invalid `panel_id`, `family` or `method` is an error.
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
   `weights` now weight the panel log-likelihood (frequency weights for
   whole panels) instead of each row’s probability.
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md):
   the mixing distribution of PLN, PGE, PLL and PW families uses its own
   Halton dimension; it previously reused the first random parameter’s
   draws, which made the two perfectly correlated.
@@ -920,7 +1023,7 @@
   includes the exp(sigma^2 / 2) lognormal mean factor, as it already did
   for PLN.
 
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   now stores its offset, so
   [`predict()`](https://rdrr.io/r/stats/predict.html) uses it. Simulated
   predictions now include heterogeneity in means and variances.
@@ -960,13 +1063,13 @@
   missing values are removed consistently, formula offsets work (giving
   both a formula offset and `offset` is an error), and starting values
   use the offset.
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   uses the shared data preparation (formula offsets, missing values,
   numeric weights), starts gamma random parameters from a positive mean,
   averages panel likelihoods over draws on the log scale, and reports
   convergence.
 - `predict(method = "Exact")` for
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   includes heterogeneity in means and variances.
 
 ### Further bug fixes and changed results
@@ -980,7 +1083,7 @@ Changed results are marked **(changed)**.
   accept `weights`, as
   [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
   and
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   do. In panel models these are frequency weights of the panels
   (constant within a panel): a panel with weight w counts as w
   independent panels in the log-likelihood, the robust covariance, BIC
@@ -1020,7 +1123,7 @@ Changed results are marked **(changed)**.
   default of the d/p/q functions,
   [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
   and
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)).
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)).
   Averaging over 1500 Halton draws was badly biased in the tails: for
   PGE with shape 1 (geometric with mean 1) and y = 1000 it gave log P =
   -3847 instead of -693.8. The new values agree with exact special cases
@@ -1136,7 +1239,7 @@ Changed results are marked **(changed)**.
   use one packing. Estimates and predictions of earlier fits were
   internally consistent; only their labels were wrong.
 
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   rejects a variable in both `formula` and `rpar_formula` when its
   random parameter is normal, uniform or triangular (only the sum of the
   fixed coefficient and the random mean is identified). Lognormal and
@@ -1160,7 +1263,7 @@ Changed results are marked **(changed)**.
   robust (sandwich) covariance uses sum(w s s’) instead of sum(w^2 s
   s’), and BIC uses the sum of the weights (of rows, or of panels in
   panel models) as the sample size.
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   weights that vary within a panel are an error (they were silently
   replaced by the first weight of the panel).
 
@@ -1205,7 +1308,7 @@ Changed results are marked **(changed)**.
   lognormal and gamma coefficients exactly and computes uniform and
   triangular MGFs on the log scale.
 
-- [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+- [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   has a `mix_draws` argument for the inner integration of the PLN, PGE,
   PLL and PW families (default `min(ndraws, 200)`), so the cost is
   proportional to `ndraws * mix_draws` instead of `ndraws^2`. Scrambled
@@ -1329,7 +1432,7 @@ Changed results are marked **(changed)**.
   no longer claims that an LR test is printed; see
   [`regCompTest()`](https://jwood-iastate.github.io/flexCountReg/reference/regCompTest.md).
 
-- [`?countreg.rp`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+- [`?countreg_rp`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   documents each random-parameter distribution’s scale, the
   heterogeneity specification and the lognormal caveat.
 
@@ -1407,7 +1510,7 @@ Changed results are marked **(changed)**.
   (`R/families.R`), which makes adding a family a one-file change.
 
 - `predict(method = "Individual")` (alias `"EB"`) for
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   models now computes Empirical Bayes observation-specific predictions
   following Wood and Gayah (2025), weighting each draw by the likelihood
   of the unit’s observed outcomes. Previously it returned the simulated
@@ -1477,11 +1580,11 @@ Changed results are marked **(changed)**.
   [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
   [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
   and
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   gain `stderr = c("normal", "robust", "boot")`. Robust standard errors
   of panel models are clustered by panel; bootstraps resample whole
   panels.
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   gains `bootstraps`.
 - All estimators gain `keep_data`; `keep_data = FALSE` does not store
   the training data.
@@ -1489,7 +1592,7 @@ Changed results are marked **(changed)**.
   and
   [`poislind_re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
   are snake_case names for
-  [`countreg.rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   and
   [`poisLind.re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md).
 - For fitted models, [`AIC()`](https://rdrr.io/r/stats/AIC.html) and

@@ -9,6 +9,21 @@ random parameters, random effects and fixed effects.
   : Count regression models
 - [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   : Random Parameters Count Regression Models
+- [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md)
+  : Hierarchical (mixed-effects) count regression
+- [`fixef(`*`<countreg_hier>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier-effects.md)
+  [`ranef(`*`<countreg_hier>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier-effects.md)
+  [`VarCorr(`*`<countreg_hier>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier-effects.md)
+  [`print(`*`<VarCorr.countreg_hier>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier-effects.md)
+  : Fixed effects, random effects and variance components
+- [`predict(`*`<countreg_hier>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_hier.md)
+  : Predictions from a hierarchical count model
+- [`simulate(`*`<countreg_hier>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/simulate.countreg_hier.md)
+  : Simulate responses from a hierarchical count model
+- [`confint(`*`<countreg_hier>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/confint.countreg_hier.md)
+  : Confidence intervals for a hierarchical count model
+- [`re_lrtest()`](https://jwood-iastate.github.io/flexCountReg/reference/re_lrtest.md)
+  : Likelihood-ratio test of a random-effect term
 - [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
   : Fixed-effects count regression
 - [`cre_test()`](https://jwood-iastate.github.io/flexCountReg/reference/cre_test.md)
@@ -72,6 +87,18 @@ Mixtures of count distributions and latent-class count regression.
   : Estimated smooth functions
 - [`plot_smooths()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_smooths.md)
   : Plot estimated smooth functions
+- [`smooth_derivatives()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_derivatives.md)
+  : Derivatives of smooth functions
+- [`plot_derivatives()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_derivatives.md)
+  : Plot derivatives of smooth functions
+- [`plot_surface()`](https://jwood-iastate.github.io/flexCountReg/reference/plot_surface.md)
+  : Plot a two-variable smooth as a surface
+- [`smooth_check()`](https://jwood-iastate.github.io/flexCountReg/reference/smooth_check.md)
+  : Check the basis dimension of smooth terms
+- [`concurvity_fcr()`](https://jwood-iastate.github.io/flexCountReg/reference/concurvity_fcr.md)
+  : Concurvity of smooth terms
+- [`calibration_by()`](https://jwood-iastate.github.io/flexCountReg/reference/calibration_by.md)
+  : Calibration of a count model by a covariate
 - [`vcov(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/vcov.flexCountReg.md)
   : Covariance matrix of the estimates
 - [`estfun(`*`<flexCountReg>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/estfun.flexCountReg.md)

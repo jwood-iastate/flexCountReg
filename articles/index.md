@@ -30,6 +30,8 @@
   identification](https://jwood-iastate.github.io/flexCountReg/articles/underreporting-and-identification.md):
 - [Random parameters and panel
   models](https://jwood-iastate.github.io/flexCountReg/articles/random-parameters-and-panels.md):
+- [Hierarchical count
+  models](https://jwood-iastate.github.io/flexCountReg/articles/hierarchical-count-models.md):
 - [Fixed-effects count
   models](https://jwood-iastate.github.io/flexCountReg/articles/fixed-effects-count-models.md):
 

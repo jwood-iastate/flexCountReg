@@ -309,13 +309,104 @@ smoothing-parameter correction that <code><a href="https://rdrr.io/pkg/mgcv/man/
 adds.</p>
 </div>
 <div class="section level2">
-<h2 id="not-yet-available">7. Not yet available<a class="anchor" aria-label="anchor" href="#not-yet-available"></a>
+<h2 id="more-kinds-of-smooth">7. More kinds of smooth<a class="anchor" aria-label="anchor" href="#more-kinds-of-smooth"></a>
 </h2>
-<p>Bootstrap standard errors with smooth terms; smooths with a
-<code>by</code> variable in <code><a href="../reference/smooth_estimates.html">smooth_estimates()</a></code>;
-random-effect, factor-smooth and spatial bases (<code>bs = "re"</code>,
-<code>"fs"</code>, <code>"mrf"</code>); and the smooth diagnostics
-(basis-dimension checks, concurvity, derivatives) are planned.</p>
+<p>Any smooth class of mgcv can be used. Some that are often useful for
+count data:</p>
+<ul>
+<li>
+<code>s(lnaadt, by = speed_group)</code>, with a factor
+<code>by</code>: a separate curve for each level (include the factor
+itself as a main effect);</li>
+<li>
+<code>s(year, by = lnaadt)</code>, with a numeric <code>by</code>: a
+<strong>varying coefficient</strong>, the effect of <code>lnaadt</code>
+changing smoothly over the years;</li>
+<li>
+<code>s(site, bs = "re")</code>: Gaussian random intercepts for the
+levels of a factor, written as a penalized smooth;</li>
+<li>
+<code>s(lnaadt, corridor, bs = "fs")</code>: each corridor’s own
+curve, shrunk towards a common one;</li>
+<li>
+<code>s(zone, bs = "mrf", xt = list(nb = nb))</code>: a spatial
+effect of areas that is smoothed between neighboring areas
+(<code>nb</code> lists each area’s neighbors).</li>
+</ul>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">washington_roads</span><span class="op">$</span><span class="va">speed_group</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">washington_roads</span><span class="op">$</span><span class="va">speed50</span>,</span>
+<span>                                       labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"other"</span>, <span class="st">"50 mph"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">mb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="fu">s</span><span class="op">(</span><span class="va">lnaadt</span>, by <span class="op">=</span> <span class="va">speed_group</span>, k <span class="op">=</span> <span class="fl">6</span><span class="op">)</span> <span class="op">+</span></span>
+<span>                 <span class="va">speed_group</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span>,</span>
+<span>               data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span></span>
+<span><span class="va">mb</span><span class="op">$</span><span class="va">model</span><span class="op">$</span><span class="va">smooth_table</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"term"</span>, <span class="st">"edf"</span>, <span class="st">"p.value"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;                          term      edf       p.value</span></span>
+<span><span class="co">#&gt; 1  s(lnaadt):speed_groupother 3.204187 1.033674e-103</span></span>
+<span><span class="co">#&gt; 2 s(lnaadt):speed_group50 mph 3.450732  2.108118e-13</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">op</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span>mfrow <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_smooths.html">plot_smooths</a></span><span class="op">(</span><span class="va">mb</span><span class="op">)</span></span></code></pre></div>
+<p><img src="smooth-effects_files/figure-html/by-plot-1.png" class="r-plt" alt="" width="672"></p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">op</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="checking-smooth-terms">8. Checking smooth terms<a class="anchor" aria-label="anchor" href="#checking-smooth-terms"></a>
+</h2>
+<p><strong>Basis dimension.</strong> Each smooth has a maximum
+flexibility set by <code>k</code>. <code><a href="../reference/smooth_check.html">smooth_check()</a></code> compares
+the residuals of neighboring observations, ordered by the smooth’s
+covariate, with the overall residual variance. It uses the randomized
+quantile residuals, which are standard normal for a correct count model.
+A k-index clearly below 1 with a small p-value means the residuals still
+follow the covariate, and a larger <code>k</code> should be tried:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">small</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">Total_crashes</span> <span class="op">~</span> <span class="fu">s</span><span class="op">(</span><span class="va">lnaadt</span>, k <span class="op">=</span> <span class="fl">4</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span>,</span>
+<span>                  data <span class="op">=</span> <span class="va">washington_roads</span>, family <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/smooth_check.html">smooth_check</a></span><span class="op">(</span><span class="va">small</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   parameter      term k      edf   k_index p_value residuals</span></span>
+<span><span class="co">#&gt; 1      mean s(lnaadt) 3 2.770066 0.9348829   0.005  quantile</span></span></code></pre></div>
+<p><strong>Concurvity.</strong> <code><a href="../reference/concurvity_fcr.html">concurvity_fcr()</a></code> reports
+how much of each smooth the other terms of its linear predictor can
+reproduce (0 to 1). Values near 1 mean the smooth’s shape is poorly
+determined.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/concurvity_fcr.html">concurvity_fcr</a></span><span class="op">(</span><span class="va">m2</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   parameter                term     observed        worst</span></span>
+<span><span class="co">#&gt; 1      mean te(lnaadt,lnlength) 8.587255e-04 1.063128e-01</span></span>
+<span><span class="co">#&gt; 2 ln(alpha)         s(lnlength) 3.576806e-33 3.247650e-29</span></span></code></pre></div>
+<p><strong>Derivatives.</strong> <code><a href="../reference/plot_derivatives.html">plot_derivatives()</a></code> shows
+where a smooth is increasing or decreasing, with pointwise and
+simultaneous bands:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_derivatives.html">plot_derivatives</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
+<p><img src="smooth-effects_files/figure-html/derivatives-1.png" class="r-plt" alt="" width="576"></p>
+<p><strong>Calibration.</strong> A smooth can fit the mean and still
+miss the zeros or the dispersion. <code><a href="../reference/calibration_by.html">calibration_by()</a></code> compares
+observed and predicted means, probabilities of zero and variances within
+quantile groups of a covariate:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/calibration_by.html">calibration_by</a></span><span class="op">(</span><span class="va">m</span>, <span class="st">"lnaadt"</span>, groups <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         group   n observed_mean predicted_mean observed_p0 predicted_p0</span></span>
+<span><span class="co">#&gt; 1  [5.8,6.73] 301    0.14285714     0.13276194   0.8671096    0.8812940</span></span>
+<span><span class="co">#&gt; 2 (6.73,7.22] 301    0.08305648     0.08516662   0.9335548    0.9208793</span></span>
+<span><span class="co">#&gt; 3 (7.22,7.89] 299    0.24414716     0.25214260   0.8026756    0.7997339</span></span>
+<span><span class="co">#&gt; 4 (7.89,8.93] 317    0.51419558     0.51932265   0.6593060    0.6527419</span></span>
+<span><span class="co">#&gt; 5 (8.93,9.91] 283    1.38162544     1.41277532   0.3886926    0.4046796</span></span>
+<span><span class="co">#&gt;   observed_var predicted_var</span></span>
+<span><span class="co">#&gt; 1    0.1428571     0.1465752</span></span>
+<span><span class="co">#&gt; 2    0.1164120     0.0909499</span></span>
+<span><span class="co">#&gt; 3    0.2992525     0.3223760</span></span>
+<span><span class="co">#&gt; 4    0.7062852     0.7733261</span></span>
+<span><span class="co">#&gt; 5    2.8396612     3.5483789</span></span></code></pre></div>
+<p>Two-variable smooths can be drawn as surfaces masked away from the
+data with <code><a href="../reference/plot_surface.html">plot_surface()</a></code>.</p>
+</div>
+<div class="section level2">
+<h2 id="not-yet-available">9. Not yet available<a class="anchor" aria-label="anchor" href="#not-yet-available"></a>
+</h2>
+<p>Bootstrap standard errors with smooth terms are not yet
+available.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

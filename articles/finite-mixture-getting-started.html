@@ -210,7 +210,7 @@ is therefore always at least equidispersed; mixtures of
 <span><span class="co">#&gt; N: 500</span></span>
 <span><span class="co">#&gt; Entropy: 130.547 | relative entropy: 0.623 </span></span>
 <span><span class="co">#&gt; Starts: 5 | 5 reached the selected log-likelihood</span></span>
-<span><span class="co">#&gt; Observed information: positive definite (condition number 19.9 ) | max |gradient|: 7.72e-07 </span></span>
+<span><span class="co">#&gt; Observed information: positive definite (condition number 19.9 ) | max |gradient|: 1.4e-07 </span></span>
 <span><span class="co">#&gt; No likelihood-ratio test of the number of components is reported (non-standard distribution).</span></span></code></pre></div>
 <p>The component intercepts are on the log scale, so the estimated
 component means are <code><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp()</a></code> of them; the mixing coefficient
@@ -393,7 +393,7 @@ mixture are compared on the same rows with information criteria:</p>
 <span><span class="co">#&gt; 4 3 Poisson components -1031.950  5 2073.901 2094.974</span></span>
 <span><span class="va">fit3</span><span class="op">$</span><span class="va">model</span><span class="op">$</span><span class="va">classes</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"label"</span>, <span class="st">"prior_share"</span>, <span class="st">"mean_count"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt;                 label prior_share   mean_count</span></span>
-<span><span class="co">#&gt; Component1 Component1  0.03284512 2.046596e-05</span></span>
+<span><span class="co">#&gt; Component1 Component1  0.03284512 2.320771e-05</span></span>
 <span><span class="co">#&gt; Component2 Component2  0.59408926 1.127026e+00</span></span>
 <span><span class="co">#&gt; Component3 Component3  0.37306562 4.938665e+00</span></span></code></pre></div>
 <p>No likelihood-ratio p-value is given for the number of components.

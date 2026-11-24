@@ -213,7 +213,7 @@ m_oinb2 <- countreg(f, data = washington_roads, family = oinb,
                     dis_param_formula_2 = ~ speed50, method = "BFGS")
 coef(m_oinb2)[c("logit(omega):(Intercept)", "logit(omega):speed50")]
 #> logit(omega):(Intercept)     logit(omega):speed50 
-#>                -4.749657                -3.187266
+#>                 -4.74966                 -3.18728
 ```
 
 ## 5. Everything else works from the PMF
@@ -266,7 +266,7 @@ coef(m_rp)
 #>    (Intercept)         lnaadt       lnlength   speed50:Mean speed50:St.Dev 
 #>     -8.8709961      1.0940735      0.7680520     -0.7064730      0.5809304 
 #>      ln(alpha)   logit(omega) 
-#>     -1.2604041     -5.5365437
+#>     -1.2604041     -5.5365436
 ```
 
 ## 6. Saving and sharing a fitted model

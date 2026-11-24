@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Hierarchical count models</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Hierarchical count models</h1>
+
+
+
+<p>Counts are often grouped: crash counts by road segment and year,
+segments within counties, animal counts by site and survey. Observations
+in the same group share unmeasured conditions, so they are correlated,
+and the groups themselves are of interest. <code>countreg_hier()</code>
+fits <strong>hierarchical</strong> (mixed-effects, multilevel) count
+models with normally distributed random effects at any number of
+grouping levels, nested or crossed, for any count family of the
+package.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;stream_salamanders&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>s <span class="ot">&lt;-</span> stream_salamanders</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>s<span class="sc">$</span>sample <span class="ot">&lt;-</span> <span class="fu">factor</span>(s<span class="sc">$</span>sample)</span></code></pre></div>
+<p>The salamander data have 644 counts from 23 stream sites, each
+surveyed four times (<code>sample</code>), for seven species and life
+stages (<code>spp</code>), at sites affected or not by mountaintop
+mining (<code>mined</code>).</p>
+<div id="a-random-intercept" class="section level2">
+<h2>1. A random intercept</h2>
+<p>Random-effect terms are written as in lme4: <code>(1 | site)</code>
+gives each site its own intercept, <span class="math inline">\(b_j \sim
+N(0, \sigma^2)\)</span>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">countreg_hier</span>(count <span class="sc">~</span> spp <span class="sc">+</span> mined <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> site), <span class="at">data =</span> s,</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>                   <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">summary</span>(h)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; Hierarchical count model: NB2</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; Integration: adaptive Gauss-Hermite quadrature, 9 points</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; Call: countreg_hier(formula = count ~ spp + mined + (1 | site), data = s, family = &quot;NB2&quot;)</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; Random effects:</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;  Groups Name        Variance Std.Dev.</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;  site   (Intercept) 0.2968   0.5447  </span></span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="co">#&gt; Number of obs: 644; groups: site, 23</span></span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a><span class="co">#&gt; Fixed coefficients and distribution parameters:</span></span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a><span class="co">#&gt; (Intercept)  0.58008    0.22595   2.567 0.010250 *  </span></span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a><span class="co">#&gt; sppPR       -1.31981    0.28752  -4.590 4.43e-06 ***</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a><span class="co">#&gt; sppDM        0.36856    0.22349   1.649 0.099120 .  </span></span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a><span class="co">#&gt; sppEC-A     -0.70982    0.25300  -2.806 0.005022 ** </span></span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; sppEC-L      0.57134    0.21912   2.607 0.009124 ** </span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt; sppDES-L     0.79285    0.21668   3.659 0.000253 ***</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt; sppDF        0.31202    0.23294   1.340 0.180401    </span></span>
+<span id="cb2-22"><a href="#cb2-22" tabindex="-1"></a><span class="co">#&gt; minedyes    -2.26385    0.28455  -7.956 1.78e-15 ***</span></span>
+<span id="cb2-23"><a href="#cb2-23" tabindex="-1"></a><span class="co">#&gt; ln(alpha)    0.05965    0.13501   0.442 0.658617    </span></span>
+<span id="cb2-24"><a href="#cb2-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-25"><a href="#cb2-25" tabindex="-1"></a><span class="co">#&gt; Random-effect standard deviations and correlations (Wald SEs):</span></span>
+<span id="cb2-26"><a href="#cb2-26" tabindex="-1"></a><span class="co">#&gt;                     Estimate Std. Error</span></span>
+<span id="cb2-27"><a href="#cb2-27" tabindex="-1"></a><span class="co">#&gt; sd_(Intercept)|site   0.5447     0.1329</span></span>
+<span id="cb2-28"><a href="#cb2-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb2-29"><a href="#cb2-29" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -826.1554   AIC: 1672.311   BIC: 1716.988</span></span></code></pre></div>
+<p>The model is</p>
+<p><span class="math display">\[
+\log \mu_{ij} = x_{ij}&#39;\beta + b_j, \qquad
+y_{ij} \mid b_j \sim \text{NB2}(\mu_{ij}, \alpha), \qquad
+b_j \sim N(0, \sigma^2),
+\]</span></p>
+<p>and the likelihood integrates each site’s <span class="math inline">\(b_j\)</span> out. With one grouping factor the
+integral is computed by <strong>adaptive Gauss-Hermite
+quadrature</strong> (9 points by default), which is accurate even for
+small groups.</p>
+<p>The standard deviation 0.54 means that sites with the same covariates
+differ in their expected counts by a factor of about <span class="math inline">\(\exp(2 \times 0.54) \approx 3\)</span> between the
+16th and 84th percentiles. <code>re_lrtest()</code> tests whether the
+variance is zero. The null value is on the boundary of the parameter
+space, so the p-value is half that of the usual <span class="math inline">\(\chi^2_1\)</span> test:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">re_lrtest</span>(h)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt;         term logLik_without logLik_with statistic df      p.value</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; 1 (1 | site)       -837.653   -826.1554  22.99518  1 8.120391e-07</span></span></code></pre></div>
+</div>
+<div id="effects-of-the-groups" class="section level2">
+<h2>2. Effects of the groups</h2>
+<p><code>ranef()</code> returns the conditional modes of the site
+effects, the most likely value of each site’s effect given its counts.
+They are shrunk towards zero, more so for sites with little information.
+<code>VarCorr()</code> returns the estimated variance components and
+<code>fixef()</code> the fixed coefficients:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">ranef</span>(h)<span class="sc">$</span>site)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt;     (Intercept)</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt; R-1  0.20312721</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; R-2  0.08408975</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; R-3 -0.05997694</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; R-4  0.47914042</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; R-5  0.09240978</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; R-6  0.38168445</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="fu">VarCorr</span>(h)</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;  Groups Name        Variance Std.Dev.</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;  site   (Intercept) 0.2968   0.5447</span></span></code></pre></div>
+</div>
+<div id="crossed-and-nested-effects" class="section level2">
+<h2>3. Crossed and nested effects</h2>
+<p>Several terms can be combined. Here the site effects are
+<strong>crossed</strong> with survey occasions shared by all sites:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>h2 <span class="ot">&lt;-</span> <span class="fu">countreg_hier</span>(count <span class="sc">~</span> spp <span class="sc">+</span> mined <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> site) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> sample),</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>                    <span class="at">data =</span> s, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">VarCorr</span>(h2)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;  Groups Name        Variance Std.Dev.</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt;  site   (Intercept) 0.33500  0.5788  </span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;  sample (Intercept) 0.01012  0.1006</span></span></code></pre></div>
+<p><strong>Nested</strong> effects, such as surveys within sites, are
+written <code>(1 | site/sample)</code>, which is short for
+<code>(1 | site) + (1 | site:sample)</code>. With more than one term the
+model uses the <strong>Laplace approximation</strong> with sparse
+matrices, as <code>lme4::glmer()</code> and <code>glmmTMB</code> do. It
+handles thousands of groups at several levels.</p>
+</div>
+<div id="random-slopes" class="section level2">
+<h2>4. Random slopes</h2>
+<p><code>(1 + cover | site)</code> gives each site its own intercept and
+its own effect of <code>cover</code>, with a correlation between them.
+<code>(cover || site)</code> makes them uncorrelated:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>h3 <span class="ot">&lt;-</span> <span class="fu">countreg_hier</span>(count <span class="sc">~</span> cover <span class="sc">+</span> mined <span class="sc">+</span> (cover <span class="sc">||</span> site), <span class="at">data =</span> s,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                    <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co">#&gt; Singular fit: a random-effect variance is estimated at or near zero (see summary()).</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">VarCorr</span>(h3)</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt;  Groups Name        Variance  Std.Dev. </span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;  site   (Intercept) 2.626e-01 5.125e-01</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt;  site   cover       2.688e-16 1.640e-08</span></span></code></pre></div>
+<p>The slope’s standard deviation is estimated at zero, so
+<code>cover</code> has the same effect at every site. A variance on the
+boundary is a <strong>singular fit</strong>: <code>summary()</code> says
+so, and the Wald standard errors of that term’s variance components are
+not reported, since they are not meaningful there. Remove the term, or
+test it with <code>re_lrtest()</code>.</p>
+<p>Group-level predictors (such as <code>mined</code>, constant within
+sites) are ordinary columns of the formula, and cross-level interactions
+such as <code>mined:cover</code> are ordinary interactions.</p>
+</div>
+<div id="predictions" class="section level2">
+<h2>5. Predictions</h2>
+<p><code>predict()</code> conditions on the estimated effects of the
+groups by default. <code>re.form</code> chooses which levels to
+condition on (<code>NA</code> for none), and groups not seen in
+estimation get no effect:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> s[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">30</span>), ]</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">predict</span>(h2, <span class="at">newdata =</span> nd)                         <span class="co"># site and sample</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.2103916 3.1660526</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">predict</span>(h2, <span class="at">newdata =</span> nd, <span class="at">re.form =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> site)) <span class="co"># site only</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [1] 0.2127103 3.4092077</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">predict</span>(h2, <span class="at">newdata =</span> nd, <span class="at">re.form =</span> <span class="cn">NA</span>)           <span class="co"># population level</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt; [1] 0.1958288 1.8879303</span></span></code></pre></div>
+<p>A population-level prediction with the effects at zero is the
+expected count of a <em>median</em> site. The <strong>mean</strong> over
+sites is larger: for the log link it is <span class="math inline">\(\exp(\eta + \sigma^2/2)\)</span>.
+<code>marginal = TRUE</code> integrates the effects that are not
+conditioned on out of the mean:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">predict</span>(h2, <span class="at">newdata =</span> nd, <span class="at">re.form =</span> <span class="cn">NA</span>, <span class="at">marginal =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; [1] 0.2327066 2.2434594</span></span></code></pre></div>
+<p><code>simulate()</code> draws new counts, either for the same groups
+(<code>use_re = &quot;conditional&quot;</code>) or for new groups with new effects
+(<code>use_re = &quot;new&quot;</code>).</p>
+</div>
+<div id="families-and-engines" class="section level2">
+<h2>6. Families and engines</h2>
+<p>Every count family can be used, including user-defined families
+(<code>new_count_family()</code>), and the distribution parameters can
+depend on covariates (<code>dis_param_formula_1</code>,
+<code>dis_param_formula_2</code>). For the Poisson, NB1 and NB2 families
+the derivatives of the log-density are analytic; for the others they are
+computed numerically.</p>
+<p><code>engine</code> chooses the integration method:</p>
+<table>
+<colgroup>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>engine</th>
+<th>when</th>
+<th>method</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>&quot;aghq&quot;</code></td>
+<td>one grouping term</td>
+<td>adaptive Gauss-Hermite quadrature, <code>nAGQ</code> points per
+effect</td>
+</tr>
+<tr class="even">
+<td><code>&quot;laplace&quot;</code></td>
+<td>any terms, nested or crossed</td>
+<td>Laplace approximation</td>
+</tr>
+<tr class="odd">
+<td><code>&quot;auto&quot;</code> (default)</td>
+<td></td>
+<td><code>&quot;aghq&quot;</code> for one term with at most two effects, otherwise
+<code>&quot;laplace&quot;</code></td>
+</tr>
+</tbody>
+</table>
+<p>With <code>nAGQ = 1</code> the quadrature is the Laplace
+approximation. The estimates equal those of <code>lme4::glmer()</code>
+(Poisson) and <code>glmmTMB</code> (Poisson, NB1 and NB2) with the same
+approximation.</p>
+</div>
+<div id="related-models" class="section level2">
+<h2>7. Related models</h2>
+<ul>
+<li><code>countreg_rp()</code> fits random parameters at one level, with
+free means and non-normal distributions (lognormal, triangular, gamma,
+…) and heterogeneity in their means and variances, by simulation.</li>
+<li><code>renb()</code>, <code>repois()</code> and
+<code>poislind_re()</code> fit random effects with conjugate
+distributions in closed form.</li>
+<li><code>countreg_fe()</code> fits fixed-effects models, which make no
+assumption about how the group effects relate to the covariates.</li>
+</ul>
+</div>
+<div id="not-yet-available" class="section level2">
+<h2>8. Not yet available</h2>
+<p>Non-normal random effects and nested simulation, posterior
+predictions from a separate history of counts, profile-likelihood
+intervals for the variance components, smooth terms and the
+correlated-random-effects option (<code>cre</code>) are not yet
+available in <code>countreg_hier()</code>.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

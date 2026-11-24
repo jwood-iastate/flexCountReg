@@ -131,6 +131,44 @@
   (`vignette("smooth-effects")`).
 * Bootstrap standard errors are not yet available with smooth terms.
 
+## Hierarchical count models
+
+* New `countreg_hier()` fits count models with normally distributed random
+  effects at any number of grouping levels, nested or crossed, written as
+  in lme4: `(1 | site)`, `(1 + lnaadt | county)` (correlated intercepts and
+  slopes), `(lnaadt || county)` (uncorrelated), `(1 | county/segment)`
+  (nested) and `(1 | site) + (1 | year)` (crossed). Every count family can
+  be used, including user-defined ones, with distribution-parameter
+  formulas, offsets and frequency weights.
+* Two integration engines: adaptive Gauss-Hermite quadrature for one
+  grouping term (9 points per effect by default), and the Laplace
+  approximation with sparse matrices for any number of terms.
+  `engine = "auto"` chooses between them. Each covariance matrix is
+  estimated through its Cholesky factor with an unconstrained diagonal, so
+  a variance can be estimated as zero; such singular fits are reported, and
+  the Wald standard errors of that term's variance components are not.
+  The derivatives of the log-density are analytic for the Poisson, NB1 and
+  NB2 families and numerical for the others.
+* Estimates, log-likelihoods and standard errors equal those of
+  `lme4::glmer()` (Poisson, Laplace and quadrature) and `glmmTMB` (Poisson,
+  NB1 and NB2; random intercepts and slopes, crossed and nested effects),
+  with log-likelihood differences of 1e-6 or less.
+* Methods: `summary()`, `predict()` with `re.form` (condition on all,
+  some or none of the levels), `allow.new.levels` and `marginal` (integrate
+  the remaining effects out of the mean, exp(eta + z' Sigma z / 2)),
+  `fitted()`, `residuals()`, `simulate()` (with the groups' effects or new
+  ones), `fixef()`, `ranef()` (conditional modes with posterior variances),
+  `VarCorr()`, `tidy()` and `glance()`. `fixef()`, `ranef()` and
+  `VarCorr()` are the nlme generics, so they work alongside lme4.
+* New `re_lrtest()`: likelihood-ratio test of a random-effect term, with
+  the boundary-corrected (chi-bar-squared) p-value.
+* New vignette, "Hierarchical count models"
+  (`vignette("hierarchical-count-models")`).
+* Not yet available in `countreg_hier()`: non-normal random effects
+  (nested simulation), posterior predictions from a separate history,
+  profile-likelihood intervals for the variance components, smooth terms
+  and `cre`.
+
 ## Fixed-effects count models
 
 * New `countreg_fe()` estimates count models with fixed effects for one or

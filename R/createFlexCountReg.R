@@ -38,6 +38,7 @@
                      countreg = "countreg",
                      countreg.rp = "countreg_rp",
                      countreg_fe = "countreg_fe",
+                     countreg_hier = "countreg_hier",
                      RENB = "renb",
                      poisLindRE = "poislind_re",
                      REPoisson = "repois",

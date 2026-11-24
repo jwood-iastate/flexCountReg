@@ -22,6 +22,7 @@ CBO
 CMD
 CMRG
 Cawthorn
+Concurvity
 Conde
 Correia
 Countr
@@ -234,6 +235,7 @@ gsl
 halton
 headwater
 hermite
+ij
 indvar
 infty
 integrand
@@ -245,6 +247,7 @@ lage
 lamW
 lbase
 le
+lme
 lmtest
 ln
 logLik
@@ -264,6 +267,7 @@ monticola
 multiway
 nd
 ndraws
+nlme
 noninteger
 nonlinearly
 nonpositive

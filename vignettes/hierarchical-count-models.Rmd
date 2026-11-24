@@ -1,0 +1,180 @@
+---
+title: "Hierarchical count models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Hierarchical count models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Counts are often grouped: crash counts by road segment and year, segments
+within counties, animal counts by site and survey. Observations in the same
+group share unmeasured conditions, so they are correlated, and the groups
+themselves are of interest. `countreg_hier()` fits **hierarchical**
+(mixed-effects, multilevel) count models with normally distributed random
+effects at any number of grouping levels, nested or crossed, for any count
+family of the package.
+
+```{r setup}
+library(flexCountReg)
+data("stream_salamanders")
+s <- stream_salamanders
+s$sample <- factor(s$sample)
+```
+
+The salamander data have 644 counts from 23 stream sites, each surveyed
+four times (`sample`), for seven species and life stages (`spp`), at sites
+affected or not by mountaintop mining (`mined`).
+
+## 1. A random intercept
+
+Random-effect terms are written as in lme4: `(1 | site)` gives each site
+its own intercept, $b_j \sim N(0, \sigma^2)$:
+
+```{r fit}
+h <- countreg_hier(count ~ spp + mined + (1 | site), data = s,
+                   family = "NB2")
+summary(h)
+```
+
+The model is
+
+$$
+\log \mu_{ij} = x_{ij}'\beta + b_j, \qquad
+y_{ij} \mid b_j \sim \text{NB2}(\mu_{ij}, \alpha), \qquad
+b_j \sim N(0, \sigma^2),
+$$
+
+and the likelihood integrates each site's $b_j$ out. With one grouping
+factor the integral is computed by **adaptive Gauss-Hermite quadrature**
+(9 points by default), which is accurate even for small groups.
+
+The standard deviation 0.54 means that sites with the same covariates
+differ in their expected counts by a factor of about
+$\exp(2 \times 0.54) \approx 3$ between the 16th and 84th percentiles.
+`re_lrtest()` tests whether the variance is zero. The null value is on the
+boundary of the parameter space, so the p-value is half that of the usual
+$\chi^2_1$ test:
+
+```{r lrtest}
+re_lrtest(h)
+```
+
+## 2. Effects of the groups
+
+`ranef()` returns the conditional modes of the site effects, the most
+likely value of each site's effect given its counts. They are shrunk
+towards zero, more so for sites with little information. `VarCorr()`
+returns the estimated variance components and `fixef()` the fixed
+coefficients:
+
+```{r ranef}
+head(ranef(h)$site)
+VarCorr(h)
+```
+
+## 3. Crossed and nested effects
+
+Several terms can be combined. Here the site effects are **crossed** with
+survey occasions shared by all sites:
+
+```{r crossed}
+h2 <- countreg_hier(count ~ spp + mined + (1 | site) + (1 | sample),
+                    data = s, family = "POISSON")
+VarCorr(h2)
+```
+
+**Nested** effects, such as surveys within sites, are written
+`(1 | site/sample)`, which is short for `(1 | site) + (1 | site:sample)`.
+With more than one term the model uses the **Laplace approximation** with
+sparse matrices, as `lme4::glmer()` and `glmmTMB` do. It handles thousands
+of groups at several levels.
+
+## 4. Random slopes
+
+`(1 + cover | site)` gives each site its own intercept and its own effect
+of `cover`, with a correlation between them. `(cover || site)` makes them
+uncorrelated:
+
+```{r slopes}
+h3 <- countreg_hier(count ~ cover + mined + (cover || site), data = s,
+                    family = "NB2")
+VarCorr(h3)
+```
+
+The slope's standard deviation is estimated at zero, so `cover` has the
+same effect at every site. A variance on the boundary is a **singular
+fit**: `summary()` says so, and the Wald standard errors of that term's
+variance components are not reported, since they are not meaningful
+there. Remove the term, or test it with `re_lrtest()`.
+
+Group-level predictors (such as `mined`, constant within sites) are
+ordinary columns of the formula, and cross-level interactions such as
+`mined:cover` are ordinary interactions.
+
+## 5. Predictions
+
+`predict()` conditions on the estimated effects of the groups by default.
+`re.form` chooses which levels to condition on (`NA` for none), and groups
+not seen in estimation get no effect:
+
+```{r predict}
+nd <- s[c(1, 30), ]
+predict(h2, newdata = nd)                         # site and sample
+predict(h2, newdata = nd, re.form = ~ (1 | site)) # site only
+predict(h2, newdata = nd, re.form = NA)           # population level
+```
+
+A population-level prediction with the effects at zero is the expected
+count of a *median* site. The **mean** over sites is larger: for the log
+link it is $\exp(\eta + \sigma^2/2)$. `marginal = TRUE` integrates the
+effects that are not conditioned on out of the mean:
+
+```{r marginal}
+predict(h2, newdata = nd, re.form = NA, marginal = TRUE)
+```
+
+`simulate()` draws new counts, either for the same groups
+(`use_re = "conditional"`) or for new groups with new effects
+(`use_re = "new"`).
+
+## 6. Families and engines
+
+Every count family can be used, including user-defined families
+(`new_count_family()`), and the distribution parameters can depend on
+covariates (`dis_param_formula_1`, `dis_param_formula_2`). For the
+Poisson, NB1 and NB2 families the derivatives of the log-density are
+analytic; for the others they are computed numerically.
+
+`engine` chooses the integration method:
+
+| engine | when | method |
+| --- | --- | --- |
+| `"aghq"` | one grouping term | adaptive Gauss-Hermite quadrature, `nAGQ` points per effect |
+| `"laplace"` | any terms, nested or crossed | Laplace approximation |
+| `"auto"` (default) | | `"aghq"` for one term with at most two effects, otherwise `"laplace"` |
+
+With `nAGQ = 1` the quadrature is the Laplace approximation. The estimates
+equal those of `lme4::glmer()` (Poisson) and `glmmTMB` (Poisson, NB1 and
+NB2) with the same approximation.
+
+## 7. Related models
+
+* `countreg_rp()` fits random parameters at one level, with free means and
+  non-normal distributions (lognormal, triangular, gamma, ...) and
+  heterogeneity in their means and variances, by simulation.
+* `renb()`, `repois()` and `poislind_re()` fit random effects with
+  conjugate distributions in closed form.
+* `countreg_fe()` fits fixed-effects models, which make no assumption about
+  how the group effects relate to the covariates.
+
+## 8. Not yet available
+
+Non-normal random effects and nested simulation, posterior predictions
+from a separate history of counts, profile-likelihood intervals for the
+variance components, smooth terms and the correlated-random-effects option
+(`cre`) are not yet available in `countreg_hier()`.

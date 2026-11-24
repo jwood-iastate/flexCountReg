@@ -56,3 +56,30 @@ mx <- countreg_mix(Total_crashes ~ s(lnaadt, k = 8) + offset(lnlength),
                    components = 2, n_starts = 3, seed = 1)
 mx$model$smooth_table[, c("parameter", "term", "edf", "lambda")]
 
+## ----by-----------------------------------------------------------------------
+washington_roads$speed_group <- factor(washington_roads$speed50,
+                                       labels = c("other", "50 mph"))
+mb <- countreg(Total_crashes ~ s(lnaadt, by = speed_group, k = 6) +
+                 speed_group + offset(lnlength),
+               data = washington_roads, family = "NB2")
+mb$model$smooth_table[, c("term", "edf", "p.value")]
+
+## ----by-plot, fig.width = 7, fig.height = 3.5---------------------------------
+op <- par(mfrow = c(1, 2))
+plot_smooths(mb)
+par(op)
+
+## ----check--------------------------------------------------------------------
+small <- countreg(Total_crashes ~ s(lnaadt, k = 4) + offset(lnlength),
+                  data = washington_roads, family = "NB2")
+smooth_check(small)
+
+## ----concurvity---------------------------------------------------------------
+concurvity_fcr(m2)
+
+## ----derivatives--------------------------------------------------------------
+plot_derivatives(m)
+
+## ----calibration--------------------------------------------------------------
+calibration_by(m, "lnaadt", groups = 5)
+

@@ -127,6 +127,7 @@ README
 RENB
 Ramaswamy
 Raphson
+Raphson's
 Rigby
 Rootogram
 Rootograms
@@ -170,6 +171,7 @@ bioChemists
 blacklip
 bslib
 callr
+cancelled
 centre
 centred
 cirrigera
@@ -182,6 +184,7 @@ df
 dgp
 digamma
 dinvgamma
+dispersions
 dlindley
 doi
 dpLnorm
@@ -200,7 +203,6 @@ equidispersed
 estimand
 estimands
 et
-expm
 exponentiate
 extrema
 favour
@@ -223,7 +225,7 @@ lage
 lamW
 lbase
 le
-lgamma
+lmtest
 ln
 logLik
 mathrm
@@ -278,6 +280,7 @@ qpoisweibull
 qquad
 qsichel
 qtri
+randtoolbox's
 rcom
 renormalized
 reparameterize

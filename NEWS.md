@@ -378,6 +378,27 @@
   coefficient matrix, or `tibble::as_tibble(summary(m))` for the tibble that
   `summary()` returned before. The offset is shown as a note, not as a
   coefficient row.
+* `countreg()` and `countreg_rp()` compute the final Hessian, and so every
+  Hessian-based, robust and cluster-robust standard error, adaptively.
+  maxLik's default step is 1e-6, where rounding error is about 0.2 per
+  Hessian entry for a log-likelihood near 1000. That made the standard
+  errors of weakly determined parameters wrong. In the README's
+  generalized NBP model on `washington_roads` they were up to 25% too
+  large (ln(p): 0.229, now 0.183).
+  * The Hessian is computed at steps h and h/2 (h = 1e-3 times the size of
+    each estimate) and combined by Richardson extrapolation. Larger steps
+    (for log-likelihoods computed with quadrature, series or Bessel
+    functions) and smaller ones are tried when the two disagree.
+  * Families with an analytic gradient (Poisson, NB1, NB2, and
+    `countreg_rp()` in general) difference the gradient; the others use
+    second differences of the log-likelihood.
+  * The fit stores `model$hessian_accuracy`, the largest relative change of
+    a standard error between the two steps, and warns when it exceeds 1%.
+  * Checked against independent Hessians, the standard errors agree to
+    about 6e-5 or better for the Poisson, NB1, NB2, NBP, PIG, PIG1, PLN, GP1
+    and DW families. The Sichel family agrees to 0.15%, for its weakly
+    identified gamma.
+  * BHHH fits keep the outer-product Hessian of the scores.
 * Hessian-based, robust and cluster-robust covariances use the symmetric
   part of the numeric Hessian. In poorly conditioned fits the inverse
   amplified the Hessian's small asymmetry. For example, a `renb()` fit by

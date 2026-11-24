@@ -541,7 +541,12 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
     grad = if (use_grad) gr_countreg_rp,
     start = start,
     method = method,
+    finalHessian = method == "BHHH",
     control = list(iterlim = max.iters, printLevel = print.level))
+  # An accurate final Hessian (maxLik's steps of 1e-6 are too small for a
+  # simulated likelihood and for families whose score uses differences)
+  fit <- .fcr_set_final_hessian(fit, ll_countreg_rp,
+                                if (use_grad) gr_countreg_rp, method)
   rp_state <- NULL
   names(fit$estimate) <- x_names
   fit$converged <- .fcr_converged(fit, method)

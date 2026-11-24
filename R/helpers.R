@@ -107,6 +107,146 @@ NULL
   log(min(max(a, 1e-3), 100))
 }
 
+# Final Hessian of a log-likelihood at the estimates, chosen adaptively.
+#
+# maxLik's own final Hessian uses steps of 1e-6, where rounding error is
+# about eps * |logLik| / 1e-12 per entry: 0.2 for a log-likelihood of 1000,
+# which made the standard errors of weakly determined parameters wrong by
+# 25% and more. How large a step is right depends on how smooth the
+# log-likelihood is (exact densities, or quadrature, series and Bessel
+# evaluations with their own error) and on the curvature of each parameter.
+# So the Hessian is computed by central differences at steps h and h/2,
+# combined by Richardson extrapolation (4 D(h/2) - D(h)) / 3, which removes
+# the h^2 error term; the difference between D(h) and D(h/2) measures the
+# remaining error. Steps h_i = rel * max(1, |theta_i|) with rel = 1e-3
+# first; if the two disagree by more than `tol`, rel = 1e-2 (noisy
+# log-likelihoods) and 1e-4 (sharp curvature) are tried, and the pair that
+# agrees best is used. Its accuracy, the largest relative change of a
+# standard error between the two steps, is attached as attribute
+# "accuracy" (with "step").
+#
+# With an analytic gradient the differences are of the gradient (2k
+# evaluations per step), otherwise second differences of the log-likelihood.
+# `fn` returns the log-likelihood contributions, `grad` (optional) their
+# scores. Returns NULL if no step gives finite values (an estimate at the
+# edge of the parameter space).
+.fcr_hessian_step <- function(fn, theta, grad, h) {
+  k <- length(theta)
+  step <- function(i, s) {
+    e <- numeric(k)
+    e[i] <- s
+    theta + e
+  }
+  H <- matrix(NA_real_, k, k)
+  if (!is.null(grad)) {
+    gsum <- function(p) {
+      g <- grad(p)
+      if (is.matrix(g)) colSums(g) else as.vector(g)
+    }
+    for (i in seq_len(k)) {
+      H[, i] <- (gsum(step(i, h[i])) - gsum(step(i, -h[i]))) / (2 * h[i])
+    }
+    H <- (H + t(H)) / 2
+  } else {
+    total <- function(p) sum(fn(p))
+    f0 <- total(theta)
+    fp <- vapply(seq_len(k), function(i) total(step(i, h[i])), 0)
+    fm <- vapply(seq_len(k), function(i) total(step(i, -h[i])), 0)
+    diag(H) <- (fp - 2 * f0 + fm) / h^2
+    for (i in seq_len(k)) {
+      for (j in seq_len(i - 1L)) {
+        pp <- theta; pp[c(i, j)] <- pp[c(i, j)] + c(h[i], h[j])
+        pm <- theta; pm[c(i, j)] <- pm[c(i, j)] + c(h[i], -h[j])
+        mp <- theta; mp[c(i, j)] <- mp[c(i, j)] + c(-h[i], h[j])
+        mm <- theta; mm[c(i, j)] <- mm[c(i, j)] - c(h[i], h[j])
+        H[i, j] <- H[j, i] <- (total(pp) - total(pm) - total(mp) +
+                                 total(mm)) / (4 * h[i] * h[j])
+      }
+    }
+  }
+  if (all(is.finite(H))) H
+}
+
+# Relative difference of two Hessians as it matters for inference: the
+# largest relative change of a standard error when both are negative
+# definite, otherwise the largest entry difference scaled by the
+# curvatures, |A_ij - B_ij| / sqrt(|B_ii B_jj|).
+.fcr_hessian_gap <- function(A, B) {
+  se <- function(H) {
+    V <- tryCatch(solve(-H), error = function(e) NULL)
+    if (is.null(V) || any(!is.finite(diag(V))) || any(diag(V) <= 0)) {
+      return(NULL)
+    }
+    sqrt(diag(V))
+  }
+  sa <- se(A)
+  sb <- se(B)
+  if (!is.null(sa) && !is.null(sb)) return(max(abs(sa / sb - 1)))
+  d <- sqrt(abs(diag(B)))
+  d[d == 0] <- 1
+  max(abs(A - B) / outer(d, d))
+}
+
+.fcr_final_hessian <- function(fn, theta, grad = NULL,
+                               rels = c(1e-3, 1e-2, 1e-4), tol = 1e-3) {
+  best <- NULL
+  for (rel in rels) {
+    h <- rel * pmax(1, abs(theta))
+    H1 <- .fcr_hessian_step(fn, theta, grad, h)
+    H2 <- if (!is.null(H1)) .fcr_hessian_step(fn, theta, grad, h / 2)
+    if (is.null(H2)) next
+    gap <- .fcr_hessian_gap(H1, H2)
+    if (!is.finite(gap)) next
+    if (is.null(best) || gap < best$gap) {
+      best <- list(H = (4 * H2 - H1) / 3, gap = gap, rel = rel)
+    }
+    if (gap < tol) break
+  }
+  if (is.null(best)) return(NULL)
+  H <- (best$H + t(best$H)) / 2
+  dimnames(H) <- list(names(theta), names(theta))
+  structure(H, accuracy = best$gap, step = best$rel)
+}
+
+# Largest relative change of a standard error between Hessian steps above
+# which the fit warns that its standard errors are numerically uncertain.
+.fcr_hessian_warn_tol <- 0.01
+
+# Replace a maxLik fit's final Hessian (not for BHHH, whose Hessian is the
+# outer product of the scores by design) with .fcr_final_hessian(), falling
+# back to maxLik's numericHessian() where that fails. Used with
+# maxLik(..., finalHessian = FALSE) so the Hessian is computed once.
+.fcr_set_final_hessian <- function(fit, fn, grad, method) {
+  if (identical(method, "BHHH")) return(fit)
+  theta <- fit$estimate
+  H <- tryCatch(.fcr_final_hessian(fn, theta, grad),
+                error = function(e) NULL)
+  if (is.null(H)) {
+    H <- tryCatch(
+      maxLik::numericHessian(function(p) sum(fn(p)),
+                             grad = if (!is.null(grad)) function(p) {
+                               g <- grad(p)
+                               if (is.matrix(g)) colSums(g) else g
+                             }, t0 = theta),
+      error = function(e) matrix(NA_real_, length(theta), length(theta)))
+    dimnames(H) <- list(names(theta), names(theta))
+  }
+  acc <- attr(H, "accuracy")
+  rel <- attr(H, "step")
+  attributes(H) <- attributes(H)[c("dim", "dimnames")]
+  fit$hessian <- H
+  fit$hessian_accuracy <- acc
+  fit$hessian_step <- rel
+  if (isTRUE(acc > .fcr_hessian_warn_tol)) {
+    warning("The numerical Hessian is uncertain: standard errors change by ",
+            "up to ", signif(100 * acc, 2), "% between differencing steps. ",
+            "Some parameters may be weakly identified (a nearly flat ",
+            "log-likelihood); treat their standard errors with care.",
+            call. = FALSE)
+  }
+  fit
+}
+
 # Covariance from the Hessian, with a generalized-inverse fallback. The
 # generalized inverse gives zero variance in directions where the likelihood
 # is flat (the null space of the Hessian), which would read as perfect

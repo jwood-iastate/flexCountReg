@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Fitting your own count distribution</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Fitting your own count distribution</h1>
+
+
+
+<p>flexCountReg has many count distributions built in (see
+<code>?count_families</code>). When the one you need is not among them,
+you can define it yourself with <code>new_count_family()</code> and use
+it with <code>countreg()</code>, <code>countreg_rp()</code> and
+<code>countreg_mix()</code>, exactly like a built-in family. You write
+one function, the log probability mass function; everything else
+(fitting, predictions, residuals, rootograms, simulation) works from
+it.</p>
+<p>This article builds a distribution that is not in the package, checks
+it, fits it, and compares it with the built-in negative binomial.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(flexCountReg)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span></code></pre></div>
+<div id="the-distribution" class="section level2">
+<h2>1. The distribution</h2>
+<p>As an example, take a <strong>one-inflated negative
+binomial</strong>: a negative binomial (NB2) with an extra probability
+<span class="math inline">\(\omega\)</span> of a count of exactly
+one,</p>
+<p><span class="math display">\[
+P(Y = y) = (1 - \omega)\, f_{NB}(y \mid \mu, \alpha) + \omega\, [y = 1],
+\]</span></p>
+<p>where <span class="math inline">\(f_{NB}\)</span> has mean <span class="math inline">\(\mu\)</span> and variance <span class="math inline">\(\mu + \alpha\mu^2\)</span>. Excess ones appear in
+data where a first event changes what follows (for example, a site that
+is treated after its first crash, or repeat-offense counts). The
+distribution has two parameters besides <span class="math inline">\(\mu\)</span>: the dispersion <span class="math inline">\(\alpha &gt; 0\)</span> and the probability <span class="math inline">\(\omega \in (0, 1)\)</span>. Its mean is <span class="math inline">\((1 - \omega)\mu + \omega\)</span>, so <span class="math inline">\(\mu\)</span> is <em>not</em> the mean.</p>
+</div>
+<div id="define-the-family" class="section level2">
+<h2>2. Define the family</h2>
+<p>A family needs a name, its parameters and the log PMF. Each parameter
+has a link, which sets the scale of its linear predictor:
+<code>&quot;log&quot;</code> for a positive parameter, <code>&quot;logit&quot;</code> for a
+probability and <code>&quot;identity&quot;</code> for any real value.
+<code>start</code> is the starting value on that scale.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>oinb <span class="ot">&lt;-</span> <span class="fu">new_count_family</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">name =</span> <span class="st">&quot;OINB&quot;</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">params =</span> <span class="fu">list</span>(<span class="at">alpha =</span> <span class="fu">count_param</span>(<span class="st">&quot;log&quot;</span>, <span class="at">start =</span> <span class="sc">-</span><span class="dv">1</span>),</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>                <span class="at">omega =</span> <span class="fu">count_param</span>(<span class="st">&quot;logit&quot;</span>, <span class="at">start =</span> <span class="sc">-</span><span class="dv">3</span>)),</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">logpmf =</span> <span class="cf">function</span>(y, mu, par) {</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>    lnb <span class="ot">&lt;-</span> <span class="fu">dnbinom</span>(y, <span class="at">size =</span> <span class="dv">1</span> <span class="sc">/</span> par<span class="sc">$</span>alpha, <span class="at">mu =</span> mu, <span class="at">log =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>    <span class="fu">ifelse</span>(y <span class="sc">==</span> <span class="dv">1</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>           <span class="fu">log</span>((<span class="dv">1</span> <span class="sc">-</span> par<span class="sc">$</span>omega) <span class="sc">*</span> <span class="fu">exp</span>(lnb) <span class="sc">+</span> par<span class="sc">$</span>omega),</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>           <span class="fu">log1p</span>(<span class="sc">-</span>par<span class="sc">$</span>omega) <span class="sc">+</span> lnb)</span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>  },</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>  <span class="at">mean_is_mu =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>  <span class="at">mean =</span> <span class="cf">function</span>(mu, par) (<span class="dv">1</span> <span class="sc">-</span> par<span class="sc">$</span>omega) <span class="sc">*</span> mu <span class="sc">+</span> par<span class="sc">$</span>omega,</span>
+<span id="cb2-13"><a href="#cb2-13" tabindex="-1"></a>  <span class="at">variance =</span> <span class="cf">function</span>(mu, par) {</span>
+<span id="cb2-14"><a href="#cb2-14" tabindex="-1"></a>    m <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> par<span class="sc">$</span>omega) <span class="sc">*</span> mu <span class="sc">+</span> par<span class="sc">$</span>omega</span>
+<span id="cb2-15"><a href="#cb2-15" tabindex="-1"></a>    ey2 <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> par<span class="sc">$</span>omega) <span class="sc">*</span> (mu <span class="sc">+</span> par<span class="sc">$</span>alpha <span class="sc">*</span> mu<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> mu<span class="sc">^</span><span class="dv">2</span>) <span class="sc">+</span> par<span class="sc">$</span>omega</span>
+<span id="cb2-16"><a href="#cb2-16" tabindex="-1"></a>    ey2 <span class="sc">-</span> m<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb2-17"><a href="#cb2-17" tabindex="-1"></a>  })</span>
+<span id="cb2-18"><a href="#cb2-18" tabindex="-1"></a>oinb</span>
+<span id="cb2-19"><a href="#cb2-19" tabindex="-1"></a><span class="co">#&gt; Count family &quot;OINB&quot; with parameter(s) alpha (log link), omega (logit link)</span></span>
+<span id="cb2-20"><a href="#cb2-20" tabindex="-1"></a><span class="co">#&gt;   mean: user function</span></span>
+<span id="cb2-21"><a href="#cb2-21" tabindex="-1"></a><span class="co">#&gt;   supplied: logpmf, mean, variance</span></span></code></pre></div>
+<p><code>logpmf</code> receives vectors <code>y</code> and
+<code>mu</code> and a list <code>par</code> with one vector per
+parameter, all of the same length, and must return one log-probability
+per element. Only <code>logpmf</code> is required:</p>
+<ul>
+<li>without <code>mean</code> (and with <code>mean_is_mu = FALSE</code>)
+and without <code>variance</code>, the moments are computed by summing
+the PMF;</li>
+<li>without <code>cdf</code>, the CDF is the cumulative sum of the
+PMF;</li>
+<li>without <code>rand</code>, random draws are made by inverting that
+CDF.</li>
+</ul>
+<p>Giving them is faster, and <code>check_count_family()</code> checks
+them against the PMF. Parameter values outside their space should give
+<code>-Inf</code> or <code>NaN</code> (errors are caught too);
+<code>valid = function(mu, par)</code> can state the parameter space
+explicitly.</p>
+</div>
+<div id="check-it-before-fitting" class="section level2">
+<h2>3. Check it before fitting</h2>
+<p><code>check_count_family()</code> evaluates the family over a grid of
+means and parameter values: the probabilities must sum to one, the mean
+and variance functions must agree with the PMF, the function must be
+vectorized, and missing or invalid inputs must not cause errors.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>chk <span class="ot">&lt;-</span> <span class="fu">check_count_family</span>(oinb, <span class="at">mu =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="dv">2</span>, <span class="dv">20</span>),</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>                          <span class="at">par =</span> <span class="fu">list</span>(<span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="dv">2</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>                                     <span class="at">omega =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.5</span>)))</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;                        check   ok                                    detail</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;                PMF sums to 1 TRUE               largest |sum - 1| = 2.1e-13</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;       mean() matches the PMF TRUE          largest relative error = 9.6e-11</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;   variance() matches the PMF TRUE          largest relative error = 2.1e-09</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt;            vectorized over y TRUE                                        ok</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;              NA mean handled TRUE                                  no error</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;  invalid mean gives no error TRUE no error (the row is given probability 0)</span></span></code></pre></div>
+<p>A family that fails a check gives a warning naming the failed checks.
+For example, a variance that scales the negative binomial variance by
+<span class="math inline">\(1 - \omega\)</span> and ignores the extra
+ones:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>wrong <span class="ot">&lt;-</span> oinb</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>wrong<span class="sc">$</span>variance <span class="ot">&lt;-</span> <span class="cf">function</span>(mu, par) (<span class="dv">1</span> <span class="sc">-</span> par<span class="sc">$</span>omega) <span class="sc">*</span> (mu <span class="sc">+</span> par<span class="sc">$</span>alpha <span class="sc">*</span> mu<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>chk <span class="ot">&lt;-</span> <span class="fu">check_count_family</span>(wrong, <span class="at">mu =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="dv">2</span>, <span class="dv">20</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>                          <span class="at">par =</span> <span class="fu">list</span>(<span class="at">alpha =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="dv">2</span>),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>                                     <span class="at">omega =</span> <span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">0.5</span>)))</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt;                        check    ok                                    detail</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt;                PMF sums to 1  TRUE               largest |sum - 1| = 2.1e-13</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;       mean() matches the PMF  TRUE          largest relative error = 9.6e-11</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;   variance() matches the PMF FALSE             largest relative error = 0.64</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;            vectorized over y  TRUE                                        ok</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;              NA mean handled  TRUE                                  no error</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;  invalid mean gives no error  TRUE no error (the row is given probability 0)</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; Warning: Failed checks: variance() matches the PMF</span></span></code></pre></div>
+</div>
+<div id="fit-it" class="section level2">
+<h2>4. Fit it</h2>
+<p>Pass the family object as <code>family</code>. The coefficients of
+the distribution parameters are labelled by their link:
+<code>ln(alpha)</code> and <code>logit(omega)</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>f <span class="ot">&lt;-</span> Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> lnlength <span class="sc">+</span> speed50</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>m_oinb <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> washington_roads, <span class="at">family =</span> oinb,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>                   <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="fu">summary</span>(m_oinb)</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; countreg(formula = f, data = washington_roads, family = oinb, </span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt;     method = &quot;BFGS&quot;)</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; Model: countreg | family: OINB | optimizer: BFGS</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; Iterations: 40 </span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Convergence: successful convergence </span></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; Coefficients (standard errors: Hessian-based):</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt;              Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; (Intercept)   -8.8891     0.5746  -15.47  &lt; 2e-16 ***</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; lnaadt         1.0964     0.0680   16.12  &lt; 2e-16 ***</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; lnlength       0.7704     0.0748   10.30  &lt; 2e-16 ***</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt; speed50       -0.5401     0.1095   -4.93  8.1e-07 ***</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; ln(alpha)     -1.0264     0.2534   -4.05  5.1e-05 ***</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; logit(omega)  -5.5742     2.8808   -1.93    0.053 .  </span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1084.923 | AIC: 2181.847 | BIC: 2213.73 </span></span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a><span class="co">#&gt; N: 1501</span></span></code></pre></div>
+<p>Compare it with the built-in negative binomial, which is the special
+case <span class="math inline">\(\omega = 0\)</span>:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>m_nb2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> washington_roads, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                  <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">c</span>(<span class="at">NB2 =</span> <span class="fu">AIC</span>(m_nb2), <span class="at">OINB =</span> <span class="fu">AIC</span>(m_oinb))</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;      NB2     OINB </span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 2179.884 2181.847</span></span></code></pre></div>
+<p>These road segments have no excess ones. The estimate of <span class="math inline">\(\omega\)</span> is 0.0038, at the boundary of its
+space, so its standard error is not available (the warning above), and
+the AIC prefers the negative binomial. The frequency table in Section 5
+shows why: there are fewer ones than the negative binomial predicts, not
+more.</p>
+<p>When the extra ones are there, the family finds them. Here 20% of the
+counts of a negative binomial sample are replaced by ones:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>sim <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="fu">rnorm</span>(n))</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>sim<span class="sc">$</span>y <span class="ot">&lt;-</span> <span class="fu">rnbinom</span>(n, <span class="at">size =</span> <span class="dv">2</span>, <span class="at">mu =</span> <span class="fu">exp</span>(<span class="fl">0.8</span> <span class="sc">+</span> <span class="fl">0.5</span> <span class="sc">*</span> sim<span class="sc">$</span>x))</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>sim<span class="sc">$</span>y[<span class="fu">runif</span>(n) <span class="sc">&lt;</span> <span class="fl">0.2</span>] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>s_oinb <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> sim, <span class="at">family =</span> oinb, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>s_nb2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(y <span class="sc">~</span> x, <span class="at">data =</span> sim, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">c</span>(<span class="at">NB2 =</span> <span class="fu">AIC</span>(s_nb2), <span class="at">OINB =</span> <span class="fu">AIC</span>(s_oinb))</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt;      NB2     OINB </span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; 7538.036 7297.448</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co"># omega (true 0.2) and alpha (true 0.5)</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="fu">c</span>(<span class="at">omega =</span> <span class="fu">plogis</span>(<span class="fu">coef</span>(s_oinb)[[<span class="st">&quot;logit(omega)&quot;</span>]]),</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  <span class="at">alpha =</span> <span class="fu">exp</span>(<span class="fu">coef</span>(s_oinb)[[<span class="st">&quot;ln(alpha)&quot;</span>]]))</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;     omega     alpha </span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; 0.2066053 0.5075688</span></span></code></pre></div>
+<p>As with the built-in families, each distribution parameter can have
+its own regression: <code>dis_param_formula_1</code> models the first
+parameter (<span class="math inline">\(\alpha\)</span>) and
+<code>dis_param_formula_2</code> the second (<span class="math inline">\(\omega\)</span>), on their link scales.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>m_oinb2 <span class="ot">&lt;-</span> <span class="fu">countreg</span>(f, <span class="at">data =</span> washington_roads, <span class="at">family =</span> oinb,</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>                    <span class="at">dis_param_formula_2 =</span> <span class="sc">~</span> speed50, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">coef</span>(m_oinb2)[<span class="fu">c</span>(<span class="st">&quot;logit(omega):(Intercept)&quot;</span>, <span class="st">&quot;logit(omega):speed50&quot;</span>)]</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; logit(omega):(Intercept)     logit(omega):speed50 </span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt;                -4.749672                -3.187241</span></span></code></pre></div>
+</div>
+<div id="everything-else-works-from-the-pmf" class="section level2">
+<h2>5. Everything else works from the PMF</h2>
+<p>Predictions of the mean use the family’s <code>mean</code> function;
+probabilities, quantile residuals, rootograms and simulation use the
+PMF.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> washington_roads[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, ]</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">predict</span>(m_oinb, <span class="at">newdata =</span> nd)                      <span class="co"># E[Y]</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.7789732 0.7085596 1.0441579</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">predict</span>(m_oinb, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>], <span class="dv">3</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;          0     1     2     3     4</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; [1,] 0.501 0.309 0.126 0.044 0.014</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; [2,] 0.530 0.303 0.115 0.037 0.011</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; [3,] 0.410 0.316 0.161 0.070 0.028</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">residuals</span>(m_oinb, <span class="at">type =</span> <span class="st">&quot;quantile&quot;</span>))</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] -1.2686338  1.2134863  1.1183552 -0.1828044 -1.3905276  0.5135716</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>sims <span class="ot">&lt;-</span> <span class="fu">simulate</span>(m_oinb, <span class="at">nsim =</span> <span class="dv">2</span>, <span class="at">seed =</span> <span class="dv">1</span>)</span></code></pre></div>
+<p>Observed and expected frequencies of the small counts show whether
+extra ones are needed. For the road data both models predict more ones
+than were observed:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>expected <span class="ot">&lt;-</span> <span class="cf">function</span>(m) {</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="fu">colSums</span>(<span class="fu">predict</span>(m, <span class="at">newdata =</span> washington_roads, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>)[, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>])</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>}</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">rbind</span>(<span class="at">observed =</span> <span class="fu">tabulate</span>(washington_roads<span class="sc">$</span>Total_crashes <span class="sc">+</span> <span class="dv">1</span>, <span class="dv">5</span>),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>      <span class="at">NB2 =</span> <span class="fu">round</span>(<span class="fu">expected</span>(m_nb2), <span class="dv">1</span>),</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>      <span class="at">OINB =</span> <span class="fu">round</span>(<span class="fu">expected</span>(m_oinb), <span class="dv">1</span>))</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt;               0     1    2    3    4</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; observed 1101.0 242.0 91.0 30.0 23.0</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; NB2      1095.1 254.2 84.0 35.2 16.3</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; OINB     1094.5 256.0 82.9 34.9 16.2</span></span></code></pre></div>
+<p>The family also works in random-parameter models and finite
+mixtures:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>m_rp <span class="ot">&lt;-</span> <span class="fu">countreg_rp</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> lnlength,</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>                    <span class="at">rpar_formula =</span> <span class="sc">~</span> <span class="sc">-</span><span class="dv">1</span> <span class="sc">+</span> speed50,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>                    <span class="at">data =</span> washington_roads, <span class="at">family =</span> oinb,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>                    <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>, <span class="at">ndraws =</span> <span class="dv">50</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">coef</span>(m_rp)</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt;    (Intercept)         lnaadt       lnlength   speed50:Mean speed50:St.Dev </span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt;     -8.8709961      1.0940735      0.7680520     -0.7064730      0.5809304 </span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt;      ln(alpha)   logit(omega) </span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;     -1.2604041     -5.5365436</span></span></code></pre></div>
+</div>
+<div id="saving-and-sharing-a-fitted-model" class="section level2">
+<h2>6. Saving and sharing a fitted model</h2>
+<p>The fitted model stores the family, so it can be saved and used in
+another R session, on another computer, or in parallel workers, without
+defining the family again:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>path <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">&quot;.rds&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="fu">saveRDS</span>(m_oinb, path)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>m_again <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(path)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="fu">predict</span>(m_again, <span class="at">newdata =</span> nd)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; [1] 0.7789732 0.7085596 1.0441579</span></span></code></pre></div>
+<p>Two families with the same <code>name</code> but different
+definitions are kept apart: each is identified by its name and a hash of
+its definition.</p>
+</div>
+<div id="what-a-user-family-can-and-cannot-do" class="section level2">
+<h2>7. What a user family can and cannot do</h2>
+<table>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Feature</th>
+<th align="left">Available</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left"><code>countreg()</code>, with distribution-parameter
+formulas</td>
+<td align="left">yes</td>
+</tr>
+<tr class="even">
+<td align="left">zero-inflated and hurdle models
+(<code>zero_formula</code>)</td>
+<td align="left">yes</td>
+</tr>
+<tr class="odd">
+<td align="left"><code>countreg_rp()</code> (random parameters,
+panels)</td>
+<td align="left">yes</td>
+</tr>
+<tr class="even">
+<td align="left"><code>countreg_mix()</code> and
+<code>countreg_lc()</code></td>
+<td align="left">yes, slower than built-in NB and Poisson mixtures</td>
+</tr>
+<tr class="odd">
+<td align="left">predictions, probabilities, residuals, rootograms,
+<code>simulate()</code></td>
+<td align="left">yes</td>
+</tr>
+<tr class="even">
+<td align="left">robust and cluster-robust standard errors,
+<code>vcov(type = &quot;cluster&quot;)</code></td>
+<td align="left">yes</td>
+</tr>
+<tr class="odd">
+<td align="left">underreporting (<code>underreport_formula</code>)</td>
+<td align="left">no: a user family is not known to be closed under
+binomial thinning</td>
+</tr>
+<tr class="even">
+<td align="left">more than two distribution parameters</td>
+<td align="left">not yet</td>
+</tr>
+</tbody>
+</table>
+<p>The gradient for a user family is computed by finite differences of
+the log PMF in the mean and in each distribution parameter. That is
+accurate and needs only two extra PMF evaluations per parameter, but a
+closed-form built-in family is faster. If a distribution is widely
+useful, it can be added to the package as a built-in family;
+<code>vignette(&quot;extending-count-distributions&quot;)</code> explains how.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

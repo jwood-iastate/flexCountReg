@@ -342,9 +342,13 @@ flexCountReg</h1>
 
 
 
-<p>This article is for contributors. It explains what a new count
-distribution has to provide for it to work throughout flexCountReg, by
-tracing the existing NB2 family through the source code. Code that uses
+<p>This article is for contributors. To <em>fit</em> a distribution that
+is not built in, you do not need any of this: define it with
+<code>new_count_family()</code>, as shown in
+<code>vignette(&quot;user-defined-count-distributions&quot;)</code>. This article
+explains what a new <em>built-in</em> count distribution has to provide
+for it to work throughout flexCountReg, by tracing the existing NB2
+family through the source code. Code that uses
 <code>flexCountReg:::</code> reaches <em>internal</em> objects: they are
 shown here to explain the implementation, may change between versions,
 and are not part of the user-facing interface. Users only see the
@@ -477,8 +481,8 @@ the README)</td>
 <code>.fcr_family()</code>. The NB2 entry:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>nb2 <span class="ot">&lt;-</span> flexCountReg<span class="sc">:::</span>.fcr_family_registry<span class="sc">$</span>NB2</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">names</span>(nb2)</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;params&quot;   &quot;dens&quot;     &quot;variance&quot; &quot;rand&quot;     &quot;mean_adj&quot; &quot;start&quot;    &quot;mean&quot;    </span></span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; [8] &quot;cdf&quot;      &quot;start_rp&quot;</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;params&quot;   &quot;dens&quot;     &quot;variance&quot; &quot;rand&quot;     &quot;mean_adj&quot; &quot;start&quot;   </span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;  [7] &quot;mean&quot;     &quot;cdf&quot;      &quot;start_rp&quot; &quot;valid&quot;    &quot;score&quot;</span></span>
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>nb2<span class="sc">$</span>params</span>
 <span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt; [[1]]</span></span>
 <span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;ln(alpha)&quot;</span></span>

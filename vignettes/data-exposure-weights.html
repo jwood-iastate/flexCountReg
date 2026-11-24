@@ -520,13 +520,18 @@ is one observation with a larger expected count; it belongs in the
 offset. A weight of 2 claims two independent observations with the same
 outcome.</li>
 <li><strong>Not survey weights.</strong> Sampling weights reweight the
-population, but the rows are not repeated observations.
-<code>stderr = &quot;robust&quot;</code> gives sandwich standard errors that are
-valid for non-integer weights under the model’s independence
-assumptions; it is not a full design-based survey analysis (strata,
-clusters and finite-population corrections are not modelled). Bootstrap
-standard errors require whole-number frequency weights and refuse other
-weights.</li>
+population, but the rows are not repeated observations. Declare them
+with <code>weight_type = &quot;sampling&quot;</code> in <code>countreg()</code> or
+<code>countreg_rp()</code>: the standard errors are then the robust
+sandwich for weighted scores, sum((w s)(w s)’) with a G / (G - 1)
+factor, which does not change when all weights are multiplied by a
+constant. (With the default frequency weights, multiplying every weight
+by 100 claims 100 times the data and shrinks the standard errors
+10-fold.) The weighted log-likelihood is a pseudo-likelihood, so LR
+tests, AIC and BIC are not valid. This is not a full design-based survey
+analysis (strata, clusters and finite-population corrections are not
+modelled). Bootstrap standard errors require whole-number frequency
+weights and refuse other weights.</li>
 <li><strong>Not numbers of trials.</strong> “3 events out of 10 animals”
 is a bounded count with a known number of trials, which needs a
 binomial-type model; neither a weight of 10 nor an exposure of 10
@@ -536,7 +541,7 @@ represents it.</li>
 <span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>                  <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">weights =</span> <span class="st">&quot;freq&quot;</span>, <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>,</span>
 <span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>                  <span class="at">stderr =</span> <span class="st">&quot;boot&quot;</span>, <span class="at">bootstraps =</span> <span class="dv">20</span>),</span>
 <span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>         <span class="at">error =</span> <span class="cf">function</span>(e) <span class="fu">conditionMessage</span>(e))</span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bootstrap standard errors with `weights` need frequency weights: nonnegative whole numbers (each row stands for that many independent observations) with a positive total. Use stderr = \&quot;robust\&quot; for other weights.&quot;</span></span></code></pre></div>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Bootstrap standard errors with `weights` need frequency weights: nonnegative whole numbers (each row stands for that many independent observations) with a positive total. For survey or inverse-probability weights, use weight_type = \&quot;sampling\&quot; with stderr = \&quot;robust\&quot;.&quot;</span></span></code></pre></div>
 </div>
 </div>
 <div id="missing-values-and-the-analysis-sample" class="section level2">

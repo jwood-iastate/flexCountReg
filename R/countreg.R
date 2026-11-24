@@ -1067,8 +1067,11 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   fit <- maxLik::maxLik(logLikFunc, grad = gradFunc,
                         start = start,
                         method = method, 
+                        finalHessian = method == "BHHH",
                         control = list(iterlim = max.iters, 
                                        printLevel = print.level))
+  # An accurate final Hessian (maxLik's steps of 1e-6 are too small)
+  fit <- .fcr_set_final_hessian(fit, logLikFunc, gradFunc, method)
   names(fit$estimate) <- x_names
   
   fit$converged <- .fcr_converged(fit, method)

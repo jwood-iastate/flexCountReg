@@ -324,6 +324,9 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     legacy <- is.null(model$draw_version)
     # Scrambled draws of fits before draw_version 3 ignored their seed
     draw_seed <- if (isTRUE(model$draw_version >= 3)) model$draw_seed
+    # Scrambled draws of fits before draw_version 4 were randtoolbox's
+    # "mixed" sequence; later fits randomly shift plain Halton points
+    scramble <- if (isTRUE(model$draw_version >= 4)) "shift" else "mixed"
     het_form <- if (legacy) "legacy" else "additive"
     
     # --- Matrices, built with the training terms and factor levels ---
@@ -447,10 +450,11 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     hdraws <- if (method == "Individual" &&
                   identical(model$draws, "per_unit")) {
       .fcr_unit_halton(.fcr_rp_draw_units(model, data), model$ndraws,
-                       N_rand, isTRUE(scrambled), draw_seed)
+                       N_rand, isTRUE(scrambled), draw_seed,
+                       scramble = scramble)
     } else {
-      .fcr_halton(ndraws, N_rand + 1, isTRUE(scrambled),
-                  draw_seed)[, seq_len(N_rand), drop = FALSE]
+      .fcr_halton(ndraws, N_rand + 1, isTRUE(scrambled), draw_seed,
+                  scramble = scramble)[, seq_len(N_rand), drop = FALSE]
     }
     
     draw_args <- list(
@@ -490,7 +494,8 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
       randtoolbox::halton(model$ndraws, 1)
     } else {
       .fcr_halton(model$mix_draws %||% model$ndraws, N_rand + 1,
-                  isTRUE(scrambled), draw_seed)[, N_rand + 1]
+                  isTRUE(scrambled), draw_seed,
+                  scramble = scramble)[, N_rand + 1]
     }
     return(.fcr_rp_eb_predict(
       model = model, data = data, family = family, mu_mat = mu_mat,

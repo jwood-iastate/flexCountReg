@@ -517,15 +517,32 @@ generate_random_draws <- function(hdraws, random_coefs_means, rand_var_params,
 # different units are not correlated. `unit` gives each row's unit number;
 # rows of the same unit share its draws. Returns a list of K (rows x R)
 # matrices of class "fcr_unit_draws".
+#
+# Scrambled draws (`scramble = "shift"`, the default) shift each unit's
+# block by its own uniform amount per dimension, modulo 1 (a
+# Cranley-Patterson rotation, randomized quasi-Monte Carlo): every unit's
+# draws stay evenly spread and each unit's simulated likelihood is unbiased.
+# The shifts come from `seed` without changing the caller's random numbers.
+# `scramble = "mixed"` takes consecutive blocks of randtoolbox's scrambled
+# ("mixed") sequence, as fits with draw_version < 4 did; averaged over those
+# blocks the simulated log-likelihood is biased, and more draws do not
+# remove the bias.
 .fcr_unit_halton <- function(unit, R, K, scrambled = FALSE, seed = NULL,
-                             burn = 10L) {
+                             burn = 10L, scramble = c("shift", "mixed")) {
+  scramble <- match.arg(scramble)
   unit <- as.integer(unit)
   n_units <- max(unit)
-  h <- .fcr_halton(burn + n_units * R, K, scrambled, seed)
+  mixed <- scrambled && scramble == "mixed"
+  h <- .fcr_halton(burn + n_units * R, K, mixed, seed, scramble = "mixed")
   h <- h[burn + seq_len(n_units * R), , drop = FALSE]
   idx <- (unit - 1L) * R + rep(seq_len(R), each = length(unit))
-  structure(lapply(seq_len(K), function(k)
-    matrix(h[idx, k], length(unit), R)), class = "fcr_unit_draws")
+  shift <- if (scrambled && !mixed) {
+    matrix(.fcr_seeded_runif(n_units * K, seed), n_units, K)
+  }
+  structure(lapply(seq_len(K), function(k) {
+    m <- matrix(h[idx, k], length(unit), R)
+    if (is.null(shift)) m else (m + shift[unit, k]) %% 1
+  }), class = "fcr_unit_draws")
 }
 
 # Rows of per-unit draws.
@@ -1121,14 +1138,36 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
 
 # Halton draws (n x dim). Scrambled draws are generated from `seed`, without
 # changing the caller's random-number stream, so the same draws can be
-# generated again for prediction.
-.fcr_halton <- function(n, dim, scrambled = FALSE, seed = NULL) {
+# generated again for prediction. `scramble = "shift"` (the default) shifts
+# each dimension by a uniform amount modulo 1 (Cranley-Patterson rotation,
+# randomized quasi-Monte Carlo; seed NULL uses seed 0). `scramble = "mixed"`
+# gives randtoolbox's scrambled ("mixed") sequence, used by countreg_rp()
+# fits with draw_version < 4.
+.fcr_halton <- function(n, dim, scrambled = FALSE, seed = NULL,
+                        scramble = c("shift", "mixed")) {
+  scramble <- match.arg(scramble)
   if (!scrambled) return(as.matrix(randtoolbox::halton(n, dim)))
-  # The scrambling uses randtoolbox's own generator, which R's set.seed()
-  # does not reach: setSeed() fixes it (without touching R's random numbers).
-  # Fits with draw_version < 3 never set it, so they used randtoolbox's
-  # default, seed 0; seed = NULL gives those draws.
+  if (scramble == "shift") {
+    h <- as.matrix(randtoolbox::halton(n, dim))
+    shift <- .fcr_seeded_runif(dim, seed)
+    return(sweep(h, 2, shift, `+`) %% 1)
+  }
+  # The mixed scrambling uses randtoolbox's own generator, which R's
+  # set.seed() does not reach: setSeed() fixes it (without touching R's
+  # random numbers). Fits with draw_version < 3 never set it, so they used
+  # randtoolbox's default, seed 0; seed = NULL gives those draws.
   randtoolbox::setSeed(if (is.null(seed)) 0 else seed)
   as.matrix(randtoolbox::halton(n, dim, mixed = TRUE))
+}
+
+# n uniform random numbers from `seed` (NULL: seed 0), leaving the caller's
+# random-number stream as it was.
+.fcr_seeded_runif <- function(n, seed = NULL) {
+  old <- if (exists(".Random.seed", envir = globalenv()))
+    get(".Random.seed", envir = globalenv())
+  on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
+    assign(".Random.seed", old, envir = globalenv()))
+  set.seed(if (is.null(seed)) 0L else seed)
+  stats::runif(n)
 }
 

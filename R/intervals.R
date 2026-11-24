@@ -110,8 +110,10 @@
     uncertainty <- "bootstrap"
   }
   if (uncertainty == "normal") {
+    # One point set (no per-unit blocks), scrambled to break the
+    # correlation between high dimensions of the standard sequence
     z <- stats::qnorm(.fcr_halton(ndraws, length(theta), scrambled,
-                                  seed = seed))
+                                  seed = seed, scramble = "mixed"))
     draws <- sweep(z %*% chol(V), 2, theta, `+`)
     colnames(draws) <- names(theta)
     return(list(draws = draws, uncertainty = "normal", requested = ndraws,

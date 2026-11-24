@@ -12,6 +12,8 @@ mod_build_ui <- function(id) {
   family_models <- .app_estimators$id[.app_estimators$uses_family]
   mixture_models <- c("countreg_mix", "countreg_lc")
   panel_models <- .app_estimators$id[.app_estimators$group != "none"]
+  cre_models <- .app_estimators$id[.app_estimators$cre]
+  sampling_models <- .app_estimators$id[.app_estimators$sampling]
   bslib::layout_sidebar(
     sidebar = bslib::sidebar(
       width = 380,
@@ -48,17 +50,74 @@ mod_build_ui <- function(id) {
                 "(a:b). Main effects stay in the model; a categorical ",
                 "(factor) predictor gives one interaction coefficient per ",
                 "non-reference level. Interactions enter the mean only."),
+      shiny::selectizeInput(ns("smooth"), "Smooth (nonlinear) effects",
+                            character(), multiple = TRUE,
+                            options = list(placeholder = "none")),
+      help_text("Numeric predictors whose effect is a penalized smooth ",
+                "curve s(x) instead of a straight line; the amount of ",
+                "smoothing is estimated. See the smooth plots on the ",
+                "Diagnose page."),
       shiny::selectInput(ns("exposure"), "Exposure (logged: offset(log(x)))",
                          none),
       shiny::selectInput(ns("log_offset"),
                          "Offset already on the log scale", none),
-      shiny::selectInput(ns("weights"), "Frequency weights", none),
+      shiny::selectInput(ns("weights"), "Weights", none),
+      shiny::conditionalPanel(
+        js_in(sampling_models), ns = ns,
+        shiny::selectInput(ns("weight_type"), "Kind of weights",
+                           c("Frequency (row counts)" = "frequency",
+                             "Sampling (survey / inverse probability)" =
+                               "sampling"))),
       help_text("Frequency weights count each row (or panel) that many ",
-                "times; they are not survey weights."),
+                "times. Sampling weights make the likelihood a ",
+                "pseudo-likelihood, with robust standard errors."),
       shiny::conditionalPanel(
         js_in(panel_models), ns = ns,
         shiny::selectInput(ns("group"), "Panel identifier", none),
         shiny::uiOutput(ns("group_help"))),
+      shiny::conditionalPanel(
+        "input.estimator == 'countreg_hier' || input.estimator == 'countreg_fe'",
+        ns = ns,
+        shiny::selectInput(ns("group2"), "Second grouping column (optional)",
+                           none),
+        shiny::conditionalPanel(
+          "input.estimator == 'countreg_hier'", ns = ns,
+          shiny::radioButtons(ns("group2_type"), NULL,
+                              c("Crossed with the first (e.g. site and year)" =
+                                  "crossed",
+                                "Nested in the first (e.g. segments in counties)" =
+                                  "nested")))),
+      shiny::conditionalPanel(
+        "input.estimator == 'countreg_hier'", ns = ns,
+        shiny::selectizeInput(ns("re_slopes"), "Random slopes", character(),
+                              multiple = TRUE,
+                              options = list(placeholder =
+                                               "random intercept only")),
+        shiny::checkboxInput(ns("re_correlated"),
+                             "Correlated intercept and slopes", TRUE),
+        shiny::selectInput(ns("re_dist"), "Distribution of the random effects",
+                           c("Normal" = "normal", "Gamma (multiplicative)" =
+                               "gamma", "Uniform" = "uniform",
+                             "Triangular" = "triangular")),
+        help_text("Effects of the groups (and their slopes) with a zero ",
+                  "mean, estimated with their variances. Non-normal effects ",
+                  "need one grouping column and are fitted by simulation.")),
+      shiny::conditionalPanel(
+        "input.estimator == 'countreg_fe'", ns = ns,
+        shiny::checkboxInput(ns("fe_jackknife"),
+                             "Split-panel jackknife (bias correction)"),
+        help_text("One coefficient per group absorbs everything constant ",
+                  "within groups; predictors that do not vary within ",
+                  "groups are not identified.")),
+      shiny::conditionalPanel(
+        js_in(cre_models), ns = ns,
+        shiny::selectizeInput(ns("cre"),
+                              "Group means of (correlated random effects)",
+                              character(), multiple = TRUE,
+                              options = list(placeholder = "none")),
+        help_text("Adds the panel means of these predictors (Mundlak), so ",
+                  "the random effects may depend on them; test with ",
+                  "cre_test().")),
       shiny::uiOutput(ns("dis1_ui")),
       shiny::conditionalPanel(
         "input.estimator == 'countreg_rp'", ns = ns,
@@ -101,7 +160,14 @@ mod_build_ui <- function(id) {
                               min = 1, step = 1),
           shiny::selectInput(ns("stderr"), "Standard errors",
                              c("Observed information (Hessian)" = "normal",
-                               "Robust (sandwich)" = "robust")))),
+                               "Robust (sandwich)" = "robust",
+                               "Cluster-robust" = "cluster")),
+          shiny::conditionalPanel(
+            "input.stderr == 'cluster'", ns = ns,
+            shiny::selectInput(ns("cluster"), "Cluster column", none),
+            help_text("Clusters of rows whose errors may be correlated. ",
+                      "Fixed-effects models cluster by their groups when ",
+                      "this is empty.")))),
       shiny::textInput(ns("label"), "Fit label (optional)",
                        placeholder = "e.g. NB2 base"),
       shiny::actionButton(ns("estimate"), "Estimate model",
@@ -177,6 +243,10 @@ mod_build_server <- function(id, state) {
         m$group else ""
       shiny::updateSelectInput(session, "group", choices = c(none, cols),
                                selected = if (same) input$group %||% "" else g)
+      for (nm in c("group2", "cluster")) {
+        shiny::updateSelectInput(session, nm, choices = c(none, cols),
+                                 selected = keep(input[[nm]], ""))
+      }
     }))
     # Shared terms and random parameters are chosen among the predictors
     shiny::observeEvent(input$predictors, ignoreNULL = FALSE, {
@@ -192,6 +262,34 @@ mod_build_server <- function(id, state) {
         session, "interactions",
         choices = interaction_choices(input$predictors),
         selected = keep_interactions(input$interactions, input$predictors))
+      d <- state$data
+      num <- input$predictors[vapply(input$predictors, function(p)
+        is.numeric(d[[p]]), logical(1))]
+      for (nm in c("smooth", "cre")) {
+        shiny::updateSelectizeInput(session, nm, choices = num,
+                                    selected = intersect(input[[nm]], num))
+      }
+      shiny::updateSelectizeInput(
+        session, "re_slopes", choices = input$predictors,
+        selected = intersect(input$re_slopes, input$predictors))
+    })
+
+    # Standard errors offered by the model type: fixed-effects models are
+    # cluster-robust by default; unavailable choices fall back to the
+    # Hessian
+    shiny::observeEvent(input$estimator, {
+      est <- .app_estimator(input$estimator)
+      ch <- c("Observed information (Hessian)" = "normal",
+              if (isTRUE(est$robust)) c("Robust (sandwich)" = "robust"),
+              if (isTRUE(est$cluster)) c("Cluster-robust" = "cluster"))
+      sel <- if (input$estimator == "countreg_fe") "cluster" else
+        if (isTRUE(input$stderr %in% ch)) input$stderr else "normal"
+      shiny::updateSelectInput(session, "stderr", choices = ch,
+                               selected = sel)
+      shiny::updateSelectInput(
+        session, "group",
+        label = if (input$estimator == "countreg_hier") "Grouping column"
+          else "Panel identifier")
     })
 
     families <- shiny::reactive({
@@ -207,6 +305,13 @@ mod_build_server <- function(id, state) {
         countreg_rp = paste(
           "Coefficients that vary randomly across observations (or panels),",
           "estimated by maximum simulated likelihood."),
+        countreg_hier = paste(
+          "Normal random effects of groups at one or two levels (crossed",
+          "or nested), with optional random slopes, for any count family."),
+        countreg_fe = paste(
+          "Fixed effects of the panels (and optionally a second dimension,",
+          "such as years): no assumption about how they relate to the",
+          "predictors."),
         renb = , poisLind.re = , repois = paste(
           "A random effect shared by the rows of each panel."),
         negmultinom = paste(
@@ -221,7 +326,9 @@ mod_build_server <- function(id, state) {
     })
     output$group_help <- shiny::renderUI({
       g <- .app_estimator(input$estimator)$group
-      help_text(if (identical(g, "required"))
+      help_text(if (input$estimator == "countreg_hier")
+        "Required: the column that identifies the groups." else
+          if (identical(g, "required"))
         "Required: the column that identifies the panels." else
           if (.app_is_mixture(input$estimator))
             "Optional: one class per panel." else
@@ -261,6 +368,9 @@ mod_build_server <- function(id, state) {
       # others when it is next updated)
       inter <- Filter(function(p) all(p %in% preds),
                       .pair_decode(input$interactions))
+      hf <- est %in% c("countreg_hier", "countreg_fe")
+      ecap <- .app_estimator(est)
+      stderr <- input$stderr %||% "normal"
       app_spec(
         data = list(source = m$source, name = m$name, object = m$object),
         recipe = list(response = opt(input$response),
@@ -269,7 +379,12 @@ mod_build_server <- function(id, state) {
                       interactions = inter,
                       exposure = opt(input$exposure),
                       log_offset = opt(input$log_offset),
-                      weights = opt(input$weights), group = grp),
+                      weights = opt(input$weights), group = grp,
+                      smooth = intersect(input$smooth %||% character(),
+                                         preds),
+                      group2 = if (hf) opt(input$group2),
+                      cluster = if (identical(stderr, "cluster"))
+                        opt(input$cluster)),
         model = list(
           estimator = est,
           family = if (caps()$uses_family) families() else "NB2",
@@ -293,7 +408,19 @@ mod_build_server <- function(id, state) {
             "NM2",
           n_starts = num(input$n_starts, 10), seed = num(input$seed, 1),
           method = input$method, max_iters = num(input$max_iters, 1000),
-          stderr = input$stderr))
+          stderr = stderr,
+          weight_type = if (isTRUE(ecap$sampling) && !is.null(opt(input$weights)))
+            input$weight_type %||% "frequency" else "frequency",
+          cre = if (isTRUE(ecap$cre)) intersect(input$cre %||% character(),
+                                                preds) else character(),
+          re_slopes = if (est == "countreg_hier")
+            intersect(input$re_slopes %||% character(), preds) else
+              character(),
+          re_correlated = !identical(input$re_correlated, FALSE),
+          group2_type = input$group2_type %||% "crossed",
+          re_dist = if (est == "countreg_hier") input$re_dist %||% "normal"
+            else "normal",
+          fe_jackknife = est == "countreg_fe" && isTRUE(input$fe_jackknife)))
     })
     shiny::observe(state$spec <- tryCatch(spec(), error = function(e) NULL))
 
@@ -334,7 +461,8 @@ mod_build_server <- function(id, state) {
       p <- validate_spec(s, d)
       used <- intersect(c(s$recipe$response, s$recipe$predictors,
                           s$recipe$exposure, s$recipe$log_offset,
-                          s$recipe$weights, s$recipe$group, s$model$dis1,
+                          s$recipe$weights, s$recipe$group,
+                          s$recipe$group2, s$recipe$cluster, s$model$dis1,
                           s$model$mixing), names(d))
       n_cc <- sum(stats::complete.cases(d[, used, drop = FALSE]))
       shiny::tagList(

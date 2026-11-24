@@ -14,10 +14,15 @@
 #' file) and create new variables (logs, powers, standardized values,
 #' indicators, products, ratios, categories, factors); specify and estimate
 #' count regression ([countreg()]), random-parameter ([countreg_rp()]),
-#' random-effects panel ([renb()], [poisLind.re()], [repois()],
-#' [negmultinom()]), finite-mixture and latent-class ([countreg_mix()],
-#' [countreg_lc()]) models; check their numerical status; diagnose them
-#' (rootograms, randomized quantile residuals, CURE plots); compare fits;
+#' hierarchical ([countreg_hier()]: random intercepts and slopes, crossed
+#' or nested levels, normal or non-normal effects), fixed-effects
+#' ([countreg_fe()]), random-effects panel ([renb()], [poisLind.re()],
+#' [repois()], [negmultinom()]), finite-mixture and latent-class
+#' ([countreg_mix()], [countreg_lc()]) models, with smooth (nonlinear)
+#' effects `s(x)`, correlated random effects (`cre`), cluster-robust
+#' standard errors and sampling weights where the model allows them; check
+#' their numerical status; diagnose them (rootograms, randomized quantile
+#' residuals, CURE plots, smooth effects); compare fits;
 #' compute predictions, confidence or prediction intervals and tolerance
 #' intervals for a table of scenarios or for uploaded new data (with the
 #' variables created on the Data tab, using the means, standard deviations

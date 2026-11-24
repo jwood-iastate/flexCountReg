@@ -67,7 +67,8 @@ margeff_ui <- function(ns) {
 # except offsets (which margEffTable() also leaves out by default)
 margeff_var_choices <- function(spec) {
   setdiff(needed_columns(spec), c(spec$recipe$exposure,
-                                  spec$recipe$log_offset))
+                                  spec$recipe$log_offset, spec$recipe$group,
+                                  spec$recipe$group2))
 }
 
 # A marginal-effects request from the page's settings

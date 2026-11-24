@@ -91,8 +91,11 @@ mod_predict_ui <- function(id) {
 needed_columns <- function(spec) {
   r <- spec$recipe
   m <- spec$model
+  # Hierarchical and fixed-effects models also need the grouping columns
+  grp <- if (m$estimator %in% c("countreg_hier", "countreg_fe"))
+    c(r$group, r$group2)
   unique(c(r$predictors, r$exposure, r$log_offset, m$dis1, m$mixing,
-           m$rpar))
+           m$rpar, grp))
 }
 
 # One row of typical values (mean of numeric columns, first level or most
@@ -100,6 +103,12 @@ needed_columns <- function(spec) {
 typical_row <- function(spec, data) {
   for (f in spec$recipe$factors) data[[f]] <- factor(data[[f]])
   cols <- needed_columns(spec)
+  # Grouping columns identify groups by their labels: a character value
+  # (the most common group), not a factor with every level
+  grp <- intersect(c(spec$recipe$group, spec$recipe$group2), cols)
+  if (spec$model$estimator %in% c("countreg_hier", "countreg_fe")) {
+    for (g in grp) data[[g]] <- as.character(data[[g]])
+  }
   if (!length(cols)) return(data.frame(row.names = 1L))
   out <- lapply(cols, function(cn) {
     v <- data[[cn]]

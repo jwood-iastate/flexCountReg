@@ -27,10 +27,15 @@ browser, with a tab for each step: load data (a bundled example or a CSV
 file) and create new variables (logs, powers, standardized values,
 indicators, products, ratios, categories, factors); specify and estimate
 count regression (\code{\link[=countreg]{countreg()}}), random-parameter (\code{\link[=countreg_rp]{countreg_rp()}}),
-random-effects panel (\code{\link[=renb]{renb()}}, \code{\link[=poisLind.re]{poisLind.re()}}, \code{\link[=repois]{repois()}},
-\code{\link[=negmultinom]{negmultinom()}}), finite-mixture and latent-class (\code{\link[=countreg_mix]{countreg_mix()}},
-\code{\link[=countreg_lc]{countreg_lc()}}) models; check their numerical status; diagnose them
-(rootograms, randomized quantile residuals, CURE plots); compare fits;
+hierarchical (\code{\link[=countreg_hier]{countreg_hier()}}: random intercepts and slopes, crossed
+or nested levels, normal or non-normal effects), fixed-effects
+(\code{\link[=countreg_fe]{countreg_fe()}}), random-effects panel (\code{\link[=renb]{renb()}}, \code{\link[=poisLind.re]{poisLind.re()}},
+\code{\link[=repois]{repois()}}, \code{\link[=negmultinom]{negmultinom()}}), finite-mixture and latent-class
+(\code{\link[=countreg_mix]{countreg_mix()}}, \code{\link[=countreg_lc]{countreg_lc()}}) models, with smooth (nonlinear)
+effects \code{s(x)}, correlated random effects (\code{cre}), cluster-robust
+standard errors and sampling weights where the model allows them; check
+their numerical status; diagnose them (rootograms, randomized quantile
+residuals, CURE plots, smooth effects); compare fits;
 compute predictions, confidence or prediction intervals and tolerance
 intervals for a table of scenarios or for uploaded new data (with the
 variables created on the Data tab, using the means, standard deviations

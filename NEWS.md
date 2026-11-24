@@ -160,6 +160,10 @@
   ones), `fixef()`, `ranef()` (conditional modes with posterior variances),
   `VarCorr()`, `tidy()` and `glance()`. `fixef()`, `ranef()` and
   `VarCorr()` are the nlme generics, so they work alongside lme4.
+* `margEffTable()` works with `countreg_hier()` (the grouping variables
+  are not candidates, and delta-method standard errors account for the
+  fixed coefficients) and leaves out the regressors a fixed-effects model
+  removed as not identified.
 * New `re_lrtest()`: likelihood-ratio test of a random-effect term, with
   the boundary-corrected (chi-bar-squared) p-value.
 * New vignette, "Hierarchical count models"
@@ -328,6 +332,20 @@
   bootstrap refits and seed; and stochastic requests (bootstrap intervals,
   tolerance intervals, bootstrap marginal effects) fix their seed when they
   are made, so the exported script replays them exactly.
+* The app runs the models added in this release: hierarchical models
+  (`countreg_hier()`: a grouping column, random slopes, correlated or
+  uncorrelated, a second level crossed with or nested in the first, and
+  normal, gamma, uniform or triangular effects) and fixed-effects models
+  (`countreg_fe()`: one or two dimensions, the split-panel jackknife,
+  cluster-robust standard errors by default). Any model can have smooth
+  (nonlinear) effects `s(x)` of numeric predictors, shown on the Diagnose
+  page ("Smooth effects", `plot_smooths()`); random-parameter,
+  hierarchical and random-effects models can add group means of
+  predictors (correlated random effects, `cre`); count regression and
+  random-parameter models offer cluster-robust standard errors (with a
+  cluster column) and sampling weights. Predictions for hierarchical and
+  fixed-effects models take the group of each scenario, and settings
+  files from earlier versions of the app still load.
 * The app's packages (shiny, bslib, DT, callr, jsonlite, zip) are
   suggested, not imported: the statistical functions do not need them, and
   `launch_app()` offers to install any that are missing. `app_object()`

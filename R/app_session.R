@@ -177,7 +177,8 @@ app_fit_object <- function(state, id) {
 
 # Short object-name stems of the outputs
 .app_out_stem <- c(rootogram = "rootogram", quantile = "qresid",
-                   cure = "cure", predict = "pred", tolerance = "tol",
+                   cure = "cure", smooths = "smooths", predict = "pred",
+                   tolerance = "tol",
                    compare = "comparison", margeff = "margeff")
 
 # Run an output request on a fit (or a comparison of fits): compile it,
@@ -300,7 +301,8 @@ app_prepare_output <- function(state, req, fit_id = NULL) {
   exprs <- compile_output(req, fit_name, out)
   title <- switch(req$type,
                   rootogram = "Rootogram", quantile = "Quantile residuals",
-                  cure = "CURE plot", predict = "Predictions",
+                  cure = "CURE plot", smooths = "Smooth effects",
+                  predict = "Predictions",
                   tolerance = "Tolerance intervals",
                   compare = "Model comparison",
                   margeff = "Marginal effects")

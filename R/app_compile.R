@@ -60,14 +60,19 @@ compile_data_load <- function(source, name, object,
 # left out of the fixed formula (they are in rpar_formula). Interactions
 # (pairs of predictors) follow the main effects as a:b; with countreg_rp an
 # interaction that involves a random parameter stays a fixed term of this
-# formula (the variable's own effect is the random parameter).
+# formula (the variable's own effect is the random parameter). Smooth
+# predictors enter as s(x). A hierarchical model adds its random-effect
+# terms in lme4's notation: (1 + slopes | group), with || for uncorrelated
+# effects, and (1 | group2) (crossed) or (1 | group:group2) (nested).
 compile_formula <- function(spec) {
   r <- spec$recipe
   m <- spec$model
   preds <- r$predictors
   rp <- m$estimator == "countreg_rp"
   if (rp) preds <- setdiff(preds, m$rpar)
-  terms <- lapply(preds, .sym)
+  terms <- lapply(preds, function(p) {
+    if (p %in% r$smooth) call("s", .sym(p)) else .sym(p)
+  })
   for (pr in r$interactions) {
     pr <- unlist(pr)
     terms <- c(terms, list(call(":", .sym(pr[1]), .sym(pr[2]))))
@@ -77,6 +82,17 @@ compile_formula <- function(spec) {
   }
   if (!is.null(r$log_offset)) {
     terms <- c(terms, list(call("offset", .sym(r$log_offset))))
+  }
+  if (m$estimator == "countreg_hier" && !is.null(r$group)) {
+    g <- .sym(r$group)
+    lhs <- .plus(c(list(1), lapply(m$re_slopes, .sym)))
+    bar <- if (length(m$re_slopes) && !isTRUE(m$re_correlated)) "||" else "|"
+    terms <- c(terms, list(call("(", call(bar, lhs, g))))
+    if (!is.null(r$group2)) {
+      g2 <- .sym(r$group2)
+      if (identical(m$group2_type, "nested")) g2 <- call(":", g, g2)
+      terms <- c(terms, list(call("(", call("|", 1, g2))))
+    }
   }
   rhs <- .plus(terms)
   # A random intercept replaces the fixed one
@@ -109,6 +125,10 @@ compile_fit <- function(spec, fit_name) {
     args$group_var <- r$group
     args$data <- dat
     if (est == "negmultinom") args$family <- m$nm_family
+  } else if (est == "countreg_fe") {
+    args$fixef <- .formula_call(NULL, lapply(c(r$group, r$group2), .sym))
+    args$data <- dat
+    args$family <- .cvec(unname(m$family))
   } else {
     if (est == "countreg_rp") {
       rterms <- lapply(m$rpar, .sym)
@@ -125,6 +145,13 @@ compile_fit <- function(spec, fit_name) {
     }
   }
   if (!is.null(r$weights)) args$weights <- r$weights
+  if (identical(m$weight_type, "sampling")) args$weight_type <- "sampling"
+  if (length(m$cre)) {
+    args$cre <- .formula_call(NULL, lapply(m$cre, .sym))
+  }
+  if (est == "countreg_hier" && !identical(m$re_dist, "normal")) {
+    args$re_dist <- m$re_dist
+  }
   if (est == "countreg_rp") {
     if (!identical(m$rpar_dist, "n")) args$rpardists <- m$rpar_dist
     if (isTRUE(m$correlated)) args$correlated <- TRUE
@@ -150,9 +177,26 @@ compile_fit <- function(spec, fit_name) {
     args$n_starts <- as.integer(m$n_starts)
     args$seed <- as.integer(m$seed)
   }
-  args$method <- m$method
-  args$max.iters <- as.integer(m$max_iters)
-  if (!identical(m$stderr, "normal")) args$stderr <- m$stderr
+  if (est == "countreg_fe") {
+    # countreg_fe(): `method` is the estimation algorithm (automatic here);
+    # standard errors are cluster-robust or Hessian-based
+    if (isTRUE(m$fe_jackknife)) args$jackknife <- TRUE
+    args$stderr <- if (identical(m$stderr, "cluster")) "cluster" else
+      "hessian"
+    if (identical(m$stderr, "cluster") && !is.null(r$cluster)) {
+      args$cluster <- .formula_call(NULL, list(.sym(r$cluster)))
+    }
+    args$max.iters <- as.integer(m$max_iters)
+  } else {
+    args$method <- if (est == "countreg_hier") {
+      if (identical(m$method, "NM")) "Nelder-Mead" else "BFGS"
+    } else m$method
+    args$max.iters <- as.integer(m$max_iters)
+    if (!identical(m$stderr, "normal")) args$stderr <- m$stderr
+    if (identical(m$stderr, "cluster")) {
+      args$cluster <- .formula_call(NULL, list(.sym(r$cluster)))
+    }
+  }
   fit_sym <- .sym(fit_name)
   out$fit <- call("<-", fit_sym, as.call(c(fun, args)))
   out$summary <- call("<-", .sym(paste0(fit_name, "_summary")),
@@ -189,6 +233,7 @@ compile_data_frame <- function(df) {
 #   rootogram  - max_count (NULL: largest observed count)
 #   quantile   - randomized quantile residuals (seed 1) and their plots
 #   cure       - var (NULL: fitted values)
+#   smooths    - the estimated smooth effects (plot_smooths())
 #   predict    - scenarios (data frame), interval, level, method, mixture,
 #                seed
 #   tolerance  - scenarios, content, confidence, side, scope, tol_method,
@@ -224,6 +269,11 @@ compile_output <- function(req, fit_name, out) {
       quote(graphics::abline(h = 0, lty = 2)),
       bquote(stats::qqnorm(.(o))),
       bquote(stats::qqline(.(o), lty = 2)),
+      quote(graphics::par(mfrow = c(1, 1)))),
+    smooths = list(
+      bquote(graphics::par(mfrow = grDevices::n2mfrow(
+        length(.(f)$model$smooth_info)))),
+      bquote(.(o) <- flexCountReg::plot_smooths(.(f), seed = 1)),
       quote(graphics::par(mfrow = c(1, 1)))),
     cure = {
       a <- list(f)

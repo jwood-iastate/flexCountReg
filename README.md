@@ -26,7 +26,9 @@ issues, including:
   exact, simulated and Empirical Bayes (observation-specific)
   predictions;
 - random-effects panel models (negative binomial, Poisson-Lindley,
-  negative multinomial);
+  negative multinomial) and fixed-effects models (`countreg_fe()`:
+  Poisson with any number of fixed-effect dimensions, or any family with
+  one);
 - finite mixtures and latent-class count regressions, with constant,
   covariate-dependent or known class proportions, shared or
   class-specific parameters, different families in different classes,
@@ -142,6 +144,17 @@ computer.
   latent-class count models (the same engine under two vocabularies),
   with several reproducible starts, and `component_probs()` /
   `class_probs()` give prior or posterior class probabilities.
+- `countreg_fe()` estimates fixed-effects count models: Poisson by the
+  conditional likelihood (one dimension) or IRLS with alternating
+  projections (site and year, …), and any other family, including
+  user-defined ones, by the concentrated dummy-variable likelihood, with
+  an optional split-panel jackknife. Standard errors are cluster-robust
+  by default; estimates equal those of `fixest::fepois()` and
+  `fixest::fenegbin()`.
+- `cre = ~ x` in `countreg_rp()`, `renb()` and `repois()` adds the means
+  of time-varying regressors within each unit (correlated random
+  effects, Mundlak 1978), and `cre_test()` tests random against fixed
+  effects.
 - `renb()` estimates the random effects negative binomial regression
   model.
 - `poisLind.re()` (also `poislind_re()`) estimates the random effects
@@ -622,6 +635,8 @@ The vignettes cover the main workflows. Start with
   `vignette("underreporting-and-identification", package = "flexCountReg")`
 - Random parameters and panel models:
   `vignette("random-parameters-and-panels", package = "flexCountReg")`
+- Fixed-effects count models:
+  `vignette("fixed-effects-count-models", package = "flexCountReg")`
 
 *Finite mixtures and latent classes*
 

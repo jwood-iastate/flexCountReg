@@ -33,7 +33,8 @@ countreg_rp(
   mix_draws = NULL,
   weight_type = c("frequency", "sampling"),
   draws = c("per_unit", "shared"),
-  cluster = NULL
+  cluster = NULL,
+  cre = NULL
 )
 }
 \arguments{
@@ -188,6 +189,16 @@ names, or a vector with one cluster id per row of \code{data}. Given
 without \code{stderr}, it sets \code{stderr = "cluster"}. See
 \code{\link{vcov.flexCountReg}}, which also gives cluster-robust
 covariances after the fit.}
+
+\item{cre}{optional one-sided formula of time-varying regressors, e.g.
+\code{~ x1 + x2}, for correlated random effects (Mundlak 1978): the
+group means of these variables (columns \code{mean_x1}, ...) are added
+to the mean model, so the random effect may depend on the regressors
+through their means. The means are computed on the estimation rows and
+stored with the fit: predictions for a group in the estimation data use
+its training means, and a new group uses the means of its own rows in
+\code{newdata}. \code{\link{cre_test}()} tests random against fixed
+effects.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

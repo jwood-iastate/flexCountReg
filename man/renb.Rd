@@ -16,7 +16,8 @@ renb(
   offset = NULL,
   weights = NULL,
   keep_data = TRUE,
-  print.level = NULL
+  print.level = NULL,
+  cre = NULL
 )
 }
 \arguments{
@@ -65,6 +66,16 @@ in the fitted object (saving memory). \code{predict()} then needs
 \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.}
 
 \item{print.level}{deprecated; use \code{verbose}.}
+
+\item{cre}{optional one-sided formula of time-varying regressors, e.g.
+\code{~ x1 + x2}, for correlated random effects (Mundlak 1978): the
+group means of these variables (columns \code{mean_x1}, ...) are added
+to the mean model, so the random effect may depend on the regressors
+through their means. The means are computed on the estimation rows and
+stored with the fit: predictions for a group in the estimation data use
+its training means, and a new group uses the means of its own rows in
+\code{newdata}. \code{\link{cre_test}()} tests random against fixed
+effects.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:

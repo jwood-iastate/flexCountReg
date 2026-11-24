@@ -30,6 +30,15 @@
 #' @param keep_data logical; if \code{FALSE}, the training data are not stored
 #'   in the fitted object (saving memory). \code{predict()} then needs
 #'   \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.
+#' @param cre optional one-sided formula of time-varying regressors, e.g.
+#'   \code{~ x1 + x2}, for correlated random effects (Mundlak 1978): the
+#'   group means of these variables (columns \code{mean_x1}, ...) are added
+#'   to the mean model, so the random effect may depend on the regressors
+#'   through their means. The means are computed on the estimation rows and
+#'   stored with the fit: predictions for a group in the estimation data use
+#'   its training means, and a new group uses the means of its own rows in
+#'   \code{newdata}. \code{\link{cre_test}()} tests random against fixed
+#'   effects.
 #' @param print.level deprecated; use \code{verbose}.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples
 #'   to be used for estimating standard errors. Whole panels (groups) are
@@ -113,7 +122,7 @@
 renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000, 
                  verbose = FALSE, stderr = "normal", bootstraps = NULL,
                  offset = NULL, weights = NULL, keep_data = TRUE,
-                 print.level = NULL) {
+                 print.level = NULL, cre = NULL) {
   print.level <- .fcr_print_level("renb", verbose, print.level)
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   
@@ -124,6 +133,17 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
          call. = FALSE)
   }
   
+  # Correlated random effects: group means of time-varying regressors
+  cre_info <- NULL
+  if (!is.null(cre)) {
+    cp <- .fcr_cre_prepare(cre, formula, as.data.frame(data), group_var,
+                           extra_vars = c(if (is.character(offset)) offset,
+                                          if (is.character(weights)) weights))
+    data <- cp$data
+    formula <- cp$formula
+    cre_info <- cp$info
+  }
+
   # Data preparation: one complete-case frame; panels from `group_var`
   prep <- prepare_model_data(formula, data, offset = offset,
                              group_var = group_var, weights = weights)
@@ -277,6 +297,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
   fit$modelType <- "RENB"
   fit$offset <- prep$blueprint$offset_label
   fit$offset_values <- offset_vec
+  fit$cre <- cre_info
   
   obj <- .createFlexCountReg(model = fit, 
                              data = data, keep_data = keep_data, 

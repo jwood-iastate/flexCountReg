@@ -78,6 +78,15 @@
 #'   covariances after the fit.
 #' @param bootstraps the number of bootstrap samples when
 #'   \code{stderr = "boot"} (default 200).
+#' @param cre optional one-sided formula of time-varying regressors, e.g.
+#'   \code{~ x1 + x2}, for correlated random effects (Mundlak 1978): the
+#'   group means of these variables (columns \code{mean_x1}, ...) are added
+#'   to the mean model, so the random effect may depend on the regressors
+#'   through their means. The means are computed on the estimation rows and
+#'   stored with the fit: predictions for a group in the estimation data use
+#'   its training means, and a new group uses the means of its own rows in
+#'   \code{newdata}. \code{\link{cre_test}()} tests random against fixed
+#'   effects.
 #' @param keep_data logical; if \code{FALSE}, the training data are not stored
 #'   in the fitted object. \code{predict()} then needs \code{newdata}.
 #' @param offset the name of a variable, or vector of variable names, to be
@@ -266,7 +275,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
                          panel_id = NULL, mix_draws = NULL,
                          weight_type = c("frequency", "sampling"),
                          draws = c("per_unit", "shared"),
-                         cluster = NULL) {
+                         cluster = NULL, cre = NULL) {
   
   print.level <- if (verbose) 2 else 0
   draws <- match.arg(draws)
@@ -329,6 +338,20 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
     rpardists <- NULL
   }
   
+  # Correlated random effects: group means of time-varying regressors
+  cre_info <- NULL
+  if (!is.null(cre)) {
+    cp <- .fcr_cre_prepare(cre, formula, data, group_var,
+                           formulas = list(rpar_formula, dis_param_formula_1,
+                                           dis_param_formula_2,
+                                           het_mean_formula, het_var_formula),
+                           extra_vars = c(if (is.character(offset)) offset,
+                                          if (is.character(weights)) weights))
+    data <- cp$data
+    formula <- cp$formula
+    cre_info <- cp$info
+  }
+
   # --- 2. Data: one complete-case model frame for everything ---
   prep <- prepare_model_data(formula, data,
                              aux_formulas = list(
@@ -692,6 +715,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   fit$se <- .fcr_se(V)
   names(fit$se) <- x_names
   fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
+  fit$cre <- cre_info
   
   obj <- .createFlexCountReg(model = fit, 
                              data = data, keep_data = keep_data,

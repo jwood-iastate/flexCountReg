@@ -28,6 +28,15 @@
 #'   standard errors.
 #' @param keep_data logical; if \code{FALSE}, the training data are not stored
 #'   in the fitted object.
+#' @param cre optional one-sided formula of time-varying regressors, e.g.
+#'   \code{~ x1 + x2}, for correlated random effects (Mundlak 1978): the
+#'   group means of these variables (columns \code{mean_x1}, ...) are added
+#'   to the mean model, so the random effect may depend on the regressors
+#'   through their means. The means are computed on the estimation rows and
+#'   stored with the fit: predictions for a group in the estimation data use
+#'   its training means, and a new group uses the means of its own rows in
+#'   \code{newdata}. \code{\link{cre_test}()} tests random against fixed
+#'   effects.
 #' @param print.level deprecated; use \code{verbose}.
 #' @param bootstraps optional integer specifying the number of bootstrap samples
 #'   to be used for estimating standard errors. If not specified, no
@@ -90,7 +99,8 @@ repois <- function(formula,
                    offset = NULL,
                    weights = NULL,
                    keep_data = TRUE,
-                   print.level = NULL) {
+                   print.level = NULL,
+                   cre = NULL) {
   
   call <- match.call()
   print.level <- .fcr_print_level("repois", verbose, print.level)
@@ -108,6 +118,17 @@ repois <- function(formula,
          call. = FALSE)
   }
   
+  # Correlated random effects: group means of time-varying regressors
+  cre_info <- NULL
+  if (!is.null(cre)) {
+    cp <- .fcr_cre_prepare(cre, formula, as.data.frame(data), group_var,
+                           extra_vars = c(if (is.character(offset)) offset,
+                                          if (is.character(weights)) weights))
+    data <- cp$data
+    formula <- cp$formula
+    cre_info <- cp$info
+  }
+
   # Shared data preparation: one complete-case frame (formula, offsets and
   # groups), training blueprint and the rows used
   prep <- prepare_model_data(formula, data, offset = offset,
@@ -190,6 +211,7 @@ repois <- function(formula,
   fit$bootstrapped_se <- if (stderr == "boot") fit$se else NULL
   fit$vcov_type <- switch(stderr, normal = "hessian", robust = "robust",
                           boot = "bootstrap")
+  fit$cre <- cre_info
   
   obj <- .createFlexCountReg(
     model = fit,

@@ -231,6 +231,8 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   }
   
   model <- object$model
+  # Correlated random effects: the group-mean columns of `newdata`
+  if (!is.null(model$cre)) data <- .fcr_cre_newdata(model$cre, data)
   
   if (!is.null(object$modelType)) {
     modtype <- object$modelType
@@ -240,6 +242,15 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     modtype <- "countreg" 
   }
   
+  if (modtype == "countreg_fe") {
+    if (type != "response" || interval != "none") {
+      stop("countreg_fe() models give type = \"response\" predictions ",
+           "without intervals.", call. = FALSE)
+    }
+    return(.fcr_fe_predict(object, data,
+                           additional_args$newgroup %||% "none"))
+  }
+
   if (interval != "none") {
     if (modtype != "countreg") {
       stop("Intervals are available for countreg() models.", call. = FALSE)

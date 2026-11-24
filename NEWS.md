@@ -47,6 +47,47 @@
 * Families can declare a `score` function in the internal registry; the
   NB1, NB2 and NBP scores are shared by `countreg()` and `countreg_rp()`.
 
+## Fixed-effects count models
+
+* New `countreg_fe()` estimates count models with fixed effects for one or
+  more grouping variables (`fixef = ~ site` or `~ site + year`). It chooses
+  among three estimators:
+  * Poisson with one dimension: the conditional likelihood.
+  * Poisson with several dimensions: IRLS with alternating projections, as
+    in `fixest::fepois()`.
+  * Any other family, including families from `new_count_family()`, with
+    one dimension: the dummy-variable likelihood with the group intercepts
+    concentrated out.
+* Groups with all-zero counts or a single observation are dropped and
+  reported, and regressors without variation within groups are removed
+  with a warning.
+* Standard errors are cluster-robust by the first fixed-effect variable by
+  default. The log-likelihood is that of the dummy-variable model, with
+  degrees of freedom that count the fixed effects.
+* `jackknife = TRUE` applies the split-panel jackknife of Dhaene and
+  Jochmans (2015). In simulations with 200 units it removed most of the NB2
+  dispersion bias with 5 or 10 periods, but did not improve the slopes, and
+  it is unreliable below 4 periods, where a warning is given.
+* `predict()` uses each known group's effect. Groups not in the
+  estimation data give `NA` unless `newgroup = "mean_fe"`.
+* Estimates, log-likelihoods and dropped groups equal those of
+  `fixest::fepois()` (one and two ways) and `fixest::fenegbin()`. The
+  cluster-robust standard errors equal fixest's with `ssc(adj = FALSE)`.
+* `countreg_rp()`, `renb()` and `repois()` gain `cre = ~ x1 + x2` for
+  correlated random effects (Mundlak 1978). The units' means of the listed
+  time-varying regressors are added to the mean model, computed on the
+  estimation rows and stored with the fit. Predictions for known units use
+  their training means; new units use the means of their own rows.
+* New `cre_test()`, a Wald test that the coefficients of those means are
+  zero: a robust test of random against fixed effects. In simulations with
+  unit effects correlated with the regressor, the plain random-effects slope
+  was biased (0.63 for a true 0.5), the slope with `cre` was 0.505, equal to
+  fixed effects, and the test rejected in every replication. With
+  uncorrelated effects, it rejected in 7% of replications at the 5% level.
+* New vignette, "Fixed-effects count models"
+  (`vignette("fixed-effects-count-models")`), with a section on correlated
+  random effects.
+
 ## Cluster-robust standard errors and the sandwich package
 
 * `countreg()` and `countreg_rp()` gain `stderr = "cluster"` with
@@ -834,6 +875,11 @@ Changed results are marked **(changed)**.
   misclassified).
 
 ## Documentation
+
+* The pkgdown site renders mathematics with MathJax
+  (`template: math-rendering: mathjax`). The equations of help pages
+  (`\eqn{}`, `\deqn{}`) and articles were shown as raw LaTeX, for example
+  in `?countreg_mix`.
 
 * The package description (DESCRIPTION) now summarizes the current
   scope: the 28 count families and their distribution functions,

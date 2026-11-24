@@ -37,6 +37,7 @@
   subclass <- switch(model$modelType %||% "countreg",
                      countreg = "countreg",
                      countreg.rp = "countreg_rp",
+                     countreg_fe = "countreg_fe",
                      RENB = "renb",
                      poisLindRE = "poislind_re",
                      REPoisson = "repois",

@@ -1,6 +1,8 @@
 url: https://jwood-iastate.github.io/flexCountReg/
 template:
   bootstrap: 5
+  # Render the math of help pages (\eqn, \deqn) and articles ($...$)
+  math-rendering: mathjax
 
 articles:
 - title: Start here
@@ -19,6 +21,7 @@ articles:
   - zeros-hurdles-and-sampling
   - underreporting-and-identification
   - random-parameters-and-panels
+  - fixed-effects-count-models
 - title: Finite mixtures and latent classes
   contents:
   - finite-mixture-getting-started
@@ -37,10 +40,12 @@ articles:
 reference:
 - title: Count regression models
   desc: Estimate count models with flexible distributions, underreporting,
-    random parameters and random effects.
+    random parameters, random effects and fixed effects.
   contents:
   - countreg
   - countreg_rp
+  - countreg_fe
+  - cre_test
   - count_families
   - renb
   - poisLindRE

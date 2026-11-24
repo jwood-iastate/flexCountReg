@@ -172,6 +172,15 @@ NULL
 # definite, otherwise the largest entry difference scaled by the
 # curvatures, |A_ij - B_ij| / sqrt(|B_ii B_jj|).
 .fcr_hessian_gap <- function(A, B) {
+  # Directions where the log-likelihood is flat (a parameter at a boundary,
+  # such as a dispersion at its Poisson limit) have no standard error to
+  # be accurate about; .fcr_hessian_vcov() reports them separately
+  flat <- .fcr_flat_params(-B) | .fcr_flat_params(-A)
+  if (all(flat)) return(0)
+  if (any(flat)) {
+    A <- A[!flat, !flat, drop = FALSE]
+    B <- B[!flat, !flat, drop = FALSE]
+  }
   se <- function(H) {
     V <- tryCatch(solve(-H), error = function(e) NULL)
     if (is.null(V) || any(!is.finite(diag(V))) || any(diag(V) <= 0)) {

@@ -27,7 +27,7 @@ The goal of flexCountReg is to provide functions that allow the analyst to estim
 - your own count distributions, defined from a log probability function with `new_count_family()` and usable in every model;
 - underreporting, and zero-inflated or hurdle versions of every distribution;
 - random parameters, with heterogeneity in their means and variances, analytic gradients, separate simulation draws for each panel, and exact, simulated and Empirical Bayes (observation-specific) predictions;
-- random-effects panel models (negative binomial, Poisson-Lindley, negative multinomial);
+- random-effects panel models (negative binomial, Poisson-Lindley, negative multinomial) and fixed-effects models (`countreg_fe()`: Poisson with any number of fixed-effect dimensions, or any family with one);
 - finite mixtures and latent-class count regressions, with constant, covariate-dependent or known class proportions, shared or class-specific parameters, different families in different classes, and one class per panel;
 - inference with Hessian-based, robust, cluster-robust (one-way or multiway) or bootstrap standard errors, frequency or sampling weights, and methods for the sandwich and lmtest packages;
 - model comparison and diagnostics: likelihood-ratio tests, comparison tables, marginal effects, CURE plots, rootograms and randomized quantile residuals;
@@ -118,6 +118,8 @@ to install any that are missing. Uploaded data stay on your computer.
 - `countreg()` estimates cross-sectional count regression models with any of the distributions below, optional models for the distribution parameters, underreporting, and zero-inflated or hurdle zero models, with Hessian-based, robust, cluster-robust (`cluster = ~ site`) or bootstrap standard errors.
 - `countreg_rp()` estimates random parameters count models, optionally with panels, correlated random parameters, and heterogeneity in the means and variances of the random parameters. Fits use the analytic gradient of the simulated likelihood and, by default, separate Halton draws for each panel.
 - `countreg_mix()` and `countreg_lc()` estimate finite-mixture and latent-class count models (the same engine under two vocabularies), with several reproducible starts, and `component_probs()` / `class_probs()` give prior or posterior class probabilities.
+- `countreg_fe()` estimates fixed-effects count models: Poisson by the conditional likelihood (one dimension) or IRLS with alternating projections (site and year, ...), and any other family, including user-defined ones, by the concentrated dummy-variable likelihood, with an optional split-panel jackknife. Standard errors are cluster-robust by default; estimates equal those of `fixest::fepois()` and `fixest::fenegbin()`.
+- `cre = ~ x` in `countreg_rp()`, `renb()` and `repois()` adds the means of time-varying regressors within each unit (correlated random effects, Mundlak 1978), and `cre_test()` tests random against fixed effects.
 - `renb()` estimates the random effects negative binomial regression model.
 - `poisLind.re()` (also `poislind_re()`) estimates the random effects Poisson-Lindley model.
 - `negmultinom()` estimates negative multinomial (random effects) panel models (NM1, NM2 and NM-P).

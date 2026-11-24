@@ -31,11 +31,11 @@
   }
   lgy <- lgamma(y + 1)
   switch(family,
-    POISSON = function(eta, alpha, sigma) {
+    POISSON = function(eta, alpha, sigma, deriv = TRUE) {
       mu <- exp(eta)
       list(l = w * (y * eta - mu - lgy), d1 = w * (y - mu), d2 = -w * mu)
     },
-    NB2 = function(eta, alpha, sigma) {
+    NB2 = function(eta, alpha, sigma, deriv = TRUE) {
       mu <- exp(eta)
       r <- 1 / alpha
       rm <- r + mu
@@ -45,7 +45,7 @@
       list(l = w * l, d1 = w * r * (y - mu) / rm,
            d2 = -w * (y + r) * r * mu / rm^2)
     },
-    NB1 = function(eta, alpha, sigma) {
+    NB1 = function(eta, alpha, sigma, deriv = TRUE) {
       s <- exp(eta) / alpha
       la <- log1p(alpha)
       l <- stats::dnbinom(y, size = s, mu = exp(eta), log = TRUE)
@@ -53,9 +53,10 @@
       d2 <- d1 + s^2 * (trigamma(y + s) - trigamma(s))
       list(l = w * l, d1 = w * d1, d2 = w * d2)
     },
-    function(eta, alpha, sigma) {
+    function(eta, alpha, sigma, deriv = TRUE) {
       h <- 1e-3
       f0 <- lf(eta, alpha, sigma)
+      if (!deriv) return(list(l = w * f0))
       fp1 <- lf(eta + h, alpha, sigma)
       fm1 <- lf(eta - h, alpha, sigma)
       fp2 <- lf(eta + 2 * h, alpha, sigma)
@@ -208,4 +209,164 @@
   lj <- m + log(rowSums(exp(lk - m))) - logdetR
   if (any(!is.finite(lj))) return(-Inf)
   sum(lj)
+}
+
+# ---- Simulation engine (one grouping term, any effect distribution) --------
+#
+# The effects of group j are b_j = L v_j with v_j a vector of independent
+# standardized draws (mean 0, variance 1): normal, uniform or symmetric
+# triangular. With "gamma" (one effect) exp(b_j) is gamma with mean 1 and
+# standard deviation s = |L_11|, the multiplicative heterogeneity of the
+# negative binomial random-effects model. The likelihood of each group is
+# the average over R scrambled Halton draws of the product of its rows'
+# densities.
+
+.fcr_re_dists <- c("normal", "uniform", "triangular", "gamma")
+
+# Standardized draws from uniforms U.
+.fcr_re_std <- function(U, dist) {
+  switch(dist,
+    normal = stats::qnorm(U),
+    uniform = sqrt(3) * (2 * U - 1),
+    triangular = sqrt(6) * ifelse(U < 0.5, -1 + sqrt(2 * U),
+                                  1 - sqrt(2 * (1 - U))),
+    stop("Unknown random-effect distribution \"", dist, "\".",
+         call. = FALSE))
+}
+
+# log of a gamma(1/s^2, 1/s^2) draw (mean 1, sd s) from uniforms U.
+.fcr_re_loggamma <- function(U, s) {
+  s <- abs(s)
+  if (s < 1e-4) return(s * stats::qnorm(U) - s^2 / 2)
+  k <- 1 / s^2
+  log(stats::qgamma(U, shape = k, rate = k))
+}
+
+# Effects of every group at draw r: a J x q matrix.
+.fcr_re_draw_effects <- function(S, U1, dist, L, r) {
+  q <- nrow(L)
+  B <- matrix(0, nrow(S[[1]]), q)
+  if (dist[1] == "gamma") {
+    B[, 1] <- .fcr_re_loggamma(U1[, r], L[1, 1])
+    return(B)
+  }
+  for (k in seq_len(q)) {
+    for (m in seq_len(k)) B[, k] <- B[, k] + L[k, m] * S[[m]][, r]
+  }
+  B
+}
+
+# Simulated log-likelihood; with `posterior = TRUE` also the posterior
+# means and covariances of the effects of each group.
+#   U         list of q (J x R) matrices of uniforms
+#   X         the term's n x q effect design, g its group index (1..J)
+#   logf_for  function(c) returning the row log-density for c stacked
+#             copies of the data (draws are evaluated c at a time)
+.fcr_hier_msl <- function(eta0, X, g, U, dist, L, logf_for, alpha, sigma,
+                          posterior = FALSE) {
+  J <- nrow(U[[1]])
+  R <- ncol(U[[1]])
+  q <- ncol(X)
+  n <- length(eta0)
+  # Effects of every group and draw: q matrices J x R
+  if (dist[1] == "gamma") {
+    Bk <- list(.fcr_re_loggamma(U[[1]], L[1, 1]))
+  } else {
+    S <- lapply(seq_len(q), function(k) .fcr_re_std(U[[k]], dist[k]))
+    Bk <- lapply(seq_len(q), function(k) {
+      out <- matrix(0, J, R)
+      for (m in seq_len(k)) out <- out + L[k, m] * S[[m]]
+      out
+    })
+  }
+  csize <- max(1L, min(R, floor(2e6 / n)))
+  lr <- matrix(0, J, R)
+  for (st in seq(1L, R, by = csize)) {
+    cols <- st:min(R, st + csize - 1L)
+    nc <- length(cols)
+    eta <- matrix(eta0, n, nc)
+    for (k in seq_len(q)) {
+      eta <- eta + X[, k] * Bk[[k]][g, cols, drop = FALSE]
+    }
+    l <- logf_for(nc)(as.vector(eta), if (!is.null(alpha)) rep(alpha, nc),
+                      if (!is.null(sigma)) rep(sigma, nc), deriv = FALSE)$l
+    l[is.na(l)] <- -Inf
+    lr[, cols] <- rowsum(matrix(l, n, nc), g, reorder = TRUE)
+  }
+  m <- apply(lr, 1, max)
+  if (any(!is.finite(m))) return(list(ll = -Inf))
+  w <- exp(lr - m)
+  ll <- sum(m + log(rowMeans(w)))
+  if (!posterior) return(list(ll = ll))
+  w <- w / rowSums(w)
+  mean_b <- vapply(Bk, function(B) rowSums(w * B), numeric(J))
+  mean_b <- matrix(mean_b, J, q)
+  cv <- array(0, c(q, q, J))
+  for (a in seq_len(q)) for (b in seq_len(q)) {
+    cv[a, b, ] <- rowSums(w * Bk[[a]] * Bk[[b]]) -
+      mean_b[, a] * mean_b[, b]
+  }
+  list(ll = ll, b = mean_b, condvar = cv)
+}
+
+# Row log-densities for c stacked copies of the data (cached by c).
+.fcr_hier_logf_stack <- function(family, y, w, dens_args) {
+  cache <- new.env(parent = emptyenv())
+  function(c) {
+    key <- as.character(c)
+    if (is.null(cache[[key]])) {
+      cache[[key]] <- .fcr_hier_logf(family, rep(y, c), rep(w, c),
+                                     dens_args)
+    }
+    cache[[key]]
+  }
+}
+
+# log E[exp(z'b)] of each row for a term's effects (z the rows of X),
+# used for marginal means.
+.fcr_re_log_mgf <- function(X, L, dist) {
+  if (all(dist == "normal")) {
+    S <- L %*% t(L)
+    return(rowSums((X %*% S) * X) / 2)
+  }
+  if (dist[1] == "gamma") {
+    s <- abs(L[1, 1])
+    if (s < 1e-8) return(rep(0, nrow(X)))
+    k <- 1 / s^2
+    x <- X[, 1]
+    out <- lgamma(k + x) - lgamma(k) - x * log(k)
+    out[k + x <= 0] <- Inf
+    return(out)
+  }
+  A <- X %*% L   # (L'z)_m for each row
+  out <- 0
+  for (m in seq_len(ncol(A))) {
+    a <- abs(A[, m])
+    out <- out + switch(dist[m],
+      normal = a^2 / 2,
+      uniform = ifelse(a < 1e-8, 0, .fcr_log_sinhc(sqrt(3) * a)),
+      triangular = {
+        c6 <- sqrt(6) * a
+        ifelse(a < 1e-6, a^2 / 2, log(2 * (cosh(c6) - 1) / c6^2))
+      })
+  }
+  out
+}
+
+# Draws of the simulation engine: for each group, R consecutive points of
+# the Halton sequence (one dimension per effect), shifted by a uniform
+# random amount modulo 1 (Cranley-Patterson rotation), which keeps their
+# even spread and makes the average unbiased. The scrambled ("mixed")
+# Halton points of randtoolbox are not used: averaged over consecutive
+# blocks they left a bias in the log-likelihood that more draws did not
+# remove. `seed` fixes the shifts without changing the caller's random
+# numbers. Returns a list of q (J x R) matrices.
+.fcr_hier_draws <- function(J, R, q, seed = 123) {
+  H <- unclass(.fcr_unit_halton(seq_len(J), as.integer(R), q))
+  old <- if (exists(".Random.seed", envir = globalenv()))
+    get(".Random.seed", envir = globalenv())
+  on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
+    assign(".Random.seed", old, envir = globalenv()))
+  set.seed(seed)
+  lapply(H, function(h) (h + stats::runif(J)) %% 1)
 }

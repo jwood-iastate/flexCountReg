@@ -457,7 +457,7 @@ its own effect of <code>cover</code>, with a correlation between them.
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="fu">VarCorr</span>(h3)</span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt;  Groups Name        Variance  Std.Dev. </span></span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt;  site   (Intercept) 2.626e-01 5.125e-01</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt;  site   cover       2.688e-16 1.640e-08</span></span></code></pre></div>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt;  site   cover       8.095e-17 8.997e-09</span></span></code></pre></div>
 <p>The slope’s standard deviation is estimated at zero, so
 <code>cover</code> has the same effect at every site. A variance on the
 boundary is a <strong>singular fit</strong>: <code>summary()</code> says
@@ -476,7 +476,7 @@ condition on (<code>NA</code> for none), and groups not seen in
 estimation get no effect:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> s[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">30</span>), ]</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">predict</span>(h2, <span class="at">newdata =</span> nd)                         <span class="co"># site and sample</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.2103916 3.1660526</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.2103916 3.1660525</span></span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="fu">predict</span>(h2, <span class="at">newdata =</span> nd, <span class="at">re.form =</span> <span class="sc">~</span> (<span class="dv">1</span> <span class="sc">|</span> site)) <span class="co"># site only</span></span>
 <span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [1] 0.2127103 3.4092077</span></span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">predict</span>(h2, <span class="at">newdata =</span> nd, <span class="at">re.form =</span> <span class="cn">NA</span>)           <span class="co"># population level</span></span>
@@ -492,8 +492,109 @@ conditioned on out of the mean:</p>
 (<code>use_re = &quot;conditional&quot;</code>) or for new groups with new effects
 (<code>use_re = &quot;new&quot;</code>).</p>
 </div>
+<div id="predictions-from-a-separate-history" class="section level2">
+<h2>6. Predictions from a separate history</h2>
+<p>To forecast a new period, the effects of the groups should come from
+their past counts, not from the counts being forecast.
+<code>history</code> gives the past data: the effects of its groups are
+computed from those counts alone, at the fitted parameters, and groups
+without history are treated as new groups.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;washington_roads&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>w <span class="ot">&lt;-</span> washington_roads</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>past <span class="ot">&lt;-</span> w[w<span class="sc">$</span>Year <span class="sc">&lt;</span> <span class="dv">2018</span>, ]</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>h_w <span class="ot">&lt;-</span> <span class="fu">countreg_hier</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span> <span class="fu">offset</span>(lnlength) <span class="sc">+</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>                       (<span class="dv">1</span> <span class="sc">|</span> ID), <span class="at">data =</span> past, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>next_year <span class="ot">&lt;-</span> w[w<span class="sc">$</span>Year <span class="sc">==</span> <span class="dv">2018</span>, ]</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>last_year <span class="ot">&lt;-</span> past[past<span class="sc">$</span>Year <span class="sc">==</span> <span class="dv">2017</span>, ]</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">cbind</span>(</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>  <span class="at">all_years =</span> <span class="fu">predict</span>(h_w, <span class="at">newdata =</span> next_year),</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>  <span class="at">last_year =</span> <span class="fu">predict</span>(h_w, <span class="at">newdata =</span> next_year, <span class="at">history =</span> last_year),</span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>  <span class="at">observed  =</span> next_year<span class="sc">$</span>Total_crashes))</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt;      all_years last_year observed</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; [1,] 0.5105095 0.5872832        1</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7575946 0.5288174        3</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; [3,] 1.0443883 0.8029405        0</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; [4,] 0.3603831 0.3997441        1</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; [5,] 0.6745255 0.8043373        0</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; [6,] 0.3803613 0.3131675        1</span></span></code></pre></div>
+</div>
+<div id="intervals-for-the-variance-components" class="section level2">
+<h2>7. Intervals for the variance components</h2>
+<p>Wald intervals for a standard deviation are symmetric and can cross
+zero. Profile-likelihood intervals follow the likelihood, so they are
+asymmetric and stop at zero:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">confint</span>(h, <span class="st">&quot;sd_(Intercept)|site&quot;</span>)                      <span class="co"># Wald</span></span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt;                         2.5 %    97.5 %</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; sd_(Intercept)|site 0.2842245 0.8052748</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">confint</span>(h, <span class="st">&quot;sd_(Intercept)|site&quot;</span>, <span class="at">method =</span> <span class="st">&quot;profile&quot;</span>)  <span class="co"># profile</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt;                         2.5 %    97.5 %</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; sd_(Intercept)|site 0.3273034 0.8768668</span></span></code></pre></div>
+<p>Each profile point refits the model, so a profile interval takes
+several fits per limit.</p>
+</div>
+<div id="smooth-terms" class="section level2">
+<h2>8. Smooth terms</h2>
+<p>The fixed part can contain penalized smooths, <code>s()</code> and
+<code>t2()</code>. They are fitted in their mixed-model form (as in
+gamm4): the wiggly part of each smooth is a set of normal random
+coefficients whose variance is <span class="math inline">\(1/\lambda\)</span>, so the smoothness is estimated
+by the marginal likelihood together with the other variance
+components.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>hs <span class="ot">&lt;-</span> <span class="fu">countreg_hier</span>(count <span class="sc">~</span> mined <span class="sc">+</span> <span class="fu">s</span>(cover) <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> site), <span class="at">data =</span> s,</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>                    <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>hs<span class="sc">$</span>model<span class="sc">$</span>smooth_table[, <span class="fu">c</span>(<span class="st">&quot;term&quot;</span>, <span class="st">&quot;edf&quot;</span>, <span class="st">&quot;p.value&quot;</span>)]</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;       term edf   p.value</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; 1 s(cover)   1 0.4639229</span></span></code></pre></div>
+<p><code>plot_smooths()</code>, <code>smooth_estimates()</code> and the
+other smooth tools of <code>vignette(&quot;smooth-effects&quot;)</code> work as
+for <code>countreg()</code>. Here the effect of <code>cover</code> is
+linear (EDF 1).</p>
+</div>
+<div id="non-normal-random-effects" class="section level2">
+<h2>9. Non-normal random effects</h2>
+<p>With one grouping term, the effects can have other distributions,
+through <code>re_dist</code>, and the likelihood is computed by
+simulation (<code>engine = &quot;msl&quot;</code>, <code>re_draws</code> draws per
+group):</p>
+<ul>
+<li><code>&quot;uniform&quot;</code> and <code>&quot;triangular&quot;</code>: effects with
+mean zero and the reported standard deviation, with bounded
+support;</li>
+<li><code>&quot;gamma&quot;</code>: the group’s multiplicative effect <span class="math inline">\(\exp(b_j)\)</span> is gamma with mean 1, as in the
+classic negative binomial random-effects model. With a Poisson family
+this is <code>repois()</code>, computed by simulation.</li>
+</ul>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>hg <span class="ot">&lt;-</span> <span class="fu">countreg_hier</span>(count <span class="sc">~</span> spp <span class="sc">+</span> mined <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> site), <span class="at">data =</span> s,</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>                    <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">re_dist =</span> <span class="st">&quot;gamma&quot;</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>rp <span class="ot">&lt;-</span> <span class="fu">repois</span>(count <span class="sc">~</span> spp <span class="sc">+</span> mined, <span class="at">group_var =</span> <span class="st">&quot;site&quot;</span>, <span class="at">data =</span> s,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>             <span class="at">method =</span> <span class="st">&quot;BFGS&quot;</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">c</span>(<span class="at">simulated =</span> <span class="fu">logLik</span>(hg), <span class="at">closed_form =</span> <span class="fu">logLik</span>(rp))</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt;   simulated closed_form </span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt;   -972.6204   -972.5913</span></span></code></pre></div>
+<p>Group effects from the simulation engine are posterior means. The
+gamma distribution needs a gamma quantile for every draw, so it is
+slower than the others.</p>
+</div>
+<div id="correlated-random-effects" class="section level2">
+<h2>10. Correlated random effects</h2>
+<p>Random effects are assumed independent of the covariates.
+<code>cre</code> adds the group means of time-varying covariates
+(Mundlak’s device), which absorbs that correlation, and
+<code>cre_test()</code> tests it:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>hc <span class="ot">&lt;-</span> <span class="fu">countreg_hier</span>(Total_crashes <span class="sc">~</span> lnaadt <span class="sc">+</span> speed50 <span class="sc">+</span> <span class="fu">offset</span>(lnlength) <span class="sc">+</span></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>                      (<span class="dv">1</span> <span class="sc">|</span> ID), <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;POISSON&quot;</span>, <span class="at">cre =</span> <span class="sc">~</span> lnaadt)</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="fu">cre_test</span>(hc)</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;  Wald test of correlated random effects (group means)</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; data:  countreg_hier(formula = Total_crashes ~ lnaadt + speed50 + offset(lnlength) +      (1 | ID), data = w, family = &quot;POISSON&quot;, cre = ~lnaadt)</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; Wald chi-squared = 7.1647, df = 1, p-value = 0.007435</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; sample estimates:</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; mean_lnaadt </span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt;    1.855635</span></span></code></pre></div>
+</div>
 <div id="families-and-engines" class="section level2">
-<h2>6. Families and engines</h2>
+<h2>11. Families and engines</h2>
 <p>Every count family can be used, including user-defined families
 (<code>new_count_family()</code>), and the distribution parameters can
 depend on covariates (<code>dis_param_formula_1</code>,
@@ -523,14 +624,19 @@ effect</td>
 </tr>
 <tr class="even">
 <td><code>&quot;laplace&quot;</code></td>
-<td>any terms, nested or crossed</td>
+<td>any terms, nested or crossed; smooth terms</td>
 <td>Laplace approximation</td>
 </tr>
 <tr class="odd">
+<td><code>&quot;msl&quot;</code></td>
+<td>one grouping term, any <code>re_dist</code></td>
+<td>maximum simulated likelihood</td>
+</tr>
+<tr class="even">
 <td><code>&quot;auto&quot;</code> (default)</td>
 <td></td>
-<td><code>&quot;aghq&quot;</code> for one term with at most two effects, otherwise
-<code>&quot;laplace&quot;</code></td>
+<td><code>&quot;msl&quot;</code> for non-normal effects, <code>&quot;aghq&quot;</code> for
+one term with at most two effects, otherwise <code>&quot;laplace&quot;</code></td>
 </tr>
 </tbody>
 </table>
@@ -540,7 +646,7 @@ approximation. The estimates equal those of <code>lme4::glmer()</code>
 approximation.</p>
 </div>
 <div id="related-models" class="section level2">
-<h2>7. Related models</h2>
+<h2>12. Related models</h2>
 <ul>
 <li><code>countreg_rp()</code> fits random parameters at one level, with
 free means and non-normal distributions (lognormal, triangular, gamma,
@@ -553,12 +659,11 @@ assumption about how the group effects relate to the covariates.</li>
 </ul>
 </div>
 <div id="not-yet-available" class="section level2">
-<h2>8. Not yet available</h2>
-<p>Non-normal random effects and nested simulation, posterior
-predictions from a separate history of counts, profile-likelihood
-intervals for the variance components, smooth terms and the
-correlated-random-effects option (<code>cre</code>) are not yet
-available in <code>countreg_hier()</code>.</p>
+<h2>13. Not yet available</h2>
+<p>Non-normal random effects at more than one level (nested simulation),
+smooth terms in the distribution-parameter formulas, and
+<code>te()</code> and <code>ti()</code> smooths (use <code>t2()</code>)
+are not yet available in <code>countreg_hier()</code>.</p>
 </div>
 
 

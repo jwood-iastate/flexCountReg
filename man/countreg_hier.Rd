@@ -12,19 +12,25 @@ countreg_hier(
   dis_param_formula_2 = NULL,
   offset = NULL,
   weights = NULL,
-  engine = c("auto", "aghq", "laplace"),
+  engine = c("auto", "aghq", "laplace", "msl"),
   nAGQ = NULL,
+  re_dist = "normal",
+  re_draws = 500,
+  cre = NULL,
+  cre_group = NULL,
   method = "BFGS",
   max.iters = 1000,
   start.vals = NULL,
   ndraws = 1500,
+  seed = 123,
   verbose = FALSE,
   keep_data = TRUE
 )
 }
 \arguments{
 \item{formula}{a model formula with random-effect terms. The fixed part
-is as in \code{\link{countreg}()} (including \code{offset()}).
+is as in \code{\link{countreg}()} (including \code{offset()}), and can
+have penalized smooth terms \code{s()} and \code{t2()} of mgcv.
 Group-level predictors are ordinary columns (constant within groups),
 and cross-level interactions are ordinary interactions.}
 
@@ -44,13 +50,35 @@ numeric vector).}
 
 \item{engine}{the approximation of the integral over the random effects:
 \code{"aghq"} (adaptive Gauss-Hermite quadrature; one grouping term
-only), \code{"laplace"} (any number of terms, nested or crossed), or
-\code{"auto"} (quadrature for a single grouping term with at most two
+only), \code{"laplace"} (any number of terms, nested or crossed, and
+smooth terms), \code{"msl"} (maximum simulated likelihood; one grouping
+term, any \code{re_dist}), or \code{"auto"} (simulation for non-normal
+effects, quadrature for a single grouping term with at most two
 effects, otherwise Laplace).}
 
 \item{nAGQ}{number of quadrature points per effect for \code{"aghq"}
 (default 9 for one effect, 5 for two or three). \code{nAGQ = 1} is the
 Laplace approximation.}
+
+\item{re_dist}{distribution of the random effects of the grouping term:
+\code{"normal"} (default), \code{"uniform"}, \code{"triangular"}
+(symmetric) or \code{"gamma"}; one value, or one per effect. Effects
+other than normal need a single grouping term and use
+\code{engine = "msl"}. With \code{"gamma"} (one effect) the
+multiplicative group effect \eqn{\exp(b_j)} is gamma with mean 1 and
+standard deviation \code{sd_...}, as in the negative binomial
+random-effects model; with the others \eqn{b_j} has mean 0 and the
+reported standard deviation.}
+
+\item{re_draws}{number of (randomly shifted) Halton draws per group for
+\code{engine = "msl"}.}
+
+\item{cre}{optional one-sided formula of time-varying regressors whose
+group means are added to the mean model (correlated random effects; see
+\code{\link{cre_test}()}).}
+
+\item{cre_group}{the grouping column(s) for the means of \code{cre};
+by default those of the random-effect terms, when all terms share them.}
 
 \item{method}{optimizer for \code{\link[stats]{optim}()}: \code{"BFGS"}
 (default) or \code{"Nelder-Mead"}.}
@@ -63,6 +91,9 @@ by the random-effect standard deviations and correlations.}
 
 \item{ndraws}{number of Halton draws for families whose density is
 simulated (as in \code{countreg()}).}
+
+\item{seed}{seed of the random shifts of the Halton draws of
+\code{engine = "msl"}.}
 
 \item{verbose}{print the optimizer's progress.}
 
@@ -104,6 +135,19 @@ accurate for small groups and is the default for one grouping factor.
 handles crossed and nested terms with sparse matrices. The derivatives
 of the log-density are analytic for the Poisson, NB1 and NB2 families
 and numerical for the others.
+
+Smooth terms are fitted in their mixed-model form: the penalized part
+of each smooth is a block of independent normal coefficients with
+variance \eqn{1/\lambda}, so the smoothing parameters are estimated by
+the (Laplace) marginal likelihood, as in gamm4. Their coefficients are
+reported on mgcv's basis, with the covariance of the coefficients and
+effects given the variance parameters, so \code{plot_smooths()} and the
+other smooth tools work as for \code{countreg()}.
+
+With \code{engine = "msl"} the group likelihoods are averages over
+\code{re_draws} draws of each group's effects, so effects can have any
+of the \code{re_dist} distributions; the effects of the groups
+(\code{ranef()}) are then posterior means.
 
 Standard errors come from the numerical Hessian of the marginal
 log-likelihood. The variance components are reported as standard

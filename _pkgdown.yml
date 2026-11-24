@@ -50,6 +50,7 @@ reference:
   - countreg_hier-effects
   - predict.countreg_hier
   - simulate.countreg_hier
+  - confint.countreg_hier
   - re_lrtest
   - countreg_fe
   - cre_test

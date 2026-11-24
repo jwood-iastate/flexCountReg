@@ -11,6 +11,7 @@
   re.form = NULL,
   allow.new.levels = TRUE,
   marginal = FALSE,
+  history = NULL,
   ...
 )
 }
@@ -35,6 +36,12 @@ count, instead of setting them to zero. For the log link the marginal
 mean is \eqn{\exp(\eta + z'\Sigma z / 2)}, larger than
 \eqn{\exp(\eta)}.}
 
+\item{history}{optional data frame of past counts (with the outcome) for
+the groups to predict. The effects of the groups are then estimated
+from \code{history} alone, at the fitted parameters, instead of taken
+from the estimation data, so a forecast never uses its own outcomes.
+Groups without history are treated as new groups.}
+
 \item{...}{unused.}
 }
 \value{
@@ -45,7 +52,8 @@ Predictions from a hierarchical count model
 }
 \details{
 Conditional predictions use the conditional modes of the random
-effects (as \code{lme4} does). With \code{marginal = FALSE} (the
+effects (as \code{lme4} does; posterior means with
+\code{engine = "msl"}). With \code{marginal = FALSE} (the
 default, as in \code{lme4}) the effects that are not conditioned on are
 zero, so a population-level prediction is the count of a median group,
 not the mean over groups.

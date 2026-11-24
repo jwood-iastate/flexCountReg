@@ -164,10 +164,28 @@
   the boundary-corrected (chi-bar-squared) p-value.
 * New vignette, "Hierarchical count models"
   (`vignette("hierarchical-count-models")`).
-* Not yet available in `countreg_hier()`: non-normal random effects
-  (nested simulation), posterior predictions from a separate history,
-  profile-likelihood intervals for the variance components, smooth terms
-  and `cre`.
+* Smooth terms `s()` and `t2()` in the fixed part, fitted in their
+  mixed-model form (as in gamm4): the penalized part of each smooth is a
+  block of normal coefficients with variance 1 / lambda, so the smoothing
+  parameters are estimated by the marginal likelihood with the variance
+  components. Smoothing parameters, EDF and curves equal those of
+  `mgcv::gam(method = "ML")` with `bs = "re"` group effects. A formula with
+  smooths and no grouping term is a GAM fitted by marginal likelihood.
+* `re_dist = "uniform"`, `"triangular"` or `"gamma"` (one grouping term)
+  gives non-normal random effects, fitted by maximum simulated likelihood
+  (`engine = "msl"`, `re_draws` randomly shifted Halton draws per group).
+  With `"gamma"` the multiplicative group effect is gamma with mean 1; a
+  Poisson model with gamma effects reproduces `repois()`.
+* `predict(history = )` estimates the effects of the groups from a separate
+  set of past counts, so a forecast never uses its own outcomes.
+* `confint(method = "profile")` gives profile-likelihood intervals for the
+  random-effect standard deviations (and fixed coefficients); they equal
+  glmmTMB's.
+* `cre` and `cre_group` add the group means of time-varying covariates
+  (correlated random effects), tested with `cre_test()`.
+* Not yet available in `countreg_hier()`: non-normal random effects at
+  more than one level, smooth terms in the distribution-parameter
+  formulas, and `te()`/`ti()` smooths (use `t2()`).
 
 ## Fixed-effects count models
 

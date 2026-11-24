@@ -142,7 +142,97 @@ predict(h2, newdata = nd, re.form = NA, marginal = TRUE)
 (`use_re = "conditional"`) or for new groups with new effects
 (`use_re = "new"`).
 
-## 6. Families and engines
+## 6. Predictions from a separate history
+
+To forecast a new period, the effects of the groups should come from
+their past counts, not from the counts being forecast. `history` gives
+the past data: the effects of its groups are computed from those counts
+alone, at the fitted parameters, and groups without history are treated
+as new groups.
+
+```{r history}
+data("washington_roads")
+w <- washington_roads
+past <- w[w$Year < 2018, ]
+h_w <- countreg_hier(Total_crashes ~ lnaadt + speed50 + offset(lnlength) +
+                       (1 | ID), data = past, family = "POISSON")
+next_year <- w[w$Year == 2018, ]
+last_year <- past[past$Year == 2017, ]
+head(cbind(
+  all_years = predict(h_w, newdata = next_year),
+  last_year = predict(h_w, newdata = next_year, history = last_year),
+  observed  = next_year$Total_crashes))
+```
+
+## 7. Intervals for the variance components
+
+Wald intervals for a standard deviation are symmetric and can cross zero.
+Profile-likelihood intervals follow the likelihood, so they are asymmetric
+and stop at zero:
+
+```{r profile}
+confint(h, "sd_(Intercept)|site")                      # Wald
+confint(h, "sd_(Intercept)|site", method = "profile")  # profile
+```
+
+Each profile point refits the model, so a profile interval takes several
+fits per limit.
+
+## 8. Smooth terms
+
+The fixed part can contain penalized smooths, `s()` and `t2()`. They are
+fitted in their mixed-model form (as in gamm4): the wiggly part of each
+smooth is a set of normal random coefficients whose variance is
+$1/\lambda$, so the smoothness is estimated by the marginal likelihood
+together with the other variance components.
+
+```{r smooth}
+hs <- countreg_hier(count ~ mined + s(cover) + (1 | site), data = s,
+                    family = "POISSON")
+hs$model$smooth_table[, c("term", "edf", "p.value")]
+```
+
+`plot_smooths()`, `smooth_estimates()` and the other smooth tools of
+`vignette("smooth-effects")` work as for `countreg()`. Here the effect of
+`cover` is linear (EDF 1).
+
+## 9. Non-normal random effects
+
+With one grouping term, the effects can have other distributions, through
+`re_dist`, and the likelihood is computed by simulation
+(`engine = "msl"`, `re_draws` draws per group):
+
+* `"uniform"` and `"triangular"`: effects with mean zero and the reported
+  standard deviation, with bounded support;
+* `"gamma"`: the group's multiplicative effect $\exp(b_j)$ is gamma with
+  mean 1, as in the classic negative binomial random-effects model. With
+  a Poisson family this is `repois()`, computed by simulation.
+
+```{r gamma}
+hg <- countreg_hier(count ~ spp + mined + (1 | site), data = s,
+                    family = "POISSON", re_dist = "gamma")
+rp <- repois(count ~ spp + mined, group_var = "site", data = s,
+             method = "BFGS")
+c(simulated = logLik(hg), closed_form = logLik(rp))
+```
+
+Group effects from the simulation engine are posterior means. The gamma
+distribution needs a gamma quantile for every draw, so it is slower than
+the others.
+
+## 10. Correlated random effects
+
+Random effects are assumed independent of the covariates. `cre` adds the
+group means of time-varying covariates (Mundlak's device), which absorbs
+that correlation, and `cre_test()` tests it:
+
+```{r cre}
+hc <- countreg_hier(Total_crashes ~ lnaadt + speed50 + offset(lnlength) +
+                      (1 | ID), data = w, family = "POISSON", cre = ~ lnaadt)
+cre_test(hc)
+```
+
+## 11. Families and engines
 
 Every count family can be used, including user-defined families
 (`new_count_family()`), and the distribution parameters can depend on
@@ -155,14 +245,15 @@ analytic; for the others they are computed numerically.
 | engine | when | method |
 | --- | --- | --- |
 | `"aghq"` | one grouping term | adaptive Gauss-Hermite quadrature, `nAGQ` points per effect |
-| `"laplace"` | any terms, nested or crossed | Laplace approximation |
-| `"auto"` (default) | | `"aghq"` for one term with at most two effects, otherwise `"laplace"` |
+| `"laplace"` | any terms, nested or crossed; smooth terms | Laplace approximation |
+| `"msl"` | one grouping term, any `re_dist` | maximum simulated likelihood |
+| `"auto"` (default) | | `"msl"` for non-normal effects, `"aghq"` for one term with at most two effects, otherwise `"laplace"` |
 
 With `nAGQ = 1` the quadrature is the Laplace approximation. The estimates
 equal those of `lme4::glmer()` (Poisson) and `glmmTMB` (Poisson, NB1 and
 NB2) with the same approximation.
 
-## 7. Related models
+## 12. Related models
 
 * `countreg_rp()` fits random parameters at one level, with free means and
   non-normal distributions (lognormal, triangular, gamma, ...) and
@@ -172,9 +263,8 @@ NB2) with the same approximation.
 * `countreg_fe()` fits fixed-effects models, which make no assumption about
   how the group effects relate to the covariates.
 
-## 8. Not yet available
+## 13. Not yet available
 
-Non-normal random effects and nested simulation, posterior predictions
-from a separate history of counts, profile-likelihood intervals for the
-variance components, smooth terms and the correlated-random-effects option
-(`cre`) are not yet available in `countreg_hier()`.
+Non-normal random effects at more than one level (nested simulation),
+smooth terms in the distribution-parameter formulas, and `te()` and `ti()`
+smooths (use `t2()`) are not yet available in `countreg_hier()`.

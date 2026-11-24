@@ -259,6 +259,154 @@ test_that("input errors are clear", {
                "single grouping term")
   expect_error(countreg_hier(count ~ mined + (1 | nosuch), data = s),
                "not found")
-  expect_error(countreg_hier(count ~ s(cover) + (1 | site), data = s),
-               "Smooth terms")
+  expect_error(countreg_hier(count ~ te(cover, DOP) + (1 | site), data = s),
+               "use s\\(\\) or t2")
+  expect_error(countreg_hier(count ~ cover + (1 | site), data = s,
+                             dis_param_formula_1 = ~ s(cover)),
+               "distribution-parameter formulas")
+  expect_error(countreg_hier(count ~ cover + (1 + cover | site), data = s,
+                             re_dist = "gamma"), "one effect")
+  expect_error(countreg_hier(count ~ cover + (1 | site) + (1 | sample),
+                             data = s, re_dist = "uniform"),
+               "single grouping term")
+  expect_error(countreg_hier(count ~ cover + (1 | site), data = s,
+                             re_dist = "lognormal"), "must be one of")
+})
+
+# ---- Phase 2 ---------------------------------------------------------------
+
+test_that("smooth terms match mgcv's marginal-likelihood fit", {
+  skip_if_not_installed("mgcv")
+  set.seed(2)
+  d <- data.frame(g = factor(sample(40, 800, TRUE)), x = runif(800))
+  d$y <- rpois(800, exp(0.3 + sin(2 * pi * d$x) + rnorm(40, 0, 0.5)[d$g]))
+  h <- countreg_hier(y ~ s(x) + (1 | g), data = d, family = "POISSON")
+  gm <- mgcv::gam(y ~ s(x) + s(g, bs = "re"), data = d, family = poisson,
+                  method = "ML")
+  st <- h$model$smooth_table
+  expect_equal(st$edf, unname(summary(gm)$edf[1]), tolerance = 2e-3)
+  expect_equal(h$model$smooth_lambda, unname(gm$sp[1]), tolerance = 1e-2)
+  expect_equal(unname(coef(h)["sd_(Intercept)|g"]),
+               unname(sqrt(gm$sig2 / gm$sp[2])), tolerance = 2e-3)
+  se <- smooth_estimates(h, n = 6, seed = 1)
+  pg <- predict(gm, newdata = data.frame(x = se$x, g = "1"), type = "terms",
+                se.fit = TRUE)
+  expect_equal(se$fit, unname(pg$fit[, "s(x)"]), tolerance = 5e-3)
+  expect_equal(se$se, unname(pg$se.fit[, "s(x)"]), tolerance = 5e-3)
+  # Predictions use the smooth on its original basis
+  nd <- d[1:5, ]
+  expect_equal(predict(h, newdata = nd), fitted(h)[1:5], tolerance = 1e-8)
+  expect_output(print(summary(h)), "Smooth terms")
+  pdf(NULL)
+  on.exit(grDevices::dev.off())
+  expect_silent(plot_smooths(h))
+  # A smooth alone (no grouping term) is a GAM fitted by marginal likelihood
+  h0 <- countreg_hier(y ~ s(x), data = d, family = "POISSON")
+  expect_length(h0$model$re_terms, 0)
+  expect_gt(h0$model$smooth_table$edf, 3)
+  lr <- re_lrtest(h)
+  expect_equal(lr$logLik_without, h0$model$maximum, tolerance = 1e-5)
+})
+
+test_that("the simulation engine matches quadrature and closed forms", {
+  s <- sal()
+  f <- count ~ spp + mined + (1 | site)
+  ha <- countreg_hier(f, data = s, family = "POISSON")
+  hn <- countreg_hier(f, data = s, family = "POISSON", engine = "msl",
+                      re_draws = 1000)
+  expect_equal(hn$model$engine, "msl")
+  expect_equal(hn$model$maximum, ha$model$maximum, tolerance = 1e-4)
+  expect_equal(coef(hn), coef(ha), tolerance = 0.02)
+  # Poisson with gamma group effects is repois()
+  hg <- countreg_hier(f, data = s, family = "POISSON", re_dist = "gamma",
+                      re_draws = 1000)
+  rp <- repois(count ~ spp + mined, group_var = "site", data = s,
+               method = "BFGS")
+  expect_equal(hg$model$maximum, rp$model$maximum, tolerance = 1e-4)
+  expect_equal(unname(coef(hg)[1:8]), unname(coef(rp)[1:8]),
+               tolerance = 0.02)
+  expect_equal(unname(coef(hg)["sd_(Intercept)|site"]),
+               unname(sqrt(exp(coef(rp)["lnalpha"]))), tolerance = 0.02)
+  # Gamma effects have mean 1 on the count scale
+  expect_equal(predict(hg, re.form = NA, marginal = TRUE),
+               predict(hg, re.form = NA))
+  # Uniform effects: marginal mean from the uniform's mgf
+  hu <- countreg_hier(f, data = s, family = "POISSON", re_dist = "uniform",
+                      re_draws = 300)
+  sdu <- coef(hu)[["sd_(Intercept)|site"]]
+  a <- sqrt(3) * sdu
+  expect_equal(predict(hu, re.form = NA, marginal = TRUE),
+               predict(hu, re.form = NA) * sinh(a) / a)
+  expect_equal(dim(attr(ranef(hu)$site, "postVar")), c(1, 1, 23))
+  expect_output(print(hu), "uniform")
+  sim <- simulate(hu, 2, seed = 1, use_re = "new")
+  expect_equal(dim(sim), c(nrow(s), 2))
+})
+
+test_that("shifted Halton draws are evenly spread and reproducible", {
+  U <- .fcr_hier_draws(50, 200, 2, seed = 7)
+  expect_length(U, 2)
+  expect_equal(dim(U[[1]]), c(50, 200))
+  expect_true(all(U[[1]] >= 0 & U[[1]] < 1))
+  # Each group's draws are a rotated low-discrepancy set
+  expect_lt(max(abs(rowMeans(U[[1]]) - 0.5)), 0.01)
+  expect_identical(.fcr_hier_draws(50, 200, 2, seed = 7), U)
+  set.seed(1)
+  a <- runif(1)
+  set.seed(1)
+  .fcr_hier_draws(5, 10, 1, seed = 99)
+  expect_identical(runif(1), a)
+})
+
+test_that("predictions from a separate history", {
+  data("washington_roads", package = "flexCountReg", envir = environment())
+  w <- washington_roads
+  past <- w[w$Year < 2018, ]
+  fut <- w[w$Year == 2018, ]
+  h <- countreg_hier(Total_crashes ~ lnaadt + speed50 + offset(lnlength) +
+                       (1 | ID), data = past, family = "POISSON")
+  # The training data as history gives the fitted effects
+  expect_equal(predict(h, newdata = fut, history = past),
+               predict(h, newdata = fut), tolerance = 1e-6)
+  one <- past[past$Year == min(past$Year), ]
+  p1 <- predict(h, newdata = fut, history = one)
+  expect_false(isTRUE(all.equal(p1, predict(h, newdata = fut))))
+  # Groups without history are new groups
+  none <- one[0, ]
+  expect_equal(predict(h, newdata = fut, history = none),
+               predict(h, newdata = fut, re.form = NA))
+  expect_error(predict(h, newdata = fut,
+                       history = one[, setdiff(names(one), "Total_crashes")]),
+               "outcome")
+})
+
+test_that("profile intervals agree with glmmTMB and are asymmetric", {
+  skip_if_not_installed("glmmTMB")
+  skip_on_cran()
+  s <- sal()
+  f <- count ~ spp + mined + (1 | site)
+  h <- countreg_hier(f, data = s, family = "NB2", engine = "laplace")
+  ci <- confint(h, method = "profile")
+  m <- suppressWarnings(glmmTMB::glmmTMB(f, data = s,
+                                         family = glmmTMB::nbinom2))
+  ref <- exp(confint(m, parm = "theta_", method = "profile")[, 1:2])
+  expect_equal(unname(ci[1, ]), unname(ref), tolerance = 2e-3)
+  wald <- confint(h)["sd_(Intercept)|site", ]
+  expect_gt(ci[1, 1], wald[1])
+  expect_error(confint(h, "sppPR:nope", method = "profile"),
+               "not available")
+})
+
+test_that("correlated random effects (cre)", {
+  data("washington_roads", package = "flexCountReg", envir = environment())
+  w <- washington_roads
+  h <- countreg_hier(Total_crashes ~ lnaadt + speed50 + offset(lnlength) +
+                       (1 | ID), data = w, family = "POISSON", cre = ~ lnaadt)
+  expect_true("mean_lnaadt" %in% names(coef(h)))
+  tst <- cre_test(h)
+  expect_s3_class(tst, "htest")
+  nd <- w[1:4, c("ID", "lnaadt", "speed50", "lnlength")]
+  expect_equal(predict(h, newdata = nd), fitted(h)[1:4], tolerance = 1e-8)
+  expect_error(countreg_hier(Total_crashes ~ lnaadt + (1 | ID) + (1 | Year),
+                             data = w, cre = ~ lnaadt), "cre_group")
 })

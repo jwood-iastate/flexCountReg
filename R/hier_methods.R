@@ -39,14 +39,20 @@ nlme::VarCorr
 }
 
 # Fixed part, distribution parameters and random-effect contributions for
-# the rows of `d`.
-.fcr_hier_parts <- function(object, d) {
+# the rows of `d`. `effects` replaces the estimated effects of the groups
+# (list per term of a J x q matrix with the group levels as row names), as
+# for predictions from a separate history.
+.fcr_hier_parts <- function(object, d, effects = NULL) {
   m <- object$model
+  if (!is.null(m$cre)) d <- .fcr_cre_newdata(m$cre, d)
   fd <- forge_new_data(m$blueprint, d)
   p <- m$par_internal
+  kb <- m$k_beta_int %||% m$k_beta
+  kf <- m$k_fix_int %||% m$k_fix
+  beta <- m$beta_full %||% p[seq_len(kb)]
   n <- nrow(d)
-  eta0 <- as.vector(fd$X %*% p[seq_len(m$k_beta)]) + fd$offset
-  pos <- m$k_beta
+  eta0 <- as.vector(fd$X %*% beta) + fd$offset
+  pos <- kb
   alpha <- sigma <- NULL
   if (m$n_alpha) {
     a <- p[pos + seq_len(m$n_alpha)]
@@ -60,19 +66,30 @@ nlme::VarCorr
       exp(as.vector(fd$aux$dis2 %*% s))
   }
   env <- environment(object$formula) %||% globalenv()
-  Sig <- .fcr_hier_sigmas(m$re_terms, p[m$k_fix + seq_len(m$n_theta)])
+  th <- p[kf + seq_len(m$n_theta)]
+  dist <- m$re_dist %||% "normal"
   re <- lapply(seq_along(m$re_terms), function(i) {
     t <- m$re_terms[[i]]
     Xl <- .fcr_hier_term_matrix(t, d)
     g <- .fcr_hier_group(t$gexpr, d, env)
-    j <- match(as.character(g), t$levels)
-    B <- matrix(m$b[t$uoff + seq_len(t$J * t$q)], t$J, t$q, byrow = TRUE)
+    L <- .fcr_hier_L(th[t$toff + seq_len(t$ntheta)], t$q)
+    if (is.null(effects)) {
+      j <- match(as.character(g), t$levels)
+      B <- matrix(m$b[t$uoff + seq_len(t$J * t$q)], t$J, t$q, byrow = TRUE)
+    } else {
+      B <- effects[[i]]
+      j <- match(as.character(g), rownames(B))
+      if (!nrow(B)) B <- matrix(0, 1, t$q)
+    }
     contrib <- rowSums(Xl * B[ifelse(is.na(j), 1L, j), , drop = FALSE])
     contrib[is.na(j)] <- 0
     contrib[is.na(g)] <- NA_real_
-    list(X = Xl, j = j, missing_group = is.na(g), new = is.na(j) & !is.na(g),
-         contrib = contrib, var = rowSums((Xl %*% Sig[[i]]) * Xl),
-         Sigma = Sig[[i]])
+    dl <- if (length(m$re_terms) == 1L) rep_len(dist, t$q) else
+      rep("normal", t$q)
+    list(X = Xl, g = g, j = j, missing_group = is.na(g),
+         new = is.na(j) & !is.na(g), contrib = contrib,
+         lmgf = .fcr_re_log_mgf(Xl, L, dl), L = L, dist = dl,
+         Sigma = L %*% t(L))
   })
   list(eta0 = eta0, alpha = alpha, sigma = sigma, re = re)
 }
@@ -93,10 +110,16 @@ nlme::VarCorr
 #'   count, instead of setting them to zero. For the log link the marginal
 #'   mean is \eqn{\exp(\eta + z'\Sigma z / 2)}, larger than
 #'   \eqn{\exp(\eta)}.
+#' @param history optional data frame of past counts (with the outcome) for
+#'   the groups to predict. The effects of the groups are then estimated
+#'   from \code{history} alone, at the fitted parameters, instead of taken
+#'   from the estimation data, so a forecast never uses its own outcomes.
+#'   Groups without history are treated as new groups.
 #' @param ... unused.
 #'
 #' @details Conditional predictions use the conditional modes of the random
-#'   effects (as \code{lme4} does). With \code{marginal = FALSE} (the
+#'   effects (as \code{lme4} does; posterior means with
+#'   \code{engine = "msl"}). With \code{marginal = FALSE} (the
 #'   default, as in \code{lme4}) the effects that are not conditioned on are
 #'   zero, so a population-level prediction is the count of a median group,
 #'   not the mean over groups.
@@ -105,12 +128,14 @@ nlme::VarCorr
 predict.countreg_hier <- function(object, newdata = NULL,
                                   type = c("response", "link"),
                                   re.form = NULL, allow.new.levels = TRUE,
-                                  marginal = FALSE, ...) {
+                                  marginal = FALSE, history = NULL, ...) {
   type <- match.arg(type)
   m <- object$model
   d <- if (is.null(newdata)) .fcr_training_rows(object) else
     as.data.frame(newdata)
-  parts <- .fcr_hier_parts(object, d)
+  eff <- if (!is.null(history)) .fcr_hier_history_effects(object, history)
+  parts <- .fcr_hier_parts(object, d, eff)
+  if (!is.null(history)) allow.new.levels <- TRUE
   incl <- .fcr_hier_reform(re.form, m$re_terms)
   eta <- parts$eta0
   extra <- numeric(length(eta))
@@ -123,12 +148,12 @@ predict.countreg_hier <- function(object, newdata = NULL,
              call. = FALSE)
       }
       eta <- eta + r$contrib
-      extra[r$new] <- extra[r$new] + r$var[r$new]
+      extra[r$new] <- extra[r$new] + r$lmgf[r$new]
     } else {
-      extra <- extra + r$var
+      extra <- extra + r$lmgf
     }
   }
-  if (isTRUE(marginal)) eta_mean <- eta + extra / 2 else eta_mean <- eta
+  eta_mean <- if (isTRUE(marginal)) eta + extra else eta
   if (type == "link") return(unname(eta_mean))
   unname(.fcr_family_mean(m$family, exp(eta_mean), parts$alpha, parts$sigma))
 }
@@ -189,11 +214,12 @@ simulate.countreg_hier <- function(object, nsim = 1, seed = NULL,
                              environment(object$formula) %||% globalenv())
         gi <- as.integer(factor(g))
         ng <- max(gi, na.rm = TRUE)
-        L <- tryCatch(t(chol(r$Sigma)), error = function(e) {
-          e <- eigen(r$Sigma, symmetric = TRUE)
-          e$vectors %*% diag(sqrt(pmax(e$values, 0)), t$q)
+        U <- matrix(stats::runif(ng * t$q), ng, t$q)
+        S <- lapply(seq_len(t$q), function(k) {
+          if (r$dist[k] == "gamma") U[, k, drop = FALSE] else
+            .fcr_re_std(U[, k, drop = FALSE], r$dist[k])
         })
-        B <- matrix(stats::rnorm(ng * t$q), ng, t$q) %*% t(L)
+        B <- .fcr_re_draw_effects(S, U[, 1, drop = FALSE], r$dist, r$L, 1L)
         eta <- eta + rowSums(r$X * B[gi, , drop = FALSE])
       }
     }
@@ -266,8 +292,8 @@ ranef.countreg_hier <- function(object, condVar = TRUE, ...) {
 #' @export
 VarCorr.countreg_hier <- function(x, ...) {
   m <- x$model
-  S <- .fcr_hier_sigmas(m$re_terms, m$par_internal[m$k_fix +
-                                                      seq_len(m$n_theta)])
+  S <- .fcr_hier_sigmas(m$re_terms, m$par_internal[
+    (m$k_fix_int %||% m$k_fix) + seq_len(m$n_theta)])
   out <- lapply(seq_along(S), function(i) {
     s <- sqrt(pmax(diag(S[[i]]), 0))
     R <- S[[i]] / outer(s, s)
@@ -313,15 +339,29 @@ print.countreg_hier <- function(x, ...) {
       length(m$estimate), " parameters; ", m$nobs, " observations\n\n",
       sep = "")
   cat("Fixed coefficients and distribution parameters:\n")
-  print(m$estimate[seq_len(m$k_fix)], digits = 4)
-  cat("\nRandom effects:\n")
-  print(VarCorr(x))
+  sm_cols <- unlist(lapply(m$smooth_info, `[[`, "idx"))
+  print(m$estimate[setdiff(seq_len(m$k_fix), sm_cols)], digits = 4)
+  if (!is.null(m$smooth_table)) {
+    cat("\nSmooth terms (EDF): ",
+        paste0(m$smooth_table$term, " ", round(m$smooth_table$edf, 2),
+               collapse = ", "), "\n", sep = "")
+  }
+  if (length(m$re_terms)) {
+    cat("\nRandom effects:\n")
+    print(VarCorr(x))
+  }
   if (isTRUE(m$singular)) cat("\nSingular fit: a variance is estimated at or",
                               "near zero.\n")
   invisible(x)
 }
 
 .fcr_hier_engine_label <- function(m) {
+  if (m$engine == "msl") {
+    return(paste0("maximum simulated likelihood, ", m$spec$re_draws %||% "",
+                  " draws per group; ", paste(unique(m$re_dist),
+                                              collapse = "/"),
+                  " effects"))
+  }
   if (m$engine == "aghq") {
     if (m$nAGQ == 1L) "Laplace approximation" else
       paste0("adaptive Gauss-Hermite quadrature, ", m$nAGQ, " points")
@@ -340,8 +380,10 @@ summary.countreg_hier <- function(object, level = 0.95, ...) {
                     `Pr(>|z|)` = 2 * stats::pnorm(-abs(z)),
                     check.names = FALSE)
   rownames(tab) <- names(est)
-  fix <- seq_len(m$k_fix)
-  vc <- tab[-fix, c("Estimate", "Std. Error"), drop = FALSE]
+  sm_cols <- unlist(lapply(m$smooth_info, `[[`, "idx"))
+  fix <- setdiff(seq_len(m$k_fix), sm_cols)
+  vc <- tab[seq_len(nrow(tab)) > m$k_fix, c("Estimate", "Std. Error"),
+             drop = FALSE]
   structure(list(call = object$call, family = m$family,
                  engine = .fcr_hier_engine_label(m),
                  coefficients = tab[fix, , drop = FALSE], varcomp = vc,
@@ -349,6 +391,7 @@ summary.countreg_hier <- function(object, level = 0.95, ...) {
                  AIC = stats::AIC(object), BIC = stats::BIC(object),
                  nobs = m$nobs, n_groups = m$n_groups,
                  singular = isTRUE(m$singular),
+                 smooth_table = m$smooth_table,
                  converged = isTRUE(m$converged)),
             class = "summary.countreg_hier")
 }
@@ -367,8 +410,18 @@ print.summary.countreg_hier <- function(x, digits = 4, ...) {
       sep = "")
   cat("Fixed coefficients and distribution parameters:\n")
   stats::printCoefmat(x$coefficients, digits = digits, signif.legend = FALSE)
-  cat("\nRandom-effect standard deviations and correlations (Wald SEs):\n")
-  print(signif(as.matrix(x$varcomp), digits))
+  if (!is.null(x$smooth_table)) {
+    cat("\nSmooth terms (EDF; lambda = 1 / variance of the penalized part):\n")
+    st <- x$smooth_table
+    print(data.frame(term = st$term, edf = round(st$edf, 3), k = st$k,
+                     lambda = st$lambda, chisq = round(st$chisq, 2),
+                     p.value = signif(st$p.value, 3)), row.names = FALSE)
+  }
+  if (nrow(x$varcomp)) {
+    cat("\nRandom-effect standard deviations and correlations (Wald ",
+        "SEs):\n", sep = "")
+    print(signif(as.matrix(x$varcomp), digits))
+  }
   cat("\nLog-likelihood: ", format(x$logLik, nsmall = 2), "   AIC: ",
       format(x$AIC, nsmall = 2), "   BIC: ", format(x$BIC, nsmall = 2), "\n",
       sep = "")
@@ -421,21 +474,24 @@ re_lrtest <- function(object, term = NULL) {
   t <- m$re_terms[[i]]
   rest <- labs[-i]
   fixed <- m$fixed_formula
+  spec <- m$spec %||% list()
   args <- list(data = object$data, family = m$family_spec %||% m$family,
                dis_param_formula_1 = m$dis_param_formula_1,
                dis_param_formula_2 = m$dis_param_formula_2,
-               weights = if (any(m$weights != 1)) m$weights,
-               ndraws = m$ndraws, keep_data = FALSE)
+               offset = spec$offset, weights = spec$weights,
+               ndraws = spec$ndraws %||% 1500, keep_data = FALSE)
   start <- m$estimate[seq_len(m$k_fix)]
-  if (length(rest)) {
+  has_smooth <- !is.null(m$smooth_table)
+  if (length(rest) || has_smooth) {
     rhs <- paste(c(deparse(fixed[[3]], width.cutoff = 500L),
-                   paste0("(", rest, ")")), collapse = " + ")
+                   if (length(rest)) paste0("(", rest, ")")),
+                 collapse = " + ")
     f0 <- stats::as.formula(paste(deparse(fixed[[2]]), "~", rhs),
                             env = environment(object$formula))
     null <- suppressMessages(do.call(countreg_hier, c(list(
       formula = f0, engine = if (m$engine == "aghq" &&
                                    length(rest) == 1L) "aghq" else "laplace",
-      start.vals = unname(start)), args)))
+      start.vals = if (!has_smooth) unname(start)), args)))
   } else {
     null <- suppressMessages(do.call(countreg, c(list(
       formula = fixed, method = "BFGS", start.vals = unname(start)),
@@ -459,4 +515,190 @@ re_lrtest <- function(object, term = NULL) {
   data.frame(term = paste0("(", term, ")"), logLik_without = ll0,
              logLik_with = ll1, statistic = stat, df = k, p.value = p,
              row.names = NULL)
+}
+
+# Effects of the groups in `history` (a list per term of J x q matrices with
+# the group levels as row names), from their counts alone at the fitted
+# parameters: conditional modes, or posterior means for engine = "msl".
+.fcr_hier_history_effects <- function(object, history) {
+  m <- object$model
+  h <- as.data.frame(history)
+  if (!is.null(m$cre)) h <- .fcr_cre_newdata(m$cre, h)
+  y <- .fcr_response(object, h)
+  if (is.null(y)) {
+    stop("`history` needs the outcome column(s) of the model.",
+         call. = FALSE)
+  }
+  pz <- .fcr_hier_parts(object, h,
+                        effects = lapply(m$re_terms, function(t)
+                          matrix(0, 0, t$q)))
+  ok <- !is.na(y) & !is.na(pz$eta0)
+  for (r in pz$re) ok <- ok & !r$missing_group & stats::complete.cases(r$X)
+  if (!any(ok)) {
+    return(lapply(m$re_terms, function(t) matrix(0, 0, t$q)))
+  }
+  .fcr_check_counts(y[ok])
+  nh <- sum(ok)
+  terms <- lapply(seq_along(m$re_terms), function(i) {
+    t <- m$re_terms[[i]]
+    g <- droplevels(factor(as.character(pz$re[[i]]$g[ok])))
+    t$X <- pz$re[[i]]$X[ok, , drop = FALSE]
+    t$g <- g
+    t$levels <- levels(g)
+    t$J <- nlevels(g)
+    t
+  })
+  terms <- .fcr_hier_offsets(terms)
+  th <- m$par_internal[(m$k_fix_int %||% m$k_fix) + seq_len(m$n_theta)]
+  nd <- m$spec$ndraws %||% 1500
+  hal <- randtoolbox::halton(nd)
+  logf <- .fcr_hier_logf(m$family, y[ok], rep(1, nh),
+                         list(haltons = hal, normed_haltons = stats::qnorm(hal),
+                              engine = "quadrature"))
+  alpha <- if (!is.null(pz$alpha)) pz$alpha[ok]
+  sigma <- if (!is.null(pz$sigma)) pz$sigma[ok]
+  eta0 <- pz$eta0[ok]
+  if (identical(m$engine, "msl")) {
+    t <- terms[[1]]
+    U <- .fcr_hier_draws(t$J, m$spec$re_draws %||% 500, t$q,
+                         (m$spec$seed %||% 123) + 1L)
+    L <- .fcr_hier_L(th[seq_len(t$ntheta)], t$q)
+    post <- .fcr_hier_msl(eta0, t$X, as.integer(t$g), U, m$re_dist, L,
+                          .fcr_hier_logf_stack(m$family, y[ok], rep(1, nh),
+                            list(haltons = hal,
+                                 normed_haltons = stats::qnorm(hal),
+                                 engine = "quadrature")),
+                          alpha, sigma, posterior = TRUE)
+    B <- post$b
+    rownames(B) <- t$levels
+    return(list(B))
+  }
+  Z <- .fcr_hier_Z(terms, nh)
+  tmpl <- .fcr_hier_lambda_template(terms)
+  Lam <- .fcr_hier_lambda(tmpl, th)
+  md <- .fcr_hier_mode(rep(0, tmpl$Q), eta0, Z %*% Lam, logf, alpha, sigma)
+  if (is.null(md)) {
+    stop("The effects of the `history` groups could not be computed.",
+         call. = FALSE)
+  }
+  b <- as.vector(Lam %*% md$u)
+  lapply(terms, function(t) {
+    B <- matrix(b[t$uoff + seq_len(t$J * t$q)], t$J, t$q, byrow = TRUE)
+    rownames(B) <- t$levels
+    B
+  })
+}
+
+# The model setup of a fit, rebuilt from its data (for profiling).
+.fcr_hier_rebuild <- function(object) {
+  if (is.null(object$data)) {
+    stop("The model was fit with keep_data = FALSE; refit it with the ",
+         "data.", call. = FALSE)
+  }
+  m <- object$model
+  sp <- m$spec
+  S <- .fcr_hier_setup(object$formula, object$data, m$family, m$family_spec,
+                       sp$dis_param_formula_1, sp$dis_param_formula_2,
+                       sp$offset, sp$weights, sp$engine, sp$nAGQ,
+                       sp$re_dist, sp$re_draws, sp$ndraws, sp$seed)
+  S
+}
+
+#' Confidence intervals for a hierarchical count model
+#'
+#' Wald intervals for every parameter, or profile-likelihood intervals for
+#' the fixed coefficients, the distribution parameters and the standard
+#' deviation of the first effect of each random-effect term.
+#'
+#' @param object a \code{\link{countreg_hier}()} fit.
+#' @param parm parameter names (by default all for \code{"wald"}, and the
+#'   random-effect standard deviations for \code{"profile"}).
+#' @param level confidence level.
+#' @param method \code{"wald"} (estimate plus or minus z standard errors) or
+#'   \code{"profile"}.
+#' @param ... unused.
+#'
+#' @details A profile-likelihood interval contains the values whose
+#'   profile log-likelihood (maximized over the other parameters) is within
+#'   \eqn{\chi^2_1(level)/2} of the maximum. It is not symmetric, and for a
+#'   standard deviation its lower limit can be 0, where the Wald interval
+#'   is unreliable. Each profile point refits the model, so profiling takes
+#'   several fits per limit. Correlations, and standard deviations of
+#'   second and later effects of a term, are not profiled (their Cholesky
+#'   parameters mix several variances).
+#' @returns A matrix with the lower and upper limits.
+#' @export
+confint.countreg_hier <- function(object, parm, level = 0.95,
+                                  method = c("wald", "profile"), ...) {
+  method <- match.arg(method)
+  if (method == "wald") {
+    return(confint.flexCountReg(object, parm, level))
+  }
+  m <- object$model
+  S <- .fcr_hier_rebuild(object)
+  p_hat <- m$par_internal
+  ll0 <- S$loglik(p_hat)
+  # Reported name -> internal index
+  map <- list()
+  np <- length(S$param_cols)
+  nm_fix <- colnames(S$prep$X)[S$param_cols]
+  for (k in seq_len(np)) map[[nm_fix[k]]] <- k
+  for (k in seq_along(S$dist_names)) map[[S$dist_names[k]]] <- S$k_beta + k
+  sd_names <- character(0)
+  for (t in S$bar_terms) {
+    nm <- paste0("sd_", t$cnms[1], "|", t$group)
+    map[[nm]] <- S$k_fix + t$toff + 1L
+    sd_names <- c(sd_names, nm)
+  }
+  if (missing(parm)) parm <- sd_names
+  bad <- setdiff(parm, names(map))
+  if (length(bad)) {
+    stop("Profile intervals are not available for: ", toString(bad),
+         ". Use method = \"wald\".", call. = FALSE)
+  }
+  H <- m$hessian_internal
+  se_int <- tryCatch(sqrt(diag(solve(-H))), error = function(e)
+    rep(NA_real_, length(p_hat)))
+  crit <- stats::qchisq(level, 1)
+  out <- matrix(NA_real_, length(parm), 2)
+  for (a in seq_along(parm)) {
+    i <- map[[parm[a]]]
+    est <- p_hat[i]
+    is_sd <- parm[a] %in% sd_names
+    se <- se_int[i]
+    if (!is.finite(se) || se <= 0) se <- 0.1 * max(1, abs(est))
+    warm <- p_hat
+    dev <- function(v) {
+      st <- warm
+      st[i] <- v
+      o <- .fcr_hier_optimize(S, st, "BFGS", 500, fixed = i, polish = FALSE)
+      warm <<- o$par
+      2 * (ll0 - o$value)
+    }
+    side <- function(dir) {
+      warm <<- p_hat
+      prev <- est
+      for (k in c(1, 2, 4, 8, 16)) {
+        v <- est + dir * k * se
+        if (is_sd && v <= 0) {
+          if (dev(0) <= crit) return(0)
+          v <- 0
+        }
+        dv <- dev(v)
+        if (dv > crit) {
+          r <- stats::uniroot(function(x) dev(x) - crit,
+                              sort(c(prev, v)), tol = 1e-4 * se)
+          return(r$root)
+        }
+        prev <- v
+        if (is_sd && v == 0) return(0)
+      }
+      NA_real_
+    }
+    out[a, ] <- c(side(-1), side(1))
+  }
+  pct <- paste(format(100 * c((1 - level) / 2, (1 + level) / 2),
+                      trim = TRUE, scientific = FALSE, digits = 3), "%")
+  dimnames(out) <- list(parm, pct)
+  out
 }

@@ -24,11 +24,11 @@
                          reason = "for random-effect terms such as (1 | site).")
   f <- stats::as.formula(formula)
   bars <- reformulas::findbars(f)
-  if (!length(bars)) {
+  fixed <- reformulas::nobars(f)
+  if (!length(bars) && !.fcr_has_smooth(fixed)) {
     stop("`formula` has no random-effect terms, such as (1 | site). Use ",
          "countreg() for a model without them.", call. = FALSE)
   }
-  fixed <- reformulas::nobars(f)
   environment(fixed) <- environment(f)
   list(fixed = fixed, bars = bars, env = environment(f))
 }
@@ -86,23 +86,74 @@
          X = unname(X), g = g, levels = levels(g), q = q, J = nlevels(g),
          ntheta = as.integer(q * (q + 1L) / 2L))
   })
-  # Column offsets of each term in u, and of each term's theta in the
-  # vector of all covariance parameters
+  .fcr_hier_offsets(terms)
+}
+
+# Column offsets of each term in u, and of each term's theta in the vector
+# of all covariance parameters.
+.fcr_hier_offsets <- function(terms) {
   off <- 0L
   toff <- 0L
   for (i in seq_along(terms)) {
     terms[[i]]$uoff <- off
     terms[[i]]$toff <- toff
-    off <- off + terms[[i]]$J * terms[[i]]$q
-    toff <- toff + terms[[i]]$ntheta
+    off <- off + as.integer(terms[[i]]$J * terms[[i]]$q)
+    toff <- toff + as.integer(terms[[i]]$ntheta)
   }
   terms
+}
+
+# Random-effect terms of the penalized smooths of the mean (the mixed-model
+# form of mgcv::smooth2random()): each penalty's range space is a block of
+# independent N(0, sigma^2) coefficients, sigma^2 = 1 / lambda, and the
+# null space becomes fixed columns. Returns the fixed columns, the terms
+# and, per smooth, what is needed to return to its original coefficients
+# (beta = U (D * c(b_1, ..., b_m, beta_fixed))).
+.fcr_hier_smooth_terms <- function(ents, X) {
+  fixed <- list()
+  terms <- list()
+  info <- list()
+  for (si in seq_along(ents)) {
+    e <- ents[[si]]
+    sm <- e$sm
+    if (length(e$S) > 1L && !inherits(sm, "t2.smooth")) {
+      stop("The smooth ", e$label, " has several penalties; in ",
+           "countreg_hier() use s() or t2() (te() and ti() are not ",
+           "available).", call. = FALSE)
+    }
+    sm$X <- X[, e$cols, drop = FALSE]
+    sm$S <- e$S
+    r <- mgcv::smooth2random(sm, "", type = 2)
+    Xf <- r$Xf
+    if (is.null(Xf)) Xf <- matrix(0, nrow(X), 0)
+    Xf <- as.matrix(Xf)
+    if (ncol(Xf)) colnames(Xf) <- paste0(e$label, ".Fx", seq_len(ncol(Xf)))
+    fixed[[si]] <- Xf
+    ti <- integer(0)
+    for (b in seq_along(r$rand)) {
+      Zr <- as.matrix(r$rand[[b]])
+      terms[[length(terms) + 1L]] <- list(
+        type = "smooth", label = e$label, group = e$label, Zs = unname(Zr),
+        J = ncol(Zr), q = 1L, ntheta = 1L, cnms = "(smooth)", smooth = si)
+      ti <- c(ti, length(terms))
+    }
+    k <- length(e$cols)
+    info[[si]] <- list(label = e$label, cols = e$cols, n_fixed = ncol(Xf),
+                       n_rand = vapply(r$rand, ncol, 0L), terms = ti,
+                       U = r$trans.U %||% diag(k),
+                       D = r$trans.D %||% rep(1, k))
+  }
+  list(X = do.call(cbind, fixed), terms = terms, info = info)
 }
 
 # Sparse design Z (n x Q) of the stacked random effects.
 .fcr_hier_Z <- function(terms, n, X_list = NULL, g_list = NULL) {
   blocks <- lapply(seq_along(terms), function(i) {
     t <- terms[[i]]
+    if (identical(t$type, "smooth")) {
+      return(methods::as(Matrix::Matrix(t$Zs, sparse = TRUE),
+                         "CsparseMatrix"))
+    }
     X <- if (is.null(X_list)) t$X else X_list[[i]]
     gi <- if (is.null(g_list)) as.integer(t$g) else g_list[[i]]
     q <- t$q

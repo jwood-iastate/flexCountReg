@@ -836,6 +836,22 @@
   seed 0), whatever the stored `draw_seed`, and different seeds gave
   identical results. Fits made before this change still predict with the
   draws they were estimated with.
+- `countreg_rp(scrambled = TRUE)` now randomizes the Halton draws with a
+  random shift (Cranley-Patterson rotation): each unit’s block of plain
+  Halton points is shifted by its own uniform amount per dimension,
+  modulo 1, with the shifts generated from the fit’s `draw_seed`. It
+  used randtoolbox’s scrambled (“mixed”) Halton sequence, whose
+  consecutive per-unit blocks biased the simulated log-likelihood, and
+  more draws did not remove the bias. For a Poisson random intercept on
+  `washington_roads` (exact maximum -1069.365 by adaptive quadrature),
+  scrambled fits gave -1069.406 at 500 draws and -1069.054 at 2000; with
+  random shifts the error at fixed parameters averages -0.02 at 500
+  draws and -0.008 at 2000 (standard deviation over seeds 0.14 and
+  0.027). Scrambled fits therefore give different estimates than before.
+  New fits have `draw_version` 4; fits with an earlier `draw_version`
+  still predict with the “mixed” draws they were estimated with.
+  Prediction intervals with `scrambled = TRUE` keep the “mixed”
+  sequence, which uses one point set and no per-unit blocks.
 - [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)
   now uses `method = "BFGS"` by default (it was `"BHHH"`). With the
   analytic gradient, BFGS reached the maximum in each of six test

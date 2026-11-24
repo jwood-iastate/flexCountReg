@@ -117,10 +117,18 @@ countreg_rp(
 
 - scrambled:
 
-  if the Halton draws should be scrambled. Scrambled draws are generated
-  from a random seed that is stored in the fit, so predictions reuse the
-  same draws, [`set.seed()`](https://rdrr.io/r/base/Random.html) before
-  fitting makes the fit reproducible, and different seeds give different
+  if the Halton draws should be randomized. The Halton points (each
+  unit's own block with `draws = "per_unit"`) are shifted by a uniform
+  random amount per dimension, modulo 1 (a Cranley-Patterson rotation,
+  i.e. randomized quasi-Monte Carlo), which keeps their even spread and
+  leaves each unit's simulated likelihood unbiased. The shifts are
+  generated from a random seed that is stored in the fit, so predictions
+  reuse the same draws,
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) before fitting
+  makes the fit reproducible, and different seeds give different draws.
+  Earlier fits (`model$draw_version` below 4) used randtoolbox's
+  scrambled ("mixed") Halton sequence, whose consecutive per-unit blocks
+  biased the simulated log-likelihood; their predictions still use those
   draws.
 
 - correlated:

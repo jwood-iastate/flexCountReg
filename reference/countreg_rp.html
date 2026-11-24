@@ -158,10 +158,18 @@ parameters.</p></dd>
 
 
 <dt id="arg-scrambled">scrambled<a class="anchor" aria-label="anchor" href="#arg-scrambled"></a></dt>
-<dd><p>if the Halton draws should be scrambled. Scrambled
-draws are generated from a random seed that is stored in the fit, so
-predictions reuse the same draws, <code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before fitting
-makes the fit reproducible, and different seeds give different draws.</p></dd>
+<dd><p>if the Halton draws should be randomized. The Halton
+points (each unit's own block with <code>draws = "per_unit"</code>) are
+shifted by a uniform random amount per dimension,
+modulo 1 (a Cranley-Patterson rotation, i.e. randomized quasi-Monte
+Carlo), which keeps their even spread and leaves each unit's simulated
+likelihood unbiased. The shifts are generated from a random seed that
+is stored in the fit, so predictions reuse the same draws,
+<code><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed()</a></code> before fitting makes the fit reproducible, and
+different seeds give different draws. Earlier fits
+(<code>model$draw_version</code> below 4) used randtoolbox's scrambled
+("mixed") Halton sequence, whose consecutive per-unit blocks biased the
+simulated log-likelihood; their predictions still use those draws.</p></dd>
 
 
 <dt id="arg-correlated">correlated<a class="anchor" aria-label="anchor" href="#arg-correlated"></a></dt>

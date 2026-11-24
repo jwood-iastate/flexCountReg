@@ -209,6 +209,7 @@ As noted in the list of functions, the probability distributions below are inclu
 
 
 **Count Distributions**
+
 *Distributions that Handle Equidispersion*
 
 - Poisson

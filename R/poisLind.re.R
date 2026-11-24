@@ -137,6 +137,7 @@ poisLind.re <- function(formula, group_var, data,
                         bootstraps = NULL, offset = NULL,
                         weights = NULL, keep_data = TRUE,
                         print.level = NULL) {
+  .fcr_refuse_smooth("poislind_re", formula)
   print.level <- .fcr_print_level("poisLind.re", verbose, print.level)
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   

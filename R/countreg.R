@@ -71,6 +71,9 @@
 #'   (based on the Hessian). Other options include "boot" for bootstrapped
 #'   standard errors, "robust" for robust (sandwich) standard errors, or
 #'   "cluster" for cluster-robust standard errors (with \code{cluster}).
+#' @param sp optional fixed smoothing parameters, one per penalty of the
+#'   smooth terms (in the order of \code{model$smooth_table}); by default
+#'   they are selected automatically.
 #' @param cluster clustering variable(s) for \code{stderr = "cluster"}: a
 #'   one-sided formula of columns of \code{data} (\code{~ corridor}; two
 #'   or more, \code{~ corridor + year}, give multiway clustering), their
@@ -143,6 +146,25 @@
 #' available model features.
 #'
 #' @details
+#' \strong{Smooth terms.} The formulas accept the penalized smooths of the
+#' mgcv package (\code{s()}, \code{te()}, \code{ti()}, \code{t2()}), for
+#' example \code{y ~ s(lnaadt) + speed50}, or
+#' \code{dis_param_formula_1 = ~ s(lnlength)} for a dispersion that varies
+#' smoothly. The model is then fitted by penalized maximum likelihood, with
+#' the smoothing parameters selected by generalized Fellner-Schall updates
+#' (Wood and Fasiolo 2017), which approximately maximize the restricted
+#' marginal likelihood; \code{sp} fixes them instead. Standard errors are
+#' Bayesian (\eqn{(H + S_\lambda)^{-1}}) by default, and robust or
+#' cluster-robust ones are available. \code{summary()} reports each smooth
+#' by its effective degrees of freedom with an approximate test, the
+#' log-likelihood's degrees of freedom are the total effective degrees of
+#' freedom, and \code{\link{smooth_estimates}()} and
+#' \code{\link{plot_smooths}()} show the estimated functions. With fixed
+#' smoothing parameters the estimates equal those of \code{mgcv::gam()};
+#' the selected smoothing parameters are close to mgcv's REML choice. Smooth
+#' terms need the mgcv package, and bootstrap standard errors are not yet
+#' available with them.
+#'
 #' The `family` codes are listed in [count_families]. Family names are not
 #' case-sensitive.
 #'
@@ -803,7 +825,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
                      zero_formula = NULL,
                      zero_type = c("inflated", "hurdle"),
                      weight_type = c("frequency", "sampling"),
-                     cluster = NULL) {
+                     cluster = NULL, sp = NULL) {
   
   print.level <- if (verbose) 2 else 0
   stderr_missing <- missing(stderr)
@@ -1064,14 +1086,67 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   }
   
   # ---- Estimation ------------------------------------------------------------
-  fit <- maxLik::maxLik(logLikFunc, grad = gradFunc,
-                        start = start,
-                        method = method, 
-                        finalHessian = method == "BHHH",
-                        control = list(iterlim = max.iters, 
-                                       printLevel = print.level))
-  # An accurate final Hessian (maxLik's steps of 1e-6 are too small)
-  fit <- .fcr_set_final_hessian(fit, logLikFunc, gradFunc, method)
+  smooths <- prep$smooth
+  has_smooth <- length(smooths$main) > 0 || length(smooths$aux) > 0
+  if (has_smooth) {
+    # Penalized smooth terms: penalized likelihood with smoothing
+    # parameters selected by Fellner-Schall updates (or fixed by `sp`)
+    if (stderr == "boot") {
+      stop("Bootstrap standard errors are not yet available with smooth ",
+           "terms; use stderr = \"normal\" (Bayesian), \"robust\" or ",
+           "\"cluster\".", call. = FALSE)
+    }
+    # The penalized fit uses BFGS (Nelder-Mead and SANN are too slow for
+    # many basis coefficients)
+    if (method %in% c("NM", "SANN")) method <- "BFGS"
+    off_dis1 <- N_predictors
+    off_dis2 <- N_predictors + N_alpha
+    off_under <- N_predictors + N_alpha + N_sigma
+    off_zero <- off_under + N_underreport
+    pen <- .fcr_pen_terms(
+      c(list(main = smooths$main), smooths$aux),
+      list(main = 0, dis1 = off_dis1, dis2 = off_dis2,
+           underreport = off_under, zero = off_zero),
+      list(main = "mean", dis1 = params[[1]], dis2 = params[[2]],
+           underreport = "Underreporting", zero = "Zero"))
+    gam <- .fcr_gam_fit(logLikFunc, gradFunc, start, pen,
+                        method = method,
+                        iterlim = max.iters, lambda = sp)
+    fit <- gam$fit
+    fit$estimate <- gam$theta
+    fit$maximum <- sum(logLikFunc(gam$theta))
+    fit$hessian <- gam$hessian
+    fit$gradientObs <- if (!is.null(gradFunc)) gradFunc(gam$theta) else
+      maxLik::numericGradient(logLikFunc, gam$theta)
+    colnames(fit$gradientObs) <- x_names
+    fit$hessian_accuracy <- gam$accuracy
+    so <- .fcr_smooth_outputs(
+      gam, c(list(main = smooths$main), smooths$aux),
+      list(main = X, dis1 = mod_alpha_frame, dis2 = mod_sigma_frame,
+           underreport = X_underreport, zero = X_zero))
+    fit$smooth_table <- so$table
+    fit$smooth_info <- so$info
+    fit$smooth_lambda <- gam$lambda
+    fit$smooth_converged <- gam$converged
+    fit$smooth_iterations <- gam$iterations
+    fit$smooth_coefs <- unique(unlist(lapply(gam$terms, `[[`, "idx")))
+    fit$edf <- gam$edf
+    fit$df_total <- sum(gam$edf)
+    if (!isTRUE(gam$converged) && is.null(sp)) {
+      warning("The smoothing parameters did not converge in ",
+              gam$iterations - 1, " Fellner-Schall iterations.",
+              call. = FALSE)
+    }
+  } else {
+    fit <- maxLik::maxLik(logLikFunc, grad = gradFunc,
+                          start = start,
+                          method = method, 
+                          finalHessian = method == "BHHH",
+                          control = list(iterlim = max.iters, 
+                                         printLevel = print.level))
+    # An accurate final Hessian (maxLik's steps of 1e-6 are too small)
+    fit <- .fcr_set_final_hessian(fit, logLikFunc, gradFunc, method)
+  }
   names(fit$estimate) <- x_names
   
   fit$converged <- .fcr_converged(fit, method)
@@ -1124,7 +1199,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
     vcov_type <- "cluster"
   } else {
     V <- .fcr_hessian_vcov(fit)
-    vcov_type <- "hessian"
+    vcov_type <- if (has_smooth) "bayesian" else "hessian"
   }
   dimnames(V) <- list(x_names, x_names)
   attr(V, "n_clusters") <- NULL

@@ -123,6 +123,7 @@ renb <- function(formula, group_var, data, method = 'NM', max.iters = 1000,
                  verbose = FALSE, stderr = "normal", bootstraps = NULL,
                  offset = NULL, weights = NULL, keep_data = TRUE,
                  print.level = NULL, cre = NULL) {
+  .fcr_refuse_smooth("renb", formula)
   print.level <- .fcr_print_level("renb", verbose, print.level)
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   

@@ -103,6 +103,7 @@ repois <- function(formula,
                    cre = NULL) {
   
   call <- match.call()
+  .fcr_refuse_smooth("repois", formula)
   print.level <- .fcr_print_level("repois", verbose, print.level)
   stderr <- .fcr_resolve_stderr(stderr, missing(stderr), bootstraps)
   if (stderr == "boot" && is.null(bootstraps)) {

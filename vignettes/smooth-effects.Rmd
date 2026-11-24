@@ -1,0 +1,177 @@
+---
+title: "Smooth effects: generalized additive count models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Smooth effects: generalized additive count models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 6,
+                      fig.height = 4)
+```
+
+A linear term such as `lnaadt` assumes that every unit increase in log
+traffic changes the log crash rate by the same amount. Often the response
+bends: flat at low volumes, steep in the middle, leveling off. A **smooth
+term** lets the data choose the shape, while a penalty keeps it from
+following noise.
+
+flexCountReg accepts the smooth terms of the mgcv package, `s()`, `te()`,
+`ti()` and `t2()`, in the formulas of `countreg()` and `countreg_rp()`: the
+mean, the distribution parameters, the zero model and, for random
+parameters, the heterogeneity in their means and variances. The model is a
+*distributional* generalized additive model: any parameter of any count
+family can depend smoothly on covariates.
+
+```{r setup}
+library(flexCountReg)
+data("washington_roads")
+```
+
+## 1. A smooth traffic-volume effect
+
+```{r fit}
+m <- countreg(Total_crashes ~ s(lnaadt) + speed50 + offset(lnlength),
+              data = washington_roads, family = "NB2")
+summary(m)
+```
+
+The smooth is summarized by its **effective degrees of freedom** (EDF): 1
+for a straight line, up to the basis dimension `k - 1` for an unpenalized
+curve. Its coefficients are not shown one by one: they only describe the
+curve together. The test is an approximate test that the whole smooth is
+zero.
+
+`plot_smooths()` shows each smooth on the scale of its linear predictor,
+with a pointwise band (shaded) and a simultaneous band (dashed) that covers
+the whole curve with 95% probability:
+
+```{r plot}
+plot_smooths(m)
+```
+
+`smooth_estimates()` returns the same values as a data frame, for your own
+plots or tables:
+
+```{r estimates}
+head(smooth_estimates(m, n = 50, seed = 1))
+```
+
+## 2. How smooth?
+
+The amount of smoothing is chosen automatically. For each smooth a
+smoothing parameter $\lambda$ multiplies its wiggliness penalty
+$b'Sb$, and the model maximizes
+
+$$
+\ell(\theta) - \tfrac{1}{2} \sum_j \lambda_j b_j' S_j b_j .
+$$
+
+The $\lambda_j$ are selected by generalized Fellner-Schall updates (Wood and
+Fasiolo 2017), which approximately maximize the restricted marginal
+likelihood (REML). They are stored in the fit, and `sp` fixes them:
+
+```{r sp}
+m$model$smooth_lambda
+stiff <- countreg(Total_crashes ~ s(lnaadt) + speed50 + offset(lnlength),
+                  data = washington_roads, family = "NB2", sp = 100)
+stiff$model$smooth_table[, c("term", "edf", "lambda")]
+```
+
+A large $\lambda$ shrinks the smooth to its unpenalized part (here a
+straight line). The log-likelihood's degrees of freedom are the total EDF,
+so `AIC()` compares smooth and parametric models fairly:
+
+```{r aic}
+lin <- countreg(Total_crashes ~ lnaadt + speed50 + offset(lnlength),
+                data = washington_roads, family = "NB2", method = "BFGS")
+c(linear = AIC(lin), smooth = AIC(m))
+```
+
+## 3. Smooth distribution parameters and surfaces
+
+Any distribution parameter can be smooth. Here the NB2 dispersion may vary
+smoothly with segment length, and traffic and length interact through a
+tensor-product surface `te()`:
+
+```{r dispersion}
+m2 <- countreg(Total_crashes ~ te(lnaadt, lnlength) + speed50,
+               data = washington_roads, family = "NB2",
+               dis_param_formula_1 = ~ s(lnlength, k = 5))
+m2$model$smooth_table[, c("parameter", "term", "edf", "p.value")]
+```
+
+```{r plot2, fig.width = 7, fig.height = 3.5}
+op <- par(mfrow = c(1, 2))
+plot_smooths(m2)
+par(op)
+```
+
+The dispersion smooth has shrunk to a straight line (EDF 1): there is no
+evidence that the overdispersion changes nonlinearly with length.
+
+## 4. Smooths with random parameters
+
+`countreg_rp()` accepts smooth terms in its fixed part and in the
+heterogeneity formulas. Three ideas look alike but are different:
+
+* a **random parameter** (`rpar_formula`) is a coefficient that varies
+  across sites with an unknown distribution, integrated by simulation;
+* a **smooth** is a nonlinear function of an observed variable;
+* a **smooth heterogeneity in means** (`het_mean_formula = ~ s(z)`) lets a
+  random parameter's mean change smoothly with an observed site attribute.
+
+They can be combined:
+
+```{r rp}
+rp <- countreg_rp(Total_crashes ~ s(lnaadt, k = 8) + offset(lnlength),
+                  rpar_formula = ~ -1 + speed50, data = washington_roads,
+                  family = "NB2", group_var = "ID", ndraws = 50)
+summary(rp)
+```
+
+A smooth can absorb heterogeneity that a random parameter's standard
+deviation would otherwise carry, so compare the random parameters' standard
+deviations with and without the smooth. Smooth terms are not allowed in
+`rpar_formula`: a random coefficient on each basis column is not a
+penalized smooth.
+
+## 5. Inference and agreement with mgcv
+
+Standard errors are Bayesian by default: the covariance of the estimates is
+$(H + S_\lambda)^{-1}$, with $H$ the negative Hessian of the log-likelihood
+and $S_\lambda$ the total penalty. Robust (`stderr = "robust"`) and
+cluster-robust (`cluster = ~ site`) versions use the same bread.
+
+With the smoothing parameters fixed at those of `mgcv::gam()`, the
+estimates, log-likelihood, EDF and standard errors equal mgcv's for the
+Poisson and negative binomial models (with the dispersion fixed). The
+selected smoothing parameters are close to mgcv's REML values (within
+about 5% in these data); the Fellner-Schall update ignores how the Hessian
+changes with $\lambda$, which REML includes.
+
+The tests of smooth terms are approximate (they follow Wood 2013 but
+ignore the uncertainty in $\lambda$), and the log-likelihood's degrees of
+freedom are the EDF without the smoothing-parameter correction that
+`mgcv::logLik.gam()` adds.
+
+## 6. Not yet available
+
+Bootstrap standard errors with smooth terms; smooths with a `by` variable
+in `smooth_estimates()`; random-effect, factor-smooth and spatial bases
+(`bs = "re"`, `"fs"`, `"mrf"`); and the smooth diagnostics (basis-dimension
+checks, concurvity, derivatives) are planned.
+
+## References
+
+Ruppert, D., Wand, M.P. and Carroll, R.J. (2003). *Semiparametric
+Regression*. Cambridge University Press.
+
+Wood, S.N. (2013). On p-values for smooth components of an extended
+generalized additive model. *Biometrika*, 100(1), 221-228.
+
+Wood, S.N. and Fasiolo, M. (2017). A generalized Fellner-Schall method for
+smoothing parameter optimization with application to Tweedie location,
+scale and shape models. *Biometrics*, 73(4), 1071-1081.

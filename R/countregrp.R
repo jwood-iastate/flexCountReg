@@ -87,6 +87,9 @@
 #'   its training means, and a new group uses the means of its own rows in
 #'   \code{newdata}. \code{\link{cre_test}()} tests random against fixed
 #'   effects.
+#' @param sp optional fixed smoothing parameters, one per penalty of the
+#'   smooth terms (in the order of \code{model$smooth_table}); by default
+#'   they are selected automatically.
 #' @param keep_data logical; if \code{FALSE}, the training data are not stored
 #'   in the fitted object. \code{predict()} then needs \code{newdata}.
 #' @param offset the name of a variable, or vector of variable names, to be
@@ -137,6 +140,31 @@
 #' @param verbose logical.
 #' 
 #' @details
+#' \strong{Smooth terms.} The formulas accept the penalized smooths of the
+#' mgcv package (\code{s()}, \code{te()}, \code{ti()}, \code{t2()}), for
+#' example \code{y ~ s(lnaadt) + speed50}, or
+#' \code{dis_param_formula_1 = ~ s(lnlength)} for a dispersion that varies
+#' smoothly. The model is then fitted by penalized maximum likelihood, with
+#' the smoothing parameters selected by generalized Fellner-Schall updates
+#' (Wood and Fasiolo 2017), which approximately maximize the restricted
+#' marginal likelihood; \code{sp} fixes them instead. Standard errors are
+#' Bayesian (\eqn{(H + S_\lambda)^{-1}}) by default, and robust or
+#' cluster-robust ones are available. \code{summary()} reports each smooth
+#' by its effective degrees of freedom with an approximate test, the
+#' log-likelihood's degrees of freedom are the total effective degrees of
+#' freedom, and \code{\link{smooth_estimates}()} and
+#' \code{\link{plot_smooths}()} show the estimated functions. With fixed
+#' smoothing parameters the estimates equal those of \code{mgcv::gam()};
+#' the selected smoothing parameters are close to mgcv's REML choice. Smooth
+#' terms need the mgcv package, and bootstrap standard errors are not yet
+#' available with them. In \code{countreg_rp()} smooths may enter
+#' \code{formula}, \code{het_mean_formula}, \code{het_var_formula} and the
+#' distribution-parameter formulas, but not \code{rpar_formula}: a random
+#' parameter is a coefficient that varies across units with an unknown
+#' distribution, a smooth is a function of an observed variable, and a
+#' smooth heterogeneity-in-means term lets a random parameter's mean vary
+#' smoothly with a unit attribute.
+#'
 #' \code{countreg.rp()} is the former name of \code{countreg_rp()}. It is
 #' deprecated (a name with a dot is easily mistaken for an S3 method): it
 #' still works, with a once-per-session warning, and calls
@@ -275,7 +303,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
                          panel_id = NULL, mix_draws = NULL,
                          weight_type = c("frequency", "sampling"),
                          draws = c("per_unit", "shared"),
-                         cluster = NULL, cre = NULL) {
+                         cluster = NULL, cre = NULL, sp = NULL) {
   
   print.level <- if (verbose) 2 else 0
   draws <- match.arg(draws)
@@ -350,6 +378,12 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
     data <- cp$data
     formula <- cp$formula
     cre_info <- cp$info
+  }
+
+  if (.fcr_has_smooth(rpar_formula)) {
+    stop("Smooth terms are not available in `rpar_formula` (a random ",
+         "coefficient on a basis column is not a penalized smooth); use ",
+         "them in `formula` or `het_mean_formula`.", call. = FALSE)
   }
 
   # --- 2. Data: one complete-case model frame for everything ---
@@ -559,17 +593,84 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
   use_grad <- !identical(getOption("flexCountReg.rp_gradient"), "numeric")
   
   # --- 6. Optimization ---
-  fit <- maxLik::maxLik(
-    ll_countreg_rp,
-    grad = if (use_grad) gr_countreg_rp,
-    start = start,
-    method = method,
-    finalHessian = method == "BHHH",
-    control = list(iterlim = max.iters, printLevel = print.level))
-  # An accurate final Hessian (maxLik's steps of 1e-6 are too small for a
-  # simulated likelihood and for families whose score uses differences)
-  fit <- .fcr_set_final_hessian(fit, ll_countreg_rp,
-                                if (use_grad) gr_countreg_rp, method)
+  smooths <- prep$smooth
+  if (length(smooths$aux$rpar)) {
+    stop("Smooth terms are not available in `rpar_formula` (a random ",
+         "coefficient on a basis column is not a penalized smooth); use ",
+         "them in `formula` or `het_mean_formula`.", call. = FALSE)
+  }
+  has_smooth <- length(smooths$main) > 0 || length(smooths$aux) > 0
+  if (has_smooth) {
+    if (stderr == "boot") {
+      stop("Bootstrap standard errors are not yet available with smooth ",
+           "terms; use stderr = \"normal\" (Bayesian), \"robust\" or ",
+           "\"cluster\".", call. = FALSE)
+    }
+    if (method %in% c("NM", "SANN")) method <- "BFGS"
+    off_hm <- N_fixed + N_rand + n_var_params
+    off_hv <- off_hm + N_het_mean
+    n_hm <- if (is.null(X_het_mean)) 0 else ncol(X_het_mean)
+    # Heterogeneity in means has one coefficient block per random
+    # parameter; each block's smooths are penalized separately
+    hm <- list()
+    for (k in seq_len(N_rand)) {
+      hm[[paste0("het_mean_", k)]] <- smooths$aux$het_mean
+    }
+    offs <- c(list(main = 0, het_var = off_hv,
+                   dis1 = off_hv + N_het_var,
+                   dis2 = off_hv + N_het_var + N_dis_1),
+              stats::setNames(as.list(off_hm + (seq_len(N_rand) - 1) * n_hm),
+                              names(hm)))
+    labs <- c(list(main = "mean", het_var = "HetVar",
+                   dis1 = params[[1]], dis2 = params[[2]]),
+              stats::setNames(as.list(paste0("HetMean:", rpar)), names(hm)))
+    pen <- .fcr_pen_terms(
+      c(list(main = smooths$main),
+        smooths$aux[intersect(names(smooths$aux), c("het_var", "dis1",
+                                                    "dis2"))],
+        if (length(smooths$aux$het_mean)) hm),
+      offs, labs)
+    gam <- .fcr_gam_fit(ll_countreg_rp, if (use_grad) gr_countreg_rp,
+                        start, pen, method = method, iterlim = max.iters,
+                        lambda = sp)
+    fit <- gam$fit
+    fit$estimate <- gam$theta
+    fit$maximum <- sum(ll_countreg_rp(gam$theta))
+    fit$hessian <- gam$hessian
+    fit$gradientObs <- if (use_grad) gr_countreg_rp(gam$theta) else
+      maxLik::numericGradient(ll_countreg_rp, gam$theta)
+    fit$hessian_accuracy <- gam$accuracy
+    so <- .fcr_smooth_outputs(
+      gam, c(list(main = smooths$main), smooths$aux),
+      list(main = X_Fixed, het_mean = X_het_mean, het_var = X_het_var,
+           dis1 = X_dis_1, dis2 = X_dis_2))
+    fit$smooth_table <- so$table
+    fit$smooth_info <- so$info
+    fit$smooth_lambda <- gam$lambda
+    fit$smooth_converged <- gam$converged
+    fit$smooth_iterations <- gam$iterations
+    fit$smooth_coefs <- unique(unlist(lapply(gam$terms, `[[`, "idx")))
+    fit$edf <- gam$edf
+    fit$df_total <- sum(gam$edf)
+    fit$code <- if (isTRUE(gam$converged) || !is.null(sp)) 0L else 1L
+    if (!isTRUE(gam$converged) && is.null(sp)) {
+      warning("The smoothing parameters did not converge in ",
+              gam$iterations - 1, " Fellner-Schall iterations.",
+              call. = FALSE)
+    }
+  } else {
+    fit <- maxLik::maxLik(
+      ll_countreg_rp,
+      grad = if (use_grad) gr_countreg_rp,
+      start = start,
+      method = method,
+      finalHessian = method == "BHHH",
+      control = list(iterlim = max.iters, printLevel = print.level))
+    # An accurate final Hessian (maxLik's steps of 1e-6 are too small for a
+    # simulated likelihood and for families whose score uses differences)
+    fit <- .fcr_set_final_hessian(fit, ll_countreg_rp,
+                                  if (use_grad) gr_countreg_rp, method)
+  }
   rp_state <- NULL
   names(fit$estimate) <- x_names
   fit$converged <- .fcr_converged(fit, method)
@@ -706,7 +807,7 @@ countreg_rp <- function(formula, rpar_formula, data, family = "NB2",
     vcov_type <- "cluster"
   } else {
     V <- .fcr_hessian_vcov(fit)
-    vcov_type <- "hessian"
+    vcov_type <- if (has_smooth) "bayesian" else "hessian"
   }
   dimnames(V) <- list(x_names, x_names)
   fit$vcov <- V

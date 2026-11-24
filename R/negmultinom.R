@@ -248,6 +248,8 @@ negmultinom <- function(formula,
                         weights = NULL) {
 
   call <- match.call()
+  .fcr_refuse_smooth("negmultinom", formula, dis_param_formula_1,
+                     dis_param_formula_2)
 
   family <- .nm_clean_family(family)
   method <- .nm_clean_method(method)

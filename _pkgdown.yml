@@ -18,6 +18,7 @@ articles:
   contents:
   - choosing-a-count-distribution
   - distribution-parameter-regression
+  - smooth-effects
   - zeros-hurdles-and-sampling
   - underreporting-and-identification
   - random-parameters-and-panels
@@ -69,6 +70,8 @@ reference:
   contents:
   - summary.flexCountReg
   - flexCountReg-methods
+  - smooth_estimates
+  - plot_smooths
   - vcov.flexCountReg
   - estfun.flexCountReg
   - flexCountReg-tidiers

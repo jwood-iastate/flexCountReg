@@ -34,7 +34,8 @@ countreg_rp(
   weight_type = c("frequency", "sampling"),
   draws = c("per_unit", "shared"),
   cluster = NULL,
-  cre = NULL
+  cre = NULL,
+  sp = NULL
 )
 }
 \arguments{
@@ -199,6 +200,10 @@ stored with the fit: predictions for a group in the estimation data use
 its training means, and a new group uses the means of its own rows in
 \code{newdata}. \code{\link{cre_test}()} tests random against fixed
 effects.}
+
+\item{sp}{optional fixed smoothing parameters, one per penalty of the
+smooth terms (in the order of \code{model$smooth_table}); by default
+they are selected automatically.}
 }
 \value{
 An object of class \code{flexCountReg} which is a list with the following components:
@@ -213,6 +218,31 @@ An object of class \code{flexCountReg} which is a list with the following compon
 Random Parameters Count Regression Models
 }
 \details{
+\strong{Smooth terms.} The formulas accept the penalized smooths of the
+mgcv package (\code{s()}, \code{te()}, \code{ti()}, \code{t2()}), for
+example \code{y ~ s(lnaadt) + speed50}, or
+\code{dis_param_formula_1 = ~ s(lnlength)} for a dispersion that varies
+smoothly. The model is then fitted by penalized maximum likelihood, with
+the smoothing parameters selected by generalized Fellner-Schall updates
+(Wood and Fasiolo 2017), which approximately maximize the restricted
+marginal likelihood; \code{sp} fixes them instead. Standard errors are
+Bayesian (\eqn{(H + S_\lambda)^{-1}}) by default, and robust or
+cluster-robust ones are available. \code{summary()} reports each smooth
+by its effective degrees of freedom with an approximate test, the
+log-likelihood's degrees of freedom are the total effective degrees of
+freedom, and \code{\link{smooth_estimates}()} and
+\code{\link{plot_smooths}()} show the estimated functions. With fixed
+smoothing parameters the estimates equal those of \code{mgcv::gam()};
+the selected smoothing parameters are close to mgcv's REML choice. Smooth
+terms need the mgcv package, and bootstrap standard errors are not yet
+available with them. In \code{countreg_rp()} smooths may enter
+\code{formula}, \code{het_mean_formula}, \code{het_var_formula} and the
+distribution-parameter formulas, but not \code{rpar_formula}: a random
+parameter is a coefficient that varies across units with an unknown
+distribution, a smooth is a function of an observed variable, and a
+smooth heterogeneity-in-means term lets a random parameter's mean vary
+smoothly with a unit attribute.
+
 \code{countreg.rp()} is the former name of \code{countreg_rp()}. It is
 deprecated (a name with a dot is easily mistaken for an S3 method): it
 still works, with a once-per-session warning, and calls

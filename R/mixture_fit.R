@@ -245,6 +245,8 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
 # Validate the arguments into the settings of a fit (everything needed to
 # rebuild the training problem from data, e.g. in bootstrap refits).
 .fcr_fm_settings <- function(a) {
+  .fcr_refuse_smooth(a$entry, a$formula, a$dis_param_formula_1,
+                     a$dis_param_formula_2, a$mixing_formula)
   lab_prefix <- if (a$entry == "countreg_lc") "Class" else "Component"
   fam <- .fcr_fm_families(a$family, a$components, a$components_missing,
                           lab_prefix)

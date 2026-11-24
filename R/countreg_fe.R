@@ -127,6 +127,7 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
                         stderr = c("cluster", "hessian"), cluster = NULL,
                         jackknife = FALSE, time = NULL,
                         max.iters = 1000, tol = 1e-10, keep_data = TRUE) {
+  .fcr_refuse_smooth("countreg_fe", formula)
   method <- match.arg(method)
   stderr <- match.arg(stderr)
   family_spec <- if (inherits(family, "fcr_count_family")) family

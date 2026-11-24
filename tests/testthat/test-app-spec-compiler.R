@@ -86,6 +86,125 @@ test_that("every model type compiles to a call that fits", {
   }
 })
 
+test_that("the hierarchical, fixed-effects and smooth options compile and fit", {
+  skip_on_cran()
+  skip_if_not_installed("mgcv")
+  skip_if_not_installed("reformulas")
+  d <- load_bundled_data("washington_roads")
+  d$Year_f <- d$Year
+  base <- list(source = "bundled", name = "washington_roads",
+               object = "data_1")
+  rec <- list(response = "Total_crashes", predictors = c("lnaadt",
+                                                         "speed50"),
+              log_offset = "lnlength")
+  cases <- list(
+    # Hierarchical: random intercept and slope, crossed years
+    list(recipe = list(group = "ID", group2 = "Year"),
+         model = list(estimator = "countreg_hier", family = "POISSON",
+                      re_slopes = "lnaadt", re_correlated = FALSE),
+         cls = "countreg_hier",
+         formula = quote(Total_crashes ~ lnaadt + speed50 +
+                           offset(lnlength) + (1 + lnaadt || ID) +
+                           (1 | Year))),
+    # Hierarchical with gamma effects
+    list(recipe = list(group = "ID"),
+         model = list(estimator = "countreg_hier", family = "POISSON",
+                      re_dist = "gamma"),
+         cls = "countreg_hier", args = list(re_dist = "gamma")),
+    # Fixed effects in two dimensions, cluster-robust by default
+    list(recipe = list(group = "ID", group2 = "Year"),
+         model = list(estimator = "countreg_fe", family = "POISSON",
+                      stderr = "cluster"),
+         cls = "countreg_fe", args = list(fixef = quote(~ID + Year),
+                                          stderr = "cluster")),
+    # Smooth effect, cluster-robust SEs and sampling weights
+    list(recipe = list(smooth = "lnaadt", cluster = "ID",
+                       weights = "Length"),
+         model = list(family = "NB2", stderr = "cluster",
+                      weight_type = "sampling"),
+         cls = "countreg",
+         formula = quote(Total_crashes ~ s(lnaadt) + speed50 +
+                           offset(lnlength)),
+         args = list(weight_type = "sampling", cluster = quote(~ID))),
+    # Correlated random effects in a random-effects panel model
+    list(recipe = list(group = "ID"),
+         model = list(estimator = "repois", cre = "lnaadt"),
+         cls = "repois", args = list(cre = quote(~lnaadt))))
+  for (cs in cases) {
+    s <- app_spec(data = base, recipe = utils::modifyList(rec, cs$recipe),
+                  model = cs$model)
+    expect_length(validate_spec(s, d), 0)
+    cl <- compile_fit(s, "fit_1")$fit[[3]]
+    if (!is.null(cs$formula)) expect_identical(cl$formula, cs$formula)
+    for (a in names(cs$args)) expect_identical(cl[[a]], cs$args[[a]])
+    env <- suppressMessages(suppressWarnings(eval_fit(s, d)))
+    expect_s3_class(env$fit_1, cs$cls)
+    expect_silent(parse(text = draft_script(s)))
+  }
+  # Nested second level
+  s <- app_spec(data = base, recipe = utils::modifyList(
+    rec, list(group = "ID", group2 = "Year")),
+    model = list(estimator = "countreg_hier", group2_type = "nested"))
+  expect_identical(compile_formula(s)[[3]][[3]],
+                   quote((1 | ID:Year)))
+})
+
+test_that("new options are validated", {
+  d <- load_bundled_data("washington_roads")
+  chk <- function(pattern, recipe = list(), model = list()) {
+    s <- app_spec(recipe = utils::modifyList(
+      list(response = "Total_crashes", predictors = c("lnaadt", "speed50")),
+      recipe), model = model)
+    expect_match(validate_spec(s, d), pattern, all = FALSE)
+  }
+  chk("numeric predictors", list(smooth = "speed50", factors = "speed50"))
+  chk("at least 10 distinct", list(smooth = "speed50"))
+  chk("must be predictors", list(smooth = "Length"))
+  chk("hierarchical and fixed-effects", list(group2 = "Year"))
+  chk("must differ", list(group = "ID", group2 = "ID"),
+      list(estimator = "countreg_hier"))
+  chk("Random slopes apply", model = list(re_slopes = "lnaadt"))
+  chk("single grouping column", list(group = "ID", group2 = "Year"),
+      list(estimator = "countreg_hier", re_dist = "uniform"))
+  chk("random intercept only", list(group = "ID"),
+      list(estimator = "countreg_hier", re_dist = "gamma",
+           re_slopes = "lnaadt"))
+  chk("not available for this model", list(group = "ID"),
+      list(estimator = "renb", stderr = "cluster"))
+  chk("cluster column", model = list(stderr = "cluster"))
+  chk("only with cluster-robust", list(cluster = "ID"))
+  chk("need a weights column", model = list(weight_type = "sampling"))
+  chk("Sampling weights are available", list(group = "ID",
+                                             weights = "Length"),
+      list(estimator = "renb", weight_type = "sampling"))
+  chk("Correlated random effects .* not available", list(group = "ID"),
+      list(estimator = "poisLind.re", cre = "lnaadt"))
+  chk("need the panel identifier", model = list(estimator = "countreg_rp",
+                                                rpar = "speed50",
+                                                cre = "lnaadt"))
+  # Settings files keep the new fields, and schema 3 files still load
+  s <- app_spec(recipe = list(response = "y", predictors = c("a", "b"),
+                              smooth = "a", group = "g", group2 = "h"),
+                model = list(estimator = "countreg_hier",
+                             re_slopes = c("a", "b"), cre = "b",
+                             re_dist = "uniform", group2_type = "nested"))
+  r <- spec_from_json(spec_to_json(s))
+  expect_identical(r$recipe$smooth, "a")
+  expect_identical(r$recipe$group2, "h")
+  expect_identical(r$model$re_slopes, c("a", "b"))
+  expect_identical(r$model$re_dist, "uniform")
+  old <- jsonlite::fromJSON(spec_to_json(app_spec(
+    recipe = list(response = "y"))), simplifyVector = TRUE)
+  old$schema <- 3L
+  old$recipe[c("smooth", "group2", "cluster")] <- NULL
+  old$model[c("weight_type", "cre", "re_slopes", "re_correlated",
+              "group2_type", "re_dist", "fe_jackknife")] <- NULL
+  r3 <- .spec_from_list(old)
+  expect_identical(r3$schema, .spec_schema)
+  expect_identical(r3$model$re_dist, "normal")
+  expect_identical(r3$recipe$smooth, character())
+})
+
 test_that("random parameters leave the fixed part of the formula", {
   s <- app_spec(recipe = list(response = "y", predictors = c("a", "b")),
                 model = list(estimator = "countreg_rp", rpar = "b"))

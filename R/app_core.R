@@ -41,18 +41,31 @@ fcr_family_table <- function() {
 # use a count family, whether a panel identifier is required, allowed or
 # not used, and a short description.
 .app_estimators <- data.frame(
-  id = c("countreg", "countreg_rp", "renb", "poisLind.re", "repois",
-         "negmultinom", "countreg_mix", "countreg_lc"),
+  id = c("countreg", "countreg_rp", "countreg_hier", "countreg_fe", "renb",
+         "poisLind.re", "repois", "negmultinom", "countreg_mix",
+         "countreg_lc"),
   label = c("Count regression", "Random parameters",
+            "Hierarchical (mixed effects)", "Fixed effects (panel)",
             "Random effects: negative binomial (panel)",
             "Random effects: Poisson-Lindley (panel)",
             "Random effects: Poisson (panel)",
             "Negative multinomial (panel)", "Finite mixture",
             "Latent classes"),
-  uses_family = c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
+  uses_family = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE,
+                  TRUE),
   group = c("none", "optional", "required", "required", "required",
-            "required", "optional", "optional"),
-  dis1 = c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
+            "required", "required", "required", "optional", "optional"),
+  dis1 = c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, TRUE),
+  # Smooth terms s(x) in the mean
+  smooth = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+  # Correlated random effects (group means of time-varying predictors)
+  cre = c(FALSE, TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE),
+  # Standard errors offered (besides the Hessian-based default)
+  robust = c(TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE),
+  cluster = c(TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE,
+              FALSE),
+  sampling = c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,
+               FALSE),
   stringsAsFactors = FALSE)
 
 .app_estimator_choices <- function() {
@@ -92,6 +105,8 @@ app_supports <- function(fit, operation) {
   countreg <- inherits(fit, "countreg")
   mixture <- inherits(fit, "countreg_mix")
   switch(operation,
+    smooths = if (length(fit$model$smooth_info)) yes else
+      no("This model has no smooth terms; choose smooth (nonlinear) effects on the Build page."),
     rootogram = , quantile = if (countreg || mixture) yes else
       no(paste("Rootograms and quantile residuals need the fitted count",
                "distribution of each row; they are available for count",

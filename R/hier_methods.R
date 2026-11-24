@@ -47,12 +47,17 @@ nlme::VarCorr
   if (!is.null(m$cre)) d <- .fcr_cre_newdata(m$cre, d)
   fd <- forge_new_data(m$blueprint, d)
   p <- m$par_internal
-  kb <- m$k_beta_int %||% m$k_beta
   kf <- m$k_fix_int %||% m$k_fix
-  beta <- m$beta_full %||% p[seq_len(kb)]
+  # Fixed coefficients and distribution parameters from the reported
+  # estimates (so that methods which perturb them, such as delta-method
+  # marginal effects, see the change)
+  est <- m$estimate
+  kx <- length(m$blueprint$x_names)
+  beta <- est[seq_len(kx)]
   n <- nrow(d)
   eta0 <- as.vector(fd$X %*% beta) + fd$offset
-  pos <- kb
+  p <- est
+  pos <- kx
   alpha <- sigma <- NULL
   if (m$n_alpha) {
     a <- p[pos + seq_len(m$n_alpha)]
@@ -66,7 +71,7 @@ nlme::VarCorr
       exp(as.vector(fd$aux$dis2 %*% s))
   }
   env <- environment(object$formula) %||% globalenv()
-  th <- p[kf + seq_len(m$n_theta)]
+  th <- m$par_internal[kf + seq_len(m$n_theta)]
   dist <- m$re_dist %||% "normal"
   re <- lapply(seq_along(m$re_terms), function(i) {
     t <- m$re_terms[[i]]

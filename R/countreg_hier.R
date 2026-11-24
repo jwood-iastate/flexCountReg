@@ -669,7 +669,11 @@ countreg_hier <- function(formula, data, family = "NB2",
     estimate = est, maximum = ll_hat, vcov = V,
     vcov_type = if (is.null(S$smooth)) "hessian" else "bayesian",
     stderr = "normal", se = .fcr_se(V), hessian_internal = H,
-    par_internal = p_hat, gradient = grad_hat, iterations = opt$counts,
+    par_internal = p_hat, gradient = grad_hat,
+    iterations = unname(opt$counts[1]), counts = opt$counts,
+    message = if (opt$convergence == 0L) "converged" else
+      paste("optim() convergence code", opt$convergence),
+    numerical = .fcr_hier_numerical(H, grad_hat),
     code = opt$convergence, converged = conv,
     family = S$family, model = S$family, params = S$params,
     fixed_formula = prep$formula,
@@ -697,6 +701,20 @@ countreg_hier <- function(formula, data, family = "NB2",
     fit$edf <- sm$edf
   }
   fit
+}
+
+# Numerical checks of the optimum (for the app and diagnostics): the
+# gradient and the eigenvalues of the information on the internal scale.
+.fcr_hier_numerical <- function(H, grad) {
+  ev <- if (is.matrix(H) && all(is.finite(H)))
+    eigen(-(H + t(H)) / 2, symmetric = TRUE, only.values = TRUE)$values
+  list(max_abs_gradient = if (length(grad)) max(abs(grad)) else NA_real_,
+       min_eigenvalue = if (length(ev)) min(ev) else NA_real_,
+       information = if (!length(ev)) "unavailable" else
+         if (min(ev) > sqrt(.Machine$double.eps) * max(abs(ev)))
+           "positive definite" else "not positive definite",
+       condition = if (length(ev) && min(ev) > 0) max(ev) / min(ev) else
+         NA_real_)
 }
 
 # Smooth coefficients on their original basis, their Bayesian covariance

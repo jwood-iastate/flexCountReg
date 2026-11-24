@@ -302,7 +302,9 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_default_vars <- function(object, data) {
-  form <- object$formula
+  # Hierarchical models: the fixed part (the grouping variables of the
+  # random-effect terms are not candidates)
+  form <- object$model$fixed_formula %||% object$formula
   if (is.null(form)) {
     stop("The fitted object does not contain a formula.")
   }
@@ -339,6 +341,11 @@ print.flexEffectTable <- function(x, ...) {
     }
     if (!is.null(object$model$group_var)) {
       special_vars <- c(special_vars, object$model$group_var)
+    }
+    # Fixed-effects models: regressors removed as not identified (constant
+    # within the groups)
+    if (is.character(object$model$not_identified)) {
+      special_vars <- c(special_vars, object$model$not_identified)
     }
   }
   

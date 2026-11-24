@@ -12,7 +12,8 @@ mod_diagnose_ui <- function(id) {
       shiny::selectInput(ns("diag"), "Diagnostic",
                          c("Rootogram" = "rootogram",
                            "Quantile residuals" = "quantile",
-                           "CURE plot" = "cure")),
+                           "CURE plot" = "cure",
+                           "Smooth effects" = "smooths")),
       shiny::conditionalPanel(
         "input.diag == 'rootogram'", ns = ns,
         shiny::numericInput(ns("max_count"), "Largest count shown", NA,
@@ -61,7 +62,8 @@ diagnostic_data <- function(type, value, fit) {
     rootogram = as.data.frame(unclass(value)[c("count", "observed",
                                                "expected")]),
     quantile = data.frame(fitted = stats::fitted(fit), residual = value),
-    cure = as.data.frame(value$data))
+    cure = as.data.frame(value$data),
+    smooths = as.data.frame(value))
 }
 
 mod_diagnose_server <- function(id, state) {
@@ -107,7 +109,8 @@ mod_diagnose_server <- function(id, state) {
                            input$max_count),
         quantile = list(type = "quantile"),
         cure = list(type = "cure",
-                    var = if (nzchar(input$cure_var %||% "")) input$cure_var))
+                    var = if (nzchar(input$cure_var %||% "")) input$cure_var),
+        smooths = list(type = "smooths"))
       res <- app_run_output(state, req, id)
       res$type <- input$diag
       res$data <- diagnostic_data(input$diag, res$value,
@@ -119,7 +122,8 @@ mod_diagnose_server <- function(id, state) {
       if (is.null(r)) return("No diagnostic yet")
       paste0(switch(r$type, rootogram = "Rootogram",
                     quantile = "Randomized quantile residuals",
-                    cure = "Cumulative residuals (CURE)"),
+                    cure = "Cumulative residuals (CURE)",
+                    smooths = "Smooth effects"),
              " - ", r$fit$label, " (", r$out, ")")
     })
     output$plot <- shiny::renderPlot({
@@ -143,6 +147,10 @@ mod_diagnose_server <- function(id, state) {
       else if (r$type == "rootogram") help_text(
         "Bars hang from the expected frequencies; bars ending above or below ",
         "zero mark counts the model under- or over-predicts.")
+      else if (r$type == "smooths") help_text(
+        "Each smooth on the scale of its linear predictor (log of the ",
+        "mean), centered: the shaded band is pointwise, the dashed lines ",
+        "cover the whole curve with 95% probability.")
     })
     # Warnings and messages raised while the diagnostic ran (also written
     # to the manifest of the export)

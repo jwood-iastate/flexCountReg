@@ -410,3 +410,17 @@ test_that("correlated random effects (cre)", {
   expect_error(countreg_hier(Total_crashes ~ lnaadt + (1 | ID) + (1 | Year),
                              data = w, cre = ~ lnaadt), "cre_group")
 })
+
+test_that("marginal effects of hierarchical and fixed-effects fits", {
+  data("washington_roads", package = "flexCountReg", envir = environment())
+  w <- washington_roads
+  h <- countreg_hier(Total_crashes ~ lnaadt + speed50 + offset(lnlength) +
+                       (1 | ID), data = w, family = "POISSON")
+  me <- margEffTable(h)
+  expect_setequal(me$term, c("lnaadt", "speed50"))
+  expect_true(all(me$std_error > 0))
+  fe <- suppressWarnings(suppressMessages(countreg_fe(
+    Total_crashes ~ lnaadt + speed50 + offset(lnlength), fixef = ~ ID,
+    data = w)))
+  expect_identical(margEffTable(fe)$term, "lnaadt")
+})

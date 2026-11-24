@@ -10,7 +10,7 @@
        mix_mode = m$mix_mode, fixed_mixing = m$fixed_mixing,
        haltons = haltons, normed_haltons = stats::qnorm(haltons),
        engine = m$engine %||% "quadrature", families = m$family,
-       labels = m$labels)
+       labels = m$labels, rp = m$rpar)
 }
 
 # Component values and log prior probabilities for the rows of `data`.
@@ -18,8 +18,13 @@
   ps <- .fcr_fm_pspec(object)
   des <- .fcr_fm_design(ps, data)
   pars <- .fcr_fm_unpack(theta, ps$map)
-  cvs <- lapply(seq_len(ps$K), function(k)
-    .fcr_fm_comp_values(des, pars, k))
+  cvs <- lapply(seq_len(ps$K), function(k) {
+    cv <- .fcr_fm_comp_values(des, pars, k)
+    # Random parameters: the component's expected counts at R draws
+    if (!is.null(ps$rp)) cv[c("mu_draws", "mu_fixed")] <-
+      .fcr_fm_rp_mu_draws(ps$rp, des, pars, k)
+    cv
+  })
   logpi <- .fcr_fm_logprior(ps, pars, des$Z, des$n)
   list(ps = ps, des = des, pars = pars, cvs = cvs, logpi = logpi,
        n = des$n)
@@ -34,6 +39,11 @@
     cv <- r$cvs[[k]]
     ok <- !is.na(y) & !is.na(cv$mu)
     if (!any(ok)) next
+    if (!is.null(cv$mu_draws)) {
+      LP[ok, k] <- .fcr_lmean_rows(.fcr_fm_logpmf_draws(
+        r$ps, cv, r$ps$families[k], y, which(ok)))
+      next
+    }
     sv <- list(mu = cv$mu[ok], alpha = if (!is.null(cv$alpha)) cv$alpha[ok],
                sigma = if (!is.null(cv$sigma)) cv$sigma[ok])
     LP[ok, k] <- .fcr_fm_logpmf(r$ps, sv, r$ps$families[k], y[ok])
@@ -107,6 +117,7 @@
            call. = FALSE)
     }
     if (is.null(gv)) return(update(r$logpi, .fcr_fm_row_logpmf(r, y)))
+    miss_post <- .fcr_fm_row_missing(r, y)
   }
   g <- .fcr_fm_group_ids(object, data)
   if (conditioning != "history") {
@@ -116,9 +127,7 @@
     Zu <- .fcr_fm_panel_design(r$des$Z, gi, G, " (in the new data)")
     logpi_u <- .fcr_fm_logprior(r$ps, r$pars, Zu, G)
     if (conditioning == "prior") return(logpi_u[gi, , drop = FALSE])
-    LP <- .fcr_fm_row_logpmf(r, y)
-    LP[.fcr_fm_row_missing(r, y), ] <- 0
-    A <- rowsum(LP, gi, reorder = TRUE)
+    A <- .fcr_fm_unit_A(r, y, gi, !miss_post)
     return(update(logpi_u, A)[gi, , drop = FALSE])
   }
   # history
@@ -145,7 +154,6 @@
   # Missing history: rows with a missing outcome or covariate are dropped
   # (with a warning); a panel with no usable history row keeps its prior,
   # like a panel absent from `history`.
-  LPh <- .fcr_fm_row_logpmf(rh, yh)
   miss <- .fcr_fm_row_missing(rh, yh)
   if (any(miss)) {
     warning(sum(miss), " history row(s) with missing values are not ",
@@ -153,7 +161,7 @@
   }
   A <- matrix(0, G, K)
   if (any(!miss)) {
-    As <- rowsum(LPh[!miss, , drop = FALSE], hi[!miss], reorder = TRUE)
+    As <- .fcr_fm_unit_A(rh, yh, hi, !miss)
     A[as.integer(rownames(As)), ] <- As
   }
   with_hist <- seq_len(G) %in% hi[!miss]
@@ -169,6 +177,9 @@
 .fcr_fm_comp_means <- function(r) {
   M <- vapply(seq_len(r$ps$K), function(k) {
     cv <- r$cvs[[k]]
+    if (!is.null(cv$mu_draws)) {
+      return(rowMeans(.fcr_fm_draw_moment(r, k, "mean")))
+    }
     suppressWarnings(.fcr_family_mean(r$ps$families[k], cv$mu, cv$alpha,
                                       cv$sigma))
   }, numeric(r$n))
@@ -178,6 +189,13 @@
 .fcr_fm_comp_vars <- function(r) {
   V <- vapply(seq_len(r$ps$K), function(k) {
     cv <- r$cvs[[k]]
+    if (!is.null(cv$mu_draws)) {
+      # Within-draw variance plus the variance of the means over draws
+      Md <- .fcr_fm_draw_moment(r, k, "mean")
+      Vd <- .fcr_fm_draw_moment(r, k, "variance")
+      m <- rowMeans(Md)
+      return(rowMeans(Vd) + rowMeans(Md^2) - m^2)
+    }
     v <- suppressWarnings(.fcr_family_variance(r$ps$families[k], cv$mu,
                                                cv$alpha, cv$sigma))
     if (is.null(v)) {
@@ -187,6 +205,37 @@
     rep_len(v, r$n)
   }, numeric(r$n))
   matrix(V, nrow = r$n, dimnames = list(NULL, r$ps$labels))
+}
+
+# The family mean or variance of component k at each draw of the random
+# parameters (n x R).
+.fcr_fm_draw_moment <- function(r, k, what) {
+  cv <- r$cvs[[k]]
+  R <- ncol(cv$mu_draws)
+  fun <- if (what == "mean") .fcr_family_mean else .fcr_family_variance
+  v <- suppressWarnings(fun(r$ps$families[k], as.vector(cv$mu_draws),
+                            if (!is.null(cv$alpha)) rep(cv$alpha, R),
+                            if (!is.null(cv$sigma)) rep(cv$sigma, R)))
+  if (is.null(v)) {
+    stop("A variance function is not available for family \"",
+         r$ps$families[k], "\".", call. = FALSE)
+  }
+  matrix(rep_len(v, r$n * R), r$n, R)
+}
+
+# Component k's log tail probability at q, averaged over the draws of the
+# random parameters when there are any.
+.fcr_fm_comp_logcdf <- function(r, k, q, lower.tail) {
+  cv <- r$cvs[[k]]
+  if (is.null(cv$mu_draws)) {
+    return(.fcr_fm_logcdf(r$ps, cv, r$ps$families[k], q, lower.tail))
+  }
+  R <- ncol(cv$mu_draws)
+  sv <- list(mu = as.vector(cv$mu_draws),
+             alpha = if (!is.null(cv$alpha)) rep(cv$alpha, R),
+             sigma = if (!is.null(cv$sigma)) rep(cv$sigma, R))
+  L <- .fcr_fm_logcdf(r$ps, sv, r$ps$families[k], rep(q, R), lower.tail)
+  .fcr_lmean_rows(matrix(L, r$n, R))
 }
 
 # Sum over components of P * M, with 0 * Inf = 0 for zero-probability
@@ -341,8 +390,7 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
 # do not count, even where their tail is undefined.
 .fcr_fm_log_tail <- function(r, LC, q, lower.tail) {
   L <- vapply(seq_len(r$ps$K), function(k)
-    .fcr_fm_logcdf(r$ps, r$cvs[[k]], r$ps$families[k], q, lower.tail),
-    numeric(r$n))
+    .fcr_fm_comp_logcdf(r, k, q, lower.tail), numeric(r$n))
   M <- LC + matrix(L, nrow = r$n)
   M[!is.na(LC) & LC == -Inf] <- -Inf
   .fcr_lse_rows(M)
@@ -367,7 +415,10 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
   cv <- r$cvs[[k]]
   out <- rep(NA_real_, r$n)
   ok <- !is.na(cv$mu) & !is.na(y)
-  if (any(ok)) {
+  if (any(ok) && !is.null(cv$mu_draws)) {
+    out[ok] <- .fcr_lmean_rows(.fcr_fm_logpmf_draws(
+      r$ps, cv, r$ps$families[k], y, which(ok)))
+  } else if (any(ok)) {
     sv <- list(mu = cv$mu[ok], alpha = if (!is.null(cv$alpha)) cv$alpha[ok],
                sigma = if (!is.null(cv$sigma)) cv$sigma[ok])
     out[ok] <- .fcr_fm_logpmf(r$ps, sv, r$ps$families[k], y[ok])
@@ -533,17 +584,34 @@ simulate.countreg_mix <- function(object, nsim = 1, seed = NULL, ...) {
   prior_u <- m$prior
   n_u <- nrow(prior_u)
   classes <- matrix(NA_integer_, n_u, nsim)
+  rp <- r$ps$rp
   sims <- lapply(seq_len(nsim), function(s) {
     cu <- if (K == 1L) rep(1L, n_u) else
       apply(prior_u, 1, function(p) sample.int(K, 1L, prob = p))
     classes[, s] <<- cu
     cr <- cu[unit]
     y <- numeric(n)
+    # Random parameters: one new draw of each unit's coefficients
+    hd <- if (!is.null(rp)) {
+      Uu <- matrix(stats::runif(n_u * length(rp$names)), n_u)
+      structure(lapply(seq_len(ncol(Uu)), function(j)
+        matrix(Uu[unit, j], n, 1)), class = "fcr_unit_draws")
+    }
     for (k in seq_len(K)) {
       idx <- which(cr == k)
       if (!length(idx)) next
       cv <- r$cvs[[k]]
-      y[idx] <- .fcr_family_r(r$ps$families[k], length(idx), cv$mu[idx],
+      mu <- cv$mu
+      if (!is.null(rp)) {
+        cols <- match(rp$names, colnames(r$des$X))
+        xb <- generate_random_draws(
+          .fcr_draw_rows(hd, idx), r$pars$beta[[k]][cols], r$pars$rv[[k]],
+          rp$dists, rp$names, r$des$X[idx, cols, drop = FALSE],
+          correlated = rp$correlated)$xb_rand_mat[, 1]
+        mu <- numeric(n)
+        mu[idx] <- cv$mu_fixed[idx] * exp(xb)
+      }
+      y[idx] <- .fcr_family_r(r$ps$families[k], length(idx), mu[idx],
                               if (!is.null(cv$alpha)) cv$alpha[idx],
                               if (!is.null(cv$sigma)) cv$sigma[idx])
     }
@@ -770,7 +838,9 @@ tidy.countreg_mix <- function(x, conf.int = FALSE, conf.level = 0.95,
   info <- x$model$map$info
   labels <- x$model$labels
   comp <- ifelse(info$block == "mean", "mean",
-                 ifelse(info$block == "mixing", "mixing", "distribution"))
+                 ifelse(info$block == "mixing", "mixing",
+                        ifelse(info$block == "rpar", "random",
+                               "distribution")))
   cls <- ifelse(is.na(info$component), "Shared",
                 labels[pmax(1L, info$component)])
   out <- tibble::tibble(term = names(cf), component = comp, class = cls,

@@ -183,6 +183,23 @@
 .fcr_fm_eval <- function(theta, spec, comps = seq_len(spec$K), LP = NULL) {
   pars <- .fcr_fm_unpack(theta, spec$map)
   K <- spec$K
+  if (!is.null(spec$rp)) {
+    # Random parameters: each component's unit log-likelihood is simulated
+    ra <- .fcr_fm_rp_A(theta, spec)
+    if (is.null(ra)) return(NULL)
+    A <- ra$A
+    pos_u <- spec$w_unit > 0
+    if (anyNA(A[pos_u, , drop = FALSE])) return(NULL)
+    A[!pos_u, ] <- 0
+    logpi <- .fcr_fm_logprior(spec, pars, spec$Zu, spec$n_u)
+    if (anyNA(logpi)) return(NULL)
+    lc <- logpi + A
+    ll <- .fcr_lse_rows(lc)
+    tau <- exp(lc - ll)
+    tau[!is.finite(ll), ] <- NA_real_
+    return(list(LP = NULL, A = A, logpi = logpi, ll = ll, tau = tau,
+                pars = pars, theta = theta, rp_states = ra$states))
+  }
   pos <- spec$w_row > 0
   if (is.null(LP)) LP <- matrix(NA_real_, spec$n, K)
   for (k in comps) {
@@ -234,12 +251,17 @@
   G <- matrix(NA_real_, spec$n_u, map$n_par)
   if (is.null(e)) return(G)
   G[] <- 0
-  tau_row <- if (is.null(spec$unit)) e$tau else e$tau[spec$unit, , drop = FALSE]
-  for (k in seq_len(spec$K)) {
-    S <- .fcr_fm_comp_scores(spec, e$pars, k, spec$w_row * tau_row[, k])
-    if (!is.null(spec$unit)) S <- rowsum(S, spec$unit, reorder = TRUE)
-    idx <- c(map$mean_idx[[k]], map$d1_idx[[k]])
-    for (j in seq_along(idx)) G[, idx[j]] <- G[, idx[j]] + S[, j]
+  if (!is.null(spec$rp)) {
+    G <- .fcr_fm_rp_grad(e, spec, G)
+  } else {
+    tau_row <- if (is.null(spec$unit)) e$tau else
+      e$tau[spec$unit, , drop = FALSE]
+    for (k in seq_len(spec$K)) {
+      S <- .fcr_fm_comp_scores(spec, e$pars, k, spec$w_row * tau_row[, k])
+      if (!is.null(spec$unit)) S <- rowsum(S, spec$unit, reorder = TRUE)
+      idx <- c(map$mean_idx[[k]], map$d1_idx[[k]])
+      for (j in seq_along(idx)) G[, idx[j]] <- G[, idx[j]] + S[, j]
+    }
   }
   if (!is.null(map$mix_idx)) {
     pi <- exp(e$logpi)
@@ -302,16 +324,26 @@
 .fcr_fm_mstep_comp <- function(theta, spec, tau, maxit) {
   tau_row <- if (is.null(spec$unit)) tau else tau[spec$unit, , drop = FALSE]
   analytic <- spec$analytic
+  rp <- !is.null(spec$rp)
   for (g in .fcr_fm_mstep_groups(spec$map)) {
     if (!length(g$idx)) next
-    q0 <- .fcr_fm_Q(theta[g$idx], g$idx, theta, spec, tau_row, g$comps)
+    Qf <- function(par) {
+      if (rp) .fcr_fm_rp_Q(par, g$idx, theta, spec, tau, g$comps) else
+        .fcr_fm_Q(par, g$idx, theta, spec, tau_row, g$comps)
+    }
+    q0 <- Qf(theta[g$idx])
     if (!is.finite(q0)) next
     fn <- function(par) {
-      v <- .fcr_fm_Q(par, g$idx, theta, spec, tau_row, g$comps)
+      v <- Qf(par)
       if (is.finite(v)) -v else 1e300
     }
-    gr <- if (analytic) function(par)
-      -.fcr_fm_Q_grad(par, g$idx, theta, spec, tau_row, g$comps)
+    gr <- if (analytic) function(par) {
+      v <- if (rp) .fcr_fm_rp_Q(par, g$idx, theta, spec, tau, g$comps,
+                                grad = TRUE) else
+        .fcr_fm_Q_grad(par, g$idx, theta, spec, tau_row, g$comps)
+      v[!is.finite(v)] <- 0
+      -v
+    }
     opt <- tryCatch(stats::optim(theta[g$idx], fn, gr, method = "BFGS",
                                  control = list(maxit = maxit, reltol = 1e-10)),
                     error = function(e) NULL)

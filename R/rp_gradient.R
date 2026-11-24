@@ -35,7 +35,8 @@
     idx <<- idx + k
     out
   }
-  out <- list(fixed = take(d$N_fixed), rand_means = take(d$N_rand),
+  out <- list(fixed = take(d$N_fixed) %||% numeric(0),
+              rand_means = take(d$N_rand),
               rand_vars = take(d$n_var_params),
               het_mean = take(d$N_het_mean), het_var = take(d$N_het_var),
               dis_1 = take(d$N_dis_1), dis_2 = take(d$N_dis_2))

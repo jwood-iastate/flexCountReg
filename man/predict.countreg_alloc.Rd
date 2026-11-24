@@ -35,7 +35,9 @@ averages over the distribution of the random parameters (the
 prediction for a new unit); \code{"posterior"} averages over each unit's
 posterior distribution given its counts in the estimation data
 (Empirical Bayes; units not in the estimation data get the marginal
-prediction). \code{newdata} then needs the \code{group_var} column(s).}
+prediction). \code{newdata} then needs the \code{group_var} column(s). The shared
+site-year term (\code{shared_formula}) is always averaged over its
+distribution, as it is new for every row.}
 
 \item{...}{unused.}
 }

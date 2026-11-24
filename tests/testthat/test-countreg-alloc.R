@@ -115,6 +115,16 @@ test_that("a Poisson total with mnl is independent Poissons; NB2 is negmultinom"
                tolerance = 1e-10)
   expect_equal(names(coef(m))[3:4],
                c("Allocation[b]:(Intercept)", "Allocation[b]:z"))
+  expect_output(print(summary(m)), "unordered; base: a")
+  # Another base category: the same fit, coefficients relative to it
+  mb <- countreg_alloc(cbind(b, a, c) ~ x, data = d, family = "POISSON",
+                       alloc_formula = ~ z, link = "mnl")
+  expect_equal(mb$loglik, m$loglik, tolerance = 1e-8)
+  expect_equal(unname(coef(mb)[c("Allocation[a]:z", "Allocation[c]:z")]),
+               unname(c(-coef(m)["Allocation[b]:z"],
+                        coef(m)["Allocation[c]:z"] -
+                          coef(m)["Allocation[b]:z"])), tolerance = 1e-4)
+  expect_equal(predict(mb)[, c("a", "b", "c")], predict(m), tolerance = 1e-4)
   skip_if_not_installed("nnet")
   keep <- rowSums(Y) > 0
   mn <- nnet::multinom(Y[keep, ] ~ z, data = d[keep, ], trace = FALSE)
@@ -323,4 +333,136 @@ test_that("random-parameter input errors", {
                               rpar_threshold = ~ 1), "three or more")
   expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d,
                               rpar_total = ~ offset(x)), "offset")
+})
+
+# ---- Shared site-year term ---------------------------------------------------
+
+sim_alloc_shared <- function(n = 3000, lc = 0.6, la = -0.5, seed = 21) {
+  set.seed(seed)
+  d <- data.frame(x = rnorm(n), z = rnorm(n), s = rbinom(n, 1, 0.5),
+                  site = rep(seq_len(n / 3), each = 3))
+  u <- rnorm(n)
+  tot <- stats::rpois(n, exp(0.6 + 0.5 * d$x + lc * u))
+  xb <- 0.5 * d$z + la * u
+  pr <- cbind(stats::pnorm(-xb), stats::pnorm(0.8 - xb) - stats::pnorm(-xb),
+              1 - stats::pnorm(0.8 - xb))
+  Y <- t(vapply(seq_len(n), function(i)
+    as.numeric(stats::rmultinom(1, tot[i], pr[i, ])), numeric(3)))
+  d$a <- Y[, 1]
+  d$b <- Y[, 2]
+  d$c <- Y[, 3]
+  d
+}
+
+test_that("the shared term has the right analytic gradient", {
+  skip_if_not_installed("numDeriv")
+  d <- sim_alloc_shared(n = 300)
+  d$wt <- rep(1:3, length.out = nrow(d))
+  pos <- d[d$a + d$b + d$c > 0, ]
+  cases <- list(
+    list(shared_formula = ~ 1),
+    list(shared_formula = ~ s, shared_in = c("total", "alloc", "threshold"),
+         family = "NB2"),
+    list(shared_formula = ~ 1, group_var = "site", rpar_total = ~ 1,
+         rpar_alloc = ~ 1, correlation = "across"),
+    list(shared_formula = ~ s, data = pos, truncated = TRUE),
+    list(shared_formula = ~ 1, data = pos, truncated = TRUE,
+         group_var = "site", rpar_alloc = ~ 1),
+    list(shared_formula = ~ 1, link = "mnl"),
+    list(shared_formula = ~ 1, likelihood = "fractional", weights = "wt",
+         shared_in = c("alloc", "threshold"), stderr = "robust"))
+  for (cs in cases) {
+    # (data frames are lists: modifyList() would merge them by column)
+    dat <- if (is.null(cs$data)) d else cs$data
+    cs$data <- NULL
+    args <- utils::modifyList(list(
+      formula = cbind(a, b, c) ~ x, family = "POISSON",
+      alloc_formula = ~ z, rpar_draws = 10, seed = 3, shared_nodes = 10,
+      .setup_only = TRUE), cs)
+    args$data <- dat
+    E <- suppressMessages(do.call(countreg_alloc, args))
+    set.seed(2)
+    p <- flexCountReg:::.fcr_alloc_start(E) +
+      stats::runif(length(E$S$names), -0.1, 0.1)
+    llf <- if (is.null(E$RS)) flexCountReg:::.fcr_alloc_ll else
+      flexCountReg:::.fcr_alloc_sim_ll
+    f <- function(q) sum(llf(q, E)$ll)
+    ana <- colSums(llf(p, E, grad = TRUE)$G)
+    expect_equal(ana, numDeriv::grad(f, p), tolerance = 1e-6,
+                 info = paste(names(cs), collapse = ","))
+  }
+})
+
+test_that("a shared term in a Poisson total is the Poisson-lognormal total", {
+  d <- sim_alloc_shared(n = 900, la = 0)
+  m1 <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "POISSON",
+                       alloc_formula = ~ z, shared_formula = ~ 1,
+                       shared_in = "total")
+  m2 <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "PLN",
+                       alloc_formula = ~ z)
+  expect_equal(m1$loglik, m2$loglik, tolerance = 1e-6)
+  expect_equal(unname(coef(m1)[1:5]), unname(coef(m2)[c(1:2, 4:6)]),
+               tolerance = 1e-4)
+  expect_equal(abs(unname(coef(m1)["shared:Total:(Intercept)"])),
+               exp(unname(coef(m2)["ln(sigma)"])), tolerance = 1e-4)
+  expect_lt(abs(m1$shared$check), 1e-3)
+})
+
+test_that("the shared term is recovered, also from truncated data", {
+  skip_on_cran()
+  d <- sim_alloc_shared(n = 3000, lc = 0.6, la = -0.5)
+  m <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "POISSON",
+                      alloc_formula = ~ z, shared_formula = ~ 1)
+  expect_true(m$converged)
+  sh <- coef(m)[c("shared:Total:(Intercept)",
+                  "shared:Allocation:(Intercept)")]
+  # Only the relative sign of the loadings is identified
+  expect_equal(unname(sh * sign(sh[1])), c(0.6, -0.5), tolerance = 0.1)
+  expect_equal(unname(coef(m)[c("x", "Allocation:z")]), c(0.5, 0.5),
+               tolerance = 0.1)
+  m0 <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "POISSON",
+                       alloc_formula = ~ z)
+  expect_gt(m$loglik - m0$loglik, 50)
+  expect_output(print(summary(m)), "Shared site-year term")
+  expect_true("shared" %in% tidy(m)$component)
+  # Predictions average over the term: with a positive loading in the
+  # total, the expected total is exp(x'b + lambda^2 / 2)
+  pt <- predict(m, newdata = d[1:5, ], type = "total")
+  lam <- unname(sh[1])
+  expect_equal(pt, exp(coef(m)[1] + coef(m)[2] * d$x[1:5] + lam^2 / 2),
+               tolerance = 1e-6, ignore_attr = TRUE)
+  expect_equal(rowSums(predict(m, newdata = d[1:5, ], type = "prob")),
+               rep(1, 5))
+  expect_error(predict(m, newdata = d[1:5, ], random = "posterior"),
+               "unit-level random parameters")
+  s <- simulate(m, seed = 1)[[1]]
+  expect_equal(colMeans(s), colMeans(d[, c("a", "b", "c")]),
+               tolerance = 0.1, ignore_attr = TRUE)
+  # Truncated data: the rows with a positive total
+  pos <- sim_alloc_shared(n = 6000, lc = 0.6, la = 0.5, seed = 12)
+  pos <- pos[pos$a + pos$b + pos$c > 0, ]
+  mt <- countreg_alloc(cbind(a, b, c) ~ x, data = pos, family = "POISSON",
+                       alloc_formula = ~ z, truncated = TRUE,
+                       shared_formula = ~ 1)
+  sh <- coef(mt)[c("shared:Total:(Intercept)",
+                   "shared:Allocation:(Intercept)")]
+  expect_equal(unname(sh * sign(sh[1])), c(0.6, 0.5), tolerance = 0.1)
+  expect_equal(unname(coef(mt)[1:2]), c(0.6, 0.5), tolerance = 0.1)
+})
+
+test_that("shared-term input errors", {
+  d <- sim_alloc_shared(n = 90)
+  expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d, link = "mnl",
+                              shared_formula = ~ 1,
+                              shared_in = "threshold"), "ordered links")
+  expect_error(countreg_alloc(cbind(a, b) ~ x, data = d,
+                              shared_formula = ~ 1,
+                              shared_in = "threshold"), "three or more")
+  expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d,
+                              shared_formula = ~ 1, shared_nodes = 1),
+               "shared_nodes")
+  expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d,
+                              shared_formula = ~ offset(x)), "offset")
+  expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d,
+                              shared_formula = ~ 1, shared_in = "count"))
 })

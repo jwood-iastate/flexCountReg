@@ -397,7 +397,9 @@ are provided in the documentation (help files).
 - Inverse Gamma Distribution
 - Triangle Distribution
 
-**Count Distributions** *Distributions that Handle Equidispersion*
+**Count Distributions**
+
+*Distributions that Handle Equidispersion*
 
 - Poisson
 

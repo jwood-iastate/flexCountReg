@@ -297,5 +297,97 @@ round(cbind(predict(mr, newdata = seg),
 #> [3,] 0.818  0.031 0.566  0.025
 ```
 
-Copula models, which join the outcomes’ distributions directly, are
-planned.
+## 7. Copulas
+
+A copula joins the outcomes’ own distributions into one joint
+distribution, so each outcome keeps its family and its expected counts:
+
+\\ P(Y_1 \le y_1, Y_2 \le y_2) = C\big(F_1(y_1), F_2(y_2); \theta\big).
+\\
+
+For counts, the probability of the observed pair is the exact volume of
+the copula over the rectangle \\\[F_1(y_1 - 1), F_1(y_1)\] \times
+\[F_2(y_2 - 1), F_2(y_2)\]\\, the sum of four copula values (of \\2^J\\
+with \\J\\ outcomes). The copula families differ in the shape of the
+dependence:
+
+| `copula`     | dependence                                               |
+|--------------|----------------------------------------------------------|
+| `"gaussian"` | symmetric, any sign, no tail dependence (two outcomes)   |
+| `"frank"`    | symmetric, no tail dependence; any sign for two outcomes |
+| `"clayton"`  | positive, strongest for joint low counts                 |
+| `"gumbel"`   | positive, strongest for joint high counts                |
+
+``` r
+
+mc <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
+                  data = w, family = c(pdo = "NB2", injury = "PIG"),
+                  copula = "clayton")
+summary(mc)
+#> Multivariate count model
+#> 
+#> Rows:        1501 
+#> Std. errors: normal 
+#> Dependence:   Clayton copula
+#> 
+#> pdo (NB2):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept) -9.42689    0.47920 -19.672  < 2e-16 ***
+#> lnaadt       1.17442    0.05493  21.382  < 2e-16 ***
+#> speed50     -0.51195    0.11434  -4.477 7.56e-06 ***
+#> ln(alpha)   -0.85167    0.23000  -3.703 0.000213 ***
+#> 
+#> injury (PIG):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)  -7.4273     1.1821  -6.283 3.32e-10 ***
+#> lnaadt        0.6683     0.1408   4.747 2.07e-06 ***
+#> speed50      -1.2046     0.4147  -2.905  0.00367 ** 
+#> ln(eta)       0.7664     1.9623   0.391  0.69611    
+#> 
+#> Copula:
+#>                  Estimate Std. Error z value Pr(>|z|)
+#> copula:ln(theta)  -1.3404     0.9094  -1.474    0.141
+#> 
+#> Clayton copula: theta = 0.2617, Kendall's tau = 0.116 (SE 0.093)
+#> 
+#> Log-likelihood: -1246.3437  AIC: 2510.6874  BIC: 2558.5123
+```
+
+[`summary()`](https://rdrr.io/r/base/summary.html) reports the copula
+parameter and its Kendall’s tau. With counts, this tau describes the
+copula, not the rank correlation of the counts themselves, which is
+weaker when the counts are small.
+
+Here the copulas barely change the fit, while the MVPLN of section 5
+fits much better:
+
+``` r
+
+fams <- c(pdo = "NB2", injury = "PIG")
+f <- cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength)
+cop <- lapply(c("gaussian", "frank", "clayton", "gumbel"), function(cf)
+  countreg_mv(f, data = w, family = fams, copula = cf))
+round(c(independent = AIC(m), gaussian = AIC(cop[[1]]),
+        frank = AIC(cop[[2]]), clayton = AIC(cop[[3]]),
+        gumbel = AIC(cop[[4]]), MVPLN = AIC(mr)))
+#> independent    gaussian       frank     clayton      gumbel       MVPLN 
+#>        2510        2511        2511        2511        2512        2473
+```
+
+The two models describe different dependence. The copula links the two
+counts of the same segment-year; the random intercepts of the MVPLN are
+shared by a segment’s three years, so it also captures that some
+segments have more crashes of both kinds year after year. In these data
+the dependence is mostly of the second kind. A copula suits outcomes
+measured once per unit, or dependence within a period; random parameters
+suit repeated observations of the same units. The two cannot yet be
+combined in
+[`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md).
+
+All parameters of a copula model are estimated together by maximum
+likelihood (started from the separate equations and the best copula
+parameter for them), with a numerical gradient.
+[`predict()`](https://rdrr.io/r/stats/predict.html) gives joint and
+conditional probabilities from the copula, and
+[`simulate()`](https://rdrr.io/r/stats/simulate.html) draws the outcomes
+from it.

@@ -71,6 +71,7 @@ mean formula and distribution-parameter formulas.</p>
 <span>  correlation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"across"</span>, <span class="st">"within"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  rpar_draws <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  copula <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"gaussian"</span>, <span class="st">"frank"</span>, <span class="st">"clayton"</span>, <span class="st">"gumbel"</span><span class="op">)</span>,</span>
 <span>  .setup_only <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -164,6 +165,12 @@ shifted Halton points, a separate block and shift for each unit).</p></dd>
 so predictions use the same draws); random by default.</p></dd>
 
 
+<dt id="arg-copula">copula<a class="anchor" aria-label="anchor" href="#arg-copula"></a></dt>
+<dd><p><code>"none"</code> (default), or a copula that joins the outcomes'
+distributions: <code>"gaussian"</code> (two outcomes), <code>"frank"</code>, <code>"clayton"</code> or
+<code>"gumbel"</code>. See Details.</p></dd>
+
+
 <dt id="arg--setup-only">.setup_only<a class="anchor" aria-label="anchor" href="#arg--setup-only"></a></dt>
 <dd><p>internal use: return the model setup without fitting.</p></dd>
 
@@ -204,16 +211,48 @@ gradients; the elements of \(L\) are reported as <code>sd:</code> and <code>chol
 and <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> shows the implied standard deviations and correlations.
 <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> gives joint and conditional probabilities of the outcomes,
 and Empirical Bayes predictions for units in the estimation data.</p>
+<p><strong>Copulas.</strong> A copula joins the outcomes' own distributions, each with
+its family, into one joint distribution:
+\(P(Y_1 \le y_1, \dots, Y_J \le y_J) = C(F_1(y_1), \dots,
+F_J(y_J); \theta)\). For counts, the probability of the observed
+combination is the exact volume of the copula over the rectangle
+\([F_j(y_j - 1), F_j(y_j)]\) (the sum over its \(2^J\) corners;
+Nikoloulopoulos and Karlis 2009), not a continuous approximation such as
+the midpoint or jittering. The margins are those of the equations, so
+expected counts and each outcome's probabilities do not change; the
+copula changes the joint and conditional probabilities. The families
+differ in the shape of the dependence:</p><ul><li><p><code>"gaussian"</code>: symmetric, without tail dependence, any sign
+(<code>copula:atanh(rho)</code>); two outcomes.</p></li>
+<li><p><code>"frank"</code>: symmetric, without tail dependence; any sign for two
+outcomes (<code>copula:theta</code>), positive for more (<code>copula:ln(theta)</code>).</p></li>
+<li><p><code>"clayton"</code>: positive, stronger in the lower tail (joint low counts;
+<code>copula:ln(theta)</code>).</p></li>
+<li><p><code>"gumbel"</code>: positive, stronger in the upper tail (joint high counts;
+<code>copula:ln(theta - 1)</code>).</p></li>
+</ul><p>All parameters are estimated together by maximum likelihood, started
+from the separate equations and the copula parameter that is best for
+them (inference functions for margins); the gradient is numerical.
+<code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports the copula parameter and its Kendall's tau. With
+counts, the copula is not unique outside the range of the margins
+(Genest and Neslehova 2007): its parameter describes this model's
+dependence, and the tau is that of the copula, not the rank correlation
+of the counts, which is weaker for small counts. Copulas cannot yet be
+combined with <code>rpar_formula</code>.</p>
 <p>Different outcomes often need different families: frequent property
 damage crashes may be close to NB2, while rare fatal crashes are more
 skewed and zero-heavy. Each equation can use any family of the package.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Ma, J., Kockelman, K. M., and Damien, P. (2008). A multivariate
+    <p>Genest, C., and Neslehova, J. (2007). A primer on copulas for count
+data. <em>ASTIN Bulletin</em>, 37(2), 475-515.</p>
+<p>Ma, J., Kockelman, K. M., and Damien, P. (2008). A multivariate
 Poisson-lognormal regression model for prediction of crash counts by
 severity, using Bayesian methods. <em>Accident Analysis and Prevention</em>,
 40(3), 964-975.</p>
+<p>Nikoloulopoulos, A. K., and Karlis, D. (2009). Modeling multivariate
+count data using copulas. <em>Communications in Statistics - Simulation and
+Computation</em>, 39(1), 172-187.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

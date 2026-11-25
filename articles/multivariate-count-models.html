@@ -329,8 +329,111 @@ the marginal ones.</p>
 <span><span class="co">#&gt; [1,] 0.779  0.030 0.539  0.024</span></span>
 <span><span class="co">#&gt; [2,] 0.775  0.030 0.536  0.024</span></span>
 <span><span class="co">#&gt; [3,] 0.818  0.031 0.566  0.025</span></span></code></pre></div>
-<p>Copula models, which join the outcomes’ distributions directly, are
-planned.</p>
+</div>
+<div class="section level2">
+<h2 id="copulas">7. Copulas<a class="anchor" aria-label="anchor" href="#copulas"></a>
+</h2>
+<p>A copula joins the outcomes’ own distributions into one joint
+distribution, so each outcome keeps its family and its expected
+counts:</p>
+<p><span class="math display">\[
+P(Y_1 \le y_1, Y_2 \le y_2) = C\big(F_1(y_1), F_2(y_2); \theta\big).
+\]</span></p>
+<p>For counts, the probability of the observed pair is the exact volume
+of the copula over the rectangle <span class="math inline">\([F_1(y_1 -
+1), F_1(y_1)] \times
+[F_2(y_2 - 1), F_2(y_2)]\)</span>, the sum of four copula values (of
+<span class="math inline">\(2^J\)</span> with <span class="math inline">\(J\)</span> outcomes). The copula families differ
+in the shape of the dependence:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th><code>copula</code></th>
+<th>dependence</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"gaussian"</code></td>
+<td>symmetric, any sign, no tail dependence (two outcomes)</td>
+</tr>
+<tr class="even">
+<td><code>"frank"</code></td>
+<td>symmetric, no tail dependence; any sign for two outcomes</td>
+</tr>
+<tr class="odd">
+<td><code>"clayton"</code></td>
+<td>positive, strongest for joint low counts</td>
+</tr>
+<tr class="even">
+<td><code>"gumbel"</code></td>
+<td>positive, strongest for joint high counts</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">mc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_mv.html">countreg_mv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pdo</span>, <span class="va">injury</span><span class="op">)</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span>,</span>
+<span>                  data <span class="op">=</span> <span class="va">w</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>pdo <span class="op">=</span> <span class="st">"NB2"</span>, injury <span class="op">=</span> <span class="st">"PIG"</span><span class="op">)</span>,</span>
+<span>                  copula <span class="op">=</span> <span class="st">"clayton"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mc</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Multivariate count model</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Rows:        1501 </span></span>
+<span><span class="co">#&gt; Std. errors: normal </span></span>
+<span><span class="co">#&gt; Dependence:   Clayton copula</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; pdo (NB2):</span></span>
+<span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span><span class="co">#&gt; (Intercept) -9.42689    0.47920 -19.672  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; lnaadt       1.17442    0.05493  21.382  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; speed50     -0.51195    0.11434  -4.477 7.56e-06 ***</span></span>
+<span><span class="co">#&gt; ln(alpha)   -0.85167    0.23000  -3.703 0.000213 ***</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; injury (PIG):</span></span>
+<span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
+<span><span class="co">#&gt; (Intercept)  -7.4273     1.1821  -6.283 3.32e-10 ***</span></span>
+<span><span class="co">#&gt; lnaadt        0.6683     0.1408   4.747 2.07e-06 ***</span></span>
+<span><span class="co">#&gt; speed50      -1.2046     0.4147  -2.905  0.00367 ** </span></span>
+<span><span class="co">#&gt; ln(eta)       0.7664     1.9623   0.391  0.69611    </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Copula:</span></span>
+<span><span class="co">#&gt;                  Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span><span class="co">#&gt; copula:ln(theta)  -1.3404     0.9094  -1.474    0.141</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Clayton copula: theta = 0.2617, Kendall's tau = 0.116 (SE 0.093)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Log-likelihood: -1246.3437  AIC: 2510.6874  BIC: 2558.5123</span></span></code></pre></div>
+<p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports the copula parameter and its Kendall’s
+tau. With counts, this tau describes the copula, not the rank
+correlation of the counts themselves, which is weaker when the counts
+are small.</p>
+<p>Here the copulas barely change the fit, while the MVPLN of section 5
+fits much better:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fams</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>pdo <span class="op">=</span> <span class="st">"NB2"</span>, injury <span class="op">=</span> <span class="st">"PIG"</span><span class="op">)</span></span>
+<span><span class="va">f</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pdo</span>, <span class="va">injury</span><span class="op">)</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span></span>
+<span><span class="va">cop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gaussian"</span>, <span class="st">"frank"</span>, <span class="st">"clayton"</span>, <span class="st">"gumbel"</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">cf</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/countreg_mv.html">countreg_mv</a></span><span class="op">(</span><span class="va">f</span>, data <span class="op">=</span> <span class="va">w</span>, family <span class="op">=</span> <span class="va">fams</span>, copula <span class="op">=</span> <span class="va">cf</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>independent <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span>, gaussian <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">cop</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>        frank <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">cop</span><span class="op">[[</span><span class="fl">2</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, clayton <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">cop</span><span class="op">[[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>        gumbel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">cop</span><span class="op">[[</span><span class="fl">4</span><span class="op">]</span><span class="op">]</span><span class="op">)</span>, MVPLN <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">mr</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; independent    gaussian       frank     clayton      gumbel       MVPLN </span></span>
+<span><span class="co">#&gt;        2510        2511        2511        2511        2512        2473</span></span></code></pre></div>
+<p>The two models describe different dependence. The copula links the
+two counts of the same segment-year; the random intercepts of the MVPLN
+are shared by a segment’s three years, so it also captures that some
+segments have more crashes of both kinds year after year. In these data
+the dependence is mostly of the second kind. A copula suits outcomes
+measured once per unit, or dependence within a period; random parameters
+suit repeated observations of the same units. The two cannot yet be
+combined in <code><a href="../reference/countreg_mv.html">countreg_mv()</a></code>.</p>
+<p>All parameters of a copula model are estimated together by maximum
+likelihood (started from the separate equations and the best copula
+parameter for them), with a numerical gradient. <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>
+gives joint and conditional probabilities from the copula, and
+<code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code> draws the outcomes from it.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

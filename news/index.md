@@ -101,6 +101,24 @@
   parameters for each unit;
   [`summary()`](https://rdrr.io/r/base/summary.html) shows the standard
   deviations and correlations.
+- [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  has copulas (`copula = "gaussian"` for two outcomes, `"frank"`,
+  `"clayton"` or `"gumbel"` for any number) that join the outcomes’ own
+  distributions. The likelihood is the exact probability of the observed
+  counts (the copula’s volume over the rectangle of each count, summed
+  over the 2^J corners), not a midpoint or jittered approximation, and
+  all parameters are estimated together, started from the separate
+  equations (inference functions for margins). The Gaussian copula uses
+  an exact bivariate normal distribution function (the algorithm of
+  Genz, accurate to about 1e-15).
+  [`summary()`](https://rdrr.io/r/base/summary.html) reports the copula
+  parameter and its Kendall’s tau,
+  [`predict()`](https://rdrr.io/r/stats/predict.html) gives joint and
+  conditional probabilities from the copula, and
+  [`simulate()`](https://rdrr.io/r/stats/simulate.html) draws from it.
+  Checked against numerical integration, the probabilities’ sums and
+  margins, independence limits, and recovery of the dependence of every
+  family.
 - Random-parameter standard deviations (the diagonal of the Cholesky
   factor) of
   [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)

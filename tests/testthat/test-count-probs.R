@@ -184,3 +184,52 @@ test_that("margEffTable() gives effects on each allocation category", {
                tolerance = 1e-4)
   expect_error(margEffTable(m, se = "bootstrap"), "several outcomes")
 })
+
+test_that("rootogram() gives one rootogram per outcome of countreg_mv()", {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off())
+  for (nm in c("mv", "mv_rp")) {
+    m <- cp_m[[nm]]
+    r <- rootogram(m, overflow = TRUE)
+    expect_named(r, c("c1", "c2"))
+    P <- predict(m, type = "prob")
+    for (o in names(r)) {
+      expect_s3_class(r[[o]], "flexCountReg_rootogram")
+      k <- r[[o]]$count[-nrow(r[[o]])]
+      expect_equal(r[[o]]$observed[-nrow(r[[o]])],
+                   as.vector(table(factor(cp_d[[o]], levels = k))))
+      expect_equal(r[[o]]$expected[-nrow(r[[o]])],
+                   unname(colSums(P[[o]])))
+      expect_equal(sum(r[[o]]$expected), nrow(cp_d))
+    }
+  }
+  m <- cp_m$mv
+  expect_equal(graphics::par("mfrow"), c(1, 1))   # restored
+  expect_equal(rootogram(m, outcome = "c2", plot = FALSE, overflow = TRUE),
+               rootogram(m, plot = FALSE, overflow = TRUE)$c2)
+  r <- rootogram(m, max_count = c(c2 = 2, c1 = 1), plot = FALSE)
+  expect_equal(vapply(r, nrow, 1L), c(c1 = 2L, c2 = 3L))
+  # As the separate model of that outcome
+  s <- countreg(c2 ~ lnaadt, cp_d, method = "BFGS")
+  expect_equal(r$c2$expected, rootogram(s, max_count = 2,
+                                        plot = FALSE)$expected,
+               tolerance = 1e-3)
+  # New data, and frequency weights
+  nd <- cp_d[1:60, ]
+  expect_equal(sum(rootogram(m, nd, plot = FALSE, overflow = TRUE)$c1$observed),
+               60)
+  expect_error(rootogram(m, nd[c("c1", "lnaadt")], plot = FALSE), "c2")
+  w <- rep(1:2, length.out = nrow(cp_d))
+  mw <- q_(countreg_mv(cbind(c1, c2) ~ lnaadt, cp_d, weights = w))
+  expect_equal(sum(rootogram(mw, plot = FALSE)$c1$observed), sum(w))
+  expect_error(rootogram(m, outcome = "zz"), "among")
+  expect_error(rootogram(m, max_count = c(c1 = 1), plot = FALSE), "c2")
+  expect_error(rootogram(m, main = letters[1:3]), "one per outcome")
+  expect_error(rootogram(cp_m$alloc), "countreg_alloc")
+  expect_error(rootogram(cp_m$countreg, outcome = "c1"), "countreg_mv")
+  # A layout set by the user is used, not replaced
+  op <- graphics::par(mfrow = c(1, 2))
+  rootogram(m, main = c("A", "B"))
+  expect_equal(graphics::par("mfrow"), c(1, 2))
+  graphics::par(op)
+})

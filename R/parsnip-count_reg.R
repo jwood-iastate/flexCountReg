@@ -505,24 +505,30 @@ count_reg_predict <- function(object, new_data, ...,
 #' @method update flexCountReg
 #' @export
 update.flexCountReg <- function(object, formula., ..., evaluate = TRUE) {
-  # (formula. is checked with missing() before being forwarded)
-  if (is.null(object$parsnip)) {
-    call <- if (missing(formula.)) {
-      stats::update.default(object, ..., evaluate = FALSE)
-    } else stats::update.default(object, formula., ..., evaluate = FALSE)
-    return(if (evaluate) eval(call, parent.frame()) else call)
-  }
+  # As update.default(), with its own match.call(): forwarding `...` to it
+  # would store the arguments as ..1, ..2 in the call
   call <- object$call
-  extras <- match.call(expand.dots = FALSE)$...
-  if (!missing(formula.)) {
-    call$formula <- stats::update(call$formula, formula.)
+  if (is.null(call)) {
+    stop("The model has no stored call, so it cannot be updated.",
+         call. = FALSE)
   }
+  extras <- match.call(expand.dots = FALSE)$...
+  from_parsnip <- !is.null(object$parsnip)
+  if (!missing(formula.)) {
+    old <- if (from_parsnip) call$formula else stats::formula(object)
+    call$formula <- stats::update(old, formula.)
+  }
+  # An argument set to NULL is removed from the call
   for (nm in names(extras)) call[[nm]] <- extras[[nm]]
-  if ("data" %in% names(extras) && !"weights" %in% names(extras)) {
+  if (from_parsnip && "data" %in% names(extras) &&
+      !"weights" %in% names(extras)) {
     call$weights <- NULL
   }
   if (!evaluate) return(call)
-  .fcr_update_parsnip(object, call, parent.frame())
+  if (from_parsnip) {
+    return(.fcr_update_parsnip(object, call, parent.frame()))
+  }
+  eval(call, parent.frame())
 }
 
 #' @rdname update.flexCountReg

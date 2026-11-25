@@ -114,6 +114,14 @@ lapply(predict(m, newdata = nd, type = "prob", max_count = 3), round, 3)
 `tidy()` has an `outcome` column, and `residuals()`, `fitted()`,
 `confint()` and `glance()` work as for other models.
 
+`rootogram()` compares the observed counts of each outcome with its own fitted
+distribution, one plot per outcome (`outcome` selects some of them). It
+checks the marginal distributions, not the dependence between the outcomes:
+
+```{r rootogram, fig.width = 7, fig.height = 3.8}
+rootogram(m)
+```
+
 ## 5. Correlated outcomes
 
 The counts of different severity levels at a site are usually correlated:

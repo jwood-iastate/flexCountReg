@@ -198,8 +198,8 @@ computer.
   `check_count_family()` tests it numerically. See
   `vignette("user-defined-count-distributions", package = "flexCountReg")`.
 - `count_reg()` is a [parsnip](https://parsnip.tidymodels.org/) model
-  specification with every estimator of the package as an engine, for use
-  with tidymodels workflows, resampling and tuning (see
+  specification with every estimator of the package as an engine, for
+  use with tidymodels workflows, resampling and tuning (see
   `vignette("tidymodels", package = "flexCountReg")`).
 
 **Working with Fitted Models**
@@ -209,10 +209,11 @@ computer.
 - `predict()` gives expected counts (one per row of `newdata`, `NA` for
   incomplete rows), the probabilities of any set of counts, and the
   components of underreporting and zero models. For every estimator
-  except `countreg_fe()` it also gives confidence intervals for the expected count and prediction intervals
-  for a new count (`interval = "confidence"` or `"prediction"`). For
-  random parameters models it offers exact, simulated and Empirical
-  Bayes (`"Individual"`) predictions.
+  except `countreg_fe()` it also gives confidence intervals for the
+  expected count and prediction intervals for a new count
+  (`interval = "confidence"` or `"prediction"`). For random parameters
+  models it offers exact, simulated and Empirical Bayes (`"Individual"`)
+  predictions.
 - `tolerance_interval()` gives content tolerance intervals for
   `countreg()` models: count ranges intended to contain at least a
   stated share of the outcome distribution with a stated confidence.

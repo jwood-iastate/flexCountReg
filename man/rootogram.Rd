@@ -14,12 +14,14 @@ rootogram(
   main = NULL,
   xlab = "Count",
   ylab = "sqrt(Frequency)",
+  outcome = NULL,
   ...
 )
 }
 \arguments{
-\item{object}{a fitted model with one outcome (any estimator except
-\code{countreg_alloc()} and \code{countreg_mv()}).}
+\item{object}{a fitted model of any estimator except
+\code{countreg_alloc()}. For a multivariate model
+(\code{countreg_mv()}), one rootogram is made for each outcome.}
 
 \item{newdata}{optional data (with the outcome) to evaluate the model on;
 defaults to the rows used in estimation.
@@ -29,7 +31,8 @@ row with its frequency weight.}
 \item{max_count}{the largest count shown. Defaults to the largest observed
 count. The cutoff only limits the display: the expected frequency of
 each shown count sums the fitted probabilities of every row, including
-rows whose outcome is above \code{max_count}.}
+rows whose outcome is above \code{max_count}. For a multivariate
+model, one number for every outcome or a vector named by outcome.}
 
 \item{style}{\code{"hanging"} (bars hang from the expected curve) or
 \code{"standing"} (bars stand on zero).}
@@ -41,7 +44,11 @@ negligible, under the plot.}
 
 \item{plot}{logical; draw the plot?}
 
-\item{main, xlab, ylab}{plot labels.}
+\item{main, xlab, ylab}{plot labels. For a multivariate model, \code{main}
+can have one title per outcome.}
+
+\item{outcome}{for \code{countreg_mv()} models: the name(s) of the
+outcomes to show (default: all).}
 
 \item{...}{further arguments passed to \code{\link[graphics]{plot}}.}
 }
@@ -53,6 +60,9 @@ Invisibly, a data frame with columns \code{count},
 Attribute \code{"tail"} holds the observed and expected frequencies of
 \code{Y > max_count}. Rows with non-finite fitted means or probabilities are
 left out of both frequencies, with a warning.
+
+For a multivariate model, a list of these data frames named by outcome
+(the data frame itself when \code{outcome} names a single one).
 }
 \description{
 Compares observed and expected count frequencies on a square-root scale
@@ -61,6 +71,13 @@ frequency of a count, hanging from the curve of the square root of its
 expected frequency under the fitted model, so bars that end above or below
 zero show counts that the model over- or under-predicts. Rootograms are a
 standard way to compare the count distributions this package offers.
+}
+\details{
+The rootogram of an outcome of a multivariate model compares its observed
+counts with its own (marginal) fitted distribution, with any random
+parameters integrated out; it does not assess the dependence between the
+outcomes. The plots are drawn side by side when the graphics device shows
+a single plot, and otherwise fill the layout set with \code{par(mfrow)}.
 }
 \examples{
 \donttest{
@@ -74,6 +91,12 @@ oldpar <- par(mfrow = c(1, 2))
 rootogram(pois, main = "Poisson")
 rootogram(nb2, main = "NB2")
 par(oldpar)
+
+# One rootogram per outcome of a multivariate model
+mv <- countreg_mv(cbind(Animal, Rollover) ~ lnaadt + lnlength,
+                  data = washington_roads)
+rootogram(mv)
+rootogram(mv, outcome = "Animal")
 }
 }
 \references{

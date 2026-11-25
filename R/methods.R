@@ -40,8 +40,17 @@
 #'
 #' \code{fitted()} and \code{residuals()} are for the rows used in
 #' estimation (rows with missing values are not included). \code{simulate()}
-#' draws new responses from the fitted distribution for the same rows; it is
-#' available for \code{countreg()} models.
+#' draws new responses from the fitted model for the same rows, for
+#' parametric bootstrapping. Every simulation draws the model's random terms
+#' anew: for \code{countreg_rp()}, each unit's random coefficients (one draw
+#' per panel of \code{group_var}, or per row); for \code{renb()},
+#' \code{repois()}, \code{poislind_re()} and \code{negmultinom()}, each
+#' panel's random effect (beta, gamma, Lindley or gamma frailty); for
+#' \code{countreg_fe()}, the counts given the estimated fixed effects (groups
+#' left out of estimation keep their fitted values: zeros for all-zero
+#' groups, the observed count for single observations). The estimators with
+#' their own methods (\code{countreg_hier()}, \code{countreg_mix()},
+#' \code{countreg_alloc()}, \code{countreg_mv()}) simulate in the same way.
 #'
 #' @returns \code{coef()}: named numeric vector. \code{vcov()}: matrix.
 #'   \code{logLik()}: an object of class \code{logLik}. \code{nobs()}:
@@ -193,8 +202,11 @@ residuals.flexCountReg <- function(object,
 #' @importFrom stats simulate
 #' @export
 simulate.flexCountReg <- function(object, nsim = 1, seed = NULL, ...) {
-  if (!inherits(object, "countreg")) {
-    stop("simulate() is available for countreg() models.", call. = FALSE)
+  modtype <- object$model$modelType %||% "countreg"
+  if (!inherits(object, "countreg") &&
+      !modtype %in% c("countreg.rp", "RENB", "REPoisson", "poisLindRE",
+                      "NegMultinom", "countreg_fe")) {
+    stop("simulate() is not available for this model.", call. = FALSE)
   }
   if (!is.null(seed)) {
     # Reproducible with `seed`, without changing the caller's random-number
@@ -207,6 +219,26 @@ simulate.flexCountReg <- function(object, nsim = 1, seed = NULL, ...) {
   }
   rng_state <- if (exists(".Random.seed", envir = globalenv()))
     get(".Random.seed", envir = globalenv())
+  if (!inherits(object, "countreg")) {
+    # Random parameters, random effects and fixed effects: each simulation
+    # draws every unit's random terms anew (see R/simulate_models.R)
+    d <- .fcr_training_rows(object)
+    if (!is.null(object$model$cre) &&
+        modtype %in% c("countreg.rp", "NegMultinom")) {
+      d <- .fcr_cre_newdata(object$model$cre, d)
+    }
+    gen <- switch(modtype,
+      countreg.rp = .fcr_sim_rp(object, d),
+      RENB = .fcr_sim_renb(object, d),
+      REPoisson = .fcr_sim_repois(object, d),
+      poisLindRE = .fcr_sim_poislind(object, d),
+      NegMultinom = .fcr_sim_negmultinom(object, d),
+      countreg_fe = .fcr_sim_fe(object, d))
+    out <- as.data.frame(lapply(seq_len(nsim), function(i) as.numeric(gen())))
+    names(out) <- paste0("sim_", seq_len(nsim))
+    attr(out, "seed") <- rng_state
+    return(out)
+  }
   parts <- .fcr_countreg_parts(object, .fcr_training_rows(object))
   n <- length(parts$mu_link)
   draw <- function(idx) {

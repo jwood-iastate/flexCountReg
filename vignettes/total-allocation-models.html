@@ -476,15 +476,15 @@ expected count <em>given</em> at least one crash.</p>
 gives the expected total:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> w[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">50</span>, <span class="dv">200</span>), ]</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">predict</span>(m, <span class="at">newdata =</span> nd)</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;           pdo     injury        fatal</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; 1   0.7667519 0.02801566 0.0014201332</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 50  0.1031854 0.01093792 0.0009719956</span></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 200 0.7648239 0.04933585 0.0033316044</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;        pdo  injury    fatal</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; 1   0.7668 0.02802 0.001420</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co">#&gt; 50  0.1032 0.01094 0.000972</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co">#&gt; 200 0.7648 0.04934 0.003332</span></span>
 <span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">predict</span>(m, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>)</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;           pdo     injury       fatal</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1   0.9630291 0.03518726 0.001783666</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 50  0.8965213 0.09503359 0.008445140</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; 200 0.9355743 0.06035031 0.004075400</span></span></code></pre></div>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;        pdo  injury    fatal</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; 1   0.9630 0.03519 0.001784</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt; 50  0.8965 0.09503 0.008445</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; 200 0.9356 0.06035 0.004075</span></span></code></pre></div>
 <p><code>simulate()</code> draws new category counts: a total from the
 count model, then its split from the multinomial distribution.</p>
 </div>
@@ -498,9 +498,9 @@ differently from the extremes:</p>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>                     <span class="at">threshold_formula =</span> <span class="sc">~</span> speed50, <span class="at">data =</span> w,</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>                     <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>)</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">AIC</span>(m, mg)</span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;    df      AIC</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; m   8 2567.414</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; mg  9 2568.491</span></span></code></pre></div>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt;    df  AIC</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; m   8 2567</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; mg  9 2568</span></span></code></pre></div>
 </div>
 <div id="unordered-categories-counts-by-crash-type" class="section level2">
 <h2>5. Unordered categories: counts by crash type</h2>
@@ -561,15 +561,15 @@ share of them are rollovers. The animal-crash share falls with traffic
 too, but that evidence is weak (p about 0.06). The predicted
 probabilities are the expected shares of each type:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">predict</span>(mty, <span class="at">newdata =</span> nd, <span class="at">type =</span> <span class="st">&quot;prob&quot;</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;          other    Animal   Rollover</span></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1,] 0.8805247 0.0990260 0.02044926</span></span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7751093 0.1526090 0.07228169</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [3,] 0.8777534 0.1041112 0.01813543</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;       other  Animal Rollover</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; [1,] 0.8805 0.09903  0.02045</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [2,] 0.7751 0.15261  0.07228</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; [3,] 0.8778 0.10411  0.01814</span></span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="fu">predict</span>(mty, <span class="at">newdata =</span> nd)</span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;           other     Animal    Rollover</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; [1,] 0.70105912 0.07884285 0.016281360</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [2,] 0.08921174 0.01756464 0.008319311</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; [3,] 0.71755344 0.08510973 0.014825506</span></span></code></pre></div>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;        other  Animal Rollover</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; [1,] 0.70106 0.07884 0.016281</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; [2,] 0.08921 0.01756 0.008319</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; [3,] 0.71755 0.08511 0.014826</span></span></code></pre></div>
 <p>How does this compare with a separate count model for each type?</p>
 <ul>
 <li>With a <strong>Poisson</strong> total and the count model’s
@@ -616,15 +616,15 @@ version. It is a quasi-likelihood, so:</p>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>                     <span class="at">data =</span> w, <span class="at">family =</span> <span class="st">&quot;NB2&quot;</span>, <span class="at">likelihood =</span> <span class="st">&quot;fractional&quot;</span>,</span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>                     <span class="at">group_var =</span> <span class="st">&quot;ID&quot;</span>)</span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">cbind</span>(<span class="at">multinomial =</span> <span class="fu">coef</span>(m), <span class="at">fractional =</span> <span class="fu">coef</span>(mf))</span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;                        multinomial  fractional</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; (Intercept)             -8.8958570 -8.89587118</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; lnaadt                   1.1244164  1.12441836</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; speed50                 -0.5677125 -0.56771887</span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; ln(alpha)               -0.9125921 -0.91257179</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; Allocation:lnaadt       -0.2181929 -0.13393479</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Allocation:speed50      -0.4278347 -0.35836783</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; Threshold1:(Intercept)  -0.5968112  0.14842063</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; Threshold2:(Intercept)   0.1196582  0.08127466</span></span></code></pre></div>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;                        multinomial fractional</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; (Intercept)                -8.8959   -8.89587</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; lnaadt                      1.1244    1.12442</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; speed50                    -0.5677   -0.56772</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; ln(alpha)                  -0.9126   -0.91257</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; Allocation:lnaadt          -0.2182   -0.13393</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Allocation:speed50         -0.4278   -0.35837</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; Threshold1:(Intercept)     -0.5968    0.14842</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; Threshold2:(Intercept)      0.1197    0.08127</span></span></code></pre></div>
 </div>
 <div id="effects-that-change-over-time" class="section level2">
 <h2>7. Effects that change over time</h2>
@@ -675,7 +675,7 @@ random parameters, shared by its three years.
 <span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt;                                               Estimate Std. Error z value</span></span>
 <span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt; sd:Total:(Intercept)                           0.64050    0.06507   9.843</span></span>
 <span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt; chol:Allocation:(Intercept)|Total:(Intercept) -0.19673    0.10527  -1.869</span></span>
-<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; sd:Allocation:(Intercept)                     -0.11052    0.27038  -0.409</span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; sd:Allocation:(Intercept)                      0.11052    0.27038   0.409</span></span>
 <span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a><span class="co">#&gt;                                               Pr(&gt;|z|)    </span></span>
 <span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a><span class="co">#&gt; sd:Total:(Intercept)                            &lt;2e-16 ***</span></span>
 <span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a><span class="co">#&gt; chol:Allocation:(Intercept)|Total:(Intercept)   0.0617 .  </span></span>
@@ -689,9 +689,9 @@ random parameters, shared by its three years.
 <span id="cb9-46"><a href="#cb9-46" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb9-47"><a href="#cb9-47" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1252.9034  AIC: 2525.8068  BIC: 2578.9457</span></span>
 <span id="cb9-48"><a href="#cb9-48" tabindex="-1"></a><span class="fu">AIC</span>(m, mr)</span>
-<span id="cb9-49"><a href="#cb9-49" tabindex="-1"></a><span class="co">#&gt;    df      AIC</span></span>
-<span id="cb9-50"><a href="#cb9-50" tabindex="-1"></a><span class="co">#&gt; m   8 2567.414</span></span>
-<span id="cb9-51"><a href="#cb9-51" tabindex="-1"></a><span class="co">#&gt; mr 10 2525.807</span></span></code></pre></div>
+<span id="cb9-49"><a href="#cb9-49" tabindex="-1"></a><span class="co">#&gt;    df  AIC</span></span>
+<span id="cb9-50"><a href="#cb9-50" tabindex="-1"></a><span class="co">#&gt; m   8 2567</span></span>
+<span id="cb9-51"><a href="#cb9-51" tabindex="-1"></a><span class="co">#&gt; mr 10 2526</span></span></code></pre></div>
 <p>The random intercepts fit much better than the NB2 model without
 them. The segment effect on the total (a Poisson-lognormal total) takes
 over the role of the NB2 overdispersion. The negative correlation says
@@ -703,7 +703,11 @@ shifted Halton points), with analytic gradients.
 <code>rpar_threshold</code> adds a random term to the gaps between
 thresholds, which changes the share of the middle categories. Random
 slopes are more terms in the same formulas, such as
-<code>rpar_total = ~ 1 + lnaadt</code>.</p>
+<code>rpar_total = ~ 1 + lnaadt</code>. With random parameters,
+<code>weights</code> are frequency weights of the segments, so they must
+be the same for all years of a segment. A truncated total is truncated
+given the segment’s random parameters, and
+<code>type = &quot;total_positive&quot;</code> averages <span class="math inline">\(E(c \mid b) / (1 - P_0(b))\)</span> over them.</p>
 <p>Predictions for a new segment average over the random parameters
 (<code>random = &quot;marginal&quot;</code>, the default). For a segment in the
 estimation data, <code>random = &quot;posterior&quot;</code> uses its own crash
@@ -712,9 +716,9 @@ history (Empirical Bayes):</p>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="fu">round</span>(<span class="fu">cbind</span>(<span class="fu">predict</span>(mr, <span class="at">newdata =</span> nd),</span>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>            <span class="fu">predict</span>(mr, <span class="at">newdata =</span> nd, <span class="at">random =</span> <span class="st">&quot;posterior&quot;</span>)), <span class="dv">3</span>)</span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt;        pdo injury fatal   pdo injury fatal</span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1    0.754  0.028 0.001 0.535  0.025 0.001</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 502  0.750  0.028 0.001 0.532  0.025 0.001</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; 1002 0.791  0.029 0.001 0.561  0.026 0.001</span></span></code></pre></div>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; 1    0.776  0.028 0.001 0.535  0.025 0.001</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; 502  0.771  0.028 0.001 0.532  0.025 0.001</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; 1002 0.813  0.029 0.001 0.561  0.026 0.001</span></span></code></pre></div>
 </div>
 <div id="a-shared-site-year-term" class="section level2">
 <h2>9. A shared site-year term</h2>
@@ -772,9 +776,9 @@ gives the same model, so only their relative sign is identified.</p>
 <span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a><span class="co">#&gt; Log-likelihood: -1274.4689  AIC: 2566.9378  BIC: 2614.7627</span></span>
 <span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a><span class="fu">AIC</span>(m, ms)</span>
-<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a><span class="co">#&gt;    df      AIC</span></span>
-<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a><span class="co">#&gt; m   8 2567.414</span></span>
-<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co">#&gt; ms  9 2566.938</span></span></code></pre></div>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a><span class="co">#&gt;    df  AIC</span></span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a><span class="co">#&gt; m   8 2567</span></span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co">#&gt; ms  9 2567</span></span></code></pre></div>
 <p>The loading in the total plays the role of the NB2 overdispersion (a
 Poisson total with this term alone is the Poisson-lognormal model), and
 the fit is as good as the NB2 model. The loading in the propensity has

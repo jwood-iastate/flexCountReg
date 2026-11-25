@@ -498,6 +498,11 @@ a constant effect, a linear trend and a flexible path:</p>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; 1 mean lnaadt Year smooth   2016 1.129769 0.05189659 1.028053  1.231484</span></span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; 2 mean lnaadt Year smooth   2017 1.124881 0.05141355 1.024112  1.225650</span></span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co">#&gt; 3 mean lnaadt Year smooth   2018 1.119993 0.05174021 1.018584  1.221402</span></span></code></pre></div>
+<p>Any mgcv basis can be used (for example <code>bs = &quot;cr&quot;</code>); the
+effects are reported at the years of the estimation data. Smooths of
+time written directly with <code>s()</code> are ordinary smooth terms,
+not time-varying effects, and <code>temporal_effects()</code> leaves
+them out.</p>
 </div>
 </div>
 <div id="time-varying-intercepts-and-distribution-parameters" class="section level2">
@@ -562,6 +567,15 @@ year in a random-parameters model:</p>
 <code>temporal_effects()</code> then reports the year effects of the
 random parameters’ means, and each basis column has its own standard
 deviation.</p>
+<p>In the multivariate models of <code>countreg_mv()</code>,
+<code>tv()</code> terms can differ by outcome, and
+<code>temporal_effects()</code> and <code>temporal_tests()</code> add a
+column <code>outcome</code>.</p>
+<p>A <code>tv()</code> term inside an interaction, such as
+<code>tv(lnaadt, time = Year):speed50</code>, is not summarized by
+<code>temporal_effects()</code> (it warns). Put the product inside
+<code>tv()</code> instead:
+<code>tv(lnaadt * speed50, time = Year)</code>.</p>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>

@@ -13,7 +13,8 @@
   distribution of a count of a new unit, with its random terms integrated out
   (`countreg_fe()`: given the estimated group effect; `countreg_hier()`: given
   the estimated effects, or marginal with `marginal = TRUE`). `rootogram()`
-  works for these models too.
+  works for these models too, and for `countreg_mv()` draws one rootogram per
+  outcome (`outcome` selects some of them).
 * `countreg_alloc()`: `type = "total_prob"` and `"count_prob"` give the count
   probabilities of the total and of each category.
 * Confidence and prediction intervals (`interval =`) for every estimator except

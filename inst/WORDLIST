@@ -57,12 +57,12 @@ Fasiolo
 Fellner
 FlexMix
 GAMMACOUNT
-Genest
-Genz
 GSL
 GW
 Gayah
 Gelbach
+Genest
+Genz
 Gourieroux
 Griliches
 Grün
@@ -107,6 +107,7 @@ MCSEs
 MGF
 MGFs
 MSLE
+MVPLN
 MathJax
 McHale
 McLachlan
@@ -117,7 +118,6 @@ Multiway
 Muncy
 Mundlak
 Mundlak's
-MVPLN
 NBGE
 NBL
 NBP
@@ -141,6 +141,7 @@ PLN
 PLogN
 PMF
 PMF's
+PMFs
 Pararai
 PoC
 Poissons
@@ -215,8 +216,8 @@ concurvity
 countreg
 covariate's
 cureplots
-dcom
 dF
+dcom
 df
 dgp
 digamma
@@ -351,7 +352,6 @@ rpinvgaus
 rplind
 rplindLnorm
 rpoisweibull
-rsample
 rsichel
 rtri
 ruber

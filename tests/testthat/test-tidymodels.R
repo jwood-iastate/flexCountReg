@@ -347,3 +347,36 @@ test_that("fit_resamples_counts() evaluates every outcome", {
   expect_error(fit_resamples_counts(spec, cv), "formula")
   expect_error(fit_resamples_counts(spec, d, y ~ x), "resampling set")
 })
+
+test_that("update() keeps the arguments as they were given", {
+  d <- roads_small()
+  m <- countreg(Total_crashes ~ lnaadt, d, family = "NB2",
+                dis_param_formula_1 = ~ lnlength, method = "BFGS")
+  # NULL removes an argument (README example)
+  u <- update(m, family = "Poisson", dis_param_formula_1 = NULL)
+  expect_equal(u$model$family, "POISSON")
+  expect_false("dis_param_formula_1" %in% names(u$call))
+  cl <- update(m, family = "NB1", max.iters = 50, evaluate = FALSE)
+  expect_equal(cl$family, "NB1")
+  expect_equal(cl$max.iters, 50)
+  # Variables of the calling function
+  f <- function() {
+    fam <- "NB1"
+    dd <- d[1:300, ]
+    update(m, . ~ . + lnlength, family = fam, data = dd)
+  }
+  u <- f()
+  expect_equal(u$model$family, "NB1")
+  expect_equal(nobs(u), 300)
+  expect_true("lnlength" %in% names(coef(u)))
+  expect_false(any(grepl("^\\.\\.[0-9]", as.character(u$call))))
+  # Models with several outcomes, and models fitted by parsnip
+  a <- quiet(countreg_alloc(cbind(c1, c2) ~ lnaadt, d, family = "NB2",
+                            dis_param_formula_1 = ~ lnlength))
+  expect_equal(quiet(update(a, family = "POISSON",
+                            dis_param_formula_1 = NULL))$family, "POISSON")
+  p <- count_reg_fit(Total_crashes ~ lnaadt, d, family = "NB2",
+                     dis_param_formula_1 = ~ lnlength, method = "BFGS")
+  expect_equal(update(p, family = "POISSON",
+                      dis_param_formula_1 = NULL)$model$family, "POISSON")
+})

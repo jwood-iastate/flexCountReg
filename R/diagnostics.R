@@ -190,8 +190,9 @@
 #' zero show counts that the model over- or under-predicts. Rootograms are a
 #' standard way to compare the count distributions this package offers.
 #'
-#' @param object a fitted model with one outcome (any estimator except
-#'   \code{countreg_alloc()} and \code{countreg_mv()}).
+#' @param object a fitted model of any estimator except
+#'   \code{countreg_alloc()}. For a multivariate model
+#'   (\code{countreg_mv()}), one rootogram is made for each outcome.
 #' @param newdata optional data (with the outcome) to evaluate the model on;
 #'   defaults to the rows used in estimation.
 #'   Without \code{newdata}, the observed and expected frequencies count each
@@ -199,7 +200,8 @@
 #' @param max_count the largest count shown. Defaults to the largest observed
 #'   count. The cutoff only limits the display: the expected frequency of
 #'   each shown count sums the fitted probabilities of every row, including
-#'   rows whose outcome is above \code{max_count}.
+#'   rows whose outcome is above \code{max_count}. For a multivariate
+#'   model, one number for every outcome or a vector named by outcome.
 #' @param overflow logical; add a last bin for \code{Y > max_count}, so the
 #'   observed and expected frequencies both sum to the total. Without it,
 #'   the tail is reported in the \code{"tail"} attribute and, when it is not
@@ -207,7 +209,10 @@
 #' @param style \code{"hanging"} (bars hang from the expected curve) or
 #'   \code{"standing"} (bars stand on zero).
 #' @param plot logical; draw the plot?
-#' @param main,xlab,ylab plot labels.
+#' @param main,xlab,ylab plot labels. For a multivariate model, \code{main}
+#'   can have one title per outcome.
+#' @param outcome for \code{countreg_mv()} models: the name(s) of the
+#'   outcomes to show (default: all).
 #' @param ... further arguments passed to \code{\link[graphics]{plot}}.
 #'
 #' @returns Invisibly, a data frame with columns \code{count},
@@ -217,6 +222,16 @@
 #'   Attribute \code{"tail"} holds the observed and expected frequencies of
 #'   \code{Y > max_count}. Rows with non-finite fitted means or probabilities are
 #'   left out of both frequencies, with a warning.
+#'
+#'   For a multivariate model, a list of these data frames named by outcome
+#'   (the data frame itself when \code{outcome} names a single one).
+#'
+#' @details
+#' The rootogram of an outcome of a multivariate model compares its observed
+#' counts with its own (marginal) fitted distribution, with any random
+#' parameters integrated out; it does not assess the dependence between the
+#' outcomes. The plots are drawn side by side when the graphics device shows
+#' a single plot, and otherwise fill the layout set with \code{par(mfrow)}.
 #'
 #' @references
 #' Kleiber, C., & Zeileis, A. (2016). Visualizing count data regressions using
@@ -234,20 +249,115 @@
 #' rootogram(pois, main = "Poisson")
 #' rootogram(nb2, main = "NB2")
 #' par(oldpar)
+#'
+#' # One rootogram per outcome of a multivariate model
+#' mv <- countreg_mv(cbind(Animal, Rollover) ~ lnaadt + lnlength,
+#'                   data = washington_roads)
+#' rootogram(mv)
+#' rootogram(mv, outcome = "Animal")
 #' }
 #' @importFrom graphics plot lines points rect abline
 #' @export
 rootogram <- function(object, newdata = NULL, max_count = NULL,
                       style = c("hanging", "standing"), overflow = FALSE,
                       plot = TRUE, main = NULL, xlab = "Count",
-                      ylab = "sqrt(Frequency)", ...) {
+                      ylab = "sqrt(Frequency)", outcome = NULL, ...) {
   style <- match.arg(style)
+  if (inherits(object, "countreg_mv")) {
+    return(.fcr_mv_rootogram(object, newdata, max_count, style, overflow,
+                             plot, main, xlab, ylab, outcome, ...))
+  }
+  if (inherits(object, "countreg_alloc")) {
+    stop("rootogram() is not available for countreg_alloc() models.",
+         call. = FALSE)
+  }
+  if (!is.null(outcome)) {
+    stop("`outcome` is for countreg_mv() models.", call. = FALSE)
+  }
   d <- if (is.null(newdata)) .fcr_training_rows(object) else
     as.data.frame(newdata)
   y <- .fcr_response(object, d)
   if (is.null(y)) {
     stop("`newdata` must contain the model's outcome.", call. = FALSE)
   }
+  # Frequency weights of the training rows count each row w times
+  w <- if (is.null(newdata) && length(object$model$weights) == nrow(d))
+    object$model$weights else rep(1, nrow(d))
+  mu_hat <- suppressWarnings(stats::predict(object, newdata = d,
+                                            type = "response"))
+  if (is.null(main)) {
+    main <- paste("Rootogram:", paste(unique(object$model$family %||%
+                                                class(object)[1]),
+                                         collapse = " + "))
+  }
+  invisible(.fcr_rootogram_one(
+    y, function(mc) .fcr_prob_matrix(object, d, mc), w, mu_hat, max_count,
+    style, overflow, plot, main, xlab, ylab, ...))
+}
+
+# One rootogram per outcome of a countreg_mv() model.
+.fcr_mv_rootogram <- function(object, newdata, max_count, style, overflow,
+                              plot, main, xlab, ylab, outcome, ...) {
+  outs <- outcome %||% object$outcomes
+  bad <- setdiff(outs, object$outcomes)
+  if (length(bad) || !length(outs)) {
+    stop("`outcome` must be among ", toString(object$outcomes), ".",
+         call. = FALSE)
+  }
+  outs <- unique(outs)
+  if (!is.null(names(max_count))) {
+    miss <- setdiff(outs, names(max_count))
+    if (length(miss)) {
+      stop("`max_count` has no value for ", toString(miss), ".",
+           call. = FALSE)
+    }
+  } else if (length(max_count) > 1L) {
+    stop("`max_count` must be a single number or a vector named by outcome.",
+         call. = FALSE)
+  }
+  if (!is.null(main) && !length(main) %in% c(1L, length(outs))) {
+    stop("`main` must have one title, or one per outcome.", call. = FALSE)
+  }
+  d <- if (is.null(newdata)) object$data_used else as.data.frame(newdata)
+  w <- if (is.null(newdata) && length(object$weights) == nrow(d))
+    object$weights else rep(1, nrow(d))
+  mu <- suppressWarnings(stats::predict(object, newdata = d))
+  # The counts of every outcome, before anything is drawn
+  ys <- lapply(outs, function(o) {
+    j <- match(o, object$outcomes)
+    if (is.null(newdata)) return(as.numeric(object$y[, j]))
+    y <- .fcr_response(list(formula = object$formulas[[j]]), d)
+    if (is.null(y)) {
+      stop("`newdata` must contain the outcome ", o, ".", call. = FALSE)
+    }
+    y
+  })
+  if (plot && length(outs) > 1L && all(graphics::par("mfrow") == 1)) {
+    op <- graphics::par(mfrow = rev(grDevices::n2mfrow(length(outs))))
+    on.exit(graphics::par(op))
+  }
+  E <- .fcr_mv_design(object, d)
+  res <- lapply(seq_along(outs), function(i) {
+    j <- match(outs[i], object$outcomes)
+    pmf <- function(mc) .fcr_mv_integrate(object, E, d, function(adds)
+      .fcr_mv_pmf(object$coefficients, E$eqs[[j]], adds[[j]], 0:mc))
+    title <- if (is.null(main)) {
+      paste0("Rootogram: ", outs[i], " (",
+             .fcr_family_label(object$family[[j]]), ")")
+    } else rep_len(main, length(outs))[i]
+    mc <- if (is.null(names(max_count))) max_count else
+      max_count[[outs[i]]]
+    .fcr_rootogram_one(ys[[i]], pmf, w, mu[, j], mc, style, overflow, plot,
+                       title, xlab, ylab, ...)
+  })
+  names(res) <- outs
+  invisible(if (length(outs) == 1L) res[[1L]] else res)
+}
+
+# Observed and expected frequencies of one outcome, and its plot. `pmf(k)`
+# gives the probabilities of the counts 0..k (one row per observation).
+.fcr_rootogram_one <- function(y, pmf, w, mu_hat, max_count, style, overflow,
+                               plot, main, xlab, ylab, ...) {
   if (is.null(max_count)) max_count <- max(y, na.rm = TRUE)
   if (!is.numeric(max_count) || length(max_count) != 1L ||
       !is.finite(max_count) || max_count < 0 ||
@@ -255,16 +365,11 @@ rootogram <- function(object, newdata = NULL, max_count = NULL,
     stop("`max_count` must be a single whole number of at least 0.",
          call. = FALSE)
   }
-  P <- .fcr_prob_matrix(object, d, max_count)
-  # Frequency weights of the training rows count each row w times
-  w <- if (is.null(newdata) && length(object$model$weights) == nrow(d))
-    object$model$weights else rep(1, nrow(d))
+  P <- pmf(max_count)
   # The analysis rows: an observed outcome and finite fitted probabilities.
   # The same rows enter the observed and the expected frequencies, whatever
   # the display cutoff: a row whose outcome is above max_count still adds
   # its fitted probabilities to every displayed count.
-  mu_hat <- suppressWarnings(stats::predict(object, newdata = d,
-                                            type = "response"))
   bad_pred <- !is.na(y) & (!stats::complete.cases(P) | !is.finite(mu_hat))
   if (any(bad_pred)) {
     warning(sum(bad_pred), " row(s) with non-finite fitted means or ",
@@ -300,11 +405,6 @@ rootogram <- function(object, newdata = NULL, max_count = NULL,
     } else {
       top <- so; bottom <- rep(0, length(so))
     }
-    if (is.null(main)) {
-      main <- paste("Rootogram:", paste(unique(object$model$family %||%
-                                                  class(object)[1]),
-                                           collapse = " + "))
-    }
     graphics::plot(range(counts) + c(-0.5, 0.5),
                    range(c(0, top, bottom, se)), type = "n", main = main,
                    xlab = xlab, ylab = ylab, ...)
@@ -323,5 +423,5 @@ rootogram <- function(object, newdata = NULL, max_count = NULL,
                       side = 1, line = 4, cex = 0.8)
     }
   }
-  invisible(out)
+  out
 }

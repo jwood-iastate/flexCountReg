@@ -1,5 +1,36 @@
 # flexCountReg 0.1.2 (development)
 
+## Count probabilities and intervals for every estimator
+
+* `predict(type = "prob")` takes `counts`, the counts to evaluate (such as
+  `0:10`, `5:8` or `c(0, 1, 10)`), besides `max_count` (short for
+  `0:max_count`). Only those counts are evaluated. `underflow = TRUE` adds
+  the probability below the smallest count, as `overflow = TRUE` does above
+  the largest. `counts` also works for `countreg_mv()` (`"prob"` and
+  `"conditional"`) and the finite mixtures.
+* `type = "prob"` for `countreg_rp()`, `countreg_fe()`, `countreg_hier()`,
+  `renb()`, `repois()`, `poislind_re()` and `negmultinom()`: the marginal
+  distribution of a count of a new unit, with its random terms integrated out
+  (`countreg_fe()`: given the estimated group effect; `countreg_hier()`: given
+  the estimated effects, or marginal with `marginal = TRUE`). `rootogram()`
+  works for these models too.
+* `countreg_alloc()`: `type = "total_prob"` and `"count_prob"` give the count
+  probabilities of the total and of each category.
+* Confidence and prediction intervals (`interval =`) for every estimator except
+  `countreg_fe()`, whose group effects have no covariance matrix. Models with
+  several outcomes return a list of data frames. In a simulation with
+  10 models (150 replications, level 0.90), the confidence intervals covered
+  0.86 to 0.93 of the true means and the prediction intervals 0.94 to 0.99 of
+  new counts (discrete counts make them conservative).
+* Rows with a missing covariate have `NA` probabilities in hurdle models
+  (where P(0) was returned) and `countreg_mv()` models (where they were 0).
+* `margEffTable()` works for `countreg_alloc()` models: effects on the expected
+  count of each category and on the total, with standard errors (it averaged
+  over the categories, without standard errors).
+* New `fit_resamples_counts()`: resamples workflows or specifications with
+  several outcomes, which `tune::fit_resamples()` cannot, and computes the
+  out-of-sample log score of the count distribution for any engine.
+
 ## tidymodels
 
 * `count_reg()` has every estimator as an engine: `"flexCountReg"`
@@ -7,8 +38,8 @@
   `"countreg_fe"`, `"countreg_hier"`, `"countreg_alloc"`, `"countreg_mv"`,
   `"renb"`, `"repois"`, `"poislind_re"` and `"negmultinom"`. New article
   `vignette("tidymodels")`.
-* New prediction types: `"conf_int"` and `"pred_int"` (`"flexCountReg"`
-  engine) and `"raw"`, whose `opts` reach every option of `predict()`. The
+* New prediction types: `"conf_int"` and `"pred_int"` (all engines except
+  `"countreg_fe"`) and `"raw"`, whose `opts` reach every option of `predict()`. The
   engine argument `predict_args` sets `predict()` options for numeric
   predictions and intervals; `fit_engine` is the estimators' `engine`.
 * Tuning works: `count_reg()` had no `update()` method, so every

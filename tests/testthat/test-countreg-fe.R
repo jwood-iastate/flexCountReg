@@ -121,7 +121,7 @@ test_that("predictions, new groups and the jackknife", {
   expect_true(all(is.na(p)))
   pm <- predict(n, newdata = nd, newgroup = "mean_fe")
   expect_true(all(is.finite(pm)))
-  expect_error(predict(n, newdata = nd, type = "prob"), "response")
+  expect_error(predict(n, newdata = nd, type = "link"), "countreg")
   jk <- suppressMessages(countreg_fe(y ~ x1 + x2, fixef = ~ id, data = d,
                                      family = "NB2", jackknife = TRUE,
                                      time = "t"))

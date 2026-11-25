@@ -23,7 +23,8 @@
 omitted, the data used to fit the model (rows removed for missing
 values give \code{NA}).}
 
-\item{...}{\code{max_count} and \code{overflow} for \code{type = "prob"}.}
+\item{...}{\code{counts}, \code{max_count}, \code{overflow} and \code{underflow} for
+\code{type = "prob"}; \code{ndraws}, \code{seed} and \code{max_count} for intervals.}
 
 \item{type}{the prediction:
 \describe{
@@ -38,9 +39,10 @@ factor).}
 between components (\code{Inf} when a component with positive probability
 has infinite variance).}
 \item{\code{"prob"}}{a matrix of count probabilities
-\eqn{P(Y = y) = \sum_k \pi_k f_k(y)} for \eqn{y = 0, \dots,}
-\code{max_count} (passed in \code{...}; default the largest training count);
-\code{overflow = TRUE} adds a column with \eqn{P(Y >} \code{max_count}\eqn{)}.}
+\eqn{P(Y = y) = \sum_k \pi_k f_k(y)} for the counts \eqn{y} in
+\code{counts}, or \eqn{y = 0, \dots,} \code{max_count} (default the largest
+training count). \code{overflow = TRUE} and \code{underflow = TRUE} add columns
+with the probabilities above and below them.}
 \item{\code{"link"}}{a matrix of the component linear predictors
 \eqn{x'\beta_k} plus offset. There is no single linear predictor of
 the mixture. With random parameters (\code{rpar_formula}), it is the
@@ -91,10 +93,14 @@ prior. For panel models the membership variables must be constant
 within each panel (in \code{newdata}, in \code{history} and between the two), as
 in fitting, so the class probabilities never depend on the row order.}
 
-\item{interval}{only \code{"none"}: confidence, prediction and tolerance
-intervals are not yet available for mixture models.}
+\item{interval}{\code{"none"} (default), \code{"confidence"} (for the expected count)
+or \code{"prediction"} (for a new count), for \code{type = "response"} with
+\code{conditioning = "prior"}; see the section \emph{Intervals of other
+estimators} of \code{\link[=predict.flexCountReg]{predict.flexCountReg()}}. They use the asymptotic normal
+distribution of the estimates, which is poor when components are weakly
+separated or a mixing proportion is near 0.}
 
-\item{level}{unused (for compatibility).}
+\item{level}{the level of the interval.}
 }
 \value{
 A numeric vector (\code{"response"}, \code{"variance"}) with one value per

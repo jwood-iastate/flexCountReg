@@ -14,6 +14,11 @@
   given = NULL,
   random = c("marginal", "posterior"),
   new_data = NULL,
+  counts = NULL,
+  overflow = FALSE,
+  underflow = FALSE,
+  interval = c("none", "confidence", "prediction"),
+  level = 0.95,
   ...
 )
 }
@@ -32,7 +37,7 @@ the mean of the random parameters).}
 \item{\code{"variance"}}{the variances (including the variance from the
 random parameters).}
 \item{\code{"prob"}}{a list with one matrix per outcome of the
-probabilities of the counts \code{0:max_count}.}
+probabilities of the counts in \code{counts} (or \code{0:max_count}).}
 \item{\code{"joint"}}{the joint probability of the counts \code{y} of all
 outcomes, one value per row.}
 \item{\code{"conditional"}}{a matrix of the probabilities of the counts
@@ -41,8 +46,9 @@ outcomes, such as the probability of a fatal crash at a site given
 its injury crashes.}
 }}
 
-\item{max_count}{for \code{"prob"} and \code{"conditional"}: the largest count
-(default: the largest observed count of the outcome).}
+\item{max_count}{for \code{"prob"} and \code{"conditional"}: short for
+\code{counts = 0:max_count} (default: the largest observed count of the
+outcome). For intervals, the largest count evaluated.}
 
 \item{y}{for \code{"joint"}: the counts of every outcome, a vector named by
 outcome (the same for every row) or a matrix or data frame with one
@@ -59,7 +65,20 @@ its counts in the estimation data (Empirical Bayes; units not in the
 estimation data get the marginal prediction). \code{newdata} then needs the
 \code{group_var} column(s).}
 
-\item{...}{unused.}
+\item{counts}{for \code{"prob"} and \code{"conditional"}: the counts, such as \code{0:10}
+or \code{5:8}.}
+
+\item{overflow, underflow}{for \code{"prob"}: add columns with the probabilities
+above and below the counts.}
+
+\item{interval, level}{confidence intervals for the expected counts or
+prediction intervals for new counts of each outcome, as a list of data
+frames (\code{fit}, \code{lwr}, \code{upr}) named by outcome; see the section
+\emph{Intervals of other estimators} of \code{\link[=predict.flexCountReg]{predict.flexCountReg()}}. With random
+parameters, prediction intervals use 50 parameter draws by default and
+are slow.}
+
+\item{...}{\code{ndraws} and \code{seed} for intervals.}
 }
 \value{
 A matrix with one column per outcome (\code{"response"}, \code{"link"},

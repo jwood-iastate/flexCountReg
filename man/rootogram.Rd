@@ -18,7 +18,8 @@ rootogram(
 )
 }
 \arguments{
-\item{object}{a \code{countreg()} model.}
+\item{object}{a fitted model with one outcome (any estimator except
+\code{countreg_alloc()} and \code{countreg_mv()}).}
 
 \item{newdata}{optional data (with the outcome) to evaluate the model on;
 defaults to the rows used in estimation.

@@ -128,6 +128,7 @@ reference:
   contents:
   - count_reg
   - count_family
+  - fit_resamples_counts
 
 - title: User-defined count distributions
   desc: Define a count distribution from its log probability function and

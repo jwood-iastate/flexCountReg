@@ -7,10 +7,16 @@
 \method{predict}{countreg_alloc}(
   object,
   newdata = NULL,
-  type = c("counts", "prob", "total", "total_positive"),
+  type = c("counts", "prob", "total", "total_positive", "total_prob", "count_prob"),
   conditional = FALSE,
   random = c("marginal", "posterior"),
   new_data = NULL,
+  counts = NULL,
+  max_count = NULL,
+  overflow = FALSE,
+  underflow = FALSE,
+  interval = c("none", "confidence", "prediction"),
+  level = 0.95,
   ...
 )
 }
@@ -24,9 +30,14 @@ data by default.}
 \eqn{E[c]\,\pi_j}; \code{"prob"}: the allocation probabilities
 \eqn{\pi_j}; \code{"total"}: the expected total \eqn{E[c]};
 \code{"total_positive"}: the expected total given at least one event,
-\eqn{E[c] / (1 - P(0))}.}
+\eqn{E[c] / (1 - P(0))}; \code{"total_prob"}: a matrix of the probabilities
+of the total's counts; \code{"count_prob"}: a list with one such matrix per
+category, the total thinned by the category's probability (not for the
+fractional quasi-likelihood, which defines no distribution of the
+category counts).}
 
-\item{conditional}{for \code{type = "counts"}: \code{TRUE} gives the expected
+\item{conditional}{for the probabilities, \code{TRUE} conditions on at least one
+event; for \code{type = "counts"}: \code{TRUE} gives the expected
 counts given at least one event, \eqn{E[c \mid c > 0]\,\pi_j}. The
 default is \code{FALSE}, the unconditional expected counts, also for a fit
 with \code{truncated = TRUE} (whose estimated distribution is that of the
@@ -41,7 +52,22 @@ prediction). \code{newdata} then needs the \code{group_var} column(s). The share
 site-year term (\code{shared_formula}) is always averaged over its
 distribution, as it is new for every row.}
 
-\item{...}{unused.}
+\item{counts, max_count}{for the probabilities: the counts, such as \code{0:10}
+or \code{5:8}, or the largest one of \code{0:max_count} (default: the largest
+observed total). For intervals, \code{max_count} is the largest count
+evaluated.}
+
+\item{overflow, underflow}{add columns with the probabilities above and
+below the counts.}
+
+\item{interval, level}{confidence intervals for the expected count or
+prediction intervals for a new count: for \code{type = "counts"} a list of
+data frames (\code{fit}, \code{lwr}, \code{upr}) named by category, for
+\code{type = "total"} one data frame. See the section \emph{Intervals of other
+estimators} of \code{\link[=predict.flexCountReg]{predict.flexCountReg()}}. With random parameters,
+prediction intervals use 50 parameter draws by default and are slow.}
+
+\item{...}{\code{ndraws} and \code{seed} for intervals.}
 }
 \value{
 A matrix with one column per category (\code{"counts"}, \code{"prob"}), or

@@ -71,6 +71,10 @@
 #' observed baseline and a switched value. If `indicator = "pseudo_elasticity"`,
 #' the result is reported as a percent change relative to the baseline.
 #'
+#' For models with several outcomes there is a column \code{outcome}: the
+#' outcomes of \code{countreg_mv()}, or the categories of
+#' \code{countreg_alloc()} and their \code{"total"}.
+#'
 #' @returns A table object of the type requested by `tableType`. For
 #'   `"tibble"`, the returned object also carries an `effect_info` attribute with
 #'   metadata about the calculation.
@@ -108,10 +112,11 @@ margEffTable <- function(object,
   indicator <- match.arg(indicator)
   se <- match.arg(se)
   tableType <- match.arg(tableType)
-  is_mv <- inherits(object, "countreg_mv")
+  is_mv <- inherits(object, c("countreg_mv", "countreg_alloc"))
   if (is_mv && se == "bootstrap") {
     stop("Bootstrap standard errors of marginal effects are not available ",
-         "for multivariate models (countreg_mv()); use se = \"delta\".",
+         "for models with several outcomes (countreg_mv(), ",
+         "countreg_alloc()); use se = \"delta\".",
          call. = FALSE)
   }
   if (inherits(object, "countreg_mix") && se == "bootstrap") {
@@ -130,7 +135,8 @@ margEffTable <- function(object,
   # counting each row with its frequency weight
   w_rows <- NULL
   if (is_mv && is.null(data)) {
-    data <- object$data_used
+    data <- if (inherits(object, "countreg_alloc"))
+      .fcr_alloc_rebuild_data(object) else object$data_used
     if (!is.null(object$call$weights) &&
         length(object$weights) == nrow(data)) {
       w_rows <- object$weights
@@ -172,7 +178,9 @@ margEffTable <- function(object,
 
   # Multivariate models: the effects on the mean of each outcome in turn
   # (the outcome is recorded in the object for .margEff_predict())
-  targets <- if (is_mv) as.list(object$outcomes) else list(NULL)
+  targets <- if (inherits(object, "countreg_alloc")) {
+    as.list(c(object$categories, "total"))
+  } else if (is_mv) as.list(object$outcomes) else list(NULL)
   eff_rows <- list()
   for (oc in targets) {
     obj <- object
@@ -297,6 +305,7 @@ print.flexEffectTable <- function(x, ...) {
 
 .margEff_model_type <- function(object) {
   if (inherits(object, "countreg_mv")) return("countreg_mv")
+  if (inherits(object, "countreg_alloc")) return("countreg_alloc")
   if (!is.null(object$modelType)) {
     return(object$modelType)
   }
@@ -323,6 +332,9 @@ print.flexEffectTable <- function(x, ...) {
 .margEff_default_vars <- function(object, data) {
   if (inherits(object, "countreg_mv")) {
     return(.margEff_mv_default_vars(object, data))
+  }
+  if (inherits(object, "countreg_alloc")) {
+    return(.margEff_alloc_default_vars(object, data))
   }
   # Hierarchical models: the fixed part (the grouping variables of the
   # random-effect terms are not candidates)
@@ -412,6 +424,24 @@ print.flexEffectTable <- function(x, ...) {
   intersect(setdiff(term_vars, special_vars), names(data))
 }
 
+# Default variables of a total-plus-allocation model: those of the total's
+# formula and (for a category) the allocation, threshold, random-parameter
+# and shared-term formulas; the distribution formulas only when the mean of
+# the total depends on them. Not offsets, group or time variables.
+.margEff_alloc_default_vars <- function(object, data) {
+  aux <- object$blueprint$aux_formulas
+  total <- object$me_outcome == "total"
+  use <- c("rp_total", "shared", if (!total) c("alloc", "thr", "rp_alloc",
+                                                "rp_thr"),
+           if (.fcr_mean_uses_dispersion(object$family)) c("dis1", "dis2"))
+  vars <- unique(c(.margEff_term_vars(object$formula),
+                   do.call(.fcr_vars, unname(aux[intersect(use,
+                                                           names(aux))]))))
+  special <- c(.fcr_tv_time_vars(c(list(object$formula), aux)),
+               object$blueprint$offset_cols, object$group_var)
+  intersect(setdiff(vars, special), names(data))
+}
+
 .margEff_is_indicator <- function(x) {
   if (is.factor(x)) {
     return(nlevels(x) == 2L)
@@ -457,6 +487,15 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_predict <- function(object, newdata, pred_method = NULL, ...) {
+  if (inherits(object, "countreg_alloc")) {
+    # The expected count of a category, or the expected total
+    if (object$me_outcome == "total") {
+      return(as.numeric(stats::predict(object, newdata = newdata,
+                                       type = "total")))
+    }
+    return(as.numeric(stats::predict(
+      object, newdata = newdata)[, object$me_outcome]))
+  }
   if (inherits(object, "countreg_mv")) {
     # The mean of the outcome being evaluated (marginal over any random
     # parameters)
@@ -474,7 +513,7 @@ print.flexEffectTable <- function(x, ...) {
 .margEff_set_theta <- function(object, theta) {
   out <- object
   theta <- as.numeric(theta)
-  if (inherits(object, "countreg_mv")) {
+  if (inherits(object, c("countreg_mv", "countreg_alloc"))) {
     out$coefficients <- stats::setNames(theta, names(object$coefficients))
     return(out)
   }
@@ -486,7 +525,7 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_theta <- function(object) {
-  if (inherits(object, "countreg_mv")) return(object$coefficients)
+  if (inherits(object, c("countreg_mv", "countreg_alloc"))) return(object$coefficients)
   theta <- object$model$estimate
   theta <- as.numeric(unlist(theta, recursive = TRUE, use.names = TRUE))
   if (is.null(names(theta))) {
@@ -499,7 +538,7 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_vcov <- function(object) {
-  if (inherits(object, "countreg_mv")) return(object$vcov)
+  if (inherits(object, c("countreg_mv", "countreg_alloc"))) return(object$vcov)
   model <- object$model
   # The covariance matrix chosen at fit time (Hessian, robust or bootstrap)
   if (is.matrix(model$vcov)) return(model$vcov)

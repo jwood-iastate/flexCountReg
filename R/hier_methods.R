@@ -104,8 +104,24 @@ nlme::VarCorr
 #' @param object a \code{\link{countreg_hier}()} fit.
 #' @param newdata,new_data optional data frame, under either name (default:
 #'   the estimation rows).
-#' @param type \code{"response"} (expected count) or \code{"link"} (log of
-#'   the mean parameter).
+#' @param type \code{"response"} (expected count), \code{"link"} (log of
+#'   the mean parameter) or \code{"prob"} (a matrix of count probabilities,
+#'   given the estimated effects; with \code{marginal} the other effects are
+#'   integrated out).
+#' @param counts,max_count for \code{"prob"}: the counts, such as
+#'   \code{0:10} or \code{5:8}, or the largest one of \code{0:max_count}
+#'   (default: the largest training count). For intervals, \code{max_count}
+#'   is the largest count evaluated.
+#' @param overflow,underflow for \code{"prob"}: add columns with the
+#'   probabilities above and below the counts.
+#' @param interval,level confidence interval for the expected count or
+#'   prediction interval for a new count (a data frame with \code{fit},
+#'   \code{lwr} and \code{upr}). They include the uncertainty of the fixed
+#'   coefficients, the distribution parameters and the estimated effects of
+#'   known groups, but not of the random-effect variances, which are held at
+#'   their estimates. Prediction intervals use \code{marginal = TRUE} unless
+#'   it is given. See the section \emph{Intervals of other estimators} of
+#'   \code{\link{predict.flexCountReg}}.
 #' @param re.form which random effects to condition on: \code{NULL} (all, the
 #'   default), \code{NA} (none, population level) or a formula of terms,
 #'   such as \code{~ (1 | county)}.
@@ -121,7 +137,7 @@ nlme::VarCorr
 #'   from \code{history} alone, at the fitted parameters, instead of taken
 #'   from the estimation data, so a forecast never uses its own outcomes.
 #'   Groups without history are treated as new groups.
-#' @param ... unused.
+#' @param ... \code{ndraws} and \code{seed} for intervals.
 #'
 #' @details Conditional predictions use the conditional modes of the random
 #'   effects (as \code{lme4} does; posterior means with
@@ -129,18 +145,44 @@ nlme::VarCorr
 #'   default, as in \code{lme4}) the effects that are not conditioned on are
 #'   zero, so a population-level prediction is the count of a median group,
 #'   not the mean over groups.
-#' @returns A numeric vector with one value per row of \code{newdata}.
+#' @returns A numeric vector with one value per row of \code{newdata}, a
+#'   matrix (\code{"prob"}) or a data frame (intervals).
 #' @export
 predict.countreg_hier <- function(object, newdata = NULL,
-                                  type = c("response", "link"),
+                                  type = c("response", "link", "prob"),
                                   re.form = NULL, allow.new.levels = TRUE,
                                   marginal = FALSE, history = NULL,
-                                  new_data = NULL, ...) {
+                                  new_data = NULL, counts = NULL,
+                                  max_count = NULL, overflow = FALSE,
+                                  underflow = FALSE,
+                                  interval = c("none", "confidence",
+                                               "prediction"),
+                                  level = 0.95, ...) {
   type <- match.arg(type)
+  interval <- match.arg(interval)
   if (is.null(newdata)) newdata <- new_data
   m <- object$model
   d <- if (is.null(newdata)) .fcr_training_rows(object) else
     as.data.frame(newdata)
+  if (interval != "none") {
+    if (type != "response" || !is.null(history)) {
+      stop("Intervals are available for type = \"response\" without ",
+           "`history`.", call. = FALSE)
+    }
+    # A new count includes the variation of the effects that are not
+    # conditioned on
+    if (interval == "prediction" && missing(marginal)) marginal <- TRUE
+    return(.fcr_general_interval(
+      object, d, interval = interval, level = level, re.form = re.form,
+      allow.new.levels = allow.new.levels, marginal = marginal,
+      max_count = max_count %||% 1e4, ...))
+  }
+  if (type == "prob") {
+    return(.fcr_prob_table(
+      function(k) .fcr_hier_pmf(object, d, k, re.form, allow.new.levels,
+                                marginal, history),
+      .fcr_count_set(counts, max_count, max(m$y)), overflow, underflow))
+  }
   eff <- if (!is.null(history)) .fcr_hier_history_effects(object, history)
   parts <- .fcr_hier_parts(object, d, eff)
   if (!is.null(history)) allow.new.levels <- TRUE

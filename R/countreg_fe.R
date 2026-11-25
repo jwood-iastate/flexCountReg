@@ -747,7 +747,8 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
 }
 
 # Predictions of a countreg_fe() fit: exp(x'beta + offset + effects).
-.fcr_fe_predict <- function(object, data, newgroup = c("none", "mean_fe")) {
+.fcr_fe_predict <- function(object, data, newgroup = c("none", "mean_fe"),
+                            link = FALSE) {
   newgroup <- match.arg(newgroup)
   m <- object$model
   fd <- forge_new_data(.fcr_blueprint(object), data)
@@ -785,6 +786,7 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
             "effect).")
   }
   out[unknown] <- NA_real_
+  if (link) return(log(out))
   as.vector(.fcr_family_mean(m$family, out,
                              if (!is.null(get_params(m$family)[[1]]))
                                rep(exp(b[[get_params(m$family)[[1]]]]),

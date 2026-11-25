@@ -926,7 +926,8 @@ countreg_mv <- function(formula, data, family = "NB2",
 #' Predictions from multivariate count models
 #'
 #' @param object a [countreg_mv()] fit.
-#' @param newdata optional new data; the estimation data by default.
+#' @param newdata,new_data optional new data (either name); the estimation
+#'   data by default.
 #' @param type the prediction:
 #'   \describe{
 #'   \item{`"response"` (default)}{a matrix of the expected counts, one
@@ -977,9 +978,11 @@ predict.countreg_mv <- function(object, newdata = NULL,
                                          "prob", "joint", "conditional"),
                                 max_count = NULL, y = NULL, outcome = NULL,
                                 given = NULL,
-                                random = c("marginal", "posterior"), ...) {
+                                random = c("marginal", "posterior"),
+                                new_data = NULL, ...) {
   type <- match.arg(type)
   random <- match.arg(random)
+  if (is.null(newdata)) newdata <- new_data
   if (is.null(newdata)) newdata <- object$data_used
   newdata <- as.data.frame(newdata)
   E <- .fcr_mv_design(object, newdata)

@@ -1,5 +1,39 @@
 # flexCountReg 0.1.2 (development)
 
+## tidymodels
+
+* `count_reg()` has every estimator as an engine: `"flexCountReg"`
+  (`countreg()`), `"countreg_rp"`, `"countreg_mix"`, `"countreg_lc"`,
+  `"countreg_fe"`, `"countreg_hier"`, `"countreg_alloc"`, `"countreg_mv"`,
+  `"renb"`, `"repois"`, `"poislind_re"` and `"negmultinom"`. New article
+  `vignette("tidymodels")`.
+* New prediction types: `"conf_int"` and `"pred_int"` (`"flexCountReg"`
+  engine) and `"raw"`, whose `opts` reach every option of `predict()`. The
+  engine argument `predict_args` sets `predict()` options for numeric
+  predictions and intervals; `fit_engine` is the estimators' `engine`.
+* Tuning works: `count_reg()` had no `update()` method, so every
+  `tune_grid()` and `finalize_workflow()` failed. New tuning parameters
+  `count_components()`, `count_zero_type()`, `count_correlated()` and
+  `count_re_dist()`.
+* `rmse()` and `mae()` no longer break yardstick when flexCountReg is loaded
+  after it: with a data frame they call the yardstick metric, and they work
+  in `metric_set()`.
+* Without a model formula (a recipe or `add_formula()`), columns named in
+  `offset`, `group_var`, `panel_id`, `cluster`, `fixef`, `cre_group` or
+  `time` (and the variables of `rpar_formula` with `"countreg_rp"`) no longer
+  enter the mean model. The documentation wrongly said that columns with a
+  non-predictor role reach the model; it now describes what works.
+* Case weights that are not whole numbers give a warning unless
+  `weight_type` is set (the previous warning for importance weights never
+  appeared, because parsnip passes only their values).
+* Models extracted from tidymodels fits work with `update()` (which now also
+  has a method for them) and with bootstrap refits when flexCountReg is not
+  attached. Their stored call holds the argument values.
+* `predict()` for `countreg_alloc()`, `countreg_mv()` and `countreg_hier()`
+  models accepts `new_data`; it was ignored, so the predictions were those
+  of the training data.
+* `augment()` methods for `countreg_alloc()` and `countreg_mv()`.
+
 ## Corrections from the November 2026 review
 
 A review of the whole package found the following problems, now fixed,

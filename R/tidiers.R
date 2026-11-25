@@ -41,7 +41,9 @@
 #'   \code{p.value} (and \code{conf.low}, \code{conf.high}).
 #'   \code{glance()}: a one-row tibble of model statistics.
 #'   \code{augment()}: the data as a tibble with \code{.fitted} (and
-#'   \code{.resid} when the outcome is available).
+#'   \code{.resid} when the outcome is available); for
+#'   \code{countreg_alloc()} and \code{countreg_mv()} models one column per
+#'   outcome (\code{.fitted_<name>}, \code{.resid_<name>}).
 #'
 #' @examples
 #' \donttest{
@@ -209,4 +211,39 @@ augment.flexCountReg <- function(x, data = NULL, new_data = NULL,
   out$.fitted <- as.vector(stats::fitted(x, ...))
   out$.resid <- as.vector(stats::residuals(x, type = type.residuals, ...))
   out
+}
+
+# augment() for models with several outcomes: one `.fitted_` (and `.resid_`)
+# column per outcome or category.
+.fcr_augment_wide <- function(x, data = NULL, new_data = NULL, newdata = NULL,
+                              ...) {
+  nd <- data %||% new_data %||% newdata
+  if (is.null(nd)) {
+    nd <- if (inherits(x, "countreg_alloc")) .fcr_alloc_rebuild_data(x) else
+      x$data_used
+  }
+  out <- tibble::as_tibble(as.data.frame(nd))
+  p <- as.matrix(stats::predict(x, newdata = as.data.frame(nd), ...))
+  nm <- if (is.null(colnames(p))) "" else paste0("_", colnames(p))
+  for (j in seq_len(ncol(p))) {
+    out[[paste0(".fitted", nm[j])]] <- as.vector(p[, j])
+  }
+  for (v in intersect(colnames(p), names(nd))) {
+    out[[paste0(".resid_", v)]] <- as.vector(nd[[v]]) - as.vector(p[, v])
+  }
+  out
+}
+
+#' @rdname flexCountReg-tidiers
+#' @export
+augment.countreg_alloc <- function(x, data = NULL, new_data = NULL,
+                                   newdata = NULL, ...) {
+  .fcr_augment_wide(x, data, new_data, newdata, ...)
+}
+
+#' @rdname flexCountReg-tidiers
+#' @export
+augment.countreg_mv <- function(x, data = NULL, new_data = NULL,
+                                newdata = NULL, ...) {
+  .fcr_augment_wide(x, data, new_data, newdata, ...)
 }

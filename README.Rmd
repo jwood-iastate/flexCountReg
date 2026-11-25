@@ -131,7 +131,7 @@ to install any that are missing. Uploaded data stay on your computer.
 - `negmultinom()` estimates negative multinomial (random effects) panel models (NM1, NM2 and NM-P).
 - `repois()` estimates the random effects Poisson model with a gamma random effect.
 - `new_count_family()` defines a count distribution from its log probability function (with optional mean, variance, CDF and random-draw functions) for use as `family` in `countreg()`, `countreg_rp()`, `countreg_mix()` and `countreg_lc()`; `check_count_family()` tests it numerically. See `vignette("user-defined-count-distributions", package = "flexCountReg")`.
-- `count_reg()` is a [parsnip](https://parsnip.tidymodels.org/) model specification with a `"flexCountReg"` engine, for use with tidymodels (the distribution can be tuned with `count_family()`).
+- `count_reg()` is a [parsnip](https://parsnip.tidymodels.org/) model specification with every estimator of the package as an engine, for use with tidymodels workflows, resampling and tuning (see `vignette("tidymodels", package = "flexCountReg")`).
 
 **Working with Fitted Models**
 

@@ -2,18 +2,50 @@
 % Please edit documentation in R/parsnip-count_reg.R
 \name{count_reg_fit}
 \alias{count_reg_fit}
-\title{Fit wrapper used by the parsnip engine}
+\alias{count_reg_predict}
+\title{Fit and predict wrappers used by the parsnip engines}
 \usage{
-count_reg_fit(formula, data, family = "NB2", weights = NULL, ...)
+count_reg_fit(
+  formula,
+  data,
+  family = NULL,
+  weights = NULL,
+  ...,
+  model = "countreg",
+  predict_args = NULL,
+  fit_engine = NULL
+)
+
+count_reg_predict(
+  object,
+  new_data,
+  ...,
+  format = c("numeric", "interval", "raw")
+)
 }
 \arguments{
-\item{formula, data, family, weights, ...}{passed to \code{\link{countreg}}.}
+\item{formula, data, family, weights, ...}{passed to the estimator.
+\code{family = NULL} uses the estimator's default.}
+
+\item{model}{the name of the estimator.}
+
+\item{predict_args}{a list of arguments for the model's \code{predict()}
+method.}
+
+\item{fit_engine}{the estimator's \code{engine} argument.}
+
+\item{object}{a fitted model.}
+
+\item{new_data}{data to predict.}
+
+\item{format}{\code{"numeric"}, \code{"interval"} or \code{"raw"}.}
 }
 \value{
-A \code{countreg()} model.
+\code{count_reg_fit()}: the estimator's model.
+\code{count_reg_predict()}: its predictions.
 }
 \description{
-Internal function called by \pkg{parsnip}; use \code{\link{count_reg}}
-or \code{\link{countreg}} instead.
+Internal functions called by \pkg{parsnip}; use \code{\link{count_reg}}
+or the estimators instead.
 }
 \keyword{internal}

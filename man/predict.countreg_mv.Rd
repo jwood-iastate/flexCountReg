@@ -13,13 +13,15 @@
   outcome = NULL,
   given = NULL,
   random = c("marginal", "posterior"),
+  new_data = NULL,
   ...
 )
 }
 \arguments{
 \item{object}{a \code{\link[=countreg_mv]{countreg_mv()}} fit.}
 
-\item{newdata}{optional new data; the estimation data by default.}
+\item{newdata, new_data}{optional new data (either name); the estimation
+data by default.}
 
 \item{type}{the prediction:
 \describe{

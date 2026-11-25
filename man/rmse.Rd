@@ -4,15 +4,21 @@
 \alias{rmse}
 \title{Calculate Root Mean Squared Error (RMSE)}
 \usage{
-rmse(y, mu)
+rmse(y, mu, ...)
 }
 \arguments{
-\item{y}{Numeric vector representing the observed values.}
+\item{y}{Numeric vector representing the observed values, or a data frame
+(see the section on yardstick).}
 
-\item{mu}{Numeric vector representing the predicted values.}
+\item{mu}{Numeric vector representing the predicted values (with a data
+frame, the column of observed values).}
+
+\item{...}{with a data frame, further arguments of the yardstick metric
+(the column of predictions first).}
 }
 \value{
-Numeric value representing the RMSE.
+Numeric value representing the RMSE (with a data frame, the
+yardstick tibble).
 }
 \description{
 This function calculates the Root Mean Squared Error (RMSE) between observed
@@ -24,6 +30,14 @@ The RMSE is calculated using the formula:
 Where \eqn{y} is the vector of observed values and \eqn{\mu} is the vector of
 predicted values.
 }
+\section{yardstick}{
+ With a data frame, \code{rmse(data, truth, estimate)}
+calls the \pkg{yardstick} metric of the same name, and the function can
+be used in \code{yardstick::metric_set()}. Loading flexCountReg after
+tidymodels (which masks yardstick's function) therefore does not change
+tidymodels code.
+}
+
 \examples{
 y <- c(1, 2, 3)
 mu <- c(1.1, 1.9, 3.2)

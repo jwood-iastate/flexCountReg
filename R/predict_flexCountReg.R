@@ -310,85 +310,37 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
     method <- match.arg(method, c("Simulated", "Exact", "Individual", "EB"))
     if (method == "EB") method <- "Individual"
     
-    family <- if(!is.null(model$family)) model$family else "NB2" 
-    rpardists <- model$rpardists
-    correlated <- model$correlated
-    scrambled <- model$scrambled
-    ndraws <- max(model$ndraws, 500)
-    params <- get_params(family)
-    coefs <- model$estimate
-    
-    # Conventions of the fit: fits made with flexCountReg 0.1.1 or earlier have no
-    # draw_version and used uniform draws on [mu - sigma/2, mu + sigma/2] and
-    # multiplicative heterogeneity in means shared by all random parameters.
-    legacy <- is.null(model$draw_version)
-    # Scrambled draws of fits before draw_version 3 ignored their seed
-    draw_seed <- if (isTRUE(model$draw_version >= 3)) model$draw_seed
-    # Scrambled draws of fits before draw_version 4 were randtoolbox's
-    # "mixed" sequence; later fits randomly shift plain Halton points
-    scramble <- if (isTRUE(model$draw_version >= 4)) "shift" else "mixed"
-    het_form <- if (legacy) "legacy" else "additive"
-    
-    # --- Matrices, built with the training terms and factor levels ---
-    bp <- .fcr_blueprint(object, aux_formulas = list(
-      rpar = model$rpar_formula,
-      dis1 = model$dis_param_formula_1, dis2 = model$dis_param_formula_2,
-      het_mean = model$het_mean_formula, het_var = model$het_var_formula))
-    fd <- forge_new_data(bp, data)
-    X_Fixed <- fd$X
-    X_offset <- fd$offset
-    
-    # Random parameters, as named in the fitted coefficients
-    rpar <- if (!is.null(model$rpar)) model$rpar else
-      sub(":Mean$", "", grep(":Mean$", names(coefs), value = TRUE))
-    X_rand <- fd$aux$rpar[, rpar, drop = FALSE]
-    N_rand <- length(rpar)
-    if (is.null(rpardists)) rpardists <- stats::setNames(rep("n", N_rand), rpar)
-    if (!is.null(names(rpardists)) && all(rpar %in% names(rpardists))) {
-      rpardists <- rpardists[rpar]
-    }
-    
-    # --- Coefficients, matched by name ---
-    fixed_coefs <- .fcr_coefs(coefs, colnames(X_Fixed))
-    random_coefs_means <- .fcr_coefs(coefs, paste0(rpar, ":Mean"))
-    if (correlated) {
-      rand_var_params <- coefs[grepl("^Chol:", names(coefs))]
-    } else {
-      rand_var_params <- .fcr_coefs(coefs, paste0(rpar, ":St.Dev"))
-      if (legacy && any(rpardists == "u")) {
-        rlang::inform(paste(
-          "This model was fit with flexCountReg 0.1.1 or earlier, whose uniform",
-          "random parameters span mu +/- St.Dev/2. Its uniform St.Dev values",
-          "are halved to the current convention (mu +/- St.Dev); refit the",
-          "model to update the estimates."),
-          .frequency = "once", .frequency_id = "fcr_legacy_uniform")
-        rand_var_params[rpardists == "u"] <- rand_var_params[rpardists == "u"] / 2
-      }
-    }
-    
-    X_het_mean <- fd$aux$het_mean
-    X_het_var <- fd$aux$het_var
-    het_mean_coefs <- NULL
-    if (!is.null(X_het_mean)) {
-      het_mean_coefs <- if (legacy) {
-        .fcr_coefs(coefs, paste0("HetMean:", colnames(X_het_mean)))
-      } else {
-        matrix(.fcr_coefs(coefs, paste0(
-          "HetMean:", rep(rpar, each = ncol(X_het_mean)), ":",
-          colnames(X_het_mean))), ncol = N_rand)
-      }
-    }
-    het_var_coefs <- if (!is.null(X_het_var)) {
-      .fcr_coefs(coefs, paste0("HetVar:", colnames(X_het_var)))
-    }
-    
-    # Distribution parameters (for the PLN/PLL mean correction)
-    vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, nrow(data))
-    vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, nrow(data))
-    mean_adj <- .fcr_mean_adjust(family, vec_1, vec_2)
-    # For GP1/GP2 with a negative dispersion E[Y] is not proportional to the
-    # mean parameter, so it is averaged over the draws instead
-    linear_mean <- .fcr_mean_is_linear(family, vec_1)
+    rp_parts <- .fcr_rp_parts(object, data)
+    family <- rp_parts$family
+    rpardists <- rp_parts$rpardists
+    correlated <- rp_parts$correlated
+    scrambled <- rp_parts$scrambled
+    ndraws <- rp_parts$ndraws
+    params <- rp_parts$params
+    coefs <- rp_parts$coefs
+    legacy <- rp_parts$legacy
+    draw_seed <- rp_parts$draw_seed
+    scramble <- rp_parts$scramble
+    het_form <- rp_parts$het_form
+    bp <- rp_parts$bp
+    fd <- rp_parts$fd
+    X_Fixed <- rp_parts$X_Fixed
+    X_offset <- rp_parts$X_offset
+    rpar <- rp_parts$rpar
+    X_rand <- rp_parts$X_rand
+    N_rand <- rp_parts$N_rand
+    fixed_coefs <- rp_parts$fixed_coefs
+    random_coefs_means <- rp_parts$random_coefs_means
+    rand_var_params <- rp_parts$rand_var_params
+    X_het_mean <- rp_parts$X_het_mean
+    X_het_var <- rp_parts$X_het_var
+    het_mean_coefs <- rp_parts$het_mean_coefs
+    het_var_coefs <- rp_parts$het_var_coefs
+    vec_1 <- rp_parts$vec_1
+    vec_2 <- rp_parts$vec_2
+    mean_adj <- rp_parts$mean_adj
+    linear_mean <- rp_parts$linear_mean
+    mu_fixed <- rp_parts$mu_fixed
     if (method == "Exact" && !linear_mean) {
       message("Exact predictions need a mean proportional to exp(X beta), ",
               "which does not hold for ", family, " with a negative ",
@@ -396,7 +348,6 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
       method <- "Simulated"
     }
     
-    mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
     
     # --- Does the expected value exist? (no MGF evaluation needed) ---
     # --- Exact: moment generating functions (Wood and Gayah, 2025) ---
@@ -864,4 +815,97 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   }
   
   structure(out, eb_coefficients = eb_coef, eb_sd = eb_sd)
+}
+
+# The pieces of a countreg_rp() model for the rows of `data` (design
+# matrices, coefficients, draw conventions, distribution parameters and the
+# mean of the fixed part), shared by predict() and simulate().
+.fcr_rp_parts <- function(object, data) {
+  model <- object$model
+  family <- if(!is.null(model$family)) model$family else "NB2" 
+  rpardists <- model$rpardists
+  correlated <- model$correlated
+  scrambled <- model$scrambled
+  ndraws <- max(model$ndraws, 500)
+  params <- get_params(family)
+  coefs <- model$estimate
+  
+  # Conventions of the fit: fits made with flexCountReg 0.1.1 or earlier have no
+  # draw_version and used uniform draws on [mu - sigma/2, mu + sigma/2] and
+  # multiplicative heterogeneity in means shared by all random parameters.
+  legacy <- is.null(model$draw_version)
+  # Scrambled draws of fits before draw_version 3 ignored their seed
+  draw_seed <- if (isTRUE(model$draw_version >= 3)) model$draw_seed
+  # Scrambled draws of fits before draw_version 4 were randtoolbox's
+  # "mixed" sequence; later fits randomly shift plain Halton points
+  scramble <- if (isTRUE(model$draw_version >= 4)) "shift" else "mixed"
+  het_form <- if (legacy) "legacy" else "additive"
+  
+  # --- Matrices, built with the training terms and factor levels ---
+  bp <- .fcr_blueprint(object, aux_formulas = list(
+    rpar = model$rpar_formula,
+    dis1 = model$dis_param_formula_1, dis2 = model$dis_param_formula_2,
+    het_mean = model$het_mean_formula, het_var = model$het_var_formula))
+  fd <- forge_new_data(bp, data)
+  X_Fixed <- fd$X
+  X_offset <- fd$offset
+  
+  # Random parameters, as named in the fitted coefficients
+  rpar <- if (!is.null(model$rpar)) model$rpar else
+    sub(":Mean$", "", grep(":Mean$", names(coefs), value = TRUE))
+  X_rand <- fd$aux$rpar[, rpar, drop = FALSE]
+  N_rand <- length(rpar)
+  if (is.null(rpardists)) rpardists <- stats::setNames(rep("n", N_rand), rpar)
+  if (!is.null(names(rpardists)) && all(rpar %in% names(rpardists))) {
+    rpardists <- rpardists[rpar]
+  }
+  
+  # --- Coefficients, matched by name ---
+  fixed_coefs <- .fcr_coefs(coefs, colnames(X_Fixed))
+  random_coefs_means <- .fcr_coefs(coefs, paste0(rpar, ":Mean"))
+  if (correlated) {
+    rand_var_params <- coefs[grepl("^Chol:", names(coefs))]
+  } else {
+    rand_var_params <- .fcr_coefs(coefs, paste0(rpar, ":St.Dev"))
+    if (legacy && any(rpardists == "u")) {
+      rlang::inform(paste(
+        "This model was fit with flexCountReg 0.1.1 or earlier, whose uniform",
+        "random parameters span mu +/- St.Dev/2. Its uniform St.Dev values",
+        "are halved to the current convention (mu +/- St.Dev); refit the",
+        "model to update the estimates."),
+        .frequency = "once", .frequency_id = "fcr_legacy_uniform")
+      rand_var_params[rpardists == "u"] <- rand_var_params[rpardists == "u"] / 2
+    }
+  }
+  
+  X_het_mean <- fd$aux$het_mean
+  X_het_var <- fd$aux$het_var
+  het_mean_coefs <- NULL
+  if (!is.null(X_het_mean)) {
+    het_mean_coefs <- if (legacy) {
+      .fcr_coefs(coefs, paste0("HetMean:", colnames(X_het_mean)))
+    } else {
+      matrix(.fcr_coefs(coefs, paste0(
+        "HetMean:", rep(rpar, each = ncol(X_het_mean)), ":",
+        colnames(X_het_mean))), ncol = N_rand)
+    }
+  }
+  het_var_coefs <- if (!is.null(X_het_var)) {
+    .fcr_coefs(coefs, paste0("HetVar:", colnames(X_het_var)))
+  }
+  
+  # Distribution parameters (for the PLN/PLL mean correction)
+  vec_1 <- .fcr_dist_param(coefs, params[[1]], fd$aux$dis1, nrow(data))
+  vec_2 <- .fcr_dist_param(coefs, params[[2]], fd$aux$dis2, nrow(data))
+  mean_adj <- .fcr_mean_adjust(family, vec_1, vec_2)
+  # For GP1/GP2 with a negative dispersion E[Y] is not proportional to the
+  # mean parameter, so it is averaged over the draws instead
+  linear_mean <- .fcr_mean_is_linear(family, vec_1)
+  mu_fixed <- exp(as.vector(X_Fixed %*% fixed_coefs) + X_offset)
+  mget(c("family", "rpardists", "correlated", "scrambled", "ndraws",
+         "params", "coefs", "legacy", "draw_seed", "scramble", "het_form",
+         "bp", "fd", "X_Fixed", "X_offset", "rpar", "X_rand", "N_rand",
+         "fixed_coefs", "random_coefs_means", "rand_var_params",
+         "X_het_mean", "X_het_var", "het_mean_coefs", "het_var_coefs",
+         "vec_1", "vec_2", "mean_adj", "linear_mean", "mu_fixed"))
 }

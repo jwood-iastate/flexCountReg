@@ -89,6 +89,21 @@ each with a regression test.
   outcome's mean) and no longer reports an effect for the time variable of
   `tv(basis = "smooth")`.
 
+### Simulation for every estimator
+
+* `simulate()` (for parametric bootstrapping) now works for `countreg_rp()`,
+  `renb()`, `repois()`, `poislind_re()`, `negmultinom()` and
+  `countreg_fe()`, which refused it before; with `countreg()`,
+  `countreg_hier()`, the mixtures, `countreg_alloc()` and `countreg_mv()`
+  every estimator simulates. Each simulation draws the model's random terms
+  anew: each unit's random coefficients (`countreg_rp()`, one draw per panel
+  or row, with correlations and heterogeneity in means and variances), each
+  panel's random effect (beta for `renb()`, gamma for `repois()` and
+  `negmultinom()`, Lindley for `poislind_re()`), or the counts given the
+  estimated fixed effects (`countreg_fe()`). Simulated means equal the
+  models' expected counts, panels share their effects, and refits on
+  simulated data recover the parameters.
+
 ### Smaller changes
 
 * `countreg()` uses bootstrap standard errors when `bootstraps` is given

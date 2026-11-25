@@ -86,11 +86,11 @@ test_that("standard methods handle objects with fewer stored parts", {
   expect_true(all(is.na(summary(m4)$coefficients[, "Std. Error"])))
 })
 
-test_that("Pearson residuals and simulate() are for countreg() models", {
+test_that("Pearson residuals are for countreg() models; simulate() works", {
   re <- renb(Total_crashes ~ lnaadt, washington_roads, group_var = "ID",
              method = "BFGS")
   expect_error(residuals(re, type = "pearson"), "available for countreg")
-  expect_error(simulate(re), "available for countreg")
+  expect_equal(dim(simulate(re, nsim = 2, seed = 1)), c(nobs(re), 2))
   out <- capture.output(print(re))
   expect_true(any(grepl("panels =", out)))
   s <- capture.output(print(summary(re)))

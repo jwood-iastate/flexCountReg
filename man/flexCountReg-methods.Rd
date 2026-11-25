@@ -91,8 +91,17 @@ of the rows (or panels), the size of the expanded data.
 
 \code{fitted()} and \code{residuals()} are for the rows used in
 estimation (rows with missing values are not included). \code{simulate()}
-draws new responses from the fitted distribution for the same rows; it is
-available for \code{countreg()} models.
+draws new responses from the fitted model for the same rows, for
+parametric bootstrapping. Every simulation draws the model's random terms
+anew: for \code{countreg_rp()}, each unit's random coefficients (one draw
+per panel of \code{group_var}, or per row); for \code{renb()},
+\code{repois()}, \code{poislind_re()} and \code{negmultinom()}, each
+panel's random effect (beta, gamma, Lindley or gamma frailty); for
+\code{countreg_fe()}, the counts given the estimated fixed effects (groups
+left out of estimation keep their fitted values: zeros for all-zero
+groups, the observed count for single observations). The estimators with
+their own methods (\code{countreg_hier()}, \code{countreg_mix()},
+\code{countreg_alloc()}, \code{countreg_mv()}) simulate in the same way.
 }
 \examples{
 \donttest{

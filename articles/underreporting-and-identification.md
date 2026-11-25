@@ -130,7 +130,7 @@ lapply(fits, function(m) round(summary(m)$coefficients[, 1:2], 3))
 #> (Intercept)                   1.089      0.337
 #> x                             0.541      0.024
 #> ln(alpha)                    -0.711      0.075
-#> Underreporting:(Intercept)    1.201      1.237
+#> Underreporting:(Intercept)    1.201      1.236
 #> Underreporting:w             -1.936      0.836
 #> 
 #> $strong
@@ -199,8 +199,8 @@ recovery_table
 #>   design       parameter truth   mean median    sd converged warned
 #> 1   weak     (Intercept)   1.0  1.167  1.019 0.525        20     11
 #> 2   weak               x   0.5  0.501  0.505 0.024        20     11
-#> 3   weak Rep:(Intercept)   1.5  1.501  1.295 1.573        20     11
-#> 4   weak           Rep:w  -2.0 -2.217 -1.820 1.063        20     11
+#> 3   weak Rep:(Intercept)   1.5  1.498  1.295 1.571        20     11
+#> 4   weak           Rep:w  -2.0 -2.214 -1.820 1.061        20     11
 #> 5 strong     (Intercept)   1.0  0.990  0.974 0.084        20      0
 #> 6 strong               x   0.5  0.504  0.508 0.024        20      0
 #> 7 strong Rep:(Intercept)   3.0  3.102  2.977 0.671        20      0

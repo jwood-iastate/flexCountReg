@@ -84,6 +84,33 @@
   Wald tests across equations. Analytic gradients, a Newton polish after
   BFGS, and normal, robust or cluster-robust standard errors. New
   vignette “Multivariate count models”.
+- [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  has random parameters in each equation (`rpar_formula`, one formula
+  for every outcome or one per outcome), drawn per unit of `group_var`
+  and correlated across equations (`correlation = "across"`, the
+  default, `"within"` or `"none"`). Poisson outcomes with correlated
+  normal random intercepts give the multivariate Poisson-lognormal model
+  (MVPLN); any family can be used in each equation. Simulated likelihood
+  with analytic gradients, checked against numerical derivatives, exact
+  two-dimensional Gauss-Hermite quadrature and recovery of correlated
+  intercepts. [`predict()`](https://rdrr.io/r/stats/predict.html) gives
+  joint (`type = "joint"`) and conditional (`type = "conditional"`)
+  probabilities of the outcomes, and Empirical Bayes predictions
+  (`random = "posterior"`);
+  [`simulate()`](https://rdrr.io/r/stats/simulate.html) draws new random
+  parameters for each unit;
+  [`summary()`](https://rdrr.io/r/base/summary.html) shows the standard
+  deviations and correlations.
+- Random-parameter standard deviations (the diagonal of the Cholesky
+  factor) of
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  and
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  are reported as positive. In
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  the intercept is random only when a random-parameter formula has the
+  term `1` itself (`~ 1`, `~ 1 + x`), as in the mixtures; `~ x` makes
+  only the slope random.
 
 ### Random parameters within latent classes
 

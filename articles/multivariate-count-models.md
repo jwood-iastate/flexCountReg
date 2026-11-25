@@ -51,7 +51,7 @@ summary(m)
 #> (Intercept)  -7.4115     1.1903  -6.227 4.77e-10 ***
 #> lnaadt        0.6661     0.1418   4.698 2.63e-06 ***
 #> speed50      -1.2201     0.4146  -2.943  0.00325 ** 
-#> ln(eta)       0.7900     1.9900   0.397  0.69137    
+#> ln(eta)       0.7900     1.9897   0.397  0.69132    
 #> 
 #> Log-likelihood: -1247.0544  AIC: 2510.1088  BIC: 2552.6199
 ```
@@ -120,7 +120,7 @@ se <- sqrt(V[a[1], a[1]] + V[a[2], a[2]] - 2 * V[a[1], a[2]])
 c(difference = unname(diff), z = unname(diff / se),
   p = 2 * pnorm(-abs(unname(diff / se))))
 #>   difference            z            p 
-#> 0.5083084901 3.3436907879 0.0008267183
+#> 0.5083084635 3.3436966915 0.0008267007
 ```
 
 Traffic increases PDO crashes clearly more than injury crashes (p \<
@@ -142,7 +142,7 @@ nd <- w[c(1, 50, 200), ]
 predict(m, newdata = nd)
 #>             pdo     injury
 #> [1,] 0.77454644 0.03005740
-#> [2,] 0.09928381 0.01309017
+#> [2,] 0.09928381 0.01309018
 #> [3,] 0.78249900 0.04238618
 lapply(predict(m, newdata = nd, type = "prob", max_count = 3), round, 3)
 #> $pdo
@@ -170,7 +170,132 @@ for other models.
 
 The counts of different severity levels at a site are usually
 correlated: unobserved conditions that raise PDO crashes also raise
-injury crashes. This version treats the equations as independent given
-the covariates, so that correlation is not modeled. Multivariate models
-with shared random effects (correlated random parameters across
-equations) and copula models are planned.
+injury crashes. `rpar_formula` adds random parameters to the equations,
+drawn once per unit of `group_var` (here a road segment, shared by its
+three years) and correlated across equations (`correlation = "across"`,
+the default).
+
+Poisson outcomes with correlated normal random intercepts give the
+**multivariate Poisson-lognormal model** (MVPLN): each segment’s
+intercepts in the two equations are bivariate normal, which makes each
+outcome overdispersed and the two outcomes correlated.
+
+``` r
+
+mr <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
+                  data = w, family = "POISSON", rpar_formula = ~ 1,
+                  group_var = "ID", rpar_draws = 200, seed = 1)
+summary(mr)
+#> Multivariate count model
+#> 
+#> Rows:        1501 
+#> Std. errors: normal 
+#> Units:       507 
+#> Random parameters: across correlation, 200 draws per unit of ID 
+#> 
+#> pdo (POISSON):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept) -9.50853    0.53848 -17.658  < 2e-16 ***
+#> lnaadt       1.16334    0.06264  18.571  < 2e-16 ***
+#> speed50     -0.52536    0.13702  -3.834 0.000126 ***
+#> 
+#> injury (POISSON):
+#>             Estimate Std. Error z value Pr(>|z|)    
+#> (Intercept)  -7.5771     1.1758  -6.444 1.16e-10 ***
+#> lnaadt        0.6656     0.1375   4.841 1.29e-06 ***
+#> speed50      -1.2357     0.4134  -2.989   0.0028 ** 
+#> 
+#> Random parameters (Cholesky factor):
+#>                                         Estimate Std. Error z value Pr(>|z|)
+#> sd:pdo:(Intercept)                       0.65585    0.06746   9.721   <2e-16
+#> chol:injury:(Intercept)|pdo:(Intercept)  0.40306    0.21548   1.871   0.0614
+#> sd:injury:(Intercept)                    0.48529    0.33677   1.441   0.1496
+#>                                            
+#> sd:pdo:(Intercept)                      ***
+#> chol:injury:(Intercept)|pdo:(Intercept) .  
+#> sd:injury:(Intercept)                      
+#> 
+#> Standard deviations and correlations:
+#>                       SD pdo:(Intercept)
+#> pdo:(Intercept)    0.656                
+#> injury:(Intercept) 0.631           0.639
+#> 
+#> Log-likelihood: -1227.3502  AIC: 2472.7004  BIC: 2520.5253
+AIC(m, mr)
+#>    df      AIC
+#> m   8 2510.109
+#> mr  9 2472.700
+```
+
+The estimated correlation of the random intercepts is about 0.64:
+segments with more PDO crashes than their traffic and speed limit
+predict tend to have more injury crashes too. The evidence for it is
+modest (the `chol:` element that carries it has p of about 0.06),
+because injury crashes are rare. The MVPLN still fits much better than
+the independent NB2 and PIG equations (AIC 2473 against 2510). Other
+families can be used in the same way: they keep their own overdispersion
+within each outcome, and the random intercepts add the correlation
+between outcomes. Random slopes are more terms in `rpar_formula`, such
+as `~ 1 + lnaadt`, and `rpar_formula` can also be a list with a
+different formula for each outcome.
+
+The likelihood is simulated: each segment’s likelihood is averaged over
+`rpar_draws` draws of its random parameters (randomly shifted Halton
+points), with analytic gradients. The standard deviations are reported
+as positive; the correlations come from the off-diagonal elements
+(`chol:`) of the Cholesky factor.
+
+## 6. Joint and conditional probabilities
+
+With correlated outcomes, the probability of a combination of counts is
+not the product of the outcomes’ probabilities. `type = "joint"` gives
+the probability of given counts of all outcomes, and
+`type = "conditional"` the distribution of one outcome given counts of
+the others, such as the chance of injury crashes on a segment-year with
+three PDO crashes:
+
+``` r
+
+nd <- w[c(1, 50, 200), ]
+predict(mr, newdata = nd, type = "joint", y = c(pdo = 1, injury = 1))
+#> [1] 0.008915450 0.001382401 0.012541737
+round(predict(mr, newdata = nd, type = "prob", max_count = 2)$injury, 4)
+#>           0      1      2
+#> [1,] 0.9707 0.0287 0.0006
+#> [2,] 0.9871 0.0128 0.0001
+#> [3,] 0.9584 0.0403 0.0012
+round(predict(mr, newdata = nd, type = "conditional", outcome = "injury",
+              given = c(pdo = 3), max_count = 2), 4)
+#>           0      1      2
+#> [1,] 0.9580 0.0408 0.0011
+#> [2,] 0.9781 0.0216 0.0003
+#> [3,] 0.9407 0.0569 0.0023
+round(predict(mr, newdata = nd, type = "conditional", outcome = "injury",
+              given = c(pdo = 0), max_count = 2), 4)
+#>           0      1     2
+#> [1,] 0.9750 0.0246 4e-04
+#> [2,] 0.9874 0.0125 1e-04
+#> [3,] 0.9645 0.0346 9e-04
+```
+
+Three PDO crashes raise the probability of an injury crash above its
+marginal value, and no PDO crash lowers it. Without random parameters
+the equations are independent, and the conditional probabilities equal
+the marginal ones.
+
+For segments in the estimation data, `random = "posterior"` uses their
+own crash history (Empirical Bayes):
+
+``` r
+
+seg <- w[w$ID == w$ID[1], ]
+round(cbind(predict(mr, newdata = seg),
+            predict(mr, newdata = seg, random = "posterior")), 3)
+#>        pdo injury   pdo injury
+#> [1,] 0.779  0.030 0.539  0.024
+#> [2,] 0.775  0.030 0.536  0.024
+#> [3,] 0.818  0.031 0.566  0.025
+```
+
+Copula models, which join the outcomes’ distributions directly, are
+planned.

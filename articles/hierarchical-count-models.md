@@ -313,7 +313,7 @@ cre_test(hc)
 #>  Wald test of correlated random effects (group means)
 #> 
 #> data:  countreg_hier(formula = Total_crashes ~ lnaadt + speed50 + offset(lnlength) +      (1 | ID), data = w, family = "POISSON", cre = ~lnaadt)
-#> Wald chi-squared = 7.1606, df = 1, p-value = 0.007452
+#> Wald chi-squared = 7.1607, df = 1, p-value = 0.007452
 #> sample estimates:
 #> mean_lnaadt 
 #>    1.855634

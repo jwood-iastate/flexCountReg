@@ -421,7 +421,7 @@ random parameters, shared by its three years.
 <span><span class="co">#&gt;                                               Estimate Std. Error z value</span></span>
 <span><span class="co">#&gt; sd:Total:(Intercept)                           0.64050    0.06507   9.843</span></span>
 <span><span class="co">#&gt; chol:Allocation:(Intercept)|Total:(Intercept) -0.19673    0.10527  -1.869</span></span>
-<span><span class="co">#&gt; sd:Allocation:(Intercept)                     -0.11052    0.27038  -0.409</span></span>
+<span><span class="co">#&gt; sd:Allocation:(Intercept)                      0.11052    0.27038   0.409</span></span>
 <span><span class="co">#&gt;                                               Pr(&gt;|z|)    </span></span>
 <span><span class="co">#&gt; sd:Total:(Intercept)                            &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; chol:Allocation:(Intercept)|Total:(Intercept)   0.0617 .  </span></span>
@@ -433,11 +433,11 @@ random parameters, shared by its three years.
 <span><span class="co">#&gt; Allocation:(Intercept) 0.226            -0.872</span></span>
 <span><span class="co">#&gt; (200 draws per unit of ID; 507 units)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Log-likelihood: -1252.9034  AIC: 2525.8068  BIC: 2578.9457</span></span>
+<span><span class="co">#&gt; Log-likelihood: -1253.0778  AIC: 2526.1557  BIC: 2579.2945</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">m</span>, <span class="va">mr</span><span class="op">)</span></span>
 <span><span class="co">#&gt;    df      AIC</span></span>
 <span><span class="co">#&gt; m   8 2567.414</span></span>
-<span><span class="co">#&gt; mr 10 2525.807</span></span></code></pre></div>
+<span><span class="co">#&gt; mr 10 2526.156</span></span></code></pre></div>
 <p>The random intercepts fit much better than the NB2 model without
 them. The segment effect on the total (a Poisson-lognormal total) takes
 over the role of the NB2 overdispersion. The negative correlation says
@@ -459,9 +459,9 @@ history (Empirical Bayes):</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mr</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span>,</span>
 <span>            <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mr</span>, newdata <span class="op">=</span> <span class="va">nd</span>, random <span class="op">=</span> <span class="st">"posterior"</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        pdo injury fatal   pdo injury fatal</span></span>
-<span><span class="co">#&gt; 1    0.754  0.028 0.001 0.535  0.025 0.001</span></span>
-<span><span class="co">#&gt; 502  0.750  0.028 0.001 0.532  0.025 0.001</span></span>
-<span><span class="co">#&gt; 1002 0.791  0.029 0.001 0.561  0.026 0.001</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    0.755  0.027 0.001 0.535  0.025 0.001</span></span>
+<span><span class="co">#&gt; 502  0.750  0.027 0.001 0.532  0.025 0.001</span></span>
+<span><span class="co">#&gt; 1002 0.791  0.028 0.001 0.561  0.026 0.001</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="a-shared-site-year-term">9. A shared site-year term<a class="anchor" aria-label="anchor" href="#a-shared-site-year-term"></a>

@@ -139,16 +139,18 @@ countreg_alloc(
 - rpar_total, rpar_alloc, rpar_threshold:
 
   one-sided formulas of random parameters in the total's mean, the
-  allocation propensity and the gaps between thresholds. Each term adds
-  a normal random deviation, with mean zero, to the corresponding
-  coefficient, so the coefficient in the equation's own formula is the
-  mean (`~ 1` in `rpar_alloc` is a random intercept of the propensity,
-  even though its fixed intercept is absorbed by the thresholds).
-  `rpar_threshold` shifts the log gaps of all thresholds above the first
-  by one common random amount, so it changes the share of the middle
-  categories (a common shift of all thresholds would be the same as a
-  random propensity intercept). For `link = "mnl"`, `rpar_alloc` gives
-  each category but the first its own random coefficients. The random
+  allocation propensity and the gaps between thresholds. The intercept
+  is random only when the formula has the term `1` itself (`~ 1`,
+  `~ 1 + x`; `~ x` makes only the slope random). Each term adds a normal
+  random deviation, with mean zero, to the corresponding coefficient, so
+  the coefficient in the equation's own formula is the mean (`~ 1` in
+  `rpar_alloc` is a random intercept of the propensity, even though its
+  fixed intercept is absorbed by the thresholds). `rpar_threshold`
+  shifts the log gaps of all thresholds above the first by one common
+  random amount, so it changes the share of the middle categories (a
+  common shift of all thresholds would be the same as a random
+  propensity intercept). For `link = "mnl"`, `rpar_alloc` gives each
+  category but the first its own random coefficients. The random
   coefficients are drawn once per unit of `group_var` (shared by all its
   rows, such as the years of a site), or once per row without
   `group_var`.

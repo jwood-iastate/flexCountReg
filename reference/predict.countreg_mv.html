@@ -49,8 +49,12 @@
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
 <span>  newdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"response"</span>, <span class="st">"link"</span>, <span class="st">"variance"</span>, <span class="st">"prob"</span><span class="op">)</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"response"</span>, <span class="st">"link"</span>, <span class="st">"variance"</span>, <span class="st">"prob"</span>, <span class="st">"joint"</span>, <span class="st">"conditional"</span><span class="op">)</span>,</span>
 <span>  max_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  y <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  outcome <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  given <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  random <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"marginal"</span>, <span class="st">"posterior"</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -68,15 +72,60 @@
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p><code>"response"</code> (default): a matrix of the expected counts, one
-column per outcome; <code>"link"</code>: the linear predictors (log of the mean
-parameter); <code>"variance"</code>: the variances; <code>"prob"</code>: a list with one
-matrix per outcome of the probabilities of the counts <code>0:max_count</code>.</p></dd>
+<dd><p>the prediction:</p><dl><dt><code>"response"</code> (default)</dt>
+<dd><p>a matrix of the expected counts, one
+column per outcome.</p></dd>
+
+<dt><code>"link"</code></dt>
+<dd><p>the linear predictors (log of the mean parameter, at
+the mean of the random parameters).</p></dd>
+
+<dt><code>"variance"</code></dt>
+<dd><p>the variances (including the variance from the
+random parameters).</p></dd>
+
+<dt><code>"prob"</code></dt>
+<dd><p>a list with one matrix per outcome of the
+probabilities of the counts <code>0:max_count</code>.</p></dd>
+
+<dt><code>"joint"</code></dt>
+<dd><p>the joint probability of the counts <code>y</code> of all
+outcomes, one value per row.</p></dd>
+
+<dt><code>"conditional"</code></dt>
+<dd><p>a matrix of the probabilities of the counts
+<code>0:max_count</code> of <code>outcome</code> given the counts <code>given</code> of other
+outcomes, such as the probability of a fatal crash at a site given
+its injury crashes.</p></dd>
+
+
+</dl></dd>
 
 
 <dt id="arg-max-count">max_count<a class="anchor" aria-label="anchor" href="#arg-max-count"></a></dt>
-<dd><p>for <code>type = "prob"</code>: the largest count (default: the
-largest observed count of each outcome).</p></dd>
+<dd><p>for <code>"prob"</code> and <code>"conditional"</code>: the largest count
+(default: the largest observed count of the outcome).</p></dd>
+
+
+<dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
+<dd><p>for <code>"joint"</code>: the counts of every outcome, a vector named by
+outcome (the same for every row) or a matrix or data frame with one
+column per outcome.</p></dd>
+
+
+<dt id="arg-outcome-given">outcome, given<a class="anchor" aria-label="anchor" href="#arg-outcome-given"></a></dt>
+<dd><p>for <code>"conditional"</code>: the name of the outcome, and
+the counts of the outcomes conditioned on, named as <code>y</code> (they can be
+some of the other outcomes).</p></dd>
+
+
+<dt id="arg-random">random<a class="anchor" aria-label="anchor" href="#arg-random"></a></dt>
+<dd><p>for fits with random parameters: <code>"marginal"</code> (default)
+averages over their distribution (the prediction for a new unit);
+<code>"posterior"</code> averages over each unit's posterior distribution given
+its counts in the estimation data (Empirical Bayes; units not in the
+estimation data get the marginal prediction). <code>newdata</code> then needs the
+<code>group_var</code> column(s).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -85,8 +134,18 @@ largest observed count of each outcome).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A matrix with one column per outcome, or a list of matrices
-(<code>"prob"</code>).</p>
+    <p>A matrix with one column per outcome (<code>"response"</code>, <code>"link"</code>,
+<code>"variance"</code>), a list of matrices (<code>"prob"</code>), a vector (<code>"joint"</code>) or
+a matrix with one column per count (<code>"conditional"</code>).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Without random parameters the outcomes are independent given
+the covariates, so joint probabilities are products of the outcomes'
+probabilities and conditional probabilities equal the marginal ones.
+With random parameters shared by the equations they are not: the
+probabilities are averages over the random parameters of products of
+the outcomes' probabilities.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -373,7 +373,7 @@ summary(mr)
 #>                                               Estimate Std. Error z value
 #> sd:Total:(Intercept)                           0.64050    0.06507   9.843
 #> chol:Allocation:(Intercept)|Total:(Intercept) -0.19673    0.10527  -1.869
-#> sd:Allocation:(Intercept)                     -0.11052    0.27038  -0.409
+#> sd:Allocation:(Intercept)                      0.11052    0.27038   0.409
 #>                                               Pr(>|z|)    
 #> sd:Total:(Intercept)                            <2e-16 ***
 #> chol:Allocation:(Intercept)|Total:(Intercept)   0.0617 .  
@@ -385,11 +385,11 @@ summary(mr)
 #> Allocation:(Intercept) 0.226            -0.872
 #> (200 draws per unit of ID; 507 units)
 #> 
-#> Log-likelihood: -1252.9034  AIC: 2525.8068  BIC: 2578.9457
+#> Log-likelihood: -1253.0778  AIC: 2526.1557  BIC: 2579.2945
 AIC(m, mr)
 #>    df      AIC
 #> m   8 2567.414
-#> mr 10 2525.807
+#> mr 10 2526.156
 ```
 
 The random intercepts fit much better than the NB2 model without them.
@@ -416,9 +416,9 @@ nd <- w[w$ID == w$ID[1], ]
 round(cbind(predict(mr, newdata = nd),
             predict(mr, newdata = nd, random = "posterior")), 3)
 #>        pdo injury fatal   pdo injury fatal
-#> 1    0.754  0.028 0.001 0.535  0.025 0.001
-#> 502  0.750  0.028 0.001 0.532  0.025 0.001
-#> 1002 0.791  0.029 0.001 0.561  0.026 0.001
+#> 1    0.755  0.027 0.001 0.535  0.025 0.001
+#> 502  0.750  0.027 0.001 0.532  0.025 0.001
+#> 1002 0.791  0.028 0.001 0.561  0.026 0.001
 ```
 
 ## 9. A shared site-year term

@@ -67,6 +67,10 @@ mean formula and distribution-parameter formulas.</p>
 <span>  ndraws <span class="op">=</span> <span class="fl">1500</span>,</span>
 <span>  engine <span class="op">=</span> <span class="st">"quadrature"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  rpar_formula <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  correlation <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"across"</span>, <span class="st">"within"</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  rpar_draws <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  .setup_only <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -131,6 +135,35 @@ standard errors (such as a site observed over several years).</p></dd>
 form, as in <code><a href="countreg.html">countreg()</a></code>.</p></dd>
 
 
+<dt id="arg-rpar-formula">rpar_formula<a class="anchor" aria-label="anchor" href="#arg-rpar-formula"></a></dt>
+<dd><p>optional one-sided formula of random parameters:
+one formula for every outcome, or a list named by outcome. Each term
+adds a normal random deviation, with mean zero, to the coefficient of
+that variable in the outcome's equation (a variable not in the
+equation's formula gets a random coefficient with mean zero). The
+intercept is random only when the formula has the term <code>1</code> itself
+(<code>~ 1</code>, <code>~ 1 + x</code>). The random parameters are drawn once per unit of
+<code>group_var</code> (shared by all its rows, such as the years of a site), or
+once per row without <code>group_var</code>.</p></dd>
+
+
+<dt id="arg-correlation">correlation<a class="anchor" aria-label="anchor" href="#arg-correlation"></a></dt>
+<dd><p>correlation of the random parameters: <code>"across"</code>
+(default; correlated within and across equations, so the outcomes of a
+unit share unobserved factors), <code>"within"</code> (correlated within each
+equation only) or <code>"none"</code>.</p></dd>
+
+
+<dt id="arg-rpar-draws">rpar_draws<a class="anchor" aria-label="anchor" href="#arg-rpar-draws"></a></dt>
+<dd><p>the number of simulation draws per unit (randomly
+shifted Halton points, a separate block and shift for each unit).</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>seed of the random shifts of the draws (stored in the fit,
+so predictions use the same draws); random by default.</p></dd>
+
+
 <dt id="arg--setup-only">.setup_only<a class="anchor" aria-label="anchor" href="#arg--setup-only"></a></dt>
 <dd><p>internal use: return the model setup without fitting.</p></dd>
 
@@ -143,16 +176,44 @@ form, as in <code><a href="countreg.html">countreg()</a></code>.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><strong>Independent equations.</strong> The outcomes are independent given the
-covariates, so the log-likelihood is the sum of the equations'
+    <p><strong>Independent equations.</strong> Without <code>rpar_formula</code>, the outcomes are
+independent given the covariates, so the log-likelihood is the sum of the equations'
 log-likelihoods and every equation's estimates equal those of a
 separate <code><a href="countreg.html">countreg()</a></code> fit. Fitting them together gives one object with
 joint predictions, simulations and tests across equations (for
 example, a Wald test that a coefficient is the same in two equations).
 The rows used are those complete for every equation.</p>
+<p><strong>Correlated outcomes.</strong> Counts of different categories at a site are
+usually correlated: unobserved conditions that raise one also raise the
+others. With <code>rpar_formula</code>, each equation's log mean gets random terms
+\(x_r' b_{uj}\), with \(b_u = L z_u\) drawn per unit and
+correlated across equations (<code>correlation = "across"</code>).</p>
+<p><strong>The multivariate Poisson-lognormal model.</strong> Poisson outcomes with
+correlated normal random intercepts (<code>family = "POISSON"</code>,
+<code>rpar_formula = ~ 1</code>, <code>correlation = "across"</code>) give the multivariate
+Poisson-lognormal model (MVPLN) of, for example, Ma et al. (2008).
+Other families keep their own overdispersion within each outcome, with
+the random intercepts adding the correlation between outcomes, and every
+equation can have a different family.
+A positive correlation of the random intercepts means that a site with
+more crashes of one category than its covariates predict also tends to
+have more of the other. The correlation can be negative too, unlike in
+models with a shared gamma effect such as <code><a href="negmultinom.html">negmultinom()</a></code>. The
+likelihood is simulated (<code>rpar_draws</code> draws per unit) with analytic
+gradients; the elements of \(L\) are reported as <code>sd:</code> and <code>chol:</code>,
+and <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> shows the implied standard deviations and correlations.
+<code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> gives joint and conditional probabilities of the outcomes,
+and Empirical Bayes predictions for units in the estimation data.</p>
 <p>Different outcomes often need different families: frequent property
 damage crashes may be close to NB2, while rare fatal crashes are more
 skewed and zero-heavy. Each equation can use any family of the package.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
+    <p>Ma, J., Kockelman, K. M., and Damien, P. (2008). A multivariate
+Poisson-lognormal regression model for prediction of crash counts by
+severity, using Bayesian methods. <em>Accident Analysis and Prevention</em>,
+40(3), 964-975.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -188,17 +249,17 @@ total and its split across categories, <code><a href="negmultinom.html">negmulti
 <span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.4115     1.1903  -6.227 4.77e-10 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.6661     0.1418   4.698 2.63e-06 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -1.2201     0.4146  -2.943  0.00325 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(eta)       0.7900     1.9900   0.397  0.69137    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(eta)       0.7900     1.9897   0.397  0.69132    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -1247.0544  AIC: 2510.1088  BIC: 2552.6199 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            pdo Injury_crashes</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1,] 0.7745464    0.030057397</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] 0.6844829    0.026562351</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [3,] 1.1348006    0.044037581</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [4,] 0.2521779    0.009786129</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [5,] 0.8105719    0.031455415</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [6,] 0.3782669    0.014679194</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,] 0.7745464     0.03005740</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] 0.6844829     0.02656235</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,] 1.1348006     0.04403759</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4,] 0.2521779     0.00978613</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5,] 0.8105719     0.03145542</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6,] 0.3782669     0.01467920</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

@@ -197,7 +197,9 @@ form, as in <code><a href="countreg.html">countreg()</a></code>.</p></dd>
 <dt id="arg-rpar-total-rpar-alloc-rpar-threshold">rpar_total, rpar_alloc, rpar_threshold<a class="anchor" aria-label="anchor" href="#arg-rpar-total-rpar-alloc-rpar-threshold"></a></dt>
 <dd><p>one-sided formulas of
 random parameters in the total's mean, the allocation propensity and
-the gaps between thresholds. Each term adds a normal random deviation,
+the gaps between thresholds. The intercept is random only when the
+formula has the term <code>1</code> itself (<code>~ 1</code>, <code>~ 1 + x</code>; <code>~ x</code> makes only
+the slope random). Each term adds a normal random deviation,
 with mean zero, to the corresponding coefficient, so the coefficient
 in the equation's own formula is the mean (<code>~ 1</code> in <code>rpar_alloc</code> is a
 random intercept of the propensity, even though its fixed intercept is

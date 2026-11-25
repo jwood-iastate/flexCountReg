@@ -30,6 +30,10 @@ predict(nb_h, newdata = nd)
 round(predict(nb_h, newdata = nd, type = "prob", max_count = 4,
               overflow = TRUE), 3)
 
+## ----predict-counts-----------------------------------------------------------
+round(predict(nb_h, newdata = nd, type = "prob", counts = 3:5,
+              overflow = TRUE, underflow = TRUE), 4)
+
 ## ----intervals----------------------------------------------------------------
 confint(nb_h)["speed50", ]
 nd2 <- data.frame(lnaadt = log(c(3000, 15000)), lnlength = 0, speed50 = 1)

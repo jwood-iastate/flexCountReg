@@ -514,7 +514,7 @@ pooled, random-effects and fixed-effects Poisson models:</p>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>            <span class="at">fixed_effects =</span> <span class="fu">est</span>(fe2)), <span class="dv">3</span>)</span>
 <span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;                estimate    se</span></span>
 <span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; pooled            1.196 0.078</span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; random_effects    1.144 0.065</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; random_effects    1.144 0.059</span></span>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; fixed_effects    -0.576 0.483</span></span></code></pre></div>
 <p>The pooled and random-effects estimates use the differences
 <em>between</em> segments in traffic volume, which are large; the
@@ -598,7 +598,7 @@ regressor itself is a within-unit effect, as in the fixed-effects model.
 <span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;  Wald test of correlated random effects (group means)</span></span>
 <span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; data:  repois(formula = Total_crashes ~ lnaadt + offset(lnlength), group_var = &quot;ID&quot;,      data = washington_roads, method = &quot;BFGS&quot;, stderr = &quot;robust&quot;,      cre = ~lnaadt)</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Wald chi-squared = 8.349, df = 1, p-value = 0.003859</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; Wald chi-squared = 8.8722, df = 1, p-value = 0.002895</span></span>
 <span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; sample estimates:</span></span>
 <span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; mean_lnaadt </span></span>
 <span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt;    1.860804</span></span></code></pre></div>
@@ -625,7 +625,8 @@ the fit, so predictions for a known unit use its training means: rows of
 <p>Predictions for a known segment use its estimated fixed effect. A
 segment that was not in the estimation data has no fixed effect, so its
 prediction is <code>NA</code> unless you ask for the mean effect
-explicitly:</p>
+explicitly (the mean of the estimated effects weighted by the segments’
+sizes in the estimation data, fixed at estimation):</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>nd <span class="ot">&lt;-</span> washington_roads[washington_roads<span class="sc">$</span>ID <span class="sc">%in%</span></span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>                         <span class="fu">names</span>(fe2<span class="sc">$</span>model<span class="sc">$</span>fixef<span class="sc">$</span>fe1)[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>], ]</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="fu">predict</span>(fe2, <span class="at">newdata =</span> nd)</span>
@@ -637,14 +638,16 @@ explicitly:</p>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; 1 row(s) belong to groups not in the estimation data, which have no fixed effect: their predictions are NA (use newgroup = &quot;mean_fe&quot; to use the mean effect).</span></span>
 <span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] NA</span></span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="fu">predict</span>(fe2, <span class="at">newdata =</span> new_site, <span class="at">newgroup =</span> <span class="st">&quot;mean_fe&quot;</span>)</span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; [1] 0.5565084</span></span></code></pre></div>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; [1] 0.5494041</span></span></code></pre></div>
 </div>
 <div id="agreement-with-other-software" class="section level2">
 <h2>8. Agreement with other software</h2>
 <p>The Poisson estimates, log-likelihoods and dropped groups equal those
 of <code>fixest::fepois()</code>, and the NB2 estimates those of
 <code>fixest::fenegbin()</code> and of <code>MASS::glm.nb()</code> with
-segment dummies. The cluster-robust standard errors use the factor <span class="math inline">\(G/(G-1)\)</span> for <span class="math inline">\(G\)</span> clusters; they equal fixest’s with
+segment dummies. The cluster-robust standard errors use the factor <span class="math inline">\(G/(G-1)\)</span> for <span class="math inline">\(G\)</span> clusters; they equal fixest’s when the
+clustering is given explicitly (<code>vcov = ~ ID</code>; fixest 0.13
+and later default to iid standard errors) with
 <code>ssc(adj = FALSE)</code>, as fixest by default also multiplies the
 variance by <span class="math inline">\((n-1)/(n-K)\)</span>.</p>
 </div>

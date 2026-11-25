@@ -191,20 +191,29 @@ poisLind.re <- function(formula, group_var, data,
   ll_w <- function(beta, y, X, group, offset_vec, w = NULL) {
     .fcr_weight_ll(.fcr_poislind_re_ll(beta, y, X, group, offset_vec), w)
   }
+  # Weighted per-panel analytic scores
+  gr_w <- function(beta, y, X, group, offset_vec, w = NULL) {
+    G <- .fcr_poislind_re_grad(beta, y, X, group, offset_vec)
+    if (!is.null(w)) G <- G * w
+    G
+  }
 
   has_smooth <- .fcr_prep_has_smooth(prep)
   if (has_smooth) {
     .fcr_smooth_no_boot(stderr)
     fit <- .fcr_smooth_fit(
       list(main = prep$smooth$main),
-      function(b) ll_w(b, y, X, group, offset_vec, w_panel), NULL,
+      function(b) ll_w(b, y, X, group, offset_vec, w_panel),
+      function(b) gr_w(b, y, X, group, offset_vec, w_panel),
       full_start, method, max.iters, sp, list(main = 0),
       list(main = "mean"), list(main = X))
     method <- fit$method
   } else {
     fit <- maxLik::maxLik(
       ll_w,
+      grad   = gr_w,
       start  = full_start,
+      finalHessian = identical(method, "BHHH"),
       w      = w_panel,
       y      = y,
       X      = X,
@@ -216,13 +225,18 @@ poisLind.re <- function(formula, group_var, data,
         printLevel = print.level
       )
     )
+    # Final Hessian from differences of the analytic scores
+    fit <- .fcr_set_final_hessian(
+      fit, function(b) ll_w(b, y, X, group, offset_vec, w_panel),
+      function(b) gr_w(b, y, X, group, offset_vec, w_panel), method)
   }
   
   fit$fcr_method <- method
   fit$method <- method
   fit <- .fcr_finish_re(fit, prep, x_names, stderr, bootstraps,
                         refit = function(sub) {
-    m <- maxLik::maxLik(ll_w, start = fit$estimate, y = sub$y,
+    m <- maxLik::maxLik(ll_w, grad = gr_w, start = fit$estimate,
+                        finalHessian = FALSE, y = sub$y,
                         X = sub$X, group = sub$group,
                         offset_vec = sub$offset, w = sub$panel_w,
                         method = method,
@@ -313,4 +327,39 @@ poislind_re <- poisLind.re
     theta_const + log_lik_obs + log_lik_gamma +
       log_linear - (y_sum + 2) * log_denom
   }, numeric(1))
+}
+
+# Analytic per-panel scores of .fcr_poislind_re_ll() (rows: panels in the
+# order of the levels of `group`; columns: beta, ln(theta)). With
+# log lambda_t = eta_t + c(theta), c = log(theta) + log(1 + theta) -
+# log(theta + 2), A = sum lambda_t, Y = sum y_t, D = A + theta and
+# L = A + theta + Y + 1:
+#   d/d beta      = sum y_t x_t + sum lambda_t x_t (1 / L - (Y + 2) / D)
+#   d/d ln(theta) = theta [2 / theta - 1 / (1 + theta) + Y c'
+#                   + (A c' + 1) / L - (Y + 2) (A c' + 1) / D],
+# c' = 1 / theta + 1 / (1 + theta) - 1 / (theta + 2).
+.fcr_poislind_re_grad <- function(beta, y, X, group, offset_vec) {
+  k <- ncol(X)
+  theta <- exp(beta[k + 1L])
+  g <- as.integer(droplevels(as.factor(group)))
+  log_theta <- log(theta)
+  log_lambda <- drop(X %*% beta[seq_len(k)]) + offset_vec +
+    log_theta + log1p(theta) - log(theta + 2)
+  # Panel log sums, without overflow
+  mx <- as.numeric(tapply(log_lambda, g, max))
+  log_A <- mx + log(as.numeric(rowsum(exp(log_lambda - mx[g]), g,
+                                      reorder = TRUE)))
+  Y <- as.numeric(rowsum(y, g, reorder = TRUE))
+  lse2 <- function(a, b) pmax(a, b) + log1p(exp(-abs(a - b)))
+  log_D <- lse2(log_A, log_theta)
+  log_L <- lse2(log_A, log(theta + Y + 1))
+  # lambda_t / L - (Y + 2) lambda_t / D, row by row
+  f <- exp(log_lambda - log_L[g]) - (Y + 2)[g] * exp(log_lambda - log_D[g])
+  d_b <- rowsum(y * X, g, reorder = TRUE) + rowsum(f * X, g, reorder = TRUE)
+  cp <- 1 / theta + 1 / (1 + theta) - 1 / (theta + 2)
+  # (A c' + 1) / L and (A c' + 1) / D
+  aL <- cp * exp(log_A - log_L) + exp(-log_L)
+  aD <- cp * exp(log_A - log_D) + exp(-log_D)
+  d_t <- theta * (2 / theta - 1 / (1 + theta) + Y * cp + aL - (Y + 2) * aD)
+  unname(cbind(d_b, d_t))
 }

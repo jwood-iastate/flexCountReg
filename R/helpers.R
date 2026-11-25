@@ -1103,8 +1103,18 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
 # number of units with positive weight. The result is then unchanged when
 # all weights are multiplied by a constant, as it must be for weights that
 # only say how much each unit counts relative to the others.
+#
+# `fit` is a maxLik fit, or a plain list (countreg_fe() and other estimators
+# that are not fitted by maxLik) holding the unit scores in `gradientObs`
+# and the Hessian in `hessian`.
 .fcr_robust_vcov <- function(fit, w = NULL, weight_type = "frequency") {
-  G <- sandwich::estfun(fit)
+  G <- if (inherits(fit, "maxLik")) sandwich::estfun(fit) else
+    fit$gradientObs
+  if (is.null(G)) {
+    stop("This model does not store per-unit scores, so sandwich ",
+         "covariances are not available for it.", call. = FALSE)
+  }
+  G <- as.matrix(G)
   if (is.null(w)) w <- rep(1, nrow(G))
   keep <- w > 0
   if (identical(weight_type, "sampling")) {
@@ -1158,6 +1168,25 @@ rp_log_mgf <- function(dist, t, mu, sigma) {
   # randtoolbox's default, seed 0; seed = NULL gives those draws.
   randtoolbox::setSeed(if (is.null(seed)) 0 else seed)
   as.matrix(randtoolbox::halton(n, dim, mixed = TRUE))
+}
+
+# Nodes and weights for expectations over K independent standard normal
+# variables, for predictions that integrate over random parameters:
+# Gauss-Hermite product grids for up to four dimensions (30, 20, 10 and 7
+# nodes per dimension; exact to machine precision for smooth integrands
+# such as exp(a'z) in one or two dimensions, and to about 1e-6 in three or
+# four); beyond that, 2048 randomly shifted Halton points from a fixed seed
+# and their antithetic copies. Plain Halton points are not used: they reach only about three
+# standard deviations into the tails, which biases lognormal means by
+# several percent. Returns Z (nodes x K) and weights w summing to 1.
+.fcr_normal_nodes <- function(K) {
+  if (K <= 4L) {
+    g <- .fcr_gh_grid(c(30L, 20L, 10L, 7L)[K], K)
+    return(list(Z = g$Z, w = g$w))
+  }
+  Z <- stats::qnorm(.fcr_halton(2048L, K, scrambled = TRUE, seed = 1L))
+  Z <- rbind(Z, -Z)
+  list(Z = Z, w = rep(1 / nrow(Z), nrow(Z)))
 }
 
 # n uniform random numbers from `seed` (NULL: seed 0), leaving the caller's

@@ -25,20 +25,33 @@
 }
 
 # The unit (row of the scores) of each analysis row.
+# Panel models store the panel of each row (panel_index), which is used
+# whenever it is present, also when every panel has a single row: the scores
+# are in the order of the panel ids, not of the rows.
 .fcr_unit_index <- function(object, n_units) {
   m <- object$model
   n <- m$nobs %||% stats::nobs(object)
-  if (n_units == n) return(seq_len(n))
   pi <- m$panel_index
   if (!is.null(pi) && length(pi) == n && max(pi) == n_units) {
     return(as.integer(pi))
   }
+  if (n_units == n) return(seq_len(n))
   stop("The rows of this model's scores cannot be matched to its data.",
        call. = FALSE)
 }
 
 # Weight of each unit (NULL without weights).
+# For countreg_fe() fits whose units are the groups of the fixed effect
+# (conditional and concentrated likelihoods), a row's frequency weight
+# stands for copies of that row in the same group, not for copies of the
+# group, and the weights may vary within a group: the weighted group score
+# is then the score of the expanded group, so the groups enter the meat
+# unweighted (as clusters) and NULL is returned.
 .fcr_unit_weights <- function(object, unit) {
+  if (identical(object$model$modelType, "countreg_fe") &&
+      !identical(object$model$method, "demean")) {
+    return(NULL)
+  }
   w <- object$model$weights
   if (is.null(w) || length(w) != length(unit)) return(NULL)
   w[!duplicated(unit)][order(unit[!duplicated(unit)])]
@@ -145,7 +158,13 @@
 #' @param type \code{NULL} or \code{"fit"} (default): the covariance chosen
 #'   at fit time (\code{stderr}). \code{"hessian"}: the inverse of the
 #'   negative Hessian. \code{"robust"}: the sandwich with one independent
-#'   unit per row, or per panel for panel models. \code{"cluster"}:
+#'   unit per row, or per panel for panel models. For
+#'   \code{\link{countreg_fe}()} fits by the conditional or concentrated
+#'   likelihood the units are the groups of the fixed effect (their scores
+#'   do not split into rows), so \code{"robust"} is clustered by group,
+#'   without the factor \eqn{G/(G-1)}; with the \code{"demean"} method the
+#'   units are the rows (as \code{vcov = "hetero"} in fixest).
+#'   \code{"cluster"}:
 #'   cluster-robust with the clusters in \code{cluster}.
 #' @param cluster for \code{type = "cluster"}: a one-sided formula of the
 #'   clustering variable(s) in the model's data (\code{~ corridor}; two or

@@ -367,6 +367,12 @@ The likelihood is simulated with `rpar_draws` draws per panel (the same
 draws for every class), with analytic gradients. Predictions,
 probabilities, class probabilities and residuals integrate over the random
 parameters, and `simulate()` draws new coefficients for every panel.
+The class expected counts are exact (from the moment generating functions
+of the random parameters, as `method = "Exact"` in `countreg_rp()`), and
+`Inf` with a warning where they do not exist (a lognormal random parameter
+of a positive variable, for example). Conditioning on a panel's outcomes
+(`conditioning = "posterior"` or `"history"`) updates its class
+probabilities, not its random parameters within the class.
 `rpardists` and `correlated` work as in `countreg_rp()`.
 
 Classes and random parameters can stand in for each other: a class can

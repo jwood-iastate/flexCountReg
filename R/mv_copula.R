@@ -168,28 +168,528 @@
     })
 }
 
-# Probability of the rectangles [Flo, Fhi] (n x J): the C-volume, summed
-# over the 2^J corners. Columns of Fhi equal to 1 with Flo NA are
-# marginalized (not differenced).
-.fcr_cop_rect <- function(Fhi, Flo, family, theta) {
+# Probability of the rectangles [Flo, Fhi] (n x J): the C-volume (see
+# .fcr_cop_volume()). Columns with Flo NA are marginalized (not
+# differenced). Ghi, Glo: the upper tails 1 - Fhi and 1 - Flo, accurate
+# where F is close to 1 (default: computed from Fhi and Flo).
+.fcr_cop_rect <- function(Fhi, Flo, family, theta, Ghi = NULL, Glo = NULL) {
+  .fcr_cop_volume(Fhi, Flo, family, theta, Ghi, Glo)$P
+}
+
+# The C-volume P of the rectangles [Flo, Fhi] (n x J) and, with grad, its
+# derivatives with respect to each Fhi (Ahi) and Flo (Alo), n x J, and to
+# theta (Dth).
+#
+# The volume is the sum over the 2^J corners, accurate to about
+# 1e-16 / P relative to P when the corners are of order one. Where an
+# outcome is in its upper tail, F(y - 1) and F(y) are both close to 1 and
+# the corner sum loses the probability (P(Y = y) falls below the rounding
+# of 1). Rows where the corner sum is below 1e-6 of the largest corner
+# (a relative error above about 2e-10), or (Gumbel) with an outcome whose
+# P(Y > y - 1) is below 1e-3, are computed again: each outcome
+# with F(y - 1) > 0.5 is described by its upper tails G = 1 - F
+# (Ghi = P(Y > y), Glo = P(Y > y - 1)), and the volume is integrated over
+# them with Gauss-Legendre rules on geometric panels, while the other
+# outcomes are differenced over their corners (in rows without such an
+# outcome, where the corners cancel through strong dependence, every
+# outcome with F(y - 1) > 0 is integrated):
+#   Archimedean copulas, C(u) = psi(sum_j phi(u_j)): with t_j = phi(u_j),
+#   the volume over the outcomes N in their upper tails is the integral of
+#   (-1)^k psi^(k)(T + sum_{j in N} t_j) over the box of their t_j (k =
+#   |N|, T the sum of phi over the corner of the other outcomes), a
+#   function of the sum only: one integral for k = 1 and, with the
+#   trapezoid density of t_1 + t_2, for k = 2 (nested for k > 2). The
+#   integrand is positive and is evaluated on the log scale.
+#   Gaussian copula (two outcomes): the conditional probability of one
+#   outcome integrated over the other's interval (.fcr_cop_row_gauss()).
+.fcr_cop_volume <- function(Fhi, Flo, family, theta, Ghi = NULL, Glo = NULL,
+                            grad = FALSE, Gfun = NULL) {
+  n <- nrow(Fhi)
   J <- ncol(Fhi)
-  act <- which(colSums(!is.na(Flo)) > 0)
-  out <- 0
-  for (s in 0:(2^length(act) - 1L)) {
-    bits <- as.integer(intToBits(s))[seq_along(act)]
-    U <- Fhi
-    U[is.na(U)] <- 1
-    if (any(bits == 1L)) {
+  fixed <- is.na(Flo)
+  Fhi[fixed] <- 1
+  if (is.null(Ghi)) Ghi <- 1 - Fhi
+  if (is.null(Glo)) Glo <- 1 - Flo
+  Ghi <- matrix(Ghi, n, J)
+  Glo <- matrix(Glo, n, J)
+  Ghi[fixed] <- 0
+  nar <- !fixed & Flo > 0.5
+  nar[is.na(nar)] <- FALSE
+  slow <- rep(FALSE, n)
+  P <- numeric(n)
+  Cmax <- numeric(n)
+  Ahi <- Alo <- if (grad) matrix(0, n, J)
+  Dth <- if (grad) numeric(n)
+  fast <- seq_len(n)
+  if (length(fast)) {
+    act <- which(colSums(!fixed[fast, , drop = FALSE]) > 0)
+    Uhi <- Fhi[fast, , drop = FALSE]
+    for (s in 0:(2^length(act) - 1L)) {
+      bits <- as.integer(intToBits(s))[seq_along(act)]
+      U <- Uhi
       lo <- act[bits == 1L]
-      U[, lo] <- Flo[, lo]
+      if (length(lo)) U[, lo] <- Flo[fast, lo, drop = FALSE]
+      # A corner with some u = 0 (or the lower end of an outcome that is
+      # left out) contributes 0
+      ok <- rowSums(U <= 0 | is.na(U)) == 0
+      if (!any(ok)) next
+      sg <- (-1)^length(lo)
+      rows <- fast[ok]
+      if (!grad) {
+        cv <- .fcr_cop_C(U[ok, , drop = FALSE], family, theta)
+        P[rows] <- P[rows] + sg * cv
+        Cmax[rows] <- pmax(Cmax[rows], abs(cv))
+        next
+      }
+      d <- .fcr_cop_derivs(U[ok, , drop = FALSE], family, theta)
+      P[rows] <- P[rows] + sg * d$C
+      Cmax[rows] <- pmax(Cmax[rows], abs(d$C))
+      for (j in act) {
+        if (bits[match(j, act)] == 0L) {
+          Ahi[rows, j] <- Ahi[rows, j] + sg * d$dU[, j]
+        } else {
+          Alo[rows, j] <- Alo[rows, j] + sg * d$dU[, j]
+        }
+      }
+      Dth[rows] <- Dth[rows] + sg * d$dth
     }
-    # A corner with some u = 0 contributes 0
-    z <- rowSums(U == 0) > 0
-    cv <- numeric(nrow(U))
-    if (any(!z)) cv[!z] <- .fcr_cop_C(U[!z, , drop = FALSE], family, theta)
-    out <- out + (-1)^sum(bits) * cv
+    # The corner sum loses digits where the probability is far below the
+    # corners: such rows are integrated instead. The bivariate normal
+    # distribution function is accurate to about 1e-16 in absolute terms
+    # only, so improbable rows (such as joint lower tails with a negative
+    # correlation) are too.
+    # Gumbel corners within 1e-3 of 1 also lose digits of the copula's
+    # derivatives (through -log(u)), so rows with an outcome that far in
+    # its upper tail are integrated too.
+    bad <- P < 1e-6 * Cmax | (family == "gaussian" & P < 1e-9) |
+      (family == "gumbel" & rowSums(nar & Glo < 1e-3) > 0)
+    bad[is.na(bad)] <- FALSE
+    slow <- bad & rowSums(!fixed) > 0
   }
+  # Rows without an outcome in its upper tail: every outcome with
+  # F(y - 1) > 0 is integrated
+  full <- slow & rowSums(nar) == 0
+  if (any(slow)) {
+    if (!is.null(Gfun)) {
+      # Accurate upper tails of the rows integrated (from the caller)
+      ws <- which(slow)
+      gs <- Gfun(ws)
+      Ghi[ws, ] <- gs$hi
+      Glo[ws, ] <- gs$lo
+      Ghi[fixed] <- 0
+    }
+    th <- theta
+    # Frank at theta = 0 is the independence copula (the limit)
+    if (family == "frank" && abs(th) < 1e-9) th <- if (th < 0) -1e-9 else 1e-9
+    ar <- if (family != "gaussian") .fcr_arch_pieces(family, th)
+    for (i in which(slow)) {
+      type <- ifelse(fixed[i, ], "f", ifelse(
+        nar[i, ] | (full[i] & Flo[i, ] > 0), "n", "w"))
+      r <- if (sum(type != "f") == 1L) {
+        # One outcome: its own probability
+        j <- which(type != "f")
+        a_hi <- a_lo <- numeric(J)
+        a_hi[j] <- 1
+        a_lo[j] <- -1
+        list(P = if (nar[i, j]) Glo[i, j] - Ghi[i, j] else
+          Fhi[i, j] - Flo[i, j], Ahi = a_hi, Alo = a_lo, Dth = 0)
+      } else if (family == "gaussian") {
+        .fcr_cop_row_gauss(th, Fhi[i, ], Ghi[i, ], Flo[i, ], Glo[i, ], type,
+                           grad)
+      } else {
+        .fcr_cop_row_arch(ar, Fhi[i, ], Ghi[i, ], Flo[i, ], Glo[i, ], type,
+                          grad)
+      }
+      # Where the integration fails (generator values that overflow at
+      # extreme parameters) the corner sum stays
+      if (!is.finite(r$P) || (grad && !all(is.finite(c(r$Ahi, r$Alo,
+                                                         r$Dth))))) next
+      P[i] <- r$P
+      if (grad) {
+        Ahi[i, ] <- r$Ahi
+        Alo[i, ] <- r$Alo
+        Dth[i] <- r$Dth
+      }
+    }
+  }
+  list(P = P, Ahi = Ahi, Alo = Alo, Dth = Dth)
+}
+
+# Nodes r and weights w of a Gauss-Legendre rule for integrals over
+# r in [0, D], on panels geometric in delta + r (delta >= 0 the distance of
+# r = 0 from the integrand's singular point) with ratio at most
+# exp(lratio), split at `breaks` and no wider than maxw.
+.fcr_cop_nodes <- function(D, delta, breaks = numeric(0), maxw = Inf,
+                           lratio = log(2), ng = 10L, maxp = 300L) {
+  cuts <- sort(unique(c(0, breaks[breaks > 0 & breaks < D], D)))
+  st <- numeric(0)
+  en <- numeric(0)
+  for (i in seq_len(length(cuts) - 1L)) {
+    lo <- cuts[i]
+    hi <- cuts[i + 1L]
+    a <- delta + lo
+    b <- delta + hi
+    # (the part next to a singular end left out is below 1e-130 of the
+    # interval)
+    if (!(a > 0)) a <- b * exp(-min(lratio * maxp, 300))
+    np <- min(maxp, max(1, ceiling(log(b / a) / lratio)))
+    e <- a * exp(log(b / a) * (0:np) / np) - delta
+    e[1L] <- lo
+    e[np + 1L] <- hi
+    e <- cummax(e)
+    if (is.finite(maxw)) {
+      wd <- diff(e)
+      if (any(wd > maxw)) {
+        m <- ceiling(wd / maxw)
+        p <- rep(seq_along(wd), m)
+        j <- sequence(m) - 1
+        e <- c(e[p] + wd[p] * j / m[p], hi)
+      }
+    }
+    st <- c(st, e[-length(e)])
+    en <- c(en, e[-1L])
+  }
+  gl <- .fcr_gl(ng)
+  half <- (en - st) / 2
+  list(r = as.vector(outer(gl$x, half) + rep((st + en) / 2, each = ng)),
+       w = as.vector(outer(gl$w, half)))
+}
+
+# log(u), from s = 1 - u where u is close to 1.
+.fcr_log_u <- function(u, s) ifelse(s < 0.5, log1p(-s), log(u))
+
+# Coefficients of the derivatives of the Gumbel generator inverse
+# psi(t) = exp(-t^a): psi^(k)(t) = psi(t) sum_m c_m t^(m a - k), m = 0..k,
+# and their derivatives with respect to a.
+.fcr_gumbel_coef <- function(k, a) {
+  cc <- 1
+  dc <- 0
+  for (kk in seq_len(k) - 1L) {
+    m <- seq_along(cc) - 1
+    nc <- numeric(length(cc) + 1L)
+    nd <- nc
+    top <- seq_along(cc) + 1L
+    nc[top] <- nc[top] - a * cc
+    nd[top] <- nd[top] - cc - a * dc
+    bot <- seq_along(cc)
+    nc[bot] <- nc[bot] + (m * a - kk) * cc
+    nd[bot] <- nd[bot] + m * cc + (m * a - kk) * dc
+    cc <- nc
+    dc <- nd
+  }
+  list(c = cc, dc = dc, m = seq_along(cc) - 1)
+}
+
+# Coefficients of the Eulerian polynomial A_n(x) (A_0 = A_1 = 1,
+# A_2 = 1 + x, A_3 = 1 + 4 x + x^2, ...), lowest power first.
+.fcr_eulerian <- function(n) {
+  a <- 1
+  if (n <= 1L) return(a)
+  for (nn in 2:n) {
+    m <- seq_len(nn) - 1
+    prev <- c(a, 0)
+    prev_m1 <- c(0, a)
+    a <- (m + 1) * prev + (nn - m) * prev_m1
+  }
+  a
+}
+
+# Pieces of an Archimedean copula C(u) = psi(sum phi(u_j)) for the
+# tail-accurate volumes: the generator phi, its derivative and their
+# derivatives with respect to theta (functions of u and s = 1 - u, accurate
+# for u close to 1), and lpsi(t, k): the log of (-1)^k psi^(k)(t) (k >= 1,
+# positive) and its derivative with respect to theta. `sing` is the
+# singular point of psi^(k) on the real line (or a point to its right) and
+# maxw the widest panel in t.
+.fcr_arch_pieces <- function(family, theta) {
+  if (family == "clayton") {
+    # phi(u) = u^-theta - 1, psi(t) = (1 + t)^(-1 / theta)
+    return(list(
+      phi = function(u, s) expm1(-theta * .fcr_log_u(u, s)),
+      dphi = function(u, s) -theta * exp((-theta - 1) * .fcr_log_u(u, s)),
+      phi_th = function(u, s) {
+        lu <- .fcr_log_u(u, s)
+        -lu * exp(-theta * lu)
+      },
+      dphi_th = function(u, s) {
+        lu <- .fcr_log_u(u, s)
+        exp((-theta - 1) * lu) * (theta * lu - 1)
+      },
+      lpsi = function(t, k) {
+        a <- 1 / theta + seq_len(k) - 1
+        l1 <- log1p(t)
+        list(lg = sum(log(a)) - (1 / theta + k) * l1,
+             dlg = -sum(1 / a) / theta^2 + l1 / theta^2)
+      },
+      sing = -1, maxw = Inf))
+  }
+  if (family == "gumbel") {
+    # phi(u) = (-log u)^theta, psi(t) = exp(-t^(1 / theta))
+    al <- 1 / theta
+    return(list(
+      phi = function(u, s) (-.fcr_log_u(u, s))^theta,
+      dphi = function(u, s) {
+        l <- -.fcr_log_u(u, s)
+        -theta * l^(theta - 1) / u
+      },
+      phi_th = function(u, s) {
+        l <- -.fcr_log_u(u, s)
+        ifelse(l > 0, l^theta * log(l), 0)
+      },
+      dphi_th = function(u, s) {
+        l <- -.fcr_log_u(u, s)
+        ifelse(l > 0, -theta * l^(theta - 1) / u * (1 / theta + log(l)), 0)
+      },
+      lpsi = function(t, k) {
+        cf <- .fcr_gumbel_coef(k, al)
+        keep <- cf$c != 0
+        cm <- cf$c[keep]
+        dm <- cf$dc[keep]
+        m <- cf$m[keep]
+        lt <- log(t)
+        ta <- exp(al * lt)
+        L <- outer(lt, m * al - k) + rep(log(abs(cm)), each = length(t))
+        mx <- apply(L, 1L, max)
+        E <- exp(L - mx)
+        se <- rowSums(E)
+        dl_da <- -ta * lt + rowSums(E * (rep(dm / cm, each = length(t)) +
+                                           outer(lt, m))) / se
+        list(lg = -ta + mx + log(se), dlg = -dl_da / theta^2)
+      },
+      sing = 0, maxw = Inf))
+  }
+  # Frank: phi(u) = -log(expm1(-theta u) / expm1(-theta)),
+  # psi(t) = -log(1 - c e^-t) / theta with c = 1 - e^-theta; then
+  # (-1)^k psi^(k)(t) = Li_(1-k)(x) / theta, x = c e^-t, and
+  # Li_(-n)(x) = x A_n(x) / (1 - x)^(n + 1)
+  h <- function(a) ifelse(abs(a) < 1e-8, 1 - a / 2, a / expm1(a))
+  dh <- function(a) ifelse(abs(a) < 0.1,
+                           -1 / 2 + a / 6 - a^3 / 180 + a^5 / 5040 -
+                             a^7 / 151200,
+                           (expm1(a) - a * exp(a)) / expm1(a)^2)
+  B <- function(a) ifelse(abs(a) < 1e-8, 1 + a / 2, a / -expm1(-a))
+  lc <- if (theta > 0) log(-expm1(-theta)) else log(expm1(-theta))
+  sc <- sign(theta)
+  ex <- 1 / expm1(theta)
+  list(
+    phi = function(u, s) {
+      out <- numeric(length(u))
+      up <- s < 0.5
+      out[up] <- -log1p(-expm1(theta * s[up]) / expm1(theta))
+      out[!up] <- log(expm1(-theta) / expm1(-theta * u[!up]))
+      out
+    },
+    dphi = function(u, s) -h(theta * u) / u,
+    phi_th = function(u, s) {
+      out <- numeric(length(u))
+      up <- s < 0.5
+      su <- s[up]
+      q <- expm1(theta * su) / expm1(theta)
+      omq <- exp(theta * su) * expm1(theta * (1 - su)) / expm1(theta)
+      out[up] <- q * (B(theta * su) - B(theta)) / (theta * omq)
+      out[!up] <- (h(theta) - h(theta * u[!up])) / theta
+      out
+    },
+    dphi_th = function(u, s) -dh(theta * u),
+    lpsi = function(t, k) {
+      A <- .fcr_eulerian(k - 1L)
+      lx <- lc - t
+      x <- sc * exp(lx)
+      l1mx <- if (theta > 0) log(-expm1(-t) + exp(-theta - t)) else
+        log1p(exp(lx))
+      pw <- seq_along(A) - 1
+      pa <- as.vector(outer(x, pw, `^`) %*% A)
+      dpa <- if (length(A) > 1L) {
+        as.vector(outer(x, pw[-1L] - 1, `^`) %*% (A[-1L] * pw[-1L]))
+      } else 0
+      dx <- x * ex
+      list(lg = lx - log(abs(theta)) + log(pa) - k * l1mx,
+           dlg = ex - 1 / theta + dpa / pa * dx + k * dx / exp(l1mx))
+    },
+    sing = 0, maxw = 2)
+}
+
+# Integral of (-1)^m psi^(m)(T + sum_i t_i) over the box of t_i in
+# [lo_i, lo_i + d_i] (m >= the number of intervals), and of its derivative
+# with respect to theta (th).
+.fcr_cop_box <- function(ar, m, T, lo, d) {
+  k <- length(lo)
+  # (generator values that overflow, at extreme parameters)
+  if (!all(is.finite(c(T, lo, d)))) return(list(v = NaN, th = NaN))
+  if (k == 0L) {
+    g <- ar$lpsi(T, m)
+    v <- exp(g$lg)
+    return(list(v = v, th = if (v > 0) v * g$dlg else 0))
+  }
+  if (any(d <= 0)) return(list(v = 0, th = 0))
+  if (k > 2L) {
+    nd <- .fcr_cop_nodes(d[k], T + sum(lo) - ar$sing, maxw = ar$maxw)
+    v <- 0
+    th <- 0
+    for (i in seq_along(nd$r)) {
+      b <- .fcr_cop_box(ar, m, T + lo[k] + nd$r[i], lo[-k], d[-k])
+      v <- v + nd$w[i] * b$v
+      th <- th + nd$w[i] * b$th
+    }
+    return(list(v = v, th = th))
+  }
+  if (k == 1L) {
+    nd <- .fcr_cop_nodes(d, T + lo - ar$sing, maxw = ar$maxw)
+    K <- 1
+  } else {
+    # t_1 + t_2 - lo_1 - lo_2 = r has the trapezoid density
+    # min(r, d_min, d_1 + d_2 - r)
+    D <- d[1L] + d[2L]
+    nd <- .fcr_cop_nodes(D, T + sum(lo) - ar$sing, breaks = range(d),
+                         maxw = ar$maxw)
+    K <- pmax(pmin(nd$r, min(d), D - nd$r), 0)
+  }
+  g <- ar$lpsi(T + sum(lo) + nd$r, m)
+  e <- exp(g$lg + log(nd$w * K))
+  e[!is.finite(e)] <- 0
+  et <- e * g$dlg
+  et[!is.finite(et)] <- 0
+  list(v = sum(e), th = sum(et))
+}
+
+# Tail-accurate volume of one row for an Archimedean copula: u and s = 1 - u
+# at F(y) (ub, sb) and F(y - 1) (ua, sa); type "n" (upper tail,
+# integrated), "w" (differenced over its corners) or "f" (left out).
+# Returns P and its derivatives with respect to F(y) (Ahi), F(y - 1) (Alo)
+# and theta (Dth).
+.fcr_cop_row_arch <- function(ar, ub, sb, ua, sa, type, grad) {
+  act <- type != "f"
+  if (anyNA(c(ub[act], sb[act], ua[act], sa[act]))) return(list(P = NaN))
+  J <- length(type)
+  N <- which(type == "n")
+  W <- which(type == "w")
+  k <- length(N)
+  lo <- ar$phi(ub[N], sb[N])
+  hi <- ar$phi(ua[N], sa[N])
+  d <- hi - lo
+  P <- 0
+  Dth <- 0
+  Ahi <- Alo <- numeric(J)
+  dlo <- dhi <- numeric(k)
+  for (cc in 0:(2^length(W) - 1L)) {
+    at_a <- as.logical(intToBits(cc))[seq_along(W)]
+    uc <- ifelse(at_a, ua[W], ub[W])
+    scc <- ifelse(at_a, sa[W], sb[W])
+    if (any(uc <= 0)) next
+    sg <- (-1)^sum(at_a)
+    T <- sum(ar$phi(uc, scc))
+    b0 <- .fcr_cop_box(ar, k, T, lo, d)
+    P <- P + sg * b0$v
+    if (!grad) next
+    Dth <- Dth + sg * b0$th
+    if (length(W)) {
+      # d/dT of the box of order k is minus the box of order k + 1
+      b1 <- .fcr_cop_box(ar, k + 1L, T, lo, d)
+      Dth <- Dth - sg * b1$v * sum(ar$phi_th(uc, scc))
+      du <- -sg * b1$v * ar$dphi(uc, scc)
+      Alo[W[at_a]] <- Alo[W[at_a]] + du[at_a]
+      Ahi[W[!at_a]] <- Ahi[W[!at_a]] + du[!at_a]
+    }
+    for (i in seq_len(k)) {
+      bl <- .fcr_cop_box(ar, k, T + lo[i], lo[-i], d[-i])
+      bh <- .fcr_cop_box(ar, k, T + hi[i], lo[-i], d[-i])
+      dlo[i] <- dlo[i] - sg * bl$v
+      dhi[i] <- dhi[i] + sg * bh$v
+    }
+  }
+  if (grad) {
+    # t = phi(u): the lower end of an interval in t is phi(F(y))
+    Ahi[N] <- dlo * ar$dphi(ub[N], sb[N])
+    Alo[N] <- dhi * ar$dphi(ua[N], sa[N])
+    Dth <- Dth + sum(dlo * ar$phi_th(ub[N], sb[N]) +
+                       dhi * ar$phi_th(ua[N], sa[N]))
+  }
+  list(P = P, Ahi = Ahi, Alo = Alo, Dth = Dth)
+}
+
+# Phi(b) - Phi(a) for a <= b, without cancellation in the upper tail.
+.fcr_pnorm_diff <- function(a, b) {
+  up <- a > 0
+  out <- stats::pnorm(b) - stats::pnorm(a)
+  out[up] <- stats::pnorm(a[up], lower.tail = FALSE) -
+    stats::pnorm(b[up], lower.tail = FALSE)
   out
+}
+
+# Tail-accurate volume of one row for the Gaussian copula (two outcomes;
+# arguments and value as .fcr_cop_row_arch()): the integral over one
+# outcome's interval of the conditional probability of the other's,
+#   P = int_a^b [Phi(w(z_b)) - Phi(w(z_a))] du, w(z) = (z - rho x) / sigma,
+# x = qnorm(u). The interval is split at u = 0.5 and each part integrated
+# over its tail probability (u below 0.5, 1 - u above), so that both
+# tails keep their relative accuracy.
+.fcr_cop_row_gauss <- function(rho, ub, sb, ua, sa, type, grad) {
+  if (anyNA(c(ub, sb, ua, sa))) return(list(P = NaN))
+  sig2 <- 1 - rho^2
+  sig <- sqrt(sig2)
+  zq <- function(u, s) ifelse(s < 0.5, stats::qnorm(s, lower.tail = FALSE),
+                              stats::qnorm(u))
+  dens <- function(z1, z2) {
+    out <- exp(-(rho^2 * (z1^2 + z2^2) - 2 * rho * z1 * z2) / (2 * sig2)) /
+      sig
+    out[!is.finite(z1) | !is.finite(z2)] <- 0
+    out
+  }
+  # The outcome integrated over: the one with the narrower interval (the
+  # other's conditional probability then changes least across it)
+  side <- ifelse(ua >= 0.5, 1L, ifelse(ub <= 0.5, -1L, 0L))
+  width <- ifelse(side == 1L, sa - sb, ub - ua)
+  i <- if (width[2L] < width[1L]) 2L else 1L
+  o <- 3L - i
+  za <- zq(ua[o], sa[o])
+  zb <- zq(ub[o], sb[o])
+  wz <- function(z, x) if (is.finite(z)) (z - rho * x) / sig else
+    rep(z, length(x))
+  D <- function(x) {
+    out <- numeric(length(x))
+    f <- is.finite(x)
+    out[f] <- .fcr_pnorm_diff(wz(za, x[f]), wz(zb, x[f]))
+    out
+  }
+  # Parts of the interval: probabilities s from s0 to s1 in the lower
+  # (x = qnorm(s)) or upper (x = qnorm(s, lower = FALSE)) tail
+  parts <- switch(as.character(side[i]),
+    "1" = list(c(1, sb[i], sa[i])),
+    "-1" = list(c(-1, ua[i], ub[i])),
+    list(c(-1, ua[i], 0.5), c(1, sb[i], 0.5)))
+  x <- numeric(0)
+  w <- numeric(0)
+  for (pt in parts) {
+    if (!(pt[3L] > pt[2L])) next
+    x1 <- stats::qnorm(pt[3L], lower.tail = pt[1L] < 0)
+    # Panels geometric in s, fine enough that the conditional probability
+    # changes little within one: w moves by about rho log(ratio) /
+    # (x sigma) across a panel, and the tail probability of w by a factor
+    # of about exp(-w dw)
+    wmax <- max(1, abs(c(za, zb)[is.finite(c(za, zb))] - rho * x1) / sig)
+    lr <- min(log(2), max(1, abs(x1)) * sig / (max(abs(rho), 1e-3) * wmax))
+    nd <- .fcr_cop_nodes(pt[3L] - pt[2L], pt[2L], lratio = lr, maxp = 2000L)
+    s <- pt[2L] + nd$r
+    x <- c(x, stats::qnorm(s, lower.tail = pt[1L] < 0))
+    w <- c(w, nd$w)
+  }
+  Dx <- D(x)
+  P <- sum(w * Dx)
+  Ahi <- Alo <- numeric(2L)
+  Dth <- 0
+  if (grad) {
+    dw <- function(zo, z) {
+      out <- stats::dnorm((zo - rho * z) / sig) * (rho * zo - z) / sig^3
+      out[!is.finite(zo) | !is.finite(z)] <- 0
+      out
+    }
+    Dth <- sum(w * (dw(zb, x) - dw(za, x)))
+    Ahi[o] <- sum(w * dens(x, zb))
+    Alo[o] <- -sum(w * dens(x, za))
+    Ahi[i] <- D(zq(ub[i], sb[i]))
+    Alo[i] <- -D(zq(ua[i], sa[i]))
+  }
+  list(P = P, Ahi = Ahi, Alo = Alo, Dth = Dth)
 }
 
 # The equation's distribution function at q (on the probability scale).
@@ -199,20 +699,138 @@
 }
 
 # Rectangle bounds of the counts Y (n x J; NA = marginalized) at the
-# parameters p, with random terms `adds` in the equations' log means.
+# parameters p, with random terms `adds` in the equations' log means:
+# F(y) (hi), F(y - 1) (lo) and the upper tails 1 - F (Ghi, Glo).
 .fcr_mv_cop_bounds <- function(p, E, Y, adds = NULL) {
   n <- nrow(Y)
   Fhi <- matrix(NA_real_, n, E$J)
   Flo <- Fhi
+  Ghi <- Fhi
+  Glo <- Fhi
   for (j in seq_len(E$J)) {
     if (all(is.na(Y[, j]))) next
     eq <- E$eqs[[j]]
     v <- .fcr_mv_eq_values(p, eq, adds[[j]])
     if (is.null(v)) return(NULL)
-    Fhi[, j] <- .fcr_mv_cdf(eq, v, Y[, j])
-    Flo[, j] <- .fcr_mv_cdf(eq, v, Y[, j] - 1)
+    mg <- .fcr_mv_cop_margin(eq, v, Y[, j])
+    Fhi[, j] <- mg$hi$F
+    Flo[, j] <- mg$lo$F
+    Ghi[, j] <- mg$hi$G
+    Glo[, j] <- mg$lo$G
   }
-  list(hi = Fhi, lo = Flo)
+  list(hi = Fhi, lo = Flo, Ghi = Ghi, Glo = Glo)
+}
+
+# F(y) (hi) and F(y - 1) (lo) of an equation with their upper tails
+# G = 1 - F, accurate where F > 0.5 (see .fcr_mv_upper()), and with grad
+# the derivatives of F as .fcr_mv_cdf_grad() (from the upper tail where it
+# is used).
+.fcr_mv_cop_margin <- function(eq, v, y, grad = FALSE, upper = TRUE) {
+  if (grad) {
+    cg <- .fcr_mv_cdf_grad(eq, v, y)
+  } else {
+    cg <- list(hi = list(F = .fcr_mv_cdf(eq, v, y)),
+               lo = list(F = .fcr_mv_cdf(eq, v, y - 1)))
+  }
+  cg$hi$G <- 1 - cg$hi$F
+  cg$lo$G <- 1 - cg$lo$F
+  if (upper) cg <- .fcr_mv_cop_upper(cg, eq, v, y, seq_along(y), grad)
+  cg
+}
+
+# The margins cg of .fcr_mv_cop_margin() with accurate upper tails (and,
+# with grad, their derivatives) for the rows `rows`.
+.fcr_mv_cop_upper <- function(cg, eq, v, y, rows, grad = FALSE) {
+  n <- length(y)
+  sub <- function(x, i) if (!is.null(x)) rep_len(x, n)[i]
+  for (side in c("hi", "lo")) {
+    q <- if (side == "hi") y else y - 1
+    Fq <- cg[[side]]$F
+    idx <- rows[!is.na(Fq[rows]) & !is.na(q[rows]) & Fq[rows] > 0.5]
+    if (!length(idx)) next
+    up <- .fcr_mv_upper(eq, list(mu = v$mu[idx], alpha = sub(v$alpha, idx),
+                                 sigma = sub(v$sigma, idx)),
+                        q[idx], Fq[idx], grad)
+    cg[[side]]$G[idx] <- up$G
+    if (grad && any(up$tail)) {
+      t <- idx[up$tail]
+      for (nm in c("eta", "a", "s")) {
+        cg[[side]][[nm]][t] <- -up[[nm]][up$tail]
+      }
+    }
+  }
+  cg
+}
+
+# Upper tails G(q) = P(Y > q) of an equation (values v for these rows) for
+# rows with F(q) > 0.5. Where 1 - F(q) < 1e-3 it has lost digits: G is
+# then the family's own upper tail function when it has one, and otherwise
+# (and, with grad, for the derivatives of G with respect to the log mean and
+# log distribution parameters) the sum of the probabilities upward from
+# q + 1. `tail` marks the rows whose derivatives come from that sum.
+.fcr_mv_upper <- function(eq, v, q, Fq, grad = FALSE, max_terms = 20000L) {
+  n <- length(q)
+  fam <- .fcr_get_family(eq$family)
+  G <- 1 - Fq
+  small <- G < 1e-3
+  out <- list(G = G, eta = numeric(n), a = numeric(n), s = numeric(n),
+              tail = rep(FALSE, n))
+  if (!any(small)) return(out)
+  closed <- !is.null(fam$cdf)
+  if (closed) {
+    i <- which(small)
+    gc <- suppressWarnings(exp(fam$cdf(q[i], v$mu[i], v$alpha[i], v$sigma[i],
+                                       FALSE)))
+    good <- is.finite(gc)
+    out$G[i[good]] <- gc[good]
+  }
+  if (closed && !grad) return(out)
+  idx <- which(small)
+  m <- length(idx)
+  S <- numeric(m)
+  de <- da <- ds <- numeric(m)
+  prev <- rep(Inf, m)
+  conv <- rep(FALSE, m)
+  act <- seq_len(m)
+  k <- q[idx] + 1
+  sub <- function(x, i) if (!is.null(x)) x[i]
+  for (it in seq_len(max_terms)) {
+    r <- idx[act]
+    kk <- k[act]
+    lf <- .fcr_quiet_dens(as.vector(do.call(fam$dens, c(
+      list(y = kk, predicted = v$mu[r], alpha = sub(v$alpha, r),
+           sigma = sub(v$sigma, r)), eq$dens_args, list(log = TRUE)))),
+      log = TRUE)
+    f <- exp(lf)
+    f[!is.finite(f)] <- 0
+    S[act] <- S[act] + f
+    if (grad) {
+      sc <- .fcr_family_score(eq$family, kk, v$mu[r], sub(v$alpha, r),
+                              sub(v$sigma, r), dens_args = eq$dens_args)
+      add <- function(x) {
+        x <- rep_len(x, length(act)) * f
+        x[!is.finite(x)] <- 0
+        x
+      }
+      de[act] <- de[act] + add(sc$eta)
+      if (!is.null(sc$alpha)) da[act] <- da[act] + add(sc$alpha)
+      if (!is.null(sc$sigma)) ds[act] <- ds[act] + add(sc$sigma)
+    }
+    done <- (f <= 1e-17 * S[act] & f <= prev[act]) | (S[act] == 0 & it > 1)
+    prev[act] <- f
+    k[act] <- kk + 1
+    conv[act[done]] <- TRUE
+    act <- act[!done]
+    if (!length(act)) break
+  }
+  if (!closed) out$G[idx[conv]] <- S[conv]
+  if (grad) {
+    out$tail[idx[conv]] <- TRUE
+    out$eta[idx] <- de
+    out$a[idx] <- da
+    out$s[idx] <- ds
+  }
+  out
 }
 
 # Mean and distribution parameters of an equation (NULL where invalid).
@@ -362,41 +980,30 @@
   if (any(vapply(vals, is.null, logical(1)))) {
     return(list(ll = rep(NA_real_, n), parts = NULL, s_cop = NULL))
   }
-  if (!grad) {
-    Fhi <- vapply(seq_len(J), function(j)
-      .fcr_mv_cdf(E$eqs[[j]], vals[[j]], E$eqs[[j]]$y), numeric(n))
-    Flo <- vapply(seq_len(J), function(j)
-      .fcr_mv_cdf(E$eqs[[j]], vals[[j]], E$eqs[[j]]$y - 1), numeric(n))
-    P <- .fcr_cop_rect(matrix(Fhi, n), matrix(Flo, n), fam, theta)
-    return(list(ll = log(pmax(P, 1e-300))))
-  }
   cg <- lapply(seq_len(J), function(j)
-    .fcr_mv_cdf_grad(E$eqs[[j]], vals[[j]], E$eqs[[j]]$y))
-  Fhi <- vapply(cg, function(x) x$hi$F, numeric(n))
-  Flo <- vapply(cg, function(x) x$lo$F, numeric(n))
-  Fhi <- matrix(Fhi, n)
-  Flo <- matrix(Flo, n)
-  # Sum the corners: P, and the derivatives of P with respect to each
-  # F_j(y_j) (A_hi) and F_j(y_j - 1) (A_lo) and to theta
-  P <- numeric(n)
-  Ahi <- matrix(0, n, J)
-  Alo <- matrix(0, n, J)
-  Dth <- numeric(n)
-  for (s in 0:(2^J - 1L)) {
-    bits <- as.integer(intToBits(s))[seq_len(J)]
-    U <- Fhi
-    if (any(bits == 1L)) U[, bits == 1L] <- Flo[, bits == 1L]
-    ok <- rowSums(U <= 0) == 0
-    if (!any(ok)) next
-    d <- .fcr_cop_derivs(U[ok, , drop = FALSE], fam, theta)
-    sg <- (-1)^sum(bits)
-    P[ok] <- P[ok] + sg * d$C
+    .fcr_mv_cop_margin(E$eqs[[j]], vals[[j]], E$eqs[[j]]$y, grad = grad,
+                       upper = FALSE))
+  col <- function(side, nm) matrix(vapply(cg, function(x) x[[side]][[nm]],
+                                          numeric(n)), n)
+  # Accurate upper tails only for the rows whose volume is integrated
+  Gfun <- function(rows) {
     for (j in seq_len(J)) {
-      if (bits[j] == 0L) Ahi[ok, j] <- Ahi[ok, j] + sg * d$dU[, j] else
-        Alo[ok, j] <- Alo[ok, j] + sg * d$dU[, j]
+      cg[[j]] <<- .fcr_mv_cop_upper(cg[[j]], E$eqs[[j]], vals[[j]],
+                                    E$eqs[[j]]$y, rows, grad)
     }
-    Dth[ok] <- Dth[ok] + sg * d$dth
+    list(hi = col("hi", "G")[rows, , drop = FALSE],
+         lo = col("lo", "G")[rows, , drop = FALSE])
   }
+  # P, and with grad the derivatives of P with respect to each F_j(y_j)
+  # (Ahi) and F_j(y_j - 1) (Alo) and to theta
+  vol <- .fcr_cop_volume(col("hi", "F"), col("lo", "F"), fam, theta,
+                         col("hi", "G"), col("lo", "G"), grad = grad,
+                         Gfun = Gfun)
+  P <- vol$P
+  if (!grad) return(list(ll = log(pmax(P, 1e-300))))
+  Ahi <- vol$Ahi
+  Alo <- vol$Alo
+  Dth <- vol$Dth
   pos <- P > 1e-300
   inv <- ifelse(pos, 1 / P, 0)
   parts <- lapply(seq_len(J), function(j) {

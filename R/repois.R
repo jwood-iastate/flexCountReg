@@ -346,17 +346,31 @@ repois <- function(formula,
       list(main = "mean"), list(main = X))
     method_opt <- fit_ml$method
   } else {
+    # The analytic per-panel scores give the optimizer's gradient, the
+    # scores used by robust and cluster-robust covariances (gradientObs),
+    # and, differenced once, an accurate final Hessian
     fit_ml <- maxLik::maxLik(
       logLik = .repois_loglik,
+      grad = .repois_grad,
       start = start,
       method = method_opt,
       control = control,
+      finalHessian = isTRUE(compute_vcov) && identical(method_opt, "BHHH"),
       y = y,
       X = X,
       offset_vec = offset_vec,
       cluster_list = cluster_list,
       w = w
     )
+    if (isTRUE(compute_vcov)) {
+      fit_ml <- .fcr_set_final_hessian(
+        fit_ml,
+        function(p) .repois_loglik(p, y = y, X = X, offset_vec = offset_vec,
+                                   cluster_list = cluster_list, w = w),
+        function(p) .repois_grad(p, y = y, X = X, offset_vec = offset_vec,
+                                 cluster_list = cluster_list, w = w),
+        method_opt)
+    }
   }
   
   par <- fit_ml$estimate

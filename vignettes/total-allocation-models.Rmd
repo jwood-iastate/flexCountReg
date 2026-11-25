@@ -263,7 +263,11 @@ The likelihood is simulated: each segment's likelihood is averaged over
 points), with analytic gradients. `rpar_threshold` adds a random term to
 the gaps between thresholds, which changes the share of the middle
 categories. Random slopes are more terms in the same formulas, such as
-`rpar_total = ~ 1 + lnaadt`.
+`rpar_total = ~ 1 + lnaadt`. With random parameters, `weights` are
+frequency weights of the segments, so they must be the same for all
+years of a segment. A truncated total is truncated given the segment's
+random parameters, and `type = "total_positive"` averages
+$E(c \mid b) / (1 - P_0(b))$ over them.
 
 Predictions for a new segment average over the random parameters
 (`random = "marginal"`, the default). For a segment in the estimation

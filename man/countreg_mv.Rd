@@ -33,7 +33,8 @@ countreg_mv(
 \code{cbind(y_1, ..., y_J)} and one right-hand side for every equation, or a
 list of two-sided formulas, one per outcome (named by the list names,
 or by their responses). An \code{offset()} term (an exposure) belongs in the
-formulas.}
+formulas. A \code{.} on the right stands for the columns of \code{data} other
+than the outcomes.}
 
 \item{data}{a data frame.}
 
@@ -51,7 +52,9 @@ constant parameter).}
 equation, instead of \code{offset()} in the formulas.}
 
 \item{weights}{optional frequency weights: a column name or a numeric
-vector.}
+vector. With random parameters they weight the units' simulated
+log-likelihoods, so with \code{group_var} they must be constant within
+units.}
 
 \item{group_var}{optional column naming the units for cluster-robust
 standard errors (such as a site observed over several years).}
@@ -141,7 +144,13 @@ F_J(y_J); \theta)}. For counts, the probability of the observed
 combination is the exact volume of the copula over the rectangle
 \eqn{[F_j(y_j - 1), F_j(y_j)]} (the sum over its \eqn{2^J} corners;
 Nikoloulopoulos and Karlis 2009), not a continuous approximation such as
-the midpoint or jittering. The margins are those of the equations, so
+the midpoint or jittering. Where a count is in the upper tail of its
+distribution, both ends of its interval are close to 1 and the corner
+sum would lose the probability; the volume is then integrated
+numerically over the outcome's upper tail probabilities
+\eqn{[P(Y_j > y_j), P(Y_j > y_j - 1)]} (and likewise where the corners
+cancel for other reasons), so that improbable combinations keep their
+relative precision. The margins are those of the equations, so
 expected counts and each outcome's probabilities do not change; the
 copula changes the joint and conditional probabilities. The families
 differ in the shape of the dependence:

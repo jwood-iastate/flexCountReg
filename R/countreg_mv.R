@@ -22,7 +22,8 @@
 #'   `cbind(y_1, ..., y_J)` and one right-hand side for every equation, or a
 #'   list of two-sided formulas, one per outcome (named by the list names,
 #'   or by their responses). An `offset()` term (an exposure) belongs in the
-#'   formulas.
+#'   formulas. A `.` on the right stands for the columns of `data` other
+#'   than the outcomes.
 #' @param data a data frame.
 #' @param family the count family of each outcome (see [count_families]):
 #'   one code for every outcome, or one per outcome (named by outcome or in
@@ -35,7 +36,9 @@
 #' @param offset optional names of offset columns (log scale) used by every
 #'   equation, instead of `offset()` in the formulas.
 #' @param weights optional frequency weights: a column name or a numeric
-#'   vector.
+#'   vector. With random parameters they weight the units' simulated
+#'   log-likelihoods, so with `group_var` they must be constant within
+#'   units.
 #' @param group_var optional column naming the units for cluster-robust
 #'   standard errors (such as a site observed over several years).
 #' @param stderr `"normal"` (from the Hessian, the default), `"robust"`
@@ -105,7 +108,13 @@
 #' combination is the exact volume of the copula over the rectangle
 #' \eqn{[F_j(y_j - 1), F_j(y_j)]} (the sum over its \eqn{2^J} corners;
 #' Nikoloulopoulos and Karlis 2009), not a continuous approximation such as
-#' the midpoint or jittering. The margins are those of the equations, so
+#' the midpoint or jittering. Where a count is in the upper tail of its
+#' distribution, both ends of its interval are close to 1 and the corner
+#' sum would lose the probability; the volume is then integrated
+#' numerically over the outcome's upper tail probabilities
+#' \eqn{[P(Y_j > y_j), P(Y_j > y_j - 1)]} (and likewise where the corners
+#' cancel for other reasons), so that improbable combinations keep their
+#' relative precision. The margins are those of the equations, so
 #' expected counts and each outcome's probabilities do not change; the
 #' copula changes the joint and conditional probabilities. The families
 #' differ in the shape of the dependence:
@@ -309,6 +318,15 @@ countreg_mv <- function(formula, data, family = "NB2",
     }
     names_all <- c(names_all, RS$names)
     unit <- if (is.null(group_var)) factor(seq_len(E$n)) else preps[[1]]$group
+    # Frequency weights apply to the units (the independent observations
+    # of the simulated likelihood)
+    if (!is.null(weights) && !is.null(group_var) &&
+        any(tapply(w, unit, function(v) diff(range(v))) > 0)) {
+      stop("`weights` vary within units of `group_var`. With random ",
+           "parameters, weights apply to whole units (the independent ",
+           "observations), so they must be constant within each unit.",
+           call. = FALSE)
+    }
     draw_seed <- seed %||% sample.int(.Machine$integer.max, 1L)
     E[c("RS", "g", "G", "units", "names")] <- list(
       RS, as.integer(unit), nlevels(unit), levels(unit), names_all)
@@ -346,10 +364,19 @@ countreg_mv <- function(formula, data, family = "NB2",
   fit <- .fcr_set_final_hessian(fit, fn, gr, method)
   est <- fit$estimate
   names(est) <- names_all
+  draw_signs <- NULL
   if (has_rpar) {
+    # Report the Cholesky factor with a positive diagonal. Changing the
+    # signs of column l of L leaves L z with the same distribution, but the
+    # simulated likelihood uses fixed draws that are not symmetric: the
+    # draws of z_l change sign too, so that the reported estimate with
+    # those draws is exactly the simulated optimum (loglik, scores and
+    # posterior weights below, and the draws of posterior predictions).
     sg <- .fcr_chol_signs(est, E$RS)
     est <- est * sg
     fit$hessian <- fit$hessian * outer(sg, sg)
+    draw_signs <- .fcr_mv_draw_signs(sg, E$RS)
+    E$UA <- .fcr_mv_sign_draws(E$UA, draw_signs)
   }
   conv <- isTRUE(.fcr_converged(fit, if (is.null(fit$refined_from)) method
                                  else "NR"))
@@ -363,8 +390,11 @@ countreg_mv <- function(formula, data, family = "NB2",
   V <- switch(stderr,
     normal = Hv,
     robust = if (has_rpar) {
-      # The units (groups) are the independent observations
-      Hv %*% crossprod(U) %*% Hv
+      # The units (groups) are the independent observations; a unit with
+      # frequency weight w counts as w units
+      wu <- .fcr_mv_unit_weights(E)
+      keep <- wu > 0
+      Hv %*% crossprod(U[keep, , drop = FALSE] / sqrt(wu[keep])) %*% Hv
     } else {
       keep <- w > 0
       Hv %*% crossprod(U[keep, , drop = FALSE] / sqrt(w[keep])) %*% Hv
@@ -397,8 +427,9 @@ countreg_mv <- function(formula, data, family = "NB2",
       idx = E$cop$idx),
     rpar = if (has_rpar) list(
       layout = E$RS, formulas = rpf, correlation = correlation,
-      draws = rpar_draws, seed = draw_seed, units = E$units,
-      unit_of_row = E$g, posterior = .fcr_mv_sim_ll(est, E, grad = TRUE)$W))
+      draws = rpar_draws, seed = draw_seed, draw_signs = draw_signs,
+      units = E$units, unit_of_row = E$g,
+      posterior = .fcr_mv_sim_ll(est, E, grad = TRUE)$W))
   colnames(out$y) <- outcomes
   names(out$formulas) <- outcomes
   class(out) <- "countreg_mv"
@@ -447,7 +478,22 @@ countreg_mv <- function(formula, data, family = "NB2",
     stop("The outcomes must have different names: ", toString(nm[duplicated(nm)]),
          ".", call. = FALSE)
   }
+  # `.` stands for the columns of `data` other than the outcomes (no
+  # outcome is a predictor of another through the dot)
+  yvars <- unique(unlist(lapply(forms, function(f) all.vars(f[[2L]]))))
+  forms <- lapply(forms, .fcr_mv_expand_dot, data = data, exclude = yvars)
   stats::setNames(forms, nm)
+}
+
+# A two-sided formula with `.` on the right expanded against the columns of
+# `data` other than `exclude`.
+.fcr_mv_expand_dot <- function(f, data, exclude) {
+  if (!"." %in% all.vars(f[[3L]])) return(f)
+  keep <- setdiff(names(data), exclude)
+  rhs <- stats::formula(stats::terms(stats::as.formula(
+    call("~", f[[3L]]), env = environment(f)), data = data[keep]))
+  f[[3L]] <- rhs[[2L]]
+  f
 }
 
 # One value per outcome from a single value or a vector/list named by
@@ -656,9 +702,30 @@ countreg_mv <- function(formula, data, family = "NB2",
   })
 }
 
+# Frequency weight of each unit (constant within units; one row per unit
+# without group_var).
+.fcr_mv_unit_weights <- function(E) E$w[match(seq_len(E$G), E$g)]
+
+# Signs of the columns of the Cholesky factor (one per random term) from
+# the sign changes of the parameters (.fcr_chol_signs()).
+.fcr_mv_draw_signs <- function(sg, RS) {
+  dg <- RS$pairs[, "k"] == RS$pairs[, "l"]
+  out <- rep(1, RS$K)
+  out[RS$pairs[dg, "l"]] <- sg[RS$idx[dg]]
+  out
+}
+
+# Draws (units x K x R) with the signs of the random terms changed.
+.fcr_mv_sign_draws <- function(UA, signs) {
+  if (is.null(signs)) return(UA)
+  for (l in which(signs < 0)) UA[, l, ] <- -UA[, l, ]
+  UA
+}
+
 # Simulated log-likelihood: one contribution per unit,
-# log((1/R) sum_r prod_(rows of the unit) prod_j f_j(y_ij | b_r)), and its
-# gradient through the posterior weights of the draws.
+# w_u log((1/R) sum_r prod_(rows of the unit) prod_j f_j(y_ij | b_r)) with
+# the unit's frequency weight w_u, and its gradient through the posterior
+# weights of the draws.
 .fcr_mv_sim_ll <- function(p, E, grad = FALSE) {
   RS <- E$RS
   L <- .fcr_alloc_chol(p, RS)
@@ -666,8 +733,11 @@ countreg_mv <- function(formula, data, family = "NB2",
   G <- E$G
   R <- dim(E$UA)[3L]
   w <- E$w
+  wu <- .fcr_mv_unit_weights(E)
+  # Rows of units with weight 0 are left out
+  w1 <- as.numeric(w > 0)
   row_ll <- function(adds) {
-    ll <- w * .fcr_mv_rowparts(p, E, adds, grad = FALSE)$ll
+    ll <- .fcr_mv_rowparts(p, E, adds, grad = FALSE)$ll
     ll[w == 0] <- 0
     ll
   }
@@ -681,9 +751,10 @@ countreg_mv <- function(formula, data, family = "NB2",
   mx[!is.finite(mx)] <- 0
   sm <- rowSums(exp(LL - mx))
   lg <- mx + log(sm) - log(R)
+  lg[wu == 0] <- 0
   if (!grad) {
     lg[!is.finite(lg)] <- NA_real_
-    return(list(ll = lg))
+    return(list(ll = wu * lg))
   }
   W <- exp(LL - mx) / sm
   W[!is.finite(W)] <- 0
@@ -701,12 +772,12 @@ countreg_mv <- function(formula, data, family = "NB2",
     for (j in seq_along(E$eqs)) {
       eq <- E$eqs[[j]]
       pt <- rp$parts[[j]]
-      Gr <- .fcr_mv_eq_grad(pt, eq, w, Gr)
+      Gr <- .fcr_mv_eq_grad(pt, eq, w1, Gr)
       for (k in which(RS$eq == j)) {
-        Db[, k] <- w * pt$s_eta * eq$Xr[, RS$col[k]]
+        Db[, k] <- w1 * pt$s_eta * eq$Xr[, RS$col[k]]
       }
     }
-    if (!is.null(E$cop)) Gr[, E$cop$idx] <- w * rp$s_cop
+    if (!is.null(E$cop)) Gr[, E$cop$idx] <- w1 * rp$s_cop
     Urow <- Ug[g, , drop = FALSE]
     Gr[, RS$idx] <- Db[, RS$pairs[, "k"], drop = FALSE] *
       Urow[, RS$pairs[, "l"], drop = FALSE]
@@ -714,15 +785,15 @@ countreg_mv <- function(formula, data, family = "NB2",
     Gg <- Gg + rowsum(Gr, g, reorder = TRUE) * W[, r]
   }
   lg[!is.finite(lg)] <- 0
-  list(ll = lg, G = Gg, W = W)
+  list(ll = wu * lg, G = Gg * wu, W = W)
 }
 
 # Number of draws for predictions: at least this many.
 .fcr_mv_pred_draws <- 500L
 
 # Average of FUN(adds) over the distribution of the random parameters for
-# the rows of the design E: marginal (plain Halton points, the same for
-# every row) or, for the rows of units in the estimation data, posterior
+# the rows of the design E: marginal (a Gauss-Hermite grid,
+# .fcr_normal_nodes(), the same for every row) or, for the rows of units in the estimation data, posterior
 # (their draws weighted by their posterior weights). FUN returns an n x m
 # matrix. Without random parameters, FUN(NULL).
 .fcr_mv_integrate <- function(object, E, newdata, FUN,
@@ -732,12 +803,16 @@ countreg_mv <- function(formula, data, family = "NB2",
   RS <- rp$layout
   L <- .fcr_alloc_chol(object$coefficients, RS)
   n <- E$n
-  Rm <- max(rp$draws, .fcr_mv_pred_draws)
-  Um <- matrix(stats::qnorm(.fcr_halton(Rm, RS$K)), Rm, RS$K)
+  # The nodes carry the sign changes of the columns of L made after the
+  # fit (see countreg_mv()); the grid is symmetric, so this changes only
+  # the order of the nodes
+  signs <- rp$draw_signs %||% rep(1, RS$K)
+  nd <- .fcr_normal_nodes(RS$K)
+  Um <- nd$Z * rep(signs, each = nrow(nd$Z))
   acc <- 0
-  for (r in seq_len(Rm)) {
+  for (r in seq_len(nrow(Um))) {
     B <- matrix(as.vector(Um[r, ] %*% t(L)), n, RS$K, byrow = TRUE)
-    acc <- acc + FUN(.fcr_mv_add(B, E)) / Rm
+    acc <- acc + nd$w[r] * FUN(.fcr_mv_add(B, E))
   }
   if (random == "posterior") {
     gv <- object$group_var
@@ -751,7 +826,8 @@ countreg_mv <- function(formula, data, family = "NB2",
     ui <- match(key, rp$units)
     seen <- which(!is.na(ui))
     if (length(seen)) {
-      UA <- .fcr_alloc_draws(length(rp$units), RS$K, rp$draws, rp$seed)
+      UA <- .fcr_mv_sign_draws(
+        .fcr_alloc_draws(length(rp$units), RS$K, rp$draws, rp$seed), signs)
       post <- 0
       for (r in seq_len(rp$draws)) {
         B <- matrix(0, n, RS$K)
@@ -799,7 +875,7 @@ countreg_mv <- function(formula, data, family = "NB2",
   bd <- .fcr_mv_cop_bounds(object$coefficients, E, Y, adds)
   if (is.null(bd)) return(rep(NA_real_, nrow(Y)))
   pmax(.fcr_cop_rect(bd$hi, bd$lo, object$copula$family,
-                     object$copula$theta), 0)
+                     object$copula$theta, bd$Ghi, bd$Glo), 0)
 }
 
 # Probabilities of the counts 0..mc of equation j at random terms `add`
@@ -886,12 +962,15 @@ countreg_mv <- function(formula, data, family = "NB2",
 #' @return A matrix with one column per outcome (`"response"`, `"link"`,
 #'   `"variance"`), a list of matrices (`"prob"`), a vector (`"joint"`) or
 #'   a matrix with one column per count (`"conditional"`).
-#' @details Without random parameters the outcomes are independent given
-#'   the covariates, so joint probabilities are products of the outcomes'
-#'   probabilities and conditional probabilities equal the marginal ones.
-#'   With random parameters shared by the equations they are not: the
-#'   probabilities are averages over the random parameters of products of
-#'   the outcomes' probabilities.
+#' @details Without random parameters or a copula the outcomes are
+#'   independent given the covariates, so joint probabilities are products
+#'   of the outcomes' probabilities and conditional probabilities equal the
+#'   marginal ones. With a copula, joint probabilities are the copula's
+#'   volumes of the rectangles of the counts (computed from the upper tails
+#'   where the counts are in them, so that improbable combinations keep
+#'   their precision). With random parameters shared by the equations the
+#'   probabilities are averages over the random parameters of the products
+#'   of the outcomes' probabilities (or of the copula's volumes).
 #' @export
 predict.countreg_mv <- function(object, newdata = NULL,
                                 type = c("response", "link", "variance",
@@ -1070,15 +1149,17 @@ print.summary.countreg_mv <- function(x, digits = 4, ...) {
   rp <- o$rpar
   cop <- o$copula
   if (!is.null(cop)) {
-    cat("Dependence:  ", .fcr_cop_label(cop$family), "copula\n\n")
+    cat("Dependence:  ", .fcr_cop_label(cop$family), "copula\n")
   } else if (is.null(rp)) {
-    cat("Equations:   independent given the covariates\n\n")
-  } else {
+    cat("Equations:   independent given the covariates\n")
+  }
+  if (!is.null(rp)) {
     cat("Units:      ", o$n_units, "\n")
     cat("Random parameters:", rp$correlation, "correlation,", rp$draws,
         "draws per", if (is.null(o$group_var)) "row" else
-          paste("unit of", toString(o$group_var)), "\n\n")
+          paste("unit of", toString(o$group_var)), "\n")
   }
+  cat("\n")
   for (j in seq_along(o$outcomes)) {
     oc <- o$outcomes[j]
     cat(oc, " (", .fcr_family_label(o$family[[j]]), "):\n", sep = "")
@@ -1198,6 +1279,12 @@ simulate.countreg_mv <- function(object, nsim = 1, seed = NULL,
       U <- .fcr_rcopula(n, length(E$eqs), cop$family, cop$theta)
       Y <- vapply(seq_along(E$eqs), function(j) {
         v <- .fcr_mv_eq_values(p, E$eqs[[j]], adds[[j]])
+        if (is.null(v)) {
+          stop("Cannot simulate ", E$eqs[[j]]$outcome, ": its distribution ",
+               "is not defined at the estimates for some rows of `newdata` ",
+               "(", .fcr_family_label(E$eqs[[j]]$family), " with these ",
+               "means and distribution parameters).", call. = FALSE)
+        }
         .fcr_mv_qcount(E$eqs[[j]], v, U[, j])
       }, numeric(n))
       Y <- matrix(Y, nrow = n)

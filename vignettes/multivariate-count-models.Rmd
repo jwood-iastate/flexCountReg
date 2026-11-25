@@ -140,7 +140,7 @@ segments with more PDO crashes than their traffic and speed limit predict
 tend to have more injury crashes too. The evidence for it is modest (the
 `chol:` element that carries it has p of about 0.06), because injury
 crashes are rare. The MVPLN still fits much better than the independent
-NB2 and PIG equations (AIC 2473 against 2510). Other families can be used in the same way: they keep their
+NB2 and PIG equations (AIC 2472 against 2510). Other families can be used in the same way: they keep their
 own overdispersion within each outcome, and the random intercepts add the
 correlation between outcomes. Random slopes are more terms in
 `rpar_formula`, such as `~ 1 + lnaadt`, and `rpar_formula` can also be a
@@ -171,9 +171,9 @@ round(predict(mr, newdata = nd, type = "conditional", outcome = "injury",
 ```
 
 Three PDO crashes raise the probability of an injury crash above its
-marginal value, and no PDO crash lowers it. Without random parameters the
-equations are independent, and the conditional probabilities equal the
-marginal ones.
+marginal value, and no PDO crash lowers it. Without random parameters (or
+a copula, Section 7) the equations are independent, and the conditional
+probabilities equal the marginal ones.
 
 For segments in the estimation data, `random = "posterior"` uses their own
 crash history (Empirical Bayes):
@@ -196,7 +196,11 @@ $$
 For counts, the probability of the observed pair is the exact volume of the
 copula over the rectangle $[F_1(y_1 - 1), F_1(y_1)] \times
 [F_2(y_2 - 1), F_2(y_2)]$, the sum of four copula values (of $2^J$ with $J$
-outcomes). The copula families differ in the shape of the dependence:
+outcomes). For a count far in the upper tail of its distribution both ends
+of its interval are within rounding of 1, so there the volume is
+integrated over the upper tail probabilities $P(Y > y)$ instead, and
+improbable pairs keep their precision. The copula families differ in the
+shape of the dependence:
 
 | `copula` | dependence |
 |---|---|
@@ -249,7 +253,7 @@ mb <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
 
 This fit takes about two minutes. Its copula parameter is close to zero
 (Frank theta 0.06, standard error 0.71), and its AIC (2474.7) is higher
-than that of the MVPLN alone (2472.7): once the segments' random
+than that of the MVPLN alone (2472.1): once the segments' random
 intercepts are in the model, nothing is left for the copula. On simulated
 data with both kinds of dependence, the combined model recovers both.
 

@@ -5,27 +5,51 @@
     is.finite(p$time) & p$time > 0
 }
 
+# log G(s; x) = log pgamma(s, x) (or its upper tail), recycled. `logs` is
+# log(s), given when s itself may underflow (the mean-parameterized
+# GAMMACOUNT family with small shapes); below s = exp(-700) the series
+# s^x e^(-s) / Gamma(x + 1) sum_n s^n / ((x + 1)...(x + n)) is
+# s^x / Gamma(x + 1) to double precision.
+.gcount_lpg <- function(s, x, lower, logs = NULL) {
+  out <- stats::pgamma(s, x, lower.tail = lower, log.p = TRUE)
+  if (!is.null(logs)) {
+    r <- .fcr_recycle(logs, x)
+    tiny <- !is.na(r[[1]]) & r[[1]] <= -700
+    if (any(tiny)) {
+      out <- rep_len(out, length(r[[1]]))
+      lg <- r[[2]][tiny] * r[[1]][tiny] - lgamma(r[[2]][tiny] + 1)
+      out[tiny] <- if (lower) lg else .fcr_log1mexp(lg)
+    }
+  }
+  out
+}
+
 # With s = rate * time and G(s; a) = pgamma(s, a) the gamma(a, 1) CDF:
 #   P(N <= y) = 1 - G(s; (y + 1) shape),  P(N > y) = G(s; (y + 1) shape)
 .gcount_logcdf <- function(y, p, lower) {
-  stats::pgamma(p$rate * p$time, shape = (y + 1) * p$shape,
-                lower.tail = !lower, log.p = TRUE)
+  .gcount_lpg(p$rate * p$time, (y + 1) * p$shape, !lower, p$logs)
 }
 
 # P(N = y) = G(s; y a) - G(s; (y + 1) a) = Q(s; (y + 1) a) - Q(s; y a), with
 # Q = 1 - G. The difference is taken between the pair of tail probabilities
-# that are not close to 1.
+# that are not close to 1. `p$logs` (optional) is log(rate * time).
 .gcount_logpmf <- function(y, p) {
   s <- p$rate * p$time
   a <- p$shape
-  out <- stats::pgamma(s, a, lower.tail = FALSE, log.p = TRUE)   # y = 0
+  logs <- p$logs
+  if (!is.null(logs)) {
+    r <- .fcr_recycle(y, s, a, logs)
+    y <- r[[1]]; s <- r[[2]]; a <- r[[3]]; logs <- r[[4]]
+  }
+  out <- .gcount_lpg(s, a, FALSE, logs)   # y = 0
   pos <- y > 0
   if (any(pos)) {
     s <- s[pos]; a <- a[pos]; yy <- y[pos]
-    la <- stats::pgamma(s, yy * a, log.p = TRUE)          # log G(s; y a)
-    lb <- stats::pgamma(s, (yy + 1) * a, log.p = TRUE)    # log G(s; (y+1) a)
-    ua <- stats::pgamma(s, yy * a, lower.tail = FALSE, log.p = TRUE)
-    ub <- stats::pgamma(s, (yy + 1) * a, lower.tail = FALSE, log.p = TRUE)
+    lgs <- if (is.null(logs)) NULL else logs[pos]
+    la <- .gcount_lpg(s, yy * a, TRUE, lgs)          # log G(s; y a)
+    lb <- .gcount_lpg(s, (yy + 1) * a, TRUE, lgs)    # log G(s; (y+1) a)
+    ua <- .gcount_lpg(s, yy * a, FALSE, lgs)
+    ub <- .gcount_lpg(s, (yy + 1) * a, FALSE, lgs)
     use_low <- la <= log(0.5)
     res <- ifelse(use_low, la + .fcr_log1mexp(lb - la),
                   ub + .fcr_log1mexp(ua - ub))

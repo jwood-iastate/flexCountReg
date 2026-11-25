@@ -47,6 +47,13 @@ The posterior probabilities give a descriptive classification
 (e.g. the most probable class of each unit), which is uncertain: units
 with probabilities near \eqn{1/K} are not well classified. The entropy
 in \code{summary()} summarizes that uncertainty.
+
+With random parameters within the classes, the posterior of a unit
+integrates over its random parameters by simulation. Panels of the
+training data passed in \code{newdata} (matched by \code{group_var}) use their
+estimation draws and so reproduce the stored probabilities; new panels,
+and the rows of a cross-sectional model passed as \code{newdata}, use a
+common set of Halton draws (see \code{\link[=predict.countreg_mix]{predict.countreg_mix()}}).
 }
 \examples{
 set.seed(1)

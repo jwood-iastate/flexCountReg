@@ -68,7 +68,10 @@
 #' families are slower to fit, especially in [countreg_rp()]; their shape
 #' parameter must lie in \eqn{[10^{-6}, 10^6]} and the mean be at most
 #' \eqn{10^9} (outside this numerical domain the likelihood is treated as
-#' 0).
+#' 0). For `DPO` the probabilities are normalized by summing at most two
+#' million terms, so in addition \eqn{\mu / \phi} (about the variance)
+#' must be below about \eqn{10^{10}}; very small \eqn{\phi} (below about
+#' \eqn{10^{-4}}) also makes each evaluation slow.
 #'
 #' ## Distribution functions and model features
 #'

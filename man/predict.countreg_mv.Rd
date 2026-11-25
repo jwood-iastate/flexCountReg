@@ -68,10 +68,13 @@ a matrix with one column per count (\code{"conditional"}).
 Predictions from multivariate count models
 }
 \details{
-Without random parameters the outcomes are independent given
-the covariates, so joint probabilities are products of the outcomes'
-probabilities and conditional probabilities equal the marginal ones.
-With random parameters shared by the equations they are not: the
-probabilities are averages over the random parameters of products of
-the outcomes' probabilities.
+Without random parameters or a copula the outcomes are
+independent given the covariates, so joint probabilities are products
+of the outcomes' probabilities and conditional probabilities equal the
+marginal ones. With a copula, joint probabilities are the copula's
+volumes of the rectangles of the counts (computed from the upper tails
+where the counts are in them, so that improbable combinations keep
+their precision). With random parameters shared by the equations the
+probabilities are averages over the random parameters of the products
+of the outcomes' probabilities (or of the copula's volumes).
 }

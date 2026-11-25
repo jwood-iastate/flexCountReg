@@ -466,3 +466,166 @@ test_that("shared-term input errors", {
   expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d,
                               shared_formula = ~ 1, shared_in = "count"))
 })
+
+# ---- Regression tests (review corrections) ----------------------------------
+
+test_that("weights with random parameters are unit frequency weights", {
+  d <- sim_alloc_rp(G = 60, Tn = 3)
+  fit <- function(...) suppressMessages(countreg_alloc(
+    cbind(a, b, c) ~ x, data = d, family = "POISSON", alloc_formula = ~ z,
+    group_var = "site", rpar_total = ~ 1, rpar_draws = 30, seed = 1, ...))
+  # Doubling every weight doubles the log-likelihood, not the estimates
+  m1 <- fit()
+  m2 <- fit(weights = rep(2, nrow(d)))
+  expect_equal(coef(m2), coef(m1), tolerance = 1e-3)
+  expect_equal(m2$loglik, 2 * m1$loglik, tolerance = 1e-6)
+  # Integer weights equal the expanded data (each replicated row its own
+  # unit without group_var), with the same draws for the replicates
+  d$wt <- rep(1:3, length.out = nrow(d))
+  setup <- function(dat, ...) suppressMessages(countreg_alloc(
+    cbind(a, b, c) ~ x, data = dat, family = "NB2", alloc_formula = ~ z,
+    rpar_total = ~ 1, rpar_alloc = ~ 1, rpar_draws = 20, seed = 1,
+    .setup_only = TRUE, ...))
+  E <- setup(d, weights = "wt")
+  ix <- rep(seq_len(nrow(d)), d$wt)
+  Ex <- setup(d[ix, ])
+  Ex$UA <- E$UA[ix, , , drop = FALSE]
+  p <- flexCountReg:::.fcr_alloc_start(E)
+  p[E$RS$idx] <- c(0.5, 0.4)
+  a <- flexCountReg:::.fcr_alloc_sim_ll(p, E, grad = TRUE)
+  b <- flexCountReg:::.fcr_alloc_sim_ll(p, Ex, grad = TRUE)
+  expect_equal(sum(a$ll), sum(b$ll), tolerance = 1e-10)
+  expect_equal(colSums(a$G), colSums(b$G), tolerance = 1e-8)
+  # Weights must be constant within a unit
+  d$wv <- seq_len(nrow(d))
+  expect_error(setup(d, weights = "wv", group_var = "site"),
+               "same for every row of a unit")
+  # The analytic gradient with unit weights (and a shared term)
+  skip_if_not_installed("numDeriv")
+  d$ws <- d$site %% 3 + 1
+  for (sh in list(NULL, ~ 1)) {
+    E <- setup(d, weights = "ws", group_var = "site", shared_formula = sh,
+               shared_nodes = 8)
+    set.seed(2)
+    p <- flexCountReg:::.fcr_alloc_start(E) +
+      stats::runif(length(E$S$names), -0.1, 0.1)
+    f <- function(q) sum(flexCountReg:::.fcr_alloc_sim_ll(q, E)$ll)
+    ana <- colSums(flexCountReg:::.fcr_alloc_sim_ll(p, E, grad = TRUE)$G)
+    expect_equal(ana, numDeriv::grad(f, p), tolerance = 1e-6)
+  }
+})
+
+test_that("flipping the Cholesky signs keeps the simulated optimum", {
+  d <- sim_alloc_rp(G = 80, Tn = 3)
+  args <- list(cbind(a, b, c) ~ x, data = d, family = "POISSON",
+               alloc_formula = ~ z, group_var = "site", rpar_total = ~ 1,
+               rpar_alloc = ~ 1, rpar_draws = 40, seed = 1)
+  E <- do.call(countreg_alloc, c(args, .setup_only = TRUE))
+  st <- flexCountReg:::.fcr_alloc_start(E)
+  st[E$RS$idx] <- c(-0.3, -0.3)
+  m <- do.call(countreg_alloc, c(args, list(start.vals = st)))
+  expect_true(all(coef(m)[E$RS$idx] > 0))
+  # The optimizer ended at negative SDs: the draws were negated with them
+  expect_equal(m$rpar$draw_signs, c(-1, -1))
+  E1 <- E
+  E1$UA <- flexCountReg:::.fcr_alloc_flip_draws(E$UA, m$rpar$draw_signs)
+  expect_equal(m$loglik,
+               sum(flexCountReg:::.fcr_alloc_sim_ll(coef(m), E1)$ll))
+  # ... which is the optimum: the unflipped estimate with the unflipped
+  # draws
+  p0 <- coef(m)
+  p0[E$RS$idx] <- -p0[E$RS$idx]
+  expect_equal(m$loglik, sum(flexCountReg:::.fcr_alloc_sim_ll(p0, E)$ll))
+  expect_lt(max(abs(colSums(m$gradientObs))), 0.05)
+  pp <- predict(m, random = "posterior", type = "total")
+  expect_equal(mean(pp), mean(d$a + d$b + d$c), tolerance = 0.02)
+})
+
+test_that("truncated totals with random parameters and a shared term", {
+  set.seed(2)
+  n <- 400
+  d <- data.frame(x = rnorm(n), z = rnorm(n))
+  tot <- rpois(n, exp(-0.3 + 0.3 * d$x + 0.9 * rnorm(n)))
+  d$a <- rbinom(n, tot, 0.6)
+  d$b <- tot - d$a
+  d <- d[tot > 0, ]
+  m <- suppressWarnings(countreg_alloc(
+    cbind(a, b) ~ x, data = d, family = "POISSON", alloc_formula = ~ z,
+    rpar_total = ~ 1, truncated = TRUE, rpar_draws = 100, seed = 5))
+  nd <- d[1:2, ]
+  # The likelihood truncates each row given its coefficient: the expected
+  # positive total averages the ratio over the random coefficient (here
+  # by exact integration)
+  cf <- coef(m)
+  mu <- exp(cf[1] + cf[2] * nd$x)
+  s <- unname(cf["sd:Total:(Intercept)"])
+  want <- vapply(mu, function(m0) stats::integrate(function(u) {
+    mb <- m0 * exp(s * u)
+    ratio <- ifelse(mb < 1e-12, 1, mb / -expm1(-mb))   # limit 1 at mb = 0
+    ratio * stats::dnorm(u)
+  }, -12, 12, rel.tol = 1e-10)$value, 0)
+  tp <- predict(m, newdata = nd, type = "total_positive")
+  expect_equal(unname(tp), unname(want), tolerance = 1e-6)
+  expect_equal(unname(rowSums(predict(m, newdata = nd, conditional = TRUE))),
+               unname(want), tolerance = 1e-6)
+  # Simulation of the shared-term model: the shared term is redrawn with
+  # the total, so the simulated mean is the likelihood's E[c | c > 0]
+  set.seed(1)
+  n <- 400
+  d <- data.frame(x = rnorm(n), z = rnorm(n))
+  tot <- rpois(n, exp(-0.5 + 0.3 * d$x + rnorm(n)))
+  d$a <- rbinom(n, tot, 1 - pnorm(0.5 * d$z))
+  d$b <- tot - d$a
+  d <- d[tot > 0, ]
+  ms <- suppressWarnings(countreg_alloc(
+    cbind(a, b) ~ x, data = d, family = "POISSON", alloc_formula = ~ z,
+    shared_formula = ~ 1, shared_in = "total", truncated = TRUE,
+    shared_nodes = 30))
+  nd <- d[1, ]
+  cf <- coef(ms)
+  m0 <- exp(cf[1] + cf[2] * nd$x)
+  lam <- cf["shared:Total:(Intercept)"]
+  num <- stats::integrate(function(u) m0 * exp(lam * u) * dnorm(u),
+                          -10, 10)$value
+  den <- stats::integrate(function(u) (1 - exp(-m0 * exp(lam * u))) *
+                            dnorm(u), -10, 10)$value
+  tp <- predict(ms, newdata = nd, type = "total_positive")
+  expect_equal(unname(tp), num / den, tolerance = 1e-4)
+  st <- vapply(simulate(ms, nsim = 4000, seed = 1, newdata = nd), sum, 0)
+  expect_true(all(st > 0))
+  expect_lt(abs(mean(st) - num / den), 4 * sd(st) / sqrt(length(st)))
+})
+
+test_that("formula dots, offsets and factor allocation formulas", {
+  d <- sim_alloc(300)
+  dd <- d[, c("a", "b", "c", "x", "z")]
+  m <- suppressMessages(countreg_alloc(cbind(a, b, c) ~ ., data = dd,
+                                       family = "POISSON"))
+  expect_equal(names(coef(m))[1:3], c("(Intercept)", "x", "z"))
+  expect_true(all(c("Allocation:x", "Allocation:z") %in% names(coef(m))))
+  m2 <- suppressMessages(countreg_alloc(cbind(a, b, c) ~ x, data = dd,
+                                        family = "POISSON",
+                                        alloc_formula = ~ .))
+  expect_false(any(grepl("fcr_total|Allocation:a", names(coef(m2)))))
+  expect_equal(m2$loglik, suppressMessages(countreg_alloc(
+    cbind(a, b, c) ~ x, data = dd, family = "POISSON",
+    alloc_formula = ~ x + z))$loglik)
+  # Offsets belong to the total
+  expect_error(countreg_alloc(cbind(a, b, c) ~ x, data = d,
+                              alloc_formula = ~ z + offset(log(len))),
+               "offset")
+  # Posterior predictions need random parameters
+  expect_error(predict(m, random = "posterior"),
+               "unit-level random parameters")
+  # A factor without intercept in an ordered allocation: coded with
+  # contrasts (the thresholds are the intercept)
+  d$f <- factor(d$v)
+  m0 <- suppressMessages(countreg_alloc(cbind(a, b, c) ~ x, data = d,
+                                        family = "POISSON",
+                                        alloc_formula = ~ 0 + f))
+  m1 <- suppressMessages(countreg_alloc(cbind(a, b, c) ~ x, data = d,
+                                        family = "POISSON",
+                                        alloc_formula = ~ f))
+  expect_equal(coef(m0), coef(m1))
+  expect_true(all(is.finite(sqrt(diag(vcov(m0))))))
+})

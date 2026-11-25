@@ -224,7 +224,9 @@ fit, so predictions for a known unit use its training means: rows of
 
 Predictions for a known segment use its estimated fixed effect. A segment
 that was not in the estimation data has no fixed effect, so its prediction
-is `NA` unless you ask for the mean effect explicitly:
+is `NA` unless you ask for the mean effect explicitly (the mean of the
+estimated effects weighted by the segments' sizes in the estimation data,
+fixed at estimation):
 
 ```{r predict}
 nd <- washington_roads[washington_roads$ID %in%
@@ -242,9 +244,10 @@ predict(fe2, newdata = new_site, newgroup = "mean_fe")
 The Poisson estimates, log-likelihoods and dropped groups equal those of
 `fixest::fepois()`, and the NB2 estimates those of `fixest::fenegbin()`
 and of `MASS::glm.nb()` with segment dummies. The cluster-robust standard
-errors use the factor $G/(G-1)$ for $G$ clusters; they equal fixest's with
-`ssc(adj = FALSE)`, as fixest by default also multiplies the variance by
-$(n-1)/(n-K)$.
+errors use the factor $G/(G-1)$ for $G$ clusters; they equal fixest's when
+the clustering is given explicitly (`vcov = ~ ID`; fixest 0.13 and later
+default to iid standard errors) with `ssc(adj = FALSE)`, as fixest by
+default also multiplies the variance by $(n-1)/(n-K)$.
 
 ## References
 

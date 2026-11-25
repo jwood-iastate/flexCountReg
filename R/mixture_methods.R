@@ -10,19 +10,34 @@
        mix_mode = m$mix_mode, fixed_mixing = m$fixed_mixing,
        haltons = haltons, normed_haltons = stats::qnorm(haltons),
        engine = m$engine %||% "quadrature", families = m$family,
-       labels = m$labels, rp = m$rpar)
+       labels = m$labels,
+       rp = if (!is.null(m$rpar)) utils::modifyList(
+         m$rpar, list(n_units = m$rpar$n_units %||% m$n_units)))
 }
 
 # Component values and log prior probabilities for the rows of `data`.
-.fcr_fm_rows <- function(object, data, theta = object$model$estimate) {
+# With random parameters, `train_unit` (the training unit of each row)
+# gives the rows the estimation draws of their units instead of the shared
+# prediction draws.
+.fcr_fm_rows <- function(object, data, theta = object$model$estimate,
+                         train_unit = NULL) {
   ps <- .fcr_fm_pspec(object)
   des <- .fcr_fm_design(ps, data)
   pars <- .fcr_fm_unpack(theta, ps$map)
+  draws <- if (!is.null(ps$rp) && !is.null(train_unit)) {
+    .fcr_fm_rp_train_draws(ps$rp, train_unit, ps$K)
+  }
   cvs <- lapply(seq_len(ps$K), function(k) {
     cv <- .fcr_fm_comp_values(des, pars, k)
-    # Random parameters: the component's expected counts at R draws
-    if (!is.null(ps$rp)) cv[c("mu_draws", "mu_fixed")] <-
-      .fcr_fm_rp_mu_draws(ps$rp, des, pars, k)
+    # Random parameters: the component's expected counts at R draws, and
+    # its exact moments
+    if (!is.null(ps$rp)) {
+      md <- .fcr_fm_rp_mu_draws(ps$rp, des, pars, k, draws)
+      cv$mu_draws <- md$mu_draws
+      cv$mu_fixed <- md$mu_fixed
+      cv$draw_w <- md$draw_w
+      cv$rp_moments <- .fcr_fm_rp_moments(ps$rp, des, pars, k)
+    }
     cv
   })
   logpi <- .fcr_fm_logprior(ps, pars, des$Z, des$n)
@@ -41,7 +56,7 @@
     if (!any(ok)) next
     if (!is.null(cv$mu_draws)) {
       LP[ok, k] <- .fcr_lmean_rows(.fcr_fm_logpmf_draws(
-        r$ps, cv, r$ps$families[k], y, which(ok)))
+        r$ps, cv, r$ps$families[k], y, which(ok)), cv$draw_w)
       next
     }
     sv <- list(mu = cv$mu[ok], alpha = if (!is.null(cv$alpha)) cv$alpha[ok],
@@ -91,8 +106,15 @@
 # prior target of a panel model also works without the panel identifiers
 # (each row is then treated as its own unit); with them, the membership
 # variables are checked as in fitting.
+#
+# With random parameters, the posterior target evaluates the panels of
+# training units (matched by the panel identifiers) with their estimation
+# draws, so the training data give the stored posterior probabilities;
+# other panels use the shared prediction draws. Without panels the rows
+# cannot be matched to training units unless `train = TRUE` says that
+# `data` is the stored training data (`object$data`).
 .fcr_fm_log_class <- function(object, r, data, conditioning,
-                              history = NULL) {
+                              history = NULL, train = FALSE) {
   K <- r$ps$K
   if (K == 1L) return(r$logpi)
   gv <- object$model$group_var
@@ -116,7 +138,13 @@
       stop("`conditioning = \"posterior\"` needs the outcome in the data.",
            call. = FALSE)
     }
-    if (is.null(gv)) return(update(r$logpi, .fcr_fm_row_logpmf(r, y)))
+    if (is.null(gv)) {
+      rr <- if (train && !is.null(r$ps$rp)) {
+        used <- object$model$rows_used %||% seq_len(r$n)
+        .fcr_fm_rows(object, data, train_unit = match(seq_len(r$n), used))
+      } else r
+      return(update(r$logpi, .fcr_fm_row_logpmf(rr, y)))
+    }
     miss_post <- .fcr_fm_row_missing(r, y)
   }
   g <- .fcr_fm_group_ids(object, data)
@@ -127,7 +155,7 @@
     Zu <- .fcr_fm_panel_design(r$des$Z, gi, G, " (in the new data)")
     logpi_u <- .fcr_fm_logprior(r$ps, r$pars, Zu, G)
     if (conditioning == "prior") return(logpi_u[gi, , drop = FALSE])
-    A <- .fcr_fm_unit_A(r, y, gi, !miss_post)
+    A <- .fcr_fm_post_A(object, r, data, y, g, gi, !miss_post)
     return(update(logpi_u, A)[gi, , drop = FALSE])
   }
   # history
@@ -173,28 +201,82 @@
   out
 }
 
-# Component means (n x K), using each family's actual expectation.
+# Posterior log-likelihoods of the panels (G x K) for the posterior target
+# of a panel model. With random parameters, rows of training panels (by
+# their identifiers) use the estimation draws of their units, the others
+# the shared prediction draws.
+.fcr_fm_post_A <- function(object, r, data, y, g, gi, use) {
+  if (is.null(r$ps$rp)) return(.fcr_fm_unit_A(r, y, gi, use))
+  tu <- match(g, object$model$unit_ids)
+  tr <- !is.na(tu)
+  A <- .fcr_fm_unit_A(r, y, gi, use & !tr)
+  if (any(tr)) {
+    rows <- which(tr)
+    rt <- .fcr_fm_rows(object, data[rows, , drop = FALSE],
+                       train_unit = tu[rows])
+    At <- .fcr_fm_unit_A(rt, y[rows], gi[rows], use[rows])
+    A[match(rownames(At), rownames(A)), ] <- At
+  }
+  A
+}
+
+# Component means (n x K), using each family's actual expectation. With
+# random parameters, the mean over them: exact (from the moment generating
+# functions) when the family's mean is proportional to mu, otherwise
+# averaged over the draws; Inf, with a warning, where it does not exist.
 .fcr_fm_comp_means <- function(r) {
+  n_inf <- 0L
   M <- vapply(seq_len(r$ps$K), function(k) {
     cv <- r$cvs[[k]]
     if (!is.null(cv$mu_draws)) {
-      return(rowMeans(.fcr_fm_draw_moment(r, k, "mean")))
+      fam <- r$ps$families[k]
+      mom <- cv$rp_moments
+      m <- if (.fcr_mean_is_linear(fam, cv$alpha)) {
+        suppressWarnings(.fcr_family_mean(fam, cv$mu_fixed * exp(mom$logf),
+                                          cv$alpha, cv$sigma))
+      } else {
+        .fcr_wmean_rows(.fcr_fm_draw_moment(r, k, "mean"), cv$draw_w)
+      }
+      m <- rep_len(m, r$n)
+      no <- !is.na(mom$mean_ok) & !mom$mean_ok
+      m[no] <- Inf
+      n_inf <<- n_inf + sum(no)
+      return(m)
     }
     suppressWarnings(.fcr_family_mean(r$ps$families[k], cv$mu, cv$alpha,
                                       cv$sigma))
   }, numeric(r$n))
+  if (n_inf > 0L) .fcr_fm_rp_inf_warning(n_inf, "expected count")
   matrix(M, nrow = r$n, dimnames = list(NULL, r$ps$labels))
 }
 
+# Warning for component moments that do not exist because of the random
+# parameters (as in countreg_rp() predictions).
+.fcr_fm_rp_inf_warning <- function(n, what) {
+  warning(n, " component ", what, "(s) are infinite: the ", what, " does ",
+          "not exist for a lognormal random parameter with a positive x, ",
+          "or a gamma random parameter with x * sd^2 / mean >= 1",
+          if (what != "expected count") " (for the variance: at 2 * x)",
+          ". See ?countreg_rp.", call. = FALSE)
+}
+
 .fcr_fm_comp_vars <- function(r) {
+  n_inf <- 0L
   V <- vapply(seq_len(r$ps$K), function(k) {
     cv <- r$cvs[[k]]
     if (!is.null(cv$mu_draws)) {
-      # Within-draw variance plus the variance of the means over draws
+      # Within-draw variance plus the variance of the means over draws;
+      # infinite where the second moment over the random parameters does
+      # not exist
       Md <- .fcr_fm_draw_moment(r, k, "mean")
       Vd <- .fcr_fm_draw_moment(r, k, "variance")
-      m <- rowMeans(Md)
-      return(rowMeans(Vd) + rowMeans(Md^2) - m^2)
+      m <- .fcr_wmean_rows(Md, cv$draw_w)
+      v <- .fcr_wmean_rows(Vd, cv$draw_w) +
+        .fcr_wmean_rows(Md^2, cv$draw_w) - m^2
+      no <- !is.na(cv$rp_moments$var_ok) & !cv$rp_moments$var_ok
+      v[no] <- Inf
+      n_inf <<- n_inf + sum(no)
+      return(v)
     }
     v <- suppressWarnings(.fcr_family_variance(r$ps$families[k], cv$mu,
                                                cv$alpha, cv$sigma))
@@ -204,6 +286,7 @@
     }
     rep_len(v, r$n)
   }, numeric(r$n))
+  if (n_inf > 0L) .fcr_fm_rp_inf_warning(n_inf, "variance")
   matrix(V, nrow = r$n, dimnames = list(NULL, r$ps$labels))
 }
 
@@ -235,7 +318,7 @@
              alpha = if (!is.null(cv$alpha)) rep(cv$alpha, R),
              sigma = if (!is.null(cv$sigma)) rep(cv$sigma, R))
   L <- .fcr_fm_logcdf(r$ps, sv, r$ps$families[k], rep(q, R), lower.tail)
-  .fcr_lmean_rows(matrix(L, r$n, R))
+  .fcr_lmean_rows(matrix(L, r$n, R), cv$draw_w)
 }
 
 # Sum over components of P * M, with 0 * Inf = 0 for zero-probability
@@ -270,7 +353,13 @@
 #'     `overflow = TRUE` adds a column with \eqn{P(Y >} `max_count`\eqn{)}.}
 #'   \item{`"link"`}{a matrix of the component linear predictors
 #'     \eqn{x'\beta_k} plus offset. There is no single linear predictor of
-#'     the mixture.}
+#'     the mixture. With random parameters (`rpar_formula`), it is the
+#'     linear predictor at the class's coefficients of the random
+#'     variables: the means of normal, uniform, triangular and gamma random
+#'     parameters, but for lognormal ones the location parameter
+#'     \eqn{\mu} (`Mean:`), whose coefficient is \eqn{e^{\mu + \sigma Z}}:
+#'     the column then is not on the scale of the coefficient at all. It
+#'     is not the log of the component's expected count either.}
 #'   }
 #' @param conditioning which class probabilities \eqn{\pi_k} are used:
 #'   \describe{
@@ -288,6 +377,20 @@
 #'     retrospective summary, not an out-of-sample prediction: the outcomes
 #'     being "predicted" were used.}
 #'   }
+#'   With random parameters within the classes, `"history"` and
+#'   `"posterior"` update only the class probabilities: within each class
+#'   the random parameters keep their population distribution (they are
+#'   not updated to the unit's own coefficients), so the component means
+#'   \eqn{m_k} are the same for every conditioning. The class likelihoods
+#'   of the update integrate over the random parameters by simulation.
+#'   For panels of the training data (identified by `group_var`) the
+#'   `"posterior"` update uses each panel's estimation draws, so the
+#'   training data reproduce the fitted posterior probabilities
+#'   ([component_probs()]); other panels, `history` rows, and the rows of a
+#'   cross-sectional model passed as `newdata` use one common set of
+#'   `max(rpar_draws, 500)` Halton draws, so their probabilities differ
+#'   from the fitted ones by simulation error. Without `newdata`, the
+#'   training rows use their estimation draws.
 #' @param history for `conditioning = "history"`: a data frame of earlier
 #'   rows of the panels in `newdata`, with outcomes and the panel
 #'   identifier. History rows with a missing outcome or covariate are
@@ -337,7 +440,8 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
          call. = FALSE)
   }
   if (is.null(newdata)) newdata <- new_data
-  data <- if (!is.null(newdata)) as.data.frame(newdata) else {
+  train <- is.null(newdata)
+  data <- if (!train) as.data.frame(newdata) else {
     if (is.null(object$data)) {
       stop("The model was fit with keep_data = FALSE; pass `newdata`.",
            call. = FALSE)
@@ -352,7 +456,8 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
   }
   M <- .fcr_fm_comp_means(r)
   if (type == "component") return(M)
-  LC <- .fcr_fm_log_class(object, r, data, conditioning, history)
+  LC <- .fcr_fm_log_class(object, r, data, conditioning, history,
+                          train = train)
   P <- exp(LC)
   if (type == "response") return(.fcr_fm_wsum(P, M))
   if (type == "variance") {
@@ -417,7 +522,7 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
   ok <- !is.na(cv$mu) & !is.na(y)
   if (any(ok) && !is.null(cv$mu_draws)) {
     out[ok] <- .fcr_lmean_rows(.fcr_fm_logpmf_draws(
-      r$ps, cv, r$ps$families[k], y, which(ok)))
+      r$ps, cv, r$ps$families[k], y, which(ok)), cv$draw_w)
   } else if (any(ok)) {
     sv <- list(mu = cv$mu[ok], alpha = if (!is.null(cv$alpha)) cv$alpha[ok],
                sigma = if (!is.null(cv$sigma)) cv$sigma[ok])
@@ -464,6 +569,13 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
 #'   (e.g. the most probable class of each unit), which is uncertain: units
 #'   with probabilities near \eqn{1/K} are not well classified. The entropy
 #'   in `summary()` summarizes that uncertainty.
+#'
+#'   With random parameters within the classes, the posterior of a unit
+#'   integrates over its random parameters by simulation. Panels of the
+#'   training data passed in `newdata` (matched by `group_var`) use their
+#'   estimation draws and so reproduce the stored probabilities; new panels,
+#'   and the rows of a cross-sectional model passed as `newdata`, use a
+#'   common set of Halton draws (see [predict.countreg_mix()]).
 #' @examples
 #' set.seed(1)
 #' d <- data.frame(y = c(rpois(300, 1), rpois(200, 6)))
@@ -521,7 +633,8 @@ residuals.countreg_mix <- function(object,
     if (any(!is.finite(v) | v <= 0)) {
       stop("Pearson residuals are not available: the mixture variance is ",
            "infinite, undefined or zero for ", sum(!is.finite(v) | v <= 0),
-           " row(s) (e.g. a Generalized Waring component with rho <= 2). ",
+           " row(s) (e.g. a Generalized Waring component with rho <= 2, or ",
+           "a random parameter whose second moment does not exist). ",
            "Use quantile residuals.", call. = FALSE)
     }
     r <- r / sqrt(v)

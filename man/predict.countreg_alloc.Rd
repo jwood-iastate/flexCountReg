@@ -45,7 +45,15 @@ distribution, as it is new for every row.}
 A matrix with one column per category (\code{"counts"}, \code{"prob"}), or
 a vector (\code{"total"}, \code{"total_positive"}). With random parameters,
 \code{"prob"} is the average allocation probability and \code{"counts"} the
-average expected count over the draws.
+average expected count over the draws. For a fit with
+\code{truncated = TRUE} and random parameters, the likelihood truncates the
+total given each unit's coefficients \eqn{b}, so \code{"total_positive"}
+(and \code{conditional = TRUE}) average the ratio over the draws,
+\eqn{E_b[E(c \mid b) / (1 - P_0(b))]}; without truncation they give
+\eqn{E_b[E(c \mid b)] / (1 - E_b[P_0(b)])}. The shared site-year term
+is integrated out before the ratio is taken, as in the likelihood.
+Posterior predictions (\code{random = "posterior"}) need random
+parameters.
 }
 \description{
 Predictions from total-plus-allocation models

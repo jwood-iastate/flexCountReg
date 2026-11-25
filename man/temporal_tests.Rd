@@ -24,7 +24,8 @@ cluster-robust one; \code{vcov(object)} by default.}
 A data frame with columns \code{part}, \code{term}, \code{test} (\code{"all equal"}
 or the pair of periods), \code{estimate} (the change, for adjacent
 periods), \code{std.error}, \code{statistic} (\eqn{\chi^2} for the joint test,
-\eqn{z} otherwise), \code{df} and \code{p.value}.
+\eqn{z} otherwise), \code{df} and \code{p.value}; with a first column
+\code{outcome} for a multivariate model (\code{\link[=countreg_mv]{countreg_mv()}}).
 }
 \description{
 Wald tests of whether the effect of each \code{\link[=tv]{tv()}} term changes over time:

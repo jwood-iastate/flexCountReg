@@ -199,8 +199,8 @@ print.fcr_mixture_control <- function(x, ...) {
 .fcr_fm_check_shared <- function(shared) {
   if (is.null(shared)) shared <- list()
   if (!is.list(shared)) {
-    stop("`shared` must be a list with elements `mean`, `dis1` and `dis2`.",
-         call. = FALSE)
+    stop("`shared` must be a list with elements `mean`, `dis1`, `dis2` ",
+         "and `rpar`.", call. = FALSE)
   }
   bad <- setdiff(names(shared), c("mean", "dis1", "dis2", "rpar"))
   if (length(bad) || (length(shared) && is.null(names(shared)))) {

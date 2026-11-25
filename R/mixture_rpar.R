@@ -121,10 +121,55 @@
   grp <- if (is.null(unit)) seq_len(n) else unit
   h <- .fcr_unit_halton(grp, rp$draws, length(cols), scrambled = TRUE,
                         seed = rp$seed)
-  list(names = cols, cols = j, fixed = setdiff(seq_len(ncol(X)), j),
-       dists = dists, correlated = rp$correlated, R = rp$draws,
-       seed = rp$seed, group = grp,
-       draws = .fcr_prepare_draws(h, dists, n, rp$correlated))
+  out <- list(names = cols, cols = j, fixed = setdiff(seq_len(ncol(X)), j),
+              dists = dists, correlated = rp$correlated, R = rp$draws,
+              seed = rp$seed, group = grp,
+              draws = .fcr_prepare_draws(h, dists, n, rp$correlated))
+  # Class-specific draw signs of a fit (see .fcr_fm_rp_set_signs())
+  if (!is.null(rp$signs)) out <- .fcr_fm_rp_set_signs(out, rp$signs)
+  out
+}
+
+# Draw signs of each class: a list (one per class) of +1/-1 per random
+# parameter, multiplying that class's standardized draws. All classes start
+# with the same draws (signs 1). After a fit, the columns of each class's
+# Cholesky factor are re-signed so that its diagonal is positive (see
+# .fcr_fm_rp_signs()); changing the sign of column l of L and of the draws
+# z_l together leaves L z, and so the simulated likelihood, unchanged.
+# Different classes may need different column signs, so the signs belong to
+# the class. Signs that are all 1 leave the shared draws.
+.fcr_fm_rp_set_signs <- function(rp, signs) {
+  rp$signs <- signs
+  rp$class_draws <- lapply(signs, function(s) {
+    if (is.null(s) || all(s == 1)) return(NULL)
+    .fcr_fm_rp_sign_draws(rp$draws, s)
+  })
+  rp
+}
+
+# Prepared draws with the standardized draws of parameter l multiplied by
+# s[l] (gamma parameters use their uniform draws and keep their signs: their
+# scales are not sign-identified).
+.fcr_fm_rp_sign_draws <- function(dr, s) {
+  for (l in seq_along(s)) {
+    if (s[l] != 1 && !is.null(dr$Z[[l]])) dr$Z[[l]] <- -dr$Z[[l]]
+  }
+  dr
+}
+
+# Column sign changes (+1/-1 per random parameter) of each class that make
+# the diagonal of its Cholesky factor positive (all 1 without correlation:
+# uncorrelated scales enter the likelihood through their absolute values).
+.fcr_fm_rp_col_signs <- function(theta, spec) {
+  rp <- spec$rp
+  Kr <- length(rp$cols)
+  lapply(seq_len(spec$K), function(k) {
+    if (!rp$correlated) return(rep(1, Kr))
+    idx <- spec$map$rv_idx[[k]]
+    ci <- .fcr_chol_index(Kr)
+    dg <- unname(theta[idx][ci[, 1] == ci[, 2]])
+    ifelse(dg < 0, -1, 1)
+  })
 }
 
 # The countreg_rp() kernel's design for component k, with unit weights w
@@ -144,7 +189,8 @@
        X_het_mean = NULL, X_het_var = NULL,
        N_fixed = length(rp$fixed), N_rand = length(rp$cols),
        n_var_params = length(map$rv_idx[[k]]), N_het_mean = 0, N_het_var = 0,
-       N_dis_1 = n1, N_dis_2 = n2, draws = rp$draws, rpardists = rp$dists,
+       N_dis_1 = n1, N_dis_2 = n2,
+       draws = rp$class_draws[[k]] %||% rp$draws, rpardists = rp$dists,
        rpar = rp$names, correlated = rp$correlated,
        dist_haltons = spec$haltons,
        normed_dist_haltons = spec$normed_haltons,
@@ -219,22 +265,36 @@
 }
 
 # Average expected count of each component over the training rows, with
-# the random parameters integrated out.
+# the random parameters integrated out: exactly (.fcr_fm_rp_moments()) when
+# the family's mean is proportional to mu, otherwise over the estimation
+# draws. Inf when the expected count of a row does not exist.
 .fcr_fm_rp_avg_mean <- function(theta, spec) {
   pars <- .fcr_fm_unpack(theta, spec$map)
   w <- spec$w_row
+  pos <- w > 0
   vapply(seq_len(spec$K), function(k) {
-    pk <- .fcr_fm_rp_par(theta, spec, k)
-    st <- .fcr_rp_eval(pk$p, .fcr_fm_rp_design(spec, k))
-    if (!isTRUE(st$valid)) return(NA_real_)
+    fam <- spec$map$families[k]
     cv <- .fcr_fm_comp_values(spec$des, pars, k)
-    R <- ncol(st$mu_mat)
-    m <- suppressWarnings(.fcr_family_mean(
-      spec$map$families[k], as.vector(st$mu_mat),
-      if (!is.null(cv$alpha)) rep(cv$alpha, R),
-      if (!is.null(cv$sigma)) rep(cv$sigma, R)))
-    m <- rowMeans(matrix(m, spec$n, R))
-    sum(w * m, na.rm = TRUE) / sum(w)
+    mom <- .fcr_fm_rp_moments(spec$rp, spec$des, pars, k)
+    if (.fcr_mean_is_linear(fam, cv$alpha)) {
+      mu_f <- exp(as.vector(spec$des$X[, spec$rp$fixed, drop = FALSE] %*%
+                              pars$beta[[k]][spec$rp$fixed]) +
+                    spec$des$offset)
+      m <- suppressWarnings(.fcr_family_mean(fam, mu_f * exp(mom$logf),
+                                             cv$alpha, cv$sigma))
+    } else {
+      pk <- .fcr_fm_rp_par(theta, spec, k)
+      st <- .fcr_rp_eval(pk$p, .fcr_fm_rp_design(spec, k))
+      if (!isTRUE(st$valid)) return(NA_real_)
+      R <- ncol(st$mu_mat)
+      m <- suppressWarnings(.fcr_family_mean(
+        fam, as.vector(st$mu_mat),
+        if (!is.null(cv$alpha)) rep(cv$alpha, R),
+        if (!is.null(cv$sigma)) rep(cv$sigma, R)))
+      m <- rowMeans(matrix(m, spec$n, R))
+    }
+    m[!is.na(mom$mean_ok) & !mom$mean_ok] <- Inf
+    sum(w[pos] * m[pos], na.rm = TRUE) / sum(w)
   }, numeric(1))
 }
 
@@ -267,18 +327,152 @@
 
 # Expected counts of each row and component at R draws of the random
 # parameters (n x R): plain Halton points, the same for every row, so a
-# panel's rows share their draws.
-.fcr_fm_rp_mu_draws <- function(rp, des, pars, k) {
+# panel's rows share their draws; or, with `draws` (from
+# .fcr_fm_rp_train_draws()), the estimation draws of the rows' training
+# units.
+.fcr_fm_rp_mu_draws <- function(rp, des, pars, k, draws = NULL) {
   cols <- match(rp$names, colnames(des$X))
   fixed <- setdiff(seq_len(ncol(des$X)), cols)
   b <- pars$beta[[k]]
   mu_f <- exp(as.vector(des$X[, fixed, drop = FALSE] %*% b[fixed]) +
                 des$offset)
-  H <- .fcr_halton(max(rp$draws, .fcr_fm_rp_pred_draws), length(cols))
+  # Without training draws: a Gauss-Hermite grid (.fcr_normal_nodes()), as
+  # uniforms Phi(z) for generate_random_draws(), with its weights
+  w <- NULL
+  H <- draws[[k]]
+  if (is.null(H)) {
+    nd <- .fcr_normal_nodes(length(cols))
+    H <- .fcr_fm_rp_node_draws(nd$Z, rp, nrow(des$X))
+    w <- nd$w
+  }
   xb <- generate_random_draws(H, b[cols], pars$rv[[k]], rp$dists, rp$names,
                               des$X[, cols, drop = FALSE],
                               correlated = rp$correlated)$xb_rand_mat
-  list(mu_draws = mu_f * exp(xb), mu_fixed = mu_f)
+  list(mu_draws = mu_f * exp(xb), mu_fixed = mu_f, draw_w = w)
+}
+
+# The estimation draws (with each class's signs) of rows whose training
+# units are `tu` (one unit index per row; rows of a panel share its draws):
+# a list with the prepared draws of each of the K classes. They are
+# regenerated from the fit's draw seed and number of training units, as in
+# .fcr_fm_rp_setup().
+.fcr_fm_rp_train_draws <- function(rp, tu, K) {
+  h <- .fcr_unit_halton(seq_len(rp$n_units), rp$draws, length(rp$names),
+                        scrambled = TRUE, seed = rp$seed)
+  dr <- .fcr_prepare_draws(.fcr_draw_rows(h, tu), rp$dists, length(tu),
+                           rp$correlated)
+  lapply(seq_len(K), function(k) {
+    s <- rp$signs[[k]]
+    if (is.null(s) || all(s == 1)) dr else .fcr_fm_rp_sign_draws(dr, s)
+  })
+}
+
+# Exact moments of component k over its random parameters. With
+# mu_i(b) = mu_fixed_i exp(x_i' b), E[mu_i(b)] = mu_fixed_i exp(logf_i),
+# where logf_i is the log moment generating function of x_i' b at 1: the
+# sum of the parameters' log MGFs (rp_log_mgf(); Wood and Gayah, 2025), or
+# x' m + ||x' L||^2 / 2 for correlated normal parameters. `mean_ok` says
+# whether the expected count exists (not for a lognormal parameter with
+# x > 0, nor a gamma parameter with x sd^2 / mean >= 1), `var_ok` whether
+# the second moment E[mu_i(b)^2] (the MGF at 2 x) does.
+.fcr_fm_rp_moments <- function(rp, des, pars, k) {
+  cols <- match(rp$names, colnames(des$X))
+  Xr <- des$X[, cols, drop = FALSE]
+  b <- pars$beta[[k]][cols]
+  v <- pars$rv[[k]]
+  n <- nrow(Xr)
+  if (rp$correlated) {
+    L <- .fcr_chol_unpack(v, length(cols))
+    logf <- as.vector(Xr %*% b) + 0.5 * rowSums((Xr %*% L)^2)
+    ok <- !is.na(logf)
+    return(list(logf = logf, mean_ok = ok, var_ok = ok))
+  }
+  logf <- numeric(n)
+  mean_ok <- var_ok <- rep(TRUE, n)
+  for (j in seq_along(cols)) {
+    dist <- rp$dists[[j]]
+    t <- Xr[, j]
+    s <- abs(v[j])
+    e1 <- .fcr_rp_mean_exists(dist, t, b[j], s)
+    e2 <- .fcr_rp_mean_exists(dist, 2 * t, b[j], s)
+    lj <- rep(Inf, n)
+    ok <- !is.na(e1) & e1
+    if (any(ok)) {
+      lj[ok] <- if (dist == "ln") .fcr_fm_ln_log_mgf(t[ok], b[j], s) else
+        rp_log_mgf(dist, t[ok], b[j], s)
+    }
+    lj[is.na(e1)] <- NA
+    logf <- logf + lj
+    mean_ok <- mean_ok & e1
+    var_ok <- var_ok & e2
+  }
+  list(logf = logf, mean_ok = mean_ok, var_ok = var_ok)
+}
+
+# log E[exp(t exp(m + s Z))], Z standard normal, for a lognormal random
+# parameter with t <= 0 (Inf for t > 0, where it does not exist). The
+# integrand exp(t e^(m + s z)) phi(z) is integrated by Gauss-Hermite
+# quadrature centered at the mode of its logarithm,
+#   h(z) = t e^(m + s z) - z^2 / 2,
+# and scaled by its curvature (adaptive Gauss-Hermite): with
+# u = -s z_hat, u e^u = -t e^m s^2 and h''(z_hat) = -(1 + u), so the
+# integrand is close to a normal density in the rescaled variable and 40
+# nodes give the integral to near machine precision.
+.fcr_fm_ln_log_mgf <- function(t, m, s, nodes = 40L) {
+  n <- length(t)
+  m <- rep_len(m, n)
+  s <- rep_len(abs(s), n)
+  out <- rep(Inf, n)
+  out[is.na(t) | is.na(m) | is.na(s)] <- NA
+  zero <- !is.na(out) & (t == 0 | s == 0)
+  out[zero] <- t[zero] * exp(m[zero])
+  neg <- !is.na(out) & !zero & t < 0
+  if (!any(neg)) return(out)
+  t <- t[neg]
+  m <- m[neg]
+  s <- s[neg]
+  # u + log(u) = c, with c = log(-t e^m s^2), by Newton's method
+  cc <- log(-t) + m + 2 * log(s)
+  u <- log1p(exp(pmin(cc, 700)))
+  u[cc > 700] <- cc[cc > 700]
+  for (i in seq_len(100L)) {
+    step <- (u + log(u) - cc) / (1 + 1 / u)
+    u <- pmax(u - step, u / 10)
+    if (all(abs(step) <= 1e-12 * pmax(1, u))) break
+  }
+  z_hat <- -u / s
+  sig <- 1 / sqrt(1 + u)
+  gh <- .fcr_gh_rule(nodes)
+  Zq <- z_hat + outer(sig, gh$z)
+  H <- t * exp(m + s * Zq) - Zq^2 / 2 +
+    matrix(gh$z^2 / 2 + log(gh$w), length(t), nodes, byrow = TRUE)
+  out[neg] <- log(sig) + .fcr_lse_rows(H)
+  out
+}
+
+# Prepared draws (as .fcr_prepare_draws()) from standard normal nodes Z
+# (nodes x K) for n rows: each distribution's standardized draw computed
+# from z directly, with the upper tail for z > 0, so far nodes keep their
+# precision (Phi(z) rounds to 1 beyond z of about 8.3). Gamma parameters
+# use uniforms, kept just below 1.
+.fcr_fm_rp_node_draws <- function(Z, rp, n) {
+  K <- ncol(Z)
+  R <- nrow(Z)
+  dists <- if (rp$correlated) rep("n", K) else rp$dists
+  rows <- function(v) matrix(v, n, R, byrow = TRUE)
+  Zl <- vector("list", K)
+  Ul <- vector("list", K)
+  for (j in seq_len(K)) {
+    z <- Z[, j]
+    lo <- stats::pnorm(-abs(z))          # the smaller tail, accurately
+    switch(dists[j],
+      n = , ln = { Zl[[j]] <- rows(z) },
+      u = { Zl[[j]] <- rows(sign(z) * (1 - 2 * lo)) },
+      t = { Zl[[j]] <- rows(sign(z) * (1 - sqrt(2 * lo))) },
+      g = { Ul[[j]] <- rows(pmin(pmax(ifelse(z < 0, lo, 1 - lo), 1e-300),
+                                 1 - 1e-15)) })
+  }
+  structure(list(U = Ul, Z = Zl, R = R), class = "fcr_prepared_draws")
 }
 
 # log f_k(y) at each draw (length(rows) x R).
@@ -287,11 +481,24 @@
   sv <- list(mu = as.vector(cv$mu_draws[rows, , drop = FALSE]),
              alpha = if (!is.null(cv$alpha)) rep(cv$alpha[rows], R),
              sigma = if (!is.null(cv$sigma)) rep(cv$sigma[rows], R))
-  matrix(.fcr_fm_logpmf(ps, sv, family, rep(y[rows], R)), length(rows), R)
+  lp <- .fcr_fm_logpmf(ps, sv, family, rep(y[rows], R))
+  # An expected count that overflows (far nodes of the integration grid)
+  # gives a finite count probability 0, not NA
+  lp[is.na(lp) & is.infinite(sv$mu)] <- -Inf
+  matrix(lp, length(rows), R)
 }
 
-# log of the row means of exp(M).
-.fcr_lmean_rows <- function(M) .fcr_lse_rows(M) - log(ncol(M))
+# log of the row means of exp(M), or of their weighted means with weights w
+# (one per column, summing to 1).
+.fcr_lmean_rows <- function(M, w = NULL) {
+  if (is.null(w)) return(.fcr_lse_rows(M) - log(ncol(M)))
+  .fcr_lse_rows(M + matrix(log(w), nrow(M), ncol(M), byrow = TRUE))
+}
+
+# Row means of M, or weighted means with weights w.
+.fcr_wmean_rows <- function(M, w = NULL) {
+  if (is.null(w)) rowMeans(M) else as.vector(M %*% w)
+}
 
 # Log-likelihood of the units `gi` (rows with `use`) under each component
 # (G x K, rows named by unit): the sum of the rows' log-probabilities, or
@@ -312,7 +519,7 @@
       LPd[rows, ] <- .fcr_fm_logpmf_draws(r$ps, cv, r$ps$families[k], y, rows)
     }
     S <- rowsum(LPd, gi, reorder = TRUE)
-    a <- .fcr_lmean_rows(S)
+    a <- .fcr_lmean_rows(S, cv$draw_w)
     A <- if (is.null(A)) matrix(a, ncol = 1, dimnames = list(rownames(S))) else
       cbind(A, a)
   }

@@ -23,6 +23,8 @@ cluster-robust one; \code{vcov(object)} by default.}
 A data frame with columns \code{part} (\code{"mean"} for the mean, otherwise
 the coefficient block, such as \code{"ln(alpha)"}), \code{term}, \code{time},
 \code{basis}, \code{period}, \code{estimate}, \code{std.error}, \code{conf.low} and \code{conf.high}.
+For a multivariate model (\code{\link[=countreg_mv]{countreg_mv()}}) a first column \code{outcome}
+names the outcome of each effect.
 }
 \description{
 Computes the effect of each \code{\link[=tv]{tv()}} term in each period, with its standard
@@ -31,6 +33,14 @@ error from the covariance of the coefficients
 basis coefficients to the period effects), and pointwise confidence
 intervals. The effects are the same for every basis; only the
 coefficients differ.
+}
+\details{
+Periods are summarized for \code{tv()} terms on their own; a \code{tv()} term in an
+interaction (such as \code{tv(x, time = t):z}) is not summarized (with a
+warning): write the product inside \code{tv()}, as \code{tv(x * z, time = t)}.
+For \code{tv(x, time, basis = "smooth")} the periods are the distinct time
+values of the estimation data. Smooths written directly with \code{s()} are
+not time-varying effects and are not reported.
 }
 \seealso{
 \code{\link[=tv]{tv()}}, \code{\link[=temporal_tests]{temporal_tests()}}

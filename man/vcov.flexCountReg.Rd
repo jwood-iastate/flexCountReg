@@ -12,7 +12,13 @@
 \item{type}{\code{NULL} or \code{"fit"} (default): the covariance chosen
 at fit time (\code{stderr}). \code{"hessian"}: the inverse of the
 negative Hessian. \code{"robust"}: the sandwich with one independent
-unit per row, or per panel for panel models. \code{"cluster"}:
+unit per row, or per panel for panel models. For
+\code{\link{countreg_fe}()} fits by the conditional or concentrated
+likelihood the units are the groups of the fixed effect (their scores
+do not split into rows), so \code{"robust"} is clustered by group,
+without the factor \eqn{G/(G-1)}; with the \code{"demean"} method the
+units are the rows (as \code{vcov = "hetero"} in fixest).
+\code{"cluster"}:
 cluster-robust with the clusters in \code{cluster}.}
 
 \item{cluster}{for \code{type = "cluster"}: a one-sided formula of the

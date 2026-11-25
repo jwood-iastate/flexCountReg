@@ -123,6 +123,41 @@ each with a regression test.
   fits (effects on each outcome’s mean) and no longer reports an effect
   for the time variable of `tv(basis = "smooth")`.
 
+#### Simulation for every estimator
+
+- [`simulate()`](https://rdrr.io/r/stats/simulate.html) (for parametric
+  bootstrapping) now works for
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
+  [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md),
+  [`poislind_re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md),
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md)
+  and
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md),
+  which refused it before; with
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md),
+  [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md),
+  the mixtures,
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  and
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  every estimator simulates. Each simulation draws the model’s random
+  terms anew: each unit’s random coefficients
+  ([`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
+  one draw per panel or row, with correlations and heterogeneity in
+  means and variances), each panel’s random effect (beta for
+  [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
+  gamma for
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  and
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md),
+  Lindley for
+  [`poislind_re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)),
+  or the counts given the estimated fixed effects
+  ([`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)).
+  Simulated means equal the models’ expected counts, panels share their
+  effects, and refits on simulated data recover the parameters.
+
 #### Smaller changes
 
 - [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)

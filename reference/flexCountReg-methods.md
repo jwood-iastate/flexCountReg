@@ -136,10 +136,27 @@ panels), the size of the expanded data.
 [`residuals()`](https://rdrr.io/r/stats/residuals.html) are for the rows
 used in estimation (rows with missing values are not included).
 [`simulate()`](https://rdrr.io/r/stats/simulate.html) draws new
-responses from the fitted distribution for the same rows; it is
-available for
-[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-models.
+responses from the fitted model for the same rows, for parametric
+bootstrapping. Every simulation draws the model's random terms anew: for
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
+each unit's random coefficients (one draw per panel of `group_var`, or
+per row); for
+[`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
+[`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md),
+[`poislind_re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
+and
+[`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md),
+each panel's random effect (beta, gamma, Lindley or gamma frailty); for
+[`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md),
+the counts given the estimated fixed effects (groups left out of
+estimation keep their fitted values: zeros for all-zero groups, the
+observed count for single observations). The estimators with their own
+methods
+([`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md),
+[`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md),
+[`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md),
+[`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md))
+simulate in the same way.
 
 ## Examples
 

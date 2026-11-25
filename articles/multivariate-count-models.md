@@ -51,7 +51,7 @@ summary(m)
 #> (Intercept)  -7.4115     1.1903  -6.227 4.77e-10 ***
 #> lnaadt        0.6661     0.1418   4.698 2.63e-06 ***
 #> speed50      -1.2201     0.4146  -2.943  0.00325 ** 
-#> ln(eta)       0.7900     1.9900   0.397  0.69137    
+#> ln(eta)       0.7900     1.9897   0.397  0.69132    
 #> 
 #> Log-likelihood: -1247.0544  AIC: 2510.1088  BIC: 2552.6199
 ```
@@ -120,7 +120,7 @@ se <- sqrt(V[a[1], a[1]] + V[a[2], a[2]] - 2 * V[a[1], a[2]])
 c(difference = unname(diff), z = unname(diff / se),
   p = 2 * pnorm(-abs(unname(diff / se))))
 #>   difference            z            p 
-#> 0.5083084901 3.3436907879 0.0008267183
+#> 0.5083084635 3.3436966915 0.0008267007
 ```
 
 Traffic increases PDO crashes clearly more than injury crashes (p \<
@@ -142,7 +142,7 @@ nd <- w[c(1, 50, 200), ]
 predict(m, newdata = nd)
 #>             pdo     injury
 #> [1,] 0.77454644 0.03005740
-#> [2,] 0.09928381 0.01309017
+#> [2,] 0.09928381 0.01309018
 #> [3,] 0.78249900 0.04238618
 lapply(predict(m, newdata = nd, type = "prob", max_count = 3), round, 3)
 #> $pdo
@@ -345,7 +345,7 @@ summary(mc)
 #> (Intercept)  -7.4266     1.1820  -6.283 3.32e-10 ***
 #> lnaadt        0.6682     0.1408   4.747 2.07e-06 ***
 #> speed50      -1.2045     0.4147  -2.905  0.00367 ** 
-#> ln(eta)       0.7635     1.9575   0.390  0.69649    
+#> ln(eta)       0.7627     1.9563   0.390  0.69661    
 #> 
 #> Copula:
 #>                  Estimate Std. Error z value Pr(>|z|)

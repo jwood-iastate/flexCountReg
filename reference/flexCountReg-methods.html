@@ -153,8 +153,17 @@ With frequency weights (<code>weights</code>), it is the sum of the weights
 of the rows (or panels), the size of the expanded data.</p>
 <p><code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code> and <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> are for the rows used in
 estimation (rows with missing values are not included). <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code>
-draws new responses from the fitted distribution for the same rows; it is
-available for <code><a href="countreg.html">countreg()</a></code> models.</p>
+draws new responses from the fitted model for the same rows, for
+parametric bootstrapping. Every simulation draws the model's random terms
+anew: for <code><a href="countreg_rp.html">countreg_rp()</a></code>, each unit's random coefficients (one draw
+per panel of <code>group_var</code>, or per row); for <code><a href="renb.html">renb()</a></code>,
+<code><a href="repois.html">repois()</a></code>, <code><a href="poisLindRE.html">poislind_re()</a></code> and <code><a href="negmultinom.html">negmultinom()</a></code>, each
+panel's random effect (beta, gamma, Lindley or gamma frailty); for
+<code><a href="countreg_fe.html">countreg_fe()</a></code>, the counts given the estimated fixed effects (groups
+left out of estimation keep their fitted values: zeros for all-zero
+groups, the observed count for single observations). The estimators with
+their own methods (<code><a href="countreg_hier.html">countreg_hier()</a></code>, <code><a href="countreg_mix.html">countreg_mix()</a></code>,
+<code><a href="countreg_alloc.html">countreg_alloc()</a></code>, <code><a href="countreg_mv.html">countreg_mv()</a></code>) simulate in the same way.</p>
     </div>
 
     <div class="section level2">

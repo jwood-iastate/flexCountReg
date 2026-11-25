@@ -113,7 +113,7 @@ outcome can have its own family:</p>
 <span><span class="co">#&gt; (Intercept)  -7.4115     1.1903  -6.227 4.77e-10 ***</span></span>
 <span><span class="co">#&gt; lnaadt        0.6661     0.1418   4.698 2.63e-06 ***</span></span>
 <span><span class="co">#&gt; speed50      -1.2201     0.4146  -2.943  0.00325 ** </span></span>
-<span><span class="co">#&gt; ln(eta)       0.7900     1.9900   0.397  0.69137    </span></span>
+<span><span class="co">#&gt; ln(eta)       0.7900     1.9897   0.397  0.69132    </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Log-likelihood: -1247.0544  AIC: 2510.1088  BIC: 2552.6199</span></span></code></pre></div>
 <p>The coefficients are named <code>&lt;outcome&gt;:&lt;term&gt;</code>.
@@ -173,7 +173,7 @@ same for PDO and injury crashes?</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>difference <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="va">diff</span><span class="op">)</span>, z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="va">diff</span> <span class="op">/</span> <span class="va">se</span><span class="op">)</span>,</span>
 <span>  p <span class="op">=</span> <span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="va">diff</span> <span class="op">/</span> <span class="va">se</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   difference            z            p </span></span>
-<span><span class="co">#&gt; 0.5083084901 3.3436907879 0.0008267183</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.5083084635 3.3436966915 0.0008267007</span></span></code></pre></div>
 <p>Traffic increases PDO crashes clearly more than injury crashes (p
 &lt; 0.001), so the share of injury crashes falls as traffic grows. The
 covariance between the two estimates is zero here, because the equations
@@ -191,7 +191,7 @@ draws all outcomes at once:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span></span>
 <span><span class="co">#&gt;             pdo     injury</span></span>
 <span><span class="co">#&gt; [1,] 0.77454644 0.03005740</span></span>
-<span><span class="co">#&gt; [2,] 0.09928381 0.01309017</span></span>
+<span><span class="co">#&gt; [2,] 0.09928381 0.01309018</span></span>
 <span><span class="co">#&gt; [3,] 0.78249900 0.04238618</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, newdata <span class="op">=</span> <span class="va">nd</span>, type <span class="op">=</span> <span class="st">"prob"</span>, max_count <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>, <span class="va">round</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $pdo</span></span>
@@ -400,7 +400,7 @@ the shape of the dependence:</p>
 <span><span class="co">#&gt; (Intercept)  -7.4266     1.1820  -6.283 3.32e-10 ***</span></span>
 <span><span class="co">#&gt; lnaadt        0.6682     0.1408   4.747 2.07e-06 ***</span></span>
 <span><span class="co">#&gt; speed50      -1.2045     0.4147  -2.905  0.00367 ** </span></span>
-<span><span class="co">#&gt; ln(eta)       0.7635     1.9575   0.390  0.69649    </span></span>
+<span><span class="co">#&gt; ln(eta)       0.7627     1.9563   0.390  0.69661    </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Copula:</span></span>
 <span><span class="co">#&gt;                  Estimate Std. Error z value Pr(&gt;|z|)</span></span>

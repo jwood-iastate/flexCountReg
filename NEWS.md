@@ -65,6 +65,24 @@
   equations. Analytic gradients, a Newton polish after BFGS, and normal,
   robust or cluster-robust standard errors. New vignette "Multivariate
   count models".
+* `countreg_mv()` has random parameters in each equation (`rpar_formula`,
+  one formula for every outcome or one per outcome), drawn per unit of
+  `group_var` and correlated across equations (`correlation = "across"`,
+  the default, `"within"` or `"none"`). Poisson outcomes with correlated
+  normal random intercepts give the multivariate Poisson-lognormal model
+  (MVPLN); any family can be used in each equation. Simulated likelihood
+  with analytic gradients, checked against numerical derivatives, exact
+  two-dimensional Gauss-Hermite quadrature and recovery of correlated
+  intercepts. `predict()` gives joint (`type = "joint"`) and conditional
+  (`type = "conditional"`) probabilities of the outcomes, and Empirical
+  Bayes predictions (`random = "posterior"`); `simulate()` draws new
+  random parameters for each unit; `summary()` shows the standard
+  deviations and correlations.
+* Random-parameter standard deviations (the diagonal of the Cholesky
+  factor) of `countreg_alloc()` and `countreg_mv()` are reported as
+  positive. In `countreg_alloc()` the intercept is random only when a
+  random-parameter formula has the term `1` itself (`~ 1`, `~ 1 + x`), as
+  in the mixtures; `~ x` makes only the slope random.
 
 ## Random parameters within latent classes
 

@@ -44,16 +44,56 @@
 #'   [countreg()]; the default method is `"BFGS"`.
 #' @param ndraws,engine integration settings of families without a closed
 #'   form, as in [countreg()].
+#' @param rpar_formula optional one-sided formula of random parameters:
+#'   one formula for every outcome, or a list named by outcome. Each term
+#'   adds a normal random deviation, with mean zero, to the coefficient of
+#'   that variable in the outcome's equation (a variable not in the
+#'   equation's formula gets a random coefficient with mean zero). The
+#'   intercept is random only when the formula has the term `1` itself
+#'   (`~ 1`, `~ 1 + x`). The random parameters are drawn once per unit of
+#'   `group_var` (shared by all its rows, such as the years of a site), or
+#'   once per row without `group_var`.
+#' @param correlation correlation of the random parameters: `"across"`
+#'   (default; correlated within and across equations, so the outcomes of a
+#'   unit share unobserved factors), `"within"` (correlated within each
+#'   equation only) or `"none"`.
+#' @param rpar_draws the number of simulation draws per unit (randomly
+#'   shifted Halton points, a separate block and shift for each unit).
+#' @param seed seed of the random shifts of the draws (stored in the fit,
+#'   so predictions use the same draws); random by default.
 #' @param .setup_only internal use: return the model setup without fitting.
 #'
 #' @details
-#' **Independent equations.** The outcomes are independent given the
-#' covariates, so the log-likelihood is the sum of the equations'
+#' **Independent equations.** Without `rpar_formula`, the outcomes are
+#' independent given the covariates, so the log-likelihood is the sum of the equations'
 #' log-likelihoods and every equation's estimates equal those of a
 #' separate [countreg()] fit. Fitting them together gives one object with
 #' joint predictions, simulations and tests across equations (for
 #' example, a Wald test that a coefficient is the same in two equations).
 #' The rows used are those complete for every equation.
+#'
+#' **Correlated outcomes.** Counts of different categories at a site are
+#' usually correlated: unobserved conditions that raise one also raise the
+#' others. With `rpar_formula`, each equation's log mean gets random terms
+#' \eqn{x_r' b_{uj}}, with \eqn{b_u = L z_u} drawn per unit and
+#' correlated across equations (`correlation = "across"`).
+#'
+#' **The multivariate Poisson-lognormal model.** Poisson outcomes with
+#' correlated normal random intercepts (`family = "POISSON"`,
+#' `rpar_formula = ~ 1`, `correlation = "across"`) give the multivariate
+#' Poisson-lognormal model (MVPLN) of, for example, Ma et al. (2008).
+#' Other families keep their own overdispersion within each outcome, with
+#' the random intercepts adding the correlation between outcomes, and every
+#' equation can have a different family.
+#' A positive correlation of the random intercepts means that a site with
+#' more crashes of one category than its covariates predict also tends to
+#' have more of the other. The correlation can be negative too, unlike in
+#' models with a shared gamma effect such as [negmultinom()]. The
+#' likelihood is simulated (`rpar_draws` draws per unit) with analytic
+#' gradients; the elements of \eqn{L} are reported as `sd:` and `chol:`,
+#' and `summary()` shows the implied standard deviations and correlations.
+#' `predict()` gives joint and conditional probabilities of the outcomes,
+#' and Empirical Bayes predictions for units in the estimation data.
 #'
 #' Different outcomes often need different families: frequent property
 #' damage crashes may be close to NB2, while rare fatal crashes are more
@@ -62,6 +102,12 @@
 #' @return An object of class `"countreg_mv"`, with methods `coef()`,
 #'   `vcov()`, `logLik()`, `summary()`, `predict()`, `fitted()`,
 #'   `residuals()`, `simulate()`, `tidy()`, `glance()` and `confint()`.
+#'
+#' @references
+#' Ma, J., Kockelman, K. M., and Damien, P. (2008). A multivariate
+#' Poisson-lognormal regression model for prediction of crash counts by
+#' severity, using Bayesian methods. *Accident Analysis and Prevention*,
+#' 40(3), 964-975.
 #'
 #' @seealso [predict.countreg_mv()], [countreg()], [countreg_alloc()] for a
 #'   total and its split across categories, [negmultinom()]
@@ -83,8 +129,13 @@ countreg_mv <- function(formula, data, family = "NB2",
                         weights = NULL, group_var = NULL, stderr = "normal",
                         method = "BFGS", max.iters = 1000, start.vals = NULL,
                         ndraws = 1500, engine = "quadrature", verbose = FALSE,
+                        rpar_formula = NULL,
+                        correlation = c("across", "within", "none"),
+                        rpar_draws = 500, seed = NULL,
                         .setup_only = FALSE) {
   cl <- match.call()
+  correlation <- match.arg(correlation)
+  .fcr_check_controls(ndraws = rpar_draws)
   data <- as.data.frame(data)
   method <- .fcr_check_method(method)
   .fcr_check_controls(max.iters, ndraws)
@@ -118,6 +169,16 @@ countreg_mv <- function(formula, data, family = "NB2",
     }
     .fcr_check_dis_formulas(fams[j], params, d1[[j]], d2[[j]])
   }
+  rpf <- .fcr_mv_dis_formulas(rpar_formula, outcomes, "rpar_formula")
+  for (f in Filter(Negate(is.null), rpf)) {
+    if (.fcr_has_formula_offset(f)) {
+      stop("`rpar_formula` cannot have an offset.", call. = FALSE)
+    }
+    if (.fcr_has_smooth(f)) {
+      stop("Smooth terms are not available in `rpar_formula`.",
+           call. = FALSE)
+    }
+  }
   if (engine == "poilog" && "PLN" %in% fams) {
     rlang::check_installed("poilog", reason = "for `engine = \"poilog\"`.")
   }
@@ -125,7 +186,8 @@ countreg_mv <- function(formula, data, family = "NB2",
   # ---- Data: the rows complete for every equation ----------------------------
   prep_eq <- function(j, dat, w) {
     prepare_model_data(forms[[j]], dat,
-                       aux_formulas = list(dis1 = d1[[j]], dis2 = d2[[j]]),
+                       aux_formulas = list(dis1 = d1[[j]], dis2 = d2[[j]],
+                                           rpar = rpf[[j]]),
                        offset = offset, weights = w, group_var = group_var)
   }
   rows <- seq_len(nrow(data))
@@ -166,19 +228,38 @@ countreg_mv <- function(formula, data, family = "NB2",
       X = pr$X, off = pr$offset, W1 = pr$aux$dis1, W2 = pr$aux$dis2,
       S = list(idx_beta = off + S$idx_beta, idx_a = off + S$idx_a,
                idx_s = off + S$idx_s, n1 = S$n1, n2 = S$n2, kx = S$kx),
-      dens_args = dens_args)
+      dens_args = dens_args,
+      Xr = .fcr_rpar_matrix(pr$aux$rpar, rpf[[j]]))
     names_all <- c(names_all, nm)
   }
   E <- list(eqs = eqs, J = J, n = length(rows), w = w, names = names_all,
             outcomes = outcomes)
+
+  # ---- Random parameters -----------------------------------------------------------
+  has_rpar <- any(!vapply(rpf, is.null, logical(1)))
+  draw_seed <- NULL
+  if (has_rpar) {
+    RS <- .fcr_mv_rlayout(eqs, correlation, length(names_all))
+    if (is.null(RS)) {
+      stop("`rpar_formula` has no terms. For a random intercept write ~ 1 ",
+           "(or ~ 1 + x).", call. = FALSE)
+    }
+    names_all <- c(names_all, RS$names)
+    unit <- if (is.null(group_var)) factor(seq_len(E$n)) else preps[[1]]$group
+    draw_seed <- seed %||% sample.int(.Machine$integer.max, 1L)
+    E[c("RS", "g", "G", "units", "names")] <- list(
+      RS, as.integer(unit), nlevels(unit), levels(unit), names_all)
+    E$UA <- .fcr_alloc_draws(E$G, RS$K, rpar_draws, draw_seed)
+  }
   if (.setup_only) return(E)
 
   # ---- Fit ---------------------------------------------------------------------
   start <- if (is.null(start.vals)) .fcr_mv_start(E) else
     .fcr_check_start(start.vals, names_all)
   names(start) <- names_all
-  fn <- function(p) .fcr_mv_ll(p, E, grad = FALSE)$ll
-  gr <- function(p) .fcr_mv_ll(p, E, grad = TRUE)$G
+  llf <- if (has_rpar) .fcr_mv_sim_ll else .fcr_mv_ll
+  fn <- function(p) llf(p, E, grad = FALSE)$ll
+  gr <- function(p) llf(p, E, grad = TRUE)$G
   fit <- maxLik::maxLik(fn, grad = gr, start = start, method = method,
                         finalHessian = method == "BHHH",
                         control = list(iterlim = max.iters,
@@ -201,6 +282,11 @@ countreg_mv <- function(formula, data, family = "NB2",
   fit <- .fcr_set_final_hessian(fit, fn, gr, method)
   est <- fit$estimate
   names(est) <- names_all
+  if (has_rpar) {
+    sg <- .fcr_chol_signs(est, E$RS)
+    est <- est * sg
+    fit$hessian <- fit$hessian * outer(sg, sg)
+  }
   conv <- isTRUE(.fcr_converged(fit, if (is.null(fit$refined_from)) method
                                  else "NR"))
   if (!conv) {
@@ -212,12 +298,15 @@ countreg_mv <- function(formula, data, family = "NB2",
   Hv <- .fcr_hessian_vcov(list(hessian = fit$hessian, estimate = est))
   V <- switch(stderr,
     normal = Hv,
-    robust = {
+    robust = if (has_rpar) {
+      # The units (groups) are the independent observations
+      Hv %*% crossprod(U) %*% Hv
+    } else {
       keep <- w > 0
       Hv %*% crossprod(U[keep, , drop = FALSE] / sqrt(w[keep])) %*% Hv
     },
     cluster = {
-      Ug <- rowsum(U, preps[[1]]$group)
+      Ug <- if (has_rpar) U else rowsum(U, preps[[1]]$group)
       G <- nrow(Ug)
       Hv %*% (crossprod(Ug) * G / max(G - 1, 1)) %*% Hv
     })
@@ -236,7 +325,12 @@ countreg_mv <- function(formula, data, family = "NB2",
     group_var = group_var, y = vapply(eqs, `[[`, numeric(length(rows)), "y"),
     weights = w, nobs = sum(w > 0), n_obs_ic = sum(w),
     rows_used = rows, n_dropped = n_dropped,
-    data_used = dsub, engine = engine, ndraws = ndraws)
+    data_used = dsub, engine = engine, ndraws = ndraws,
+    n_units = if (has_rpar) E$G else sum(w > 0),
+    rpar = if (has_rpar) list(
+      layout = E$RS, formulas = rpf, correlation = correlation,
+      draws = rpar_draws, seed = draw_seed, units = E$units,
+      unit_of_row = E$g, posterior = .fcr_mv_sim_ll(est, E, grad = TRUE)$W))
   colnames(out$y) <- outcomes
   names(out$formulas) <- outcomes
   class(out) <- "countreg_mv"
@@ -414,7 +508,176 @@ countreg_mv <- function(formula, data, family = "NB2",
       if (!is.na(pos)) st[S$idx_s[pos]] <- rep_len(fs, 2L)[2L]
     }
   }
+  if (!is.null(E$RS)) {
+    dg <- E$RS$pairs[, "k"] == E$RS$pairs[, "l"]
+    st[E$RS$idx] <- ifelse(dg, 0.1, 0)
+  }
   st
+}
+
+# ---- Random parameters ------------------------------------------------------
+
+# Layout of the random terms: one per column of each equation's random
+# design (its equation and column), and the Cholesky factor's free elements
+# (none: diagonal; within: blocks by equation; across: full).
+.fcr_mv_rlayout <- function(eqs, correlation, offset) {
+  eq <- integer(0)
+  col <- integer(0)
+  labels <- character(0)
+  for (j in seq_along(eqs)) {
+    Xr <- eqs[[j]]$Xr
+    if (is.null(Xr)) next
+    eq <- c(eq, rep(j, ncol(Xr)))
+    col <- c(col, seq_len(ncol(Xr)))
+    labels <- c(labels, paste0(eqs[[j]]$outcome, ":", colnames(Xr)))
+  }
+  K <- length(eq)
+  if (!K) return(NULL)
+  pairs <- do.call(rbind, lapply(seq_len(K), function(k) {
+    l <- switch(correlation,
+      none = k,
+      within = which(eq == eq[k] & seq_len(K) <= k),
+      across = seq_len(k))
+    cbind(k = k, l = l)
+  }))
+  nm <- ifelse(pairs[, "k"] == pairs[, "l"],
+               paste0("sd:", labels[pairs[, "k"]]),
+               paste0("chol:", labels[pairs[, "k"]], "|",
+                      labels[pairs[, "l"]]))
+  list(K = K, eq = eq, col = col, labels = labels, pairs = pairs,
+       names = nm, idx = offset + seq_len(nrow(pairs)))
+}
+
+# Each equation's random term in the log mean for random coefficients B
+# (rows x K); NULL for equations without random parameters.
+.fcr_mv_add <- function(B, E) {
+  RS <- E$RS
+  lapply(seq_along(E$eqs), function(j) {
+    k <- which(RS$eq == j)
+    if (!length(k)) return(NULL)
+    rowSums(E$eqs[[j]]$Xr[, RS$col[k], drop = FALSE] * B[, k, drop = FALSE])
+  })
+}
+
+# Simulated log-likelihood: one contribution per unit,
+# log((1/R) sum_r prod_(rows of the unit) prod_j f_j(y_ij | b_r)), and its
+# gradient through the posterior weights of the draws.
+.fcr_mv_sim_ll <- function(p, E, grad = FALSE) {
+  RS <- E$RS
+  L <- .fcr_alloc_chol(p, RS)
+  g <- E$g
+  G <- E$G
+  R <- dim(E$UA)[3L]
+  w <- E$w
+  row_ll <- function(adds) {
+    ll <- numeric(E$n)
+    for (j in seq_along(E$eqs)) {
+      ll <- ll + .fcr_mv_eq_parts(p, E$eqs[[j]], adds[[j]], grad = FALSE)$ll
+    }
+    ll <- w * ll
+    ll[w == 0] <- 0
+    ll
+  }
+  LL <- matrix(NA_real_, G, R)
+  for (r in seq_len(R)) {
+    B <- (matrix(E$UA[, , r], G, RS$K) %*% t(L))[g, , drop = FALSE]
+    LL[, r] <- rowsum(row_ll(.fcr_mv_add(B, E)), g, reorder = TRUE)[, 1L]
+  }
+  LL[is.nan(LL)] <- -Inf
+  mx <- apply(LL, 1L, max)
+  mx[!is.finite(mx)] <- 0
+  sm <- rowSums(exp(LL - mx))
+  lg <- mx + log(sm) - log(R)
+  if (!grad) {
+    lg[!is.finite(lg)] <- NA_real_
+    return(list(ll = lg))
+  }
+  W <- exp(LL - mx) / sm
+  W[!is.finite(W)] <- 0
+  np <- length(p)
+  Gg <- matrix(0, G, np)
+  for (r in seq_len(R)) {
+    if (!any(W[, r] > 1e-12)) next
+    Ug <- matrix(E$UA[, , r], G, RS$K)
+    B <- (Ug %*% t(L))[g, , drop = FALSE]
+    adds <- .fcr_mv_add(B, E)
+    Gr <- matrix(0, E$n, np)
+    Db <- matrix(0, E$n, RS$K)
+    for (j in seq_along(E$eqs)) {
+      eq <- E$eqs[[j]]
+      pt <- .fcr_mv_eq_parts(p, eq, adds[[j]], grad = TRUE)
+      Gr <- .fcr_mv_eq_grad(pt, eq, w, Gr)
+      for (k in which(RS$eq == j)) {
+        Db[, k] <- w * pt$s_eta * eq$Xr[, RS$col[k]]
+      }
+    }
+    Urow <- Ug[g, , drop = FALSE]
+    Gr[, RS$idx] <- Db[, RS$pairs[, "k"], drop = FALSE] *
+      Urow[, RS$pairs[, "l"], drop = FALSE]
+    Gr[!is.finite(Gr)] <- 0
+    Gg <- Gg + rowsum(Gr, g, reorder = TRUE) * W[, r]
+  }
+  lg[!is.finite(lg)] <- 0
+  list(ll = lg, G = Gg, W = W)
+}
+
+# Number of draws for predictions: at least this many.
+.fcr_mv_pred_draws <- 500L
+
+# Average of FUN(adds) over the distribution of the random parameters for
+# the rows of the design E: marginal (plain Halton points, the same for
+# every row) or, for the rows of units in the estimation data, posterior
+# (their draws weighted by their posterior weights). FUN returns an n x m
+# matrix. Without random parameters, FUN(NULL).
+.fcr_mv_integrate <- function(object, E, newdata, FUN,
+                              random = "marginal") {
+  rp <- object$rpar
+  if (is.null(rp)) return(FUN(NULL))
+  RS <- rp$layout
+  L <- .fcr_alloc_chol(object$coefficients, RS)
+  n <- E$n
+  Rm <- max(rp$draws, .fcr_mv_pred_draws)
+  Um <- matrix(stats::qnorm(.fcr_halton(Rm, RS$K)), Rm, RS$K)
+  acc <- 0
+  for (r in seq_len(Rm)) {
+    B <- matrix(as.vector(Um[r, ] %*% t(L)), n, RS$K, byrow = TRUE)
+    acc <- acc + FUN(.fcr_mv_add(B, E)) / Rm
+  }
+  if (random == "posterior") {
+    gv <- object$group_var
+    if (is.null(gv) || !all(gv %in% names(newdata))) {
+      stop("Posterior predictions need the grouping column(s) ",
+           toString(gv %||% "(group_var)"), " in `newdata` (and a fit with ",
+           "`group_var`).", call. = FALSE)
+    }
+    key <- as.character(interaction(newdata[, gv, drop = FALSE],
+                                    drop = TRUE, sep = ":"))
+    ui <- match(key, rp$units)
+    seen <- which(!is.na(ui))
+    if (length(seen)) {
+      UA <- .fcr_alloc_draws(length(rp$units), RS$K, rp$draws, rp$seed)
+      post <- 0
+      for (r in seq_len(rp$draws)) {
+        B <- matrix(0, n, RS$K)
+        B[seen, ] <- matrix(UA[ui[seen], , r], length(seen), RS$K) %*% t(L)
+        post <- post + rp$posterior[ui, r] * FUN(.fcr_mv_add(B, E))
+      }
+      acc[seen, ] <- post[seen, ]
+    }
+  }
+  acc
+}
+
+# Row log-probabilities of counts Y (n x J matrix, columns in outcome
+# order; NA columns are left out) at random terms `adds`.
+.fcr_mv_logp <- function(p, E, Y, adds = NULL, which = seq_along(E$eqs)) {
+  out <- numeric(E$n)
+  for (j in which) {
+    eq <- E$eqs[[j]]
+    eq$y <- Y[, j]
+    out <- out + .fcr_mv_eq_parts(p, eq, adds[[j]], grad = FALSE)$ll
+  }
+  out
 }
 
 # The equations of a fit for new data.
@@ -427,22 +690,52 @@ countreg_mv <- function(formula, data, family = "NB2",
     list(outcome = object$outcomes[j], family = object$family[[j]],
          y = rep(0, nrow(fd$X)), X = fd$X, off = fd$offset,
          W1 = fd$aux$dis1, W2 = fd$aux$dis2, S = object$layout[[j]],
-         dens_args = dens_args)
+         dens_args = dens_args,
+         Xr = .fcr_rpar_matrix(fd$aux$rpar, object$rpar$formulas[[j]]))
   })
   list(eqs = eqs, J = length(eqs), n = nrow(newdata),
-       outcomes = object$outcomes)
+       outcomes = object$outcomes, RS = object$rpar$layout)
 }
 
-# Mean, distribution parameters and variance of every equation for the rows
-# of `newdata`.
-.fcr_mv_values <- function(object, newdata) {
-  E <- .fcr_mv_design(object, newdata)
-  p <- object$coefficients
-  lapply(E$eqs, function(eq) {
-    pt <- .fcr_mv_eq_parts(p, eq, grad = FALSE)
-    list(eq = eq, mu = pt$mu, alpha = pt$alpha, sigma = pt$sigma,
-         mean = .fcr_family_mean(eq$family, pt$mu, pt$alpha, pt$sigma))
-  })
+# Probabilities of the counts 0..mc of equation j at random terms `add`
+# (n x (mc + 1)).
+.fcr_mv_pmf <- function(p, eq, add, mc) {
+  P <- vapply(0:mc, function(k) {
+    eq$y <- rep(k, length(eq$y))
+    exp(.fcr_mv_eq_parts(p, eq, add, grad = FALSE)$ll)
+  }, numeric(length(eq$y)))
+  matrix(P, nrow = length(eq$y))
+}
+
+# Counts of the outcomes as an n x J matrix (NA for outcomes not given)
+# from a named vector (the same for every row) or a matrix or data frame
+# with columns named by outcome.
+.fcr_mv_count_matrix <- function(y, outcomes, n, what) {
+  if (is.data.frame(y)) y <- as.matrix(y)
+  nm <- if (is.matrix(y)) colnames(y) else names(y)
+  if (is.null(nm) || any(!nzchar(nm))) {
+    stop("`", what, "` must be named by outcome (", toString(outcomes), ").",
+         call. = FALSE)
+  }
+  bad <- setdiff(nm, outcomes)
+  if (length(bad)) {
+    stop("Unknown outcome(s) in `", what, "`: ", toString(bad), ".",
+         call. = FALSE)
+  }
+  Y <- matrix(NA_real_, n, length(outcomes), dimnames = list(NULL, outcomes))
+  if (is.matrix(y)) {
+    if (nrow(y) != n && nrow(y) != 1L) {
+      stop("`", what, "` needs one row, or one per row of `newdata`.",
+           call. = FALSE)
+    }
+    for (c in nm) Y[, c] <- rep_len(y[, c], n)
+  } else {
+    for (c in nm) Y[, c] <- y[[c]]
+  }
+  if (any(!.fcr_is_count(Y[, nm][!is.na(Y[, nm])]))) {
+    stop("`", what, "` must hold non-negative whole numbers.", call. = FALSE)
+  }
+  Y
 }
 
 # ---------------------------------------------------------------------------
@@ -453,47 +746,131 @@ countreg_mv <- function(formula, data, family = "NB2",
 #'
 #' @param object a [countreg_mv()] fit.
 #' @param newdata optional new data; the estimation data by default.
-#' @param type `"response"` (default): a matrix of the expected counts, one
-#'   column per outcome; `"link"`: the linear predictors (log of the mean
-#'   parameter); `"variance"`: the variances; `"prob"`: a list with one
-#'   matrix per outcome of the probabilities of the counts `0:max_count`.
-#' @param max_count for `type = "prob"`: the largest count (default: the
-#'   largest observed count of each outcome).
+#' @param type the prediction:
+#'   \describe{
+#'   \item{`"response"` (default)}{a matrix of the expected counts, one
+#'     column per outcome.}
+#'   \item{`"link"`}{the linear predictors (log of the mean parameter, at
+#'     the mean of the random parameters).}
+#'   \item{`"variance"`}{the variances (including the variance from the
+#'     random parameters).}
+#'   \item{`"prob"`}{a list with one matrix per outcome of the
+#'     probabilities of the counts `0:max_count`.}
+#'   \item{`"joint"`}{the joint probability of the counts `y` of all
+#'     outcomes, one value per row.}
+#'   \item{`"conditional"`}{a matrix of the probabilities of the counts
+#'     `0:max_count` of `outcome` given the counts `given` of other
+#'     outcomes, such as the probability of a fatal crash at a site given
+#'     its injury crashes.}
+#'   }
+#' @param max_count for `"prob"` and `"conditional"`: the largest count
+#'   (default: the largest observed count of the outcome).
+#' @param y for `"joint"`: the counts of every outcome, a vector named by
+#'   outcome (the same for every row) or a matrix or data frame with one
+#'   column per outcome.
+#' @param outcome,given for `"conditional"`: the name of the outcome, and
+#'   the counts of the outcomes conditioned on, named as `y` (they can be
+#'   some of the other outcomes).
+#' @param random for fits with random parameters: `"marginal"` (default)
+#'   averages over their distribution (the prediction for a new unit);
+#'   `"posterior"` averages over each unit's posterior distribution given
+#'   its counts in the estimation data (Empirical Bayes; units not in the
+#'   estimation data get the marginal prediction). `newdata` then needs the
+#'   `group_var` column(s).
 #' @param ... unused.
-#' @return A matrix with one column per outcome, or a list of matrices
-#'   (`"prob"`).
+#' @return A matrix with one column per outcome (`"response"`, `"link"`,
+#'   `"variance"`), a list of matrices (`"prob"`), a vector (`"joint"`) or
+#'   a matrix with one column per count (`"conditional"`).
+#' @details Without random parameters the outcomes are independent given
+#'   the covariates, so joint probabilities are products of the outcomes'
+#'   probabilities and conditional probabilities equal the marginal ones.
+#'   With random parameters shared by the equations they are not: the
+#'   probabilities are averages over the random parameters of products of
+#'   the outcomes' probabilities.
 #' @export
 predict.countreg_mv <- function(object, newdata = NULL,
                                 type = c("response", "link", "variance",
-                                         "prob"),
-                                max_count = NULL, ...) {
+                                         "prob", "joint", "conditional"),
+                                max_count = NULL, y = NULL, outcome = NULL,
+                                given = NULL,
+                                random = c("marginal", "posterior"), ...) {
   type <- match.arg(type)
+  random <- match.arg(random)
   if (is.null(newdata)) newdata <- object$data_used
-  vals <- .fcr_mv_values(object, as.data.frame(newdata))
+  newdata <- as.data.frame(newdata)
+  E <- .fcr_mv_design(object, newdata)
+  p <- object$coefficients
   outs <- object$outcomes
+  J <- length(outs)
+  n <- E$n
+  vals <- function(adds, j) .fcr_mv_eq_parts(p, E$eqs[[j]], adds[[j]],
+                                             grad = FALSE)
+  integrate <- function(FUN) .fcr_mv_integrate(object, E, newdata, FUN,
+                                               random)
+  named <- function(M) {
+    M <- matrix(M, nrow = n)
+    colnames(M) <- outs
+    M
+  }
+  if (type == "link") {
+    return(named(vapply(seq_len(J), function(j) log(vals(NULL, j)$mu),
+                        numeric(n))))
+  }
+  if (type %in% c("response", "variance")) {
+    A <- integrate(function(adds) {
+      do.call(cbind, lapply(seq_len(J), function(j) {
+        v <- vals(adds, j)
+        fam <- E$eqs[[j]]$family
+        m <- .fcr_family_mean(fam, v$mu, v$alpha, v$sigma)
+        if (type == "response") return(m)
+        cbind(m, rep_len(.fcr_family_variance(fam, v$mu, v$alpha, v$sigma),
+                         n), m^2)
+      }))
+    })
+    if (type == "response") return(named(A))
+    m <- A[, 3L * seq_len(J) - 2L, drop = FALSE]
+    return(named(A[, 3L * seq_len(J) - 1L, drop = FALSE] +
+                   A[, 3L * seq_len(J), drop = FALSE] - m^2))
+  }
   if (type == "prob") {
-    out <- lapply(seq_along(vals), function(j) {
-      v <- vals[[j]]
+    out <- lapply(seq_len(J), function(j) {
       mc <- max_count %||% max(object$y[, j])
-      fam <- .fcr_get_family(v$eq$family)
-      P <- vapply(0:mc, function(k) exp(.fcr_quiet_dens(as.vector(do.call(
-        fam$dens, c(list(y = rep(k, length(v$mu)), predicted = v$mu,
-                         alpha = v$alpha, sigma = v$sigma), v$eq$dens_args,
-                    list(log = TRUE)))), log = TRUE)), numeric(length(v$mu)))
-      P <- matrix(P, nrow = length(v$mu))
+      P <- integrate(function(adds) .fcr_mv_pmf(p, E$eqs[[j]], adds[[j]], mc))
       colnames(P) <- 0:mc
       P
     })
     return(stats::setNames(out, outs))
   }
-  M <- vapply(vals, function(v) switch(type,
-    response = v$mean,
-    link = log(v$mu),
-    variance = .fcr_family_variance(v$eq$family, v$mu, v$alpha, v$sigma)),
-    numeric(nrow(as.data.frame(newdata))))
-  M <- matrix(M, ncol = length(outs))
-  colnames(M) <- outs
-  M
+  if (type == "joint") {
+    if (is.null(y)) stop("`type = \"joint\"` needs `y`.", call. = FALSE)
+    Y <- .fcr_mv_count_matrix(y, outs, n, "y")
+    if (anyNA(Y)) {
+      stop("`y` must give the counts of every outcome (", toString(outs),
+           ").", call. = FALSE)
+    }
+    return(as.vector(integrate(function(adds)
+      matrix(exp(.fcr_mv_logp(p, E, Y, adds)), ncol = 1L))))
+  }
+  # conditional
+  if (is.null(outcome) || length(outcome) != 1L || !outcome %in% outs) {
+    stop("`outcome` must be one of ", toString(outs), ".", call. = FALSE)
+  }
+  if (is.null(given)) stop("`type = \"conditional\"` needs `given`.",
+                           call. = FALSE)
+  Yg <- .fcr_mv_count_matrix(given, outs, n, "given")
+  t <- match(outcome, outs)
+  if (!all(is.na(Yg[, t]))) {
+    stop("`given` cannot include the outcome itself.", call. = FALSE)
+  }
+  gj <- which(colSums(!is.na(Yg)) > 0)
+  mc <- max_count %||% max(object$y[, t])
+  A <- integrate(function(adds) {
+    base <- exp(.fcr_mv_logp(p, E, Yg, adds, which = gj))
+    cbind(.fcr_mv_pmf(p, E$eqs[[t]], adds[[t]], mc) * base, base)
+  })
+  P <- A[, seq_len(mc + 1L), drop = FALSE] / A[, mc + 2L]
+  colnames(P) <- 0:mc
+  P
 }
 
 #' @export
@@ -543,6 +920,9 @@ print.countreg_mv <- function(x, ...) {
     S <- object$layout[[j]]
     out[c(S$idx_beta, S$idx_a, S$idx_s)] <- object$outcomes[j]
   }
+  if (!is.null(object$rpar)) {
+    out[object$rpar$layout$idx] <- "Random parameters (Cholesky factor)"
+  }
   out
 }
 
@@ -564,7 +944,15 @@ print.summary.countreg_mv <- function(x, digits = 4, ...) {
   cat("Multivariate count model\n\n")
   cat("Rows:       ", o$nobs, "\n")
   cat("Std. errors:", o$stderr, "\n")
-  cat("Equations:   independent given the covariates\n\n")
+  rp <- o$rpar
+  if (is.null(rp)) {
+    cat("Equations:   independent given the covariates\n\n")
+  } else {
+    cat("Units:      ", o$n_units, "\n")
+    cat("Random parameters:", rp$correlation, "correlation,", rp$draws,
+        "draws per", if (is.null(o$group_var)) "row" else
+          paste("unit of", toString(o$group_var)), "\n\n")
+  }
   for (j in seq_along(o$outcomes)) {
     oc <- o$outcomes[j]
     cat(oc, " (", .fcr_family_label(o$family[[j]]), "):\n", sep = "")
@@ -572,6 +960,22 @@ print.summary.countreg_mv <- function(x, digits = 4, ...) {
     rownames(tb) <- sub(paste0("^", .fcr_regex_escape(oc), ":"), "",
                         rownames(tb))
     stats::printCoefmat(tb, digits = digits, signif.legend = FALSE)
+    cat("\n")
+  }
+  if (!is.null(rp)) {
+    cat("Random parameters (Cholesky factor):\n")
+    stats::printCoefmat(x$table[rp$layout$idx, , drop = FALSE],
+                        digits = digits, signif.legend = FALSE)
+    vc <- .fcr_alloc_varcorr(o)
+    sdv <- sqrt(diag(vc))
+    tab <- cbind(SD = sdv)
+    if (length(sdv) > 1L) {
+      cr <- stats::cov2cor(vc)
+      cr[upper.tri(cr, diag = TRUE)] <- NA
+      tab <- cbind(tab, cr[, -ncol(cr), drop = FALSE])
+    }
+    cat("\nStandard deviations and correlations:\n")
+    print(round(tab, 3), na.print = "")
     cat("\n")
   }
   k <- length(o$coefficients)
@@ -595,6 +999,12 @@ tidy.countreg_mv <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
   for (j in seq_along(x$outcomes)) {
     S <- x$layout[[j]]
     comp[c(S$idx_a, S$idx_s)] <- "distribution"
+  }
+  if (!is.null(x$rpar)) {
+    RS <- x$rpar$layout
+    comp[RS$idx] <- "random"
+    oc[RS$idx] <- x$outcomes[RS$eq[RS$pairs[, "k"]]]
+    term[RS$idx] <- RS$names
   }
   out <- data.frame(outcome = oc, term = term, component = comp,
                     estimate = s$table[, 1], std.error = s$table[, 2],
@@ -622,11 +1032,29 @@ simulate.countreg_mv <- function(object, nsim = 1, seed = NULL,
                                  newdata = NULL, ...) {
   if (!is.null(seed)) set.seed(seed)
   if (is.null(newdata)) newdata <- object$data_used
-  vals <- .fcr_mv_values(object, as.data.frame(newdata))
-  n <- nrow(as.data.frame(newdata))
+  newdata <- as.data.frame(newdata)
+  E <- .fcr_mv_design(object, newdata)
+  p <- object$coefficients
+  n <- E$n
+  rp <- object$rpar
+  # With random parameters, each simulation draws new coefficients for
+  # each unit (the group_var units of newdata, or each row)
+  unit <- if (!is.null(rp) && !is.null(object$group_var) &&
+              all(object$group_var %in% names(newdata))) {
+    as.integer(factor(interaction(newdata[, object$group_var, drop = FALSE],
+                                  drop = TRUE, sep = ":")))
+  } else seq_len(n)
   one <- function() {
-    Y <- vapply(vals, function(v) .fcr_family_r(v$eq$family, n, v$mu,
-                                                v$alpha, v$sigma), numeric(n))
+    adds <- NULL
+    if (!is.null(rp)) {
+      L <- .fcr_alloc_chol(p, rp$layout)
+      Bu <- matrix(stats::rnorm(max(unit) * rp$layout$K), max(unit)) %*% t(L)
+      adds <- .fcr_mv_add(Bu[unit, , drop = FALSE], E)
+    }
+    Y <- vapply(seq_along(E$eqs), function(j) {
+      v <- .fcr_mv_eq_parts(p, E$eqs[[j]], adds[[j]], grad = FALSE)
+      .fcr_family_r(E$eqs[[j]]$family, n, v$mu, v$alpha, v$sigma)
+    }, numeric(n))
     Y <- matrix(Y, nrow = n)
     colnames(Y) <- object$outcomes
     Y

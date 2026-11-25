@@ -80,7 +80,9 @@
 #'   form, as in [countreg()].
 #' @param rpar_total,rpar_alloc,rpar_threshold one-sided formulas of
 #'   random parameters in the total's mean, the allocation propensity and
-#'   the gaps between thresholds. Each term adds a normal random deviation,
+#'   the gaps between thresholds. The intercept is random only when the
+#'   formula has the term `1` itself (`~ 1`, `~ 1 + x`; `~ x` makes only
+#'   the slope random). Each term adds a normal random deviation,
 #'   with mean zero, to the corresponding coefficient, so the coefficient
 #'   in the equation's own formula is the mean (`~ 1` in `rpar_alloc` is a
 #'   random intercept of the propensity, even though its fixed intercept is
@@ -440,6 +442,15 @@ countreg_alloc <- function(formula, data, family = "NB2",
   RS <- NULL
   draw_seed <- NULL
   if (has_rpar) {
+    # The intercept is random only when the formula has the term 1 itself
+    prep$aux$rp_total <- .fcr_rpar_matrix(prep$aux$rp_total, rpar_total)
+    prep$aux$rp_alloc <- .fcr_rpar_matrix(prep$aux$rp_alloc, rpar_alloc)
+    prep$aux$rp_thr <- .fcr_rpar_matrix(prep$aux$rp_thr, rpar_threshold)
+    if (!sum(vapply(prep$aux[c("rp_total", "rp_alloc", "rp_thr")],
+                    function(M) if (is.null(M)) 0L else ncol(M), 1L))) {
+      stop("The random-parameter formulas have no terms. For a random ",
+           "intercept write ~ 1 (or ~ 1 + x).", call. = FALSE)
+    }
     RS <- .fcr_alloc_rlayout(prep$aux$rp_total, prep$aux$rp_alloc,
                              prep$aux$rp_thr, categories, ordered,
                              correlation, length(S$names))
@@ -477,6 +488,11 @@ countreg_alloc <- function(formula, data, family = "NB2",
   fit <- .fcr_set_final_hessian(fit, fn, gr, method)
   est <- fit$estimate
   names(est) <- S$names
+  if (has_rpar) {
+    sg <- .fcr_chol_signs(est, RS)
+    est <- est * sg
+    fit$hessian <- fit$hessian * outer(sg, sg)
+  }
   conv <- isTRUE(fit$code %in% c(0L, 1L, 2L, 8L)) ||
     grepl("converge|successful", fit$message %||% "", ignore.case = TRUE)
   if (!conv) {
@@ -1302,8 +1318,11 @@ countreg_alloc <- function(formula, data, family = "NB2",
        dens_args = list(haltons = haltons,
                         normed_haltons = stats::qnorm(haltons),
                         engine = object$engine),
-       y = rep(0, nrow(fd$X)), Xr = fd$aux$rp_total, Zr = fd$aux$rp_alloc,
-       Vr = fd$aux$rp_thr, RS = object$rpar$layout, Sm = fd$aux$shared,
+       y = rep(0, nrow(fd$X)),
+       Xr = .fcr_rpar_matrix(fd$aux$rp_total, object$rpar$formulas$total),
+       Zr = .fcr_rpar_matrix(fd$aux$rp_alloc, object$rpar$formulas$alloc),
+       Vr = .fcr_rpar_matrix(fd$aux$rp_thr, object$rpar$formulas$threshold),
+       RS = object$rpar$layout, Sm = fd$aux$shared,
        GH = if (!is.null(S$SH)) .fcr_gh_rule(object$shared$nodes),
        w = rep(1, nrow(fd$X)))
 }

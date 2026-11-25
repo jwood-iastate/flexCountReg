@@ -97,7 +97,9 @@ form, as in \code{\link[=countreg]{countreg()}}.}
 
 \item{rpar_total, rpar_alloc, rpar_threshold}{one-sided formulas of
 random parameters in the total's mean, the allocation propensity and
-the gaps between thresholds. Each term adds a normal random deviation,
+the gaps between thresholds. The intercept is random only when the
+formula has the term \code{1} itself (\code{~ 1}, \code{~ 1 + x}; \code{~ x} makes only
+the slope random). Each term adds a normal random deviation,
 with mean zero, to the corresponding coefficient, so the coefficient
 in the equation's own formula is the mean (\code{~ 1} in \code{rpar_alloc} is a
 random intercept of the propensity, even though its fixed intercept is

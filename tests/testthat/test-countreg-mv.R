@@ -121,3 +121,163 @@ test_that("input errors", {
   expect_error(countreg_mv(cbind(a, b) ~ x, data = d, stderr = "cluster"),
                "group_var")
 })
+
+# ---- Random parameters across equations --------------------------------------
+
+sim_mvrp <- function(G = 300, Tn = 4, seed = 7, sdv = c(0.5, 0.4, 0.6),
+                     cr = c(0.6, -0.4, 0.3), nb = TRUE) {
+  set.seed(seed)
+  id <- rep(seq_len(G), each = Tn)
+  n <- G * Tn
+  Rm <- diag(3)
+  Rm[lower.tri(Rm)] <- cr
+  Rm[upper.tri(Rm)] <- t(Rm)[upper.tri(Rm)]
+  Sig <- diag(sdv) %*% Rm %*% diag(sdv)
+  b <- (matrix(stats::rnorm(3 * G), G) %*% chol(Sig))[id, ]
+  d <- data.frame(id = id, x = stats::rnorm(n), z = stats::rbinom(n, 1, 0.5))
+  d$a <- stats::rpois(n, exp(0.5 + 0.4 * d$x + b[, 1]))
+  mu_b <- exp(-0.3 + 0.3 * d$z + b[, 2])
+  d$b <- if (nb) stats::rnbinom(n, size = 2, mu = mu_b) else
+    stats::rpois(n, mu_b)
+  d$c <- stats::rpois(n, exp(-0.8 + 0.5 * d$x + b[, 3]))
+  d
+}
+
+test_that("the simulated likelihood has the right analytic gradient", {
+  skip_if_not_installed("numDeriv")
+  d <- sim_mvrp(G = 60)
+  cases <- list(
+    list(family = "POISSON", rpar_formula = ~ 1, group_var = NULL),
+    list(family = c("POISSON", "NB2", "PIG"), rpar_formula = ~ 1),
+    list(family = "NB2", rpar_formula = list(a = ~ 1 + x, b = ~ z),
+         correlation = "within"),
+    list(family = "NB1", rpar_formula = ~ 1, correlation = "none",
+         dis_param_formula_1 = ~ z),
+    list(family = "POISSON", rpar_formula = ~ 1,
+         weights = rep(1:2, nrow(d) / 2)))
+  for (cs in cases) {
+    args <- utils::modifyList(list(
+      formula = cbind(a, b, c) ~ x + z, group_var = "id", rpar_draws = 15,
+      seed = 3, .setup_only = TRUE), cs)
+    args$data <- d
+    E <- do.call(countreg_mv, args)
+    set.seed(2)
+    p <- flexCountReg:::.fcr_mv_start(E) +
+      stats::runif(length(E$names), -0.1, 0.1)
+    f <- function(q) sum(flexCountReg:::.fcr_mv_sim_ll(q, E)$ll)
+    expect_equal(colSums(flexCountReg:::.fcr_mv_sim_ll(p, E, grad = TRUE)$G),
+                 numDeriv::grad(f, p), tolerance = 1e-5,
+                 info = paste(names(cs), collapse = ","))
+  }
+})
+
+test_that("the simulated likelihood approaches the exact integral", {
+  # Bivariate Poisson-lognormal with correlated random intercepts per row:
+  # exact by two-dimensional Gauss-Hermite quadrature
+  set.seed(4)
+  n <- 200
+  d <- data.frame(x = stats::rnorm(n))
+  b <- matrix(stats::rnorm(2 * n), n) %*% chol(matrix(c(0.25, 0.15, 0.15,
+                                                        0.36), 2))
+  d$a <- stats::rpois(n, exp(0.3 + 0.4 * d$x + b[, 1]))
+  d$b <- stats::rpois(n, exp(-0.2 + b[, 2]))
+  E <- countreg_mv(cbind(a, b) ~ x, data = d, family = "POISSON",
+                   rpar_formula = list(a = ~ 1, b = ~ 1), rpar_draws = 2000,
+                   seed = 1, .setup_only = TRUE)
+  p <- stats::setNames(c(0.3, 0.4, -0.2, 0, 0.5, 0.3, 0.52), E$names)
+  sim <- sum(flexCountReg:::.fcr_mv_sim_ll(p, E)$ll)
+  L <- flexCountReg:::.fcr_alloc_chol(p, E$RS)
+  gh <- flexCountReg:::.fcr_gh_grid(30, 2)
+  B <- gh$Z %*% t(L)
+  exact <- sum(vapply(seq_len(n), function(i) {
+    log(sum(gh$w * stats::dpois(d$a[i], exp(0.3 + 0.4 * d$x[i] + B[, 1])) *
+              stats::dpois(d$b[i], exp(-0.2 + B[, 2]))))
+  }, numeric(1)))
+  expect_lt(abs(sim - exact), 0.2)
+})
+
+test_that("correlated random intercepts are recovered", {
+  skip_on_cran()
+  d <- sim_mvrp(G = 400, Tn = 6, nb = FALSE)
+  m <- countreg_mv(cbind(a, b, c) ~ x + z, data = d, family = "POISSON",
+                   rpar_formula = ~ 1, group_var = "id", rpar_draws = 100,
+                   seed = 2)
+  expect_true(m$converged)
+  cf <- coef(m)
+  expect_true(all(cf[grep("^sd:", names(cf))] > 0))
+  vc <- flexCountReg:::.fcr_alloc_varcorr(m)
+  expect_equal(unname(sqrt(diag(vc))), c(0.5, 0.4, 0.6), tolerance = 0.2)
+  cr <- stats::cov2cor(vc)
+  expect_lt(max(abs(c(cr[2, 1], cr[3, 1], cr[3, 2]) - c(0.6, -0.4, 0.3))),
+            0.2)
+  m0 <- countreg_mv(cbind(a, b, c) ~ x + z, data = d, family = "POISSON")
+  expect_lt(AIC(m), AIC(m0) - 100)
+  expect_output(print(summary(m)), "Standard deviations and correlations")
+  expect_true("random" %in% tidy(m)$component)
+})
+
+test_that("joint and conditional probabilities", {
+  d <- sim_mvrp(G = 80)
+  m <- countreg_mv(cbind(a, b) ~ x, data = d, family = "POISSON",
+                   rpar_formula = ~ 1, group_var = "id", rpar_draws = 50,
+                   seed = 1)
+  nd <- d[1:2, ]
+  grid <- expand.grid(a = 0:60, b = 0:40)
+  tot <- vapply(1:2, function(i) sum(predict(
+    m, newdata = nd[rep(i, nrow(grid)), ], type = "joint", y = grid)), 0)
+  expect_equal(tot, c(1, 1), tolerance = 1e-6)
+  cp <- predict(m, newdata = nd, type = "conditional", outcome = "b",
+                given = c(a = 3), max_count = 60)
+  expect_equal(unname(rowSums(cp)), c(1, 1), tolerance = 1e-6)
+  # P(b = 1 | a = 3) = P(a = 3, b = 1) / P(a = 3)
+  j31 <- predict(m, newdata = nd, type = "joint", y = c(a = 3, b = 1))
+  pa3 <- predict(m, newdata = nd, type = "prob", max_count = 3)$a[, "3"]
+  expect_equal(unname(cp[, "1"]), j31 / pa3, tolerance = 1e-8)
+  # Without random parameters the conditional equals the marginal
+  mi <- countreg_mv(cbind(a, b) ~ x, data = d, family = "POISSON")
+  expect_equal(unname(predict(mi, newdata = nd, type = "conditional",
+                              outcome = "b", given = c(a = 3),
+                              max_count = 5)),
+               unname(predict(mi, newdata = nd, type = "prob",
+                              max_count = 5)$b))
+  # Posterior (Empirical Bayes) predictions for estimated units
+  pm <- predict(m, newdata = d[1:4, ])
+  pp <- predict(m, newdata = d[1:4, ], random = "posterior")
+  expect_false(isTRUE(all.equal(pm, pp)))
+  expect_error(predict(m, newdata = d[1:4, "x", drop = FALSE],
+                       random = "posterior"), "grouping column")
+  expect_error(predict(m, newdata = nd, type = "joint", y = c(a = 1)),
+               "every outcome")
+  expect_error(predict(m, newdata = nd, type = "conditional", outcome = "b",
+                       given = c(b = 1)), "outcome itself")
+  s <- simulate(m, nsim = 1, seed = 1)$sim_1
+  expect_equal(dim(s), c(nrow(d), 2))
+})
+
+test_that("random-parameter input errors", {
+  d <- sim_mvrp(G = 20)
+  expect_error(countreg_mv(cbind(a, b) ~ x, data = d,
+                           rpar_formula = ~ offset(x)), "offset")
+  expect_error(countreg_mv(cbind(a, b) ~ x, data = d,
+                           rpar_formula = list(q = ~ 1)), "Unknown outcome")
+})
+
+test_that("countreg_alloc() makes the intercept random only when asked", {
+  set.seed(3)
+  n <- 120
+  d <- data.frame(x = stats::rnorm(n), site = rep(1:40, each = 3))
+  Y <- t(vapply(stats::rpois(n, 3), function(k)
+    as.numeric(stats::rmultinom(1, k, c(0.6, 0.3, 0.1))), numeric(3)))
+  d$a <- Y[, 1]
+  d$b <- Y[, 2]
+  d$c <- Y[, 3]
+  E <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "POISSON",
+                      alloc_formula = ~ x, group_var = "site",
+                      rpar_total = ~ x, rpar_draws = 5, .setup_only = TRUE)
+  expect_equal(E$RS$labels, "Total:x")
+  E1 <- countreg_alloc(cbind(a, b, c) ~ x, data = d, family = "POISSON",
+                       alloc_formula = ~ x, group_var = "site",
+                       rpar_total = ~ 1 + x, rpar_draws = 5,
+                       .setup_only = TRUE)
+  expect_equal(E1$RS$labels, c("Total:(Intercept)", "Total:x"))
+})

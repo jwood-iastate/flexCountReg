@@ -2,47 +2,169 @@
 % Please edit documentation in R/parsnip-count_reg.R
 \name{count_reg}
 \alias{count_reg}
+\alias{update.count_reg}
 \title{Count regression model specification for tidymodels}
 \usage{
 count_reg(mode = "regression", family = NULL, engine = "flexCountReg")
+
+\method{update}{count_reg}(object, parameters = NULL, family = NULL, fresh = FALSE, ...)
 }
 \arguments{
 \item{mode}{the model mode; only \code{"regression"} is available.}
 
 \item{family}{the count distribution, one of the \code{family} values of
 \code{\link{countreg}} (for example \code{"NB2"}, \code{"PIG2"} or
-\code{"PLN"}). Default \code{"NB2"}.}
+\code{"PLN"}) or a family from \code{\link{new_count_family}()}.
+\code{NULL} uses the default of the engine's estimator
+(\code{"NB2"} for \code{countreg()}). The engines \code{"renb"},
+\code{"repois"} and \code{"poislind_re"} have a fixed distribution and
+do not accept it; \code{"negmultinom"} and \code{"countreg_fe"} accept
+the families of their estimators; \code{"countreg_mv"} accepts one
+family per outcome.}
 
-\item{engine}{the fitting engine; only \code{"flexCountReg"}.}
+\item{engine}{the fitting engine; see the section \emph{Engines}.}
+
+\item{object}{a \code{count_reg()} specification.}
+
+\item{parameters}{a one-row tibble or named list of main arguments to
+update.}
+
+\item{fresh}{logical; replace the arguments (\code{TRUE}) or modify them?}
+
+\item{...}{engine arguments to update.}
 }
 \value{
 A \code{count_reg} model specification.
 }
 \description{
 \code{count_reg()} defines a count regression model for the
-\pkg{parsnip} package, fitted with the \code{"flexCountReg"} engine
-(\code{\link{countreg}}). The count distribution is a main argument, so it
-can be tuned with \pkg{tune}.
+\pkg{parsnip} package. Every estimator of flexCountReg is an engine, so
+all of them can be used in workflows, resampling, tuning and workflow
+sets. The count distribution (\code{family}) is a main argument.
 }
-\details{
-Other \code{countreg()} arguments are engine arguments, set with
-\code{parsnip::set_engine("flexCountReg", ...)}: for example
-\code{method}, \code{dis_param_formula_1}, \code{underreport_formula},
-\code{offset} or \code{stderr}. Variables used only in those auxiliary
-formulas, and offset columns, must be kept in the data by any recipe (in a
-workflow, add them with \code{workflows::add_variables()} or give them a
-non-predictor role). A formula \code{offset()} term can be used with
-\code{workflows::add_model(spec, formula = y ~ x + offset(log_exposure))}.
-Case weights from tidymodels are passed to \code{countreg()} as frequency
-weights.
+\section{Engines}{
 
-Predictions (\code{type = "numeric"}) are the expected counts from
-\code{\link{predict.flexCountReg}} and have one row per row of
-\code{new_data}, with \code{NA} for rows with missing values.
-
-Requires the \pkg{parsnip} package. The engine is registered when
-flexCountReg or parsnip is loaded.
+\tabular{lll}{
+\strong{Engine} \tab \strong{Estimator} \tab \strong{Model} \cr
+\code{"flexCountReg"} \tab \code{\link{countreg}} \tab any family, with
+zero-inflated, hurdle and underreporting components \cr
+\code{"countreg_rp"} \tab \code{\link{countreg_rp}} \tab random
+parameters \cr
+\code{"countreg_mix"} \tab \code{\link{countreg_mix}} \tab finite
+mixtures \cr
+\code{"countreg_lc"} \tab \code{\link{countreg_lc}} \tab latent classes
+\cr
+\code{"countreg_fe"} \tab \code{\link{countreg_fe}} \tab fixed effects
+\cr
+\code{"countreg_hier"} \tab \code{\link{countreg_hier}} \tab
+hierarchical models \cr
+\code{"countreg_alloc"} \tab \code{\link{countreg_alloc}} \tab total
+plus allocation (several outcome columns) \cr
+\code{"countreg_mv"} \tab \code{\link{countreg_mv}} \tab multivariate
+(several outcomes) \cr
+\code{"renb"} \tab \code{\link{renb}} \tab random-effects negative
+binomial \cr
+\code{"repois"} \tab \code{\link{repois}} \tab random-effects Poisson
+\cr
+\code{"poislind_re"} \tab \code{\link{poislind_re}} \tab random-effects
+Poisson-Lindley \cr
+\code{"negmultinom"} \tab \code{\link{negmultinom}} \tab negative
+multinomial
 }
+All other arguments of the estimator are engine arguments, set with
+\code{parsnip::set_engine()}, for example
+\code{set_engine("countreg_rp", rpar_formula = ~ -1 + x, ndraws = 200)}.
+Arguments with a finite set of choices have tuning parameters (see
+\code{\link{count_family}}).
+
+The estimators' own \code{engine} argument (the numerical method) is
+called \code{fit_engine} here, for example
+\code{set_engine("countreg_hier", fit_engine = "laplace")}.
+
+The engine argument \code{predict_args} (a list) holds arguments passed
+to the model's \code{predict()} method for numeric predictions and
+intervals, for example \code{predict_args = list(method = "Exact")} for
+\code{"countreg_rp"}, \code{list(newgroup = "mean_fe")} for
+\code{"countreg_fe"} or \code{list(marginal = TRUE)} for
+\code{"countreg_hier"}.
+}
+
+\section{Formulas, recipes and extra columns}{
+
+The engines use the formula interface. In a workflow, the model receives
+only the columns the preprocessor declares as outcomes and predictors
+(not those with other roles), so every column the model needs must be a
+predictor: offsets, grouping variables, and variables of auxiliary
+formulas (\code{dis_param_formula_1}, \code{rpar_formula}, ...). Two ways
+to say which of them enter the mean model:
+\itemize{
+\item Give the model formula, as in
+\code{workflows::add_model(spec, formula = y ~ x + offset(log_exp))},
+with \code{workflows::add_variables()} or a recipe as the preprocessor.
+This works for every model, including smooths (\code{s(x)}), formula
+offsets, random effects (\code{(1 | site)}), \code{tv()} terms and
+several outcomes (\code{cbind(y1, y2) ~ x}).
+\item Without a model formula, all predictors enter the mean model
+(\code{y ~ .}), except that columns named in \code{offset},
+\code{group_var}, \code{panel_id}, \code{cluster}, \code{fixef},
+\code{cre_group} or \code{time}, and the variables of
+\code{rpar_formula} for \code{"countreg_rp"} (which are random instead
+of fixed), are left out of the \code{.}. The outcome is then named
+\code{..y} in the fitted model.
+}
+With a recipe, do not transform the grouping columns (for example with
+\code{step_dummy()} or \code{step_normalize()}) or an offset.
+}
+
+\section{Case weights}{
+
+Case weights are passed to the estimator's \code{weights}. By default
+they are frequency weights. parsnip passes the engine only their values,
+so for importance weights with \code{"flexCountReg"} or
+\code{"countreg_rp"} set the engine argument
+\code{weight_type = "sampling"}; a warning is given for weights that are
+not whole numbers without it.
+}
+
+\section{Predictions}{
+
+\code{type = "numeric"} gives the expected counts of the estimator's
+\code{predict()} method, with one row per row of \code{new_data} and
+\code{NA} for rows with missing values. For models with several outcomes
+there is one column per outcome or category
+(\code{.pred_<name>}); \code{predict_args = list(type = "total")} gives
+the total of \code{"countreg_alloc"} as \code{.pred}. The
+\code{"flexCountReg"} engine also has \code{type = "conf_int"} and
+\code{type = "pred_int"} (see \code{\link{predict.flexCountReg}}).
+Everything else is available with \code{type = "raw"}, whose \code{opts}
+are passed to \code{predict()}: for example
+\code{predict(fit, new_data, type = "raw",
+opts = list(type = "prob", max_count = 5))} for count probabilities.
+
+Predictions that use the observed outcome (Empirical Bayes predictions of
+random-parameter models, posterior class probabilities) need it in
+\code{new_data}; a workflow removes the outcome, so use the model itself:
+\code{predict(hardhat::extract_fit_engine(wf), newdata = ...)}. All other
+functions of the package (\code{\link{margEffTable}},
+\code{\link{cureplot}}, \code{\link{rootogram}}, \code{vcov()}, ...) also
+take the extracted model.
+}
+
+\section{Several outcomes}{
+
+The engines \code{"countreg_alloc"} and \code{"countreg_mv"} can be
+fitted and predicted in workflows, but the resampling functions of
+\pkg{tune} compute metrics for one outcome, so use
+\code{rsample} splits directly to validate them.
+}
+
+\section{Loading}{
+
+Requires the \pkg{parsnip} package. The engines are registered when
+flexCountReg is loaded; load it before using a saved model or workflow.
+Parallel workers of \pkg{tune} load it themselves.
+}
+
 \examples{
 \donttest{
 if (requireNamespace("parsnip", quietly = TRUE)) {
@@ -51,6 +173,14 @@ if (requireNamespace("parsnip", quietly = TRUE)) {
   fit <- parsnip::fit(spec, Total_crashes ~ lnaadt + lnlength,
                       data = washington_roads)
   predict(fit, new_data = washington_roads[1:5, ])
+  predict(fit, new_data = washington_roads[1:5, ], type = "pred_int")
+
+  # Another estimator
+  re <- count_reg() |>
+    parsnip::set_engine("repois", group_var = "ID", method = "BFGS")
+  fit_re <- parsnip::fit(re, Total_crashes ~ lnaadt + lnlength,
+                         data = washington_roads)
+  tidy(fit_re)
 }
 }
 }

@@ -2,6 +2,8 @@
 
 S3method(VarCorr,countreg_hier)
 S3method(as_tibble,summary.flexCountReg)
+S3method(augment,countreg_alloc)
+S3method(augment,countreg_mv)
 S3method(augment,flexCountReg)
 S3method(bread,flexCountReg)
 S3method(coef,countreg_alloc)
@@ -68,6 +70,10 @@ S3method(tidy,countreg_alloc)
 S3method(tidy,countreg_mix)
 S3method(tidy,countreg_mv)
 S3method(tidy,flexCountReg)
+S3method(update,count_reg)
+S3method(update,countreg_alloc)
+S3method(update,countreg_mv)
+S3method(update,flexCountReg)
 S3method(vcov,countreg_alloc)
 S3method(vcov,countreg_mv)
 S3method(vcov,flexCountReg)
@@ -82,10 +88,15 @@ export(component_probs)
 export(concurvity_fcr)
 export(cor2cov)
 export(corr_haltons)
+export(count_components)
+export(count_correlated)
 export(count_family)
 export(count_param)
+export(count_re_dist)
 export(count_reg)
 export(count_reg_fit)
+export(count_reg_predict)
+export(count_zero_type)
 export(countreg)
 export(countreg.rp)
 export(countreg_alloc)
@@ -309,6 +320,7 @@ importFrom(stats,
   simulate,
   terms,
   uniroot,
+  update,
   vcov
 )
 importFrom(tibble,

@@ -198,8 +198,9 @@ computer.
   `check_count_family()` tests it numerically. See
   `vignette("user-defined-count-distributions", package = "flexCountReg")`.
 - `count_reg()` is a [parsnip](https://parsnip.tidymodels.org/) model
-  specification with a `"flexCountReg"` engine, for use with tidymodels
-  (the distribution can be tuned with `count_family()`).
+  specification with every estimator of the package as an engine, for use
+  with tidymodels workflows, resampling and tuning (see
+  `vignette("tidymodels", package = "flexCountReg")`).
 
 **Working with Fitted Models**
 
@@ -697,6 +698,8 @@ The vignettes cover the main workflows. Start with
 
 - Evaluating predictive performance without information leakage:
   `vignette("predictive-validation", package = "flexCountReg")`
+- Count models with tidymodels:
+  `vignette("tidymodels", package = "flexCountReg")`
 - Predicting new units and known units in panel data:
   `vignette("prediction-for-panel-data", package = "flexCountReg")`
 

@@ -5,6 +5,8 @@
 \alias{tidy.flexCountReg}
 \alias{glance.flexCountReg}
 \alias{augment.flexCountReg}
+\alias{augment.countreg_alloc}
+\alias{augment.countreg_mv}
 \title{Tidy, glance and augment flexCountReg models}
 \usage{
 \method{tidy}{flexCountReg}(x, conf.int = FALSE, conf.level = 0.95, exponentiate = FALSE, ...)
@@ -19,6 +21,10 @@
   type.residuals = c("response", "pearson"),
   ...
 )
+
+\method{augment}{countreg_alloc}(x, data = NULL, new_data = NULL, newdata = NULL, ...)
+
+\method{augment}{countreg_mv}(x, data = NULL, new_data = NULL, newdata = NULL, ...)
 }
 \arguments{
 \item{x}{a model estimated with this package.}
@@ -48,7 +54,9 @@ or \code{"pearson"} (see \code{\link{residuals.flexCountReg}}).}
 \code{p.value} (and \code{conf.low}, \code{conf.high}).
 \code{glance()}: a one-row tibble of model statistics.
 \code{augment()}: the data as a tibble with \code{.fitted} (and
-\code{.resid} when the outcome is available).
+\code{.resid} when the outcome is available); for
+\code{countreg_alloc()} and \code{countreg_mv()} models one column per
+outcome (\code{.fitted_<name>}, \code{.resid_<name>}).
 }
 \description{
 Methods for the \code{tidy()}, \code{glance()} and \code{augment()}

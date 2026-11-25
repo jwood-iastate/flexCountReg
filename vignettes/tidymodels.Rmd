@@ -1,0 +1,414 @@
+---
+title: "Count models with tidymodels"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Count models with tidymodels}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+pkgs <- c("parsnip", "recipes", "workflows", "workflowsets", "rsample",
+          "tune", "yardstick", "dials", "hardhat")
+have <- all(vapply(pkgs, requireNamespace, logical(1), quietly = TRUE))
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = have,
+                      message = FALSE, warning = FALSE)
+options(digits = 4)
+```
+
+[tidymodels](https://www.tidymodels.org/) is a family of packages for
+building, resampling, tuning and comparing models with one interface.
+flexCountReg plugs into it through **parsnip**: `count_reg()` is a model
+specification, and every estimator of the package is one of its *engines*.
+A negative binomial regression, a latent-class model and a random-effects
+model can then share the same preprocessing, the same resamples and the
+same metrics.
+
+This article covers fitting and predicting, recipes and workflows, offsets
+and other special columns, comparing and tuning models, weights, panel
+models, several outcomes, and getting back to the functions of flexCountReg.
+
+```{r setup}
+library(parsnip)
+library(recipes)
+library(workflows)
+library(workflowsets)
+library(rsample)
+library(tune)
+library(yardstick)
+library(flexCountReg)
+
+data("washington_roads")
+roads <- tibble::as_tibble(washington_roads)
+roads$ID <- as.character(roads$ID)
+```
+
+`library(tidymodels)` loads all of these except flexCountReg at once. The data have
+three years of crashes on each road segment, identified by `ID`.
+
+## A first model
+
+Choose the distribution with `family`, the estimator with `set_engine()`, and
+fit. Arguments of the estimator go into `set_engine()`.
+
+```{r first}
+nb_spec <- count_reg(family = "NB2") |>
+  set_engine("flexCountReg", method = "BFGS")
+
+nb_fit <- fit(nb_spec, Total_crashes ~ lnaadt + lnlength + speed50,
+              data = roads)
+tidy(nb_fit)
+glance(nb_fit)
+```
+
+Predictions are tibbles with one row per row of `new_data`:
+
+```{r first-predict}
+new_roads <- roads[1:4, ]
+predict(nb_fit, new_roads)
+predict(nb_fit, new_roads, type = "conf_int")
+predict(nb_fit, new_roads, type = "pred_int", level = 0.9)
+augment(nb_fit, new_roads)[, c(".pred", ".resid", "Total_crashes")]
+```
+
+`conf_int` is an interval for the expected count, `pred_int` for a future
+count. Everything else that `predict()` offers is available with
+`type = "raw"` and `opts`, such as the probabilities of 0 to 3 crashes:
+
+```{r first-raw}
+predict(nb_fit, new_roads, type = "raw",
+        opts = list(type = "prob", max_count = 3, overflow = TRUE))
+```
+
+## The engines
+
+```{r engines}
+show_engines("count_reg")
+```
+
+| Engine | Estimator | Typical engine arguments |
+|:--|:--|:--|
+| `flexCountReg` | `countreg()` | `dis_param_formula_1`, `zero_formula`, `underreport_formula`, `offset` |
+| `countreg_rp` | `countreg_rp()` | `rpar_formula`, `rpardists`, `ndraws`, `group_var` |
+| `countreg_mix` | `countreg_mix()` | `components`, `mixing_formula` |
+| `countreg_lc` | `countreg_lc()` | `classes`, `membership_formula`, `group_var` |
+| `countreg_fe` | `countreg_fe()` | `fixef` |
+| `countreg_hier` | `countreg_hier()` | `re_dist`, `fit_engine` |
+| `countreg_alloc` | `countreg_alloc()` | `alloc_formula`, `link` |
+| `countreg_mv` | `countreg_mv()` | `copula`, `rpar_formula` |
+| `renb`, `repois`, `poislind_re` | the function of that name | `group_var` |
+| `negmultinom` | `negmultinom()` | `group_var` |
+
+Two engine arguments belong to the tidymodels interface:
+
+* `predict_args` is a list of arguments for the model's `predict()` method,
+  used for numeric predictions, for example
+  `predict_args = list(method = "Exact")` for random parameters.
+* `fit_engine` is the estimators' own `engine` argument (the numerical
+  method), because `set_engine()` already has an argument of that name.
+
+## Recipes and workflows
+
+A **workflow** bundles preprocessing with the model. Here a recipe centers
+and scales the numeric predictors and makes indicators of a factor; the
+statistics are estimated on the training data only.
+
+```{r workflow}
+roads$year <- factor(roads$Year)
+set.seed(2026)
+split <- group_initial_split(roads, group = ID, prop = 0.75)
+train <- training(split)
+test <- testing(split)
+
+rec <- recipe(Total_crashes ~ lnaadt + lnlength + speed50 + year,
+              data = train) |>
+  step_normalize(lnaadt, lnlength) |>
+  step_dummy(year)
+
+nb_wf <- workflow() |>
+  add_recipe(rec) |>
+  add_model(nb_spec)
+nb_wf_fit <- fit(nb_wf, train)
+tidy(nb_wf_fit)
+
+augment(nb_wf_fit, test) |>
+  rmse(truth = Total_crashes, estimate = .pred)
+```
+
+The split keeps all years of a segment on one side (`group_initial_split()`),
+so the test segments are new to the model. A random split of rows would put
+years of one segment on both sides.
+
+flexCountReg's own `rmse()` and `mae()` take two vectors; given a data
+frame they call the yardstick metric, so tidymodels code works whichever
+package is loaded last. (With yardstick loaded last, use
+`flexCountReg::rmse()` or `yardstick::rmse_vec()` for two vectors.)
+
+## Offsets and other columns that are not predictors
+
+With `add_formula()` or a recipe, all predictors enter the mean model. Count
+models often need columns with another purpose: an exposure, a grouping
+variable, or a covariate of the dispersion only. A workflow passes the model
+only its predictors and outcomes, so these columns must be among the
+*predictors* (a recipe's other roles do not reach the model). There are two
+ways to say what they are.
+
+**Give the model formula** in `add_model()`. The preprocessor says which
+columns are available and the formula says how they are used. All the formula
+features of the package work here: `offset()`, smooths `s(x)`, `tv()` terms
+and random effects.
+
+```{r offset-formula}
+wf_offset <- workflow() |>
+  add_variables(outcomes = Total_crashes,
+                predictors = c(lnaadt, lnlength, speed50)) |>
+  add_model(count_reg() |>
+              set_engine("flexCountReg", method = "BFGS",
+                         dis_param_formula_1 = ~ lnlength),
+            formula = Total_crashes ~ lnaadt + speed50 + offset(lnlength))
+tidy(fit(wf_offset, train))[, 1:4]
+```
+
+A recipe works too, in place of `add_variables()`:
+
+```{r offset-recipe, eval = FALSE}
+workflow() |>
+  add_recipe(rec) |>
+  add_model(nb_spec, formula = Total_crashes ~ s(lnaadt) + speed50)
+```
+
+**Name the columns in engine arguments**. Columns named in `offset`,
+`group_var`, `panel_id`, `cluster`, `fixef`, `cre_group` or `time` are left
+out of the mean model when no model formula is given. So are the
+variables of `rpar_formula` with the `countreg_rp` engine, which are random
+instead of fixed.
+
+```{r offset-arg}
+wf_offset2 <- workflow() |>
+  add_formula(Total_crashes ~ lnaadt + lnlength) |>
+  add_model(count_reg() |> set_engine("flexCountReg", method = "BFGS",
+                                      offset = "lnlength"))
+tidy(fit(wf_offset2, train))[, 1:4]
+```
+
+Variables used only in `dis_param_formula_1`, `zero_formula` and similar
+formulas are *not* left out, because they often belong in both places; use
+a model formula for those. Do not normalize an offset or make indicators of
+a grouping column in a recipe.
+
+## Comparing models on resamples
+
+Cross-validate with whole segments, and compare several engines in a
+workflow set. The panel engines receive the segment as `group_var`.
+
+```{r workflowset}
+set.seed(2026)
+folds <- group_vfold_cv(train, group = ID, v = 3)
+
+specs <- list(
+  poisson = count_reg(family = "POISSON") |>
+    set_engine("flexCountReg", method = "BFGS"),
+  nb2 = nb_spec,
+  two_class = count_reg(family = "POISSON") |>
+    set_engine("countreg_lc", classes = 2, n_starts = 3, seed = 1,
+               group_var = "ID"),
+  re_poisson = count_reg() |>
+    set_engine("repois", group_var = "ID", method = "BFGS"))
+
+base <- workflow_set(
+  preproc = list(base = Total_crashes ~ lnaadt + lnlength + speed50 + ID),
+  models = specs[c("two_class", "re_poisson")])
+plain <- workflow_set(
+  preproc = list(base = Total_crashes ~ lnaadt + lnlength + speed50),
+  models = specs[c("poisson", "nb2")])
+
+res <- dplyr::bind_rows(base, plain) |>
+  workflow_map("fit_resamples", resamples = folds,
+               metrics = metric_set(rmse, mae))
+rank_results(res, rank_metric = "rmse")[, c("wflow_id", ".metric", "mean",
+                                            "std_err")]
+```
+
+RMSE and MAE only look at the expected count, and models with the same mean
+structure are hard to tell apart by them. To compare the *distributions*,
+score the predicted probabilities, here with the out-of-sample
+log-likelihood of each fold (see `vignette("predictive-validation",
+package = "flexCountReg")` for scores and calibration):
+
+```{r logscore}
+log_score <- function(spec) {
+  sapply(folds$splits, function(s) {
+    f <- fit(spec, Total_crashes ~ lnaadt + lnlength + speed50,
+             data = analysis(s))
+    held_out <- assessment(s)
+    p <- predict(f, held_out, type = "raw",
+                 opts = list(type = "prob",
+                             max_count = max(roads$Total_crashes)))
+    mean(log(p[cbind(seq_len(nrow(p)), held_out$Total_crashes + 1)]))
+  })
+}
+sapply(specs[c("poisson", "nb2")], function(s) mean(log_score(s)))
+```
+
+## Tuning
+
+The distribution is a tuning parameter:
+
+```{r tune-family}
+tune_wf <- workflow() |>
+  add_formula(Total_crashes ~ lnaadt + lnlength + speed50) |>
+  add_model(count_reg(family = tune()) |>
+              set_engine("flexCountReg", method = "BFGS"))
+
+tuned <- tune_grid(tune_wf, resamples = folds,
+                   grid = data.frame(family = c("POISSON", "NB1", "NB2",
+                                                "PL")),
+                   metrics = metric_set(rmse, mae))
+show_best(tuned, metric = "rmse")
+
+final_wf <- finalize_workflow(tune_wf, select_best(tuned, metric = "rmse"))
+last_fit(final_wf, split, metrics = metric_set(rmse, mae)) |>
+  collect_metrics()
+```
+
+Some engine arguments have tuning parameters too (see `?count_family`):
+`components` and `classes`, `zero_type`, `correlated` and `re_dist`. Any
+other argument can be tuned with an explicit grid.
+
+```{r tune-classes}
+lc_wf <- workflow() |>
+  add_formula(Total_crashes ~ lnaadt + lnlength) |>
+  add_model(count_reg(family = "POISSON") |>
+              set_engine("countreg_mix", components = tune(), n_starts = 2,
+                         seed = 1))
+hardhat::extract_parameter_set_dials(lc_wf)
+tune_grid(lc_wf, folds, grid = data.frame(components = 2:3),
+          metrics = metric_set(rmse)) |>
+  collect_metrics()
+```
+
+Tuning selects for out-of-sample accuracy; the standard errors of the selected
+model do not account for the selection. Some families have no dispersion
+parameter, so a grid that includes `"POISSON"` fails for those rows when
+`dis_param_formula_1` is set.
+
+Use a parallel backend for slow models
+(`future::plan("multisession")` before `tune_grid()`); the workers load
+flexCountReg themselves.
+
+## Case weights
+
+Case weights become the estimator's `weights`, by default frequency
+weights. parsnip passes the engine only the values of the weights, so for
+importance or sampling weights say so with `weight_type = "sampling"`
+(`flexCountReg` and `countreg_rp` engines), which gives robust standard
+errors.
+
+```{r weights}
+train_w <- train
+train_w$w <- hardhat::frequency_weights(rep(1:2, length.out = nrow(train)))
+wf_w <- workflow() |>
+  add_formula(Total_crashes ~ lnaadt + lnlength) |>
+  add_case_weights(w) |>
+  add_model(nb_spec)
+tidy(fit(wf_w, train_w))[, 1:4]
+```
+
+## Panel and hierarchical models
+
+Random effects of `countreg_hier()` are written in the model formula:
+
+```{r hier}
+hier_wf <- workflow() |>
+  add_variables(outcomes = Total_crashes,
+                predictors = c(lnaadt, lnlength, ID)) |>
+  add_model(count_reg(family = "NB2") |>
+              set_engine("countreg_hier",
+                         predict_args = list(marginal = TRUE)),
+            formula = Total_crashes ~ lnaadt + lnlength + (1 | ID))
+hier_fit <- fit(hier_wf, train)
+predict(hier_fit, test[1:3, ])
+```
+
+The test segments are new groups. With `marginal = TRUE` their predictions
+average over the distribution of the random effect; without it they are for a
+segment whose effect is zero. The choice matters for `rmse()`, so set it in
+`predict_args`. Likewise, `countreg_fe()` has no effect for a new group and
+predicts `NA` unless `predict_args = list(newgroup = "mean_fe")`.
+
+A random-parameters model:
+
+```{r rp}
+rp_spec <- count_reg(family = "NB2") |>
+  set_engine("countreg_rp", rpar_formula = ~ -1 + lnlength,
+             ndraws = 100, predict_args = list(method = "Exact"))
+rp_wf <- workflow() |>
+  add_formula(Total_crashes ~ lnaadt + speed50 + lnlength) |>
+  add_model(rp_spec)
+rp_fit <- fit(rp_wf, train)
+tidy(rp_fit)[, 1:4]
+predict(rp_fit, test[1:3, ])
+```
+
+## Several outcomes
+
+`countreg_mv()` and `countreg_alloc()` model several counts. Declare all of
+them as outcomes and give the model formula. There is one prediction column
+per outcome.
+
+```{r mv}
+set.seed(1)
+sev <- train
+sev$injury <- rbinom(nrow(sev), sev$Total_crashes, 0.35)
+sev$pdo <- sev$Total_crashes - sev$injury
+
+mv_wf <- workflow() |>
+  add_variables(outcomes = c(injury, pdo),
+                predictors = c(lnaadt, lnlength)) |>
+  add_model(count_reg(family = "NB2") |>
+              set_engine("countreg_mv", copula = "frank"),
+            formula = cbind(injury, pdo) ~ lnaadt + lnlength)
+mv_fit <- fit(mv_wf, sev)
+predict(mv_fit, sev[1:3, ])
+```
+
+(The severities here are simulated.) The resampling functions of tune compute
+metrics for a single outcome, so validate these models with a loop over
+rsample splits:
+
+```{r mv-validate}
+mv_folds <- group_vfold_cv(sev, group = ID, v = 3)
+do.call(rbind, lapply(mv_folds$splits, function(s) {
+  f <- fit(mv_wf, analysis(s))
+  a <- augment(f, assessment(s))
+  data.frame(injury = rmse_vec(a$injury, a$.pred_injury),
+             pdo = rmse_vec(a$pdo, a$.pred_pdo))
+})) |> colMeans()
+```
+
+## Back to flexCountReg
+
+`extract_fit_engine()` returns the flexCountReg model, for everything that
+tidymodels has no interface for: marginal effects, CURE plots, rootograms,
+robust covariances, model tests.
+
+```{r engine, fig.width = 6, fig.height = 4}
+m <- extract_fit_engine(fit(wf_offset, train))
+margEffTable(m)
+cureplot(m, indvar = "lnaadt")
+sqrt(diag(vcov(m, type = "robust")))[1:3]
+```
+
+Keep in mind:
+
+* Without a model formula the outcome is called `..y` in the extracted model;
+  with one it keeps its name.
+* The extracted model sees the *preprocessed* columns. Marginal effects after
+  `step_normalize()` are per standard deviation.
+* A workflow removes the outcome from `new_data`. Predictions that use
+  it, such as Empirical Bayes predictions
+  (`predict(m, newdata, method = "Individual")`) or posterior class
+  probabilities, need the extracted model.
+* `keep_data = FALSE` (an engine argument of most estimators) makes saved
+  models smaller, at the cost of the functions that need the training data.
+* Load flexCountReg before using a saved workflow: that registers the engines.

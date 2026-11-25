@@ -2,23 +2,63 @@
 % Please edit documentation in R/parsnip-count_reg.R
 \name{count_family}
 \alias{count_family}
-\title{Count distribution tuning parameter}
+\alias{count_components}
+\alias{count_zero_type}
+\alias{count_correlated}
+\alias{count_re_dist}
+\title{Tuning parameters for count regression models}
 \usage{
 count_family(
   values = c("POISSON", "NB1", "NB2", "NBP", "GP1", "GP2", "PIG1", "PIG2", "PL", "PLN",
     "COM")
 )
+
+count_components(range = c(2L, 4L), trans = NULL)
+
+count_zero_type(values = c("inflated", "hurdle"))
+
+count_correlated(values = c(FALSE, TRUE))
+
+count_re_dist(values = c("normal", "uniform", "triangular", "gamma"))
 }
 \arguments{
-\item{values}{the candidate families.}
+\item{values}{the candidate values.}
+
+\item{range}{the smallest and largest number of components or classes.}
+
+\item{trans}{a transformation (see \code{dials::new_quant_param()}).}
 }
 \value{
-A \pkg{dials} qualitative parameter.
+A \pkg{dials} parameter.
 }
 \description{
-A \pkg{dials} parameter for the \code{family} argument of
-\code{\link{count_reg}}, for tuning over count distributions.
+\pkg{dials} parameters for \code{\link{count_reg}}: the count
+distribution (the main argument \code{family}) and engine arguments.
+Arguments of \code{count_reg()} marked with \code{tune()} use them
+automatically.
+}
+\details{
+\tabular{lll}{
+\strong{Parameter} \tab \strong{Argument} \tab \strong{Engine} \cr
+\code{count_family()} \tab \code{family} \tab all with a family \cr
+\code{count_components()} \tab \code{components}, \code{classes} \tab
+\code{"countreg_mix"}, \code{"countreg_lc"} \cr
+\code{count_zero_type()} \tab \code{zero_type} \tab
+\code{"flexCountReg"} \cr
+\code{count_correlated()} \tab \code{correlated} \tab
+\code{"countreg_rp"}, \code{"countreg_mix"}, \code{"countreg_lc"} \cr
+\code{count_re_dist()} \tab \code{re_dist} \tab
+\code{"countreg_hier"} (one term) \cr
+}
+The families supported by \code{"countreg_fe"} (\code{"POISSON"} and
+\code{"NB2"} by default here) and \code{"negmultinom"} (\code{"NM1"},
+\code{"NM2"} and \code{"NMP"}) are their own default values. Any other engine argument
+can be tuned with an explicit grid, or with \code{update()} on the
+parameter set.
 }
 \examples{
-if (requireNamespace("dials", quietly = TRUE)) count_family()
+if (requireNamespace("dials", quietly = TRUE)) {
+  count_family()
+  count_components()
+}
 }

@@ -10,13 +10,15 @@
   type = c("counts", "prob", "total", "total_positive"),
   conditional = FALSE,
   random = c("marginal", "posterior"),
+  new_data = NULL,
   ...
 )
 }
 \arguments{
 \item{object}{a \code{\link[=countreg_alloc]{countreg_alloc()}} fit.}
 
-\item{newdata}{optional new data; the estimation data by default.}
+\item{newdata, new_data}{optional new data (either name); the estimation
+data by default.}
 
 \item{type}{\code{"counts"} (default): the expected count in each category,
 \eqn{E[c]\,\pi_j}; \code{"prob"}: the allocation probabilities

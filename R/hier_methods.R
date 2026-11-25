@@ -102,7 +102,8 @@ nlme::VarCorr
 #' Predictions from a hierarchical count model
 #'
 #' @param object a \code{\link{countreg_hier}()} fit.
-#' @param newdata optional data frame (default: the estimation rows).
+#' @param newdata,new_data optional data frame, under either name (default:
+#'   the estimation rows).
 #' @param type \code{"response"} (expected count) or \code{"link"} (log of
 #'   the mean parameter).
 #' @param re.form which random effects to condition on: \code{NULL} (all, the
@@ -133,8 +134,10 @@ nlme::VarCorr
 predict.countreg_hier <- function(object, newdata = NULL,
                                   type = c("response", "link"),
                                   re.form = NULL, allow.new.levels = TRUE,
-                                  marginal = FALSE, history = NULL, ...) {
+                                  marginal = FALSE, history = NULL,
+                                  new_data = NULL, ...) {
   type <- match.arg(type)
+  if (is.null(newdata)) newdata <- new_data
   m <- object$model
   d <- if (is.null(newdata)) .fcr_training_rows(object) else
     as.data.frame(newdata)

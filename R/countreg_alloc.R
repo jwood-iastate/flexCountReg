@@ -1398,7 +1398,8 @@ countreg_alloc <- function(formula, data, family = "NB2",
 #' Predictions from total-plus-allocation models
 #'
 #' @param object a [countreg_alloc()] fit.
-#' @param newdata optional new data; the estimation data by default.
+#' @param newdata,new_data optional new data (either name); the estimation
+#'   data by default.
 #' @param type `"counts"` (default): the expected count in each category,
 #'   \eqn{E[c]\,\pi_j}; `"prob"`: the allocation probabilities
 #'   \eqn{\pi_j}; `"total"`: the expected total \eqn{E[c]};
@@ -1436,9 +1437,11 @@ predict.countreg_alloc <- function(object, newdata = NULL,
                                             "total_positive"),
                                    conditional = FALSE,
                                    random = c("marginal", "posterior"),
-                                   ...) {
+                                   new_data = NULL, ...) {
   type <- match.arg(type)
   random <- match.arg(random)
+  if (is.null(newdata)) newdata <- new_data
+  if (!is.null(newdata)) newdata <- as.data.frame(newdata)
   if (is.null(newdata)) {
     newdata <- .fcr_alloc_rebuild_data(object)
   }

@@ -57,9 +57,19 @@ myBIC <- function(LL, nparam, n){
 #' This function calculates the Root Mean Squared Error (RMSE) between observed
 #' and predicted values.
 #'
-#' @param y Numeric vector representing the observed values.
-#' @param mu Numeric vector representing the predicted values.
-#' @return Numeric value representing the RMSE.
+#' @param y Numeric vector representing the observed values, or a data frame
+#'   (see the section on yardstick).
+#' @param mu Numeric vector representing the predicted values (with a data
+#'   frame, the column of observed values).
+#' @param ... with a data frame, further arguments of the yardstick metric
+#'   (the column of predictions first).
+#' @return Numeric value representing the RMSE (with a data frame, the
+#'   yardstick tibble).
+#' @section yardstick: With a data frame, \code{rmse(data, truth, estimate)}
+#'   calls the \pkg{yardstick} metric of the same name, and the function can
+#'   be used in \code{yardstick::metric_set()}. Loading flexCountReg after
+#'   tidymodels (which masks yardstick's function) therefore does not change
+#'   tidymodels code.
 #' @details The RMSE is calculated using the formula:
 #' \deqn{RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \mu_i)^2}}
 #' Where \eqn{y} is the vector of observed values and \eqn{\mu} is the vector of
@@ -71,18 +81,33 @@ myBIC <- function(LL, nparam, n){
 #' rmse(y, mu)
 #' 
 #' @export
-rmse <- function(y, mu){
-  return(sqrt(mean((y - mu)^2)))
-}
+rmse <- structure(function(y, mu, ...) {
+  if (missing(y) || is.data.frame(y)) {
+    rlang::check_installed("yardstick", reason = "for data frame metrics.")
+    return(.fcr_yardstick(yardstick::rmse, if (!missing(y)) y,
+                          if (!missing(mu)) rlang::enquo(mu),
+                          rlang::enquos(...)))
+  }
+  sqrt(mean((y - mu)^2))
+}, direction = "minimize", range = c(0, Inf),
+class = c("numeric_metric", "metric", "function"))
 
 #' Calculate Mean Absolute Error (MAE)
 #'
 #' This function calculates the Mean Absolute Error (MAE) between observed and
 #' predicted values.
 #'
-#' @param y Numeric vector representing the observed values.
-#' @param mu Numeric vector representing the predicted values.
-#' @return Numeric value representing the MAE.
+#' @param y Numeric vector representing the observed values, or a data frame
+#'   (see the section on yardstick).
+#' @param mu Numeric vector representing the predicted values (with a data
+#'   frame, the column of observed values).
+#' @param ... with a data frame, further arguments of the yardstick metric
+#'   (the column of predictions first).
+#' @return Numeric value representing the MAE (with a data frame, the
+#'   yardstick tibble).
+#' @section yardstick: With a data frame, \code{mae(data, truth, estimate)}
+#'   calls the \pkg{yardstick} metric of the same name, and the function can
+#'   be used in \code{yardstick::metric_set()}.
 #' @details The MAE is calculated using the formula:
 #' \deqn{MAE = \frac{1}{n} \sum_{i=1}^{n} |y_i - \mu_i|}
 #' Where \eqn{y} is the vector of observed values and \eqn{\mu} is the vector of
@@ -93,6 +118,21 @@ rmse <- function(y, mu){
 #' mae(y, mu)
 #' 
 #' @export
-mae <- function(y, mu){
-  return(mean(abs(y - mu)))
+mae <- structure(function(y, mu, ...) {
+  if (missing(y) || is.data.frame(y)) {
+    rlang::check_installed("yardstick", reason = "for data frame metrics.")
+    return(.fcr_yardstick(yardstick::mae, if (!missing(y)) y,
+                          if (!missing(mu)) rlang::enquo(mu),
+                          rlang::enquos(...)))
+  }
+  mean(abs(y - mu))
+}, direction = "minimize", range = c(0, Inf),
+class = c("numeric_metric", "metric", "function"))
+
+# Call a yardstick metric on the arguments of rmse() or mae() given a data
+# frame (`data`) first, or only named arguments (as metric_set() does).
+.fcr_yardstick <- function(metric, data, truth, dots) {
+  args <- c(if (!is.null(data)) list(data = data),
+            if (!is.null(truth)) list(truth), as.list(dots))
+  rlang::eval_tidy(rlang::call2(metric, !!!args))
 }

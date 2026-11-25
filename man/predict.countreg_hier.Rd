@@ -12,13 +12,15 @@
   allow.new.levels = TRUE,
   marginal = FALSE,
   history = NULL,
+  new_data = NULL,
   ...
 )
 }
 \arguments{
 \item{object}{a \code{\link{countreg_hier}()} fit.}
 
-\item{newdata}{optional data frame (default: the estimation rows).}
+\item{newdata, new_data}{optional data frame, under either name (default:
+the estimation rows).}
 
 \item{type}{\code{"response"} (expected count) or \code{"link"} (log of
 the mean parameter).}

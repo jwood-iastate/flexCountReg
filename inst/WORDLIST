@@ -310,6 +310,7 @@ ppinvgaus
 pplind
 pplindLnorm
 ppoisweibull
+preprocessor
 progabide
 pscl
 psichel
@@ -350,11 +351,13 @@ rpinvgaus
 rplind
 rplindLnorm
 rpoisweibull
+rsample
 rsichel
 rtri
 ruber
 rubra
 sd
+severities
 smooth's
 smooth’s
 spp

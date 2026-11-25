@@ -113,7 +113,7 @@ outcome can have its own family:</p>
 <span><span class="co">#&gt; (Intercept)  -7.4115     1.1903  -6.227 4.77e-10 ***</span></span>
 <span><span class="co">#&gt; lnaadt        0.6661     0.1418   4.698 2.63e-06 ***</span></span>
 <span><span class="co">#&gt; speed50      -1.2201     0.4146  -2.943  0.00325 ** </span></span>
-<span><span class="co">#&gt; ln(eta)       0.7900     1.9900   0.397  0.69137    </span></span>
+<span><span class="co">#&gt; ln(eta)       0.7900     1.9897   0.397  0.69132    </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Log-likelihood: -1247.0544  AIC: 2510.1088  BIC: 2552.6199</span></span></code></pre></div>
 <p>The coefficients are named <code>&lt;outcome&gt;:&lt;term&gt;</code>.
@@ -173,7 +173,7 @@ same for PDO and injury crashes?</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>difference <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="va">diff</span><span class="op">)</span>, z <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="va">diff</span> <span class="op">/</span> <span class="va">se</span><span class="op">)</span>,</span>
 <span>  p <span class="op">=</span> <span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">pnorm</a></span><span class="op">(</span><span class="op">-</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unname.html" class="external-link">unname</a></span><span class="op">(</span><span class="va">diff</span> <span class="op">/</span> <span class="va">se</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   difference            z            p </span></span>
-<span><span class="co">#&gt; 0.5083084901 3.3436907879 0.0008267183</span></span></code></pre></div>
+<span><span class="co">#&gt; 0.5083084635 3.3436966915 0.0008267007</span></span></code></pre></div>
 <p>Traffic increases PDO crashes clearly more than injury crashes (p
 &lt; 0.001), so the share of injury crashes falls as traffic grows. The
 covariance between the two estimates is zero here, because the equations
@@ -191,7 +191,7 @@ draws all outcomes at once:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, newdata <span class="op">=</span> <span class="va">nd</span><span class="op">)</span></span>
 <span><span class="co">#&gt;             pdo     injury</span></span>
 <span><span class="co">#&gt; [1,] 0.77454644 0.03005740</span></span>
-<span><span class="co">#&gt; [2,] 0.09928381 0.01309017</span></span>
+<span><span class="co">#&gt; [2,] 0.09928381 0.01309018</span></span>
 <span><span class="co">#&gt; [3,] 0.78249900 0.04238618</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, newdata <span class="op">=</span> <span class="va">nd</span>, type <span class="op">=</span> <span class="st">"prob"</span>, max_count <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>, <span class="va">round</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; $pdo</span></span>
@@ -208,6 +208,13 @@ draws all outcomes at once:</p>
 <p><code><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy()</a></code> has an <code>outcome</code> column, and
 <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code>, <code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code>, <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code>
 and <code><a href="https://generics.r-lib.org/reference/glance.html" class="external-link">glance()</a></code> work as for other models.</p>
+<p><code><a href="../reference/rootogram.html">rootogram()</a></code> compares the observed counts of each outcome
+with its own fitted distribution, one plot per outcome
+(<code>outcome</code> selects some of them). It checks the marginal
+distributions, not the dependence between the outcomes:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/rootogram.html">rootogram</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span></code></pre></div>
+<p><img src="multivariate-count-models_files/figure-html/rootogram-1.png" class="r-plt" alt="" width="672"></p>
 </div>
 <div class="section level2">
 <h2 id="correlated-outcomes">5. Correlated outcomes<a class="anchor" aria-label="anchor" href="#correlated-outcomes"></a>
@@ -222,7 +229,7 @@ segment, shared by its three years) and correlated across equations
 <strong>multivariate Poisson-lognormal model</strong> (MVPLN): each
 segment’s intercepts in the two equations are bivariate normal, which
 makes each outcome overdispersed and the two outcomes correlated.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mr</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_mv.html">countreg_mv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pdo</span>, <span class="va">injury</span><span class="op">)</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span>,</span>
 <span>                  data <span class="op">=</span> <span class="va">w</span>, family <span class="op">=</span> <span class="st">"POISSON"</span>, rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>,</span>
 <span>                  group_var <span class="op">=</span> <span class="st">"ID"</span>, rpar_draws <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
@@ -293,7 +300,7 @@ is not the product of the outcomes’ probabilities.
 outcomes, and <code>type = "conditional"</code> the distribution of one
 outcome given counts of the others, such as the chance of injury crashes
 on a segment-year with three PDO crashes:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">nd</span> <span class="op">&lt;-</span> <span class="va">w</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">50</span>, <span class="fl">200</span><span class="op">)</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mr</span>, newdata <span class="op">=</span> <span class="va">nd</span>, type <span class="op">=</span> <span class="st">"joint"</span>, y <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>pdo <span class="op">=</span> <span class="fl">1</span>, injury <span class="op">=</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] 0.008986714 0.001443140 0.012633591</span></span>
@@ -321,7 +328,7 @@ conditional probabilities equal the marginal ones.</p>
 <p>For segments in the estimation data,
 <code>random = "posterior"</code> uses their own crash history
 (Empirical Bayes):</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">seg</span> <span class="op">&lt;-</span> <span class="va">w</span><span class="op">[</span><span class="va">w</span><span class="op">$</span><span class="va">ID</span> <span class="op">==</span> <span class="va">w</span><span class="op">$</span><span class="va">ID</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span>, <span class="op">]</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mr</span>, newdata <span class="op">=</span> <span class="va">seg</span><span class="op">)</span>,</span>
 <span>            <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mr</span>, newdata <span class="op">=</span> <span class="va">seg</span>, random <span class="op">=</span> <span class="st">"posterior"</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span></span>
@@ -377,7 +384,7 @@ the shape of the dependence:</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_mv.html">countreg_mv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pdo</span>, <span class="va">injury</span><span class="op">)</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span>,</span>
 <span>                  data <span class="op">=</span> <span class="va">w</span>, family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>pdo <span class="op">=</span> <span class="st">"NB2"</span>, injury <span class="op">=</span> <span class="st">"PIG"</span><span class="op">)</span>,</span>
 <span>                  copula <span class="op">=</span> <span class="st">"clayton"</span><span class="op">)</span></span>
@@ -400,7 +407,7 @@ the shape of the dependence:</p>
 <span><span class="co">#&gt; (Intercept)  -7.4266     1.1820  -6.283 3.32e-10 ***</span></span>
 <span><span class="co">#&gt; lnaadt        0.6682     0.1408   4.747 2.07e-06 ***</span></span>
 <span><span class="co">#&gt; speed50      -1.2045     0.4147  -2.905  0.00367 ** </span></span>
-<span><span class="co">#&gt; ln(eta)       0.7635     1.9575   0.390  0.69649    </span></span>
+<span><span class="co">#&gt; ln(eta)       0.7627     1.9563   0.390  0.69661    </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Copula:</span></span>
 <span><span class="co">#&gt;                  Estimate Std. Error z value Pr(&gt;|z|)</span></span>
@@ -415,7 +422,7 @@ correlation of the counts themselves, which is weaker when the counts
 are small.</p>
 <p>Here the copulas barely change the fit, while the MVPLN of section 5
 fits much better:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fams</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>pdo <span class="op">=</span> <span class="st">"NB2"</span>, injury <span class="op">=</span> <span class="st">"PIG"</span><span class="op">)</span></span>
 <span><span class="va">f</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pdo</span>, <span class="va">injury</span><span class="op">)</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span></span>
 <span><span class="va">cop</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"gaussian"</span>, <span class="st">"frank"</span>, <span class="st">"clayton"</span>, <span class="st">"gumbel"</span><span class="op">)</span>, <span class="kw">function</span><span class="op">(</span><span class="va">cf</span><span class="op">)</span></span>
@@ -434,7 +441,7 @@ measured once per unit, or dependence within a period; random parameters
 suit repeated observations of the same units.</p>
 <p>The two can also be combined: random intercepts shared by a segment’s
 years, and a copula for what remains within each year.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg_mv.html">countreg_mv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">pdo</span>, <span class="va">injury</span><span class="op">)</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">speed50</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset</a></span><span class="op">(</span><span class="va">lnlength</span><span class="op">)</span>,</span>
 <span>                  data <span class="op">=</span> <span class="va">w</span>, family <span class="op">=</span> <span class="st">"POISSON"</span>, rpar_formula <span class="op">=</span> <span class="op">~</span> <span class="fl">1</span>,</span>
 <span>                  group_var <span class="op">=</span> <span class="st">"ID"</span>, rpar_draws <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">1</span>,</span>

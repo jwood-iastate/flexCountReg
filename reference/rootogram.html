@@ -70,6 +70,7 @@ standard way to compare the count distributions this package offers.</p>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  xlab <span class="op">=</span> <span class="st">"Count"</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="st">"sqrt(Frequency)"</span>,</span>
+<span>  outcome <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -79,8 +80,9 @@ standard way to compare the count distributions this package offers.</p>
 
 
 <dl><dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
-<dd><p>a fitted model with one outcome (any estimator except
-<code><a href="countreg_alloc.html">countreg_alloc()</a></code> and <code><a href="countreg_mv.html">countreg_mv()</a></code>).</p></dd>
+<dd><p>a fitted model of any estimator except
+<code><a href="countreg_alloc.html">countreg_alloc()</a></code>. For a multivariate model
+(<code><a href="countreg_mv.html">countreg_mv()</a></code>), one rootogram is made for each outcome.</p></dd>
 
 
 <dt id="arg-newdata">newdata<a class="anchor" aria-label="anchor" href="#arg-newdata"></a></dt>
@@ -94,7 +96,8 @@ row with its frequency weight.</p></dd>
 <dd><p>the largest count shown. Defaults to the largest observed
 count. The cutoff only limits the display: the expected frequency of
 each shown count sums the fitted probabilities of every row, including
-rows whose outcome is above <code>max_count</code>.</p></dd>
+rows whose outcome is above <code>max_count</code>. For a multivariate
+model, one number for every outcome or a vector named by outcome.</p></dd>
 
 
 <dt id="arg-style">style<a class="anchor" aria-label="anchor" href="#arg-style"></a></dt>
@@ -114,7 +117,13 @@ negligible, under the plot.</p></dd>
 
 
 <dt id="arg-main-xlab-ylab">main, xlab, ylab<a class="anchor" aria-label="anchor" href="#arg-main-xlab-ylab"></a></dt>
-<dd><p>plot labels.</p></dd>
+<dd><p>plot labels. For a multivariate model, <code>main</code>
+can have one title per outcome.</p></dd>
+
+
+<dt id="arg-outcome">outcome<a class="anchor" aria-label="anchor" href="#arg-outcome"></a></dt>
+<dd><p>for <code><a href="countreg_mv.html">countreg_mv()</a></code> models: the name(s) of the
+outcomes to show (default: all).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -130,6 +139,16 @@ negligible, under the plot.</p></dd>
 Attribute <code>"tail"</code> holds the observed and expected frequencies of
 <code>Y &gt; max_count</code>. Rows with non-finite fitted means or probabilities are
 left out of both frequencies, with a warning.</p>
+<p>For a multivariate model, a list of these data frames named by outcome
+(the data frame itself when <code>outcome</code> names a single one).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The rootogram of an outcome of a multivariate model compares its observed
+counts with its own (marginal) fitted distribution, with any random
+parameters integrated out; it does not assess the dependence between the
+outcomes. The plots are drawn side by side when the graphics device shows
+a single plot, and otherwise fill the layout set with <code>par(mfrow)</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -151,6 +170,14 @@ rootograms. <em>The American Statistician</em>, 70(3), 296-303.</p>
 <span class="r-in"><span><span class="fu">rootogram</span><span class="op">(</span><span class="va">nb2</span>, main <span class="op">=</span> <span class="st">"NB2"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="rootogram-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/par.html" class="external-link">par</a></span><span class="op">(</span><span class="va">oldpar</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># One rootogram per outcome of a multivariate model</span></span></span>
+<span class="r-in"><span><span class="va">mv</span> <span class="op">&lt;-</span> <span class="fu"><a href="countreg_mv.html">countreg_mv</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="va">Animal</span>, <span class="va">Rollover</span><span class="op">)</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span></span>
+<span class="r-in"><span>                  data <span class="op">=</span> <span class="va">washington_roads</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">rootogram</span><span class="op">(</span><span class="va">mv</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="rootogram-2.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="fu">rootogram</span><span class="op">(</span><span class="va">mv</span>, outcome <span class="op">=</span> <span class="st">"Animal"</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="rootogram-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

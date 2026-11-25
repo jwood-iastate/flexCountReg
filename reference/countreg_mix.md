@@ -502,25 +502,25 @@ summary(fit)
 #> 
 #> Class 1 (NB2):
 #>                              Estimate Std. Error z value Pr(>|z|)    
-#> Component1:Mean:(Intercept)    2.0974     0.0143   146.4   <2e-16 ***
-#> Component1:Mean:shell_weight   0.9677     0.0430    22.5   <2e-16 ***
-#> Component1:ln(alpha)         -20.6986   209.9017    -0.1     0.92    
+#> Component1:Mean:(Intercept)    2.0974     0.0145  144.74   <2e-16 ***
+#> Component1:Mean:shell_weight   0.9677     0.0439   22.05   <2e-16 ***
+#> Component1:ln(alpha)         -20.6190   366.8057   -0.06     0.96    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Class 2 (NB2):
 #>                              Estimate Std. Error z value Pr(>|z|)    
-#> Component2:Mean:(Intercept)    1.7141     0.0189   90.66   <2e-16 ***
-#> Component2:Mean:shell_weight   2.5623     0.1110   23.09   <2e-16 ***
-#> Component2:ln(alpha)         -20.2632   380.0516   -0.05     0.96    
+#> Component2:Mean:(Intercept)    1.7141     0.0189   90.51   <2e-16 ***
+#> Component2:Mean:shell_weight   2.5623     0.1107   23.14   <2e-16 ***
+#> Component2:ln(alpha)         -20.2864   462.1310   -0.04     0.96    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Mixing (multinomial logit):
 #>                               Estimate Std. Error z value Pr(>|z|)    
-#> Mixing:Component1:(Intercept)    4.323      0.772    5.60  2.1e-08 ***
-#> Mixing:Component1:sexI          -9.328      1.565   -5.96  2.5e-09 ***
-#> Mixing:Component1:sexM           8.407    120.117    0.07     0.94    
+#> Mixing:Component1:(Intercept)     4.32       1.16    3.74  0.00018 ***
+#> Mixing:Component1:sexI           -9.33       1.57   -5.94  2.8e-09 ***
+#> Mixing:Component1:sexM            7.37      71.58    0.10  0.91799    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -532,12 +532,12 @@ summary(fit)
 #>  effective_n: sum of posterior probabilities; modal_n: units whose most
 #>  probable class it is; mean_count: average expected count)
 #> 
-#> Log-likelihood: -9681.481 | AIC: 19380.96 | BIC: 19438 | ICL: 19701.21 
+#> Log-likelihood: -9681.481 | AIC: 19380.96 | BIC: 19438 | ICL: 19701.38 
 #> N: 4177
-#> Entropy: 131.607 | relative entropy: 0.955 
+#> Entropy: 131.692 | relative entropy: 0.955 
 #> Starts: 5 | 1 reached the selected log-likelihood
 #> Note: only one start reached this solution; try more starts.
-#> Observed information: singular | max |gradient|: 0.0019 
+#> Observed information: singular | max |gradient|: 0.000289 
 #> No likelihood-ratio test of the number of classes is reported (non-standard distribution).
 # }
 ```

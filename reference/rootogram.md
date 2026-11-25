@@ -21,6 +21,7 @@ rootogram(
   main = NULL,
   xlab = "Count",
   ylab = "sqrt(Frequency)",
+  outcome = NULL,
   ...
 )
 ```
@@ -29,10 +30,11 @@ rootogram(
 
 - object:
 
-  a fitted model with one outcome (any estimator except
-  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
-  and
-  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)).
+  a fitted model of any estimator except
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md).
+  For a multivariate model
+  ([`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)),
+  one rootogram is made for each outcome.
 
 - newdata:
 
@@ -45,7 +47,8 @@ rootogram(
   the largest count shown. Defaults to the largest observed count. The
   cutoff only limits the display: the expected frequency of each shown
   count sums the fitted probabilities of every row, including rows whose
-  outcome is above `max_count`.
+  outcome is above `max_count`. For a multivariate model, one number for
+  every outcome or a vector named by outcome.
 
 - style:
 
@@ -65,7 +68,14 @@ rootogram(
 
 - main, xlab, ylab:
 
-  plot labels.
+  plot labels. For a multivariate model, `main` can have one title per
+  outcome.
+
+- outcome:
+
+  for
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  models: the name(s) of the outcomes to show (default: all).
 
 - ...:
 
@@ -80,6 +90,18 @@ its last row (count `max_count + 1`) is the bin `Y > max_count`.
 Attribute `"tail"` holds the observed and expected frequencies of
 `Y > max_count`. Rows with non-finite fitted means or probabilities are
 left out of both frequencies, with a warning.
+
+For a multivariate model, a list of these data frames named by outcome
+(the data frame itself when `outcome` names a single one).
+
+## Details
+
+The rootogram of an outcome of a multivariate model compares its
+observed counts with its own (marginal) fitted distribution, with any
+random parameters integrated out; it does not assess the dependence
+between the outcomes. The plots are drawn side by side when the graphics
+device shows a single plot, and otherwise fill the layout set with
+`par(mfrow)`.
 
 ## References
 
@@ -101,5 +123,13 @@ rootogram(pois, main = "Poisson")
 rootogram(nb2, main = "NB2")
 
 par(oldpar)
+
+# One rootogram per outcome of a multivariate model
+mv <- countreg_mv(cbind(Animal, Rollover) ~ lnaadt + lnlength,
+                  data = washington_roads)
+rootogram(mv)
+
+rootogram(mv, outcome = "Animal")
+
 # }
 ```

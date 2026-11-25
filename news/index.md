@@ -27,7 +27,9 @@
   [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md):
   given the estimated effects, or marginal with `marginal = TRUE`).
   [`rootogram()`](https://jwood-iastate.github.io/flexCountReg/reference/rootogram.md)
-  works for these models too.
+  works for these models too, and for
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  draws one rootogram per outcome (`outcome` selects some of them).
 - [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md):
   `type = "total_prob"` and `"count_prob"` give the count probabilities
   of the total and of each category.

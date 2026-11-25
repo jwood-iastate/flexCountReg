@@ -155,9 +155,9 @@ its standard error is `NA`:
 
 summary(zinb_const)$coefficients["Zero:(Intercept)", 1:2]
 #>   Estimate Std. Error 
-#>  -12.32361   67.69227
+#>  -12.32427   67.71443
 plogis(coef(zinb_const)[["Zero:(Intercept)"]])
-#> [1] 4.445507e-06
+#> [1] 4.442605e-06
 ```
 
 With covariates, the zero model can describe *which* students have more
@@ -176,12 +176,12 @@ zc(zinb)
 #>                    Estimate Std. Error
 #> Zero:(Intercept) -0.8786574  0.4036952
 #> Zero:ment        -0.6113860  0.2458692
-#> Zero:kid5         0.1564023  0.3617611
+#> Zero:kid5         0.1564024  0.3617611
 zc(hnb)
 #>                     Estimate Std. Error
-#> Zero:(Intercept)  0.23680759 0.29551911
-#> Zero:femWomen    -0.25115053 0.15910530
-#> Zero:marMarried   0.32623628 0.18081835
+#> Zero:(Intercept)  0.23680758 0.29551909
+#> Zero:femWomen    -0.25115052 0.15910530
+#> Zero:marMarried   0.32623628 0.18081834
 #> Zero:kid5        -0.28525098 0.11113046
 #> Zero:phd          0.02221526 0.07955718
 #> Zero:ment         0.08012173 0.01301809

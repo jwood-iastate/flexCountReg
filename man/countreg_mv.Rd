@@ -24,6 +24,7 @@ countreg_mv(
   correlation = c("across", "within", "none"),
   rpar_draws = 500,
   seed = NULL,
+  copula = c("none", "gaussian", "frank", "clayton", "gumbel"),
   .setup_only = FALSE
 )
 }
@@ -85,6 +86,10 @@ shifted Halton points, a separate block and shift for each unit).}
 \item{seed}{seed of the random shifts of the draws (stored in the fit,
 so predictions use the same draws); random by default.}
 
+\item{copula}{\code{"none"} (default), or a copula that joins the outcomes'
+distributions: \code{"gaussian"} (two outcomes), \code{"frank"}, \code{"clayton"} or
+\code{"gumbel"}. See Details.}
+
 \item{.setup_only}{internal use: return the model setup without fitting.}
 }
 \value{
@@ -129,6 +134,38 @@ and \code{summary()} shows the implied standard deviations and correlations.
 \code{predict()} gives joint and conditional probabilities of the outcomes,
 and Empirical Bayes predictions for units in the estimation data.
 
+\strong{Copulas.} A copula joins the outcomes' own distributions, each with
+its family, into one joint distribution:
+\eqn{P(Y_1 \le y_1, \dots, Y_J \le y_J) = C(F_1(y_1), \dots,
+F_J(y_J); \theta)}. For counts, the probability of the observed
+combination is the exact volume of the copula over the rectangle
+\eqn{[F_j(y_j - 1), F_j(y_j)]} (the sum over its \eqn{2^J} corners;
+Nikoloulopoulos and Karlis 2009), not a continuous approximation such as
+the midpoint or jittering. The margins are those of the equations, so
+expected counts and each outcome's probabilities do not change; the
+copula changes the joint and conditional probabilities. The families
+differ in the shape of the dependence:
+\itemize{
+\item \code{"gaussian"}: symmetric, without tail dependence, any sign
+(\code{copula:atanh(rho)}); two outcomes.
+\item \code{"frank"}: symmetric, without tail dependence; any sign for two
+outcomes (\code{copula:theta}), positive for more (\code{copula:ln(theta)}).
+\item \code{"clayton"}: positive, stronger in the lower tail (joint low counts;
+\code{copula:ln(theta)}).
+\item \code{"gumbel"}: positive, stronger in the upper tail (joint high counts;
+\code{copula:ln(theta - 1)}).
+}
+
+All parameters are estimated together by maximum likelihood, started
+from the separate equations and the copula parameter that is best for
+them (inference functions for margins); the gradient is numerical.
+\code{summary()} reports the copula parameter and its Kendall's tau. With
+counts, the copula is not unique outside the range of the margins
+(Genest and Neslehova 2007): its parameter describes this model's
+dependence, and the tau is that of the copula, not the rank correlation
+of the counts, which is weaker for small counts. Copulas cannot yet be
+combined with \code{rpar_formula}.
+
 Different outcomes often need different families: frequent property
 damage crashes may be close to NB2, while rare fatal crashes are more
 skewed and zero-heavy. Each equation can use any family of the package.
@@ -146,10 +183,17 @@ head(predict(m))
 }
 }
 \references{
+Genest, C., and Neslehova, J. (2007). A primer on copulas for count
+data. \emph{ASTIN Bulletin}, 37(2), 475-515.
+
 Ma, J., Kockelman, K. M., and Damien, P. (2008). A multivariate
 Poisson-lognormal regression model for prediction of crash counts by
 severity, using Bayesian methods. \emph{Accident Analysis and Prevention},
 40(3), 964-975.
+
+Nikoloulopoulos, A. K., and Karlis, D. (2009). Modeling multivariate
+count data using copulas. \emph{Communications in Statistics - Simulation and
+Computation}, 39(1), 172-187.
 }
 \seealso{
 \code{\link[=predict.countreg_mv]{predict.countreg_mv()}}, \code{\link[=countreg]{countreg()}}, \code{\link[=countreg_alloc]{countreg_alloc()}} for a

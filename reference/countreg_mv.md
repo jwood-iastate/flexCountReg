@@ -212,13 +212,22 @@ The families differ in the shape of the dependence:
 
 All parameters are estimated together by maximum likelihood, started
 from the separate equations and the copula parameter that is best for
-them (inference functions for margins); the gradient is numerical.
+them (inference functions for margins).
 [`summary()`](https://rdrr.io/r/base/summary.html) reports the copula
 parameter and its Kendall's tau. With counts, the copula is not unique
 outside the range of the margins (Genest and Neslehova 2007): its
 parameter describes this model's dependence, and the tau is that of the
 copula, not the rank correlation of the counts, which is weaker for
-small counts. Copulas cannot yet be combined with `rpar_formula`.
+small counts. The gradient is analytic: the derivatives of the copula
+and of each outcome's distribution function, \\\partial F(y) / \partial
+\theta = \sum\_{k \le y} f(k)\\ \partial \log f(k) / \partial \theta\\.
+
+**Copulas with random parameters.** `copula` and `rpar_formula` can be
+combined: given a unit's random parameters, the outcomes of each row are
+joined by the copula, and the unit's likelihood averages over the random
+parameters. The random parameters, shared by the rows of a unit (such as
+the years of a site), carry the dependence between units' outcomes over
+time; the copula carries the dependence that remains within each row.
 
 Different outcomes often need different families: frequent property
 damage crashes may be close to NB2, while rare fatal crashes are more

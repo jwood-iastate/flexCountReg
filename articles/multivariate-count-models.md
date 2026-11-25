@@ -332,21 +332,21 @@ summary(mc)
 #> 
 #> pdo (NB2):
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept) -9.42689    0.47920 -19.672  < 2e-16 ***
-#> lnaadt       1.17442    0.05493  21.382  < 2e-16 ***
-#> speed50     -0.51195    0.11434  -4.477 7.56e-06 ***
-#> ln(alpha)   -0.85167    0.23000  -3.703 0.000213 ***
+#> (Intercept) -9.42640    0.47919 -19.672  < 2e-16 ***
+#> lnaadt       1.17436    0.05492  21.381  < 2e-16 ***
+#> speed50     -0.51196    0.11434  -4.478 7.55e-06 ***
+#> ln(alpha)   -0.85163    0.23000  -3.703 0.000213 ***
 #> 
 #> injury (PIG):
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  -7.4273     1.1821  -6.283 3.32e-10 ***
-#> lnaadt        0.6683     0.1408   4.747 2.07e-06 ***
-#> speed50      -1.2046     0.4147  -2.905  0.00367 ** 
-#> ln(eta)       0.7664     1.9623   0.391  0.69611    
+#> (Intercept)  -7.4266     1.1820  -6.283 3.32e-10 ***
+#> lnaadt        0.6682     0.1408   4.747 2.07e-06 ***
+#> speed50      -1.2045     0.4147  -2.905  0.00367 ** 
+#> ln(eta)       0.7627     1.9563   0.390  0.69661    
 #> 
 #> Copula:
 #>                  Estimate Std. Error z value Pr(>|z|)
-#> copula:ln(theta)  -1.3404     0.9094  -1.474    0.141
+#> copula:ln(theta)  -1.3405     0.9096  -1.474    0.141
 #> 
 #> Clayton copula: theta = 0.2617, Kendall's tau = 0.116 (SE 0.093)
 #> 
@@ -380,13 +380,30 @@ shared by a segment’s three years, so it also captures that some
 segments have more crashes of both kinds year after year. In these data
 the dependence is mostly of the second kind. A copula suits outcomes
 measured once per unit, or dependence within a period; random parameters
-suit repeated observations of the same units. The two cannot yet be
-combined in
-[`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md).
+suit repeated observations of the same units.
+
+The two can also be combined: random intercepts shared by a segment’s
+years, and a copula for what remains within each year.
+
+``` r
+
+mb <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
+                  data = w, family = "POISSON", rpar_formula = ~ 1,
+                  group_var = "ID", rpar_draws = 200, seed = 1,
+                  copula = "frank")
+```
+
+This fit takes about two minutes. Its copula parameter is close to zero
+(Frank theta 0.06, standard error 0.71), and its AIC (2474.7) is higher
+than that of the MVPLN alone (2472.7): once the segments’ random
+intercepts are in the model, nothing is left for the copula. On
+simulated data with both kinds of dependence, the combined model
+recovers both.
 
 All parameters of a copula model are estimated together by maximum
 likelihood (started from the separate equations and the best copula
-parameter for them), with a numerical gradient.
+parameter for them), with analytic gradients from the derivatives of the
+copula and of each outcome’s distribution function.
 [`predict()`](https://rdrr.io/r/stats/predict.html) gives joint and
 conditional probabilities from the copula, and
 [`simulate()`](https://rdrr.io/r/stats/simulate.html) draws the outcomes

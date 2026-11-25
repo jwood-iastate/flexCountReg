@@ -119,6 +119,15 @@
   Checked against numerical integration, the probabilities’ sums and
   margins, independence limits, and recovery of the dependence of every
   family.
+- Copula models of
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  have analytic gradients (the derivatives of the copula and of each
+  outcome’s distribution function), and copulas can be combined with
+  random parameters (`copula` with `rpar_formula`): given a unit’s
+  random parameters, the outcomes of each row are joined by the copula,
+  so the random parameters carry the dependence between units over time
+  and the copula the dependence within each row. Joint and conditional
+  probabilities and simulations integrate over the random parameters.
 - Random-parameter standard deviations (the diagonal of the Cholesky
   factor) of
   [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)

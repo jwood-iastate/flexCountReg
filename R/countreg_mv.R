@@ -61,6 +61,9 @@
 #'   shifted Halton points, a separate block and shift for each unit).
 #' @param seed seed of the random shifts of the draws (stored in the fit,
 #'   so predictions use the same draws); random by default.
+#' @param copula `"none"` (default), or a copula that joins the outcomes'
+#'   distributions: `"gaussian"` (two outcomes), `"frank"`, `"clayton"` or
+#'   `"gumbel"`. See Details.
 #' @param .setup_only internal use: return the model setup without fitting.
 #'
 #' @details
@@ -95,6 +98,36 @@
 #' `predict()` gives joint and conditional probabilities of the outcomes,
 #' and Empirical Bayes predictions for units in the estimation data.
 #'
+#' **Copulas.** A copula joins the outcomes' own distributions, each with
+#' its family, into one joint distribution:
+#' \eqn{P(Y_1 \le y_1, \dots, Y_J \le y_J) = C(F_1(y_1), \dots,
+#' F_J(y_J); \theta)}. For counts, the probability of the observed
+#' combination is the exact volume of the copula over the rectangle
+#' \eqn{[F_j(y_j - 1), F_j(y_j)]} (the sum over its \eqn{2^J} corners;
+#' Nikoloulopoulos and Karlis 2009), not a continuous approximation such as
+#' the midpoint or jittering. The margins are those of the equations, so
+#' expected counts and each outcome's probabilities do not change; the
+#' copula changes the joint and conditional probabilities. The families
+#' differ in the shape of the dependence:
+#' * `"gaussian"`: symmetric, without tail dependence, any sign
+#'   (`copula:atanh(rho)`); two outcomes.
+#' * `"frank"`: symmetric, without tail dependence; any sign for two
+#'   outcomes (`copula:theta`), positive for more (`copula:ln(theta)`).
+#' * `"clayton"`: positive, stronger in the lower tail (joint low counts;
+#'   `copula:ln(theta)`).
+#' * `"gumbel"`: positive, stronger in the upper tail (joint high counts;
+#'   `copula:ln(theta - 1)`).
+#'
+#' All parameters are estimated together by maximum likelihood, started
+#' from the separate equations and the copula parameter that is best for
+#' them (inference functions for margins); the gradient is numerical.
+#' `summary()` reports the copula parameter and its Kendall's tau. With
+#' counts, the copula is not unique outside the range of the margins
+#' (Genest and Neslehova 2007): its parameter describes this model's
+#' dependence, and the tau is that of the copula, not the rank correlation
+#' of the counts, which is weaker for small counts. Copulas cannot yet be
+#' combined with `rpar_formula`.
+#'
 #' Different outcomes often need different families: frequent property
 #' damage crashes may be close to NB2, while rare fatal crashes are more
 #' skewed and zero-heavy. Each equation can use any family of the package.
@@ -104,10 +137,17 @@
 #'   `residuals()`, `simulate()`, `tidy()`, `glance()` and `confint()`.
 #'
 #' @references
+#' Genest, C., and Neslehova, J. (2007). A primer on copulas for count
+#' data. *ASTIN Bulletin*, 37(2), 475-515.
+#'
 #' Ma, J., Kockelman, K. M., and Damien, P. (2008). A multivariate
 #' Poisson-lognormal regression model for prediction of crash counts by
 #' severity, using Bayesian methods. *Accident Analysis and Prevention*,
 #' 40(3), 964-975.
+#'
+#' Nikoloulopoulos, A. K., and Karlis, D. (2009). Modeling multivariate
+#' count data using copulas. *Communications in Statistics - Simulation and
+#' Computation*, 39(1), 172-187.
 #'
 #' @seealso [predict.countreg_mv()], [countreg()], [countreg_alloc()] for a
 #'   total and its split across categories, [negmultinom()]
@@ -132,9 +172,12 @@ countreg_mv <- function(formula, data, family = "NB2",
                         rpar_formula = NULL,
                         correlation = c("across", "within", "none"),
                         rpar_draws = 500, seed = NULL,
+                        copula = c("none", "gaussian", "frank", "clayton",
+                                   "gumbel"),
                         .setup_only = FALSE) {
   cl <- match.call()
   correlation <- match.arg(correlation)
+  copula <- match.arg(copula)
   .fcr_check_controls(ndraws = rpar_draws)
   data <- as.data.frame(data)
   method <- .fcr_check_method(method)
@@ -237,6 +280,20 @@ countreg_mv <- function(formula, data, family = "NB2",
 
   # ---- Random parameters -----------------------------------------------------------
   has_rpar <- any(!vapply(rpf, is.null, logical(1)))
+  has_cop <- copula != "none"
+  if (has_cop && has_rpar) {
+    stop("Copulas and random parameters cannot yet be combined in ",
+         "countreg_mv(); use one or the other.", call. = FALSE)
+  }
+  if (has_cop) {
+    if (copula == "gaussian" && J != 2L) {
+      stop("The Gaussian copula is available for two outcomes; use ",
+           "\"frank\", \"clayton\" or \"gumbel\" for more.", call. = FALSE)
+    }
+    E$cop <- list(family = copula, idx = length(names_all) + 1L)
+    names_all <- c(names_all, .fcr_cop_par_name(copula, J))
+    E$names <- names_all
+  }
   draw_seed <- NULL
   if (has_rpar) {
     RS <- .fcr_mv_rlayout(eqs, correlation, length(names_all))
@@ -254,12 +311,20 @@ countreg_mv <- function(formula, data, family = "NB2",
   if (.setup_only) return(E)
 
   # ---- Fit ---------------------------------------------------------------------
-  start <- if (is.null(start.vals)) .fcr_mv_start(E) else
-    .fcr_check_start(start.vals, names_all)
+  if (has_cop) {
+    start <- if (is.null(start.vals)) .fcr_mv_cop_start(E) else
+      .fcr_check_start(start.vals, names_all)
+    fn <- function(p) .fcr_mv_cop_ll(p, E)
+    # No analytic scores of the distribution functions: numerical gradient
+    gr <- NULL
+  } else {
+    start <- if (is.null(start.vals)) .fcr_mv_start(E) else
+      .fcr_check_start(start.vals, names_all)
+    llf <- if (has_rpar) .fcr_mv_sim_ll else .fcr_mv_ll
+    fn <- function(p) llf(p, E, grad = FALSE)$ll
+    gr <- function(p) llf(p, E, grad = TRUE)$G
+  }
   names(start) <- names_all
-  llf <- if (has_rpar) .fcr_mv_sim_ll else .fcr_mv_ll
-  fn <- function(p) llf(p, E, grad = FALSE)$ll
-  gr <- function(p) llf(p, E, grad = TRUE)$G
   fit <- maxLik::maxLik(fn, grad = gr, start = start, method = method,
                         finalHessian = method == "BHHH",
                         control = list(iterlim = max.iters,
@@ -267,7 +332,7 @@ countreg_mv <- function(formula, data, family = "NB2",
   # A few Newton steps (numerical Hessian of the analytic gradient) tighten
   # the solution after a quasi-Newton optimizer; kept only if the
   # log-likelihood does not decrease
-  if (method != "NR") {
+  if (method != "NR" && !is.null(gr)) {
     f2 <- tryCatch(maxLik::maxLik(fn, grad = gr, start = fit$estimate,
                                   method = "NR",
                                   control = list(iterlim = 20)),
@@ -293,7 +358,7 @@ countreg_mv <- function(formula, data, family = "NB2",
     warning("The optimizer did not report convergence: ", fit$message,
             call. = FALSE)
   }
-  U <- gr(est)
+  U <- if (is.null(gr)) maxLik::numericGradient(fn, est) else gr(est)
   colnames(U) <- names_all
   Hv <- .fcr_hessian_vcov(list(hessian = fit$hessian, estimate = est))
   V <- switch(stderr,
@@ -327,6 +392,10 @@ countreg_mv <- function(formula, data, family = "NB2",
     rows_used = rows, n_dropped = n_dropped,
     data_used = dsub, engine = engine, ndraws = ndraws,
     n_units = if (has_rpar) E$G else sum(w > 0),
+    copula = if (has_cop) list(
+      family = copula, eta = unname(est[E$cop$idx]),
+      theta = .fcr_cop_theta(est[E$cop$idx], copula, J),
+      idx = E$cop$idx),
     rpar = if (has_rpar) list(
       layout = E$RS, formulas = rpf, correlation = correlation,
       draws = rpar_draws, seed = draw_seed, units = E$units,
@@ -515,6 +584,30 @@ countreg_mv <- function(formula, data, family = "NB2",
   st
 }
 
+# Starting values of a copula model (inference functions for margins): the
+# independent equations' estimates, then the copula parameter that
+# maximizes the likelihood with those margins.
+.fcr_mv_cop_start <- function(E) {
+  k <- E$cop$idx
+  Ei <- E
+  Ei$cop <- NULL
+  st <- .fcr_mv_start(Ei)[-k]
+  fi <- tryCatch(maxLik::maxLik(
+    function(p) .fcr_mv_ll(p, Ei)$ll,
+    grad = function(p) .fcr_mv_ll(p, Ei, grad = TRUE)$G, start = st,
+    method = "BFGS", control = list(iterlim = 500)), error = function(e) NULL)
+  pm <- if (is.null(fi)) st else fi$estimate
+  rng <- switch(E$cop$family, gaussian = c(-3, 3),
+                frank = if (E$J == 2L) c(-30, 30) else c(-5, 4),
+                clayton = c(-6, 3), gumbel = c(-6, 3))
+  f <- function(e) {
+    v <- sum(.fcr_mv_cop_ll(c(pm, e), E))
+    if (is.finite(v)) v else -1e300
+  }
+  eta <- stats::optimize(f, rng, maximum = TRUE)$maximum
+  c(pm, eta)
+}
+
 # ---- Random parameters ------------------------------------------------------
 
 # Layout of the random terms: one per column of each equation's random
@@ -697,6 +790,15 @@ countreg_mv <- function(formula, data, family = "NB2",
        outcomes = object$outcomes, RS = object$rpar$layout)
 }
 
+# Probability of the counts Y (n x J; NA = outcome left out) under the
+# fitted copula: the C-volume of the rectangle of each row.
+.fcr_mv_cop_prob <- function(object, E, Y) {
+  bd <- .fcr_mv_cop_bounds(object$coefficients, E, Y)
+  if (is.null(bd)) return(rep(NA_real_, nrow(Y)))
+  pmax(.fcr_cop_rect(bd$hi, bd$lo, object$copula$family,
+                     object$copula$theta), 0)
+}
+
 # Probabilities of the counts 0..mc of equation j at random terms `add`
 # (n x (mc + 1)).
 .fcr_mv_pmf <- function(p, eq, add, mc) {
@@ -848,6 +950,7 @@ predict.countreg_mv <- function(object, newdata = NULL,
       stop("`y` must give the counts of every outcome (", toString(outs),
            ").", call. = FALSE)
     }
+    if (!is.null(object$copula)) return(.fcr_mv_cop_prob(object, E, Y))
     return(as.vector(integrate(function(adds)
       matrix(exp(.fcr_mv_logp(p, E, Y, adds)), ncol = 1L))))
   }
@@ -864,6 +967,17 @@ predict.countreg_mv <- function(object, newdata = NULL,
   }
   gj <- which(colSums(!is.na(Yg)) > 0)
   mc <- max_count %||% max(object$y[, t])
+  if (!is.null(object$copula)) {
+    den <- .fcr_mv_cop_prob(object, E, Yg)
+    P <- vapply(0:mc, function(k) {
+      Yk <- Yg
+      Yk[, t] <- k
+      .fcr_mv_cop_prob(object, E, Yk)
+    }, numeric(n)) / den
+    P <- matrix(P, nrow = n)
+    colnames(P) <- 0:mc
+    return(P)
+  }
   A <- integrate(function(adds) {
     base <- exp(.fcr_mv_logp(p, E, Yg, adds, which = gj))
     cbind(.fcr_mv_pmf(p, E$eqs[[t]], adds[[t]], mc) * base, base)
@@ -923,6 +1037,7 @@ print.countreg_mv <- function(x, ...) {
   if (!is.null(object$rpar)) {
     out[object$rpar$layout$idx] <- "Random parameters (Cholesky factor)"
   }
+  if (!is.null(object$copula)) out[object$copula$idx] <- "Copula"
   out
 }
 
@@ -945,7 +1060,10 @@ print.summary.countreg_mv <- function(x, digits = 4, ...) {
   cat("Rows:       ", o$nobs, "\n")
   cat("Std. errors:", o$stderr, "\n")
   rp <- o$rpar
-  if (is.null(rp)) {
+  cop <- o$copula
+  if (!is.null(cop)) {
+    cat("Dependence:  ", .fcr_cop_label(cop$family), "copula\n\n")
+  } else if (is.null(rp)) {
     cat("Equations:   independent given the covariates\n\n")
   } else {
     cat("Units:      ", o$n_units, "\n")
@@ -978,6 +1096,16 @@ print.summary.countreg_mv <- function(x, digits = 4, ...) {
     print(round(tab, 3), na.print = "")
     cat("\n")
   }
+  if (!is.null(cop)) {
+    cat("Copula:\n")
+    stats::printCoefmat(x$table[cop$idx, , drop = FALSE], digits = digits,
+                        signif.legend = FALSE)
+    dep <- .fcr_mv_cop_dependence(o)
+    cat("\n", .fcr_cop_label(cop$family), " copula: ", dep$label, " = ",
+        format(dep$theta, digits = 4), ", Kendall's tau = ",
+        format(dep$tau, digits = 3), " (SE ", format(dep$tau_se, digits = 2),
+        ")\n\n", sep = "")
+  }
   k <- length(o$coefficients)
   cat("Log-likelihood:", format(o$loglik, digits = 8), " AIC:",
       format(-2 * o$loglik + 2 * k, digits = 8), " BIC:",
@@ -999,6 +1127,11 @@ tidy.countreg_mv <- function(x, conf.int = FALSE, conf.level = 0.95, ...) {
   for (j in seq_along(x$outcomes)) {
     S <- x$layout[[j]]
     comp[c(S$idx_a, S$idx_s)] <- "distribution"
+  }
+  if (!is.null(x$copula)) {
+    comp[x$copula$idx] <- "copula"
+    oc[x$copula$idx] <- NA_character_
+    term[x$copula$idx] <- rownames(s$table)[x$copula$idx]
   }
   if (!is.null(x$rpar)) {
     RS <- x$rpar$layout
@@ -1044,7 +1177,19 @@ simulate.countreg_mv <- function(object, nsim = 1, seed = NULL,
     as.integer(factor(interaction(newdata[, object$group_var, drop = FALSE],
                                   drop = TRUE, sep = ":")))
   } else seq_len(n)
+  cop <- object$copula
   one <- function() {
+    if (!is.null(cop)) {
+      # Uniforms from the copula, then each outcome's quantiles
+      U <- .fcr_rcopula(n, length(E$eqs), cop$family, cop$theta)
+      Y <- vapply(seq_along(E$eqs), function(j) {
+        v <- .fcr_mv_eq_values(p, E$eqs[[j]])
+        .fcr_mv_qcount(E$eqs[[j]], v, U[, j])
+      }, numeric(n))
+      Y <- matrix(Y, nrow = n)
+      colnames(Y) <- object$outcomes
+      return(Y)
+    }
     adds <- NULL
     if (!is.null(rp)) {
       L <- .fcr_alloc_chol(p, rp$layout)
@@ -1061,4 +1206,24 @@ simulate.countreg_mv <- function(object, nsim = 1, seed = NULL,
   }
   stats::setNames(replicate(nsim, one(), simplify = FALSE),
                   paste0("sim_", seq_len(nsim)))
+}
+
+.fcr_cop_label <- function(family) {
+  c(gaussian = "Gaussian", frank = "Frank", clayton = "Clayton",
+    gumbel = "Gumbel")[[family]]
+}
+
+# The copula parameter on its own scale and its Kendall's tau, with a
+# delta-method standard error of tau.
+.fcr_mv_cop_dependence <- function(object) {
+  cop <- object$copula
+  J <- length(object$outcomes)
+  eta <- cop$eta
+  se_eta <- sqrt(max(object$vcov[cop$idx, cop$idx], 0))
+  tau_of <- function(e) .fcr_cop_tau(.fcr_cop_theta(e, cop$family, J),
+                                     cop$family)
+  h <- 1e-5 * max(1, abs(eta))
+  dtau <- (tau_of(eta + h) - tau_of(eta - h)) / (2 * h)
+  list(label = if (cop$family == "gaussian") "rho" else "theta",
+       theta = cop$theta, tau = tau_of(eta), tau_se = abs(dtau) * se_eta)
 }

@@ -184,5 +184,62 @@ round(cbind(predict(mr, newdata = seg),
             predict(mr, newdata = seg, random = "posterior")), 3)
 ```
 
-Copula models, which join the outcomes' distributions directly, are
-planned.
+## 7. Copulas
+
+A copula joins the outcomes' own distributions into one joint
+distribution, so each outcome keeps its family and its expected counts:
+
+$$
+P(Y_1 \le y_1, Y_2 \le y_2) = C\big(F_1(y_1), F_2(y_2); \theta\big).
+$$
+
+For counts, the probability of the observed pair is the exact volume of the
+copula over the rectangle $[F_1(y_1 - 1), F_1(y_1)] \times
+[F_2(y_2 - 1), F_2(y_2)]$, the sum of four copula values (of $2^J$ with $J$
+outcomes). The copula families differ in the shape of the dependence:
+
+| `copula` | dependence |
+|---|---|
+| `"gaussian"` | symmetric, any sign, no tail dependence (two outcomes) |
+| `"frank"` | symmetric, no tail dependence; any sign for two outcomes |
+| `"clayton"` | positive, strongest for joint low counts |
+| `"gumbel"` | positive, strongest for joint high counts |
+
+```{r copula}
+mc <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
+                  data = w, family = c(pdo = "NB2", injury = "PIG"),
+                  copula = "clayton")
+summary(mc)
+```
+
+`summary()` reports the copula parameter and its Kendall's tau. With
+counts, this tau describes the copula, not the rank correlation of the
+counts themselves, which is weaker when the counts are small.
+
+Here the copulas barely change the fit, while the MVPLN of section 5 fits
+much better:
+
+```{r copula-compare}
+fams <- c(pdo = "NB2", injury = "PIG")
+f <- cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength)
+cop <- lapply(c("gaussian", "frank", "clayton", "gumbel"), function(cf)
+  countreg_mv(f, data = w, family = fams, copula = cf))
+round(c(independent = AIC(m), gaussian = AIC(cop[[1]]),
+        frank = AIC(cop[[2]]), clayton = AIC(cop[[3]]),
+        gumbel = AIC(cop[[4]]), MVPLN = AIC(mr)))
+```
+
+The two models describe different dependence. The copula links the two
+counts of the same segment-year; the random intercepts of the MVPLN are shared
+by a segment's three years, so it also captures that some segments have
+more crashes of both kinds year after year. In these data the dependence
+is mostly of the second kind. A copula suits outcomes measured once per
+unit, or dependence within a period; random parameters suit repeated
+observations of the same units. The two cannot yet be combined in
+`countreg_mv()`.
+
+All parameters of a copula model are estimated together by maximum
+likelihood (started from the separate equations and the best copula
+parameter for them), with a numerical gradient. `predict()` gives joint
+and conditional probabilities from the copula, and `simulate()` draws
+the outcomes from it.

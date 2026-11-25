@@ -281,3 +281,120 @@ test_that("countreg_alloc() makes the intercept random only when asked", {
                        .setup_only = TRUE)
   expect_equal(E1$RS$labels, c("Total:(Intercept)", "Total:x"))
 })
+
+# ---- Copulas -----------------------------------------------------------------
+
+test_that("the bivariate normal distribution function is exact", {
+  ref <- function(a, b, r) stats::integrate(function(x) stats::dnorm(x) *
+      stats::pnorm((b - r * x) / sqrt(1 - r^2)), -Inf, a,
+    rel.tol = 1e-13, abs.tol = 1e-15)$value
+  for (r in c(-0.99, -0.93, -0.5, 0, 0.2, 0.8, 0.95)) {
+    for (a in c(-2, 0.3, 1.7)) for (b in c(-1, 0, 2.2)) {
+      expect_equal(flexCountReg:::.fcr_pbvnorm(a, b, r), ref(a, b, r),
+                   tolerance = 1e-10)
+    }
+  }
+  expect_equal(flexCountReg:::.fcr_pbvnorm(Inf, 0.3, 0.5), stats::pnorm(0.3))
+  expect_equal(flexCountReg:::.fcr_pbvnorm(-Inf, 1, 0.5), 0)
+})
+
+test_that("rectangle probabilities are a distribution with the right margins", {
+  rect <- flexCountReg:::.fcr_cop_rect
+  F1 <- function(y) stats::ppois(y, 1.3)
+  F2 <- function(y) stats::pnbinom(y, size = 2, mu = 0.8)
+  F3 <- function(y) stats::ppois(y, 0.5)
+  g <- expand.grid(a = 0:25, b = 0:25)
+  hi <- cbind(F1(g$a), F2(g$b))
+  lo <- cbind(F1(g$a - 1), F2(g$b - 1))
+  indep <- stats::dpois(g$a, 1.3) * stats::dnbinom(g$b, size = 2, mu = 0.8)
+  for (cf in list(c("gaussian", 0.6), c("frank", -4), c("clayton", 2),
+                  c("gumbel", 2))) {
+    P <- rect(hi, lo, cf[1], as.numeric(cf[2]))
+    expect_equal(sum(P), 1, tolerance = 1e-10, info = cf[1])
+    expect_gt(min(P), -1e-12)
+    # The margins are the outcomes' own distributions
+    expect_equal(as.vector(tapply(P, g$a, sum)), stats::dpois(0:25, 1.3),
+                 tolerance = 1e-10, info = cf[1])
+  }
+  expect_equal(rect(hi, lo, "gaussian", 0), indep, tolerance = 1e-12)
+  expect_equal(rect(hi, lo, "clayton", 1e-9), indep, tolerance = 1e-8)
+  expect_equal(rect(hi, lo, "frank", 0), indep, tolerance = 1e-12)
+  g3 <- expand.grid(a = 0:15, b = 0:15, c = 0:12)
+  for (fam in c("clayton", "gumbel", "frank")) {
+    P3 <- rect(cbind(F1(g3$a), F2(g3$b), F3(g3$c)),
+               cbind(F1(g3$a - 1), F2(g3$b - 1), F3(g3$c - 1)), fam, 1.5)
+    # (the grid leaves out about 3e-8 of the probability)
+    expect_equal(sum(P3), 1, tolerance = 1e-6, info = fam)
+  }
+  # An outcome left out: the other's own probabilities
+  expect_equal(rect(cbind(F1(0:20), NA), cbind(F1(-1:19), NA), "gumbel", 2),
+               stats::dpois(0:20, 1.3), tolerance = 1e-12)
+})
+
+test_that("copula draws have the copula's Kendall's tau", {
+  set.seed(1)
+  for (cf in list(list("gaussian", 2, 0.6), list("frank", 2, -4),
+                  list("frank", 3, 5), list("clayton", 3, 2),
+                  list("gumbel", 3, 2))) {
+    U <- flexCountReg:::.fcr_rcopula(3000, cf[[2]], cf[[1]], cf[[3]])
+    expect_lt(abs(stats::cor(U[, 1], U[, 2], method = "kendall") -
+                    flexCountReg:::.fcr_cop_tau(cf[[3]], cf[[1]])), 0.04)
+    expect_lt(abs(mean(U) - 0.5), 0.02)
+  }
+})
+
+sim_cop <- function(n, family, theta, seed = 1) {
+  set.seed(seed)
+  d <- data.frame(x = stats::rnorm(n), z = stats::rbinom(n, 1, 0.5))
+  U <- flexCountReg:::.fcr_rcopula(n, 2, family, theta)
+  d$a <- stats::qnbinom(U[, 1], size = 1.5, mu = exp(0.6 + 0.5 * d$x))
+  d$b <- stats::qpois(U[, 2], exp(-0.2 + 0.4 * d$z))
+  d
+}
+
+test_that("copula models recover the dependence and keep the margins", {
+  d <- sim_cop(1500, "clayton", 2, seed = 2)
+  m <- countreg_mv(cbind(a, b) ~ x + z, data = d,
+                   family = c("NB2", "POISSON"), copula = "clayton")
+  expect_true(m$converged)
+  expect_equal(unname(m$copula$theta), 2, tolerance = 0.15)
+  expect_equal(unname(coef(m)[c("a:x", "b:z")]), c(0.5, 0.4),
+               tolerance = 0.2)
+  expect_output(print(summary(m)), "Kendall's tau")
+  expect_true("copula" %in% tidy(m)$component)
+  mi <- countreg_mv(cbind(a, b) ~ x + z, data = d,
+                    family = c("NB2", "POISSON"))
+  expect_gt(as.numeric(logLik(m) - logLik(mi)), 50)
+  nd <- d[1:3, ]
+  # The margins are the equations': expected counts are those of the
+  # margins, and the joint probabilities of all pairs sum to 1
+  expect_equal(predict(m, newdata = nd)[, "b"],
+               exp(coef(m)["b:(Intercept)"] + coef(m)["b:x"] * nd$x +
+                     coef(m)["b:z"] * nd$z),
+               ignore_attr = TRUE)
+  g <- expand.grid(a = 0:80, b = 0:20)
+  expect_equal(sum(predict(m, newdata = nd[rep(1, nrow(g)), ], type = "joint",
+                           y = g)), 1, tolerance = 1e-6)
+  cp <- predict(m, newdata = nd, type = "conditional", outcome = "b",
+                given = c(a = 4), max_count = 20)
+  expect_equal(unname(rowSums(cp)), rep(1, 3), tolerance = 1e-8)
+  j <- predict(m, newdata = nd, type = "joint", y = c(a = 4, b = 2))
+  pa <- predict(m, newdata = nd, type = "prob", max_count = 4)$a[, "4"]
+  expect_equal(unname(cp[, "2"]), j / pa, tolerance = 1e-8)
+  s <- simulate(m, nsim = 1, seed = 2)$sim_1
+  expect_equal(colMeans(s), colMeans(m$y), tolerance = 0.1)
+  expect_gt(stats::cor(s[, 1], s[, 2], method = "kendall"), 0.2)
+  # The Gaussian copula with a negative dependence
+  dg <- sim_cop(1500, "gaussian", -0.5, seed = 4)
+  mg <- countreg_mv(cbind(a, b) ~ x + z, data = dg,
+                    family = c("NB2", "POISSON"), copula = "gaussian")
+  expect_equal(unname(mg$copula$theta), -0.5, tolerance = 0.15)
+})
+
+test_that("copula input errors", {
+  d <- sim_mv(n = 40)
+  expect_error(countreg_mv(cbind(a, b, c) ~ x, data = d,
+                           copula = "gaussian"), "two outcomes")
+  expect_error(countreg_mv(cbind(a, b) ~ x, data = d, copula = "clayton",
+                           rpar_formula = ~ 1), "cannot yet be combined")
+})

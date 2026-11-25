@@ -199,15 +199,15 @@
 }
 
 # Rectangle bounds of the counts Y (n x J; NA = marginalized) at the
-# parameters p.
-.fcr_mv_cop_bounds <- function(p, E, Y) {
+# parameters p, with random terms `adds` in the equations' log means.
+.fcr_mv_cop_bounds <- function(p, E, Y, adds = NULL) {
   n <- nrow(Y)
   Fhi <- matrix(NA_real_, n, E$J)
   Flo <- Fhi
   for (j in seq_len(E$J)) {
     if (all(is.na(Y[, j]))) next
     eq <- E$eqs[[j]]
-    v <- .fcr_mv_eq_values(p, eq)
+    v <- .fcr_mv_eq_values(p, eq, adds[[j]])
     if (is.null(v)) return(NULL)
     Fhi[, j] <- .fcr_mv_cdf(eq, v, Y[, j])
     Flo[, j] <- .fcr_mv_cdf(eq, v, Y[, j] - 1)
@@ -216,10 +216,12 @@
 }
 
 # Mean and distribution parameters of an equation (NULL where invalid).
-.fcr_mv_eq_values <- function(p, eq) {
+.fcr_mv_eq_values <- function(p, eq, add_eta = NULL) {
   S <- eq$S
   n <- length(eq$y)
-  mu <- exp(as.vector(eq$X %*% p[S$idx_beta]) + eq$off)
+  lp <- as.vector(eq$X %*% p[S$idx_beta]) + eq$off
+  if (!is.null(add_eta)) lp <- lp + add_eta
+  mu <- exp(lp)
   dp <- .fcr_alloc_dispar(p, S, eq$W1, eq$W2, n)
   if (!all(.fcr_family_valid(eq$family, mu, dp$alpha, dp$sigma))) {
     return(NULL)
@@ -227,17 +229,185 @@
   list(mu = mu, alpha = dp$alpha, sigma = dp$sigma)
 }
 
-# Log-likelihood of the copula model: one contribution per row.
-.fcr_mv_cop_ll <- function(p, E) {
-  Y <- vapply(E$eqs, `[[`, numeric(E$n), "y")
-  Y <- matrix(Y, nrow = E$n)
-  bd <- .fcr_mv_cop_bounds(p, E, Y)
-  if (is.null(bd)) return(rep(NA_real_, E$n))
-  theta <- .fcr_cop_theta(p[E$cop$idx], E$cop$family, E$J)
-  P <- .fcr_cop_rect(bd$hi, bd$lo, E$cop$family, theta)
-  ll <- E$w * log(pmax(P, 1e-300))
-  ll[E$w == 0] <- 0
-  ll
+# F(y) and F(y - 1) of an equation and their derivatives with respect to
+# the log mean and the log distribution parameters:
+#   d F(q) / d theta = sum_{k <= q} f(k) d log f(k) / d theta,
+# summed over k = 0, ..., max(y) for the rows that need each k.
+.fcr_mv_cdf_grad <- function(eq, v, y) {
+  n <- length(y)
+  fam <- .fcr_get_family(eq$family)
+  z <- function() numeric(n)
+  hi <- list(F = z(), eta = z(), a = z(), s = z())
+  lo <- list(F = z(), eta = z(), a = z(), s = z())
+  for (k in 0:max(y)) {
+    act <- which(y >= k)
+    sub <- function(x) if (!is.null(x)) x[act]
+    yk <- rep(k, length(act))
+    lf <- .fcr_quiet_dens(as.vector(do.call(fam$dens, c(
+      list(y = yk, predicted = v$mu[act], alpha = sub(v$alpha),
+           sigma = sub(v$sigma)), eq$dens_args, list(log = TRUE)))),
+      log = TRUE)
+    f <- exp(lf)
+    sc <- .fcr_family_score(eq$family, yk, v$mu[act], sub(v$alpha),
+                            sub(v$sigma), dens_args = eq$dens_args)
+    pieces <- list(F = f, eta = f * sc$eta,
+                   a = if (!is.null(sc$alpha)) f * sc$alpha else 0,
+                   s = if (!is.null(sc$sigma)) f * sc$sigma else 0)
+    below <- y[act] > k              # k <= y - 1
+    for (nm in names(pieces)) {
+      val <- rep_len(pieces[[nm]], length(act))
+      val[!is.finite(val)] <- 0
+      hi[[nm]][act] <- hi[[nm]][act] + val
+      lo[[nm]][act[below]] <- lo[[nm]][act[below]] + val[below]
+    }
+  }
+  hi$F <- pmin(hi$F, 1)
+  lo$F <- pmin(lo$F, 1)
+  list(hi = hi, lo = lo)
+}
+
+# The copula C(U) and its derivatives with respect to each u_j (n x J) and
+# to theta, for the rows of U (no u equal to 0).
+.fcr_cop_derivs <- function(U, family, theta) {
+  U <- pmin(pmax(U, 1e-300), 1)
+  J <- ncol(U)
+  if (family == "gaussian") {
+    a <- stats::qnorm(pmin(U[, 1L], 1 - 1e-16))
+    b <- stats::qnorm(pmin(U[, 2L], 1 - 1e-16))
+    a[U[, 1L] >= 1] <- Inf
+    b[U[, 2L] >= 1] <- Inf
+    r <- theta
+    sr <- sqrt(1 - r^2)
+    C <- .fcr_pbvnorm(a, b, r)
+    dU <- cbind(ifelse(is.finite(a), stats::pnorm((b - r * a) / sr), 0),
+                ifelse(is.finite(b), stats::pnorm((a - r * b) / sr), 0))
+    dU[!is.finite(a) & !is.finite(b), ] <- 0
+    dU[is.finite(a) & !is.finite(b), 1L] <- 1
+    dU[!is.finite(a) & is.finite(b), 2L] <- 1
+    q <- ifelse(is.finite(a) & is.finite(b),
+                (a^2 - 2 * r * a * b + b^2) / (1 - r^2), Inf)
+    dth <- exp(-q / 2) / (2 * pi * sr)
+    return(list(C = C, dU = dU, dth = dth))
+  }
+  if (family == "clayton") {
+    t <- expm1(-theta * log(U))          # u^(-theta) - 1
+    s1 <- 1 + rowSums(t)
+    C <- exp(-log(s1) / theta)
+    dU <- exp((-1 / theta - 1) * log(s1)) * U^(-theta - 1)
+    lu <- log(U) * U^(-theta)
+    dth <- C * (log(s1) / theta^2 + rowSums(lu) / (theta * s1))
+    return(list(C = C, dU = dU, dth = dth))
+  }
+  if (family == "gumbel") {
+    l <- -log(U)
+    lt <- l^theta
+    s <- rowSums(lt)
+    C <- exp(-s^(1 / theta))
+    dU <- C * s^(1 / theta - 1) * l^(theta - 1) / U
+    dU[!is.finite(dU)] <- 0
+    llog <- ifelse(l > 0, lt * log(l), 0)
+    dth <- -C * s^(1 / theta) * (-log(s) / theta^2 +
+                                   rowSums(llog) / (theta * s))
+    dth[!is.finite(dth)] <- 0
+    return(list(C = C, dU = dU, dth = dth))
+  }
+  # frank
+  if (abs(theta) < 1e-6) {
+    P <- apply(U, 1L, prod)
+    dU <- P / U
+    dth <- P * ((J - 1 - rowSums(U)) / 2 + P / 2)
+    return(list(C = P, dU = dU, dth = dth))
+  }
+  e <- expm1(-theta * U)
+  e0 <- expm1(-theta)
+  N <- apply(e, 1L, prod) / e0^(J - 1L)
+  C <- -log1p(N) / theta
+  dU <- (N / (1 + N)) * exp(-theta * U) / e
+  dlogN <- rowSums(-U * exp(-theta * U) / e) + (J - 1) * exp(-theta) / e0
+  dth <- log1p(N) / theta^2 - N * dlogN / (theta * (1 + N))
+  list(C = C, dU = dU, dth = dth)
+}
+
+# d theta / d eta of the copula parameter.
+.fcr_cop_dtheta <- function(eta, family, J) {
+  switch(family,
+    gaussian = 1 - tanh(eta)^2,
+    frank = if (J == 2L) 1 else exp(eta),
+    clayton = exp(eta),
+    gumbel = exp(eta))
+}
+
+# Row log-probabilities (unweighted) of the observed counts and, with
+# grad, their derivatives with respect to each equation's log mean and log
+# distribution parameters (one list per equation, as .fcr_mv_eq_parts())
+# and to the copula parameter. `adds` are random terms in the log means.
+.fcr_mv_rowparts <- function(p, E, adds = NULL, grad = TRUE) {
+  if (is.null(E$cop)) {
+    ll <- numeric(E$n)
+    parts <- vector("list", E$J)
+    for (j in seq_len(E$J)) {
+      pt <- .fcr_mv_eq_parts(p, E$eqs[[j]], adds[[j]], grad = grad)
+      ll <- ll + pt$ll
+      parts[[j]] <- pt
+    }
+    return(list(ll = ll, parts = parts))
+  }
+  J <- E$J
+  n <- E$n
+  fam <- E$cop$family
+  eta <- p[E$cop$idx]
+  theta <- .fcr_cop_theta(eta, fam, J)
+  vals <- lapply(seq_len(J), function(j)
+    .fcr_mv_eq_values(p, E$eqs[[j]], adds[[j]]))
+  if (any(vapply(vals, is.null, logical(1)))) {
+    return(list(ll = rep(NA_real_, n), parts = NULL, s_cop = NULL))
+  }
+  if (!grad) {
+    Fhi <- vapply(seq_len(J), function(j)
+      .fcr_mv_cdf(E$eqs[[j]], vals[[j]], E$eqs[[j]]$y), numeric(n))
+    Flo <- vapply(seq_len(J), function(j)
+      .fcr_mv_cdf(E$eqs[[j]], vals[[j]], E$eqs[[j]]$y - 1), numeric(n))
+    P <- .fcr_cop_rect(matrix(Fhi, n), matrix(Flo, n), fam, theta)
+    return(list(ll = log(pmax(P, 1e-300))))
+  }
+  cg <- lapply(seq_len(J), function(j)
+    .fcr_mv_cdf_grad(E$eqs[[j]], vals[[j]], E$eqs[[j]]$y))
+  Fhi <- vapply(cg, function(x) x$hi$F, numeric(n))
+  Flo <- vapply(cg, function(x) x$lo$F, numeric(n))
+  Fhi <- matrix(Fhi, n)
+  Flo <- matrix(Flo, n)
+  # Sum the corners: P, and the derivatives of P with respect to each
+  # F_j(y_j) (A_hi) and F_j(y_j - 1) (A_lo) and to theta
+  P <- numeric(n)
+  Ahi <- matrix(0, n, J)
+  Alo <- matrix(0, n, J)
+  Dth <- numeric(n)
+  for (s in 0:(2^J - 1L)) {
+    bits <- as.integer(intToBits(s))[seq_len(J)]
+    U <- Fhi
+    if (any(bits == 1L)) U[, bits == 1L] <- Flo[, bits == 1L]
+    ok <- rowSums(U <= 0) == 0
+    if (!any(ok)) next
+    d <- .fcr_cop_derivs(U[ok, , drop = FALSE], fam, theta)
+    sg <- (-1)^sum(bits)
+    P[ok] <- P[ok] + sg * d$C
+    for (j in seq_len(J)) {
+      if (bits[j] == 0L) Ahi[ok, j] <- Ahi[ok, j] + sg * d$dU[, j] else
+        Alo[ok, j] <- Alo[ok, j] + sg * d$dU[, j]
+    }
+    Dth[ok] <- Dth[ok] + sg * d$dth
+  }
+  pos <- P > 1e-300
+  inv <- ifelse(pos, 1 / P, 0)
+  parts <- lapply(seq_len(J), function(j) {
+    h <- cg[[j]]$hi
+    l <- cg[[j]]$lo
+    list(s_eta = inv * (Ahi[, j] * h$eta + Alo[, j] * l$eta),
+         s_a = inv * (Ahi[, j] * h$a + Alo[, j] * l$a),
+         s_s = inv * (Ahi[, j] * h$s + Alo[, j] * l$s))
+  })
+  list(ll = log(pmax(P, 1e-300)), parts = parts,
+       s_cop = inv * Dth * .fcr_cop_dtheta(eta, fam, J))
 }
 
 # Draws of the copula (n x J matrix of uniforms): conditional inversion for

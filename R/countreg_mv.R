@@ -120,13 +120,23 @@
 #'
 #' All parameters are estimated together by maximum likelihood, started
 #' from the separate equations and the copula parameter that is best for
-#' them (inference functions for margins); the gradient is numerical.
+#' them (inference functions for margins).
 #' `summary()` reports the copula parameter and its Kendall's tau. With
 #' counts, the copula is not unique outside the range of the margins
 #' (Genest and Neslehova 2007): its parameter describes this model's
 #' dependence, and the tau is that of the copula, not the rank correlation
-#' of the counts, which is weaker for small counts. Copulas cannot yet be
-#' combined with `rpar_formula`.
+#' of the counts, which is weaker for small counts. The gradient is
+#' analytic: the derivatives of the copula and of each outcome's
+#' distribution function, \eqn{\partial F(y) / \partial \theta =
+#' \sum_{k \le y} f(k)\, \partial \log f(k) / \partial \theta}.
+#'
+#' **Copulas with random parameters.** `copula` and `rpar_formula` can be
+#' combined: given a unit's random parameters, the outcomes of each row are
+#' joined by the copula, and the unit's likelihood averages over the
+#' random parameters. The random parameters, shared by the rows of a unit
+#' (such as the years of a site), carry the dependence between units'
+#' outcomes over time; the copula carries the dependence that remains
+#' within each row.
 #'
 #' Different outcomes often need different families: frequent property
 #' damage crashes may be close to NB2, while rare fatal crashes are more
@@ -281,10 +291,6 @@ countreg_mv <- function(formula, data, family = "NB2",
   # ---- Random parameters -----------------------------------------------------------
   has_rpar <- any(!vapply(rpf, is.null, logical(1)))
   has_cop <- copula != "none"
-  if (has_cop && has_rpar) {
-    stop("Copulas and random parameters cannot yet be combined in ",
-         "countreg_mv(); use one or the other.", call. = FALSE)
-  }
   if (has_cop) {
     if (copula == "gaussian" && J != 2L) {
       stop("The Gaussian copula is available for two outcomes; use ",
@@ -311,19 +317,12 @@ countreg_mv <- function(formula, data, family = "NB2",
   if (.setup_only) return(E)
 
   # ---- Fit ---------------------------------------------------------------------
-  if (has_cop) {
-    start <- if (is.null(start.vals)) .fcr_mv_cop_start(E) else
-      .fcr_check_start(start.vals, names_all)
-    fn <- function(p) .fcr_mv_cop_ll(p, E)
-    # No analytic scores of the distribution functions: numerical gradient
-    gr <- NULL
-  } else {
-    start <- if (is.null(start.vals)) .fcr_mv_start(E) else
-      .fcr_check_start(start.vals, names_all)
-    llf <- if (has_rpar) .fcr_mv_sim_ll else .fcr_mv_ll
-    fn <- function(p) llf(p, E, grad = FALSE)$ll
-    gr <- function(p) llf(p, E, grad = TRUE)$G
-  }
+  start <- if (!is.null(start.vals)) {
+    .fcr_check_start(start.vals, names_all)
+  } else if (has_cop) .fcr_mv_cop_start(E) else .fcr_mv_start(E)
+  llf <- if (has_rpar) .fcr_mv_sim_ll else .fcr_mv_ll
+  fn <- function(p) llf(p, E, grad = FALSE)$ll
+  gr <- function(p) llf(p, E, grad = TRUE)$G
   names(start) <- names_all
   fit <- maxLik::maxLik(fn, grad = gr, start = start, method = method,
                         finalHessian = method == "BHHH",
@@ -536,19 +535,17 @@ countreg_mv <- function(formula, data, family = "NB2",
 # sum over equations, times the row weight), and the gradient rows.
 .fcr_mv_ll <- function(p, E, grad = FALSE) {
   w <- E$w
-  ll <- numeric(E$n)
-  G <- if (grad) matrix(0, E$n, length(p))
-  for (eq in E$eqs) {
-    pt <- .fcr_mv_eq_parts(p, eq, grad = grad)
-    ll <- ll + pt$ll
-    if (grad) G <- .fcr_mv_eq_grad(pt, eq, w, G)
-  }
-  ll <- w * ll
+  rp <- .fcr_mv_rowparts(p, E, grad = grad)
+  ll <- w * rp$ll
   ll[w == 0] <- 0
   if (!grad) {
     ll[!is.finite(ll)] <- NA_real_
     return(list(ll = ll))
   }
+  G <- matrix(0, E$n, length(p))
+  if (is.null(rp$parts)) return(list(ll = ll, G = G))
+  for (j in seq_len(E$J)) G <- .fcr_mv_eq_grad(rp$parts[[j]], E$eqs[[j]], w, G)
+  if (!is.null(E$cop)) G[, E$cop$idx] <- w * rp$s_cop
   G[!is.finite(G)] <- 0
   list(ll = ll, G = G)
 }
@@ -586,26 +583,33 @@ countreg_mv <- function(formula, data, family = "NB2",
 
 # Starting values of a copula model (inference functions for margins): the
 # independent equations' estimates, then the copula parameter that
-# maximizes the likelihood with those margins.
+# maximizes the likelihood with those margins (without random parameters),
+# and the random parameters' usual starts.
 .fcr_mv_cop_start <- function(E) {
   k <- E$cop$idx
+  m <- seq_len(k - 1L)               # the equations' parameters come first
+  st <- .fcr_mv_start(E)
   Ei <- E
-  Ei$cop <- NULL
-  st <- .fcr_mv_start(Ei)[-k]
+  Ei[c("cop", "RS")] <- list(NULL)
+  Ei$names <- E$names[m]
   fi <- tryCatch(maxLik::maxLik(
     function(p) .fcr_mv_ll(p, Ei)$ll,
-    grad = function(p) .fcr_mv_ll(p, Ei, grad = TRUE)$G, start = st,
+    grad = function(p) .fcr_mv_ll(p, Ei, grad = TRUE)$G, start = st[m],
     method = "BFGS", control = list(iterlim = 500)), error = function(e) NULL)
-  pm <- if (is.null(fi)) st else fi$estimate
+  pm <- if (is.null(fi)) st[m] else fi$estimate
+  Ec <- E
+  Ec$RS <- NULL
+  Ec$names <- E$names[seq_len(k)]
   rng <- switch(E$cop$family, gaussian = c(-3, 3),
                 frank = if (E$J == 2L) c(-30, 30) else c(-5, 4),
                 clayton = c(-6, 3), gumbel = c(-6, 3))
   f <- function(e) {
-    v <- sum(.fcr_mv_cop_ll(c(pm, e), E))
+    v <- sum(.fcr_mv_ll(c(pm, e), Ec)$ll)
     if (is.finite(v)) v else -1e300
   }
-  eta <- stats::optimize(f, rng, maximum = TRUE)$maximum
-  c(pm, eta)
+  st[m] <- pm
+  st[k] <- stats::optimize(f, rng, maximum = TRUE)$maximum
+  st
 }
 
 # ---- Random parameters ------------------------------------------------------
@@ -663,11 +667,7 @@ countreg_mv <- function(formula, data, family = "NB2",
   R <- dim(E$UA)[3L]
   w <- E$w
   row_ll <- function(adds) {
-    ll <- numeric(E$n)
-    for (j in seq_along(E$eqs)) {
-      ll <- ll + .fcr_mv_eq_parts(p, E$eqs[[j]], adds[[j]], grad = FALSE)$ll
-    }
-    ll <- w * ll
+    ll <- w * .fcr_mv_rowparts(p, E, adds, grad = FALSE)$ll
     ll[w == 0] <- 0
     ll
   }
@@ -696,14 +696,17 @@ countreg_mv <- function(formula, data, family = "NB2",
     adds <- .fcr_mv_add(B, E)
     Gr <- matrix(0, E$n, np)
     Db <- matrix(0, E$n, RS$K)
+    rp <- .fcr_mv_rowparts(p, E, adds, grad = TRUE)
+    if (is.null(rp$parts)) next
     for (j in seq_along(E$eqs)) {
       eq <- E$eqs[[j]]
-      pt <- .fcr_mv_eq_parts(p, eq, adds[[j]], grad = TRUE)
+      pt <- rp$parts[[j]]
       Gr <- .fcr_mv_eq_grad(pt, eq, w, Gr)
       for (k in which(RS$eq == j)) {
         Db[, k] <- w * pt$s_eta * eq$Xr[, RS$col[k]]
       }
     }
+    if (!is.null(E$cop)) Gr[, E$cop$idx] <- w * rp$s_cop
     Urow <- Ug[g, , drop = FALSE]
     Gr[, RS$idx] <- Db[, RS$pairs[, "k"], drop = FALSE] *
       Urow[, RS$pairs[, "l"], drop = FALSE]
@@ -792,8 +795,8 @@ countreg_mv <- function(formula, data, family = "NB2",
 
 # Probability of the counts Y (n x J; NA = outcome left out) under the
 # fitted copula: the C-volume of the rectangle of each row.
-.fcr_mv_cop_prob <- function(object, E, Y) {
-  bd <- .fcr_mv_cop_bounds(object$coefficients, E, Y)
+.fcr_mv_cop_prob <- function(object, E, Y, adds = NULL) {
+  bd <- .fcr_mv_cop_bounds(object$coefficients, E, Y, adds)
   if (is.null(bd)) return(rep(NA_real_, nrow(Y)))
   pmax(.fcr_cop_rect(bd$hi, bd$lo, object$copula$family,
                      object$copula$theta), 0)
@@ -950,7 +953,10 @@ predict.countreg_mv <- function(object, newdata = NULL,
       stop("`y` must give the counts of every outcome (", toString(outs),
            ").", call. = FALSE)
     }
-    if (!is.null(object$copula)) return(.fcr_mv_cop_prob(object, E, Y))
+    if (!is.null(object$copula)) {
+      return(as.vector(integrate(function(adds)
+        matrix(.fcr_mv_cop_prob(object, E, Y, adds), ncol = 1L))))
+    }
     return(as.vector(integrate(function(adds)
       matrix(exp(.fcr_mv_logp(p, E, Y, adds)), ncol = 1L))))
   }
@@ -968,13 +974,15 @@ predict.countreg_mv <- function(object, newdata = NULL,
   gj <- which(colSums(!is.na(Yg)) > 0)
   mc <- max_count %||% max(object$y[, t])
   if (!is.null(object$copula)) {
-    den <- .fcr_mv_cop_prob(object, E, Yg)
-    P <- vapply(0:mc, function(k) {
-      Yk <- Yg
-      Yk[, t] <- k
-      .fcr_mv_cop_prob(object, E, Yk)
-    }, numeric(n)) / den
-    P <- matrix(P, nrow = n)
+    A <- integrate(function(adds) {
+      num <- vapply(0:mc, function(k) {
+        Yk <- Yg
+        Yk[, t] <- k
+        .fcr_mv_cop_prob(object, E, Yk, adds)
+      }, numeric(n))
+      cbind(matrix(num, nrow = n), .fcr_mv_cop_prob(object, E, Yg, adds))
+    })
+    P <- A[, seq_len(mc + 1L), drop = FALSE] / A[, mc + 2L]
     colnames(P) <- 0:mc
     return(P)
   }
@@ -1179,22 +1187,22 @@ simulate.countreg_mv <- function(object, nsim = 1, seed = NULL,
   } else seq_len(n)
   cop <- object$copula
   one <- function() {
-    if (!is.null(cop)) {
-      # Uniforms from the copula, then each outcome's quantiles
-      U <- .fcr_rcopula(n, length(E$eqs), cop$family, cop$theta)
-      Y <- vapply(seq_along(E$eqs), function(j) {
-        v <- .fcr_mv_eq_values(p, E$eqs[[j]])
-        .fcr_mv_qcount(E$eqs[[j]], v, U[, j])
-      }, numeric(n))
-      Y <- matrix(Y, nrow = n)
-      colnames(Y) <- object$outcomes
-      return(Y)
-    }
     adds <- NULL
     if (!is.null(rp)) {
       L <- .fcr_alloc_chol(p, rp$layout)
       Bu <- matrix(stats::rnorm(max(unit) * rp$layout$K), max(unit)) %*% t(L)
       adds <- .fcr_mv_add(Bu[unit, , drop = FALSE], E)
+    }
+    if (!is.null(cop)) {
+      # Uniforms from the copula, then each outcome's quantiles
+      U <- .fcr_rcopula(n, length(E$eqs), cop$family, cop$theta)
+      Y <- vapply(seq_along(E$eqs), function(j) {
+        v <- .fcr_mv_eq_values(p, E$eqs[[j]], adds[[j]])
+        .fcr_mv_qcount(E$eqs[[j]], v, U[, j])
+      }, numeric(n))
+      Y <- matrix(Y, nrow = n)
+      colnames(Y) <- object$outcomes
+      return(Y)
     }
     Y <- vapply(seq_along(E$eqs), function(j) {
       v <- .fcr_mv_eq_parts(p, E$eqs[[j]], adds[[j]], grad = FALSE)

@@ -395,6 +395,84 @@ test_that("copula input errors", {
   d <- sim_mv(n = 40)
   expect_error(countreg_mv(cbind(a, b, c) ~ x, data = d,
                            copula = "gaussian"), "two outcomes")
-  expect_error(countreg_mv(cbind(a, b) ~ x, data = d, copula = "clayton",
-                           rpar_formula = ~ 1), "cannot yet be combined")
+})
+
+test_that("copula models have the right analytic gradient", {
+  skip_if_not_installed("numDeriv")
+  set.seed(1)
+  n <- 240
+  d <- data.frame(x = stats::rnorm(n), z = stats::rbinom(n, 1, 0.5),
+                  site = rep(1:80, each = 3))
+  U <- flexCountReg:::.fcr_rcopula(n, 3, "clayton", 1.5)
+  # Moderate counts: with very improbable rows the log-likelihood carries
+  # rounding noise of about 1e-8 that numerical derivatives amplify
+  d$a <- pmin(stats::qnbinom(U[, 1], size = 1.5, mu = exp(0.6 + 0.5 * d$x)),
+              6)
+  d$b <- stats::qpois(U[, 2], exp(-0.2 + 0.4 * d$z))
+  d$c <- stats::qpois(U[, 3], 0.7)
+  cases <- list(
+    list(f = cbind(a, b) ~ x + z, family = c("NB2", "POISSON"),
+         copula = "gaussian"),
+    list(f = cbind(a, b) ~ x + z, family = c("NB2", "POISSON"),
+         copula = "frank"),
+    list(f = cbind(a, b, c) ~ x, family = c("NB2", "POISSON", "NB1"),
+         copula = "clayton", dis_param_formula_1 = list(a = ~ z)),
+    list(f = cbind(a, b, c) ~ x, family = "POISSON", copula = "gumbel"),
+    list(f = cbind(a, b) ~ x + z, family = c("NB2", "POISSON"),
+         copula = "clayton", rpar_formula = ~ 1, group_var = "site"),
+    list(f = cbind(a, b) ~ x, family = "POISSON", copula = "gaussian",
+         rpar_formula = list(a = ~ x)))
+  for (cs in cases) {
+    args <- c(list(formula = cs$f, data = d, rpar_draws = 10, seed = 2,
+                   .setup_only = TRUE), cs[setdiff(names(cs), "f")])
+    E <- do.call(countreg_mv, args)
+    set.seed(3)
+    p <- flexCountReg:::.fcr_mv_start(E) +
+      stats::runif(length(E$names), -0.1, 0.1)
+    llf <- if (is.null(E$RS)) flexCountReg:::.fcr_mv_ll else
+      flexCountReg:::.fcr_mv_sim_ll
+    f <- function(q) sum(llf(q, E)$ll)
+    # A larger first step keeps rounding noise out of the numerical
+    # derivative
+    expect_equal(colSums(llf(p, E, grad = TRUE)$G),
+                 numDeriv::grad(f, p, method.args = list(d = 1e-2, r = 6)),
+                 tolerance = 1e-5, info = cs$copula)
+  }
+})
+
+test_that("copulas combine with random parameters", {
+  skip_on_cran()
+  set.seed(9)
+  G <- 400
+  id <- rep(seq_len(G), each = 4)
+  n <- 4 * G
+  b <- (matrix(stats::rnorm(2 * G), G) %*%
+          chol(matrix(c(0.25, 0.12, 0.12, 0.16), 2)))[id, ]
+  d <- data.frame(id = id, x = stats::rnorm(n))
+  U <- flexCountReg:::.fcr_rcopula(n, 2, "clayton", 1.5)
+  d$a <- stats::qpois(U[, 1], exp(0.5 + 0.4 * d$x + b[, 1]))
+  d$b <- stats::qpois(U[, 2], exp(-0.3 + b[, 2]))
+  m <- countreg_mv(cbind(a, b) ~ x, data = d, family = "POISSON",
+                   rpar_formula = ~ 1, group_var = "id", rpar_draws = 100,
+                   seed = 1, copula = "clayton")
+  expect_true(m$converged)
+  expect_equal(unname(m$copula$theta), 1.5, tolerance = 0.25)
+  vc <- flexCountReg:::.fcr_alloc_varcorr(m)
+  expect_equal(unname(sqrt(diag(vc))), c(0.5, 0.4), tolerance = 0.25)
+  mr <- countreg_mv(cbind(a, b) ~ x, data = d, family = "POISSON",
+                    rpar_formula = ~ 1, group_var = "id", rpar_draws = 100,
+                    seed = 1)
+  expect_lt(AIC(m), AIC(mr) - 50)
+  nd <- d[1:2, ]
+  g <- expand.grid(a = 0:40, b = 0:25)
+  expect_equal(sum(predict(m, newdata = nd[rep(1, nrow(g)), ],
+                           type = "joint", y = g)), 1, tolerance = 1e-6)
+  cp <- predict(m, newdata = nd, type = "conditional", outcome = "b",
+                given = c(a = 3), max_count = 25)
+  expect_equal(unname(rowSums(cp)), c(1, 1), tolerance = 1e-6)
+  j <- predict(m, newdata = nd, type = "joint", y = c(a = 3, b = 1))
+  pa <- predict(m, newdata = nd, type = "prob", max_count = 3)$a[, "3"]
+  expect_equal(unname(cp[, "1"]), j / pa, tolerance = 1e-8)
+  s <- simulate(m, seed = 1)$sim_1
+  expect_equal(colMeans(s), colMeans(m$y), tolerance = 0.15)
 })

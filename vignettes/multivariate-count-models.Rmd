@@ -235,11 +235,27 @@ by a segment's three years, so it also captures that some segments have
 more crashes of both kinds year after year. In these data the dependence
 is mostly of the second kind. A copula suits outcomes measured once per
 unit, or dependence within a period; random parameters suit repeated
-observations of the same units. The two cannot yet be combined in
-`countreg_mv()`.
+observations of the same units.
+
+The two can also be combined: random intercepts shared by a segment's
+years, and a copula for what remains within each year.
+
+```{r both, eval = FALSE}
+mb <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
+                  data = w, family = "POISSON", rpar_formula = ~ 1,
+                  group_var = "ID", rpar_draws = 200, seed = 1,
+                  copula = "frank")
+```
+
+This fit takes about two minutes. Its copula parameter is close to zero
+(Frank theta 0.06, standard error 0.71), and its AIC (2474.7) is higher
+than that of the MVPLN alone (2472.7): once the segments' random
+intercepts are in the model, nothing is left for the copula. On simulated
+data with both kinds of dependence, the combined model recovers both.
 
 All parameters of a copula model are estimated together by maximum
 likelihood (started from the separate equations and the best copula
-parameter for them), with a numerical gradient. `predict()` gives joint
+parameter for them), with analytic gradients from the derivatives of the
+copula and of each outcome's distribution function. `predict()` gives joint
 and conditional probabilities from the copula, and `simulate()` draws
 the outcomes from it.

@@ -48,7 +48,7 @@ and predicted values.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rmse</span><span class="op">(</span><span class="va">y</span>, <span class="va">mu</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rmse</span><span class="op">(</span><span class="va">y</span>, <span class="va">mu</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -56,16 +56,24 @@ and predicted values.</p>
 
 
 <dl><dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
-<dd><p>Numeric vector representing the observed values.</p></dd>
+<dd><p>Numeric vector representing the observed values, or a data frame
+(see the section on yardstick).</p></dd>
 
 
 <dt id="arg-mu">mu<a class="anchor" aria-label="anchor" href="#arg-mu"></a></dt>
-<dd><p>Numeric vector representing the predicted values.</p></dd>
+<dd><p>Numeric vector representing the predicted values (with a data
+frame, the column of observed values).</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>with a data frame, further arguments of the yardstick metric
+(the column of predictions first).</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Numeric value representing the RMSE.</p>
+    <p>Numeric value representing the RMSE (with a data frame, the
+yardstick tibble).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -73,6 +81,14 @@ and predicted values.</p>
 $$RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \mu_i)^2}$$
 Where \(y\) is the vector of observed values and \(\mu\) is the vector of
 predicted values.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="yardstick">yardstick<a class="anchor" aria-label="anchor" href="#yardstick"></a></h2>
+    <p>With a data frame, <code>rmse(data, truth, estimate)</code>
+calls the <span class="pkg">yardstick</span> metric of the same name, and the function can
+be used in <code><a href="https://yardstick.tidymodels.org/reference/metric_set.html" class="external-link">yardstick::metric_set()</a></code>. Loading flexCountReg after
+tidymodels (which masks yardstick's function) therefore does not change
+tidymodels code.</p>
     </div>
 
     <div class="section level2">

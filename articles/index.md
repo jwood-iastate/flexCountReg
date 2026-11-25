@@ -52,6 +52,8 @@
 
 - [Evaluating predictive performance without information
   leakage](https://jwood-iastate.github.io/flexCountReg/articles/predictive-validation.md):
+- [Count models with
+  tidymodels](https://jwood-iastate.github.io/flexCountReg/articles/tidymodels.md):
 - [Predicting new units and known units in panel
   data](https://jwood-iastate.github.io/flexCountReg/articles/prediction-for-panel-data.md):
 

@@ -6,12 +6,12 @@
     }
   };
 </script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"><link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet"><script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet"><link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet"><script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Count regression model specification for tidymodels — count_reg"><meta name="description" content="count_reg() defines a count regression model for the
-parsnip package, fitted with the &quot;flexCountReg&quot; engine
-(countreg). The count distribution is a main argument, so it
-can be tuned with tune."><meta property="og:description" content="count_reg() defines a count regression model for the
-parsnip package, fitted with the &quot;flexCountReg&quot; engine
-(countreg). The count distribution is a main argument, so it
-can be tuned with tune."><meta property="og:image" content="https://jwood-iastate.github.io/flexCountReg/logo.png"></head><body>
+parsnip package. Every estimator of flexCountReg is an engine, so
+all of them can be used in workflows, resampling, tuning and workflow
+sets. The count distribution (family) is a main argument."><meta property="og:description" content="count_reg() defines a count regression model for the
+parsnip package. Every estimator of flexCountReg is an engine, so
+all of them can be used in workflows, resampling, tuning and workflow
+sets. The count distribution (family) is a main argument."><meta property="og:image" content="https://jwood-iastate.github.io/flexCountReg/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -47,14 +47,17 @@ can be tuned with tune."><meta property="og:image" content="https://jwood-iastat
 
     <div class="ref-description section level2">
     <p><code>count_reg()</code> defines a count regression model for the
-<span class="pkg">parsnip</span> package, fitted with the <code>"flexCountReg"</code> engine
-(<code><a href="countreg.html">countreg</a></code>). The count distribution is a main argument, so it
-can be tuned with <span class="pkg">tune</span>.</p>
+<span class="pkg">parsnip</span> package. Every estimator of flexCountReg is an engine, so
+all of them can be used in workflows, resampling, tuning and workflow
+sets. The count distribution (<code>family</code>) is a main argument.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">count_reg</span><span class="op">(</span>mode <span class="op">=</span> <span class="st">"regression"</span>, family <span class="op">=</span> <span class="cn">NULL</span>, engine <span class="op">=</span> <span class="st">"flexCountReg"</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">count_reg</span><span class="op">(</span>mode <span class="op">=</span> <span class="st">"regression"</span>, family <span class="op">=</span> <span class="cn">NULL</span>, engine <span class="op">=</span> <span class="st">"flexCountReg"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'count_reg'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span><span class="va">object</span>, parameters <span class="op">=</span> <span class="cn">NULL</span>, family <span class="op">=</span> <span class="cn">NULL</span>, fresh <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -68,11 +71,34 @@ can be tuned with <span class="pkg">tune</span>.</p>
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
 <dd><p>the count distribution, one of the <code>family</code> values of
 <code><a href="countreg.html">countreg</a></code> (for example <code>"NB2"</code>, <code>"PIG2"</code> or
-<code>"PLN"</code>). Default <code>"NB2"</code>.</p></dd>
+<code>"PLN"</code>) or a family from <code><a href="new_count_family.html">new_count_family()</a></code>.
+<code>NULL</code> uses the default of the engine's estimator
+(<code>"NB2"</code> for <code><a href="countreg.html">countreg()</a></code>). The engines <code>"renb"</code>,
+<code>"repois"</code> and <code>"poislind_re"</code> have a fixed distribution and
+do not accept it; <code>"negmultinom"</code> and <code>"countreg_fe"</code> accept
+the families of their estimators; <code>"countreg_mv"</code> accepts one
+family per outcome.</p></dd>
 
 
 <dt id="arg-engine">engine<a class="anchor" aria-label="anchor" href="#arg-engine"></a></dt>
-<dd><p>the fitting engine; only <code>"flexCountReg"</code>.</p></dd>
+<dd><p>the fitting engine; see the section <em>Engines</em>.</p></dd>
+
+
+<dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
+<dd><p>a <code>count_reg()</code> specification.</p></dd>
+
+
+<dt id="arg-parameters">parameters<a class="anchor" aria-label="anchor" href="#arg-parameters"></a></dt>
+<dd><p>a one-row tibble or named list of main arguments to
+update.</p></dd>
+
+
+<dt id="arg-fresh">fresh<a class="anchor" aria-label="anchor" href="#arg-fresh"></a></dt>
+<dd><p>logical; replace the arguments (<code>TRUE</code>) or modify them?</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>engine arguments to update.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -80,22 +106,108 @@ can be tuned with <span class="pkg">tune</span>.</p>
     <p>A <code>count_reg</code> model specification.</p>
     </div>
     <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Other <code><a href="countreg.html">countreg()</a></code> arguments are engine arguments, set with
-<code>parsnip::set_engine("flexCountReg", ...)</code>: for example
-<code>method</code>, <code>dis_param_formula_1</code>, <code>underreport_formula</code>,
-<code>offset</code> or <code>stderr</code>. Variables used only in those auxiliary
-formulas, and offset columns, must be kept in the data by any recipe (in a
-workflow, add them with <code>workflows::add_variables()</code> or give them a
-non-predictor role). A formula <code><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset()</a></code> term can be used with
-<code>workflows::add_model(spec, formula = y ~ x + offset(log_exposure))</code>.
-Case weights from tidymodels are passed to <code><a href="countreg.html">countreg()</a></code> as frequency
-weights.</p>
-<p>Predictions (<code>type = "numeric"</code>) are the expected counts from
-<code><a href="predict.flexCountReg.html">predict.flexCountReg</a></code> and have one row per row of
-<code>new_data</code>, with <code>NA</code> for rows with missing values.</p>
-<p>Requires the <span class="pkg">parsnip</span> package. The engine is registered when
-flexCountReg or parsnip is loaded.</p>
+    <h2 id="engines">Engines<a class="anchor" aria-label="anchor" href="#engines"></a></h2>
+
+
+<table class="table table"><tr><td><strong>Engine</strong></td><td><strong>Estimator</strong></td><td><strong>Model</strong></td></tr><tr><td><code>"flexCountReg"</code></td><td><code><a href="countreg.html">countreg</a></code></td><td>any family, with
+zero-inflated, hurdle and underreporting components</td></tr><tr><td><code>"countreg_rp"</code></td><td><code><a href="countreg_rp.html">countreg_rp</a></code></td><td>random
+parameters</td></tr><tr><td><code>"countreg_mix"</code></td><td><code><a href="countreg_mix.html">countreg_mix</a></code></td><td>finite
+mixtures</td></tr><tr><td><code>"countreg_lc"</code></td><td><code><a href="countreg_mix.html">countreg_lc</a></code></td><td>latent classes</td></tr><tr><td><code>"countreg_fe"</code></td><td><code><a href="countreg_fe.html">countreg_fe</a></code></td><td>fixed effects</td></tr><tr><td><code>"countreg_hier"</code></td><td><code><a href="countreg_hier.html">countreg_hier</a></code></td><td>hierarchical models</td></tr><tr><td><code>"countreg_alloc"</code></td><td><code><a href="countreg_alloc.html">countreg_alloc</a></code></td><td>total
+plus allocation (several outcome columns)</td></tr><tr><td><code>"countreg_mv"</code></td><td><code><a href="countreg_mv.html">countreg_mv</a></code></td><td>multivariate
+(several outcomes)</td></tr><tr><td><code>"renb"</code></td><td><code><a href="renb.html">renb</a></code></td><td>random-effects negative
+binomial</td></tr><tr><td><code>"repois"</code></td><td><code><a href="repois.html">repois</a></code></td><td>random-effects Poisson</td></tr><tr><td><code>"poislind_re"</code></td><td><code><a href="poisLindRE.html">poislind_re</a></code></td><td>random-effects
+Poisson-Lindley</td></tr><tr><td><code>"negmultinom"</code></td><td><code><a href="negmultinom.html">negmultinom</a></code></td><td>negative
+multinomial</td></tr></table><p>All other arguments of the estimator are engine arguments, set with
+<code><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">parsnip::set_engine()</a></code>, for example
+<code>set_engine("countreg_rp", rpar_formula = ~ -1 + x, ndraws = 200)</code>.
+Arguments with a finite set of choices have tuning parameters (see
+<code><a href="count_family.html">count_family</a></code>).</p>
+<p>The estimators' own <code>engine</code> argument (the numerical method) is
+called <code>fit_engine</code> here, for example
+<code>set_engine("countreg_hier", fit_engine = "laplace")</code>.</p>
+<p>The engine argument <code>predict_args</code> (a list) holds arguments passed
+to the model's <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> method for numeric predictions and
+intervals, for example <code>predict_args = list(method = "Exact")</code> for
+<code>"countreg_rp"</code>, <code>list(newgroup = "mean_fe")</code> for
+<code>"countreg_fe"</code> or <code>list(marginal = TRUE)</code> for
+<code>"countreg_hier"</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="formulas-recipes-and-extra-columns">Formulas, recipes and extra columns<a class="anchor" aria-label="anchor" href="#formulas-recipes-and-extra-columns"></a></h2>
+
+
+<p>The engines use the formula interface. In a workflow, the model receives
+only the columns the preprocessor declares as outcomes and predictors
+(not those with other roles), so every column the model needs must be a
+predictor: offsets, grouping variables, and variables of auxiliary
+formulas (<code>dis_param_formula_1</code>, <code>rpar_formula</code>, ...). Two ways
+to say which of them enter the mean model:</p><ul><li><p>Give the model formula, as in
+<code>workflows::add_model(spec, formula = y ~ x + offset(log_exp))</code>,
+with <code><a href="https://workflows.tidymodels.org/reference/add_variables.html" class="external-link">workflows::add_variables()</a></code> or a recipe as the preprocessor.
+This works for every model, including smooths (<code>s(x)</code>), formula
+offsets, random effects (<code>(1 | site)</code>), <code><a href="tv.html">tv()</a></code> terms and
+several outcomes (<code>cbind(y1, y2) ~ x</code>).</p></li>
+<li><p>Without a model formula, all predictors enter the mean model
+(<code>y ~ .</code>), except that columns named in <code>offset</code>,
+<code>group_var</code>, <code>panel_id</code>, <code>cluster</code>, <code>fixef</code>,
+<code>cre_group</code> or <code>time</code>, and the variables of
+<code>rpar_formula</code> for <code>"countreg_rp"</code> (which are random instead
+of fixed), are left out of the <code>.</code>. The outcome is then named
+<code>..y</code> in the fitted model.</p></li>
+</ul><p>With a recipe, do not transform the grouping columns (for example with
+<code>step_dummy()</code> or <code>step_normalize()</code>) or an offset.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="case-weights">Case weights<a class="anchor" aria-label="anchor" href="#case-weights"></a></h2>
+
+
+<p>Case weights are passed to the estimator's <code>weights</code>. By default
+they are frequency weights. parsnip passes the engine only their values,
+so for importance weights with <code>"flexCountReg"</code> or
+<code>"countreg_rp"</code> set the engine argument
+<code>weight_type = "sampling"</code>; a warning is given for weights that are
+not whole numbers without it.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="predictions">Predictions<a class="anchor" aria-label="anchor" href="#predictions"></a></h2>
+
+
+<p><code>type = "numeric"</code> gives the expected counts of the estimator's
+<code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> method, with one row per row of <code>new_data</code> and
+<code>NA</code> for rows with missing values. For models with several outcomes
+there is one column per outcome or category
+(<code>.pred_&lt;name&gt;</code>); <code>predict_args = list(type = "total")</code> gives
+the total of <code>"countreg_alloc"</code> as <code>.pred</code>. The
+<code>"flexCountReg"</code> engine also has <code>type = "conf_int"</code> and
+<code>type = "pred_int"</code> (see <code><a href="predict.flexCountReg.html">predict.flexCountReg</a></code>).
+Everything else is available with <code>type = "raw"</code>, whose <code>opts</code>
+are passed to <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>: for example
+<code>predict(fit, new_data, type = "raw",
+opts = list(type = "prob", max_count = 5))</code> for count probabilities.</p>
+<p>Predictions that use the observed outcome (Empirical Bayes predictions of
+random-parameter models, posterior class probabilities) need it in
+<code>new_data</code>; a workflow removes the outcome, so use the model itself:
+<code>predict(hardhat::extract_fit_engine(wf), newdata = ...)</code>. All other
+functions of the package (<code><a href="margEffTable.html">margEffTable</a></code>,
+<code><a href="cureplot.html">cureplot</a></code>, <code><a href="rootogram.html">rootogram</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code>, ...) also
+take the extracted model.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="several-outcomes">Several outcomes<a class="anchor" aria-label="anchor" href="#several-outcomes"></a></h2>
+
+
+<p>The engines <code>"countreg_alloc"</code> and <code>"countreg_mv"</code> can be
+fitted and predicted in workflows, but the resampling functions of
+<span class="pkg">tune</span> compute metrics for one outcome, so use
+<code>rsample</code> splits directly to validate them.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="loading">Loading<a class="anchor" aria-label="anchor" href="#loading"></a></h2>
+
+
+<p>Requires the <span class="pkg">parsnip</span> package. The engines are registered when
+flexCountReg is loaded; load it before using a saved model or workflow.
+Parallel workers of <span class="pkg">tune</span> load it themselves.</p>
     </div>
 
     <div class="section level2">
@@ -107,15 +219,22 @@ flexCountReg or parsnip is loaded.</p>
 <span class="r-in"><span>  <span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">parsnip</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">spec</span>, <span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span></span>
 <span class="r-in"><span>                      data <span class="op">=</span> <span class="va">washington_roads</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, new_data <span class="op">=</span> <span class="va">washington_roads</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, new_data <span class="op">=</span> <span class="va">washington_roads</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span>, type <span class="op">=</span> <span class="st">"pred_int"</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># Another estimator</span></span></span>
+<span class="r-in"><span>  <span class="va">re</span> <span class="op">&lt;-</span> <span class="fu">count_reg</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
+<span class="r-in"><span>    <span class="fu">parsnip</span><span class="fu">::</span><span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"repois"</span>, group_var <span class="op">=</span> <span class="st">"ID"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">fit_re</span> <span class="op">&lt;-</span> <span class="fu">parsnip</span><span class="fu">::</span><span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">re</span>, <span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span>,</span></span>
+<span class="r-in"><span>                         data <span class="op">=</span> <span class="va">washington_roads</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://generics.r-lib.org/reference/tidy.html" class="external-link">tidy</a></span><span class="op">(</span><span class="va">fit_re</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 5 × 1</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   .pred</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> 1.18 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> 1.07 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> 1.56 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> 0.511</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5</span> 1.22 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A tibble: 4 × 6</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   term        component    estimate std.error statistic  p.value</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> (Intercept) mean           -<span style="color: #BB0000;">9.00</span>     0.489     -<span style="color: #BB0000;">18.4</span>  1.05<span style="color: #949494;">e</span><span style="color: #BB0000;">-75</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2</span> lnaadt      mean            1.09     0.059<span style="text-decoration: underline;">8</span>     18.3  8.64<span style="color: #949494;">e</span><span style="color: #BB0000;">-75</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3</span> lnlength    mean            0.766    0.084<span style="text-decoration: underline;">7</span>      9.04 1.51<span style="color: #949494;">e</span><span style="color: #BB0000;">-19</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4</span> lnalpha     distribution   -<span style="color: #BB0000;">0.821</span>    0.201      -<span style="color: #BB0000;">4.10</span> 4.19<span style="color: #949494;">e</span><span style="color: #BB0000;">- 5</span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

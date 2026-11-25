@@ -156,7 +156,7 @@
 <li>
 <code><a href="reference/new_count_family.html">new_count_family()</a></code> defines a count distribution from its log probability function (with optional mean, variance, CDF and random-draw functions) for use as <code>family</code> in <code><a href="reference/countreg.html">countreg()</a></code>, <code><a href="reference/countreg_rp.html">countreg_rp()</a></code>, <code><a href="reference/countreg_mix.html">countreg_mix()</a></code> and <code><a href="reference/countreg_mix.html">countreg_lc()</a></code>; <code><a href="reference/check_count_family.html">check_count_family()</a></code> tests it numerically. See <code><a href="articles/user-defined-count-distributions.html">vignette("user-defined-count-distributions", package = "flexCountReg")</a></code>.</li>
 <li>
-<code><a href="reference/count_reg.html">count_reg()</a></code> is a <a href="https://parsnip.tidymodels.org/" class="external-link">parsnip</a> model specification with a <code>"flexCountReg"</code> engine, for use with tidymodels (the distribution can be tuned with <code><a href="reference/count_family.html">count_family()</a></code>).</li>
+<code><a href="reference/count_reg.html">count_reg()</a></code> is a <a href="https://parsnip.tidymodels.org/" class="external-link">parsnip</a> model specification with every estimator of the package as an engine, for use with tidymodels workflows, resampling and tuning (see <code><a href="articles/tidymodels.html">vignette("tidymodels", package = "flexCountReg")</a></code>).</li>
 </ul>
 <p><strong>Working with Fitted Models</strong></p>
 <ul>
@@ -587,6 +587,8 @@
 <p><em>Predict and validate</em></p>
 <ul>
 <li>Evaluating predictive performance without information leakage: <code><a href="articles/predictive-validation.html">vignette("predictive-validation", package = "flexCountReg")</a></code>
+</li>
+<li>Count models with tidymodels: <code><a href="articles/tidymodels.html">vignette("tidymodels", package = "flexCountReg")</a></code>
 </li>
 <li>Predicting new units and known units in panel data: <code><a href="articles/prediction-for-panel-data.html">vignette("prediction-for-panel-data", package = "flexCountReg")</a></code>
 </li>

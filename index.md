@@ -259,9 +259,9 @@ computer.
   [`vignette("user-defined-count-distributions", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/user-defined-count-distributions.md).
 - [`count_reg()`](https://jwood-iastate.github.io/flexCountReg/reference/count_reg.md)
   is a [parsnip](https://parsnip.tidymodels.org/) model specification
-  with a `"flexCountReg"` engine, for use with tidymodels (the
-  distribution can be tuned with
-  [`count_family()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md)).
+  with every estimator of the package as an engine, for use with
+  tidymodels workflows, resampling and tuning (see
+  [`vignette("tidymodels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/tidymodels.md)).
 
 **Working with Fitted Models**
 
@@ -807,6 +807,8 @@ The vignettes cover the main workflows. Start with
 
 - Evaluating predictive performance without information leakage:
   [`vignette("predictive-validation", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/predictive-validation.md)
+- Count models with tidymodels:
+  [`vignette("tidymodels", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/tidymodels.md)
 - Predicting new units and known units in panel data:
   [`vignette("prediction-for-panel-data", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/prediction-for-panel-data.md)
 

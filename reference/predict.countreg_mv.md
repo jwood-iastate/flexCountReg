@@ -15,6 +15,7 @@ predict(
   outcome = NULL,
   given = NULL,
   random = c("marginal", "posterior"),
+  new_data = NULL,
   ...
 )
 ```
@@ -27,9 +28,9 @@ predict(
   [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
   fit.
 
-- newdata:
+- newdata, new_data:
 
-  optional new data; the estimation data by default.
+  optional new data (either name); the estimation data by default.
 
 - type:
 

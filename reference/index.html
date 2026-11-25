@@ -365,7 +365,14 @@
 
         <dt>
 
-          <code><a href="flexCountReg-tidiers.html">tidy(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-tidiers.html">glance(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-tidiers.html">augment(<i>&lt;flexCountReg&gt;</i>)</a></code>
+          <code><a href="update.flexCountReg.html">update(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="update.flexCountReg.html">update(<i>&lt;countreg_alloc&gt;</i>)</a></code> <code><a href="update.flexCountReg.html">update(<i>&lt;countreg_mv&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Update and refit a flexCountReg model</dd>
+
+        <dt>
+
+          <code><a href="flexCountReg-tidiers.html">tidy(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-tidiers.html">glance(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-tidiers.html">augment(<i>&lt;flexCountReg&gt;</i>)</a></code> <code><a href="flexCountReg-tidiers.html">augment(<i>&lt;countreg_alloc&gt;</i>)</a></code> <code><a href="flexCountReg-tidiers.html">augment(<i>&lt;countreg_mv&gt;</i>)</a></code>
 
         </dt>
         <dd>Tidy, glance and augment flexCountReg models</dd>
@@ -467,7 +474,7 @@
       </dl></div><div class="section level2">
       <h2 id="tidymodels">tidymodels<a class="anchor" aria-label="anchor" href="#tidymodels"></a></h2>
 
-      <div class="section-desc"><p>A parsnip model specification with the flexCountReg engine.</p></div>
+      <div class="section-desc"><p>A parsnip model specification with every estimator as an engine, and tuning parameters.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -476,17 +483,17 @@
 
       <dl><dt>
 
-          <code><a href="count_reg.html">count_reg()</a></code>
+          <code><a href="count_reg.html">count_reg()</a></code> <code><a href="count_reg.html">update(<i>&lt;count_reg&gt;</i>)</a></code>
 
         </dt>
         <dd>Count regression model specification for tidymodels</dd>
 
         <dt>
 
-          <code><a href="count_family.html">count_family()</a></code>
+          <code><a href="count_family.html">count_family()</a></code> <code><a href="count_family.html">count_components()</a></code> <code><a href="count_family.html">count_zero_type()</a></code> <code><a href="count_family.html">count_correlated()</a></code> <code><a href="count_family.html">count_re_dist()</a></code>
 
         </dt>
-        <dd>Count distribution tuning parameter</dd>
+        <dd>Tuning parameters for count regression models</dd>
       </dl></div><div class="section level2">
       <h2 id="user-defined-count-distributions">User-defined count distributions<a class="anchor" aria-label="anchor" href="#user-defined-count-distributions"></a></h2>
 

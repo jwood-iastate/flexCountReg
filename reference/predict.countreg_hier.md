@@ -14,6 +14,7 @@ predict(
   allow.new.levels = TRUE,
   marginal = FALSE,
   history = NULL,
+  new_data = NULL,
   ...
 )
 ```
@@ -26,9 +27,9 @@ predict(
   [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md)
   fit.
 
-- newdata:
+- newdata, new_data:
 
-  optional data frame (default: the estimation rows).
+  optional data frame, under either name (default: the estimation rows).
 
 - type:
 

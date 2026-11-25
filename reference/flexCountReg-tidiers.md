@@ -26,6 +26,12 @@ augment(
   type.residuals = c("response", "pearson"),
   ...
 )
+
+# S3 method for class 'countreg_alloc'
+augment(x, data = NULL, new_data = NULL, newdata = NULL, ...)
+
+# S3 method for class 'countreg_mv'
+augment(x, data = NULL, new_data = NULL, newdata = NULL, ...)
 ```
 
 ## Arguments
@@ -78,7 +84,11 @@ with columns `term`, `component`, `estimate`, `std.error`, `statistic`,
 one-row tibble of model statistics.
 [`augment()`](https://generics.r-lib.org/reference/augment.html): the
 data as a tibble with `.fitted` (and `.resid` when the outcome is
-available).
+available); for
+[`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+and
+[`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+models one column per outcome (`.fitted_<name>`, `.resid_<name>`).
 
 ## Details
 

@@ -2,6 +2,68 @@
 
 ## flexCountReg 0.1.2 (development)
 
+### tidymodels
+
+- [`count_reg()`](https://jwood-iastate.github.io/flexCountReg/reference/count_reg.md)
+  has every estimator as an engine: `"flexCountReg"`
+  ([`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)),
+  `"countreg_rp"`, `"countreg_mix"`, `"countreg_lc"`, `"countreg_fe"`,
+  `"countreg_hier"`, `"countreg_alloc"`, `"countreg_mv"`, `"renb"`,
+  `"repois"`, `"poislind_re"` and `"negmultinom"`. New article
+  [`vignette("tidymodels")`](https://jwood-iastate.github.io/flexCountReg/articles/tidymodels.md).
+- New prediction types: `"conf_int"` and `"pred_int"` (`"flexCountReg"`
+  engine) and `"raw"`, whose `opts` reach every option of
+  [`predict()`](https://rdrr.io/r/stats/predict.html). The engine
+  argument `predict_args` sets
+  [`predict()`](https://rdrr.io/r/stats/predict.html) options for
+  numeric predictions and intervals; `fit_engine` is the estimators’
+  `engine`.
+- Tuning works:
+  [`count_reg()`](https://jwood-iastate.github.io/flexCountReg/reference/count_reg.md)
+  had no [`update()`](https://rdrr.io/r/stats/update.html) method, so
+  every
+  [`tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
+  and
+  [`finalize_workflow()`](https://tune.tidymodels.org/reference/finalize_model.html)
+  failed. New tuning parameters
+  [`count_components()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md),
+  [`count_zero_type()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md),
+  [`count_correlated()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md)
+  and
+  [`count_re_dist()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md).
+- [`rmse()`](https://jwood-iastate.github.io/flexCountReg/reference/rmse.md)
+  and
+  [`mae()`](https://jwood-iastate.github.io/flexCountReg/reference/mae.md)
+  no longer break yardstick when flexCountReg is loaded after it: with a
+  data frame they call the yardstick metric, and they work in
+  [`metric_set()`](https://yardstick.tidymodels.org/reference/metric_set.html).
+- Without a model formula (a recipe or
+  [`add_formula()`](https://workflows.tidymodels.org/reference/add_formula.html)),
+  columns named in `offset`, `group_var`, `panel_id`, `cluster`,
+  `fixef`, `cre_group` or `time` (and the variables of `rpar_formula`
+  with `"countreg_rp"`) no longer enter the mean model. The
+  documentation wrongly said that columns with a non-predictor role
+  reach the model; it now describes what works.
+- Case weights that are not whole numbers give a warning unless
+  `weight_type` is set (the previous warning for importance weights
+  never appeared, because parsnip passes only their values).
+- Models extracted from tidymodels fits work with
+  [`update()`](https://rdrr.io/r/stats/update.html) (which now also has
+  a method for them) and with bootstrap refits when flexCountReg is not
+  attached. Their stored call holds the argument values.
+- [`predict()`](https://rdrr.io/r/stats/predict.html) for
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md),
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  and
+  [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md)
+  models accepts `new_data`; it was ignored, so the predictions were
+  those of the training data.
+- [`augment()`](https://generics.r-lib.org/reference/augment.html)
+  methods for
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  and
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md).
+
 ### Corrections from the November 2026 review
 
 A review of the whole package found the following problems, now fixed,

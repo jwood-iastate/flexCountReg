@@ -12,6 +12,7 @@ predict(
   type = c("counts", "prob", "total", "total_positive"),
   conditional = FALSE,
   random = c("marginal", "posterior"),
+  new_data = NULL,
   ...
 )
 ```
@@ -24,9 +25,9 @@ predict(
   [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
   fit.
 
-- newdata:
+- newdata, new_data:
 
-  optional new data; the estimation data by default.
+  optional new data (either name); the estimation data by default.
 
 - type:
 

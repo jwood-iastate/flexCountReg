@@ -106,13 +106,15 @@
 #' \code{NA} for rows with missing values. For models with several outcomes
 #' there is one column per outcome or category
 #' (\code{.pred_<name>}); \code{predict_args = list(type = "total")} gives
-#' the total of \code{"countreg_alloc"} as \code{.pred}. The
-#' \code{"flexCountReg"} engine also has \code{type = "conf_int"} and
-#' \code{type = "pred_int"} (see \code{\link{predict.flexCountReg}}).
+#' the total of \code{"countreg_alloc"} as \code{.pred}. All
+#' engines except \code{"countreg_fe"} also have \code{type = "conf_int"} and
+#' \code{type = "pred_int"} (see \code{\link{predict.flexCountReg}}), with a
+#' pair of columns per outcome for models with several
+#' (\code{.pred_lower_<name>}, \code{.pred_upper_<name>}).
 #' Everything else is available with \code{type = "raw"}, whose \code{opts}
 #' are passed to \code{predict()}: for example
 #' \code{predict(fit, new_data, type = "raw",
-#' opts = list(type = "prob", max_count = 5))} for count probabilities.
+#' opts = list(type = "prob", counts = 0:5))} for count probabilities.
 #'
 #' Predictions that use the observed outcome (Empirical Bayes predictions of
 #' random-parameter models, posterior class probabilities) need it in
@@ -126,7 +128,7 @@
 #' The engines \code{"countreg_alloc"} and \code{"countreg_mv"} can be
 #' fitted and predicted in workflows, but the resampling functions of
 #' \pkg{tune} compute metrics for one outcome, so use
-#' \code{rsample} splits directly to validate them.
+#' \code{\link{fit_resamples_counts}()} to validate them.
 #'
 #' @section Loading:
 #' Requires the \pkg{parsnip} package. The engines are registered when
@@ -283,7 +285,7 @@ count_re_dist <- function(values = c("normal", "uniform", "triangular",
 .fcr_parsnip_engines <- function() {
   mix <- c(correlated = "count_correlated")
   list(
-    flexCountReg = list(fun = "countreg", intervals = TRUE,
+    flexCountReg = list(fun = "countreg",
                         tunable = c(zero_type = "count_zero_type")),
     countreg_rp = list(fun = "countreg_rp",
                        tunable = c(correlated = "count_correlated")),
@@ -291,7 +293,8 @@ count_re_dist <- function(values = c("normal", "uniform", "triangular",
                         tunable = c(components = "count_components", mix)),
     countreg_lc = list(fun = "countreg_lc",
                        tunable = c(classes = "count_components", mix)),
-    countreg_fe = list(fun = "countreg_fe", families = c("POISSON", "NB2")),
+    countreg_fe = list(fun = "countreg_fe", intervals = FALSE,
+                       families = c("POISSON", "NB2")),
     countreg_hier = list(fun = "countreg_hier",
                          tunable = c(re_dist = "count_re_dist")),
     countreg_alloc = list(fun = "countreg_alloc"),
@@ -413,7 +416,12 @@ count_reg_predict <- function(object, new_data, ...,
   }
   if (format != "raw" && !nrow(new_data)) {
     if (format == "interval") {
-      return(tibble::tibble(.pred_lower = numeric(), .pred_upper = numeric()))
+      nm <- if (identical(args$type, "total")) NULL else
+        object$outcomes %||% object$categories
+      nm <- if (is.null(nm)) c(".pred_lower", ".pred_upper") else
+        paste0(c(".pred_lower_", ".pred_upper_"), rep(nm, each = 2L))
+      return(tibble::as_tibble(stats::setNames(
+        rep(list(numeric()), length(nm)), nm)))
     }
     nm <- if (!identical(args$type %||% "counts", "counts")) NULL else
       object$outcomes %||% object$categories
@@ -425,7 +433,14 @@ count_reg_predict <- function(object, new_data, ...,
                c(list(object, newdata = as.data.frame(new_data)), args))
   if (format == "raw") return(p)
   if (format == "interval") {
-    return(tibble::tibble(.pred_lower = p$lwr, .pred_upper = p$upr))
+    if (is.data.frame(p)) {
+      return(tibble::tibble(.pred_lower = p$lwr, .pred_upper = p$upr))
+    }
+    # Several outcomes: a pair of columns for each
+    p <- unlist(lapply(names(p), function(nm) stats::setNames(
+      list(p[[nm]]$lwr, p[[nm]]$upr),
+      paste0(c(".pred_lower_", ".pred_upper_"), nm))), recursive = FALSE)
+    return(tibble::as_tibble(p))
   }
   if (is.matrix(p)) {
     nm <- colnames(p) %||% seq_len(ncol(p))
@@ -578,7 +593,7 @@ update.countreg_mv <- update.flexCountReg
   }
   pred("numeric", list(format = "numeric"))
   pred("raw", list(format = "raw"))
-  if (isTRUE(info$intervals)) {
+  if (!isFALSE(info$intervals)) {
     pred("conf_int", list(format = "interval", interval = "confidence",
                           level = quote(level)))
     pred("pred_int", list(format = "interval", interval = "prediction",

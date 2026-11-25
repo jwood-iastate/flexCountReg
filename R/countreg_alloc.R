@@ -1404,8 +1404,25 @@ countreg_alloc <- function(formula, data, family = "NB2",
 #'   \eqn{E[c]\,\pi_j}; `"prob"`: the allocation probabilities
 #'   \eqn{\pi_j}; `"total"`: the expected total \eqn{E[c]};
 #'   `"total_positive"`: the expected total given at least one event,
-#'   \eqn{E[c] / (1 - P(0))}.
-#' @param conditional for `type = "counts"`: `TRUE` gives the expected
+#'   \eqn{E[c] / (1 - P(0))}; `"total_prob"`: a matrix of the probabilities
+#'   of the total's counts; `"count_prob"`: a list with one such matrix per
+#'   category, the total thinned by the category's probability (not for the
+#'   fractional quasi-likelihood, which defines no distribution of the
+#'   category counts).
+#' @param counts,max_count for the probabilities: the counts, such as `0:10`
+#'   or `5:8`, or the largest one of `0:max_count` (default: the largest
+#'   observed total). For intervals, `max_count` is the largest count
+#'   evaluated.
+#' @param overflow,underflow add columns with the probabilities above and
+#'   below the counts.
+#' @param interval,level confidence intervals for the expected count or
+#'   prediction intervals for a new count: for `type = "counts"` a list of
+#'   data frames (`fit`, `lwr`, `upr`) named by category, for
+#'   `type = "total"` one data frame. See the section *Intervals of other
+#'   estimators* of [predict.flexCountReg()]. With random parameters,
+#'   prediction intervals use 50 parameter draws by default and are slow.
+#' @param conditional for the probabilities, `TRUE` conditions on at least one
+#'   event; for `type = "counts"`: `TRUE` gives the expected
 #'   counts given at least one event, \eqn{E[c \mid c > 0]\,\pi_j}. The
 #'   default is `FALSE`, the unconditional expected counts, also for a fit
 #'   with `truncated = TRUE` (whose estimated distribution is that of the
@@ -1418,7 +1435,7 @@ countreg_alloc <- function(formula, data, family = "NB2",
 #'   prediction). `newdata` then needs the `group_var` column(s). The shared
 #'   site-year term (`shared_formula`) is always averaged over its
 #'   distribution, as it is new for every row.
-#' @param ... unused.
+#' @param ... `ndraws` and `seed` for intervals.
 #' @return A matrix with one column per category (`"counts"`, `"prob"`), or
 #'   a vector (`"total"`, `"total_positive"`). With random parameters,
 #'   `"prob"` is the average allocation probability and `"counts"` the
@@ -1434,16 +1451,49 @@ countreg_alloc <- function(formula, data, family = "NB2",
 #' @export
 predict.countreg_alloc <- function(object, newdata = NULL,
                                    type = c("counts", "prob", "total",
-                                            "total_positive"),
+                                            "total_positive", "total_prob",
+                                            "count_prob"),
                                    conditional = FALSE,
                                    random = c("marginal", "posterior"),
-                                   new_data = NULL, ...) {
+                                   new_data = NULL, counts = NULL,
+                                   max_count = NULL, overflow = FALSE,
+                                   underflow = FALSE,
+                                   interval = c("none", "confidence",
+                                                "prediction"),
+                                   level = 0.95, ...) {
   type <- match.arg(type)
   random <- match.arg(random)
+  interval <- match.arg(interval)
   if (is.null(newdata)) newdata <- new_data
   if (!is.null(newdata)) newdata <- as.data.frame(newdata)
   if (is.null(newdata)) {
     newdata <- .fcr_alloc_rebuild_data(object)
+  }
+  if (interval != "none") {
+    if (!type %in% c("counts", "total") || conditional ||
+        random != "marginal") {
+      stop("Intervals are available for type = \"counts\" or \"total\" ",
+           "with conditional = FALSE and random = \"marginal\".",
+           call. = FALSE)
+    }
+    return(.fcr_general_interval(object, newdata, interval = interval,
+                                 level = level, outcome_type = type,
+                                 max_count = max_count %||% 1e4, ...))
+  }
+  if (type %in% c("total_prob", "count_prob")) {
+    if (random != "marginal") {
+      stop("Count probabilities are available for random = \"marginal\".",
+           call. = FALSE)
+    }
+    cs <- .fcr_count_set(counts, max_count, max(object$total))
+    one <- function(what, outcome = NULL) .fcr_prob_table(
+      function(k) {
+        P <- .fcr_alloc_pmf(object, newdata, k, what, conditional, outcome)
+        if (is.list(P)) P[[1L]] else P
+      }, cs, overflow, underflow)
+    if (type == "total_prob") return(one("total"))
+    return(stats::setNames(lapply(object$categories, one, what = "counts"),
+                           object$categories))
   }
   E <- .fcr_alloc_design(object, newdata)
   p <- object$coefficients

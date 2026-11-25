@@ -184,8 +184,8 @@ test_that("marginal effects include the membership pathway", {
 test_that("unsupported operations explain themselves", {
   d <- fm_data(200)
   m <- countreg_mix(y ~ x, data = d, components = 2, n_starts = 1, seed = 1)
-  expect_error(predict(m, newdata = d, interval = "confidence"),
-               "not yet available")
+  expect_error(predict(m, newdata = d, interval = "confidence",
+                       type = "variance"), "type = \"response\"")
   expect_error(tolerance_interval(m, d), "countreg")
   expect_error(regCompTest(m), "does not test finite-mixture")
   expect_error(predict(m, method = "Exact"), "conditioning")

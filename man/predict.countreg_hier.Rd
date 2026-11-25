@@ -7,12 +7,18 @@
 \method{predict}{countreg_hier}(
   object,
   newdata = NULL,
-  type = c("response", "link"),
+  type = c("response", "link", "prob"),
   re.form = NULL,
   allow.new.levels = TRUE,
   marginal = FALSE,
   history = NULL,
   new_data = NULL,
+  counts = NULL,
+  max_count = NULL,
+  overflow = FALSE,
+  underflow = FALSE,
+  interval = c("none", "confidence", "prediction"),
+  level = 0.95,
   ...
 )
 }
@@ -22,8 +28,10 @@
 \item{newdata, new_data}{optional data frame, under either name (default:
 the estimation rows).}
 
-\item{type}{\code{"response"} (expected count) or \code{"link"} (log of
-the mean parameter).}
+\item{type}{\code{"response"} (expected count), \code{"link"} (log of
+the mean parameter) or \code{"prob"} (a matrix of count probabilities,
+given the estimated effects; with \code{marginal} the other effects are
+integrated out).}
 
 \item{re.form}{which random effects to condition on: \code{NULL} (all, the
 default), \code{NA} (none, population level) or a formula of terms,
@@ -44,10 +52,28 @@ from \code{history} alone, at the fitted parameters, instead of taken
 from the estimation data, so a forecast never uses its own outcomes.
 Groups without history are treated as new groups.}
 
-\item{...}{unused.}
+\item{counts, max_count}{for \code{"prob"}: the counts, such as
+\code{0:10} or \code{5:8}, or the largest one of \code{0:max_count}
+(default: the largest training count). For intervals, \code{max_count}
+is the largest count evaluated.}
+
+\item{overflow, underflow}{for \code{"prob"}: add columns with the
+probabilities above and below the counts.}
+
+\item{interval, level}{confidence interval for the expected count or
+prediction interval for a new count (a data frame with \code{fit},
+\code{lwr} and \code{upr}). They include the uncertainty of the fixed
+coefficients, the distribution parameters and the estimated effects of
+known groups, but not of the random-effect variances, which are held at
+their estimates. Prediction intervals use \code{marginal = TRUE} unless
+it is given. See the section \emph{Intervals of other estimators} of
+\code{\link{predict.flexCountReg}}.}
+
+\item{...}{\code{ndraws} and \code{seed} for intervals.}
 }
 \value{
-A numeric vector with one value per row of \code{newdata}.
+A numeric vector with one value per row of \code{newdata}, a
+matrix (\code{"prob"}) or a data frame (intervals).
 }
 \description{
 Predictions from a hierarchical count model

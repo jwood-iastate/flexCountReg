@@ -107,6 +107,10 @@ E_j = \frac{1}{n}\sum_{i=1}^n \left(\frac{x_{ij}}{\mu_i}\frac{\partial \mu_i}{\p
 For indicator variables, the function computes a discrete change between the
 observed baseline and a switched value. If \code{indicator = "pseudo_elasticity"},
 the result is reported as a percent change relative to the baseline.
+
+For models with several outcomes there is a column \code{outcome}: the
+outcomes of \code{countreg_mv()}, or the categories of
+\code{countreg_alloc()} and their \code{"total"}.
 }
 \examples{
 \donttest{

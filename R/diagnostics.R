@@ -1,23 +1,23 @@
 # Probability predictions, randomized quantile residuals and rootograms for
 # countreg() models.
 
-# P(Y = k | x_i) for k = 0..max_count and each row of `data`, evaluated with
+# P(Y = k | x_i) for the counts and each row of `data`, evaluated with
 # the fitted family exactly as in the likelihood (mean parameter
 # exp(X beta + offset) * p, the same distribution parameters and the same
-# Halton draws). Returns an n x (max_count + 1) matrix.
-.fcr_prob_matrix <- function(object, data, max_count) {
-  if (inherits(object, "countreg_mix")) {
-    return(.fcr_fm_prob_matrix(object, data, max_count))
-  }
+# Halton draws). Returns an n x length(counts) matrix. Other models:
+# .fcr_count_pmf().
+.fcr_prob_matrix <- function(object, data, max_count,
+                             counts = seq.int(0, max_count)) {
   if (!inherits(object, "countreg")) {
-    stop("Probability predictions are available for countreg() models.",
-         call. = FALSE)
+    P <- .fcr_count_pmf(object, data, counts)
+    dimnames(P) <- list(NULL, as.character(counts))
+    return(P)
   }
   parts <- .fcr_countreg_parts(object, data)
-  P <- vapply(0:max_count, function(k) .fcr_parts_density(object, parts, k),
+  P <- vapply(counts, function(k) .fcr_parts_density(object, parts, k),
               numeric(length(parts$mu_link)))
-  P <- matrix(P, ncol = max_count + 1,
-              dimnames = list(NULL, as.character(0:max_count)))
+  P <- matrix(P, ncol = length(counts),
+              dimnames = list(NULL, as.character(counts)))
   # A row with a missing value in any component (mean, distribution
   # parameters, reporting or zero model) has no distribution: its
   # probabilities are NA, not 0 (which made the overflow column 1)
@@ -25,19 +25,20 @@
   for (nm in c("p_report", "alpha", "sigma", "zero_prob")) {
     if (!is.null(parts[[nm]])) miss <- miss | is.na(parts[[nm]])
   }
-  P[miss, ] <- NA_real_
   if (!is.null(parts$zero_prob)) {
     zp <- parts$zero_prob
-    f0 <- P[, 1]
+    k0 <- which(counts == 0)
     if (parts$zero_type == "inflated") {
+      f0 <- P[, k0]
       P <- P * (1 - zp)
-      P[, 1] <- zp + (1 - zp) * f0
+      P[, k0] <- zp + (1 - zp) * f0
     } else {
-      lf0 <- parts$lf0 %||% log(f0)
+      lf0 <- parts$lf0 %||% .fcr_parts_density(object, parts, 0, log = TRUE)
       P <- P * (zp / -expm1(lf0))
-      P[, 1] <- 1 - zp
+      P[, k0] <- 1 - zp
     }
   }
+  P[miss, ] <- NA_real_
   P
 }
 
@@ -189,7 +190,8 @@
 #' zero show counts that the model over- or under-predicts. Rootograms are a
 #' standard way to compare the count distributions this package offers.
 #'
-#' @param object a \code{countreg()} model.
+#' @param object a fitted model with one outcome (any estimator except
+#'   \code{countreg_alloc()} and \code{countreg_mv()}).
 #' @param newdata optional data (with the outcome) to evaluate the model on;
 #'   defaults to the rows used in estimation.
 #'   Without \code{newdata}, the observed and expected frequencies count each
@@ -242,8 +244,10 @@ rootogram <- function(object, newdata = NULL, max_count = NULL,
   style <- match.arg(style)
   d <- if (is.null(newdata)) .fcr_training_rows(object) else
     as.data.frame(newdata)
-  y <- as.numeric(stats::model.response(stats::model.frame(
-    object$formula, d, na.action = stats::na.pass)))
+  y <- .fcr_response(object, d)
+  if (is.null(y)) {
+    stop("`newdata` must contain the model's outcome.", call. = FALSE)
+  }
   if (is.null(max_count)) max_count <- max(y, na.rm = TRUE)
   if (!is.numeric(max_count) || length(max_count) != 1L ||
       !is.finite(max_count) || max_count < 0 ||

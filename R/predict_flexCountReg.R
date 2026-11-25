@@ -26,17 +26,55 @@
 #'   the zero model: the probability of a structural zero (zero-inflated) or
 #'   of a zero count (hurdle).
 #'   \code{"prob"} returns a matrix of probabilities \eqn{P(Y = k)} with one
-#'   row per row of \code{newdata} and one column per count
-#'   \eqn{k = 0, \dots,} \code{max_count} (passed in \code{...}; default the
-#'   largest count in the training data), for rootograms and for scoring
-#'   models out of sample. With \code{overflow = TRUE} (in \code{...}), a last
-#'   column holds the tail mass \eqn{P(Y > } \code{max_count}\eqn{)}, so each
-#'   row sums to 1. Types other than \code{"response"} are available
-#'   for \code{countreg} models only.
+#'   row per row of \code{newdata} and one column per count, for rootograms
+#'   and for scoring models out of sample (see the section \emph{Count
+#'   probabilities}). It is available for every estimator; the other types
+#'   besides \code{"response"} for \code{countreg} models only.
 #' @param interval \code{"none"} (default), \code{"confidence"} or
-#'   \code{"prediction"} (\code{countreg} models). See the section
-#'   \emph{Intervals}.
+#'   \code{"prediction"}. See the section \emph{Intervals}.
 #' @param level the confidence or prediction level of the interval.
+#'
+#' @section Count probabilities:
+#' For \code{type = "prob"}, these arguments (in \code{...}) choose the
+#' counts:
+#' \itemize{
+#'   \item \code{counts}: the counts, non-negative whole numbers such as
+#'   \code{0:10}, \code{5:8} or \code{c(0, 1, 10)}. Only these are
+#'   evaluated, so a range far from zero is as cheap as one near it.
+#'   \item \code{max_count}: short for \code{counts = 0:max_count}; the
+#'   default is the largest count in the training data.
+#'   \item \code{overflow = TRUE}: add a last column \code{">k"} with the
+#'   probability of a count above the largest one.
+#'   \item \code{underflow = TRUE}: add a first column \code{"<k"} with the
+#'   probability of a count below the smallest one. With both, the rows of
+#'   a contiguous range sum to 1.
+#' }
+#' The probabilities are those of the marginal distribution of one count of
+#' a new unit: the unit's random terms are integrated out in closed form
+#' (\code{renb}, \code{repois}, \code{poislind_re}, \code{negmultinom}) or
+#' by Gauss-Hermite quadrature or scrambled Halton draws
+#' (\code{countreg_rp}).
+#' For \code{negmultinom} models of type NM1 and NM-P the frailty depends on
+#' the total mean of the cluster, taken over the cluster's rows in
+#' \code{newdata} (every row is its own cluster without the grouping
+#' columns). \code{countreg_fe} models use the estimated group effects.
+#' Finite mixtures, hierarchical, multivariate and allocation models:
+#' \code{\link{predict.countreg_mix}}, \code{\link{predict.countreg_hier}},
+#' \code{\link{predict.countreg_mv}}, \code{\link{predict.countreg_alloc}}.
+#'
+#' @section Intervals of other estimators:
+#' The estimators other than \code{countreg()} use draws from the asymptotic
+#' normal distribution of the estimates: \code{ndraws} scrambled Halton
+#' points (default 500 for confidence and 200 for prediction intervals),
+#' with \code{seed}. Parameters without a usable standard error (none, or
+#' the log of a distribution parameter with one above 10, which is at a
+#' boundary) are held at their estimates, with a message. Prediction intervals are the
+#' quantiles of the predictive distribution, the count probabilities averaged
+#' over the draws (up to \code{max_count}, default 1e4), and are for one
+#' count of a new unit, including its random terms. \code{countreg_fe}
+#' models have none: their group effects have no covariance matrix. The
+#' parametric bootstrap (\code{uncertainty = "bootstrap"}) is for
+#' \code{countreg} models.
 #'
 #' @section Intervals:
 #' For \code{countreg} models, \code{interval = "confidence"} gives a
@@ -243,17 +281,32 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   }
   
   if (modtype == "countreg_fe") {
-    if (type != "response" || interval != "none") {
-      stop("countreg_fe() models give type = \"response\" predictions ",
-           "without intervals.", call. = FALSE)
+    if (interval != "none") {
+      stop("Intervals are not available for countreg_fe() models: the ",
+           "estimated group effects have no covariance matrix, and an ",
+           "interval that ignored their uncertainty would be too narrow. ",
+           "countreg_hier() has intervals that include it.", call. = FALSE)
     }
-    return(.fcr_fe_predict(object, data,
-                           additional_args$newgroup %||% "none"))
+    if (type == "response") {
+      return(.fcr_fe_predict(object, data,
+                             additional_args$newgroup %||% "none"))
+    }
   }
 
   if (interval != "none") {
     if (modtype != "countreg") {
-      stop("Intervals are available for countreg() models.", call. = FALSE)
+      if (type != "response") {
+        stop("Intervals of this model are available for type = ",
+             "\"response\".", call. = FALSE)
+      }
+      if (identical(additional_args$method, "Individual") ||
+          identical(additional_args$method, "EB")) {
+        stop("Intervals are not available for Empirical Bayes predictions.",
+             call. = FALSE)
+      }
+      return(do.call(.fcr_general_interval, c(
+        list(object, data, interval = interval, level = level),
+        additional_args[setdiff(names(additional_args), "data")])))
     }
     ia <- additional_args
     return(.fcr_predict_interval(
@@ -266,23 +319,16 @@ predict.flexCountReg <- function(object, newdata = NULL, ...,
   }
 
   if (type == "prob") {
-    max_count <- additional_args$max_count
-    if (is.null(max_count)) {
-      y_tr <- object$model[["y"]]
-      max_count <- if (!is.null(y_tr)) max(y_tr) else 20
-    }
-    if (!is.numeric(max_count) || length(max_count) != 1L ||
-        !is.finite(max_count) || max_count < 0 ||
-        max_count != round(max_count)) {
-      stop("`max_count` must be a single non-negative whole number.",
-           call. = FALSE)
-    }
-    P <- .fcr_prob_matrix(object, data, as.integer(max_count))
-    if (isTRUE(additional_args$overflow)) {
-      # Tail mass P(Y > max_count), so each row sums to 1
-      P <- cbind(P, pmax(0, 1 - rowSums(P)))
-      colnames(P)[ncol(P)] <- paste0(">", max_count)
-    }
+    y_tr <- object$model[["y"]]
+    counts <- .fcr_count_set(additional_args$counts,
+                             additional_args$max_count,
+                             if (!is.null(y_tr)) max(y_tr) else 20)
+    pa <- additional_args[intersect(names(additional_args),
+                                    c("newgroup", "method"))]
+    if (modtype == "countreg") pa <- list()
+    P <- .fcr_prob_table(
+      function(k) do.call(.fcr_count_pmf, c(list(object, data, k), pa)),
+      counts, additional_args$overflow, additional_args$underflow)
     return(P)
   }
   

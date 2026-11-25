@@ -880,10 +880,17 @@ countreg_mv <- function(formula, data, family = "NB2",
 
 # Probabilities of the counts 0..mc of equation j at random terms `add`
 # (n x (mc + 1)).
-.fcr_mv_pmf <- function(p, eq, add, mc) {
-  P <- vapply(0:mc, function(k) {
+.fcr_mv_pmf <- function(p, eq, add, counts) {
+  P <- vapply(counts, function(k) {
     eq$y <- rep(k, length(eq$y))
-    exp(.fcr_mv_eq_parts(p, eq, add, grad = FALSE)$ll)
+    v <- .fcr_mv_eq_parts(p, eq, add, grad = FALSE)
+    out <- exp(v$ll)
+    # Rows with missing values have no distribution (not probability 0)
+    miss <- is.na(v$mu)
+    if (!is.null(v$alpha)) miss <- miss | is.na(v$alpha)
+    if (!is.null(v$sigma)) miss <- miss | is.na(v$sigma)
+    out[miss] <- NA_real_
+    out
   }, numeric(length(eq$y)))
   matrix(P, nrow = length(eq$y))
 }
@@ -937,7 +944,7 @@ countreg_mv <- function(formula, data, family = "NB2",
 #'   \item{`"variance"`}{the variances (including the variance from the
 #'     random parameters).}
 #'   \item{`"prob"`}{a list with one matrix per outcome of the
-#'     probabilities of the counts `0:max_count`.}
+#'     probabilities of the counts in `counts` (or `0:max_count`).}
 #'   \item{`"joint"`}{the joint probability of the counts `y` of all
 #'     outcomes, one value per row.}
 #'   \item{`"conditional"`}{a matrix of the probabilities of the counts
@@ -945,8 +952,19 @@ countreg_mv <- function(formula, data, family = "NB2",
 #'     outcomes, such as the probability of a fatal crash at a site given
 #'     its injury crashes.}
 #'   }
-#' @param max_count for `"prob"` and `"conditional"`: the largest count
-#'   (default: the largest observed count of the outcome).
+#' @param counts for `"prob"` and `"conditional"`: the counts, such as `0:10`
+#'   or `5:8`.
+#' @param max_count for `"prob"` and `"conditional"`: short for
+#'   `counts = 0:max_count` (default: the largest observed count of the
+#'   outcome). For intervals, the largest count evaluated.
+#' @param overflow,underflow for `"prob"`: add columns with the probabilities
+#'   above and below the counts.
+#' @param interval,level confidence intervals for the expected counts or
+#'   prediction intervals for new counts of each outcome, as a list of data
+#'   frames (`fit`, `lwr`, `upr`) named by outcome; see the section
+#'   *Intervals of other estimators* of [predict.flexCountReg()]. With random
+#'   parameters, prediction intervals use 50 parameter draws by default and
+#'   are slow.
 #' @param y for `"joint"`: the counts of every outcome, a vector named by
 #'   outcome (the same for every row) or a matrix or data frame with one
 #'   column per outcome.
@@ -959,7 +977,7 @@ countreg_mv <- function(formula, data, family = "NB2",
 #'   its counts in the estimation data (Empirical Bayes; units not in the
 #'   estimation data get the marginal prediction). `newdata` then needs the
 #'   `group_var` column(s).
-#' @param ... unused.
+#' @param ... `ndraws` and `seed` for intervals.
 #' @return A matrix with one column per outcome (`"response"`, `"link"`,
 #'   `"variance"`), a list of matrices (`"prob"`), a vector (`"joint"`) or
 #'   a matrix with one column per count (`"conditional"`).
@@ -979,12 +997,26 @@ predict.countreg_mv <- function(object, newdata = NULL,
                                 max_count = NULL, y = NULL, outcome = NULL,
                                 given = NULL,
                                 random = c("marginal", "posterior"),
-                                new_data = NULL, ...) {
+                                new_data = NULL, counts = NULL,
+                                overflow = FALSE, underflow = FALSE,
+                                interval = c("none", "confidence",
+                                             "prediction"),
+                                level = 0.95, ...) {
   type <- match.arg(type)
   random <- match.arg(random)
+  interval <- match.arg(interval)
   if (is.null(newdata)) newdata <- new_data
   if (is.null(newdata)) newdata <- object$data_used
   newdata <- as.data.frame(newdata)
+  if (interval != "none") {
+    if (type != "response" || random != "marginal") {
+      stop("Intervals are available for type = \"response\" with random = ",
+           "\"marginal\".", call. = FALSE)
+    }
+    return(.fcr_general_interval(object, newdata, interval = interval,
+                                 level = level,
+                                 max_count = max_count %||% 1e4, ...))
+  }
   E <- .fcr_mv_design(object, newdata)
   p <- object$coefficients
   outs <- object$outcomes
@@ -1021,10 +1053,10 @@ predict.countreg_mv <- function(object, newdata = NULL,
   }
   if (type == "prob") {
     out <- lapply(seq_len(J), function(j) {
-      mc <- max_count %||% max(object$y[, j])
-      P <- integrate(function(adds) .fcr_mv_pmf(p, E$eqs[[j]], adds[[j]], mc))
-      colnames(P) <- 0:mc
-      P
+      .fcr_prob_table(function(k) integrate(function(adds)
+        .fcr_mv_pmf(p, E$eqs[[j]], adds[[j]], k)),
+        .fcr_count_set(counts, max_count, max(object$y[, j])), overflow,
+        underflow)
     })
     return(stats::setNames(out, outs))
   }
@@ -1054,26 +1086,27 @@ predict.countreg_mv <- function(object, newdata = NULL,
     stop("`given` cannot include the outcome itself.", call. = FALSE)
   }
   gj <- which(colSums(!is.na(Yg)) > 0)
-  mc <- max_count %||% max(object$y[, t])
+  cs <- .fcr_count_set(counts, max_count, max(object$y[, t]))
+  K <- length(cs)
   if (!is.null(object$copula)) {
     A <- integrate(function(adds) {
-      num <- vapply(0:mc, function(k) {
+      num <- vapply(cs, function(k) {
         Yk <- Yg
         Yk[, t] <- k
         .fcr_mv_cop_prob(object, E, Yk, adds)
       }, numeric(n))
       cbind(matrix(num, nrow = n), .fcr_mv_cop_prob(object, E, Yg, adds))
     })
-    P <- A[, seq_len(mc + 1L), drop = FALSE] / A[, mc + 2L]
-    colnames(P) <- 0:mc
+    P <- A[, seq_len(K), drop = FALSE] / A[, K + 1L]
+    colnames(P) <- cs
     return(P)
   }
   A <- integrate(function(adds) {
     base <- exp(.fcr_mv_logp(p, E, Yg, adds, which = gj))
-    cbind(.fcr_mv_pmf(p, E$eqs[[t]], adds[[t]], mc) * base, base)
+    cbind(.fcr_mv_pmf(p, E$eqs[[t]], adds[[t]], cs) * base, base)
   })
-  P <- A[, seq_len(mc + 1L), drop = FALSE] / A[, mc + 2L]
-  colnames(P) <- 0:mc
+  P <- A[, seq_len(K), drop = FALSE] / A[, K + 1L]
+  colnames(P) <- cs
   P
 }
 

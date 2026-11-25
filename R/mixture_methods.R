@@ -348,9 +348,10 @@
 #'     between components (`Inf` when a component with positive probability
 #'     has infinite variance).}
 #'   \item{`"prob"`}{a matrix of count probabilities
-#'     \eqn{P(Y = y) = \sum_k \pi_k f_k(y)} for \eqn{y = 0, \dots,}
-#'     `max_count` (passed in `...`; default the largest training count);
-#'     `overflow = TRUE` adds a column with \eqn{P(Y >} `max_count`\eqn{)}.}
+#'     \eqn{P(Y = y) = \sum_k \pi_k f_k(y)} for the counts \eqn{y} in
+#'     `counts`, or \eqn{y = 0, \dots,} `max_count` (default the largest
+#'     training count). `overflow = TRUE` and `underflow = TRUE` add columns
+#'     with the probabilities above and below them.}
 #'   \item{`"link"`}{a matrix of the component linear predictors
 #'     \eqn{x'\beta_k} plus offset. There is no single linear predictor of
 #'     the mixture. With random parameters (`rpar_formula`), it is the
@@ -398,10 +399,15 @@
 #'   prior. For panel models the membership variables must be constant
 #'   within each panel (in `newdata`, in `history` and between the two), as
 #'   in fitting, so the class probabilities never depend on the row order.
-#' @param interval only `"none"`: confidence, prediction and tolerance
-#'   intervals are not yet available for mixture models.
-#' @param level unused (for compatibility).
-#' @param ... `max_count` and `overflow` for `type = "prob"`.
+#' @param interval `"none"` (default), `"confidence"` (for the expected count)
+#'   or `"prediction"` (for a new count), for `type = "response"` with
+#'   `conditioning = "prior"`; see the section *Intervals of other
+#'   estimators* of [predict.flexCountReg()]. They use the asymptotic normal
+#'   distribution of the estimates, which is poor when components are weakly
+#'   separated or a mixing proportion is near 0.
+#' @param level the level of the interval.
+#' @param ... `counts`, `max_count`, `overflow` and `underflow` for
+#'   `type = "prob"`; `ndraws`, `seed` and `max_count` for intervals.
 #'
 #' @returns A numeric vector (`"response"`, `"variance"`) with one value per
 #'   row of the data, or a matrix (`"component"`, `"prob"`, `"link"`).
@@ -428,12 +434,6 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
   type <- match.arg(type)
   conditioning <- match.arg(conditioning)
   interval <- match.arg(interval)
-  if (interval != "none") {
-    stop("Confidence and prediction intervals are not yet available for ",
-         "finite-mixture models: the interval methods of countreg() assume ",
-         "a one-component model, and mixture intervals need their own ",
-         "validation.", call. = FALSE)
-  }
   dots <- list(...)
   if (!is.null(dots$method)) {
     stop("`method` does not apply to mixture models; use `conditioning`.",
@@ -447,6 +447,14 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
            call. = FALSE)
     }
     as.data.frame(object$data)
+  }
+  if (interval != "none") {
+    if (type != "response" || conditioning != "prior") {
+      stop("Intervals of mixture models are available for type = ",
+           "\"response\" with conditioning = \"prior\".", call. = FALSE)
+    }
+    return(.fcr_general_interval(object, data, interval = interval,
+                                 level = level, ...))
   }
   r <- .fcr_fm_rows(object, data)
   if (type == "link") {
@@ -468,24 +476,15 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
     return(out)
   }
   # type == "prob"
-  max_count <- dots$max_count
-  if (is.null(max_count)) max_count <- max(object$model$y %||% 20)
-  if (!is.numeric(max_count) || length(max_count) != 1L ||
-      !is.finite(max_count) || max_count < 0 ||
-      max_count != round(max_count)) {
-    stop("`max_count` must be a single non-negative whole number.",
-         call. = FALSE)
-  }
-  Pr <- .fcr_fm_prob_rows(r, P, max_count)
-  if (isTRUE(dots$overflow)) {
-    # P(Y > max_count) from the components' own upper tails, not as
-    # 1 - sum(P): the subtraction loses all relative accuracy once the tail
-    # is below the rounding error of 1 (Poisson(1): P(Y > 20) = 7.5e-21
-    # would become 0).
-    Pr <- cbind(Pr, exp(.fcr_fm_log_tail(r, LC, rep(max_count, r$n),
-                                         lower.tail = FALSE)))
-    colnames(Pr)[ncol(Pr)] <- paste0(">", max_count)
-  }
+  counts <- .fcr_count_set(dots$counts, dots$max_count,
+                           max(object$model$y %||% 20))
+  # P(Y > max) from the components' own upper tails, not as 1 - sum(P): the
+  # subtraction loses all relative accuracy once the tail is below the
+  # rounding error of 1 (Poisson(1): P(Y > 20) = 7.5e-21 would become 0).
+  Pr <- .fcr_prob_table(
+    function(k) .fcr_fm_prob_rows(r, P, k), counts, dots$overflow,
+    dots$underflow, upper = function(q)
+      exp(.fcr_fm_log_tail(r, LC, rep(q, r$n), lower.tail = FALSE)))
   Pr
 }
 
@@ -501,15 +500,15 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
   .fcr_lse_rows(M)
 }
 
-# Count probabilities of the mixture for k = 0..max_count.
-.fcr_fm_prob_rows <- function(r, P, max_count) {
-  out <- matrix(0, r$n, max_count + 1,
-                dimnames = list(NULL, as.character(0:max_count)))
+# Count probabilities of the mixture at `counts`.
+.fcr_fm_prob_rows <- function(r, P, counts) {
+  out <- matrix(0, r$n, length(counts),
+                dimnames = list(NULL, as.character(counts)))
   for (k in seq_len(r$ps$K)) {
     pk <- P[, k]
-    for (c in 0:max_count) {
-      lp <- .fcr_fm_row_logpmf_k(r, k, rep(c, r$n))
-      out[, c + 1] <- out[, c + 1] + ifelse(pk > 0, pk * exp(lp), 0)
+    for (j in seq_along(counts)) {
+      lp <- .fcr_fm_row_logpmf_k(r, k, rep(counts[j], r$n))
+      out[, j] <- out[, j] + ifelse(pk > 0, pk * exp(lp), 0)
     }
   }
   out[is.na(P[, 1]), ] <- NA
@@ -529,12 +528,6 @@ predict.countreg_mix <- function(object, newdata = NULL, ...,
     out[ok] <- .fcr_fm_logpmf(r$ps, sv, r$ps$families[k], y[ok])
   }
   out
-}
-
-# Probability matrix used by rootogram()
-.fcr_fm_prob_matrix <- function(object, data, max_count) {
-  r <- .fcr_fm_rows(object, data)
-  .fcr_fm_prob_rows(r, exp(r$logpi), max_count)
 }
 
 # Variance of the mixture at the prior probabilities (Pearson residuals)

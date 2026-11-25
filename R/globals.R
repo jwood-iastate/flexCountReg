@@ -4,5 +4,7 @@ utils::globalVariables(c(
   "underreport_formula", "logLikFunc", "fit",
   "method", "max.iters", "print.level",
   # quoted expressions evaluated by parsnip (see parsnip-count_reg.R)
-  "object", "new_data"
+  "object", "new_data",
+  # columns in fit_resamples_counts()
+  "truth"
 ))

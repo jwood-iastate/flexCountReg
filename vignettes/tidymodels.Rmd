@@ -72,12 +72,15 @@ augment(nb_fit, new_roads)[, c(".pred", ".resid", "Total_crashes")]
 ```
 
 `conf_int` is an interval for the expected count, `pred_int` for a future
-count. Everything else that `predict()` offers is available with
-`type = "raw"` and `opts`, such as the probabilities of 0 to 3 crashes:
+count. All engines have them except `countreg_fe`. Everything else that
+`predict()` offers is available with `type = "raw"` and `opts`, such as the
+probabilities of 0 to 3 crashes. `counts` chooses the counts, so a range such
+as `5:8` works too; `overflow = TRUE` (and `underflow = TRUE`) add the
+probabilities beyond the range:
 
 ```{r first-raw}
 predict(nb_fit, new_roads, type = "raw",
-        opts = list(type = "prob", max_count = 3, overflow = TRUE))
+        opts = list(type = "prob", counts = 0:3, overflow = TRUE))
 ```
 
 ## The engines
@@ -231,23 +234,19 @@ rank_results(res, rank_metric = "rmse")[, c("wflow_id", ".metric", "mean",
 
 RMSE and MAE only look at the expected count, and models with the same mean
 structure are hard to tell apart by them. To compare the *distributions*,
-score the predicted probabilities, here with the out-of-sample
-log-likelihood of each fold (see `vignette("predictive-validation",
-package = "flexCountReg")` for scores and calibration):
+score the predicted probabilities. `fit_resamples_counts()` resamples a
+workflow or specification like `fit_resamples()` and can add the mean
+log probability of the held-out counts (larger is better). See
+`vignette("predictive-validation", package = "flexCountReg")` for scores and
+calibration.
 
 ```{r logscore}
-log_score <- function(spec) {
-  sapply(folds$splits, function(s) {
-    f <- fit(spec, Total_crashes ~ lnaadt + lnlength + speed50,
-             data = analysis(s))
-    held_out <- assessment(s)
-    p <- predict(f, held_out, type = "raw",
-                 opts = list(type = "prob",
-                             max_count = max(roads$Total_crashes)))
-    mean(log(p[cbind(seq_len(nrow(p)), held_out$Total_crashes + 1)]))
-  })
-}
-sapply(specs[c("poisson", "nb2")], function(s) mean(log_score(s)))
+f <- Total_crashes ~ lnaadt + lnlength + speed50
+scores <- lapply(specs, fit_resamples_counts, resamples = folds,
+                 formula = f, log_score = TRUE)
+do.call(rbind, Map(function(s, nm) {
+  cbind(model = nm, s[s$.metric == "log_score", c("mean", "std_err")])
+}, scores, names(scores)))
 ```
 
 ## Tuning
@@ -372,18 +371,19 @@ mv_fit <- fit(mv_wf, sev)
 predict(mv_fit, sev[1:3, ])
 ```
 
-(The severities here are simulated.) The resampling functions of tune compute
-metrics for a single outcome, so validate these models with a loop over
-rsample splits:
+(The severities here are simulated.) Interval predictions have a pair of
+columns per outcome:
+
+```{r mv-int}
+predict(mv_fit, sev[1:3, ], type = "pred_int", level = 0.9)
+```
+
+The resampling functions of tune compute metrics for a single outcome.
+`fit_resamples_counts()` evaluates all of them:
 
 ```{r mv-validate}
 mv_folds <- group_vfold_cv(sev, group = ID, v = 3)
-do.call(rbind, lapply(mv_folds$splits, function(s) {
-  f <- fit(mv_wf, analysis(s))
-  a <- augment(f, assessment(s))
-  data.frame(injury = rmse_vec(a$injury, a$.pred_injury),
-             pdo = rmse_vec(a$pdo, a$.pred_pdo))
-})) |> colMeans()
+fit_resamples_counts(mv_wf, mv_folds, log_score = TRUE)
 ```
 
 ## Back to flexCountReg

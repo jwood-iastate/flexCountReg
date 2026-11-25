@@ -207,9 +207,9 @@ computer.
 - `summary()` gives the coefficient table, standard-error type, fit
   statistics and a likelihood-ratio test against the Poisson model.
 - `predict()` gives expected counts (one per row of `newdata`, `NA` for
-  incomplete rows), the probability of each count, and the components of
-  underreporting and zero models. For `countreg()` models it also gives
-  confidence intervals for the expected count and prediction intervals
+  incomplete rows), the probabilities of any set of counts, and the
+  components of underreporting and zero models. For every estimator
+  except `countreg_fe()` it also gives confidence intervals for the expected count and prediction intervals
   for a new count (`interval = "confidence"` or `"prediction"`). For
   random parameters models it offers exact, simulated and Empirical
   Bayes (`"Individual"`) predictions.

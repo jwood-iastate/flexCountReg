@@ -284,3 +284,66 @@ test_that("predict() of every class honors new_data", {
                  predict(m, newdata = d[3:5, ]))
   }
 })
+
+test_that("intervals of every engine but fixed effects", {
+  skip_if_not_installed("parsnip")
+  d <- roads_small()
+  f <- quiet(parsnip::fit(
+    count_reg() |> parsnip::set_engine("countreg_mv"),
+    cbind(c1, c2) ~ lnaadt, d))
+  p <- quiet(predict(f, d[1:3, ], type = "pred_int", level = 0.9))
+  expect_named(p, c(".pred_lower_c1", ".pred_upper_c1", ".pred_lower_c2",
+                    ".pred_upper_c2"))
+  expect_equal(nrow(p), 3)
+  p0 <- predict(f, d[0, ], type = "pred_int")
+  expect_named(p0, names(p))
+  f <- quiet(parsnip::fit(
+    count_reg() |> parsnip::set_engine("repois", group_var = "ID",
+                                       method = "BFGS"),
+    Total_crashes ~ lnaadt, d))
+  p <- predict(f, d[1:3, ], type = "conf_int")
+  expect_named(p, c(".pred_lower", ".pred_upper"))
+  expect_true(all(p$.pred_lower < p$.pred_upper))
+})
+
+test_that("fit_resamples_counts() evaluates every outcome", {
+  for (p in c("workflows", "rsample", "yardstick", "tidyselect")) {
+    skip_if_not_installed(p)
+  }
+  d <- roads_small()
+  set.seed(1)
+  cv <- rsample::group_vfold_cv(d, group = ID, v = 2)
+  spec <- count_reg() |> parsnip::set_engine("flexCountReg", method = "BFGS")
+  r <- fit_resamples_counts(spec, cv, Total_crashes ~ lnaadt,
+                            log_score = TRUE)
+  expect_equal(r$outcome, rep("Total_crashes", 3))
+  expect_equal(r$.metric, c("rmse", "mae", "log_score"))
+  expect_equal(r$n, c(2L, 2L, 2L))
+  s <- cv$splits[[1]]
+  f <- parsnip::fit(spec, Total_crashes ~ lnaadt, rsample::analysis(s))
+  te <- rsample::assessment(s)
+  by <- fit_resamples_counts(spec, cv, Total_crashes ~ lnaadt,
+                             log_score = TRUE, summarize = FALSE)
+  P <- predict(f$fit, te, type = "prob", max_count = 50)
+  expect_equal(by$.estimate[1:3], c(
+    rmse(te$Total_crashes, predict(f, te)$.pred),
+    mae(te$Total_crashes, predict(f, te)$.pred),
+    mean(log(P[cbind(seq_len(nrow(te)), te$Total_crashes + 1)]))))
+  # Several outcomes in a workflow
+  for (eng in c("countreg_mv", "countreg_alloc")) {
+    wf <- workflows::workflow() |>
+      workflows::add_variables(c(c1, c2), lnaadt) |>
+      workflows::add_model(count_reg() |> parsnip::set_engine(eng),
+                           formula = cbind(c1, c2) ~ lnaadt)
+    r <- quiet(fit_resamples_counts(wf, cv, log_score = TRUE))
+    expect_equal(r$outcome, rep(c("c1", "c2"), each = 3))
+    expect_true(all(is.finite(r$mean)))
+  }
+  # Without a model formula the outcome's name comes from the workflow
+  wf <- workflows::workflow() |> workflows::add_formula(Total_crashes ~ lnaadt)
+  r <- fit_resamples_counts(workflows::add_model(wf, spec), cv,
+                            summarize = FALSE)
+  expect_equal(by$.estimate[by$.metric != "log_score"], r$.estimate)
+  expect_error(fit_resamples_counts(spec, cv), "formula")
+  expect_error(fit_resamples_counts(spec, d, y ~ x), "resampling set")
+})

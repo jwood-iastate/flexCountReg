@@ -8,7 +8,8 @@
 //   HYPERPOIS  hyper-Poisson, rate lambda:       d E / d log(lambda) = Var
 //   DW         discrete Weibull, c = -log(theta): E = sum_k exp(-c k^b)
 //   GAMMACOUNT gamma renewal count, unit window, rate s:
-//              E = sum_k P(Gamma(k a, 1) <= s),  d E / d s = sum_k density
+//              E = sum_k P(Gamma(k a, 1) <= s),
+//              d E / d log(s) = s sum_k density (solved in log(s))
 //
 // DPO and hyper-Poisson probabilities are normalized by summing the weights
 // over a window around the mode, grown until the weights at its ends are 50
@@ -75,11 +76,13 @@ struct Table {
   int fam = 0;
   double loglam = 0, par = 1, lgpar = 0;
   bool ok = false;
+  bool wide = false;   // failed because the window outgrew its budget
   double logw(double y) const { return tab_logw(fam, y, loglam, par, lgpar); }
 };
 
 void tab_fill(Table &t, int fam, double loglam, double par) {
   t.ok = false;
+  t.wide = false;
   t.fam = fam; t.loglam = loglam; t.par = par;
   t.lgpar = (fam == 1) ? std::lgamma(par) : 0.0;
   double lam = std::exp(loglam);
@@ -88,11 +91,34 @@ void tab_fill(Table &t, int fam, double loglam, double par) {
   if (!R_FINITE(m) || !R_FINITE(sd)) return;
   double half = 10.0 * sd + 30.0;
   double L = std::max(0.0, std::floor(m - half)), R = std::ceil(m + half);
-  // Work budget: the window never needs more than a few dozen SDs
-  double maxW = std::min(200.0 * sd + 2000.0, 2e6);
+  // Work budget: the window never needs more than a few dozen SDs. For
+  // a double Poisson with small phi and small lambda the spread is not
+  // sqrt(lambda / phi) but up to about 1 / phi
+  double maxW = 200.0 * sd + 2000.0;
+  if (fam == 0 && par < 1.0) maxW += 100.0 / par;
+  maxW = std::min(maxW, 2e6);
+  if (fam == 0 && par < 1.0 && loglam <= 0) {
+    // Quick check that the weights cannot fall 50 log units within the
+    // budget (the window would grow past it after much work): with
+    // lambda <= 1, -(log w(k + 1) - log w(k)) is at most
+    // 1 - phi - phi log(lambda) at k = 0 and
+    // phi (log(k + 1) - log(lambda)) + 1 / (2 k) for k >= 1, so the fall
+    // from any point to y = maxW is at most D below.
+    double Rw = maxW, l1 = std::log1p(Rw);
+    double D = std::max(0.0, 1.0 - par - par * loglam) +
+      par * ((Rw + 1.0) * l1 - Rw - Rw * loglam) +
+      0.5 * (1.0 + std::log(Rw));
+    if (D < 50.0) {
+      t.wide = true;
+      return;
+    }
+  }
   double top = NEG_INF;
   while (true) {
-    if (R - L > maxW) return;
+    if (R - L > maxW) {
+      t.wide = true;
+      return;
+    }
     t.L0 = L;
     t.lw.resize((std::size_t) (R - L + 1));
     top = NEG_INF;
@@ -109,11 +135,34 @@ void tab_fill(Table &t, int fam, double loglam, double par) {
     std::size_t n = t.lw.size();
     double dr1 = t.lw[n - 1] - t.lw[n - 2], dr2 = t.lw[n - 2] - t.lw[n - 3];
     bool okR = t.lw[n - 1] < top - 50.0 && dr1 < 0 && dr1 <= dr2;
+    double ltail_bound = NA_REAL;
+    if (!okR && fam == 0 && par < 1.0) {
+      // Double Poisson with phi < 1: log w(y + 1) - log w(y) =
+      // phi (log(lambda) - log(y + 1)) + (1 - phi) (y log(1 + 1 / y) - 1),
+      // and y log(1 + 1 / y) < 1, so beyond R every ratio is below
+      // exp(B), B = phi (log(lambda) - log(R + 1)). The ratios themselves
+      // increase towards that bound (the second term tends to 0 from
+      // below), which the test above rejects; for small phi this happens
+      // over hundreds of thousands of terms. The geometric bound on the
+      // tail is accepted once it is negligible.
+      double B = par * (loglam - std::log(R + 1.0));
+      if (B < 0) {
+        double lt = t.lw[n - 1] + B - std::log(-std::expm1(B));
+        if (lt < top - 45.0) {
+          okR = true;
+          ltail_bound = lt;
+        }
+      }
+    }
     double dl1 = t.lw[0] - t.lw[1], dl2 = t.lw[1] - t.lw[2];
     bool okL = (L == 0) || (t.lw[0] < top - 50.0 && dl1 < 0 && dl1 <= dl2);
     if (okR && okL) {
-      double r = std::exp(dr1);
-      t.ltail_r = t.lw[n - 1] + std::log(r) - std::log1p(-r);
+      if (ISNAN(ltail_bound)) {
+        double r = std::exp(dr1);
+        t.ltail_r = t.lw[n - 1] + std::log(r) - std::log1p(-r);
+      } else {
+        t.ltail_r = ltail_bound;
+      }
       if (L > 0) {
         double rl = std::exp(dl1);
         t.ltail_l = t.lw[0] + std::log(rl) - std::log1p(-rl);
@@ -182,20 +231,51 @@ double tab_upper(const Table &t, double y) {
 
 // log(lambda) with mean mu; the table is left filled at the solution
 double tab_solve(Table &t, int fam, double mu, double par) {
+  // A double Poisson with phi < 1 has variance near mu / phi; the window
+  // budget (2e6 terms, see tab_fill) holds up to mu / phi of about 1e10.
+  // Well beyond that the solve fails anyway, after many costly tables.
+  if (fam == 0 && par < 1.0 && mu > 1e11 * par) return NA_REAL;
   double v = std::log(mu);
   if (fam == 1) v = std::log(std::max(mu * par, mu + par - 1.0));
   double lo = NEG_INF, hi = R_PosInf;
-  for (int it = 0; it < 100; ++it) {
+  bool hi_fail = false;   // hi set by a failed (too wide) table
+  for (int it = 0; it < 200; ++it) {
     tab_fill(t, fam, v, par);
-    if (!t.ok) return NA_REAL;
+    if (!t.ok) {
+      // A double Poisson with small phi whose weights spread over more
+      // terms than the budget has a mean above any that can be handled:
+      // treat it as too large (from the start log(mu), e.g. phi = 1e-6
+      // and mu = 0.5, the solution is near log(lambda) = -5.8e5)
+      if (!(t.wide && fam == 0 && par < 1.0)) return NA_REAL;
+      hi = v;
+      hi_fail = true;
+      // The mean is continuous in log(lambda): when the bracket has shrunk
+      // this far with a mean still too small at lo, the solution needs a
+      // window beyond the budget
+      if (R_FINITE(lo) && hi - lo <= 1e-8 * std::max(1.0, std::fabs(v))) {
+        return NA_REAL;
+      }
+      v = R_FINITE(lo) ? 0.5 * (lo + hi) : v - std::max(5.0, std::fabs(v));
+      continue;
+    }
     double f = t.mean - mu;
     if (std::fabs(f) <= 1e-13 * mu) return v;
-    if (f < 0) lo = v; else hi = v;
+    if (f < 0) {
+      lo = v;
+    } else {
+      hi = v;
+      hi_fail = false;
+    }
     if (R_FINITE(lo) && R_FINITE(hi) &&
-        hi - lo <= 1e-14 * std::max(1.0, std::fabs(v))) return v;
+        hi - lo <= 1e-14 * std::max(1.0, std::fabs(v))) {
+      return hi_fail ? NA_REAL : v;
+    }
     double slope = ((fam == 0) ? par : 1.0) * t.var;
     double vn = (slope > 0) ? v - f / slope : NA_REAL;
-    double step_max = 5.0;
+    // Steps grow with |log(lambda)|: for a double Poisson with small phi,
+    // log(lambda) is of order -1 / phi (e.g. about -500 at phi = 0.002 and
+    // mean 0.5), out of reach of fixed steps of 5
+    double step_max = std::max(5.0, std::fabs(v));
     if (!R_FINITE(vn) || vn <= lo || vn >= hi ||
         std::fabs(vn - v) > step_max) {
       if (R_FINITE(lo) && R_FINITE(hi)) vn = 0.5 * (lo + hi);
@@ -290,67 +370,181 @@ double dw_solve(double mu, double b) {
 }
 
 // ---- gamma renewal count (unit window) ---------------------------------------
+//
+// Everything is in v = log(s): for small shapes the rate s that gives a
+// moderate mean underflows (P(Y >= k) = P(Gamma(k a) <= s) is close to
+// exp(k a log s), so a mean of 0.5 at a = 0.001 needs log s = -1100).
 
-struct GCSums { double E, dE, E2; };
+// log P(Gamma(x, 1) <= s) (lower) or > s, s = exp(v). Below s = exp(-700)
+// the series P = s^x e^(-s) / Gamma(x + 1) sum_n s^n / ((x + 1)...(x + n))
+// is s^x / Gamma(x + 1) to double precision.
+double gc_lpg(double v, double s, double x, bool lower) {
+  if (v > -700.0) return R::pgamma(s, x, 1.0, lower ? 1 : 0, 1);
+  double lg = x * v - std::lgamma(x + 1.0);
+  return lower ? lg : log1mexp(lg);
+}
 
-// Work is capped (5000 terms past the leading ones); beyond it the result is
-// NA (only reached for extreme shapes, roughly a < 0.005, i.e. a dispersion
-// index above about 200).
-GCSums gc_sums(double s, double a, bool second) {
-  GCSums r = {0.0, 0.0, 0.0};
-  if (!R_FINITE(s) || s <= 0 || !R_FINITE(a) || a <= 0) {
+// d P(Gamma(x) <= s) / d log(s) = s dgamma(s; x)
+inline double gc_dens(double v, double s, double x) {
+  return std::exp(x * v - s - std::lgamma(x));
+}
+
+// 20-point Gauss-Legendre nodes and weights on [-1, 1]
+struct GL20 {
+  double x[20], w[20];
+  GL20() {
+    const int n = 20;
+    for (int i = 0; i < n; ++i) {
+      double z = std::cos(M_PI * (i + 0.75) / (n + 0.5)), dp = 1.0;
+      for (int it = 0; it < 100; ++it) {
+        double p0 = 1.0, p1 = 0.0;
+        for (int j = 0; j < n; ++j) {
+          double p2 = p1;
+          p1 = p0;
+          p0 = ((2.0 * j + 1.0) * z * p1 - j * p2) / (j + 1.0);
+        }
+        dp = n * (z * p0 - p1) / (z * z - 1.0);
+        double dz = p0 / dp;
+        z -= dz;
+        if (std::fabs(dz) < 1e-16) break;
+      }
+      x[i] = z;
+      w[i] = 2.0 / ((1.0 - z * z) * dp * dp);
+    }
+  }
+};
+
+const GL20 &gl20() {
+  static const GL20 g;
+  return g;
+}
+
+struct GCSums { double E, dE, E2; bool approx; };
+
+// E = sum_k G(k a), dE = d E / d log(s) = sum_k s dgamma(s; k a) and
+// E2 = sum_k (2k - 1) G(k a), with G(x) = P(Gamma(x) <= s). Terms with
+// G = 1 to double precision (k a more than 10 sd + 40 below s) are counted
+// without evaluation; then up to N0 terms are summed directly. When the
+// terms decrease too slowly for that (small shapes: the terms vary on a
+// scale of about 1 / a terms), the rest of each sum is computed by the
+// Euler-Maclaurin formula,
+//   sum_{k > K} f(k) = int_K^Inf f - f(K) / 2 - f1(K) / 12 + f3(K) / 720
+// (f1, f3 the first and third derivatives, by finite differences), with the
+// integral by 20-point Gauss-Legendre panels in x = k a (approx = true).
+GCSums gc_sums(double v, double a, bool second) {
+  GCSums r = {0.0, 0.0, 0.0, false};
+  if (ISNAN(v) || !R_FINITE(a) || a <= 0 || v == R_PosInf) {
     r.E = r.dE = r.E2 = NA_REAL;
     return r;
   }
-  // P(Gamma(k a) <= s) is 1 to double precision while k a is more than
-  // 10 sd + 40 below s: those terms are counted without evaluation
+  double s = std::exp(v);
   double klow = std::floor((s - 10.0 * std::sqrt(s) - 40.0) / a);
   if (klow < 0) klow = 0;
   r.E = klow;
   if (second) r.E2 = klow * klow;   // sum_{k <= klow} (2k - 1)
+  const double N0 = 1000.0;
   double prev = 2.0;
-  bool done = false;
-  for (double k = klow + 1.0; k <= klow + 5000.0; k += 1.0) {
-    double p = R::pgamma(s, k * a, 1.0, 1, 0);
+  double K = klow + N0;
+  for (double k = klow + 1.0; k <= K; k += 1.0) {
+    double p = std::exp(gc_lpg(v, s, k * a, true));
     r.E += p;
-    r.dE += R::dgamma(s, k * a, 1.0, 0);
+    r.dE += gc_dens(v, s, k * a);
     if (second) r.E2 += (2.0 * k - 1.0) * p;
     // Past the bulk, the terms decrease ever faster, so the remainder is
     // below the geometric bound p r / (1 - r) with r = p / prev
     if (k * a > s && p < prev) {
       double ratio = p / prev;
       if (p == 0.0 || p / (1.0 - ratio) < 1e-16 * std::max(r.E, 1e-300)) {
-        done = true;
-        break;
+        return r;
       }
     }
     prev = p;
   }
-  if (!done) r.E = r.dE = r.E2 = NA_REAL;
+  // Euler-Maclaurin remainder beyond K
+  r.approx = true;
+  double g[5], d[5], q[5];   // G, density and (2k - 1) G at k = K - 2..K + 2
+  for (int j = 0; j < 5; ++j) {
+    double k = K + j - 2.0;
+    g[j] = std::exp(gc_lpg(v, s, k * a, true));
+    d[j] = gc_dens(v, s, k * a);
+    q[j] = (2.0 * k - 1.0) * g[j];
+  }
+  auto fd1 = [](const double *f) {
+    return (-f[4] + 8.0 * f[3] - 8.0 * f[1] + f[0]) / 12.0;
+  };
+  auto fd3 = [](const double *f) {
+    return (f[4] - 2.0 * f[3] + 2.0 * f[1] - f[0]) / 2.0;
+  };
+  // Integrals over x from K a, in panels of a width resolving G and the
+  // density: about sqrt(s) wide for large s, about 1 / |log s| for small s
+  const GL20 &gl = gl20();
+  double w = (v >= 0) ? 0.25 * std::max(1.0, std::sqrt(s)) :
+    0.25 / std::max(1.0, -v);
+  double IG = 0.0, ID = 0.0, IX = 0.0, prevG = R_PosInf;
+  double x0 = K * a;
+  bool done = false;
+  for (int pan = 0; pan < 200000; ++pan) {
+    double lo = x0 + pan * w, c = lo + 0.5 * w;
+    double sG = 0.0, sD = 0.0, sX = 0.0;
+    for (int j = 0; j < 20; ++j) {
+      double x = c + 0.5 * w * gl.x[j];
+      double gx = std::exp(gc_lpg(v, s, x, true));
+      sG += gl.w[j] * gx;
+      sD += gl.w[j] * gc_dens(v, s, x);
+      sX += gl.w[j] * x * gx;
+    }
+    sG *= 0.5 * w; sD *= 0.5 * w; sX *= 0.5 * w;
+    IG += sG; ID += sD; IX += sX;
+    if (lo > s && sG <= prevG &&
+        sG < 1e-17 * (r.E + IG / a) && sD < 1e-17 * (r.dE + ID / a)) {
+      done = true;
+      break;
+    }
+    prevG = sG;
+  }
+  if (!done) {
+    r.E = r.dE = r.E2 = NA_REAL;
+    return r;
+  }
+  r.E += IG / a - g[2] / 2.0 - fd1(g) / 12.0 + fd3(g) / 720.0;
+  r.dE += ID / a - d[2] / 2.0 - fd1(d) / 12.0 + fd3(d) / 720.0;
+  if (second) {
+    // int_K^Inf (2k - 1) G(k a) dk = (2 / a^2) int x G dx - (1 / a) int G dx
+    r.E2 += 2.0 * IX / (a * a) - IG / a - q[2] / 2.0 - fd1(q) / 12.0 +
+      fd3(q) / 720.0;
+  }
   return r;
 }
 
 // log(s) with mean mu
 double gc_solve(double mu, double a) {
-  double s0 = (mu < 1.0) ? std::pow(mu * std::exp(std::lgamma(a + 1.0)),
-                                   1.0 / a) : a * mu + (a - 1.0) / 2.0;
-  if (!(s0 > 0) || !R_FINITE(s0)) s0 = a * mu;
-  double v = std::log(s0);
+  double v;
+  if (a < 0.05) {
+    // Small shapes: nearly geometric, P(Y >= k) ~ exp(k a log s)
+    v = std::log(mu / (1.0 + mu)) / a;
+  } else {
+    double s0 = (mu < 1.0) ? std::pow(mu * std::exp(std::lgamma(a + 1.0)),
+                                     1.0 / a) : a * mu + (a - 1.0) / 2.0;
+    if (!(s0 > 0) || !R_FINITE(s0)) s0 = a * mu;
+    v = std::log(s0);
+  }
   double lo = NEG_INF, hi = R_PosInf;
-  for (int it = 0; it < 100; ++it) {
-    double s = std::exp(v);
-    GCSums r = gc_sums(s, a, false);
+  for (int it = 0; it < 200; ++it) {
+    GCSums r = gc_sums(v, a, false);
     if (ISNAN(r.E)) return NA_REAL;
     double f = r.E - mu;
-    if (std::fabs(f) <= 1e-13 * mu) return v;
+    // The Euler-Maclaurin sums are accurate to about 1e-12
+    if (std::fabs(f) <= (r.approx ? 1e-11 : 1e-13) * mu) return v;
     if (f < 0) lo = v; else hi = v;     // E increases in s
     if (R_FINITE(lo) && R_FINITE(hi) &&
         hi - lo <= 1e-14 * std::max(1.0, std::fabs(v))) return v;
-    double slope = s * r.dE;
+    double slope = r.dE;
     double vn = (slope > 0) ? v - f / slope : NA_REAL;
-    if (!R_FINITE(vn) || vn <= lo || vn >= hi || std::fabs(vn - v) > 5.0) {
+    double step_max = std::max(5.0, std::fabs(v));
+    if (!R_FINITE(vn) || vn <= lo || vn >= hi ||
+        std::fabs(vn - v) > step_max) {
       if (R_FINITE(lo) && R_FINITE(hi)) vn = 0.5 * (lo + hi);
-      else vn = v + ((f < 0) ? 5.0 : -5.0);
+      else vn = v + ((f < 0) ? step_max : -step_max);
     }
     if (std::fabs(vn - v) <= 1e-15 * std::max(1.0, std::fabs(v))) return vn;
     v = vn;
@@ -418,7 +612,7 @@ NumericVector gc_mp_cpp(NumericVector mu, NumericVector a, int what) {
       out[i] = v;
       continue;
     }
-    GCSums r = gc_sums(std::exp(v), a[i], true);
+    GCSums r = gc_sums(v, a[i], true);
     out[i] = std::max(r.E2 - r.E * r.E, 0.0);
   }
   return out;

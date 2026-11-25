@@ -85,8 +85,13 @@
 #'   Standard errors are cluster-robust by the first fixed-effect variable
 #'   by default, with the factor \eqn{G/(G-1)} for \eqn{G} clusters. They
 #'   equal those of \code{fixest::fepois()} and \code{fixest::fenegbin()}
-#'   with \code{ssc(adj = FALSE)}; by default fixest also multiplies the
-#'   variance by \eqn{(n-1)/(n-K)}. The log-likelihood is that of the dummy-variable model,
+#'   when the clustering is given explicitly, \code{vcov = ~ site} (fixest
+#'   0.13 and later default to iid standard errors), with
+#'   \code{ssc(adj = FALSE)}; by default fixest also multiplies the
+#'   variance by \eqn{(n-1)/(n-K)}. \code{vcov(fit, type = "robust")}
+#'   treats each group as an independent unit with the conditional and
+#'   concentrated likelihoods (it is clustered by group, without
+#'   \eqn{G/(G-1)}), and each row with the \code{"demean"} method. The log-likelihood is that of the dummy-variable model,
 #'   and its degrees of freedom count the fixed effects, so AIC and BIC
 #'   compare with models that estimate them.
 #'
@@ -104,7 +109,10 @@
 #'   \code{predict()} uses each known group's estimated effect. A group not
 #'   in the estimation data has no fixed effect: its prediction is
 #'   \code{NA}, unless \code{newgroup = "mean_fe"} is given to use the
-#'   weighted mean of the estimated effects.
+#'   mean of the estimated effects, weighted by the groups' sizes in the
+#'   estimation sample (their numbers of rows, counted with the frequency
+#'   weights). This mean is fixed at estimation, so the prediction for a new
+#'   group does not depend on the other rows of \code{newdata}.
 #'
 #' @references
 #' Allison, P.D. and Waterman, R.P. (2002). Fixed-effects negative binomial
@@ -201,9 +209,12 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
       g <- fe[[v]]
       tot <- tapply(w * y * keep, g, sum)
       n_g <- tapply(keep, g, sum)
+      # Observations of a group, counting frequency weights (a row with
+      # weight 3 is three observations, as in the expanded data)
+      n_obs <- tapply(w * keep, g, sum)
       zero <- names(tot)[tot == 0 & n_g > 0]
       single <- if (family == "POISSON" || method == "concentrated")
-        names(n_g)[n_g == 1]
+        names(n_obs)[n_g > 0 & n_obs <= 1]
       bad <- union(zero, single)
       if (length(bad)) {
         hit <- keep & g %in% bad
@@ -227,7 +238,8 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
   # the blueprint keeps the rebuilt smooths for prediction
   if (length(prep$smooth$main)) {
     sm_specs <- .fcr_smooth_split(formula)$specs
-    built <- .fcr_smooth_build(sm_specs, data[rows[idx], , drop = FALSE])
+    built <- .fcr_smooth_build(sm_specs,
+                               droplevels(data[rows[idx], , drop = FALSE]))
     old_cols <- unlist(lapply(prep$smooth$main, `[[`, "cols"))
     p0 <- min(old_cols) - 1L
     newB <- matrix(NA_real_, nrow(X), ncol(built$B),
@@ -402,6 +414,11 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
     fe_method_label = label, modelType = "countreg_fe",
     formula = formula, fixef_formula = fixef, fixef_vars = fe_vars,
     fixef = fit$fixef, n_fe = n_fe, dropped = dropped,
+    # Size of each group (sum of the frequency weights of its rows) in the
+    # estimation sample, in the order of `fixef`
+    fixef_n = stats::setNames(lapply(seq_along(fe), function(d)
+      as.vector(rowsum(w, as.integer(fe[[d]]), reorder = TRUE))),
+      names(fit$fixef)),
     not_identified = not_identified, jackknife = jk,
     blueprint = prep$blueprint, offset = prep$blueprint$offset_label,
     y = y, nobs = length(y), n_groups = nlevels(fe[[1]]),
@@ -749,8 +766,13 @@ countreg_fe <- function(formula, fixef, data, family = "POISSON",
     val <- a[match(as.character(data[[v]]), names(a))]
     new <- is.na(val) & !is.na(data[[v]])
     if (any(new) && newgroup == "mean_fe") {
-      val[new] <- stats::weighted.mean(a, as.vector(table(factor(
-        as.character(data[[v]])[!new], levels = names(a))) + 1e-12))
+      # A fixed mean of the estimated effects, weighted by the groups' sizes
+      # in the estimation sample (plain mean for fits that predate the
+      # stored sizes), so a new group's prediction does not depend on the
+      # other rows of newdata
+      n_g <- m$fixef_n[[d]]
+      val[new] <- if (length(n_g) == length(a)) stats::weighted.mean(a, n_g)
+        else mean(a)
     }
     unknown <- unknown | is.na(val)
     tot <- tot + ifelse(is.na(val), 0, val)

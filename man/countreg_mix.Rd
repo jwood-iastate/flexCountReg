@@ -184,8 +184,9 @@ a Cholesky factor (\verb{Chol:}) in each class.}
 
 \item{rpar_draws}{the number of simulation draws of the random
 parameters for each unit (randomly shifted Halton points, a separate
-block for each unit, the same draws for every class). They are
-generated from a seed derived from \code{seed}.}
+block for each unit, the same draws for every class up to the signs
+described in "Random parameters within classes"). They are generated
+from a seed derived from \code{seed}.}
 }
 \value{
 An object of class \code{c("countreg_mix", "flexCountReg")}
@@ -276,10 +277,32 @@ here) before the direct maximization finishes it. Every class uses the
 same draws of a unit (common random numbers): the class likelihoods stay
 unbiased, their simulation errors largely cancel in the posterior class
 probabilities, and relabeling the classes leaves the simulated
-likelihood unchanged. Different units have independent draws. Predictions and probabilities integrate over the random
+likelihood unchanged. Different units have independent draws.
+
+Only the absolute values of the scales are identified (and, with
+\code{correlated = TRUE}, the signs of the columns of each class's Cholesky
+factor): the fit reports positive standard deviations and a positive
+Cholesky diagonal. A Cholesky column is re-signed together with that
+class's standardized draws of the parameter (\code{fit$model$rpar$signs}),
+which leaves the simulated likelihood unchanged, so the reported maximum,
+gradient, Hessian and posterior probabilities all refer to the reported
+coefficients. Bootstrap refits are normalized the same way before their
+classes are aligned.
+
+Predictions and probabilities integrate over the random
 parameters (\code{predict()}, \code{component_probs()}, \code{rootogram()}, residuals);
-\code{simulate()} draws new coefficients for every unit. Smooth terms are not
-yet available with random parameters.
+\code{simulate()} draws new coefficients for every unit. The component
+expected counts are exact, from the moment generating functions of the
+random parameters (as \code{method = "Exact"} in \code{\link[=countreg_rp]{countreg_rp()}}), when the
+family's mean is proportional to \eqn{\mu}; they are \code{Inf}, with a
+warning, where the expected count does not exist (a lognormal random
+parameter with a positive variable, or a gamma one with
+\eqn{x \sigma^2 / \mu \ge 1}), and component variances likewise where
+the second moment does not exist. Count probabilities and class
+posteriors are simulated. Conditioning on outcomes (\code{"posterior"},
+\code{"history"}) updates the class probabilities only, not the random
+parameters within the classes. Smooth terms are not yet available with
+random parameters.
 
 Random parameters and classes can both explain heterogeneity, so the
 fit can be weakly identified: a class can stand in for a tail of a

@@ -114,6 +114,11 @@ msm <- fit_basis("smooth")
 temporal_effects(msm)
 ```
 
+Any mgcv basis can be used (for example `bs = "cr"`); the effects are
+reported at the years of the estimation data. Smooths of time written
+directly with `s()` are ordinary smooth terms, not time-varying effects,
+and `temporal_effects()` leaves them out.
+
 ## 3. Time-varying intercepts and distribution parameters
 
 `tv(1, time = Year)` lets the intercept vary by year. With an intercept in
@@ -162,6 +167,14 @@ temporal_effects(r)
 `tv()` can also appear in `rpar_formula`. `temporal_effects()` then
 reports the year effects of the random parameters' means, and each basis
 column has its own standard deviation.
+
+In the multivariate models of `countreg_mv()`, `tv()` terms can differ by
+outcome, and `temporal_effects()` and `temporal_tests()` add a column
+`outcome`.
+
+A `tv()` term inside an interaction, such as `tv(lnaadt, time = Year):speed50`,
+is not summarized by `temporal_effects()` (it warns). Put the product
+inside `tv()` instead: `tv(lnaadt * speed50, time = Year)`.
 
 ## Reference
 

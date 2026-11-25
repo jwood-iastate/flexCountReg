@@ -109,8 +109,13 @@ dispersion) and is not provided.
 Standard errors are cluster-robust by the first fixed-effect variable
 by default, with the factor \eqn{G/(G-1)} for \eqn{G} clusters. They
 equal those of \code{fixest::fepois()} and \code{fixest::fenegbin()}
-with \code{ssc(adj = FALSE)}; by default fixest also multiplies the
-variance by \eqn{(n-1)/(n-K)}. The log-likelihood is that of the dummy-variable model,
+when the clustering is given explicitly, \code{vcov = ~ site} (fixest
+0.13 and later default to iid standard errors), with
+\code{ssc(adj = FALSE)}; by default fixest also multiplies the
+variance by \eqn{(n-1)/(n-K)}. \code{vcov(fit, type = "robust")}
+treats each group as an independent unit with the conditional and
+concentrated likelihoods (it is clustered by group, without
+\eqn{G/(G-1)}), and each row with the \code{"demean"} method. The log-likelihood is that of the dummy-variable model,
 and its degrees of freedom count the fixed effects, so AIC and BIC
 compare with models that estimate them.
 
@@ -128,7 +133,10 @@ with smooth terms.
 \code{predict()} uses each known group's estimated effect. A group not
 in the estimation data has no fixed effect: its prediction is
 \code{NA}, unless \code{newgroup = "mean_fe"} is given to use the
-weighted mean of the estimated effects.
+mean of the estimated effects, weighted by the groups' sizes in the
+estimation sample (their numbers of rows, counted with the frequency
+weights). This mean is fixed at estimation, so the prediction for a new
+group does not depend on the other rows of \code{newdata}.
 }
 \examples{
 \donttest{

@@ -108,6 +108,12 @@ margEffTable <- function(object,
   indicator <- match.arg(indicator)
   se <- match.arg(se)
   tableType <- match.arg(tableType)
+  is_mv <- inherits(object, "countreg_mv")
+  if (is_mv && se == "bootstrap") {
+    stop("Bootstrap standard errors of marginal effects are not available ",
+         "for multivariate models (countreg_mv()); use se = \"delta\".",
+         call. = FALSE)
+  }
   if (inherits(object, "countreg_mix") && se == "bootstrap") {
     stop("Bootstrap standard errors of marginal effects are not yet ",
          "available for mixture models (each refit needs several starts ",
@@ -123,6 +129,13 @@ margEffTable <- function(object,
   # Without `data`, the effects average over the rows used in estimation,
   # counting each row with its frequency weight
   w_rows <- NULL
+  if (is_mv && is.null(data)) {
+    data <- object$data_used
+    if (!is.null(object$call$weights) &&
+        length(object$weights) == nrow(data)) {
+      w_rows <- object$weights
+    }
+  }
   if (is.null(data) && !is.null(object$data)) {
     data <- .fcr_training_rows(object)
     if (!is.null(object$call$weights) &&
@@ -150,38 +163,43 @@ margEffTable <- function(object,
     pred_method <- "Exact"
   }
   
-  candidate_vars <- .margEff_default_vars(object, data)
-  if (is.null(vars)) {
-    vars <- candidate_vars
-  } else {
+  if (!is.null(vars)) {
     missing_vars <- setdiff(vars, names(data))
     if (length(missing_vars) > 0L) {
       stop("The following variables are not in `data`: ", paste(missing_vars, collapse = ", "))
     }
   }
-  
-  if (length(vars) == 0L) {
-    stop("No eligible variables were found for marginal-effect computation.")
+
+  # Multivariate models: the effects on the mean of each outcome in turn
+  # (the outcome is recorded in the object for .margEff_predict())
+  targets <- if (is_mv) as.list(object$outcomes) else list(NULL)
+  eff_rows <- list()
+  for (oc in targets) {
+    obj <- object
+    if (is_mv) obj$me_outcome <- oc
+    vv <- vars %||% .margEff_default_vars(obj, data)
+    for (v in vv) {
+      row <- .margEff_one_term(
+        object = obj,
+        data = data,
+        var = v,
+        measure = measure,
+        indicator = indicator,
+        se = se,
+        bootstraps = bootstraps,
+        pred_method = pred_method,
+        confint_level = confint_level,
+        cluster_var = cluster_var,
+        w = w_rows,
+        ...
+      )
+      if (is_mv) row <- cbind(outcome = oc, row, stringsAsFactors = FALSE)
+      eff_rows[[length(eff_rows) + 1L]] <- row
+    }
   }
-  
-  eff_rows <- vector("list", length(vars))
-  
-  for (i in seq_along(vars)) {
-    v <- vars[[i]]
-    eff_rows[[i]] <- .margEff_one_term(
-      object = object,
-      data = data,
-      var = v,
-      measure = measure,
-      indicator = indicator,
-      se = se,
-      bootstraps = bootstraps,
-      pred_method = pred_method,
-      confint_level = confint_level,
-      cluster_var = cluster_var,
-      w = w_rows,
-      ...
-    )
+
+  if (length(eff_rows) == 0L) {
+    stop("No eligible variables were found for marginal-effect computation.")
   }
   
   out <- do.call(rbind, lapply(eff_rows, as.data.frame))
@@ -278,6 +296,7 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_model_type <- function(object) {
+  if (inherits(object, "countreg_mv")) return("countreg_mv")
   if (!is.null(object$modelType)) {
     return(object$modelType)
   }
@@ -302,6 +321,9 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_default_vars <- function(object, data) {
+  if (inherits(object, "countreg_mv")) {
+    return(.margEff_mv_default_vars(object, data))
+  }
   # Hierarchical models: the fixed part (the grouping variables of the
   # random-effect terms are not candidates)
   form <- object$model$fixed_formula %||% object$formula
@@ -333,9 +355,12 @@ print.flexEffectTable <- function(x, ...) {
   
   # Time variables of tv() terms: the periods are fixed at their training
   # values, so the time variable is not a marginal-effect candidate
-  special_vars <- .fcr_tv_time_vars(c(list(form), aux,
-                                      list(m$dis_param_formula_1,
-                                           m$dis_param_formula_2)))
+  # (tv(basis = "smooth") terms are stored as s(time, by = x), so their
+  # time variables come from the blueprint)
+  special_vars <- c(.fcr_tv_time_vars(c(list(form), aux,
+                                        list(m$dis_param_formula_1,
+                                             m$dis_param_formula_2))),
+                    .fcr_tv_smooth_time_vars(object))
   if (!is.null(object$model)) {
     if (!is.null(object$model[["offset"]])) {
       special_vars <- c(special_vars, object$model[["offset"]])
@@ -356,6 +381,35 @@ print.flexEffectTable <- function(x, ...) {
   term_vars <- setdiff(term_vars, special_vars)
   term_vars <- intersect(term_vars, names(data))
   term_vars
+}
+
+# Variables of the right-hand side terms of a formula (not those used only
+# in offset()).
+.margEff_term_vars <- function(form) {
+  if (is.null(form)) return(character(0))
+  tt <- stats::delete.response(stats::terms(form))
+  unique(unlist(lapply(attr(tt, "term.labels"), function(l)
+    all.vars(str2lang(l)))))
+}
+
+# Default variables of outcome `object$me_outcome` of a multivariate model
+# (countreg_mv()): those of its mean and random-parameter formulas, and of
+# its distribution-parameter formulas when its family's mean depends on
+# them; not the time variables of tv() terms, offsets or group variables.
+.margEff_mv_default_vars <- function(object, data) {
+  j <- match(object$me_outcome, object$outcomes)
+  form <- object$formulas[[j]]
+  aux <- list(object$rpar$formulas[[j]])
+  dis <- list(object$dis_param_formula_1[[j]],
+              object$dis_param_formula_2[[j]])
+  if (.fcr_mean_uses_dispersion(object$family[[j]])) aux <- c(aux, dis)
+  term_vars <- unique(c(.margEff_term_vars(form),
+                        do.call(.fcr_vars, unname(aux))))
+  special_vars <- c(.fcr_tv_time_vars(c(list(form), aux, dis)),
+                    .fcr_tv_smooth_time_vars(object),
+                    object$blueprints[[j]]$offset_cols,
+                    object$group_var)
+  intersect(setdiff(term_vars, special_vars), names(data))
 }
 
 .margEff_is_indicator <- function(x) {
@@ -403,6 +457,12 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_predict <- function(object, newdata, pred_method = NULL, ...) {
+  if (inherits(object, "countreg_mv")) {
+    # The mean of the outcome being evaluated (marginal over any random
+    # parameters)
+    pred <- stats::predict(object, newdata = newdata)
+    return(as.numeric(pred[, object$me_outcome]))
+  }
   if (is.null(pred_method)) {
     pred <- predict(object, newdata = newdata, ...)
   } else {
@@ -414,6 +474,10 @@ print.flexEffectTable <- function(x, ...) {
 .margEff_set_theta <- function(object, theta) {
   out <- object
   theta <- as.numeric(theta)
+  if (inherits(object, "countreg_mv")) {
+    out$coefficients <- stats::setNames(theta, names(object$coefficients))
+    return(out)
+  }
   if (!is.null(names(object$model$estimate))) {
     names(theta) <- names(object$model$estimate)
   }
@@ -422,6 +486,7 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_theta <- function(object) {
+  if (inherits(object, "countreg_mv")) return(object$coefficients)
   theta <- object$model$estimate
   theta <- as.numeric(unlist(theta, recursive = TRUE, use.names = TRUE))
   if (is.null(names(theta))) {
@@ -434,6 +499,7 @@ print.flexEffectTable <- function(x, ...) {
 }
 
 .margEff_vcov <- function(object) {
+  if (inherits(object, "countreg_mv")) return(object$vcov)
   model <- object$model
   # The covariance matrix chosen at fit time (Hessian, robust or bootstrap)
   if (is.matrix(model$vcov)) return(model$vcov)
@@ -597,7 +663,14 @@ print.flexEffectTable <- function(x, ...) {
     sum(w[ok] * v[ok]) / sum(w[ok])
   }
   x <- data[[var]]
-  mu0 <- .margEff_predict(object, data, pred_method = pred_method, ...)
+  mu0 <- suppressWarnings(.margEff_predict(object, data,
+                                            pred_method = pred_method, ...))
+  if (any(is.infinite(mu0))) {
+    stop("Marginal effects are not available: the expected count is ",
+         "infinite for ", sum(is.infinite(mu0)), " row(s) (for example a ",
+         "lognormal or gamma random parameter whose expected value does ",
+         "not exist).", call. = FALSE)
+  }
   
   is_indicator <- .margEff_is_indicator(x)
   

@@ -17,6 +17,8 @@
 # Poisson with phi = 1e8 is a point mass) or the mean equation cannot be
 # solved to useful precision; the density is then treated as 0, so
 # optimizers step back instead of spending their time there.
+# For DPO the normalizing sums hold at most 2e6 terms (src/meanParam.cpp),
+# which also limits mu / phi to about 1e10.
 .fcr_mp_par_range <- c(1e-6, 1e6)
 .fcr_mp_mu_max <- 1e9
 
@@ -84,26 +86,36 @@
 
 # ---- gamma count (mean mu over a unit window, shape a) ----------------------
 
-.gc_mp_rate <- function(mu, a) exp(gc_mp_cpp(mu, a, 0L))
+# Parameters of the gamma count with mean mu: the rate is carried on the log
+# scale as well (`logs`), since for small shapes it underflows (a mean of
+# 0.5 at shape 0.001 needs a rate of about exp(-1100))
+.gc_mp_pars <- function(mu, a) {
+  v <- gc_mp_cpp(mu, a, 0L)
+  list(shape = a, rate = exp(v), time = 1, logs = v)
+}
 
 .gc_mp_logpmf <- function(y, mu, a) {
   .fcr_mp_apply(y, mu, a, function(y, mu, a)
-    .gcount_logpmf(y, list(shape = a, rate = .gc_mp_rate(mu, a), time = 1)))
+    .gcount_logpmf(y, .gc_mp_pars(mu, a)))
 }
 
 .gc_mp_logcdf <- function(q, mu, a, lower) {
   .fcr_mp_apply(floor(q), mu, a, function(y, mu, a)
-    .gcount_logcdf(y, list(shape = a, rate = .gc_mp_rate(mu, a), time = 1),
-                   lower))
+    .gcount_logcdf(y, .gc_mp_pars(mu, a), lower))
 }
 
 .gc_mp_var <- function(mu, a) {
   .fcr_mp_apply(0, mu, a, function(y, mu, a) gc_mp_cpp(mu, a, 1L))
 }
 
+# Draws by inversion of the CDF (as rgcount()), with the log rate so that
+# rates that underflow work
 .gc_mp_rand <- function(n, mu, a) {
   r <- .fcr_recycle(seq_len(n), mu, a)
-  rgcount(n, shape = r[[3]], rate = .gc_mp_rate(r[[2]], r[[3]]), time = 1)
+  p <- .gc_mp_pars(r[[2]], r[[3]])
+  .fcr_q(stats::runif(n), p, function(p) is.finite(p$logs) &
+           is.finite(p$shape) & p$shape > 0,
+         .gcount_logcdf, .gcount_qstart, TRUE, FALSE)
 }
 
 # ---- Polya-Aeppli as Poisson-Tweedie with power 1.5 ---------------------------

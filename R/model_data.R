@@ -27,13 +27,16 @@ NULL
 # terms of one (which carry the data-dependent bases of poly(), ns(),
 # scale() etc. in their "predvars"). Rows with missing values are kept as NA
 # rows (na.pass), so the caller controls row filtering. The trained terms
-# are returned in attribute "terms".
+# are returned in attribute "terms". Without `xlev` (training data), unused
+# factor levels are dropped, as in lm(), so the stored levels are those of
+# the estimation rows.
 .fcr_rhs_matrix <- function(fml, mf_data, xlev = NULL,
                             drop_intercept = FALSE, contrasts = NULL) {
   if (is.null(fml)) return(NULL)
   tt <- if (inherits(fml, "terms")) fml else
     stats::delete.response(stats::terms(stats::as.formula(fml)))
-  mf <- .fcr_model_frame_xlev(tt, mf_data, xlev)
+  mf <- .fcr_model_frame_xlev(tt, mf_data, xlev,
+                              drop.unused.levels = is.null(xlev))
   X <- .fcr_tv_finish(stats::model.matrix(tt, mf, contrasts.arg = contrasts),
                       tt)
   ctr <- attr(X, "contrasts")
@@ -48,9 +51,10 @@ NULL
 # contrasts attribute of a factor in the new data (with a warning); the
 # training contrasts are passed to model.matrix() afterwards, so that
 # warning is expected and muffled.
-.fcr_model_frame_xlev <- function(tt, data, xlev) {
+.fcr_model_frame_xlev <- function(tt, data, xlev, drop.unused.levels = FALSE) {
   withCallingHandlers(
-    stats::model.frame(tt, data, na.action = stats::na.pass, xlev = xlev),
+    stats::model.frame(tt, data, na.action = stats::na.pass, xlev = xlev,
+                       drop.unused.levels = drop.unused.levels),
     warning = function(w) {
       if (grepl("contrasts dropped from factor", conditionMessage(w))) {
         invokeRestart("muffleWarning")
@@ -83,6 +87,10 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
                                offset = NULL, weights = NULL,
                                group_var = NULL) {
   data <- as.data.frame(data)
+  # tv(basis = "smooth") terms are rewritten to s(time, by = x) below; the
+  # original formulas say which smooths are time-varying effects
+  formula_orig <- formula
+  aux_orig <- Filter(Negate(is.null), aux_formulas)
   # Expand `.` before any checks; the expanded forms go into the blueprint
   formula <- .fcr_expand_dot(formula, data)
   aux_formulas <- lapply(Filter(Negate(is.null), aux_formulas),
@@ -145,11 +153,17 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
   keep <- stats::complete.cases(data[, vars, drop = FALSE])
   if (is.numeric(weights)) keep <- keep & !is.na(weights)
   if (!any(keep)) stop("No complete cases in `data`.", call. = FALSE)
-  d <- data[keep, , drop = FALSE]
+  d <- .fcr_drop_unused_levels(data[keep, , drop = FALSE], vars)
+  # The tv(basis = "smooth") smooths of each block and their periods
+  tv_smooth <- list(main = .fcr_tv_smooth_info(formula_orig, d),
+                    aux = lapply(aux_orig, .fcr_tv_smooth_info, data = d))
 
   # Missing raw values were removed above; values made invalid by a
-  # transformation (e.g. log of a negative) are reported by the checks below
-  mf <- stats::model.frame(formula_pf, d, na.action = stats::na.pass)
+  # transformation (e.g. log of a negative) are reported by the checks below.
+  # Unused factor levels (also of factors made in the formula) are dropped,
+  # as in lm(), so the stored levels are those of the estimation rows.
+  mf <- stats::model.frame(formula_pf, d, na.action = stats::na.pass,
+                           drop.unused.levels = TRUE)
   y <- stats::model.response(mf)
   if (!is.null(y) && (!is.numeric(y) || is.matrix(y))) {
     stop("The response must be a numeric count vector, not ",
@@ -238,7 +252,32 @@ prepare_model_data <- function(formula, data, aux_formulas = list(),
                         aux_contrasts = lapply(aux, attr, "contrasts"),
                         aux_terms = lapply(aux, attr, "terms"),
                         x_names = colnames(X),
-                        smooth = smooth))
+                        smooth = smooth,
+                        tv_smooth = tv_smooth))
+}
+
+# Drop the unused levels of the factor columns `vars` of the estimation rows
+# `d` (levels declared but not observed, or left only in rows that were
+# removed), so they give no all-zero design columns. This also covers the
+# factor `by` variables of smooths and the factor time variables of tv().
+# As in model.frame(), a contrasts matrix that no longer fits is dropped
+# with a warning; a named contrast (such as "contr.sum") is kept.
+.fcr_drop_unused_levels <- function(d, vars) {
+  for (v in intersect(vars, names(d))) {
+    x <- d[[v]]
+    if (!is.factor(x)) next
+    if (length(unique(x[!is.na(x)])) == nlevels(x)) next
+    ctr <- attr(x, "contrasts")
+    x <- droplevels(x)
+    if (is.character(ctr)) {
+      attr(x, "contrasts") <- ctr
+    } else if (!is.null(ctr)) {
+      warning("contrasts dropped from factor ", v, " due to missing levels",
+              call. = FALSE)
+    }
+    d[[v]] <- x
+  }
+  d
 }
 
 # Rebuild model matrices for new data from a blueprint. Returns matrices with

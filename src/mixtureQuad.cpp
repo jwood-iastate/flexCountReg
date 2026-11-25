@@ -16,6 +16,9 @@
 //   4  NBGE negative binomial-generalized exponential: kernel NB2 with
 //           mean lambda and size r = 1 / alpha, x = exp(t) ~ GE(a, 1),
 //           c = mean / A (as PGE), s = 1
+//   5  PW by scale: as PW with c = lambda sigma given directly ("mean"
+//           is then lambda sigma), so that Weibull shapes whose
+//           Gamma(1 + 1 / alpha) overflows can be used
 //
 // The log integrand h(t) is maximized by a safeguarded Newton method with
 // analytic derivatives; the integral is then computed on the log scale with
@@ -120,8 +123,40 @@ double mix_h(const MixSpec &m, double t, double *d1 = nullptr,
   return ISNAN(h) ? R_NegInf : h;
 }
 
+// Mode of h for the Poisson-Weibull mixture. With A = y + alpha,
+//   h'(t) = A - c exp(t) - alpha exp(alpha t)
+// is strictly decreasing, so the mode is its unique root. It is bracketed
+// in closed form: where either term alone reaches A, h' <= 0; where both
+// are at most A / 2, h' >= 0. Newton steps are taken inside the bracket,
+// with bisection whenever a step leaves it. A start from the count and
+// fixed step limits (as for the other kinds) can stall: for large alpha
+// the steps are about 1 / alpha long, and for small alpha the mode can be
+// thousands of units (about 1 / alpha) away.
+double pw_mode(const MixSpec &m) {
+  double lA = std::log(m.y + m.a), la = std::log(m.a);
+  double hi = std::min(lA - m.logc, (lA - la) / m.a);
+  double lo = std::min(lA - M_LN2 - m.logc, (lA - M_LN2 - la) / m.a);
+  double t = 0.5 * (lo + hi);
+  for (int it = 0; it < 400; ++it) {
+    double d1, d2;
+    mix_h(m, t, &d1, &d2);
+    if (d1 == 0.0) return t;
+    if (d1 > 0) lo = t; else hi = t;
+    if (hi - lo <= 4e-16 * std::max(1.0, std::fabs(t))) break;
+    double tn = (d2 < 0 && R_FINITE(d2)) ? t - d1 / d2 : R_NaN;
+    if (!(tn > lo && tn < hi)) tn = 0.5 * (lo + hi);
+    if (std::fabs(tn - t) <= 1e-15 * std::max(1.0, std::fabs(t))) {
+      t = tn;
+      break;
+    }
+    t = tn;
+  }
+  return t;
+}
+
 // Mode of h by safeguarded Newton iterations with backtracking
 double mix_mode(const MixSpec &m) {
+  if (m.kind == 2) return pw_mode(m);
   // Start where the rate matches the count (clamped to a sensible range)
   double t = (std::log(std::max(m.y, 0.5)) - m.logc) / m.s;
   if (m.kind == 0 || m.kind == 3) t = std::max(-8.0, std::min(8.0, t));
@@ -172,6 +207,39 @@ const Rule &rule() {
   return r;
 }
 
+// A log probability is at most 0. Rounding can give a tiny positive value;
+// anything larger (or not a number) means the rule failed, which is
+// reported as NaN rather than as a probability above 1.
+double mix_check_logp(double out) {
+  if (out > 0) out = (out < 1e-10) ? 0.0 : R_NaN;
+  if (ISNAN(out)) out = R_NaN;
+  return out;
+}
+
+// Sum over the sinh-sinh nodes v = +-(v0 + j hs), j = 0, 1, ..., |v| <= 3.25,
+// v0 > 0, of exp(h(t(v)) - h(t*)) times dt / dv / sc, with the same early
+// stopping as the fixed rule (used to halve the step of that rule)
+double de_sum_offset(const MixSpec &m, double tm, double sc, double hm,
+                     double v0, double hs) {
+  const double hp = M_PI / 2.0, vmax = 3.25;
+  double total = 0.0;
+  for (int dir = -1; dir <= 1; dir += 2) {
+    double prev = 0.0;
+    for (int j = 0; ; ++j) {
+      double v = v0 + j * hs;
+      if (v > vmax) break;
+      double sv = std::sinh(v);
+      double hk = mix_h(m, tm + sc * dir * std::sinh(hp * sv)) - hm;
+      double term = hk + std::log(hp * std::cosh(v)) +
+        std::log(std::cosh(hp * sv));
+      if (term > -745) total += std::exp(term);
+      if (term < -46.0 && hk < prev) break;
+      prev = hk;
+    }
+  }
+  return total;
+}
+
 double mix_logpmf_one(MixSpec m) {
   double tm = mix_mode(m);
   double d1, d2;
@@ -185,24 +253,51 @@ double mix_logpmf_one(MixSpec m) {
   // smaller still and are skipped.
   int K = (int) r.u.size(), mid = K / 2;
   double total = std::exp(r.logw[mid]);   // u = 0: h(t*) - h(t*) = 0
+  double even = total;                    // nodes of the rule with step 2 h
   for (int dir = -1; dir <= 1; dir += 2) {
     double prev = 0.0;
     for (int k = mid + dir; k >= 0 && k < K; k += dir) {
       double hk = mix_h(m, tm + sc * r.u[k]) - hm;
       double term = hk + r.logw[k];
-      if (term > -745) total += std::exp(term);
+      if (term > -745) {
+        double e = std::exp(term);
+        total += e;
+        if ((k - mid) % 2 == 0) even += e;
+      }
       if (term < -46.0 && hk < prev) break;
       prev = hk;
     }
   }
-  return hm + std::log(sc) + std::log(total);
+  if (m.kind == 2) {
+    // Poisson-Weibull: error check. The error of a double exponential rule
+    // with step h is about the square of its error with step 2 h, so when
+    // the sums with steps h and 2 h (the even nodes) agree to 1e-7, the
+    // finer one is accurate to about 1e-14. Otherwise the step is halved
+    // (reusing the earlier nodes) until two successive sums agree that
+    // well. For small alpha and y = 0 the integrand has a steep edge (where
+    // the Poisson rate passes 1) inside the much wider bulk of the Weibull
+    // mixing density, and the fixed step left a relative error of up to
+    // about 1e-4 in 1 - P(Y = 0).
+    double hs = 1.0 / 32.0;   // the step of rule()
+    if (!(std::fabs(total - 2.0 * even) <= 1e-7 * total)) {
+      for (int lev = 0; lev < 6; ++lev) {
+        double Sn = 0.5 * total +
+          0.5 * hs * de_sum_offset(m, tm, sc, hm, 0.5 * hs, hs);
+        hs *= 0.5;
+        bool conv = std::fabs(Sn - total) <= 1e-7 * Sn;
+        total = Sn;
+        if (conv) break;
+      }
+    }
+  }
+  return mix_check_logp(hm + std::log(sc) + std::log(total));
 }
 
 }  // namespace
 
 // Log P(Y = x) for vectors of equal length (recycled in R). par1 is sigma
-// (PLN), shape (PGE, NBGE), alpha (PW) or theta (PLL); par2 is sigma (PLL)
-// or the NB dispersion alpha > 0 (NBGE).
+// (PLN), shape (PGE, NBGE), alpha (PW, kind 5) or theta (PLL); par2 is
+// sigma (PLL) or the NB dispersion alpha > 0 (NBGE).
 // Invalid parameters give NaN; x that is not a nonnegative whole number
 // gives -Inf; NA gives NA.
 // [[Rcpp::export]]
@@ -232,7 +327,7 @@ NumericVector mix_logpmf_cpp(NumericVector x, NumericVector mean,
       continue;
     }
     MixSpec m;
-    m.kind = kind;
+    m.kind = (kind == 5) ? 2 : kind;
     m.r = (kind == 4) ? 1.0 / p2 : 0.0;
     m.lgr = (kind == 4) ? lgamma_ratio(xi, m.r) : 0.0;
     m.y = xi;
@@ -249,6 +344,9 @@ NumericVector mix_logpmf_cpp(NumericVector x, NumericVector mean,
       m.s = 1.0; break;
     case 2:
       m.logc = std::log(mu) - std::lgamma(1.0 + 1.0 / p1);
+      m.s = 1.0; break;
+    case 5:
+      m.logc = std::log(mu);
       m.s = 1.0; break;
     default:
       m.logc = std::log(mu) + std::log(p1) + std::log1p(p1) -

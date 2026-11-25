@@ -66,7 +66,10 @@
 .fcr_hier_terms <- function(bars, d, env) {
   terms <- lapply(bars, function(b) {
     ff <- stats::as.formula(call("~", b[[2]]), env)
-    mf <- stats::model.frame(ff, d, na.action = stats::na.pass)
+    # Unused factor levels (after subsetting or dropped rows) would give
+    # all-zero effect columns
+    mf <- stats::model.frame(ff, d, na.action = stats::na.pass,
+                             drop.unused.levels = TRUE)
     tt <- stats::terms(mf)
     X <- stats::model.matrix(tt, mf)
     if (!ncol(X)) {

@@ -98,6 +98,7 @@ dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL,
   if (is.null(alpha) || is.null(sigma)) 
     warning("Parameters alpha and sigma are required")
   
+  from_mean <- is.null(lambda) && !is.null(mean_value)
   if (is.null(lambda)) {
     if (!is.null(mean_value)) {
       lambda <- mean_value / (sigma * gamma(1 + 1 / alpha))
@@ -107,19 +108,9 @@ dpoisweibull <- function(x, lambda = NULL, alpha = NULL, sigma = NULL,
   }
   
   if (engine == "quadrature") {
-    # E[Y] = lambda * sigma * Gamma(1 + 1 / alpha); the Weibull scale
-    # cancels from the mean-parameterized PMF but must be valid
-    r <- .fcr_recycle(x, lambda, alpha, sigma)
-    if (length(r[[1]]) == 0L) return(numeric(0))
-    al <- r[[3]]; sg <- r[[4]]
-    ok_al <- is.finite(al) & al > 0
-    mean_y <- r[[2]] * sg * ifelse(ok_al, gamma(1 + 1 / pmax(al, 1e-300)),
-                                    NaN)
-    lp <- suppressWarnings(.fcr_mix_logpmf(r[[1]], mean_y, al, 0, "PW"))
-    bad <- !is.na(r[[2]]) & !is.na(al) & !is.na(sg) &
-      !(is.finite(r[[2]]) & r[[2]] > 0 & ok_al & is.finite(sg) & sg > 0)
-    lp[bad & !is.na(r[[1]])] <- NaN
-    .fcr_warn_nan(is.nan(lp) & !is.na(r[[1]]))
+    lp <- .pw_quad_logpmf(x, if (from_mean) mean_value else lambda, alpha,
+                          sigma, from_mean)
+    .fcr_warn_nan(is.nan(lp))
     return(if (log) lp else exp(lp))
   }
 
@@ -160,25 +151,22 @@ ppoisweibull <- function(q, lambda = NULL, alpha = NULL, sigma = NULL,
       alpha <- params[1]
       sigma <- params[2]
     }
-    if (is.null(lambda) && !is.null(mean_value)) {
-      lambda <- mean_value / (sigma * gamma(1 + 1 / alpha))
-    }
+    from_mean <- is.null(lambda) && !is.null(mean_value)
+    if (from_mean) lambda <- mean_value
     if (is.null(lambda) || is.null(alpha) || is.null(sigma)) {
       stop("`lambda` (or `mean_value`), `alpha` and `sigma` are required.",
            call. = FALSE)
     }
+    # `lambda` holds the mean of Y when from_mean is TRUE
     core <- function(q, lambda, alpha, sigma, lower.tail, log.p) {
-      r <- .fcr_recycle(q, lambda, alpha, sigma)
-      ok <- is.finite(r[[3]]) & r[[3]] > 0 & is.finite(r[[4]]) & r[[4]] > 0
-      m <- r[[2]] * r[[4]] * ifelse(ok, gamma(1 + 1 / pmax(r[[3]], 1e-300)),
-                                    NaN)
-      .fcr_mix_cdf(r[[1]], m, r[[3]], 0, "PW", lower.tail, log.p)
+      .pw_quad_cdf(q, lambda, alpha, sigma, from_mean, lower.tail, log.p)
     }
     return(.fcr_p_contract(core, q,
                            list(lambda = lambda, alpha = alpha,
                                 sigma = sigma), lower.tail, log.p,
-                           logdens = function(x, ...)
-                             dpoisweibull(x, ..., log = TRUE)))
+                           logdens = function(x, lambda, alpha, sigma)
+                             .pw_quad_logpmf(x, lambda, alpha, sigma,
+                                             from_mean)))
   }
   .fcr_p_contract(.ppoisweibull_core, q,
                   list(lambda = lambda, alpha = alpha, sigma = sigma,
@@ -273,6 +261,60 @@ rpoisweibull <- function(n, lambda=NULL, alpha = NULL, sigma = NULL,
   # return(y)
 }
 
+
+# log P(Y = x) by quadrature (src/mixtureQuad.cpp), recycled. With
+# from_mean = TRUE, `m` is the mean of Y (the Weibull scale sigma cancels but
+# must be valid); otherwise `m` is lambda and the mixing variable is
+# lambda * sigma * Weibull(alpha, 1), passed to the C++ code as a scale
+# (kind 5) so that shapes for which Gamma(1 + 1 / alpha) overflows (alpha
+# below about 0.006) still work. Invalid parameters give NaN, missing values
+# NA.
+.pw_quad_logpmf <- function(x, m, alpha, sigma, from_mean) {
+  r <- .fcr_recycle(x, m, alpha, sigma)
+  if (length(r[[1]]) == 0L) return(numeric(0))
+  m <- r[[2]]; al <- r[[3]]; sg <- r[[4]]
+  scale <- if (from_mean) m else m * sg
+  lp <- mix_logpmf_cpp(as.numeric(r[[1]]), as.numeric(scale),
+                       as.numeric(al), numeric(length(al)),
+                       if (from_mean) 2L else 5L)
+  bad <- !is.na(m) & !is.na(al) & !is.na(sg) &
+    !(is.finite(m) & m > 0 & is.finite(al) & al > 0 & is.finite(sg) &
+        sg > 0 & is.finite(scale))
+  lp[bad & !is.na(r[[1]])] <- NaN
+  lp
+}
+
+# P(Y <= q) (or P(Y > q)) for finite q >= 0 by summing the quadrature PMF
+# over 0, ..., floor(q), once per distinct parameter set (as .fcr_mix_cdf())
+.pw_quad_cdf <- function(q, m, alpha, sigma, from_mean, lower.tail = TRUE,
+                         log.p = FALSE) {
+  r <- .fcr_recycle(q, m, alpha, sigma)
+  q <- floor(r[[1]])
+  out <- rep(NA_real_, length(q))
+  key <- paste(format(r[[2]], digits = 17), format(r[[3]], digits = 17),
+               format(r[[4]], digits = 17), sep = "\r")
+  for (k in unique(key)) {
+    idx <- which(key == k)
+    i1 <- idx[1]
+    lp <- .pw_quad_logpmf(0:max(q[idx]), r[[2]][i1], r[[3]][i1], r[[4]][i1],
+                          from_mean)
+    if (anyNA(lp)) {
+      out[idx] <- if (any(is.nan(lp))) NaN else NA_real_
+      next
+    }
+    top <- max(lp)
+    lcdf <- if (top == -Inf) rep(-Inf, length(lp)) else
+      top + log(cumsum(exp(lp - top)))
+    lcdf <- pmin(lcdf[q[idx] + 1], 0)
+    out[idx] <- if (lower.tail) {
+      if (log.p) lcdf else exp(lcdf)
+    } else {
+      if (log.p) .fcr_log1mexp(lcdf) else -expm1(lcdf)
+    }
+  }
+  .fcr_warn_nan(is.nan(out))
+  out
+}
 
 # Weibull shape (alpha) and scale (sigma) with a given mean and standard
 # deviation. The coefficient of variation cv = sd / mean depends only on the

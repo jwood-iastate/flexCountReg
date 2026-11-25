@@ -153,8 +153,11 @@ test_that("the simulated likelihood has the right analytic gradient", {
          correlation = "within"),
     list(family = "NB1", rpar_formula = ~ 1, correlation = "none",
          dis_param_formula_1 = ~ z),
+    # (frequency weights are constant within the units)
     list(family = "POISSON", rpar_formula = ~ 1,
-         weights = rep(1:2, nrow(d) / 2)))
+         weights = rep(1:2, each = 4, length.out = nrow(d))),
+    list(family = "POISSON", rpar_formula = ~ 1, group_var = NULL,
+         weights = rep(1:3, length.out = nrow(d))))
   for (cs in cases) {
     args <- utils::modifyList(list(
       formula = cbind(a, b, c) ~ x + z, group_var = "id", rpar_draws = 15,
@@ -475,4 +478,226 @@ test_that("copulas combine with random parameters", {
   expect_equal(unname(cp[, "1"]), j / pa, tolerance = 1e-8)
   s <- simulate(m, seed = 1)$sim_1
   expect_equal(colMeans(s), colMeans(m$y), tolerance = 0.15)
+  # The summary shows both the copula and the random parameters' units
+  out <- utils::capture.output(print(summary(m)))
+  expect_true(any(grepl("Clayton copula", out)))
+  expect_true(any(grepl("^Units:", out)))
+  expect_true(any(grepl("100 draws per unit of id", out)))
+})
+
+# ---- Review fixes (2026-11) --------------------------------------------------
+
+# Reference probabilities of rectangles in the upper tails, independent of
+# the package's computation: Archimedean copulas through their frailty
+# (Marshall-Olkin) representation,
+#   P = E_V prod_j (exp(-V phi(F_j(y_j))) - exp(-V phi(F_j(y_j - 1)))),
+# with V gamma (Clayton) or the stable law of index 1/2 (Gumbel with
+# theta = 2), and phi computed from the upper tails.
+tail_ref <- function(G, family, theta) {
+  # G: rows (P(Y > y), P(Y > y - 1)) of each outcome
+  lu <- function(g) log1p(-g)
+  phi <- function(g) if (family == "clayton") expm1(-theta * lu(g)) else
+    (-lu(g))^theta
+  xb <- phi(G[, 1])
+  d <- phi(G[, 2]) - xb
+  lprod <- function(v) sum(-v * xb + log(-expm1(-v * d)))
+  ldens <- if (family == "clayton") function(v)
+    stats::dgamma(v, 1 / theta, log = TRUE) else function(v)
+      -log(2 * sqrt(pi)) - 1.5 * log(v) - 1 / (4 * v)
+  f <- function(l) vapply(l, function(li) exp(lprod(exp(li)) +
+                                                ldens(exp(li)) + li), 0)
+  br <- seq(-20, 100, by = 5)
+  sum(vapply(seq_len(length(br) - 1L), function(k)
+    stats::integrate(f, br[k], br[k + 1L], rel.tol = 1e-12,
+                     abs.tol = 0)$value, 0))
+}
+
+test_that("copula probabilities are accurate in the upper tails", {
+  vol <- flexCountReg:::.fcr_cop_volume
+  # Two Poisson(1) outcomes with the counts (14, 14): the corner sum of
+  # F(y) and F(y - 1), all within 1e-11 of 1, used to lose the probability
+  set.seed(1)
+  n <- 300
+  d <- data.frame(x = stats::rnorm(n))
+  d$a <- stats::rpois(n, 1)
+  d$b <- stats::rpois(n, 1)
+  d$a[1] <- 14
+  d$b[1] <- 14
+  E <- countreg_mv(cbind(a, b) ~ 1, data = d, family = "POISSON",
+                   copula = "frank", .setup_only = TRUE)
+  sh <- stats::ppois(13, 1, lower.tail = FALSE)
+  sl <- stats::ppois(14, 1, lower.tail = FALSE)
+  # Frank's copula is radially symmetric: the same copula of the upper tails
+  C <- function(u, v) flexCountReg:::.fcr_cop_C(cbind(u, v), "frank", 3)
+  ref <- C(sh, sh) - C(sl, sh) - C(sh, sl) + C(sl, sl)
+  expect_equal(flexCountReg:::.fcr_mv_ll(c(0, 0, 3), E)$ll[1], log(ref),
+               tolerance = 1e-10)
+  expect_equal(log(ref), -51.23276, tolerance = 1e-6)
+  # The outlying row no longer drives the fitted dependence (it was -6.6)
+  m <- countreg_mv(cbind(a, b) ~ 1, data = d, family = "POISSON",
+                   copula = "frank")
+  expect_lt(abs(m$copula$theta - 0.16), 0.1)
+  # Joint predictions use the same computation
+  expect_equal(predict(m, newdata = d[1, , drop = FALSE], type = "joint",
+                       y = c(a = 14, b = 14)),
+               exp(flexCountReg:::.fcr_mv_ll(coef(m), E)$ll[1]),
+               tolerance = 1e-10)
+  cp <- predict(m, newdata = d[1, , drop = FALSE], type = "conditional",
+                outcome = "b", given = c(a = 14), max_count = 40)
+  expect_equal(sum(cp), 1, tolerance = 1e-10)
+
+  # Gaussian copula: against the conditional probability integrated with
+  # an adaptive rule
+  r <- 0.6
+  s <- sqrt(1 - r^2)
+  z1 <- stats::qnorm(sh, lower.tail = FALSE)
+  z0 <- stats::qnorm(sl, lower.tail = FALSE)
+  gref <- stats::integrate(function(x) stats::dnorm(x) *
+    (stats::pnorm((z1 - r * x) / s, lower.tail = FALSE) -
+       stats::pnorm((z0 - r * x) / s, lower.tail = FALSE)), z1, z0,
+    rel.tol = 1e-12, abs.tol = 0)$value
+  one <- function(k) matrix(k, 1, 2)
+  gv <- vol(one(1 - sl), one(1 - sh), "gaussian", r, one(sl), one(sh))$P
+  expect_equal(gv, gref, tolerance = 1e-9)
+  # A lower tail with a negative correlation (Poisson(30) counts of 0)
+  f0 <- stats::dpois(0, 30)
+  lref <- stats::integrate(function(t) {
+    x <- stats::qnorm(f0) - t
+    exp(stats::dnorm(x, log = TRUE) +
+          stats::pnorm((stats::qnorm(f0) + 0.6 * x) / 0.8, log.p = TRUE))
+  }, 0, Inf, rel.tol = 1e-12, abs.tol = 0)$value
+  lv <- vol(one(f0), one(0), "gaussian", -0.6)$P
+  expect_equal(lv, lref, tolerance = 1e-8)
+
+  # Clayton and Gumbel with three outcomes in their upper tails
+  G <- rbind(c(stats::ppois(14, 1, lower.tail = FALSE),
+               stats::ppois(13, 1, lower.tail = FALSE)),
+             c(stats::pnbinom(20, size = 1.5, mu = 2, lower.tail = FALSE),
+               stats::pnbinom(19, size = 1.5, mu = 2, lower.tail = FALSE)),
+             c(stats::ppois(9, 1, lower.tail = FALSE),
+               stats::ppois(8, 1, lower.tail = FALSE)))
+  Fm <- t(1 - G)
+  Gm <- t(G)
+  for (fam in c("clayton", "gumbel")) {
+    v <- vol(Fm[1, , drop = FALSE], Fm[2, , drop = FALSE], fam, 2,
+             Gm[1, , drop = FALSE], Gm[2, , drop = FALSE])$P
+    expect_equal(v, tail_ref(G, fam, 2), tolerance = 1e-9, info = fam)
+    expect_lt(log(v), -45)
+  }
+})
+
+test_that("tail probabilities have the right analytic gradient", {
+  set.seed(5)
+  n <- 8
+  d <- data.frame(x = stats::rnorm(n))
+  d$a <- c(14, 14, 1, 30, 0, 2, 25, 0)
+  d$b <- c(14, 1, 14, 0, 40, 3, 25, 0)
+  d$c <- c(12, 0, 2, 20, 15, 1, 1, 0)
+  cases <- list(
+    list(f = cbind(a, b) ~ x, family = c("NB2", "POISSON"),
+         copula = "gaussian", eta = 0.8),
+    list(f = cbind(a, b) ~ x, family = c("NB2", "POISSON"),
+         copula = "frank", eta = -5),
+    list(f = cbind(a, b, c) ~ x, family = c("NB2", "POISSON", "NB1"),
+         copula = "clayton", eta = log(2)),
+    list(f = cbind(a, b, c) ~ x, family = "POISSON", copula = "gumbel",
+         eta = 0))
+  for (cs in cases) {
+    E <- countreg_mv(cs$f, data = d, family = cs$family, copula = cs$copula,
+                     .setup_only = TRUE)
+    p <- flexCountReg:::.fcr_mv_start(E)
+    p[E$cop$idx] <- cs$eta
+    G <- flexCountReg:::.fcr_mv_ll(p, E, grad = TRUE)$G
+    for (i in c(1, 4, 7)) {
+      # Central differences with a fixed step (Richardson extrapolation
+      # with large first steps is upset by the switch between the corner
+      # sum and the integration, which agree to about 1e-10)
+      f1 <- function(q) flexCountReg:::.fcr_mv_ll(q, E)$ll[i]
+      num <- vapply(seq_along(p), function(k) {
+        e <- replace(numeric(length(p)), k, 1e-4)
+        (f1(p + e) - f1(p - e)) / 2e-4
+      }, 0)
+      expect_equal(G[i, ], num, tolerance = 1e-6,
+                   info = paste(cs$copula, i))
+    }
+  }
+})
+
+test_that("the sign normalization of L keeps the simulated optimum", {
+  skip_on_cran()
+  d <- sim_mv(n = 200)
+  args <- list(formula = cbind(a, b) ~ x, data = d,
+               family = c("NB2", "POISSON"), group_var = "site",
+               rpar_formula = ~ 1, rpar_draws = 30, seed = 4)
+  m1 <- do.call(countreg_mv, args)
+  # Start from the mirror image of the solution: the optimizer stays at
+  # negative standard deviations, which are then reported positive
+  E <- do.call(countreg_mv, c(args, .setup_only = TRUE))
+  st <- coef(m1)
+  st[E$RS$idx] <- -st[E$RS$idx]
+  m2 <- do.call(countreg_mv, c(args, list(start.vals = st)))
+  expect_true(all(m2$rpar$draw_signs == -1))
+  expect_true(all(coef(m2)[grep("^sd:", names(coef(m2)))] > 0))
+  # The reported estimate with the sign-changed draws is the optimum: the
+  # scores vanish and the log-likelihood is the simulated maximum
+  expect_lt(max(abs(colSums(m2$gradientObs))), 1e-3)
+  E$UA <- flexCountReg:::.fcr_mv_sign_draws(E$UA, m2$rpar$draw_signs)
+  expect_equal(m2$loglik, sum(flexCountReg:::.fcr_mv_sim_ll(coef(m2), E)$ll),
+               tolerance = 1e-10)
+  # Posterior predictions use the same draws
+  pp <- predict(m2, newdata = d[1:4, ], random = "posterior")
+  expect_true(all(is.finite(pp)))
+})
+
+test_that("frequency weights with random parameters weight the units", {
+  d <- sim_mv(n = 120)
+  d$w <- rep(1:3, length.out = 120)
+  de <- d[rep(seq_len(120), d$w), ]
+  fit <- function(dd, ...) countreg_mv(cbind(a, b) ~ x, data = dd,
+                                       family = c("NB2", "POISSON"),
+                                       rpar_formula = ~ 1, rpar_draws = 20,
+                                       seed = 1, .setup_only = TRUE, ...)
+  Ew <- fit(d, weights = "w")
+  Ee <- fit(de)
+  # Each copy of a row is its own unit, with the draws of the original
+  Ee$UA <- Ew$UA[rep(seq_len(120), d$w), , , drop = FALSE]
+  p <- flexCountReg:::.fcr_mv_start(Ew) + 0.05
+  sim <- flexCountReg:::.fcr_mv_sim_ll
+  expect_equal(sum(sim(p, Ew)$ll), sum(sim(p, Ee)$ll), tolerance = 1e-10)
+  expect_equal(colSums(sim(p, Ew, grad = TRUE)$G),
+               colSums(sim(p, Ee, grad = TRUE)$G), tolerance = 1e-10)
+  # Weights must be constant within the units of group_var
+  expect_error(fit(d, weights = "w", group_var = "site"), "constant within")
+  d$w2 <- rep(1:2, each = 4, length.out = 120)
+  expect_silent(fit(d, weights = "w2", group_var = "site"))
+})
+
+test_that("the dot does not make outcomes predictors", {
+  set.seed(1)
+  d <- data.frame(x = stats::rnorm(100), z = stats::rnorm(100))
+  d$a <- stats::rpois(100, 2)
+  d$b <- stats::rpois(100, 1)
+  m <- countreg_mv(cbind(a, b) ~ ., data = d, family = "POISSON")
+  expect_equal(names(coef(m)), c("a:(Intercept)", "a:x", "a:z",
+                                 "b:(Intercept)", "b:x", "b:z"))
+  ml <- countreg_mv(list(a ~ ., b ~ x), data = d, family = "POISSON")
+  expect_equal(names(coef(ml)), c("a:(Intercept)", "a:x", "a:z",
+                                  "b:(Intercept)", "b:x"))
+  expect_equal(unname(coef(m)), unname(coef(countreg_mv(
+    cbind(a, b) ~ x + z, data = d, family = "POISSON"))))
+})
+
+test_that("simulate() explains an undefined distribution", {
+  set.seed(2)
+  d <- data.frame(x = stats::rnorm(150))
+  U <- flexCountReg:::.fcr_rcopula(150, 2, "frank", 3)
+  d$a <- stats::qpois(U[, 1], exp(0.5 + 0.3 * d$x))
+  d$b <- stats::qpois(U[, 2], 1)
+  m <- countreg_mv(cbind(a, b) ~ x, data = d, family = c("GP2", "POISSON"),
+                   copula = "frank")
+  # GP2 needs 1 + (alpha - 1) mu > 0: undefined for large means when the
+  # dispersion is near its lower limit
+  m$coefficients["a:ln(alpha+1)"] <- -30
+  m$coefficients["a:(Intercept)"] <- 3
+  expect_error(simulate(m, seed = 1), "Cannot simulate a")
 })

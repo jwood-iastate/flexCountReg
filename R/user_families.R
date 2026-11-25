@@ -195,23 +195,53 @@ print.fcr_count_family <- function(x, ...) {
   lp
 }
 
-# Moments by summing the PMF to a tail mass below `tol` (each row).
+# Moments by summing the PMF (each row) in blocks of counts, until the tail
+# mass is below `tol` or, past the mean, the last block adds less than
+# `tol` (relative) to the mass and to the second moment while its terms
+# decrease. The second rule ends the sums for a PMF that does not sum to
+# exactly 1 (with the mass rule alone, a user PMF that sums to 1 - 1e-9
+# was summed term by term to max_y = 1e6). Rows whose probabilities are
+# all 0 (invalid parameters) stop well past the mean; rows still running
+# at max_y (very heavy tails) give a warning.
 .fcr_user_moments <- function(fam, mu, par, tol = 1e-12, max_y = 1e6) {
   n <- max(length(mu), lengths(par))
   mu <- rep_len(mu, n)
   par <- lapply(par, rep_len, n)
   s0 <- s1 <- s2 <- numeric(n)
   active <- which(!is.na(mu) & mu > 0)
-  y <- 0
-  while (length(active) && y <= max_y) {
-    p <- exp(.fcr_user_logpmf(fam, y, mu[active],
-                              lapply(par, `[`, active)))
-    s0[active] <- s0[active] + p
-    s1[active] <- s1[active] + y * p
-    s2[active] <- s2[active] + y^2 * p
-    done <- (1 - s0[active] < tol & y > mu[active]) | !is.finite(p)
+  y0 <- 0
+  block <- 64
+  while (length(active) && y0 <= max_y) {
+    na <- length(active)
+    yb <- y0:min(y0 + block - 1, max_y)
+    nb <- length(yb)
+    # rows of active, each with the counts of the block
+    lp <- .fcr_user_logpmf(fam, rep(yb, times = na),
+                           rep(mu[active], each = nb),
+                           lapply(par, function(p) rep(p[active], each = nb)))
+    p <- matrix(exp(lp), nrow = nb)
+    b0 <- colSums(p)
+    b2 <- colSums(yb^2 * p)
+    s0[active] <- s0[active] + b0
+    s1[active] <- s1[active] + colSums(yb * p)
+    s2[active] <- s2[active] + b2
+    ylast <- yb[nb]
+    m <- mu[active]
+    small <- b0 <= tol * s0[active] & b2 <= tol * s2[active] &
+      p[nb, ] <= p[1, ]
+    done <- ylast > m &
+      (1 - s0[active] < tol | (s0[active] > 0 & small) |
+         (s0[active] == 0 & ylast > 2 * m + 1000)) |
+      !is.finite(b0)
     active <- active[!done]
-    y <- y + 1
+    y0 <- ylast + 1
+    block <- max(64, min(2 * block, floor(2e6 / max(length(active), 1))))
+  }
+  if (length(active)) {
+    warning("The moments of the count family were summed to y = ", max_y,
+            " without converging for ", length(active), " observation(s); ",
+            "give the family a `variance` (and `mean`) function.",
+            call. = FALSE)
   }
   m <- s1 / s0
   v <- s2 / s0 - m^2

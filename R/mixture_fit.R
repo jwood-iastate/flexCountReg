@@ -106,8 +106,9 @@
 #'   a Cholesky factor (`Chol:`) in each class.
 #' @param rpar_draws the number of simulation draws of the random
 #'   parameters for each unit (randomly shifted Halton points, a separate
-#'   block for each unit, the same draws for every class). They are
-#'   generated from a seed derived from `seed`.
+#'   block for each unit, the same draws for every class up to the signs
+#'   described in "Random parameters within classes"). They are generated
+#'   from a seed derived from `seed`.
 #'
 #' @details
 #' ## Estimation
@@ -164,10 +165,32 @@
 #' same draws of a unit (common random numbers): the class likelihoods stay
 #' unbiased, their simulation errors largely cancel in the posterior class
 #' probabilities, and relabeling the classes leaves the simulated
-#' likelihood unchanged. Different units have independent draws. Predictions and probabilities integrate over the random
+#' likelihood unchanged. Different units have independent draws.
+#'
+#' Only the absolute values of the scales are identified (and, with
+#' `correlated = TRUE`, the signs of the columns of each class's Cholesky
+#' factor): the fit reports positive standard deviations and a positive
+#' Cholesky diagonal. A Cholesky column is re-signed together with that
+#' class's standardized draws of the parameter (`fit$model$rpar$signs`),
+#' which leaves the simulated likelihood unchanged, so the reported maximum,
+#' gradient, Hessian and posterior probabilities all refer to the reported
+#' coefficients. Bootstrap refits are normalized the same way before their
+#' classes are aligned.
+#'
+#' Predictions and probabilities integrate over the random
 #' parameters (`predict()`, `component_probs()`, `rootogram()`, residuals);
-#' `simulate()` draws new coefficients for every unit. Smooth terms are not
-#' yet available with random parameters.
+#' `simulate()` draws new coefficients for every unit. The component
+#' expected counts are exact, from the moment generating functions of the
+#' random parameters (as `method = "Exact"` in [countreg_rp()]), when the
+#' family's mean is proportional to \eqn{\mu}; they are `Inf`, with a
+#' warning, where the expected count does not exist (a lognormal random
+#' parameter with a positive variable, or a gamma one with
+#' \eqn{x \sigma^2 / \mu \ge 1}), and component variances likewise where
+#' the second moment does not exist. Count probabilities and class
+#' posteriors are simulated. Conditioning on outcomes (`"posterior"`,
+#' `"history"`) updates the class probabilities only, not the random
+#' parameters within the classes. Smooth terms are not yet available with
+#' random parameters.
 #'
 #' Random parameters and classes can both explain heterogeneity, so the
 #' fit can be weakly identified: a class can stand in for a tail of a
@@ -733,7 +756,17 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
        length(unique(spec$fixed_mixing)) > 1L)) {
     return(seq_len(K))
   }
-  order(.fcr_fm_comp_avg_mean(theta, spec))
+  m <- .fcr_fm_comp_avg_mean(theta, spec)
+  if (any(!is.finite(m))) {
+    # Random parameters whose expected count does not exist (lognormal with
+    # x > 0, ...): order by the average linear predictor instead
+    pars <- .fcr_fm_unpack(theta, spec$map)
+    m <- vapply(seq_len(K), function(k) {
+      eta <- as.vector(spec$des$X %*% pars$beta[[k]])
+      sum(spec$w_row * eta) / sum(spec$w_row)
+    }, numeric(1))
+  }
+  order(m)
 }
 
 # ---- Main fitting function -------------------------------------------------------
@@ -833,10 +866,20 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
   }
   # Random-parameter scales: only their absolute values (and, correlated,
   # the signs of the Cholesky factor's columns) are identified; report
-  # positive standard deviations (a positive diagonal)
+  # positive standard deviations (a positive diagonal). Uncorrelated scales
+  # enter the likelihood through their absolute values; a Cholesky column
+  # changes sign together with the class's draws of that parameter, so the
+  # simulated likelihood, its maximum, gradient and Hessian all refer to
+  # the reported coefficients.
   if (!is.null(spec$rp)) {
     sg <- .fcr_fm_rp_signs(theta, spec)
     if (any(sg < 0)) {
+      cs <- .fcr_fm_rp_col_signs(theta, spec)
+      old <- spec$rp$signs %||% lapply(cs, function(v) rep(1, length(v)))
+      signs <- Map(`*`, old, cs)
+      spec$rp <- .fcr_fm_rp_set_signs(spec$rp, signs)
+      st$rp$signs <- signs
+      spec$st <- st
       theta <- theta * sg
       if (!is.null(H)) H <- H * outer(sg, sg)
       if (!is.null(gO)) gO <- sweep(gO, 2, sg, `*`)
@@ -974,6 +1017,13 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     stringsAsFactors = FALSE)
   classes$modal_count[is.na(classes$modal_count)] <- 0
   classes$small <- classes$posterior_share < st$control$small_class
+  if (any(is.infinite(classes$mean_count))) {
+    warning("The expected count does not exist for some training rows in ",
+      "component(s) ", toString(st$labels[is.infinite(classes$mean_count)]),
+      " (a lognormal random parameter with a positive x, or a gamma random ",
+      "parameter with x * sd^2 / mean >= 1): their mean_count and those ",
+      "rows' predictions are Inf.", call. = FALSE)
+  }
 
   # ---- Numerical checks ----
   numerical <- .fcr_fm_numerical(H, g, fit$maximum)
@@ -1026,7 +1076,8 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
     rpar = if (!is.null(spec$rp)) list(
       formula = st$rp$formula, names = spec$rp$names, dists = spec$rp$dists,
       correlated = spec$rp$correlated, draws = spec$rp$R,
-      seed = spec$rp$seed, shared = isTRUE(st$shared$rpar)))
+      seed = spec$rp$seed, shared = isTRUE(st$shared$rpar),
+      signs = spec$rp$signs, n_units = spec$n_u))
   .createFlexCountReg(model = out, data = data, call = call,
                       keep_data = keep_data)
 }
@@ -1104,12 +1155,17 @@ countreg_lc <- function(formula, data, family = "POISSON", classes = 2L,
       d[[wname]] <- spec$w_row[rows]
       stb$weights <- wname
     }
+    # A refit has new units and so new draws: they start with signs 1
+    if (!is.null(stb$rp)) stb$rp$signs <- NULL
     sp <- .fcr_fm_setup(stb, d)
     sp$st <- stb
     s <- .fcr_fm_search(sp, st$control$boot_starts + 1L,
                         sample.int(.Machine$integer.max, 1L),
                         start.vals = theta)
     est <- s$fit$estimate
+    # The same sign normalization as the fit (positive standard deviations
+    # and Cholesky diagonals) before the labels are aligned
+    if (!is.null(sp$rp)) est <- est * .fcr_fm_rp_signs(est, sp)
     # Align labels with the original estimates (an optimal assignment, so
     # any number of components can be aligned)
     al <- .fcr_fm_align(est, theta, map, scale, spec$fixed_mixing)

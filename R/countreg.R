@@ -83,7 +83,9 @@
 #'   covariances after the fit.
 #' @param bootstraps Optional integer specifying the number of bootstrap samples
 #'   to be used for estimating standard errors when `stderr`= "boot". Defaults
-#'   to 200 when `stderr = "boot"` and `bootstraps` is not given.
+#'   to 200 when `stderr = "boot"` and `bootstraps` is not given. Giving
+#'   `bootstraps` without `stderr` selects bootstrap standard errors (as in
+#'   [countreg_rp()], [renb()], [repois()] and [poisLind.re()]).
 #' @param keep_data logical; if \code{FALSE}, the training data are not stored
 #'   in the fitted object (saving memory). \code{predict()} then needs
 #'   \code{newdata}, and \code{fitted()}/\code{residuals()} are unavailable.
@@ -844,7 +846,7 @@ countreg <- function(formula, data, family = "NB2", offset = NULL,
   .fcr_check_controls(max.iters, ndraws)
   underreport_family <- match.arg(tolower(underreport_family),
                                   c("logit", "probit"))
-  stderr <- .fcr_resolve_stderr(stderr, stderr_missing, NULL,
+  stderr <- .fcr_resolve_stderr(stderr, stderr_missing, bootstraps,
                                 c("normal", "robust", "boot", "cluster"),
                                 cluster)
   wt <- .fcr_resolve_weight_type(weight_type, weights, stderr,

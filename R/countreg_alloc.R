@@ -317,13 +317,6 @@ countreg_alloc <- function(formula, data, family = "NB2",
            call. = FALSE)
     }
   }
-  for (nm in c("rpar_total", "rpar_alloc", "rpar_threshold",
-               "shared_formula")) {
-    f <- get(nm)
-    if (!is.null(f) && .fcr_has_formula_offset(f)) {
-      stop("`", nm, "` cannot have an offset.", call. = FALSE)
-    }
-  }
 
   # ---- Categories -----------------------------------------------------------
   formula <- stats::as.formula(formula)
@@ -351,6 +344,27 @@ countreg_alloc <- function(formula, data, family = "NB2",
 
   # Count model: the total as the response
   tot_name <- ".fcr_total"
+  # A `.` stands for the columns of the data other than the category counts
+  # (expanded here, before the internal total column is added)
+  dot_data <- data[, setdiff(names(data), c(all.vars(lhs), tot_name)),
+                   drop = FALSE]
+  formula <- .fcr_expand_dot(formula, dot_data)
+  alloc_formula <- .fcr_expand_dot(alloc_formula, dot_data)
+  threshold_formula <- .fcr_expand_dot(threshold_formula, dot_data)
+  dis_param_formula_1 <- .fcr_expand_dot(dis_param_formula_1, dot_data)
+  dis_param_formula_2 <- .fcr_expand_dot(dis_param_formula_2, dot_data)
+  rpar_total <- .fcr_expand_dot(rpar_total, dot_data)
+  rpar_alloc <- .fcr_expand_dot(rpar_alloc, dot_data)
+  rpar_threshold <- .fcr_expand_dot(rpar_threshold, dot_data)
+  shared_formula <- .fcr_expand_dot(shared_formula, dot_data)
+  for (nm in c("alloc_formula", "threshold_formula", "rpar_total",
+               "rpar_alloc", "rpar_threshold", "shared_formula")) {
+    f <- get(nm)
+    if (!is.null(f) && .fcr_has_formula_offset(f)) {
+      stop("`", nm, "` cannot have an offset; put offsets in `formula`.",
+           call. = FALSE)
+    }
+  }
   total_all <- rowSums(Y_all)
   data[[tot_name]] <- total_all
   count_formula <- formula
@@ -358,6 +372,12 @@ countreg_alloc <- function(formula, data, family = "NB2",
   rhs_noff <- .fcr_drop_offsets(stats::delete.response(stats::terms(formula)))
   if (is.null(alloc_formula)) alloc_formula <- rhs_noff
   alloc_formula <- stats::as.formula(alloc_formula)
+  if (ordered && !attr(stats::terms(alloc_formula), "intercept")) {
+    # The thresholds take the place of the intercept: without one, a
+    # factor's full set of dummies would be collinear with them, so the
+    # formula is coded with an intercept, which is then dropped
+    alloc_formula <- stats::update(alloc_formula, ~ . + 1)
+  }
   threshold_formula <- stats::as.formula(threshold_formula)
   if (ordered && !attr(stats::terms(threshold_formula), "intercept")) {
     stop("`threshold_formula` must have an intercept.", call. = FALSE)
@@ -459,6 +479,15 @@ countreg_alloc <- function(formula, data, family = "NB2",
     E$g <- as.integer(unit)
     E$G <- nlevels(unit)
     E$units <- levels(unit)
+    # Weights are frequency weights of the units: the same for every row
+    # of a unit
+    wrange <- vapply(split(w, E$g), function(x) diff(range(x)), 0)
+    if (any(wrange > 1e-8 * pmax(1, vapply(split(w, E$g), max, 0)))) {
+      stop("With random parameters the weights apply to units: they must ",
+           "be the same for every row of a unit (`group_var`).",
+           call. = FALSE)
+    }
+    E$wu <- vapply(split(w, E$g), `[`, 0, 1L)
     draw_seed <- seed %||% sample.int(.Machine$integer.max, 1L)
     E$UA <- .fcr_alloc_draws(E$G, RS$K, rpar_draws, draw_seed)
     E$Xr <- prep$aux$rp_total
@@ -489,9 +518,16 @@ countreg_alloc <- function(formula, data, family = "NB2",
   est <- fit$estimate
   names(est) <- S$names
   if (has_rpar) {
+    # Flipping column l of the Cholesky factor leaves the coefficients
+    # U L' unchanged only if the draws of column l are negated too (the
+    # shifted Halton draws are not symmetric): the flipped estimate is
+    # then exactly the simulated optimum
+    draw_signs <- sign(diag(.fcr_alloc_chol(est, RS)))
+    draw_signs[draw_signs == 0] <- 1
     sg <- .fcr_chol_signs(est, RS)
     est <- est * sg
     fit$hessian <- fit$hessian * outer(sg, sg)
+    E$UA <- .fcr_alloc_flip_draws(E$UA, draw_signs)
   }
   conv <- isTRUE(fit$code %in% c(0L, 1L, 2L, 8L)) ||
     grepl("converge|successful", fit$message %||% "", ignore.case = TRUE)
@@ -521,8 +557,10 @@ countreg_alloc <- function(formula, data, family = "NB2",
   V_cov <- switch(stderr,
     normal = Hv,
     robust = if (has_rpar) {
-      # The units (groups) are the independent observations
-      Hv %*% crossprod(U) %*% Hv
+      # The units (groups) are the independent observations, each
+      # counted `weight` times
+      keep <- E$wu > 0
+      Hv %*% crossprod(U[keep, , drop = FALSE] / sqrt(E$wu[keep])) %*% Hv
     } else {
       keep <- w > 0
       meat <- crossprod(U[keep, , drop = FALSE] / sqrt(w[keep]))
@@ -552,6 +590,7 @@ countreg_alloc <- function(formula, data, family = "NB2",
       layout = RS, formulas = list(total = rpar_total, alloc = rpar_alloc,
                                    threshold = rpar_threshold),
       correlation = correlation, draws = rpar_draws, seed = draw_seed,
+      draw_signs = draw_signs,
       units = E$units, unit_of_row = E$g,
       posterior = .fcr_alloc_sim_ll(est, E, grad = TRUE)$W),
     shared = if (has_shared) list(formula = shared_formula, equations =
@@ -932,6 +971,12 @@ countreg_alloc <- function(formula, data, family = "NB2",
   g <- E$g
   G <- E$G
   R <- dim(E$UA)[3L]
+  # The weights are frequency weights of the units: the unit likelihood is
+  # simulated from the unweighted rows, and the unit's log-likelihood and
+  # score are then multiplied by its weight
+  wu <- E$wu %||% vapply(split(E$w, g), `[`, 0, 1L)
+  E$w <- as.numeric(E$w > 0)
+  if (!is.null(E$Erep)) E$Erep$w <- as.numeric(E$Erep$w > 0)
   LL <- matrix(NA_real_, G, R)
   for (r in seq_len(R)) {
     B <- (matrix(E$UA[, , r], G, RS$K) %*% t(L))[g, , drop = FALSE]
@@ -943,6 +988,8 @@ countreg_alloc <- function(formula, data, family = "NB2",
   mx[!is.finite(mx)] <- 0
   sm <- rowSums(exp(LL - mx))
   lg <- mx + log(sm) - log(R)
+  lg <- wu * lg
+  lg[wu == 0] <- 0
   if (!grad) {
     lg[!is.finite(lg)] <- NA_real_
     return(list(ll = lg))
@@ -964,6 +1011,7 @@ countreg_alloc <- function(formula, data, family = "NB2",
     Gr[!is.finite(Gr)] <- 0
     Gg <- Gg + rowsum(Gr, g, reorder = TRUE) * W[, r]
   }
+  Gg <- Gg * wu
   lg[!is.finite(lg)] <- 0
   list(ll = lg, G = Gg, W = W)
 }
@@ -1218,6 +1266,14 @@ countreg_alloc <- function(formula, data, family = "NB2",
   UA
 }
 
+# Negate the draws of the random coefficients whose Cholesky column was
+# flipped after the fit (`signs`: one +1 or -1 per coefficient).
+.fcr_alloc_flip_draws <- function(UA, signs) {
+  if (is.null(signs)) return(UA)
+  for (l in which(signs < 0)) UA[, l, ] <- -UA[, l, ]
+  UA
+}
+
 # log(1 - exp(x)) for x <= 0.
 .fcr_log1mexp <- function(x) {
   ifelse(x > -log(2), log(-expm1(x)), log1p(-exp(x)))
@@ -1365,7 +1421,15 @@ countreg_alloc <- function(formula, data, family = "NB2",
 #' @return A matrix with one column per category (`"counts"`, `"prob"`), or
 #'   a vector (`"total"`, `"total_positive"`). With random parameters,
 #'   `"prob"` is the average allocation probability and `"counts"` the
-#'   average expected count over the draws.
+#'   average expected count over the draws. For a fit with
+#'   `truncated = TRUE` and random parameters, the likelihood truncates the
+#'   total given each unit's coefficients \eqn{b}, so `"total_positive"`
+#'   (and `conditional = TRUE`) average the ratio over the draws,
+#'   \eqn{E_b[E(c \mid b) / (1 - P_0(b))]}; without truncation they give
+#'   \eqn{E_b[E(c \mid b)] / (1 - E_b[P_0(b)])}. The shared site-year term
+#'   is integrated out before the ratio is taken, as in the likelihood.
+#'   Posterior predictions (`random = "posterior"`) need random
+#'   parameters.
 #' @export
 predict.countreg_alloc <- function(object, newdata = NULL,
                                    type = c("counts", "prob", "total",
@@ -1382,10 +1446,11 @@ predict.countreg_alloc <- function(object, newdata = NULL,
   p <- object$coefficients
   need_p0 <- type == "total_positive" || (type == "counts" && conditional)
   if (is.null(object$rpar)) {
-    if (random == "posterior" && !is.null(object$shared)) {
+    if (random == "posterior") {
       stop("Posterior predictions need unit-level random parameters ",
-           "(`rpar_total`, `rpar_alloc` or `rpar_threshold`); the shared ",
-           "site-year term is new for every row.", call. = FALSE)
+           "(`rpar_total`, `rpar_alloc` or `rpar_threshold`)",
+           if (!is.null(object$shared)) "; the shared site-year term is new ",
+           if (!is.null(object$shared)) "for every row", ".", call. = FALSE)
     }
     pc <- .fcr_alloc_predict_mix(object, p, E, need_p0 = need_p0)
     p0 <- pc$p0
@@ -1403,8 +1468,7 @@ predict.countreg_alloc <- function(object, newdata = NULL,
   L <- .fcr_alloc_chol(p, RS)
   n <- nrow(E$X)
   R <- rp$draws
-  Wrow <- matrix(1 / R, n, R)
-  Urow <- NULL
+  seen <- rep(FALSE, n)
   if (random == "posterior") {
     if (is.null(object$group_var) ||
         !all(object$group_var %in% names(newdata))) {
@@ -1417,33 +1481,58 @@ predict.countreg_alloc <- function(object, newdata = NULL,
                                     sep = ":"))
     ui <- match(key, rp$units)
     seen <- !is.na(ui)
-    if (any(seen)) {
-      UA <- .fcr_alloc_draws(length(rp$units), RS$K, R, rp$seed)
-      Wrow[seen, ] <- rp$posterior[ui[seen], , drop = FALSE]
-    }
   }
-  # Marginal draws: plain Halton points, the same for every row
-  Um <- matrix(stats::qnorm(.fcr_halton(R, RS$K)), R, RS$K)
-  acc <- list(counts = 0, prob = 0, total = 0, p0 = 0)
-  for (r in seq_len(R)) {
-    B <- matrix(Um[r, ] %*% t(L), n, RS$K, byrow = TRUE)
-    if (random == "posterior" && any(seen)) {
-      B[seen, ] <- (matrix(UA[ui[seen], , r], sum(seen), RS$K)) %*% t(L)
+  by_draw <- isTRUE(object$truncated)
+  # Average over draws: B_of(r) gives the random coefficients of every row
+  # at draw r, Wt (n x draws) the weights
+  average <- function(B_of, Wt) {
+    acc <- list(counts = 0, prob = 0, total = 0, p0 = 0)
+    for (r in seq_len(ncol(Wt))) {
+      pc <- .fcr_alloc_predict_mix(object, p, E, .fcr_alloc_add(B_of(r), E),
+                                   need_p0 = need_p0)
+      wr <- Wt[, r]
+      # Given at least one event: a truncated fit truncates each row given
+      # its random coefficients b, so E[c | c > 0] = E_b[E(c | b) /
+      # (1 - P0(b))], the ratio averaged over the draws; otherwise the
+      # untruncated mixture is conditioned, E_b[E(c | b)] / (1 - E_b[P0(b)])
+      pos <- if (need_p0 && by_draw) 1 / (1 - pc$p0) else 1
+      acc$counts <- acc$counts + wr * pc$counts * pos
+      acc$prob <- acc$prob + wr * pc$prob
+      acc$total <- acc$total + wr * pc$total * pos
+      if (need_p0 && !by_draw) acc$p0 <- acc$p0 + wr * pc$p0
     }
-    pc <- .fcr_alloc_predict_mix(object, p, E, .fcr_alloc_add(B, E),
-                                 need_p0 = need_p0)
-    wr <- Wrow[, r]
-    acc$counts <- acc$counts + wr * pc$counts
-    acc$prob <- acc$prob + wr * pc$prob
-    acc$total <- acc$total + wr * pc$total
-    if (need_p0) acc$p0 <- acc$p0 + wr * pc$p0
+    acc
+  }
+  # Marginal: a Gauss-Hermite grid over the random parameters (the same
+  # nodes for every row; .fcr_normal_nodes())
+  nd <- .fcr_normal_nodes(RS$K)
+  acc <- average(function(r) matrix(nd$Z[r, ] %*% t(L), n, RS$K,
+                                    byrow = TRUE),
+                 matrix(nd$w, n, length(nd$w), byrow = TRUE))
+  # Posterior: the estimation draws of the units in the estimation data,
+  # weighted by their posterior weights
+  if (any(seen)) {
+    UA <- .fcr_alloc_flip_draws(
+      .fcr_alloc_draws(length(rp$units), RS$K, R, rp$seed), rp$draw_signs)
+    Wp <- matrix(0, n, R)
+    Wp[seen, ] <- rp$posterior[ui[seen], , drop = FALSE]
+    post <- average(function(r) {
+      B <- matrix(0, n, RS$K)
+      B[seen, ] <- matrix(UA[ui[seen], , r], sum(seen), RS$K) %*% t(L)
+      B
+    }, Wp)
+    for (nm in names(acc)) {
+      if (is.matrix(acc[[nm]])) acc[[nm]][seen, ] <- post[[nm]][seen, ] else
+        if (length(acc[[nm]]) == n) acc[[nm]][seen] <- post[[nm]][seen]
+    }
   }
   colnames(acc$counts) <- colnames(acc$prob) <- object$categories
+  den <- if (need_p0 && !by_draw) 1 - acc$p0 else 1
   switch(type,
-    counts = if (conditional) acc$counts / (1 - acc$p0) else acc$counts,
+    counts = if (conditional) acc$counts / den else acc$counts,
     prob = acc$prob,
     total = acc$total,
-    total_positive = acc$total / (1 - acc$p0))
+    total_positive = acc$total / den)
 }
 
 # The estimation rows of the data, for predictions without newdata.
@@ -1634,33 +1723,72 @@ simulate.countreg_alloc <- function(object, nsim = 1, seed = NULL,
   } else seq_len(n)
   # The shared site-year term: a new standard normal draw for every row
   lam <- if (!is.null(object$shared)) .fcr_alloc_loadings(p, E)
-  pc_draw <- function() {
-    add <- NULL
-    if (!is.null(object$rpar)) {
-      RS <- object$rpar$layout
-      L <- .fcr_alloc_chol(p, RS)
-      Bu <- matrix(stats::rnorm(max(unit) * RS$K), max(unit), RS$K) %*% t(L)
-      add <- .fcr_alloc_add(Bu[unit, , drop = FALSE], E)
-    }
-    if (!is.null(lam)) add <- .fcr_alloc_shared_add(add, lam, stats::rnorm(n))
-    .fcr_alloc_predict_core(p, E, add)
+  rows_of <- function(x, i) {
+    if (is.null(x)) NULL else if (is.matrix(x)) x[i, , drop = FALSE] else
+      x[i]
   }
-  random_draws <- !is.null(object$rpar) || !is.null(object$shared)
-  pc <- pc_draw()
+  # Predictions for rows `i` with random terms `addR` (of those rows) and
+  # shared-term draws `u`
+  pc_rows <- function(i, addR, u) {
+    Ei <- E
+    for (nm in c("X", "off", "W1", "W2", "Z", "V", "Sm", "y", "w")) {
+      Ei[nm] <- list(rows_of(E[[nm]], i))
+    }
+    add <- addR
+    if (!is.null(lam)) {
+      add <- .fcr_alloc_shared_add(add, lapply(lam, rows_of, i = i), u)
+    }
+    .fcr_alloc_predict_core(p, Ei, add)
+  }
+  # The unit-level random terms of every row: new coefficients for each
+  # unit in each simulation
+  draw_rpar <- function() {
+    if (is.null(object$rpar)) return(NULL)
+    RS <- object$rpar$layout
+    L <- .fcr_alloc_chol(p, RS)
+    Bu <- matrix(stats::rnorm(max(unit) * RS$K), max(unit), RS$K) %*% t(L)
+    .fcr_alloc_add(Bu[unit, , drop = FALSE], E)
+  }
+  all_rows <- seq_len(n)
+  pc_fixed <- if (is.null(object$rpar) && is.null(lam)) {
+    pc_rows(all_rows, NULL, NULL)
+  }
+  max_rounds <- 10000L
   one <- function() {
-    if (random_draws) pc <- pc_draw()
+    addR <- draw_rpar()
+    pc <- pc_fixed %||%
+      pc_rows(all_rows, addR, if (!is.null(lam)) stats::rnorm(n))
     tot <- .fcr_family_r(object$family, n, pc$mu, pc$alpha, pc$sigma)
+    prob <- pc$prob
     if (object$truncated) {
-      for (i in seq_len(100L)) {
+      # Rejection sampling of the zero-truncated total. The likelihood
+      # conditions on each unit's random coefficients, which are kept;
+      # the selection acts after the shared term is drawn, so a rejected
+      # row draws a new shared term together with its new total
+      for (it in seq_len(max_rounds + 1L)) {
         z <- which(tot == 0)
         if (!length(z)) break
-        tot[z] <- .fcr_family_r(object$family, length(z), pc$mu[z],
-                                pc$alpha[z], pc$sigma[z])
+        if (it > max_rounds) {
+          stop("simulate(): ", length(z), " row(s) still had a zero total ",
+               "after ", max_rounds, " draws; their probability of a ",
+               "positive total is too small to simulate the zero-truncated ",
+               "total.", call. = FALSE)
+        }
+        if (!is.null(lam)) {
+          pz <- pc_rows(z, lapply(addR, rows_of, i = z),
+                        stats::rnorm(length(z)))
+          tot[z] <- .fcr_family_r(object$family, length(z), pz$mu,
+                                  pz$alpha, pz$sigma)
+          prob[z, ] <- pz$prob
+        } else {
+          tot[z] <- .fcr_family_r(object$family, length(z), pc$mu[z],
+                                  pc$alpha[z], pc$sigma[z])
+        }
       }
     }
     out <- t(vapply(seq_len(n), function(i)
-      as.numeric(stats::rmultinom(1L, tot[i], pc$prob[i, ])),
-      numeric(ncol(pc$prob))))
+      as.numeric(stats::rmultinom(1L, tot[i], prob[i, ])),
+      numeric(ncol(prob))))
     colnames(out) <- object$categories
     out
   }

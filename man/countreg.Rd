@@ -104,7 +104,9 @@ standard errors, "robust" for robust (sandwich) standard errors, or
 
 \item{bootstraps}{Optional integer specifying the number of bootstrap samples
 to be used for estimating standard errors when \code{stderr}= "boot". Defaults
-to 200 when \code{stderr = "boot"} and \code{bootstraps} is not given.}
+to 200 when \code{stderr = "boot"} and \code{bootstraps} is not given. Giving
+\code{bootstraps} without \code{stderr} selects bootstrap standard errors (as in
+\code{\link[=countreg_rp]{countreg_rp()}}, \code{\link[=renb]{renb()}}, \code{\link[=repois]{repois()}} and \code{\link[=poisLind.re]{poisLind.re()}}).}
 
 \item{engine}{the numerical method for the mixed Poisson families PLN, PGE, PW
 and PLL: \code{"quadrature"} (default; adaptive quadrature on the log

@@ -196,6 +196,10 @@ training data; offset columns must be present.</p>
 <p>For <code><a href="../reference/countreg.html">countreg()</a></code> models, <code>type</code> chooses the
 quantity:</p>
 <table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
 <thead><tr class="header">
 <th><code>type</code></th>
 <th>Quantity</th>
@@ -221,8 +225,8 @@ offset</td>
 </tr>
 <tr class="odd">
 <td><code>"prob"</code></td>
-<td>matrix of <span class="math inline">\(P(Y = k)\)</span>, <span class="math inline">\(k = 0, \dots,\)</span> <code>max_count</code>
-</td>
+<td>matrix of <span class="math inline">\(P(Y = k)\)</span> for the
+counts in <code>counts</code> (or <code>0:max_count</code>)</td>
 </tr>
 <tr class="even">
 <td><code>"zero"</code></td>
@@ -240,7 +244,19 @@ offset</td>
 <span><span class="co">#&gt; [1,] 0.502 0.307 0.127 0.044 0.014 0.006</span></span>
 <span><span class="co">#&gt; [2,] 0.531 0.301 0.116 0.037 0.011 0.004</span></span>
 <span><span class="co">#&gt; [3,] 0.411 0.314 0.162 0.070 0.028 0.015</span></span></code></pre></div>
-<p>With <code>overflow = TRUE</code> the last column holds <span class="math inline">\(P(Y &gt;\)</span> <code>max_count</code><span class="math inline">\()\)</span>, so each row sums to one.</p>
+<p>With <code>overflow = TRUE</code> the last column holds <span class="math inline">\(P(Y &gt;\)</span> <code>max_count</code><span class="math inline">\()\)</span>, so each row sums to one.
+<code>counts</code> gives any other set or range of counts, and
+<code>underflow = TRUE</code> the probability below it:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">nb_h</span>, newdata <span class="op">=</span> <span class="va">nd</span>, type <span class="op">=</span> <span class="st">"prob"</span>, counts <span class="op">=</span> <span class="fl">3</span><span class="op">:</span><span class="fl">5</span>,</span>
+<span>              overflow <span class="op">=</span> <span class="cn">TRUE</span>, underflow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span></span>
+<span><span class="co">#&gt;          &lt;3      3      4      5     &gt;5</span></span>
+<span><span class="co">#&gt; [1,] 0.9363 0.0442 0.0139 0.0041 0.0016</span></span>
+<span><span class="co">#&gt; [2,] 0.9478 0.0373 0.0109 0.0030 0.0010</span></span>
+<span><span class="co">#&gt; [3,] 0.8869 0.0701 0.0275 0.0101 0.0053</span></span></code></pre></div>
+<p><code>type = "prob"</code> and <code>interval</code> are available
+for the other estimators too (no intervals for
+<code><a href="../reference/countreg_fe.html">countreg_fe()</a></code>).</p>
 <p>For random-parameter models, <code>method</code> chooses how the
 random coefficients are handled:</p>
 <ul>
@@ -300,7 +316,7 @@ fall?</td>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">nb_h</span><span class="op">)</span><span class="op">[</span><span class="st">"speed50"</span>, <span class="op">]</span></span>
 <span><span class="co">#&gt;      2.5 %     97.5 % </span></span>
 <span><span class="co">#&gt; -0.7483606 -0.3257283</span></span>
@@ -344,7 +360,7 @@ the fitted distribution (<code><a href="../reference/countreg.html">countreg()</
 Smyth, 1996), which are standard normal when the model is correct; use
 them for residual plots and normality checks.</li>
 </ul>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals</a></span><span class="op">(</span><span class="va">nb_h</span>, type <span class="op">=</span> <span class="st">"quantile"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>mean <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span>, sd <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/sd.html" class="external-link">sd</a></span><span class="op">(</span><span class="va">r</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;        mean          sd </span></span>
@@ -356,7 +372,7 @@ parameters are held at their estimates (a plug-in simulation), so the
 spread of simulated statistics reflects the randomness of the counts,
 not the uncertainty of the estimates. It is the basis of
 parametric-bootstrap checks:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sims</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate</a></span><span class="op">(</span><span class="va">nb_h</span>, nsim <span class="op">=</span> <span class="fl">200</span>, seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="co"># Observed share of zeros against its simulated distribution</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>observed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">d</span><span class="op">$</span><span class="va">Total_crashes</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span>,</span>
@@ -378,7 +394,7 @@ the data (see the vignette on choosing a count distribution).</p>
 or not, and are always reported. BIC uses the number of independent
 units: rows, panels for panel models, and the sum of the frequency
 weights when weights are used.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">po</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">d</span>, family <span class="op">=</span> <span class="st">"POISSON"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">nb1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">d</span>, family <span class="op">=</span> <span class="st">"NB1"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
 <span><span class="va">pl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/countreg.html">countreg</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">d</span>, family <span class="op">=</span> <span class="st">"PL"</span>, method <span class="op">=</span> <span class="st">"BFGS"</span><span class="op">)</span></span>
@@ -523,7 +539,7 @@ parameters unidentified.</li>
 bootstrap of the LR statistic using <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code>.</p>
 <p><code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> reports a test against Poisson when it is
 valid:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">nb_h</span><span class="op">)</span><span class="op">$</span><span class="va">lr_test</span></span>
 <span><span class="co">#&gt; $statistic</span></span>
 <span><span class="co">#&gt; [1] 31.31106</span></span>
@@ -548,7 +564,7 @@ in <code>y ~ I(2 * x) + z</code>.</p>
 <p><code><a href="../reference/regCompTest.html">regCompTest()</a></code> applies the same rules to two fitted
 models (the one with fewer parameters is the restricted model) or to a
 model and a base model it fits on the same rows:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/regCompTest.html">regCompTest</a></span><span class="op">(</span><span class="va">po</span>, model2 <span class="op">=</span> <span class="va">nb_h</span><span class="op">)</span></span>
 <span><span class="va">r</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"LR"</span>, <span class="st">"LRdof"</span>, <span class="st">"LR_type"</span>, <span class="st">"LR_pvalue"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; $LR</span></span>
@@ -589,7 +605,7 @@ McFadden’s pseudo-R², <span class="math inline">\(1 - \ell /
 rows by default, so it is comparable across families.
 <code>basemodel</code> and <code>variables</code> choose another
 baseline.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/regCompTable.html">regCompTable</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Poisson <span class="op">=</span> <span class="va">po</span>, NB2 <span class="op">=</span> <span class="va">nb_h</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 10 × 3</span></span></span>
 <span><span class="co">#&gt;    Parameter    Poisson           NB2              </span></span>

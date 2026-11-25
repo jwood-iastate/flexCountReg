@@ -16,6 +16,11 @@ predict(
   given = NULL,
   random = c("marginal", "posterior"),
   new_data = NULL,
+  counts = NULL,
+  overflow = FALSE,
+  underflow = FALSE,
+  interval = c("none", "confidence", "prediction"),
+  level = 0.95,
   ...
 )
 ```
@@ -52,7 +57,7 @@ predict(
   `"prob"`
 
   :   a list with one matrix per outcome of the probabilities of the
-      counts `0:max_count`.
+      counts in `counts` (or `0:max_count`).
 
   `"joint"`
 
@@ -67,8 +72,9 @@ predict(
 
 - max_count:
 
-  for `"prob"` and `"conditional"`: the largest count (default: the
-  largest observed count of the outcome).
+  for `"prob"` and `"conditional"`: short for `counts = 0:max_count`
+  (default: the largest observed count of the outcome). For intervals,
+  the largest count evaluated.
 
 - y:
 
@@ -91,9 +97,28 @@ predict(
   get the marginal prediction). `newdata` then needs the `group_var`
   column(s).
 
+- counts:
+
+  for `"prob"` and `"conditional"`: the counts, such as `0:10` or `5:8`.
+
+- overflow, underflow:
+
+  for `"prob"`: add columns with the probabilities above and below the
+  counts.
+
+- interval, level:
+
+  confidence intervals for the expected counts or prediction intervals
+  for new counts of each outcome, as a list of data frames (`fit`,
+  `lwr`, `upr`) named by outcome; see the section *Intervals of other
+  estimators* of
+  [`predict.flexCountReg()`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md).
+  With random parameters, prediction intervals use 50 parameter draws by
+  default and are slow.
+
 - ...:
 
-  unused.
+  `ndraws` and `seed` for intervals.
 
 ## Value
 

@@ -178,6 +178,8 @@ tuning parameters.
   [`count_correlated()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md)
   [`count_re_dist()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md)
   : Tuning parameters for count regression models
+- [`fit_resamples_counts()`](https://jwood-iastate.github.io/flexCountReg/reference/fit_resamples_counts.md)
+  : Resampling count models, including models with several outcomes
 
 ## User-defined count distributions
 

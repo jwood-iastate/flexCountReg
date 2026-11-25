@@ -74,7 +74,8 @@ values give <code>NA</code>).</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p><code>max_count</code> and <code>overflow</code> for <code>type = "prob"</code>.</p></dd>
+<dd><p><code>counts</code>, <code>max_count</code>, <code>overflow</code> and <code>underflow</code> for
+<code>type = "prob"</code>; <code>ndraws</code>, <code>seed</code> and <code>max_count</code> for intervals.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
@@ -96,9 +97,10 @@ has infinite variance).</p></dd>
 
 <dt><code>"prob"</code></dt>
 <dd><p>a matrix of count probabilities
-\(P(Y = y) = \sum_k \pi_k f_k(y)\) for \(y = 0, \dots,\)
-<code>max_count</code> (passed in <code>...</code>; default the largest training count);
-<code>overflow = TRUE</code> adds a column with \(P(Y &gt;\) <code>max_count</code>\()\).</p></dd>
+\(P(Y = y) = \sum_k \pi_k f_k(y)\) for the counts \(y\) in
+<code>counts</code>, or \(y = 0, \dots,\) <code>max_count</code> (default the largest
+training count). <code>overflow = TRUE</code> and <code>underflow = TRUE</code> add columns
+with the probabilities above and below them.</p></dd>
 
 <dt><code>"link"</code></dt>
 <dd><p>a matrix of the component linear predictors
@@ -163,12 +165,16 @@ in fitting, so the class probabilities never depend on the row order.</p></dd>
 
 
 <dt id="arg-interval">interval<a class="anchor" aria-label="anchor" href="#arg-interval"></a></dt>
-<dd><p>only <code>"none"</code>: confidence, prediction and tolerance
-intervals are not yet available for mixture models.</p></dd>
+<dd><p><code>"none"</code> (default), <code>"confidence"</code> (for the expected count)
+or <code>"prediction"</code> (for a new count), for <code>type = "response"</code> with
+<code>conditioning = "prior"</code>; see the section <em>Intervals of other
+estimators</em> of <code><a href="predict.flexCountReg.html">predict.flexCountReg()</a></code>. They use the asymptotic normal
+distribution of the estimates, which is poor when components are weakly
+separated or a mixing proportion is near 0.</p></dd>
 
 
 <dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
-<dd><p>unused (for compatibility).</p></dd>
+<dd><p>the level of the interval.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -196,10 +202,10 @@ row of the data, or a matrix (<code>"component"</code>, <code>"prob"</code>, <co
 <span class="r-out co"><span class="r-pr">#&gt;</span> [3,]  0.9645638   6.082595</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span>, newdata <span class="op">=</span> <span class="va">d</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, , drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, type <span class="op">=</span> <span class="st">"prob"</span>,</span></span>
 <span class="r-in"><span>        max_count <span class="op">=</span> <span class="fl">5</span>, overflow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>          0         1         2         3          4          5        &gt;5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             0         1         2         3          4          5        &gt;5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

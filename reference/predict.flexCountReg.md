@@ -88,12 +88,10 @@ predict(
   the probability from the zero model: the probability of a structural
   zero (zero-inflated) or of a zero count (hurdle). `"prob"` returns a
   matrix of probabilities \\P(Y = k)\\ with one row per row of `newdata`
-  and one column per count \\k = 0, \dots,\\ `max_count` (passed in
-  `...`; default the largest count in the training data), for rootograms
-  and for scoring models out of sample. With `overflow = TRUE` (in
-  `...`), a last column holds the tail mass \\P(Y \> \\
-  `max_count`\\)\\, so each row sums to 1. Types other than `"response"`
-  are available for `countreg` models only.
+  and one column per count, for rootograms and for scoring models out of
+  sample (see the section *Count probabilities*). It is available for
+  every estimator; the other types besides `"response"` for `countreg`
+  models only.
 
 - new_data:
 
@@ -102,8 +100,8 @@ predict(
 
 - interval:
 
-  `"none"` (default), `"confidence"` or `"prediction"` (`countreg`
-  models). See the section *Intervals*.
+  `"none"` (default), `"confidence"` or `"prediction"`. See the section
+  *Intervals*.
 
 - level:
 
@@ -138,6 +136,54 @@ optional parameter `method`: Only valid for random parameters models
 
 optional parameter `eb_type`: for `method = "Individual"`, either
 `"coefficients"` (default) or `"mean"`.
+
+## Count probabilities
+
+For `type = "prob"`, these arguments (in `...`) choose the counts:
+
+- `counts`: the counts, non-negative whole numbers such as `0:10`, `5:8`
+  or `c(0, 1, 10)`. Only these are evaluated, so a range far from zero
+  is as cheap as one near it.
+
+- `max_count`: short for `counts = 0:max_count`; the default is the
+  largest count in the training data.
+
+- `overflow = TRUE`: add a last column `">k"` with the probability of a
+  count above the largest one.
+
+- `underflow = TRUE`: add a first column `"<k"` with the probability of
+  a count below the smallest one. With both, the rows of a contiguous
+  range sum to 1.
+
+The probabilities are those of the marginal distribution of one count of
+a new unit: the unit's random terms are integrated out in closed form
+(`renb`, `repois`, `poislind_re`, `negmultinom`) or by Gauss-Hermite
+quadrature or scrambled Halton draws (`countreg_rp`). For `negmultinom`
+models of type NM1 and NM-P the frailty depends on the total mean of the
+cluster, taken over the cluster's rows in `newdata` (every row is its
+own cluster without the grouping columns). `countreg_fe` models use the
+estimated group effects. Finite mixtures, hierarchical, multivariate and
+allocation models:
+[`predict.countreg_mix`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mix.md),
+[`predict.countreg_hier`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_hier.md),
+[`predict.countreg_mv`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mv.md),
+[`predict.countreg_alloc`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_alloc.md).
+
+## Intervals of other estimators
+
+The estimators other than
+[`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+use draws from the asymptotic normal distribution of the estimates:
+`ndraws` scrambled Halton points (default 500 for confidence and 200 for
+prediction intervals), with `seed`. Parameters without a usable standard
+error (none, or the log of a distribution parameter with one above 10,
+which is at a boundary) are held at their estimates, with a message.
+Prediction intervals are the quantiles of the predictive distribution,
+the count probabilities averaged over the draws (up to `max_count`,
+default 1e4), and are for one count of a new unit, including its random
+terms. `countreg_fe` models have none: their group effects have no
+covariance matrix. The parametric bootstrap
+(`uncertainty = "bootstrap"`) is for `countreg` models.
 
 ## Intervals
 

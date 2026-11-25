@@ -160,13 +160,17 @@ segment, identified by <code>ID</code>.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> 1.04   0.957             2</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> 0.332 -<span style="color: #BB0000;">0.332</span>             0</span></span></code></pre></div>
 <p><code>conf_int</code> is an interval for the expected count,
-<code>pred_int</code> for a future count. Everything else that
-<code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> offers is available with
-<code>type = "raw"</code> and <code>opts</code>, such as the
-probabilities of 0 to 3 crashes:</p>
+<code>pred_int</code> for a future count. All engines have them except
+<code>countreg_fe</code>. Everything else that <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>
+offers is available with <code>type = "raw"</code> and
+<code>opts</code>, such as the probabilities of 0 to 3 crashes.
+<code>counts</code> chooses the counts, so a range such as
+<code>5:8</code> works too; <code>overflow = TRUE</code> (and
+<code>underflow = TRUE</code>) add the probabilities beyond the
+range:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">nb_fit</span>, <span class="va">new_roads</span>, type <span class="op">=</span> <span class="st">"raw"</span>,</span>
-<span>        opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"prob"</span>, max_count <span class="op">=</span> <span class="fl">3</span>, overflow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
+<span>        opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"prob"</span>, counts <span class="op">=</span> <span class="fl">0</span><span class="op">:</span><span class="fl">3</span>, overflow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;           0      1       2        3       &gt;3</span></span>
 <span><span class="co">#&gt; [1,] 0.5020 0.3072 0.12707 0.044160 0.019553</span></span>
 <span><span class="co">#&gt; [2,] 0.5307 0.3014 0.11571 0.037318 0.014906</span></span>
@@ -448,25 +452,24 @@ workflow set. The panel engines receive the segment as
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">8</span> base_poisson    rmse    0.851  0.091<span style="text-decoration: underline;">9</span></span></span></code></pre></div>
 <p>RMSE and MAE only look at the expected count, and models with the
 same mean structure are hard to tell apart by them. To compare the
-<em>distributions</em>, score the predicted probabilities, here with the
-out-of-sample log-likelihood of each fold (see
+<em>distributions</em>, score the predicted probabilities.
+<code><a href="../reference/fit_resamples_counts.html">fit_resamples_counts()</a></code> resamples a workflow or
+specification like <code><a href="https://tune.tidymodels.org/reference/fit_resamples.html" class="external-link">fit_resamples()</a></code> and can add the mean log
+probability of the held-out counts (larger is better). See
 <code><a href="../articles/predictive-validation.html">vignette("predictive-validation", package = "flexCountReg")</a></code>
-for scores and calibration):</p>
+for scores and calibration.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">log_score</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">spec</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">folds</span><span class="op">$</span><span class="va">splits</span>, <span class="kw">function</span><span class="op">(</span><span class="va">s</span><span class="op">)</span> <span class="op">{</span></span>
-<span>    <span class="va">f</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">spec</span>, <span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span>,</span>
-<span>             data <span class="op">=</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/as.data.frame.rsplit.html" class="external-link">analysis</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span><span class="op">)</span></span>
-<span>    <span class="va">held_out</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/as.data.frame.rsplit.html" class="external-link">assessment</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span></span>
-<span>    <span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">f</span>, <span class="va">held_out</span>, type <span class="op">=</span> <span class="st">"raw"</span>,</span>
-<span>                 opts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"prob"</span>,</span>
-<span>                             max_count <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">roads</span><span class="op">$</span><span class="va">Total_crashes</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">p</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span><span class="op">)</span>, <span class="va">held_out</span><span class="op">$</span><span class="va">Total_crashes</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="op">}</span><span class="op">)</span></span>
-<span><span class="op">}</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">specs</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"poisson"</span>, <span class="st">"nb2"</span><span class="op">)</span><span class="op">]</span>, <span class="kw">function</span><span class="op">(</span><span class="va">s</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu">log_score</span><span class="op">(</span><span class="va">s</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; poisson     nb2 </span></span>
-<span><span class="co">#&gt; -0.7709 -0.7518</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">f</span> <span class="op">&lt;-</span> <span class="va">Total_crashes</span> <span class="op">~</span> <span class="va">lnaadt</span> <span class="op">+</span> <span class="va">lnlength</span> <span class="op">+</span> <span class="va">speed50</span></span>
+<span><span class="va">scores</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">specs</span>, <span class="va">fit_resamples_counts</span>, resamples <span class="op">=</span> <span class="va">folds</span>,</span>
+<span>                 formula <span class="op">=</span> <span class="va">f</span>, log_score <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/funprog.html" class="external-link">Map</a></span><span class="op">(</span><span class="kw">function</span><span class="op">(</span><span class="va">s</span>, <span class="va">nm</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">nm</span>, <span class="va">s</span><span class="op">[</span><span class="va">s</span><span class="op">$</span><span class="va">.metric</span> <span class="op">==</span> <span class="st">"log_score"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mean"</span>, <span class="st">"std_err"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">}</span>, <span class="va">scores</span>, <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">scores</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt;                 model    mean std_err</span></span>
+<span><span class="co">#&gt; poisson       poisson -0.7709 0.04543</span></span>
+<span><span class="co">#&gt; nb2               nb2 -0.7518 0.04256</span></span>
+<span><span class="co">#&gt; two_class   two_class -0.7606 0.05090</span></span>
+<span><span class="co">#&gt; re_poisson re_poisson -0.7510 0.04285</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="tuning">Tuning<a class="anchor" aria-label="anchor" href="#tuning"></a>
@@ -633,19 +636,30 @@ formula. There is one prediction column per outcome.</p>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>        0.403     0.805</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>        0.366     0.730</span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>        0.542     1.09</span></span></code></pre></div>
-<p>(The severities here are simulated.) The resampling functions of tune
-compute metrics for a single outcome, so validate these models with a
-loop over rsample splits:</p>
+<p>(The severities here are simulated.) Interval predictions have a pair
+of columns per outcome:</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">mv_fit</span>, <span class="va">sev</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="op">]</span>, type <span class="op">=</span> <span class="st">"pred_int"</span>, level <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 4</span></span></span>
+<span><span class="co">#&gt;   .pred_lower_injury .pred_upper_injury .pred_lower_pdo .pred_upper_pdo</span></span>
+<span><span class="co">#&gt;                <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>           <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>                  0                  2               0               3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>                  0                  2               0               3</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>                  0                  2               0               4</span></span></code></pre></div>
+<p>The resampling functions of tune compute metrics for a single
+outcome. <code><a href="../reference/fit_resamples_counts.html">fit_resamples_counts()</a></code> evaluates all of them:</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mv_folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/group_vfold_cv.html" class="external-link">group_vfold_cv</a></span><span class="op">(</span><span class="va">sev</span>, group <span class="op">=</span> <span class="va">ID</span>, v <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="va">rbind</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">lapply</a></span><span class="op">(</span><span class="va">mv_folds</span><span class="op">$</span><span class="va">splits</span>, <span class="kw">function</span><span class="op">(</span><span class="va">s</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">f</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">mv_wf</span>, <span class="fu"><a href="https://rsample.tidymodels.org/reference/as.data.frame.rsplit.html" class="external-link">analysis</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://generics.r-lib.org/reference/augment.html" class="external-link">augment</a></span><span class="op">(</span><span class="va">f</span>, <span class="fu"><a href="https://rsample.tidymodels.org/reference/as.data.frame.rsplit.html" class="external-link">assessment</a></span><span class="op">(</span><span class="va">s</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>injury <span class="op">=</span> <span class="fu"><a href="https://yardstick.tidymodels.org/reference/rmse.html" class="external-link">rmse_vec</a></span><span class="op">(</span><span class="va">a</span><span class="op">$</span><span class="va">injury</span>, <span class="va">a</span><span class="op">$</span><span class="va">.pred_injury</span><span class="op">)</span>,</span>
-<span>             pdo <span class="op">=</span> <span class="fu"><a href="https://yardstick.tidymodels.org/reference/rmse.html" class="external-link">rmse_vec</a></span><span class="op">(</span><span class="va">a</span><span class="op">$</span><span class="va">pdo</span>, <span class="va">a</span><span class="op">$</span><span class="va">.pred_pdo</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colMeans</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="co">#&gt; injury    pdo </span></span>
-<span><span class="co">#&gt; 0.4114 0.6455</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/fit_resamples_counts.html">fit_resamples_counts</a></span><span class="op">(</span><span class="va">mv_wf</span>, <span class="va">mv_folds</span>, log_score <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 5</span></span></span>
+<span><span class="co">#&gt;   outcome .metric     mean     n std_err</span></span>
+<span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> injury  rmse       0.411     3 0.012<span style="text-decoration: underline;">2</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span> injury  mae        0.218     3 0.008<span style="text-decoration: underline;">56</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span> injury  log_score -<span style="color: #BB0000;">0.374</span>     3 0.041<span style="text-decoration: underline;">1</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span> pdo     rmse       0.646     3 0.030<span style="text-decoration: underline;">3</span> </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span> pdo     mae        0.380     3 0.009<span style="text-decoration: underline;">39</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span> pdo     log_score -<span style="color: #BB0000;">0.614</span>     3 0.009<span style="text-decoration: underline;">78</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="back-to-flexcountreg">Back to flexCountReg<a class="anchor" aria-label="anchor" href="#back-to-flexcountreg"></a>
@@ -653,7 +667,7 @@ loop over rsample splits:</p>
 <p><code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_fit_engine()</a></code> returns the flexCountReg model, for
 everything that tidymodels has no interface for: marginal effects, CURE
 plots, rootograms, robust covariances, model tests.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_fit_engine</a></span><span class="op">(</span><span class="fu"><a href="https://generics.r-lib.org/reference/fit.html" class="external-link">fit</a></span><span class="op">(</span><span class="va">wf_offset</span>, <span class="va">train</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/margEffTable.html">margEffTable</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Marginal Effects / Elasticities</span></span>
@@ -667,7 +681,7 @@ plots, rootograms, robust covariances, model tests.</p>
 <span><span class="co">#&gt;        0 ***  -57.268  -29.065  1125                    NA</span></span>
 <span><span class="fu"><a href="../reference/cureplot.html">cureplot</a></span><span class="op">(</span><span class="va">m</span>, indvar <span class="op">=</span> <span class="st">"lnaadt"</span><span class="op">)</span></span></code></pre></div>
 <p><img src="tidymodels_files/figure-html/engine-1.png" class="r-plt" alt="" width="576"></p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">m</span>, type <span class="op">=</span> <span class="st">"robust"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span></span>
 <span><span class="co">#&gt; (Intercept)      lnaadt     speed50 </span></span>
 <span><span class="co">#&gt;      0.5780      0.0668      0.1370</span></span></code></pre></div>

@@ -270,10 +270,10 @@ computer.
   likelihood-ratio test against the Poisson model.
 - [`predict()`](https://rdrr.io/r/stats/predict.html) gives expected
   counts (one per row of `newdata`, `NA` for incomplete rows), the
-  probability of each count, and the components of underreporting and
-  zero models. For
-  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-  models it also gives confidence intervals for the expected count and
+  probabilities of any set of counts, and the components of
+  underreporting and zero models. For every estimator except
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
+  it also gives confidence intervals for the expected count and
   prediction intervals for a new count (`interval = "confidence"` or
   `"prediction"`). For random parameters models it offers exact,
   simulated and Empirical Bayes (`"Individual"`) predictions.
@@ -1003,6 +1003,8 @@ tuning parameters.
   [`count_correlated()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md)
   [`count_re_dist()`](https://jwood-iastate.github.io/flexCountReg/reference/count_family.md)
   : Tuning parameters for count regression models
+- [`fit_resamples_counts()`](https://jwood-iastate.github.io/flexCountReg/reference/fit_resamples_counts.md)
+  : Resampling count models, including models with several outcomes
 
 ## User-defined count distributions
 

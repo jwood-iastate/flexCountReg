@@ -56,6 +56,11 @@
 <span>  given <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  random <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"marginal"</span>, <span class="st">"posterior"</span><span class="op">)</span>,</span>
 <span>  new_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  counts <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  overflow <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  underflow <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  interval <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"confidence"</span>, <span class="st">"prediction"</span><span class="op">)</span>,</span>
+<span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -88,7 +93,7 @@ random parameters).</p></dd>
 
 <dt><code>"prob"</code></dt>
 <dd><p>a list with one matrix per outcome of the
-probabilities of the counts <code>0:max_count</code>.</p></dd>
+probabilities of the counts in <code>counts</code> (or <code>0:max_count</code>).</p></dd>
 
 <dt><code>"joint"</code></dt>
 <dd><p>the joint probability of the counts <code>y</code> of all
@@ -105,8 +110,9 @@ its injury crashes.</p></dd>
 
 
 <dt id="arg-max-count">max_count<a class="anchor" aria-label="anchor" href="#arg-max-count"></a></dt>
-<dd><p>for <code>"prob"</code> and <code>"conditional"</code>: the largest count
-(default: the largest observed count of the outcome).</p></dd>
+<dd><p>for <code>"prob"</code> and <code>"conditional"</code>: short for
+<code>counts = 0:max_count</code> (default: the largest observed count of the
+outcome). For intervals, the largest count evaluated.</p></dd>
 
 
 <dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
@@ -130,8 +136,27 @@ estimation data get the marginal prediction). <code>newdata</code> then needs th
 <code>group_var</code> column(s).</p></dd>
 
 
+<dt id="arg-counts">counts<a class="anchor" aria-label="anchor" href="#arg-counts"></a></dt>
+<dd><p>for <code>"prob"</code> and <code>"conditional"</code>: the counts, such as <code>0:10</code>
+or <code>5:8</code>.</p></dd>
+
+
+<dt id="arg-overflow-underflow">overflow, underflow<a class="anchor" aria-label="anchor" href="#arg-overflow-underflow"></a></dt>
+<dd><p>for <code>"prob"</code>: add columns with the probabilities
+above and below the counts.</p></dd>
+
+
+<dt id="arg-interval-level">interval, level<a class="anchor" aria-label="anchor" href="#arg-interval-level"></a></dt>
+<dd><p>confidence intervals for the expected counts or
+prediction intervals for new counts of each outcome, as a list of data
+frames (<code>fit</code>, <code>lwr</code>, <code>upr</code>) named by outcome; see the section
+<em>Intervals of other estimators</em> of <code><a href="predict.flexCountReg.html">predict.flexCountReg()</a></code>. With random
+parameters, prediction intervals use 50 parameter draws by default and
+are slow.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>unused.</p></dd>
+<dd><p><code>ndraws</code> and <code>seed</code> for intervals.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -35,7 +35,8 @@ predict(
 
 - ...:
 
-  `max_count` and `overflow` for `type = "prob"`.
+  `counts`, `max_count`, `overflow` and `underflow` for `type = "prob"`;
+  `ndraws`, `seed` and `max_count` for intervals.
 
 - type:
 
@@ -61,9 +62,10 @@ predict(
   `"prob"`
 
   :   a matrix of count probabilities \\P(Y = y) = \sum_k \pi_k f_k(y)\\
-      for \\y = 0, \dots,\\ `max_count` (passed in `...`; default the
-      largest training count); `overflow = TRUE` adds a column with
-      \\P(Y \>\\ `max_count`\\)\\.
+      for the counts \\y\\ in `counts`, or \\y = 0, \dots,\\ `max_count`
+      (default the largest training count). `overflow = TRUE` and
+      `underflow = TRUE` add columns with the probabilities above and
+      below them.
 
   `"link"`
 
@@ -129,12 +131,18 @@ predict(
 
 - interval:
 
-  only `"none"`: confidence, prediction and tolerance intervals are not
-  yet available for mixture models.
+  `"none"` (default), `"confidence"` (for the expected count) or
+  `"prediction"` (for a new count), for `type = "response"` with
+  `conditioning = "prior"`; see the section *Intervals of other
+  estimators* of
+  [`predict.flexCountReg()`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md).
+  They use the asymptotic normal distribution of the estimates, which is
+  poor when components are weakly separated or a mixing proportion is
+  near 0.
 
 - level:
 
-  unused (for compatibility).
+  the level of the interval.
 
 ## Value
 
@@ -162,8 +170,8 @@ predict(m, newdata = d[1:3, , drop = FALSE], type = "component")
 #> [3,]  0.9645638   6.082595
 predict(m, newdata = d[1:3, , drop = FALSE], type = "prob",
         max_count = 5, overflow = TRUE)
-#>          0         1         2         3          4          5        >5
-#> 1 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
-#> 2 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
-#> 3 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
+#>             0         1         2         3          4          5        >5
+#> [1,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
+#> [2,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
+#> [3,] 0.229734 0.2262613 0.1233191 0.0684353 0.06027532 0.06487828 0.2270966
 ```

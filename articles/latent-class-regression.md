@@ -678,10 +678,11 @@ coefficients are not.
 - Different formulas for different components (all components share the
   mean and distribution-parameter formulas, with component-specific
   coefficients unless shared).
-- Confidence, prediction and tolerance intervals for mixture predictions
-  (`predict(interval = ...)` and
-  [`tolerance_interval()`](https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.md)
-  refuse mixtures).
+- Tolerance intervals for mixture predictions
+  ([`tolerance_interval()`](https://jwood-iastate.github.io/flexCountReg/reference/tolerance_interval.md)
+  refuses mixtures). `predict(interval = ...)` gives confidence and
+  prediction intervals from the asymptotic normal distribution of the
+  estimates, which is poor for weakly separated classes.
 - Bootstrap standard errors of marginal effects (`se = "delta"` works).
 - A calibrated test of the number of classes.
 - Classes that change over time within a panel (hidden Markov models).

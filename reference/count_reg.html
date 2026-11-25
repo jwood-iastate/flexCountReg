@@ -177,13 +177,15 @@ not whole numbers without it.</p>
 <code>NA</code> for rows with missing values. For models with several outcomes
 there is one column per outcome or category
 (<code>.pred_&lt;name&gt;</code>); <code>predict_args = list(type = "total")</code> gives
-the total of <code>"countreg_alloc"</code> as <code>.pred</code>. The
-<code>"flexCountReg"</code> engine also has <code>type = "conf_int"</code> and
-<code>type = "pred_int"</code> (see <code><a href="predict.flexCountReg.html">predict.flexCountReg</a></code>).
+the total of <code>"countreg_alloc"</code> as <code>.pred</code>. All
+engines except <code>"countreg_fe"</code> also have <code>type = "conf_int"</code> and
+<code>type = "pred_int"</code> (see <code><a href="predict.flexCountReg.html">predict.flexCountReg</a></code>), with a
+pair of columns per outcome for models with several
+(<code>.pred_lower_&lt;name&gt;</code>, <code>.pred_upper_&lt;name&gt;</code>).
 Everything else is available with <code>type = "raw"</code>, whose <code>opts</code>
 are passed to <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code>: for example
 <code>predict(fit, new_data, type = "raw",
-opts = list(type = "prob", max_count = 5))</code> for count probabilities.</p>
+opts = list(type = "prob", counts = 0:5))</code> for count probabilities.</p>
 <p>Predictions that use the observed outcome (Empirical Bayes predictions of
 random-parameter models, posterior class probabilities) need it in
 <code>new_data</code>; a workflow removes the outcome, so use the model itself:
@@ -199,7 +201,7 @@ take the extracted model.</p>
 <p>The engines <code>"countreg_alloc"</code> and <code>"countreg_mv"</code> can be
 fitted and predicted in workflows, but the resampling functions of
 <span class="pkg">tune</span> compute metrics for one outcome, so use
-<code>rsample</code> splits directly to validate them.</p>
+<code><a href="fit_resamples_counts.html">fit_resamples_counts()</a></code> to validate them.</p>
     </div>
     <div class="section level2">
     <h2 id="loading">Loading<a class="anchor" aria-label="anchor" href="#loading"></a></h2>

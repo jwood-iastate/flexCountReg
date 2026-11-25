@@ -205,13 +205,10 @@ the count distribution alone, and <code>"zero"</code> is the probability from
 the zero model: the probability of a structural zero (zero-inflated) or
 of a zero count (hurdle).
 <code>"prob"</code> returns a matrix of probabilities \(P(Y = k)\) with one
-row per row of <code>newdata</code> and one column per count
-\(k = 0, \dots,\) <code>max_count</code> (passed in <code>...</code>; default the
-largest count in the training data), for rootograms and for scoring
-models out of sample. With <code>overflow = TRUE</code> (in <code>...</code>), a last
-column holds the tail mass \(P(Y &gt; \) <code>max_count</code>\()\), so each
-row sums to 1. Types other than <code>"response"</code> are available
-for <code>countreg</code> models only.</p></dd>
+row per row of <code>newdata</code> and one column per count, for rootograms
+and for scoring models out of sample (see the section <em>Count
+probabilities</em>). It is available for every estimator; the other types
+besides <code>"response"</code> for <code>countreg</code> models only.</p></dd>
 
 
 <dt id="arg-new-data">new_data<a class="anchor" aria-label="anchor" href="#arg-new-data"></a></dt>
@@ -221,8 +218,7 @@ tidymodels. Give one or the other.</p></dd>
 
 <dt id="arg-interval">interval<a class="anchor" aria-label="anchor" href="#arg-interval"></a></dt>
 <dd><p><code>"none"</code> (default), <code>"confidence"</code> or
-<code>"prediction"</code> (<code>countreg</code> models). See the section
-<em>Intervals</em>.</p></dd>
+<code>"prediction"</code>. See the section <em>Intervals</em>.</p></dd>
 
 
 <dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
@@ -256,6 +252,51 @@ if an offset column is missing from <code>newdata</code>.</p>
 <code>Individual</code> (or <code>EB</code>), or <code>Exact</code>.</p>
 <p>optional parameter <code>eb_type</code>: for <code>method = "Individual"</code>,
 either <code>"coefficients"</code> (default) or <code>"mean"</code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="count-probabilities">Count probabilities<a class="anchor" aria-label="anchor" href="#count-probabilities"></a></h2>
+
+
+<p>For <code>type = "prob"</code>, these arguments (in <code>...</code>) choose the
+counts:</p><ul><li><p><code>counts</code>: the counts, non-negative whole numbers such as
+<code>0:10</code>, <code>5:8</code> or <code>c(0, 1, 10)</code>. Only these are
+evaluated, so a range far from zero is as cheap as one near it.</p></li>
+<li><p><code>max_count</code>: short for <code>counts = 0:max_count</code>; the
+default is the largest count in the training data.</p></li>
+<li><p><code>overflow = TRUE</code>: add a last column <code>"&gt;k"</code> with the
+probability of a count above the largest one.</p></li>
+<li><p><code>underflow = TRUE</code>: add a first column <code>"&lt;k"</code> with the
+probability of a count below the smallest one. With both, the rows of
+a contiguous range sum to 1.</p></li>
+</ul><p>The probabilities are those of the marginal distribution of one count of
+a new unit: the unit's random terms are integrated out in closed form
+(<code>renb</code>, <code>repois</code>, <code>poislind_re</code>, <code>negmultinom</code>) or
+by Gauss-Hermite quadrature or scrambled Halton draws
+(<code>countreg_rp</code>).
+For <code>negmultinom</code> models of type NM1 and NM-P the frailty depends on
+the total mean of the cluster, taken over the cluster's rows in
+<code>newdata</code> (every row is its own cluster without the grouping
+columns). <code>countreg_fe</code> models use the estimated group effects.
+Finite mixtures, hierarchical, multivariate and allocation models:
+<code><a href="predict.countreg_mix.html">predict.countreg_mix</a></code>, <code><a href="predict.countreg_hier.html">predict.countreg_hier</a></code>,
+<code><a href="predict.countreg_mv.html">predict.countreg_mv</a></code>, <code><a href="predict.countreg_alloc.html">predict.countreg_alloc</a></code>.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="intervals-of-other-estimators">Intervals of other estimators<a class="anchor" aria-label="anchor" href="#intervals-of-other-estimators"></a></h2>
+
+
+<p>The estimators other than <code><a href="countreg.html">countreg()</a></code> use draws from the asymptotic
+normal distribution of the estimates: <code>ndraws</code> scrambled Halton
+points (default 500 for confidence and 200 for prediction intervals),
+with <code>seed</code>. Parameters without a usable standard error (none, or
+the log of a distribution parameter with one above 10, which is at a
+boundary) are held at their estimates, with a message. Prediction intervals are the
+quantiles of the predictive distribution, the count probabilities averaged
+over the draws (up to <code>max_count</code>, default 1e4), and are for one
+count of a new unit, including its random terms. <code>countreg_fe</code>
+models have none: their group effects have no covariance matrix. The
+parametric bootstrap (<code>uncertainty = "bootstrap"</code>) is for
+<code>countreg</code> models.</p>
     </div>
     <div class="section level2">
     <h2 id="intervals">Intervals<a class="anchor" aria-label="anchor" href="#intervals"></a></h2>

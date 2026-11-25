@@ -696,9 +696,11 @@ mixtures.</li>
 <li>Different formulas for different components (all components share
 the mean and distribution-parameter formulas, with component-specific
 coefficients unless shared).</li>
-<li>Confidence, prediction and tolerance intervals for mixture
-predictions (<code>predict(interval = ...)</code> and
-<code><a href="../reference/tolerance_interval.html">tolerance_interval()</a></code> refuse mixtures).</li>
+<li>Tolerance intervals for mixture predictions
+(<code><a href="../reference/tolerance_interval.html">tolerance_interval()</a></code> refuses mixtures).
+<code>predict(interval = ...)</code> gives confidence and prediction
+intervals from the asymptotic normal distribution of the estimates,
+which is poor for weakly separated classes.</li>
 <li>Bootstrap standard errors of marginal effects
 (<code>se = "delta"</code> works).</li>
 <li>A calibrated test of the number of classes.</li>

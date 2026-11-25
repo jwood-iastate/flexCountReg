@@ -146,6 +146,13 @@ the observed baseline and a switched value. If
 `indicator = "pseudo_elasticity"`, the result is reported as a percent
 change relative to the baseline.
 
+For models with several outcomes there is a column `outcome`: the
+outcomes of
+[`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md),
+or the categories of
+[`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+and their `"total"`.
+
 ## Examples
 
 ``` r

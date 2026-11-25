@@ -9,10 +9,16 @@ Predictions from total-plus-allocation models
 predict(
   object,
   newdata = NULL,
-  type = c("counts", "prob", "total", "total_positive"),
+  type = c("counts", "prob", "total", "total_positive", "total_prob", "count_prob"),
   conditional = FALSE,
   random = c("marginal", "posterior"),
   new_data = NULL,
+  counts = NULL,
+  max_count = NULL,
+  overflow = FALSE,
+  underflow = FALSE,
+  interval = c("none", "confidence", "prediction"),
+  level = 0.95,
   ...
 )
 ```
@@ -34,12 +40,18 @@ predict(
   `"counts"` (default): the expected count in each category,
   \\E\[c\]\\\pi_j\\; `"prob"`: the allocation probabilities \\\pi_j\\;
   `"total"`: the expected total \\E\[c\]\\; `"total_positive"`: the
-  expected total given at least one event, \\E\[c\] / (1 - P(0))\\.
+  expected total given at least one event, \\E\[c\] / (1 - P(0))\\;
+  `"total_prob"`: a matrix of the probabilities of the total's counts;
+  `"count_prob"`: a list with one such matrix per category, the total
+  thinned by the category's probability (not for the fractional
+  quasi-likelihood, which defines no distribution of the category
+  counts).
 
 - conditional:
 
-  for `type = "counts"`: `TRUE` gives the expected counts given at least
-  one event, \\E\[c \mid c \> 0\]\\\pi_j\\. The default is `FALSE`, the
+  for the probabilities, `TRUE` conditions on at least one event; for
+  `type = "counts"`: `TRUE` gives the expected counts given at least one
+  event, \\E\[c \mid c \> 0\]\\\pi_j\\. The default is `FALSE`, the
   unconditional expected counts, also for a fit with `truncated = TRUE`
   (whose estimated distribution is that of the untruncated total).
 
@@ -54,9 +66,29 @@ predict(
   (`shared_formula`) is always averaged over its distribution, as it is
   new for every row.
 
+- counts, max_count:
+
+  for the probabilities: the counts, such as `0:10` or `5:8`, or the
+  largest one of `0:max_count` (default: the largest observed total).
+  For intervals, `max_count` is the largest count evaluated.
+
+- overflow, underflow:
+
+  add columns with the probabilities above and below the counts.
+
+- interval, level:
+
+  confidence intervals for the expected count or prediction intervals
+  for a new count: for `type = "counts"` a list of data frames (`fit`,
+  `lwr`, `upr`) named by category, for `type = "total"` one data frame.
+  See the section *Intervals of other estimators* of
+  [`predict.flexCountReg()`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md).
+  With random parameters, prediction intervals use 50 parameter draws by
+  default and are slow.
+
 - ...:
 
-  unused.
+  `ndraws` and `seed` for intervals.
 
 ## Value
 

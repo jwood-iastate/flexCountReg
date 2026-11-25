@@ -29,9 +29,10 @@ rootogram(
 
 - object:
 
-  a
-  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
-  model.
+  a fitted model with one outcome (any estimator except
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  and
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)).
 
 - newdata:
 

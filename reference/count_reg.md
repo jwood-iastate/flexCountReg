@@ -135,13 +135,14 @@ weights that are not whole numbers without it.
 per row of `new_data` and `NA` for rows with missing values. For models
 with several outcomes there is one column per outcome or category
 (`.pred_<name>`); `predict_args = list(type = "total")` gives the total
-of `"countreg_alloc"` as `.pred`. The `"flexCountReg"` engine also has
-`type = "conf_int"` and `type = "pred_int"` (see
-[`predict.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md)).
-Everything else is available with `type = "raw"`, whose `opts` are
-passed to [`predict()`](https://rdrr.io/r/stats/predict.html): for
-example
-`predict(fit, new_data, type = "raw", opts = list(type = "prob", max_count = 5))`
+of `"countreg_alloc"` as `.pred`. All engines except `"countreg_fe"`
+also have `type = "conf_int"` and `type = "pred_int"` (see
+[`predict.flexCountReg`](https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.md)),
+with a pair of columns per outcome for models with several
+(`.pred_lower_<name>`, `.pred_upper_<name>`). Everything else is
+available with `type = "raw"`, whose `opts` are passed to
+[`predict()`](https://rdrr.io/r/stats/predict.html): for example
+`predict(fit, new_data, type = "raw", opts = list(type = "prob", counts = 0:5))`
 for count probabilities.
 
 Predictions that use the observed outcome (Empirical Bayes predictions
@@ -159,8 +160,9 @@ extracted model.
 
 The engines `"countreg_alloc"` and `"countreg_mv"` can be fitted and
 predicted in workflows, but the resampling functions of tune compute
-metrics for one outcome, so use `rsample` splits directly to validate
-them.
+metrics for one outcome, so use
+[`fit_resamples_counts()`](https://jwood-iastate.github.io/flexCountReg/reference/fit_resamples_counts.md)
+to validate them.
 
 ## Loading
 

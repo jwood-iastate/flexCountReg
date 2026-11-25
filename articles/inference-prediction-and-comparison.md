@@ -159,7 +159,7 @@ models, `type` chooses the quantity:
 | `"true"` | expected true count (with underreporting) |
 | `"prob_reported"` | probability that a count is reported |
 | `"link"` | linear predictor \\X\beta\\ + offset |
-| `"prob"` | matrix of \\P(Y = k)\\, \\k = 0, \dots,\\ `max_count` |
+| `"prob"` | matrix of \\P(Y = k)\\ for the counts in `counts` (or `0:max_count`) |
 | `"zero"` | zero-model probability (zero-inflated or hurdle models) |
 
 ``` r
@@ -176,7 +176,22 @@ round(predict(nb_h, newdata = nd, type = "prob", max_count = 4,
 ```
 
 With `overflow = TRUE` the last column holds \\P(Y \>\\
-`max_count`\\)\\, so each row sums to one.
+`max_count`\\)\\, so each row sums to one. `counts` gives any other set
+or range of counts, and `underflow = TRUE` the probability below it:
+
+``` r
+
+round(predict(nb_h, newdata = nd, type = "prob", counts = 3:5,
+              overflow = TRUE, underflow = TRUE), 4)
+#>          <3      3      4      5     >5
+#> [1,] 0.9363 0.0442 0.0139 0.0041 0.0016
+#> [2,] 0.9478 0.0373 0.0109 0.0030 0.0010
+#> [3,] 0.8869 0.0701 0.0275 0.0101 0.0053
+```
+
+`type = "prob"` and `interval` are available for the other estimators
+too (no intervals for
+[`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)).
 
 For random-parameter models, `method` chooses how the random
 coefficients are handled:

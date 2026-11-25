@@ -49,12 +49,18 @@
 <span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span></span>
 <span>  <span class="va">object</span>,</span>
 <span>  newdata <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"response"</span>, <span class="st">"link"</span><span class="op">)</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"response"</span>, <span class="st">"link"</span>, <span class="st">"prob"</span><span class="op">)</span>,</span>
 <span>  re.form <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  allow.new.levels <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  marginal <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  history <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  new_data <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  counts <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  max_count <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  overflow <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  underflow <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  interval <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"confidence"</span>, <span class="st">"prediction"</span><span class="op">)</span>,</span>
+<span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -73,8 +79,10 @@ the estimation rows).</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p><code>"response"</code> (expected count) or <code>"link"</code> (log of
-the mean parameter).</p></dd>
+<dd><p><code>"response"</code> (expected count), <code>"link"</code> (log of
+the mean parameter) or <code>"prob"</code> (a matrix of count probabilities,
+given the estimated effects; with <code>marginal</code> the other effects are
+integrated out).</p></dd>
 
 
 <dt id="arg-re-form">re.form<a class="anchor" aria-label="anchor" href="#arg-re-form"></a></dt>
@@ -104,13 +112,37 @@ from the estimation data, so a forecast never uses its own outcomes.
 Groups without history are treated as new groups.</p></dd>
 
 
+<dt id="arg-counts-max-count">counts, max_count<a class="anchor" aria-label="anchor" href="#arg-counts-max-count"></a></dt>
+<dd><p>for <code>"prob"</code>: the counts, such as
+<code>0:10</code> or <code>5:8</code>, or the largest one of <code>0:max_count</code>
+(default: the largest training count). For intervals, <code>max_count</code>
+is the largest count evaluated.</p></dd>
+
+
+<dt id="arg-overflow-underflow">overflow, underflow<a class="anchor" aria-label="anchor" href="#arg-overflow-underflow"></a></dt>
+<dd><p>for <code>"prob"</code>: add columns with the
+probabilities above and below the counts.</p></dd>
+
+
+<dt id="arg-interval-level">interval, level<a class="anchor" aria-label="anchor" href="#arg-interval-level"></a></dt>
+<dd><p>confidence interval for the expected count or
+prediction interval for a new count (a data frame with <code>fit</code>,
+<code>lwr</code> and <code>upr</code>). They include the uncertainty of the fixed
+coefficients, the distribution parameters and the estimated effects of
+known groups, but not of the random-effect variances, which are held at
+their estimates. Prediction intervals use <code>marginal = TRUE</code> unless
+it is given. See the section <em>Intervals of other estimators</em> of
+<code><a href="predict.flexCountReg.html">predict.flexCountReg</a></code>.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>unused.</p></dd>
+<dd><p><code>ndraws</code> and <code>seed</code> for intervals.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A numeric vector with one value per row of <code>newdata</code>.</p>
+    <p>A numeric vector with one value per row of <code>newdata</code>, a
+matrix (<code>"prob"</code>) or a data frame (intervals).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

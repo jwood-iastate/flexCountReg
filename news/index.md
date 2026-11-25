@@ -2,6 +2,60 @@
 
 ## flexCountReg 0.1.2 (development)
 
+### Count probabilities and intervals for every estimator
+
+- `predict(type = "prob")` takes `counts`, the counts to evaluate (such
+  as `0:10`, `5:8` or `c(0, 1, 10)`), besides `max_count` (short for
+  `0:max_count`). Only those counts are evaluated. `underflow = TRUE`
+  adds the probability below the smallest count, as `overflow = TRUE`
+  does above the largest. `counts` also works for
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  (`"prob"` and `"conditional"`) and the finite mixtures.
+- `type = "prob"` for
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md),
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md),
+  [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md),
+  [`renb()`](https://jwood-iastate.github.io/flexCountReg/reference/renb.md),
+  [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md),
+  [`poislind_re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
+  and
+  [`negmultinom()`](https://jwood-iastate.github.io/flexCountReg/reference/negmultinom.md):
+  the marginal distribution of a count of a new unit, with its random
+  terms integrated out
+  ([`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md):
+  given the estimated group effect;
+  [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md):
+  given the estimated effects, or marginal with `marginal = TRUE`).
+  [`rootogram()`](https://jwood-iastate.github.io/flexCountReg/reference/rootogram.md)
+  works for these models too.
+- [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md):
+  `type = "total_prob"` and `"count_prob"` give the count probabilities
+  of the total and of each category.
+- Confidence and prediction intervals (`interval =`) for every estimator
+  except
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md),
+  whose group effects have no covariance matrix. Models with several
+  outcomes return a list of data frames. In a simulation with 10 models
+  (150 replications, level 0.90), the confidence intervals covered 0.86
+  to 0.93 of the true means and the prediction intervals 0.94 to 0.99 of
+  new counts (discrete counts make them conservative).
+- Rows with a missing covariate have `NA` probabilities in hurdle models
+  (where P(0) was returned) and
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  models (where they were 0).
+- [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  works for
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  models: effects on the expected count of each category and on the
+  total, with standard errors (it averaged over the categories, without
+  standard errors).
+- New
+  [`fit_resamples_counts()`](https://jwood-iastate.github.io/flexCountReg/reference/fit_resamples_counts.md):
+  resamples workflows or specifications with several outcomes, which
+  [`tune::fit_resamples()`](https://tune.tidymodels.org/reference/fit_resamples.html)
+  cannot, and computes the out-of-sample log score of the count
+  distribution for any engine.
+
 ### tidymodels
 
 - [`count_reg()`](https://jwood-iastate.github.io/flexCountReg/reference/count_reg.md)
@@ -11,9 +65,9 @@
   `"countreg_hier"`, `"countreg_alloc"`, `"countreg_mv"`, `"renb"`,
   `"repois"`, `"poislind_re"` and `"negmultinom"`. New article
   [`vignette("tidymodels")`](https://jwood-iastate.github.io/flexCountReg/articles/tidymodels.md).
-- New prediction types: `"conf_int"` and `"pred_int"` (`"flexCountReg"`
-  engine) and `"raw"`, whose `opts` reach every option of
-  [`predict()`](https://rdrr.io/r/stats/predict.html). The engine
+- New prediction types: `"conf_int"` and `"pred_int"` (all engines
+  except `"countreg_fe"`) and `"raw"`, whose `opts` reach every option
+  of [`predict()`](https://rdrr.io/r/stats/predict.html). The engine
   argument `predict_args` sets
   [`predict()`](https://rdrr.io/r/stats/predict.html) options for
   numeric predictions and intervals; `fit_engine` is the estimators’

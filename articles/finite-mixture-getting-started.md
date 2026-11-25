@@ -273,10 +273,10 @@ max_count <- 12
 P <- predict(fit2, newdata = nd, type = "prob", max_count = max_count,
              overflow = TRUE)
 round(P, 4)
-#>        0      1      2      3      4      5      6      7      8      9     10
-#> 1 0.2225 0.2402 0.1512 0.0968 0.0797 0.0697 0.0553 0.0383 0.0233 0.0126 0.0061
-#>       11     12   >12
-#> 1 0.0027 0.0011 6e-04
+#>           0      1      2      3      4      5      6      7      8      9
+#> [1,] 0.2225 0.2402 0.1512 0.0968 0.0797 0.0697 0.0553 0.0383 0.0233 0.0126
+#>          10     11     12   >12
+#> [1,] 0.0061 0.0027 0.0011 6e-04
 grid <- 0:max_count
 contrib <- sapply(1:2, function(k) p_hat[k] * dpois(grid, m_hat[k]))
 all.equal(rowSums(contrib), unname(P[1, seq_along(grid)]))

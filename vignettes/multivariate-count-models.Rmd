@@ -118,7 +118,71 @@ lapply(predict(m, newdata = nd, type = "prob", max_count = 3), round, 3)
 
 The counts of different severity levels at a site are usually correlated:
 unobserved conditions that raise PDO crashes also raise injury crashes.
-This version treats the equations as independent given the covariates, so
-that correlation is not modeled. Multivariate models with shared random
-effects (correlated random parameters across equations) and copula models
-are planned.
+`rpar_formula` adds random parameters to the equations, drawn once per
+unit of `group_var` (here a road segment, shared by its three years) and
+correlated across equations (`correlation = "across"`, the default).
+
+Poisson outcomes with correlated normal random intercepts give the
+**multivariate Poisson-lognormal model** (MVPLN): each segment's
+intercepts in the two equations are bivariate normal, which makes each
+outcome overdispersed and the two outcomes correlated.
+
+```{r mvpln}
+mr <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
+                  data = w, family = "POISSON", rpar_formula = ~ 1,
+                  group_var = "ID", rpar_draws = 200, seed = 1)
+summary(mr)
+AIC(m, mr)
+```
+
+The estimated correlation of the random intercepts is about 0.64:
+segments with more PDO crashes than their traffic and speed limit predict
+tend to have more injury crashes too. The evidence for it is modest (the
+`chol:` element that carries it has p of about 0.06), because injury
+crashes are rare. The MVPLN still fits much better than the independent
+NB2 and PIG equations (AIC 2473 against 2510). Other families can be used in the same way: they keep their
+own overdispersion within each outcome, and the random intercepts add the
+correlation between outcomes. Random slopes are more terms in
+`rpar_formula`, such as `~ 1 + lnaadt`, and `rpar_formula` can also be a
+list with a different formula for each outcome.
+
+The likelihood is simulated: each segment's likelihood is averaged over
+`rpar_draws` draws of its random parameters (randomly shifted Halton
+points), with analytic gradients. The standard deviations are reported as
+positive; the correlations come from the off-diagonal elements (`chol:`)
+of the Cholesky factor.
+
+## 6. Joint and conditional probabilities
+
+With correlated outcomes, the probability of a combination of counts is
+not the product of the outcomes' probabilities. `type = "joint"` gives the
+probability of given counts of all outcomes, and `type = "conditional"`
+the distribution of one outcome given counts of the others, such as the
+chance of injury crashes on a segment-year with three PDO crashes:
+
+```{r conditional}
+nd <- w[c(1, 50, 200), ]
+predict(mr, newdata = nd, type = "joint", y = c(pdo = 1, injury = 1))
+round(predict(mr, newdata = nd, type = "prob", max_count = 2)$injury, 4)
+round(predict(mr, newdata = nd, type = "conditional", outcome = "injury",
+              given = c(pdo = 3), max_count = 2), 4)
+round(predict(mr, newdata = nd, type = "conditional", outcome = "injury",
+              given = c(pdo = 0), max_count = 2), 4)
+```
+
+Three PDO crashes raise the probability of an injury crash above its
+marginal value, and no PDO crash lowers it. Without random parameters the
+equations are independent, and the conditional probabilities equal the
+marginal ones.
+
+For segments in the estimation data, `random = "posterior"` uses their own
+crash history (Empirical Bayes):
+
+```{r posterior}
+seg <- w[w$ID == w$ID[1], ]
+round(cbind(predict(mr, newdata = seg),
+            predict(mr, newdata = seg, random = "posterior")), 3)
+```
+
+Copula models, which join the outcomes' distributions directly, are
+planned.

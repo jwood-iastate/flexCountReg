@@ -7,8 +7,12 @@
 \method{predict}{countreg_mv}(
   object,
   newdata = NULL,
-  type = c("response", "link", "variance", "prob"),
+  type = c("response", "link", "variance", "prob", "joint", "conditional"),
   max_count = NULL,
+  y = NULL,
+  outcome = NULL,
+  given = NULL,
+  random = c("marginal", "posterior"),
   ...
 )
 }
@@ -17,20 +21,57 @@
 
 \item{newdata}{optional new data; the estimation data by default.}
 
-\item{type}{\code{"response"} (default): a matrix of the expected counts, one
-column per outcome; \code{"link"}: the linear predictors (log of the mean
-parameter); \code{"variance"}: the variances; \code{"prob"}: a list with one
-matrix per outcome of the probabilities of the counts \code{0:max_count}.}
+\item{type}{the prediction:
+\describe{
+\item{\code{"response"} (default)}{a matrix of the expected counts, one
+column per outcome.}
+\item{\code{"link"}}{the linear predictors (log of the mean parameter, at
+the mean of the random parameters).}
+\item{\code{"variance"}}{the variances (including the variance from the
+random parameters).}
+\item{\code{"prob"}}{a list with one matrix per outcome of the
+probabilities of the counts \code{0:max_count}.}
+\item{\code{"joint"}}{the joint probability of the counts \code{y} of all
+outcomes, one value per row.}
+\item{\code{"conditional"}}{a matrix of the probabilities of the counts
+\code{0:max_count} of \code{outcome} given the counts \code{given} of other
+outcomes, such as the probability of a fatal crash at a site given
+its injury crashes.}
+}}
 
-\item{max_count}{for \code{type = "prob"}: the largest count (default: the
-largest observed count of each outcome).}
+\item{max_count}{for \code{"prob"} and \code{"conditional"}: the largest count
+(default: the largest observed count of the outcome).}
+
+\item{y}{for \code{"joint"}: the counts of every outcome, a vector named by
+outcome (the same for every row) or a matrix or data frame with one
+column per outcome.}
+
+\item{outcome, given}{for \code{"conditional"}: the name of the outcome, and
+the counts of the outcomes conditioned on, named as \code{y} (they can be
+some of the other outcomes).}
+
+\item{random}{for fits with random parameters: \code{"marginal"} (default)
+averages over their distribution (the prediction for a new unit);
+\code{"posterior"} averages over each unit's posterior distribution given
+its counts in the estimation data (Empirical Bayes; units not in the
+estimation data get the marginal prediction). \code{newdata} then needs the
+\code{group_var} column(s).}
 
 \item{...}{unused.}
 }
 \value{
-A matrix with one column per outcome, or a list of matrices
-(\code{"prob"}).
+A matrix with one column per outcome (\code{"response"}, \code{"link"},
+\code{"variance"}), a list of matrices (\code{"prob"}), a vector (\code{"joint"}) or
+a matrix with one column per count (\code{"conditional"}).
 }
 \description{
 Predictions from multivariate count models
+}
+\details{
+Without random parameters the outcomes are independent given
+the covariates, so joint probabilities are products of the outcomes'
+probabilities and conditional probabilities equal the marginal ones.
+With random parameters shared by the equations they are not: the
+probabilities are averages over the random parameters of products of
+the outcomes' probabilities.
 }

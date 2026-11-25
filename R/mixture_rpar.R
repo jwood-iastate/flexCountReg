@@ -53,6 +53,31 @@
        intercept = .fcr_explicit_intercept(f))
 }
 
+# Sign changes (+1/-1 per parameter) that make the diagonal of a packed
+# Cholesky factor positive (layout RS with pairs k, l and positions idx):
+# changing the signs of column l of L leaves L z with the same
+# distribution, so only the signs relative to the diagonal are identified.
+.fcr_chol_signs <- function(theta, RS) {
+  sg <- rep(1, length(theta))
+  pr <- RS$pairs
+  dg <- theta[RS$idx][pr[, "k"] == pr[, "l"]]
+  col_sign <- stats::setNames(ifelse(dg < 0, -1, 1),
+                              pr[pr[, "k"] == pr[, "l"], "l"])
+  sg[RS$idx] <- col_sign[as.character(pr[, "l"])]
+  sg
+}
+
+# The random-parameter design of a formula: its model matrix without the
+# intercept column unless the formula has the term 1 itself (NULL stays
+# NULL; a matrix with no columns left becomes NULL).
+.fcr_rpar_matrix <- function(M, f) {
+  if (is.null(M) || is.null(f)) return(NULL)
+  if (!.fcr_explicit_intercept(f)) {
+    M <- M[, colnames(M) != "(Intercept)", drop = FALSE]
+  }
+  if (!ncol(M)) NULL else M
+}
+
 # Does the right side of a one-sided formula contain the term 1 itself
 # (~ 1, ~ 1 + x)? An implicit intercept (~ x) does not count: in
 # `rpar_formula` it would make every intercept random by accident.

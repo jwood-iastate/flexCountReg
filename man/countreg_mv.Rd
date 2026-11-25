@@ -20,6 +20,10 @@ countreg_mv(
   ndraws = 1500,
   engine = "quadrature",
   verbose = FALSE,
+  rpar_formula = NULL,
+  correlation = c("across", "within", "none"),
+  rpar_draws = 500,
+  seed = NULL,
   .setup_only = FALSE
 )
 }
@@ -60,6 +64,27 @@ standard errors (such as a site observed over several years).}
 \item{ndraws, engine}{integration settings of families without a closed
 form, as in \code{\link[=countreg]{countreg()}}.}
 
+\item{rpar_formula}{optional one-sided formula of random parameters:
+one formula for every outcome, or a list named by outcome. Each term
+adds a normal random deviation, with mean zero, to the coefficient of
+that variable in the outcome's equation (a variable not in the
+equation's formula gets a random coefficient with mean zero). The
+intercept is random only when the formula has the term \code{1} itself
+(\code{~ 1}, \code{~ 1 + x}). The random parameters are drawn once per unit of
+\code{group_var} (shared by all its rows, such as the years of a site), or
+once per row without \code{group_var}.}
+
+\item{correlation}{correlation of the random parameters: \code{"across"}
+(default; correlated within and across equations, so the outcomes of a
+unit share unobserved factors), \code{"within"} (correlated within each
+equation only) or \code{"none"}.}
+
+\item{rpar_draws}{the number of simulation draws per unit (randomly
+shifted Halton points, a separate block and shift for each unit).}
+
+\item{seed}{seed of the random shifts of the draws (stored in the fit,
+so predictions use the same draws); random by default.}
+
 \item{.setup_only}{internal use: return the model setup without fitting.}
 }
 \value{
@@ -73,13 +98,36 @@ by severity or by type at each site, each with its own count family,
 mean formula and distribution-parameter formulas.
 }
 \details{
-\strong{Independent equations.} The outcomes are independent given the
-covariates, so the log-likelihood is the sum of the equations'
+\strong{Independent equations.} Without \code{rpar_formula}, the outcomes are
+independent given the covariates, so the log-likelihood is the sum of the equations'
 log-likelihoods and every equation's estimates equal those of a
 separate \code{\link[=countreg]{countreg()}} fit. Fitting them together gives one object with
 joint predictions, simulations and tests across equations (for
 example, a Wald test that a coefficient is the same in two equations).
 The rows used are those complete for every equation.
+
+\strong{Correlated outcomes.} Counts of different categories at a site are
+usually correlated: unobserved conditions that raise one also raise the
+others. With \code{rpar_formula}, each equation's log mean gets random terms
+\eqn{x_r' b_{uj}}, with \eqn{b_u = L z_u} drawn per unit and
+correlated across equations (\code{correlation = "across"}).
+
+\strong{The multivariate Poisson-lognormal model.} Poisson outcomes with
+correlated normal random intercepts (\code{family = "POISSON"},
+\code{rpar_formula = ~ 1}, \code{correlation = "across"}) give the multivariate
+Poisson-lognormal model (MVPLN) of, for example, Ma et al. (2008).
+Other families keep their own overdispersion within each outcome, with
+the random intercepts adding the correlation between outcomes, and every
+equation can have a different family.
+A positive correlation of the random intercepts means that a site with
+more crashes of one category than its covariates predict also tends to
+have more of the other. The correlation can be negative too, unlike in
+models with a shared gamma effect such as \code{\link[=negmultinom]{negmultinom()}}. The
+likelihood is simulated (\code{rpar_draws} draws per unit) with analytic
+gradients; the elements of \eqn{L} are reported as \verb{sd:} and \verb{chol:},
+and \code{summary()} shows the implied standard deviations and correlations.
+\code{predict()} gives joint and conditional probabilities of the outcomes,
+and Empirical Bayes predictions for units in the estimation data.
 
 Different outcomes often need different families: frequent property
 damage crashes may be close to NB2, while rare fatal crashes are more
@@ -96,6 +144,12 @@ m <- countreg_mv(cbind(pdo, Injury_crashes) ~ lnaadt + speed50 +
 summary(m)
 head(predict(m))
 }
+}
+\references{
+Ma, J., Kockelman, K. M., and Damien, P. (2008). A multivariate
+Poisson-lognormal regression model for prediction of crash counts by
+severity, using Bayesian methods. \emph{Accident Analysis and Prevention},
+40(3), 964-975.
 }
 \seealso{
 \code{\link[=predict.countreg_mv]{predict.countreg_mv()}}, \code{\link[=countreg]{countreg()}}, \code{\link[=countreg_alloc]{countreg_alloc()}} for a

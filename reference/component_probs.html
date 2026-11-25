@@ -104,6 +104,12 @@ probabilities use <code>predict(type = "prob")</code>).</p>
 (e.g. the most probable class of each unit), which is uncertain: units
 with probabilities near \(1/K\) are not well classified. The entropy
 in <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> summarizes that uncertainty.</p>
+<p>With random parameters within the classes, the posterior of a unit
+integrates over its random parameters by simulation. Panels of the
+training data passed in <code>newdata</code> (matched by <code>group_var</code>) use their
+estimation draws and so reproduce the stored probabilities; new panels,
+and the rows of a cross-sectional model passed as <code>newdata</code>, use a
+common set of Halton draws (see <code><a href="predict.countreg_mix.html">predict.countreg_mix()</a></code>).</p>
     </div>
 
     <div class="section level2">

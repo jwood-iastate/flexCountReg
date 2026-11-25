@@ -45,7 +45,9 @@ temporal_tests(object, term = NULL, vcov = NULL, adjust = "none", ...)
 A data frame with columns `part`, `term`, `test` (`"all equal"` or the
 pair of periods), `estimate` (the change, for adjacent periods),
 `std.error`, `statistic` (\\\chi^2\\ for the joint test, \\z\\
-otherwise), `df` and `p.value`.
+otherwise), `df` and `p.value`; with a first column `outcome` for a
+multivariate model
+([`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)).
 
 ## See also
 

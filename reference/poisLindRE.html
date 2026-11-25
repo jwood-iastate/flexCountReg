@@ -224,7 +224,6 @@ $$</p>
 <span class="r-in"><span>  method    <span class="op">=</span> <span class="st">"NM"</span>,</span></span>
 <span class="r-in"><span>  max.iters <span class="op">=</span> <span class="fl">1000</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The Hessian is not negative definite at the estimates, so the standard errors of ln(theta) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">poislind.mod</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Call:</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> poisLind.re(formula = Animal ~ lnaadt + lnlength + speed50 + </span>
@@ -237,13 +236,13 @@ $$</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Coefficients (standard errors: Hessian-based):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               Estimate Std. Error z value Pr(&gt;|z|)    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)     -9.623      1.337   -7.20  6.2e-13 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt           1.036      0.157    6.61  3.8e-11 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength         1.456      0.236    6.17  6.9e-10 ***</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> speed50         -0.855      0.335   -2.55    0.011 *  </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)     -9.623      1.392   -6.91  4.8e-12 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt           1.036      0.164    6.33  2.4e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> lnlength         1.456      0.236    6.18  6.4e-10 ***</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> speed50         -0.855      0.336   -2.55    0.011 *  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ShouldWidth04   -0.434      0.291   -1.49    0.136    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k     -0.756      0.532   -1.42    0.155    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(theta)        6.068         NA      NA       NA    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> AADTover10k     -0.756      0.525   -1.44    0.150    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(theta)        6.068    378.113    0.02    0.987    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ---</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

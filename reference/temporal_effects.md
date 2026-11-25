@@ -44,7 +44,24 @@ temporal_effects(object, term = NULL, level = 0.95, vcov = NULL, ...)
 
 A data frame with columns `part` (`"mean"` for the mean, otherwise the
 coefficient block, such as `"ln(alpha)"`), `term`, `time`, `basis`,
-`period`, `estimate`, `std.error`, `conf.low` and `conf.high`.
+`period`, `estimate`, `std.error`, `conf.low` and `conf.high`. For a
+multivariate model
+([`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md))
+a first column `outcome` names the outcome of each effect.
+
+## Details
+
+Periods are summarized for
+[`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
+terms on their own; a
+[`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
+term in an interaction (such as `tv(x, time = t):z`) is not summarized
+(with a warning): write the product inside
+[`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md),
+as `tv(x * z, time = t)`. For `tv(x, time, basis = "smooth")` the
+periods are the distinct time values of the estimation data. Smooths
+written directly with `s()` are not time-varying effects and are not
+reported.
 
 ## See also
 

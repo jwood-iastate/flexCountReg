@@ -85,7 +85,8 @@ mean formula and distribution-parameter formulas.</p>
 <code>cbind(y_1, ..., y_J)</code> and one right-hand side for every equation, or a
 list of two-sided formulas, one per outcome (named by the list names,
 or by their responses). An <code><a href="https://rdrr.io/r/stats/offset.html" class="external-link">offset()</a></code> term (an exposure) belongs in the
-formulas.</p></dd>
+formulas. A <code>.</code> on the right stands for the columns of <code>data</code> other
+than the outcomes.</p></dd>
 
 
 <dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
@@ -113,7 +114,9 @@ equation, instead of <code><a href="https://rdrr.io/r/stats/offset.html" class="
 
 <dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
 <dd><p>optional frequency weights: a column name or a numeric
-vector.</p></dd>
+vector. With random parameters they weight the units' simulated
+log-likelihoods, so with <code>group_var</code> they must be constant within
+units.</p></dd>
 
 
 <dt id="arg-group-var">group_var<a class="anchor" aria-label="anchor" href="#arg-group-var"></a></dt>
@@ -218,7 +221,13 @@ F_J(y_J); \theta)\). For counts, the probability of the observed
 combination is the exact volume of the copula over the rectangle
 \([F_j(y_j - 1), F_j(y_j)]\) (the sum over its \(2^J\) corners;
 Nikoloulopoulos and Karlis 2009), not a continuous approximation such as
-the midpoint or jittering. The margins are those of the equations, so
+the midpoint or jittering. Where a count is in the upper tail of its
+distribution, both ends of its interval are close to 1 and the corner
+sum would lose the probability; the volume is then integrated
+numerically over the outcome's upper tail probabilities
+\([P(Y_j &gt; y_j), P(Y_j &gt; y_j - 1)]\) (and likewise where the corners
+cancel for other reasons), so that improbable combinations keep their
+relative precision. The margins are those of the equations, so
 expected counts and each outcome's probabilities do not change; the
 copula changes the joint and conditional probabilities. The families
 differ in the shape of the dependence:</p><ul><li><p><code>"gaussian"</code>: symmetric, without tail dependence, any sign
@@ -297,17 +306,17 @@ total and its split across categories, <code><a href="negmultinom.html">negmulti
 <span class="r-out co"><span class="r-pr">#&gt;</span> (Intercept)  -7.4115     1.1903  -6.227 4.77e-10 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> lnaadt        0.6661     0.1418   4.698 2.63e-06 ***</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> speed50      -1.2201     0.4146  -2.943  0.00325 ** </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ln(eta)       0.7900     1.9897   0.397  0.69132    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ln(eta)       0.7900     1.9900   0.397  0.69137    </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Log-likelihood: -1247.0544  AIC: 2510.1088  BIC: 2552.6199 </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">m</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>            pdo Injury_crashes</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1,] 0.7745464     0.03005740</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] 0.6844829     0.02656235</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [3,] 1.1348006     0.04403759</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [4,] 0.2521779     0.00978613</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [5,] 0.8105719     0.03145542</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [6,] 0.3782669     0.01467920</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1,] 0.7745464    0.030057397</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [2,] 0.6844829    0.026562351</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [3,] 1.1348006    0.044037581</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [4,] 0.2521779    0.009786129</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [5,] 0.8105719    0.031455415</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [6,] 0.3782669    0.014679194</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

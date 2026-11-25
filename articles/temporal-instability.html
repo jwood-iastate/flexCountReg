@@ -239,6 +239,11 @@ a constant effect, a linear trend and a flexible path:</p>
 <span><span class="co">#&gt; 1 mean lnaadt Year smooth   2016 1.129769 0.05189659 1.028053  1.231484</span></span>
 <span><span class="co">#&gt; 2 mean lnaadt Year smooth   2017 1.124881 0.05141355 1.024112  1.225650</span></span>
 <span><span class="co">#&gt; 3 mean lnaadt Year smooth   2018 1.119993 0.05174021 1.018584  1.221402</span></span></code></pre></div>
+<p>Any mgcv basis can be used (for example <code>bs = "cr"</code>); the
+effects are reported at the years of the estimation data. Smooths of
+time written directly with <code>s()</code> are ordinary smooth terms,
+not time-varying effects, and <code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> leaves
+them out.</p>
 </div>
 </div>
 <div class="section level2">
@@ -309,6 +314,15 @@ year in a random-parameters model:</p>
 <code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> then reports the year effects of the
 random parameters’ means, and each basis column has its own standard
 deviation.</p>
+<p>In the multivariate models of <code><a href="../reference/countreg_mv.html">countreg_mv()</a></code>,
+<code><a href="../reference/tv.html">tv()</a></code> terms can differ by outcome, and
+<code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> and <code><a href="../reference/temporal_tests.html">temporal_tests()</a></code> add a
+column <code>outcome</code>.</p>
+<p>A <code><a href="../reference/tv.html">tv()</a></code> term inside an interaction, such as
+<code>tv(lnaadt, time = Year):speed50</code>, is not summarized by
+<code><a href="../reference/temporal_effects.html">temporal_effects()</a></code> (it warns). Put the product inside
+<code><a href="../reference/tv.html">tv()</a></code> instead:
+<code>tv(lnaadt * speed50, time = Year)</code>.</p>
 </div>
 <div class="section level2">
 <h2 id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a>

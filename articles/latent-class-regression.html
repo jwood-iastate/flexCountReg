@@ -562,7 +562,14 @@ within each class is left in the counts, and the fit is much worse.</p>
 panel (the same draws for every class), with analytic gradients.
 Predictions, probabilities, class probabilities and residuals integrate
 over the random parameters, and <code><a href="https://rdrr.io/r/stats/simulate.html" class="external-link">simulate()</a></code> draws new
-coefficients for every panel. <code>rpardists</code> and
+coefficients for every panel. The class expected counts are exact (from
+the moment generating functions of the random parameters, as
+<code>method = "Exact"</code> in <code><a href="../reference/countreg_rp.html">countreg_rp()</a></code>), and
+<code>Inf</code> with a warning where they do not exist (a lognormal
+random parameter of a positive variable, for example). Conditioning on a
+panel’s outcomes (<code>conditioning = "posterior"</code> or
+<code>"history"</code>) updates its class probabilities, not its random
+parameters within the class. <code>rpardists</code> and
 <code>correlated</code> work as in <code><a href="../reference/countreg_rp.html">countreg_rp()</a></code>.</p>
 <p>Classes and random parameters can stand in for each other: a class
 can take the place of a tail of a random parameter, and a large standard

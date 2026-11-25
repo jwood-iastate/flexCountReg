@@ -73,7 +73,10 @@ families are slower to fit, especially in
 [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md);
 their shape parameter must lie in \\\[10^{-6}, 10^6\]\\ and the mean be
 at most \\10^9\\ (outside this numerical domain the likelihood is
-treated as 0).
+treated as 0). For `DPO` the probabilities are normalized by summing at
+most two million terms, so in addition \\\mu / \phi\\ (about the
+variance) must be below about \\10^{10}\\; very small \\\phi\\ (below
+about \\10^{-4}\\) also makes each evaluation slow.
 
 ### Distribution functions and model features
 

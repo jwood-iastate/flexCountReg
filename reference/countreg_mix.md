@@ -261,7 +261,8 @@ countreg_lc(
 
   the number of simulation draws of the random parameters for each unit
   (randomly shifted Halton points, a separate block for each unit, the
-  same draws for every class). They are generated from a seed derived
+  same draws for every class up to the signs described in "Random
+  parameters within classes"). They are generated from a seed derived
   from `seed`.
 
 ## Value
@@ -353,13 +354,35 @@ Every class uses the same draws of a unit (common random numbers): the
 class likelihoods stay unbiased, their simulation errors largely cancel
 in the posterior class probabilities, and relabeling the classes leaves
 the simulated likelihood unchanged. Different units have independent
-draws. Predictions and probabilities integrate over the random
-parameters ([`predict()`](https://rdrr.io/r/stats/predict.html),
+draws.
+
+Only the absolute values of the scales are identified (and, with
+`correlated = TRUE`, the signs of the columns of each class's Cholesky
+factor): the fit reports positive standard deviations and a positive
+Cholesky diagonal. A Cholesky column is re-signed together with that
+class's standardized draws of the parameter (`fit$model$rpar$signs`),
+which leaves the simulated likelihood unchanged, so the reported
+maximum, gradient, Hessian and posterior probabilities all refer to the
+reported coefficients. Bootstrap refits are normalized the same way
+before their classes are aligned.
+
+Predictions and probabilities integrate over the random parameters
+([`predict()`](https://rdrr.io/r/stats/predict.html),
 [`component_probs()`](https://jwood-iastate.github.io/flexCountReg/reference/component_probs.md),
 [`rootogram()`](https://jwood-iastate.github.io/flexCountReg/reference/rootogram.md),
 residuals); [`simulate()`](https://rdrr.io/r/stats/simulate.html) draws
-new coefficients for every unit. Smooth terms are not yet available with
-random parameters.
+new coefficients for every unit. The component expected counts are
+exact, from the moment generating functions of the random parameters (as
+`method = "Exact"` in
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)),
+when the family's mean is proportional to \\\mu\\; they are `Inf`, with
+a warning, where the expected count does not exist (a lognormal random
+parameter with a positive variable, or a gamma one with \\x \sigma^2 /
+\mu \ge 1\\), and component variances likewise where the second moment
+does not exist. Count probabilities and class posteriors are simulated.
+Conditioning on outcomes (`"posterior"`, `"history"`) updates the class
+probabilities only, not the random parameters within the classes. Smooth
+terms are not yet available with random parameters.
 
 Random parameters and classes can both explain heterogeneity, so the fit
 can be weakly identified: a class can stand in for a tail of a random
@@ -479,25 +502,25 @@ summary(fit)
 #> 
 #> Class 1 (NB2):
 #>                              Estimate Std. Error z value Pr(>|z|)    
-#> Component1:Mean:(Intercept)    2.0974     0.0145  144.74   <2e-16 ***
-#> Component1:Mean:shell_weight   0.9677     0.0439   22.05   <2e-16 ***
-#> Component1:ln(alpha)         -20.6190   366.8057   -0.06     0.96    
+#> Component1:Mean:(Intercept)    2.0974     0.0143   146.4   <2e-16 ***
+#> Component1:Mean:shell_weight   0.9677     0.0430    22.5   <2e-16 ***
+#> Component1:ln(alpha)         -20.6986   209.9017    -0.1     0.92    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Class 2 (NB2):
 #>                              Estimate Std. Error z value Pr(>|z|)    
-#> Component2:Mean:(Intercept)    1.7141     0.0189   90.51   <2e-16 ***
-#> Component2:Mean:shell_weight   2.5623     0.1107   23.14   <2e-16 ***
-#> Component2:ln(alpha)         -20.2864   462.1310   -0.04     0.96    
+#> Component2:Mean:(Intercept)    1.7141     0.0189   90.66   <2e-16 ***
+#> Component2:Mean:shell_weight   2.5623     0.1110   23.09   <2e-16 ***
+#> Component2:ln(alpha)         -20.2632   380.0516   -0.05     0.96    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
 #> Mixing (multinomial logit):
 #>                               Estimate Std. Error z value Pr(>|z|)    
-#> Mixing:Component1:(Intercept)     4.32       1.16    3.74  0.00018 ***
-#> Mixing:Component1:sexI           -9.33       1.57   -5.94  2.8e-09 ***
-#> Mixing:Component1:sexM            7.37      71.58    0.10  0.91799    
+#> Mixing:Component1:(Intercept)    4.323      0.772    5.60  2.1e-08 ***
+#> Mixing:Component1:sexI          -9.328      1.565   -5.96  2.5e-09 ***
+#> Mixing:Component1:sexM           8.407    120.117    0.07     0.94    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 
@@ -509,12 +532,12 @@ summary(fit)
 #>  effective_n: sum of posterior probabilities; modal_n: units whose most
 #>  probable class it is; mean_count: average expected count)
 #> 
-#> Log-likelihood: -9681.481 | AIC: 19380.96 | BIC: 19438 | ICL: 19701.38 
+#> Log-likelihood: -9681.481 | AIC: 19380.96 | BIC: 19438 | ICL: 19701.21 
 #> N: 4177
-#> Entropy: 131.692 | relative entropy: 0.955 
+#> Entropy: 131.607 | relative entropy: 0.955 
 #> Starts: 5 | 1 reached the selected log-likelihood
 #> Note: only one start reached this solution; try more starts.
-#> Observed information: singular | max |gradient|: 0.000289 
+#> Observed information: singular | max |gradient|: 0.0019 
 #> No likelihood-ratio test of the number of classes is reported (non-standard distribution).
 # }
 ```

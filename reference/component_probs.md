@@ -63,6 +63,14 @@ probabilities near \\1/K\\ are not well classified. The entropy in
 [`summary()`](https://rdrr.io/r/base/summary.html) summarizes that
 uncertainty.
 
+With random parameters within the classes, the posterior of a unit
+integrates over its random parameters by simulation. Panels of the
+training data passed in `newdata` (matched by `group_var`) use their
+estimation draws and so reproduce the stored probabilities; new panels,
+and the rows of a cross-sectional model passed as `newdata`, use a
+common set of Halton draws (see
+[`predict.countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mix.md)).
+
 ## Examples
 
 ``` r

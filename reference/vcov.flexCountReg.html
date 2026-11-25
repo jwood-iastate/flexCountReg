@@ -67,7 +67,13 @@ scores, without refitting.</p>
 <dd><p><code>NULL</code> or <code>"fit"</code> (default): the covariance chosen
 at fit time (<code>stderr</code>). <code>"hessian"</code>: the inverse of the
 negative Hessian. <code>"robust"</code>: the sandwich with one independent
-unit per row, or per panel for panel models. <code>"cluster"</code>:
+unit per row, or per panel for panel models. For
+<code><a href="countreg_fe.html">countreg_fe()</a></code> fits by the conditional or concentrated
+likelihood the units are the groups of the fixed effect (their scores
+do not split into rows), so <code>"robust"</code> is clustered by group,
+without the factor \(G/(G-1)\); with the <code>"demean"</code> method the
+units are the rows (as <code>vcov = "hetero"</code> in fixest).
+<code>"cluster"</code>:
 cluster-robust with the clusters in <code>cluster</code>.</p></dd>
 
 

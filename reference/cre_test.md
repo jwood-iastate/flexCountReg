@@ -52,7 +52,7 @@ cre_test(m)
 #>  Wald test of correlated random effects (group means)
 #> 
 #> data:  repois(formula = Total_crashes ~ lnaadt + offset(lnlength), group_var = "ID",      data = washington_roads, stderr = "robust", cre = ~lnaadt)
-#> Wald chi-squared = 11.951, df = 1, p-value = 0.0005462
+#> Wald chi-squared = 8.8821, df = 1, p-value = 0.00288
 #> sample estimates:
 #> mean_lnaadt 
 #>    1.861682 

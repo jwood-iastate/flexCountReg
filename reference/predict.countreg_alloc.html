@@ -104,7 +104,15 @@ distribution, as it is new for every row.</p></dd>
     <p>A matrix with one column per category (<code>"counts"</code>, <code>"prob"</code>), or
 a vector (<code>"total"</code>, <code>"total_positive"</code>). With random parameters,
 <code>"prob"</code> is the average allocation probability and <code>"counts"</code> the
-average expected count over the draws.</p>
+average expected count over the draws. For a fit with
+<code>truncated = TRUE</code> and random parameters, the likelihood truncates the
+total given each unit's coefficients \(b\), so <code>"total_positive"</code>
+(and <code>conditional = TRUE</code>) average the ratio over the draws,
+\(E_b[E(c \mid b) / (1 - P_0(b))]\); without truncation they give
+\(E_b[E(c \mid b)] / (1 - E_b[P_0(b)])\). The shared site-year term
+is integrated out before the ratio is taken, as in the likelihood.
+Posterior predictions (<code>random = "posterior"</code>) need random
+parameters.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -93,7 +93,18 @@ cluster-robust one; <code>vcov(object)</code> by default.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with columns <code>part</code> (<code>"mean"</code> for the mean, otherwise
 the coefficient block, such as <code>"ln(alpha)"</code>), <code>term</code>, <code>time</code>,
-<code>basis</code>, <code>period</code>, <code>estimate</code>, <code>std.error</code>, <code>conf.low</code> and <code>conf.high</code>.</p>
+<code>basis</code>, <code>period</code>, <code>estimate</code>, <code>std.error</code>, <code>conf.low</code> and <code>conf.high</code>.
+For a multivariate model (<code><a href="countreg_mv.html">countreg_mv()</a></code>) a first column <code>outcome</code>
+names the outcome of each effect.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>Periods are summarized for <code><a href="tv.html">tv()</a></code> terms on their own; a <code><a href="tv.html">tv()</a></code> term in an
+interaction (such as <code>tv(x, time = t):z</code>) is not summarized (with a
+warning): write the product inside <code><a href="tv.html">tv()</a></code>, as <code>tv(x * z, time = t)</code>.
+For <code>tv(x, time, basis = "smooth")</code> the periods are the distinct time
+values of the estimation data. Smooths written directly with <code>s()</code> are
+not time-varying effects and are not reported.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

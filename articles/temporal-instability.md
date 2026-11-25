@@ -141,6 +141,13 @@ temporal_effects(msm)
 #> 3 mean lnaadt Year smooth   2018 1.119993 0.05174021 1.018584  1.221402
 ```
 
+Any mgcv basis can be used (for example `bs = "cr"`); the effects are
+reported at the years of the estimation data. Smooths of time written
+directly with `s()` are ordinary smooth terms, not time-varying effects,
+and
+[`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
+leaves them out.
+
 ## 3. Time-varying intercepts and distribution parameters
 
 `tv(1, time = Year)` lets the intercept vary by year. With an intercept
@@ -225,6 +232,23 @@ can also appear in `rpar_formula`.
 [`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
 then reports the year effects of the random parameters’ means, and each
 basis column has its own standard deviation.
+
+In the multivariate models of
+[`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md),
+[`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
+terms can differ by outcome, and
+[`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
+and
+[`temporal_tests()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_tests.md)
+add a column `outcome`.
+
+A [`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
+term inside an interaction, such as `tv(lnaadt, time = Year):speed50`,
+is not summarized by
+[`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
+(it warns). Put the product inside
+[`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
+instead: `tv(lnaadt * speed50, time = Year)`.
 
 ## Reference
 

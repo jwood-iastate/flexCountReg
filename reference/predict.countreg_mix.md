@@ -68,7 +68,14 @@ predict(
   `"link"`
 
   :   a matrix of the component linear predictors \\x'\beta_k\\ plus
-      offset. There is no single linear predictor of the mixture.
+      offset. There is no single linear predictor of the mixture. With
+      random parameters (`rpar_formula`), it is the linear predictor at
+      the class's coefficients of the random variables: the means of
+      normal, uniform, triangular and gamma random parameters, but for
+      lognormal ones the location parameter \\\mu\\ (`Mean:`), whose
+      coefficient is \\e^{\mu + \sigma Z}\\: the column then is not on
+      the scale of the coefficient at all. It is not the log of the
+      component's expected count either.
 
 - conditioning:
 
@@ -93,6 +100,22 @@ predict(
       (whole panels for panel models). This is a retrospective summary,
       not an out-of-sample prediction: the outcomes being "predicted"
       were used.
+
+  With random parameters within the classes, `"history"` and
+  `"posterior"` update only the class probabilities: within each class
+  the random parameters keep their population distribution (they are not
+  updated to the unit's own coefficients), so the component means
+  \\m_k\\ are the same for every conditioning. The class likelihoods of
+  the update integrate over the random parameters by simulation. For
+  panels of the training data (identified by `group_var`) the
+  `"posterior"` update uses each panel's estimation draws, so the
+  training data reproduce the fitted posterior probabilities
+  ([`component_probs()`](https://jwood-iastate.github.io/flexCountReg/reference/component_probs.md));
+  other panels, `history` rows, and the rows of a cross-sectional model
+  passed as `newdata` use one common set of `max(rpar_draws, 500)`
+  Halton draws, so their probabilities differ from the fitted ones by
+  simulation error. Without `newdata`, the training rows use their
+  estimation draws.
 
 - history:
 

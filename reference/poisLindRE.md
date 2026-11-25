@@ -174,7 +174,6 @@ poislind.mod <- poisLind.re(
   method    = "NM",
   max.iters = 1000
 )
-#> Warning: The Hessian is not negative definite at the estimates, so the standard errors of ln(theta) are NA. The estimate may be on the boundary of the parameter space or not at a maximum.
 summary(poislind.mod)
 #> Call:
 #> poisLind.re(formula = Animal ~ lnaadt + lnlength + speed50 + 
@@ -187,13 +186,13 @@ summary(poislind.mod)
 #> 
 #> Coefficients (standard errors: Hessian-based):
 #>               Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)     -9.623      1.337   -7.20  6.2e-13 ***
-#> lnaadt           1.036      0.157    6.61  3.8e-11 ***
-#> lnlength         1.456      0.236    6.17  6.9e-10 ***
-#> speed50         -0.855      0.335   -2.55    0.011 *  
+#> (Intercept)     -9.623      1.392   -6.91  4.8e-12 ***
+#> lnaadt           1.036      0.164    6.33  2.4e-10 ***
+#> lnlength         1.456      0.236    6.18  6.4e-10 ***
+#> speed50         -0.855      0.336   -2.55    0.011 *  
 #> ShouldWidth04   -0.434      0.291   -1.49    0.136    
-#> AADTover10k     -0.756      0.532   -1.42    0.155    
-#> ln(theta)        6.068         NA      NA       NA    
+#> AADTover10k     -0.756      0.525   -1.44    0.150    
+#> ln(theta)        6.068    378.113    0.02    0.987    
 #> ---
 #> Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 #> 

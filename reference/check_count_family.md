@@ -62,8 +62,8 @@ check_count_family(nb_theta, mu = c(0.1, 2, 30),
                    par = list(theta = c(0.5, 5)))
 #>                        check   ok                                    detail
 #>                PMF sums to 1 TRUE               largest |sum - 1| = 1.1e-16
-#>               mean equals mu TRUE          largest relative error = 5.2e-11
-#>   variance() matches the PMF TRUE          largest relative error = 1.3e-09
+#>               mean equals mu TRUE          largest relative error = 3.7e-14
+#>   variance() matches the PMF TRUE          largest relative error = 1.2e-12
 #>            vectorized over y TRUE                                        ok
 #>              NA mean handled TRUE                                  no error
 #>  invalid mean gives no error TRUE no error (the row is given probability 0)

@@ -22,8 +22,13 @@ vcov(object, type = NULL, cluster = NULL, ...)
   `NULL` or `"fit"` (default): the covariance chosen at fit time
   (`stderr`). `"hessian"`: the inverse of the negative Hessian.
   `"robust"`: the sandwich with one independent unit per row, or per
-  panel for panel models. `"cluster"`: cluster-robust with the clusters
-  in `cluster`.
+  panel for panel models. For
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
+  fits by the conditional or concentrated likelihood the units are the
+  groups of the fixed effect (their scores do not split into rows), so
+  `"robust"` is clustered by group, without the factor \\G/(G-1)\\; with
+  the `"demean"` method the units are the rows (as `vcov = "hetero"` in
+  fixest). `"cluster"`: cluster-robust with the clusters in `cluster`.
 
 - cluster:
 

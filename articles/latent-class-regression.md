@@ -524,7 +524,15 @@ draws for every class), with analytic gradients. Predictions,
 probabilities, class probabilities and residuals integrate over the
 random parameters, and
 [`simulate()`](https://rdrr.io/r/stats/simulate.html) draws new
-coefficients for every panel. `rpardists` and `correlated` work as in
+coefficients for every panel. The class expected counts are exact (from
+the moment generating functions of the random parameters, as
+`method = "Exact"` in
+[`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md)),
+and `Inf` with a warning where they do not exist (a lognormal random
+parameter of a positive variable, for example). Conditioning on a
+panel’s outcomes (`conditioning = "posterior"` or `"history"`) updates
+its class probabilities, not its random parameters within the class.
+`rpardists` and `correlated` work as in
 [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md).
 
 Classes and random parameters can stand in for each other: a class can

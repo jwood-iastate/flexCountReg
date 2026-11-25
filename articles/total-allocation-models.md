@@ -385,11 +385,11 @@ summary(mr)
 #> Allocation:(Intercept) 0.226            -0.872
 #> (200 draws per unit of ID; 507 units)
 #> 
-#> Log-likelihood: -1253.0778  AIC: 2526.1557  BIC: 2579.2945
+#> Log-likelihood: -1252.9034  AIC: 2525.8068  BIC: 2578.9457
 AIC(m, mr)
 #>    df      AIC
 #> m   8 2567.414
-#> mr 10 2526.156
+#> mr 10 2525.807
 ```
 
 The random intercepts fit much better than the NB2 model without them.
@@ -403,7 +403,11 @@ The likelihood is simulated: each segment’s likelihood is averaged over
 points), with analytic gradients. `rpar_threshold` adds a random term to
 the gaps between thresholds, which changes the share of the middle
 categories. Random slopes are more terms in the same formulas, such as
-`rpar_total = ~ 1 + lnaadt`.
+`rpar_total = ~ 1 + lnaadt`. With random parameters, `weights` are
+frequency weights of the segments, so they must be the same for all
+years of a segment. A truncated total is truncated given the segment’s
+random parameters, and `type = "total_positive"` averages \\E(c \mid b)
+/ (1 - P_0(b))\\ over them.
 
 Predictions for a new segment average over the random parameters
 (`random = "marginal"`, the default). For a segment in the estimation
@@ -416,9 +420,9 @@ nd <- w[w$ID == w$ID[1], ]
 round(cbind(predict(mr, newdata = nd),
             predict(mr, newdata = nd, random = "posterior")), 3)
 #>        pdo injury fatal   pdo injury fatal
-#> 1    0.755  0.027 0.001 0.535  0.025 0.001
-#> 502  0.750  0.027 0.001 0.532  0.025 0.001
-#> 1002 0.791  0.028 0.001 0.561  0.026 0.001
+#> 1    0.776  0.028 0.001 0.535  0.025 0.001
+#> 502  0.771  0.028 0.001 0.532  0.025 0.001
+#> 1002 0.813  0.029 0.001 0.561  0.026 0.001
 ```
 
 ## 9. A shared site-year term

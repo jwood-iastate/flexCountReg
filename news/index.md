@@ -2,6 +2,146 @@
 
 ## flexCountReg 0.1.2 (development)
 
+### Corrections from the November 2026 review
+
+A review of the whole package found the following problems, now fixed,
+each with a regression test.
+
+#### Estimates and inference
+
+- Random-parameter models
+  ([`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md),
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md),
+  correlated random parameters in
+  [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)
+  /
+  [`countreg_lc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)):
+  flipping Cholesky columns after the fit to report positive standard
+  deviations now flips the stored simulation draws too (for mixtures,
+  each class’s own draws), so the reported estimates, log-likelihood,
+  scores, Hessian, robust standard errors and posterior weights all
+  belong to the simulated optimum. Before, the log-likelihood at the
+  reported estimates could be lower than the reported maximum (by about
+  1 to 4 in the review’s examples).
+- [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  copulas: probabilities of counts in the upper tails of their
+  distributions (and other rows whose copula corners cancel) are now
+  integrated over the upper-tail probabilities instead of differenced
+  near 1, keeping their relative precision with analytic gradients. Such
+  rows used to collapse to probability 0 and could distort the fitted
+  dependence (one extreme pair in independent data gave a Frank theta of
+  -6.56). Joint and conditional predictions use the same computation.
+- [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  and
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  with random parameters: frequency weights now multiply each unit’s
+  log-likelihood (they entered inside the simulated average, so
+  rescaling the weights changed the estimates). With `group_var`,
+  weights must be constant within units.
+- [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  with `truncated = TRUE`: `predict(type = "total_positive")` and
+  `conditional = TRUE` with random parameters now average E(c \| b) /
+  (1 - P0(b)) over the random parameters, as the likelihood implies;
+  [`simulate()`](https://rdrr.io/r/stats/simulate.html) with a shared
+  site-year term redraws the shared term with each rejected total (it
+  sampled a different distribution and could leave zero totals).
+- Predictions that integrate over random parameters
+  ([`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md),
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md),
+  the mixtures’ count probabilities and moments) use Gauss-Hermite grids
+  (exact for the lognormal means of normal random parameters) instead of
+  plain Halton points, which reach only about three standard deviations
+  and biased expected counts by 1-4%. Mixture component means are exact
+  (from the moment generating function) when the family’s mean is
+  proportional to mu, and `Inf` with a warning where the expected count
+  does not exist (a lognormal random parameter with a positive
+  covariate, or a gamma random parameter with large variance), as in
+  [`countreg_rp()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.md);
+  [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  then stops with a clear message.
+- Mixture bootstrap refits normalize the signs of the random-parameter
+  scales before label alignment; posterior class probabilities of the
+  training data are the same with and without `newdata`.
+- [`repois()`](https://jwood-iastate.github.io/flexCountReg/reference/repois.md)
+  uses its analytic score in the optimizer, the stored scores and the
+  final Hessian (its standard errors came from numerical derivatives and
+  were off by up to a factor of three with panel weights);
+  [`poislind_re()`](https://jwood-iastate.github.io/flexCountReg/reference/poisLindRE.md)
+  gains an analytic score, so its standard errors are accurate.
+- The Poisson-Weibull distribution
+  ([`dpoisweibull()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonWeibull.md),
+  [`ppoisweibull()`](https://jwood-iastate.github.io/flexCountReg/reference/PoissonWeibull.md),
+  `family = "PW"`) no longer returns `Inf`, `NaN` or probabilities above
+  1 for large or very small Weibull shapes; the quadrature finds the
+  peak of the integrand with a bracketed search and checks its own
+  accuracy.
+- `DPO` and `GAMMACOUNT`: the mean equation is solved across the
+  documented shape range (the probability was 0 below a shape of about
+  0.003-0.005); `DPO` also needs mu / phi below about 1e10 (documented).
+- [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md):
+  groups whose observations, counting frequency weights, number one are
+  dropped as single observations (the rule counted rows, so weighted
+  fits differed from the expanded data); `predict(newgroup = "mean_fe")`
+  uses a fixed mean of the estimated effects (weighted by the groups’
+  sizes) instead of one that depended on the other rows of `newdata`.
+- Cluster-robust covariances of panel models whose panels each have one
+  row match scores to rows by panel id (they could be assigned to the
+  wrong panel).
+
+#### Errors and crashes
+
+- Factors with unused levels (after subsetting, after rows with missing
+  values are dropped, or declared) no longer stop estimation with a
+  “rank deficient” error: as in
+  [`lm()`](https://rdrr.io/r/stats/lm.html), unused levels are dropped
+  in every formula, including random-effect terms of
+  [`countreg_hier()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.md).
+- `vcov(type = "robust")` works for
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
+  fits (the groups are the units for the conditional and concentrated
+  likelihoods).
+- `cbind(...) ~ .` works in
+  [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md)
+  and no longer uses the other outcomes as predictors in
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  (the `.` stands for the columns other than the counts).
+- [`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
+  and
+  [`temporal_tests()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_tests.md)
+  work for
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  fits (with an `outcome` column), for `tv(basis = "smooth")` with any
+  mgcv basis, and for `tv(1, time = ...)` in `rpar_formula` without a
+  fixed intercept; smooths written with `s()` are no longer reported as
+  time-varying effects, and a
+  [`tv()`](https://jwood-iastate.github.io/flexCountReg/reference/tv.md)
+  term inside an interaction gives a clear message instead of being
+  ignored.
+- [`margEffTable()`](https://jwood-iastate.github.io/flexCountReg/reference/margEffTable.md)
+  works for
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  fits (effects on each outcome’s mean) and no longer reports an effect
+  for the time variable of `tv(basis = "smooth")`.
+
+#### Smaller changes
+
+- [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  uses bootstrap standard errors when `bootstraps` is given without
+  `stderr`, as the other estimators do.
+- [`countreg_alloc()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_alloc.md):
+  an offset in `alloc_formula` or `threshold_formula` is an error (it
+  was dropped); `alloc_formula = ~ 0 + f` with an ordered link is coded
+  with contrasts; `predict(random = "posterior")` without random
+  parameters is an error instead of a marginal prediction.
+- Moments of user-defined families without a `variance` function no
+  longer take minutes for PMFs that do not sum to exactly 1.
+- Documentation:
+  [`countreg_fe()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_fe.md)
+  clustered standard errors equal fixest’s when `vcov = ~ group` is
+  given (fixest 0.13 defaults to iid); the `shared` error message of the
+  mixtures lists `rpar`; mixture history/posterior conditioning updates
+  only the class probabilities.
+
 ### Total-plus-allocation models
 
 - New

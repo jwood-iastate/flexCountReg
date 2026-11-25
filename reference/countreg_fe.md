@@ -146,10 +146,15 @@ those of
 [`fixest::fepois()`](https://lrberge.github.io/fixest/reference/feglm.html)
 and
 [`fixest::fenegbin()`](https://lrberge.github.io/fixest/reference/femlm.html)
-with `ssc(adj = FALSE)`; by default fixest also multiplies the variance
-by \\(n-1)/(n-K)\\. The log-likelihood is that of the dummy-variable
-model, and its degrees of freedom count the fixed effects, so AIC and
-BIC compare with models that estimate them.
+when the clustering is given explicitly, `vcov = ~ site` (fixest 0.13
+and later default to iid standard errors), with `ssc(adj = FALSE)`; by
+default fixest also multiplies the variance by \\(n-1)/(n-K)\\.
+`vcov(fit, type = "robust")` treats each group as an independent unit
+with the conditional and concentrated likelihoods (it is clustered by
+group, without \\G/(G-1)\\), and each row with the `"demean"` method.
+The log-likelihood is that of the dummy-variable model, and its degrees
+of freedom count the fixed effects, so AIC and BIC compare with models
+that estimate them.
 
 **Smooth terms.** `formula` may contain smooth terms (`s(x)`, `te()`,
 ...) of variables that change within groups; a smooth of a variable that
@@ -166,7 +171,10 @@ dummies. The jackknife is not available with smooth terms.
 [`predict()`](https://rdrr.io/r/stats/predict.html) uses each known
 group's estimated effect. A group not in the estimation data has no
 fixed effect: its prediction is `NA`, unless `newgroup = "mean_fe"` is
-given to use the weighted mean of the estimated effects.
+given to use the mean of the estimated effects, weighted by the groups'
+sizes in the estimation sample (their numbers of rows, counted with the
+frequency weights). This mean is fixed at estimation, so the prediction
+for a new group does not depend on the other rows of `newdata`.
 
 ## References
 

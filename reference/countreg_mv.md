@@ -41,7 +41,8 @@ countreg_mv(
   a list of two-sided formulas, one per outcome (named by the list
   names, or by their responses). An
   [`offset()`](https://rdrr.io/r/stats/offset.html) term (an exposure)
-  belongs in the formulas.
+  belongs in the formulas. A `.` on the right stands for the columns of
+  `data` other than the outcomes.
 
 - data:
 
@@ -72,7 +73,9 @@ countreg_mv(
 
 - weights:
 
-  optional frequency weights: a column name or a numeric vector.
+  optional frequency weights: a column name or a numeric vector. With
+  random parameters they weight the units' simulated log-likelihoods, so
+  with `group_var` they must be constant within units.
 
 - group_var:
 
@@ -193,10 +196,16 @@ y_J) = C(F_1(y_1), \dots, F_J(y_J); \theta)\\. For counts, the
 probability of the observed combination is the exact volume of the
 copula over the rectangle \\\[F_j(y_j - 1), F_j(y_j)\]\\ (the sum over
 its \\2^J\\ corners; Nikoloulopoulos and Karlis 2009), not a continuous
-approximation such as the midpoint or jittering. The margins are those
-of the equations, so expected counts and each outcome's probabilities do
-not change; the copula changes the joint and conditional probabilities.
-The families differ in the shape of the dependence:
+approximation such as the midpoint or jittering. Where a count is in the
+upper tail of its distribution, both ends of its interval are close to 1
+and the corner sum would lose the probability; the volume is then
+integrated numerically over the outcome's upper tail probabilities
+\\\[P(Y_j \> y_j), P(Y_j \> y_j - 1)\]\\ (and likewise where the corners
+cancel for other reasons), so that improbable combinations keep their
+relative precision. The margins are those of the equations, so expected
+counts and each outcome's probabilities do not change; the copula
+changes the joint and conditional probabilities. The families differ in
+the shape of the dependence:
 
 - `"gaussian"`: symmetric, without tail dependence, any sign
   (`copula:atanh(rho)`); two outcomes.
@@ -284,16 +293,16 @@ summary(m)
 #> (Intercept)  -7.4115     1.1903  -6.227 4.77e-10 ***
 #> lnaadt        0.6661     0.1418   4.698 2.63e-06 ***
 #> speed50      -1.2201     0.4146  -2.943  0.00325 ** 
-#> ln(eta)       0.7900     1.9897   0.397  0.69132    
+#> ln(eta)       0.7900     1.9900   0.397  0.69137    
 #> 
 #> Log-likelihood: -1247.0544  AIC: 2510.1088  BIC: 2552.6199 
 head(predict(m))
 #>            pdo Injury_crashes
-#> [1,] 0.7745464     0.03005740
-#> [2,] 0.6844829     0.02656235
-#> [3,] 1.1348006     0.04403759
-#> [4,] 0.2521779     0.00978613
-#> [5,] 0.8105719     0.03145542
-#> [6,] 0.3782669     0.01467920
+#> [1,] 0.7745464    0.030057397
+#> [2,] 0.6844829    0.026562351
+#> [3,] 1.1348006    0.044037581
+#> [4,] 0.2521779    0.009786129
+#> [5,] 0.8105719    0.031455415
+#> [6,] 0.3782669    0.014679194
 # }
 ```

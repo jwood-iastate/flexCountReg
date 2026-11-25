@@ -273,9 +273,6 @@ re_models <- list(
 #> Warning: The Hessian is not negative definite at the estimates, so the standard
 #> errors of ln(a-1) are NA. The estimate may be on the boundary of the parameter
 #> space or not at a maximum.
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of ln(theta) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 do.call(rbind, lapply(names(re_models), function(nm) {
   cbind(model = nm,
         glance(re_models[[nm]])[, c("logLik", "AIC", "BIC", "nobs",
@@ -300,12 +297,12 @@ identified and is reported as `NA`:
 
 tidy(re_models$PoisLindRE)
 #> # A tibble: 4 × 6
-#>   term        component    estimate std.error statistic   p.value
-#>   <chr>       <chr>           <dbl>     <dbl>     <dbl>     <dbl>
-#> 1 (Intercept) mean           -8.77     0.512     -17.1   1.22e-65
-#> 2 lnaadt      mean            1.11     0.0603     18.5   4.18e-76
-#> 3 speed50     mean           -0.561    0.132      -4.24  2.19e- 5
-#> 4 ln(theta)   distribution   -7.13    NA          NA    NA    
+#>   term        component    estimate std.error statistic  p.value
+#>   <chr>       <chr>           <dbl>     <dbl>     <dbl>    <dbl>
+#> 1 (Intercept) mean           -8.77     0.497    -17.6   1.36e-69
+#> 2 lnaadt      mean            1.11     0.0585    19.0   8.55e-81
+#> 3 speed50     mean           -0.561    0.132     -4.24  2.21e- 5
+#> 4 ln(theta)   distribution   -7.13    12.0       -0.597 5.51e- 1
 ```
 
 Its fit statistics are close to those of the other two models, but with
@@ -324,17 +321,14 @@ standard errors resample whole panels:
 re_robust <- poisLind.re(Total_crashes ~ lnaadt + speed50, group_var = "ID",
                          data = washington_roads, offset = "lnlength",
                          method = "BFGS", stderr = "robust")
-#> Warning: The Hessian is not negative definite at the estimates, so the standard
-#> errors of ln(theta) are NA. The estimate may be on the boundary of the
-#> parameter space or not at a maximum.
 tidy(re_robust)
 #> # A tibble: 4 × 6
 #>   term        component    estimate std.error statistic  p.value
 #>   <chr>       <chr>           <dbl>     <dbl>     <dbl>    <dbl>
-#> 1 (Intercept) mean           -8.77     0.599     -14.6  1.36e-48
-#> 2 lnaadt      mean            1.11     0.0702     15.9  1.41e-56
-#> 3 speed50     mean           -0.561    0.131      -4.29 1.79e- 5
-#> 4 ln(theta)   distribution   -7.13     0.0642   -111.   0    
+#> 1 (Intercept) mean           -8.77     0.564     -15.5  1.61e-54
+#> 2 lnaadt      mean            1.11     0.0661     16.8  1.17e-63
+#> 3 speed50     mean           -0.561    0.131      -4.28 1.84e- 5
+#> 4 ln(theta)   distribution   -7.13     0.635     -11.2  2.61e-29
 ```
 
 Cross-sectional models can also be fitted with `stderr = "robust"` or

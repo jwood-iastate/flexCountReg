@@ -100,8 +100,8 @@ chk <- check_count_family(oinb, mu = c(0.2, 2, 20),
                                      omega = c(0.05, 0.5)))
 #>                        check   ok                                    detail
 #>                PMF sums to 1 TRUE               largest |sum - 1| = 2.1e-13
-#>       mean() matches the PMF TRUE          largest relative error = 9.6e-11
-#>   variance() matches the PMF TRUE          largest relative error = 2.1e-09
+#>       mean() matches the PMF TRUE          largest relative error = 2.3e-13
+#>   variance() matches the PMF TRUE          largest relative error = 6.8e-12
 #>            vectorized over y TRUE                                        ok
 #>              NA mean handled TRUE                                  no error
 #>  invalid mean gives no error TRUE no error (the row is given probability 0)
@@ -120,7 +120,7 @@ chk <- check_count_family(wrong, mu = c(0.2, 2, 20),
                                      omega = c(0.05, 0.5)))
 #>                        check    ok                                    detail
 #>                PMF sums to 1  TRUE               largest |sum - 1| = 2.1e-13
-#>       mean() matches the PMF  TRUE          largest relative error = 9.6e-11
+#>       mean() matches the PMF  TRUE          largest relative error = 2.3e-13
 #>   variance() matches the PMF FALSE             largest relative error = 0.64
 #>            vectorized over y  TRUE                                        ok
 #>              NA mean handled  TRUE                                  no error
@@ -213,7 +213,7 @@ m_oinb2 <- countreg(f, data = washington_roads, family = oinb,
                     dis_param_formula_2 = ~ speed50, method = "BFGS")
 coef(m_oinb2)[c("logit(omega):(Intercept)", "logit(omega):speed50")]
 #> logit(omega):(Intercept)     logit(omega):speed50 
-#>                -4.749657                -3.187266
+#>                 -4.74966                 -3.18728
 ```
 
 ## 5. Everything else works from the PMF
@@ -266,7 +266,7 @@ coef(m_rp)
 #>    (Intercept)         lnaadt       lnlength   speed50:Mean speed50:St.Dev 
 #>     -8.8709961      1.0940735      0.7680520     -0.7064730      0.5809304 
 #>      ln(alpha)   logit(omega) 
-#>     -1.2604041     -5.5365437
+#>     -1.2604041     -5.5365436
 ```
 
 ## 6. Saving and sharing a fitted model

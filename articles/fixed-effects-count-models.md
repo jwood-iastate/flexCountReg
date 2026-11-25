@@ -171,7 +171,7 @@ round(rbind(pooled = est(pooled), random_effects = est(re),
             fixed_effects = est(fe2)), 3)
 #>                estimate    se
 #> pooled            1.196 0.078
-#> random_effects    1.144 0.061
+#> random_effects    1.144 0.059
 #> fixed_effects    -0.576 0.483
 ```
 
@@ -272,7 +272,7 @@ cre_test(cre)
 #>  Wald test of correlated random effects (group means)
 #> 
 #> data:  repois(formula = Total_crashes ~ lnaadt + offset(lnlength), group_var = "ID",      data = washington_roads, method = "BFGS", stderr = "robust",      cre = ~lnaadt)
-#> Wald chi-squared = 8.9698, df = 1, p-value = 0.002745
+#> Wald chi-squared = 8.8722, df = 1, p-value = 0.002895
 #> sample estimates:
 #> mean_lnaadt 
 #>    1.860804
@@ -302,7 +302,9 @@ fit, so predictions for a known unit use its training means: rows of
 
 Predictions for a known segment use its estimated fixed effect. A
 segment that was not in the estimation data has no fixed effect, so its
-prediction is `NA` unless you ask for the mean effect explicitly:
+prediction is `NA` unless you ask for the mean effect explicitly (the
+mean of the estimated effects weighted by the segments’ sizes in the
+estimation data, fixed at estimation):
 
 ``` r
 
@@ -317,7 +319,7 @@ predict(fe2, newdata = new_site)
 #> 1 row(s) belong to groups not in the estimation data, which have no fixed effect: their predictions are NA (use newgroup = "mean_fe" to use the mean effect).
 #> [1] NA
 predict(fe2, newdata = new_site, newgroup = "mean_fe")
-#> [1] 0.5565084
+#> [1] 0.5494041
 ```
 
 ## 8. Agreement with other software
@@ -328,9 +330,10 @@ and the NB2 estimates those of
 [`fixest::fenegbin()`](https://lrberge.github.io/fixest/reference/femlm.html)
 and of [`MASS::glm.nb()`](https://rdrr.io/pkg/MASS/man/glm.nb.html) with
 segment dummies. The cluster-robust standard errors use the factor
-\\G/(G-1)\\ for \\G\\ clusters; they equal fixest’s with
-`ssc(adj = FALSE)`, as fixest by default also multiplies the variance by
-\\(n-1)/(n-K)\\.
+\\G/(G-1)\\ for \\G\\ clusters; they equal fixest’s when the clustering
+is given explicitly (`vcov = ~ ID`; fixest 0.13 and later default to iid
+standard errors) with `ssc(adj = FALSE)`, as fixest by default also
+multiplies the variance by \\(n-1)/(n-K)\\.
 
 ## References
 

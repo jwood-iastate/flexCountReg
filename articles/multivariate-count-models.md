@@ -51,7 +51,7 @@ summary(m)
 #> (Intercept)  -7.4115     1.1903  -6.227 4.77e-10 ***
 #> lnaadt        0.6661     0.1418   4.698 2.63e-06 ***
 #> speed50      -1.2201     0.4146  -2.943  0.00325 ** 
-#> ln(eta)       0.7900     1.9897   0.397  0.69132    
+#> ln(eta)       0.7900     1.9900   0.397  0.69137    
 #> 
 #> Log-likelihood: -1247.0544  AIC: 2510.1088  BIC: 2552.6199
 ```
@@ -120,7 +120,7 @@ se <- sqrt(V[a[1], a[1]] + V[a[2], a[2]] - 2 * V[a[1], a[2]])
 c(difference = unname(diff), z = unname(diff / se),
   p = 2 * pnorm(-abs(unname(diff / se))))
 #>   difference            z            p 
-#> 0.5083084635 3.3436966915 0.0008267007
+#> 0.5083084901 3.3436907879 0.0008267183
 ```
 
 Traffic increases PDO crashes clearly more than injury crashes (p \<
@@ -142,7 +142,7 @@ nd <- w[c(1, 50, 200), ]
 predict(m, newdata = nd)
 #>             pdo     injury
 #> [1,] 0.77454644 0.03005740
-#> [2,] 0.09928381 0.01309018
+#> [2,] 0.09928381 0.01309017
 #> [3,] 0.78249900 0.04238618
 lapply(predict(m, newdata = nd, type = "prob", max_count = 3), round, 3)
 #> $pdo
@@ -220,11 +220,11 @@ summary(mr)
 #> pdo:(Intercept)    0.656                
 #> injury:(Intercept) 0.631           0.639
 #> 
-#> Log-likelihood: -1227.3502  AIC: 2472.7004  BIC: 2520.5253
+#> Log-likelihood: -1227.0638  AIC: 2472.1276  BIC: 2519.9526
 AIC(m, mr)
 #>    df      AIC
 #> m   8 2510.109
-#> mr  9 2472.700
+#> mr  9 2472.128
 ```
 
 The estimated correlation of the random intercepts is about 0.64:
@@ -232,7 +232,7 @@ segments with more PDO crashes than their traffic and speed limit
 predict tend to have more injury crashes too. The evidence for it is
 modest (the `chol:` element that carries it has p of about 0.06),
 because injury crashes are rare. The MVPLN still fits much better than
-the independent NB2 and PIG equations (AIC 2473 against 2510). Other
+the independent NB2 and PIG equations (AIC 2472 against 2510). Other
 families can be used in the same way: they keep their own overdispersion
 within each outcome, and the random intercepts add the correlation
 between outcomes. Random slopes are more terms in `rpar_formula`, such
@@ -258,30 +258,30 @@ three PDO crashes:
 
 nd <- w[c(1, 50, 200), ]
 predict(mr, newdata = nd, type = "joint", y = c(pdo = 1, injury = 1))
-#> [1] 0.008915450 0.001382401 0.012541737
+#> [1] 0.008986714 0.001443140 0.012633591
 round(predict(mr, newdata = nd, type = "prob", max_count = 2)$injury, 4)
 #>           0      1      2
-#> [1,] 0.9707 0.0287 0.0006
-#> [2,] 0.9871 0.0128 0.0001
-#> [3,] 0.9584 0.0403 0.0012
+#> [1,] 0.9702 0.0291 0.0006
+#> [2,] 0.9868 0.0130 0.0001
+#> [3,] 0.9577 0.0409 0.0013
 round(predict(mr, newdata = nd, type = "conditional", outcome = "injury",
               given = c(pdo = 3), max_count = 2), 4)
 #>           0      1      2
-#> [1,] 0.9580 0.0408 0.0011
-#> [2,] 0.9781 0.0216 0.0003
-#> [3,] 0.9407 0.0569 0.0023
+#> [1,] 0.9566 0.0421 0.0013
+#> [2,] 0.9738 0.0257 0.0005
+#> [3,] 0.9388 0.0585 0.0025
 round(predict(mr, newdata = nd, type = "conditional", outcome = "injury",
               given = c(pdo = 0), max_count = 2), 4)
 #>           0      1     2
-#> [1,] 0.9750 0.0246 4e-04
-#> [2,] 0.9874 0.0125 1e-04
-#> [3,] 0.9645 0.0346 9e-04
+#> [1,] 0.9748 0.0247 4e-04
+#> [2,] 0.9872 0.0127 1e-04
+#> [3,] 0.9643 0.0348 9e-04
 ```
 
 Three PDO crashes raise the probability of an injury crash above its
 marginal value, and no PDO crash lowers it. Without random parameters
-the equations are independent, and the conditional probabilities equal
-the marginal ones.
+(or a copula, Section 7) the equations are independent, and the
+conditional probabilities equal the marginal ones.
 
 For segments in the estimation data, `random = "posterior"` uses their
 own crash history (Empirical Bayes):
@@ -292,9 +292,9 @@ seg <- w[w$ID == w$ID[1], ]
 round(cbind(predict(mr, newdata = seg),
             predict(mr, newdata = seg, random = "posterior")), 3)
 #>        pdo injury   pdo injury
-#> [1,] 0.779  0.030 0.539  0.024
-#> [2,] 0.775  0.030 0.536  0.024
-#> [3,] 0.818  0.031 0.566  0.025
+#> [1,] 0.791  0.030 0.539  0.024
+#> [2,] 0.786  0.030 0.536  0.024
+#> [3,] 0.831  0.031 0.566  0.025
 ```
 
 ## 7. Copulas
@@ -308,8 +308,11 @@ distribution, so each outcome keeps its family and its expected counts:
 For counts, the probability of the observed pair is the exact volume of
 the copula over the rectangle \\\[F_1(y_1 - 1), F_1(y_1)\] \times
 \[F_2(y_2 - 1), F_2(y_2)\]\\, the sum of four copula values (of \\2^J\\
-with \\J\\ outcomes). The copula families differ in the shape of the
-dependence:
+with \\J\\ outcomes). For a count far in the upper tail of its
+distribution both ends of its interval are within rounding of 1, so
+there the volume is integrated over the upper tail probabilities \\P(Y
+\> y)\\ instead, and improbable pairs keep their precision. The copula
+families differ in the shape of the dependence:
 
 | `copula`     | dependence                                               |
 |--------------|----------------------------------------------------------|
@@ -342,7 +345,7 @@ summary(mc)
 #> (Intercept)  -7.4266     1.1820  -6.283 3.32e-10 ***
 #> lnaadt        0.6682     0.1408   4.747 2.07e-06 ***
 #> speed50      -1.2045     0.4147  -2.905  0.00367 ** 
-#> ln(eta)       0.7627     1.9563   0.390  0.69661    
+#> ln(eta)       0.7635     1.9575   0.390  0.69649    
 #> 
 #> Copula:
 #>                  Estimate Std. Error z value Pr(>|z|)
@@ -371,7 +374,7 @@ round(c(independent = AIC(m), gaussian = AIC(cop[[1]]),
         frank = AIC(cop[[2]]), clayton = AIC(cop[[3]]),
         gumbel = AIC(cop[[4]]), MVPLN = AIC(mr)))
 #> independent    gaussian       frank     clayton      gumbel       MVPLN 
-#>        2510        2511        2511        2511        2512        2473
+#>        2510        2511        2511        2511        2512        2472
 ```
 
 The two models describe different dependence. The copula links the two
@@ -395,7 +398,7 @@ mb <- countreg_mv(cbind(pdo, injury) ~ lnaadt + speed50 + offset(lnlength),
 
 This fit takes about two minutes. Its copula parameter is close to zero
 (Frank theta 0.06, standard error 0.71), and its AIC (2474.7) is higher
-than that of the MVPLN alone (2472.7): once the segments’ random
+than that of the MVPLN alone (2472.1): once the segments’ random
 intercepts are in the model, nothing is left for the copula. On
 simulated data with both kinds of dependence, the combined model
 recovers both.

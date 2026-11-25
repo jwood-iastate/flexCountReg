@@ -62,4 +62,11 @@ predict(
 A matrix with one column per category (`"counts"`, `"prob"`), or a
 vector (`"total"`, `"total_positive"`). With random parameters, `"prob"`
 is the average allocation probability and `"counts"` the average
-expected count over the draws.
+expected count over the draws. For a fit with `truncated = TRUE` and
+random parameters, the likelihood truncates the total given each unit's
+coefficients \\b\\, so `"total_positive"` (and `conditional = TRUE`)
+average the ratio over the draws, \\E_b\[E(c \mid b) / (1 - P_0(b))\]\\;
+without truncation they give \\E_b\[E(c \mid b)\] / (1 -
+E_b\[P_0(b)\])\\. The shared site-year term is integrated out before the
+ratio is taken, as in the likelihood. Posterior predictions
+(`random = "posterior"`) need random parameters.

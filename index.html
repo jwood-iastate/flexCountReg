@@ -71,6 +71,7 @@
 <li>your own count distributions, defined from a log probability function with <code><a href="reference/new_count_family.html">new_count_family()</a></code> and usable in every model;</li>
 <li>smooth (generalized additive) effects with the penalized <code>s()</code> and <code>te()</code> terms of mgcv in the mean, the distribution parameters, the zero model and random-parameter heterogeneity, with automatic smoothing and <code><a href="reference/plot_smooths.html">plot_smooths()</a></code>;</li>
 <li>effects that change over time (temporal instability) with <code><a href="reference/tv.html">tv()</a></code>, with period-by-period effects and tests from <code><a href="reference/temporal_effects.html">temporal_effects()</a></code> and <code><a href="reference/temporal_tests.html">temporal_tests()</a></code>;</li>
+<li>multivariate count models of several outcomes on the same units, each with its own family and formulas, with <code><a href="reference/countreg_mv.html">countreg_mv()</a></code>;</li>
 <li>total-plus-allocation models of a count and its split across categories (such as crashes by severity, or by crash type with a multinomial logit split) with <code><a href="reference/countreg_alloc.html">countreg_alloc()</a></code>;</li>
 <li>underreporting, and zero-inflated or hurdle versions of every distribution;</li>
 <li>random parameters, with heterogeneity in their means and variances, analytic gradients, separate simulation draws for each panel, and exact, simulated and Empirical Bayes (observation-specific) predictions;</li>
@@ -572,6 +573,8 @@
 <li>Fixed-effects count models: <code><a href="articles/fixed-effects-count-models.html">vignette("fixed-effects-count-models", package = "flexCountReg")</a></code>
 </li>
 <li>Total-plus-allocation models: counts by severity: <code><a href="articles/total-allocation-models.html">vignette("total-allocation-models", package = "flexCountReg")</a></code>
+</li>
+<li>Multivariate count models: <code><a href="articles/multivariate-count-models.html">vignette("multivariate-count-models", package = "flexCountReg")</a></code>
 </li>
 </ul>
 <p><em>Finite mixtures and latent classes</em></p>

@@ -22,6 +22,9 @@ issues, including:
   [`temporal_effects()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_effects.md)
   and
   [`temporal_tests()`](https://jwood-iastate.github.io/flexCountReg/reference/temporal_tests.md);
+- multivariate count models of several outcomes on the same units, each
+  with its own family and formulas, with
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md);
 - total-plus-allocation models of a count and its split across
   categories (such as crashes by severity, or by crash type with a
   multinomial logit split) with
@@ -790,6 +793,8 @@ The vignettes cover the main workflows. Start with
   [`vignette("fixed-effects-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/fixed-effects-count-models.md)
 - Total-plus-allocation models: counts by severity:
   [`vignette("total-allocation-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/total-allocation-models.md)
+- Multivariate count models:
+  [`vignette("multivariate-count-models", package = "flexCountReg")`](https://jwood-iastate.github.io/flexCountReg/articles/multivariate-count-models.md)
 
 *Finite mixtures and latent classes*
 

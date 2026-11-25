@@ -32,6 +32,10 @@ random parameters, random effects and fixed effects.
   : Total-plus-allocation count models
 - [`predict(`*`<countreg_alloc>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_alloc.md)
   : Predictions from total-plus-allocation models
+- [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  : Multivariate count regression
+- [`predict(`*`<countreg_mv>`*`)`](https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mv.md)
+  : Predictions from multivariate count models
 - [`count_families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
   [`count-families`](https://jwood-iastate.github.io/flexCountReg/reference/count_families.md)
   : Count Families for countreg() and countreg_rp()

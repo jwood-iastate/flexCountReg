@@ -13,6 +13,7 @@ articles:
   hierarchical-count-models: hierarchical-count-models.html
   inference-prediction-and-comparison: inference-prediction-and-comparison.html
   latent-class-regression: latent-class-regression.html
+  multivariate-count-models: multivariate-count-models.html
   numerical-reliability: numerical-reliability.html
   prediction-for-panel-data: prediction-for-panel-data.html
   predictions-and-effects: predictions-and-effects.html
@@ -25,7 +26,7 @@ articles:
   underreporting-and-identification: underreporting-and-identification.html
   user-defined-count-distributions: user-defined-count-distributions.html
   zeros-hurdles-and-sampling: zeros-hurdles-and-sampling.html
-last_built: 2026-11-24T23:31Z
+last_built: 2026-11-24T23:53Z
 urls:
   reference: https://jwood-iastate.github.io/flexCountReg/reference
   article: https://jwood-iastate.github.io/flexCountReg/articles

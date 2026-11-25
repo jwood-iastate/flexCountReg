@@ -68,6 +68,23 @@
   the total reproduces the Poisson-lognormal (`PLN`) fit.
 - New vignette “Total-plus-allocation models: counts by severity”.
 
+### Multivariate count models
+
+- New
+  [`countreg_mv()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.md)
+  fits several count outcomes observed on the same units (crashes by
+  severity or type at each site), each with its own count family, mean
+  formula and distribution-parameter formulas
+  (`family = c(pdo = "NB2", injury = "PIG")`, formulas given as
+  `cbind(y1, y2) ~ x` or a list of formulas, one per outcome). In this
+  first version the equations are independent given the covariates, so
+  the fit equals separate
+  [`countreg()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg.md)
+  fits; one fit gives joint predictions, probabilities, simulations, and
+  Wald tests across equations. Analytic gradients, a Newton polish after
+  BFGS, and normal, robust or cluster-robust standard errors. New
+  vignette “Multivariate count models”.
+
 ### Random parameters within latent classes
 
 - [`countreg_mix()`](https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.md)

@@ -15,6 +15,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/index.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/inference-prediction-and-comparison.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/latent-class-regression.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/articles/multivariate-count-models.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/numerical-reliability.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/prediction-for-panel-data.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/articles/predictions-and-effects.html</loc></url>
@@ -72,6 +73,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier-effects.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_hier.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_mix.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_mv.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/countreg_rp.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/cre_test.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/cureplot.html</loc></url>
@@ -97,6 +99,7 @@
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_alloc.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_hier.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mix.html</loc></url>
+<url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.countreg_mv.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/predict.flexCountReg.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/re_lrtest.html</loc></url>
 <url><loc>https://jwood-iastate.github.io/flexCountReg/reference/reexports.html</loc></url>
